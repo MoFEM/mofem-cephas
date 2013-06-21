@@ -1,0 +1,180 @@
+/** \file moabField_Core.hpp
+ * \brief Core moabField::FEMethod class for user interface
+ * 
+ * Low level data structures not used directly by user
+ *
+ * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+*/
+
+#ifndef __MOABFEMETHOD_CORE_HPP__
+#define __MOABFEMETHOD_CORE_HPP__
+
+#include "moabField.hpp"
+#include "dataStructures.hpp"
+
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/io.hpp>
+
+using namespace boost::numeric;
+
+namespace MoFEM {
+
+/** 
+ * \brief The core user interface for FE method
+ * 
+ * This class give user some data structures and methods on those that
+ * structures which could be useful.
+*/
+struct FEMethod_Core: public moabField::FEMethod {
+
+  //
+  FEMethod_Core *ParentMethod;
+  int verbose;
+
+  double NTET[4],diffNTET[12],diffNTETinvJac[12];
+
+  vector<double> g_NTET;
+  const EntityHandle* conn;
+  vector<double> coords;
+
+  FEMethod_Core(Interface& _moab,int verbose = 0);
+  ~FEMethod_Core();
+
+  PetscErrorCode preProcess();
+  PetscErrorCode operator()();
+  PetscErrorCode postProcess();
+
+  PetscErrorCode GlobIndices();
+  PetscErrorCode DataOp();
+  PetscErrorCode ShapeFunctions();
+  PetscErrorCode ParentData(const string &fe_name);
+
+  typedef FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type dofs_by_Composite;
+  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type numered_dofs_by_Composite;
+
+  template <typename T> static FieldData UnaryFunction_FieldData(const T *it) { return it->get_FieldData(); }
+  template <typename T> static ApproximationRank UnaryFunction_ApproxRank(const T *it) { return it->get_dof_rank(); }
+  template <typename T> static ApproximationOrder UnaryFunction_ApproxOrder(const T *it) { return it->get_dof_order(); }
+  template <typename T> static DofIdx UnaryFunction_PetscGlobalIdx(const T *it) { return it->get_petsc_gloabl_dof_idx(); }
+  template <typename T> static DofIdx UnaryFunction_PetscLocalIdx(const T *it) { return it->get_petsc_local_dof_idx(); }
+  template <typename T> static DofIdx UnaryFunction_EntDofIdx(const T *it) { return it->get_EntDofIdx(); }
+  PetscErrorCode GetDataView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FEDofMoFEMEntity_multiIndex_view &dof);
+  PetscErrorCode GetRowView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof);
+  PetscErrorCode GetColView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof);
+
+  typedef map<const MoFEMField*,vector<DofIdx> > GlobIndices_Type;
+  typedef map<const MoFEMEntity*,vector<DofIdx> > GlobIndices_EntType;
+  GlobIndices_Type row_nodesGlobIndices;
+  GlobIndices_EntType row_edgesGlobIndices;
+  GlobIndices_EntType row_facesGlobIndices;
+  GlobIndices_EntType row_elemGlobIndices;
+  GlobIndices_Type col_nodesGlobIndices;
+  GlobIndices_EntType col_edgesGlobIndices;
+  GlobIndices_EntType col_facesGlobIndices;
+  GlobIndices_EntType col_elemGlobIndices;
+
+  typedef map<const MoFEMField*,ublas::vector<FieldData> > Data_Type;
+  typedef map<const MoFEMEntity*,ublas::vector<FieldData> > Data_EntType;
+  Data_Type data_nodes;
+  Data_EntType data_edges;
+  Data_EntType data_faces;
+  Data_EntType data_elem;
+
+  typedef map<string,vector< ublas::vector<FieldData> > > Data_at_Gauss_pt;
+  typedef map<string,vector< ublas::matrix<FieldData> > > DiffData_at_Gauss_pt;
+  Data_at_Gauss_pt data_at_gauss_pt;
+  DiffData_at_Gauss_pt diff_data_at_gauss_pt;
+  PetscErrorCode Data_at_GaussPoints();
+  PetscErrorCode DiffData_at_GaussPoints();
+
+  typedef map<const MoFEMField*,vector< ublas::matrix<FieldData> > > N_Matrix_Type;
+  typedef map<const MoFEMEntity*,vector< ublas::matrix<FieldData> > > N_Matrix_EntType;
+  N_Matrix_Type row_N_Matrix_nodes;
+  N_Matrix_EntType row_N_Matrix_edges;
+  N_Matrix_EntType row_N_Matrix_faces;
+  N_Matrix_EntType row_N_Matrix_elem;
+  N_Matrix_Type col_N_Matrix_nodes;
+  N_Matrix_EntType col_N_Matrix_edges;
+  N_Matrix_EntType col_N_Matrix_faces;
+  N_Matrix_EntType col_N_Matrix_elem;
+  PetscErrorCode GetNMatrix_at_GaussPoint(
+    GlobIndices_Type& nodesGlobIndices, GlobIndices_EntType& edgesGlobIndices,
+    GlobIndices_EntType& facesGlobIndices, GlobIndices_EntType& volumeGlobIndices,
+    N_Matrix_Type& N_Matrix_nodes,
+    N_Matrix_EntType& N_Matrix_edges,
+    N_Matrix_EntType& N_Matrix_faces,
+    N_Matrix_EntType& N_Matrix_elem);
+  PetscErrorCode GetRowNMatrix_at_GaussPoint();
+  PetscErrorCode GetColNMatrix_at_GaussPoint();
+  N_Matrix_Type row_diffN_Matrix_nodes;
+  N_Matrix_EntType row_diffN_Matrix_edges;
+  N_Matrix_EntType row_diffN_Matrix_faces;
+  N_Matrix_EntType row_diffN_Matrix_elem;
+  N_Matrix_Type col_diffN_Matrix_nodes;
+  N_Matrix_EntType col_diffN_Matrix_edges;
+  N_Matrix_EntType col_diffN_Matrix_faces;
+  N_Matrix_EntType col_diffN_Matrix_elem;
+
+  /**
+   * \brief Calulate element GRADIENT matrices
+   *
+   * [ dN1/dx	....	.... 	]
+   * [ dN1/dy	.... 	....	]
+   * [ ....	....	....	]
+   * [ 0	dN1/dx	....	]
+   * [ 0	dN1/dy  ....	]
+   * [ ....	....	....	]
+   */
+  PetscErrorCode GetDiffNMatrix_at_GaussPoint(
+    GlobIndices_Type& nodesGlobIndices, GlobIndices_EntType& edgesGlobIndices,
+    GlobIndices_EntType& facesGlobIndices, GlobIndices_EntType& volumeGlobIndices,
+    N_Matrix_Type& diffNMatrix_nodes,
+    N_Matrix_EntType& diffNMatrix_edges,
+    N_Matrix_EntType& diffNMatrix_faces,
+    N_Matrix_EntType& diffNMatrix_elem);
+  PetscErrorCode GetRowDiffNMatrix_at_GaussPoint();
+  PetscErrorCode GetColDiffNMatrix_at_GaussPoint();
+
+  const EntMoFEMFE *fe_ent_ptr;
+
+  vector< vector<double> > H1edgeN,diffH1edgeN;
+  vector< vector<double> > H1faceN,diffH1faceN;
+  vector<double> H1elemN,diffH1elemN;
+  vector<double> L2elemN,diffL2elemN;
+  vector< vector<double> > diffH1edgeNinvJac;
+  vector< vector<double> > diffH1faceNinvJac;
+  vector<double> diffH1elemNinvJac;
+  vector<double> diffL2elemNinvJac;
+  PetscErrorCode get_ShapeFunction(
+    vector<const double*> *shape_by_gauss_pt,
+    vector<const double*> *diff_shape_by_gauss_pt,
+    const MoFEMField* field_ptr,EntityType type,int side_number = -1);
+  bool isH1,isHdiv,isHcurl,isL2;
+  vector<int> maxOrderEdgeH1,maxOrderEdgeHdiv;
+  vector<int> maxOrderFaceH1,maxOrderFaceHdiv,maxOrderFaceHcurl;
+  int maxOrderElemH1,maxOrderElemHdiv,maxOrderElemHcurl,maxOrderElemL2;
+
+  PetscErrorCode InitDataStructures();
+
+
+  PetscErrorCode ierr;
+  ErrorCode rval;
+
+};
+
+}
+
+#endif //__MOABFEMETHOD_CORE_HPP__
