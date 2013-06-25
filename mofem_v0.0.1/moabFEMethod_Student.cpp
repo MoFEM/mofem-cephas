@@ -31,13 +31,13 @@ FEMethod_Student::FEMethod_Student(Interface& _moab,int _verbose): FEMethod_Core
   rval = moab.tag_get_handle("Volume",1,MB_TYPE_DOUBLE,th_volume,MB_TAG_CREAT|MB_TAG_SPARSE,&def_V); CHKERR(rval);
 }
 FEMethod_Student::~FEMethod_Student() {}
-PetscErrorCode FEMethod_Student::OpStudentStart() {
+PetscErrorCode FEMethod_Student::OpStudentStart(vector<double>& _gNTET_) {
   PetscFunctionBegin;
     fe_ent_ptr = fe_ptr->fe_ptr;
     ierr = InitDataStructures(); CHKERRQ(ierr);
     ierr = GlobIndices(); CHKERRQ(ierr);
     ierr = DataOp(); CHKERRQ(ierr);
-    ierr = ShapeFunctions(); CHKERRQ(ierr);
+    ierr = ShapeFunctions(_gNTET_); CHKERRQ(ierr);
     ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
     ierr = DiffData_at_GaussPoints(); CHKERRQ(ierr);
     ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
@@ -56,14 +56,14 @@ PetscErrorCode FEMethod_Student::OpStudentStart() {
   if( V <= 0 ) SETERRQ1(PETSC_COMM_SELF,1,"V < 0 for EntityHandle = %lu\n",fe_handle);
   rval = moab.tag_set_data(th_volume,&fe_handle,1,&V); CHKERR_PETSC(rval);
 
-  const unsigned int g_dim = g_NTET.size()/4;
+  const int g_dim = get_dim_gNTET();
   coords_at_Gauss_nodes.resize(g_dim);
-  for(unsigned int gg = 0;gg<g_dim;gg++) {
+  for(int gg = 0;gg<g_dim;gg++) {
     coords_at_Gauss_nodes[gg].resize(3);
     for(int dd = 0;dd<3;dd++) {
-      (coords_at_Gauss_nodes[gg])[0] = cblas_ddot(4,&coords[0],3,&g_NTET[gg*4],1);
-      (coords_at_Gauss_nodes[gg])[1] = cblas_ddot(4,&coords[1],3,&g_NTET[gg*4],1);
-      (coords_at_Gauss_nodes[gg])[2] = cblas_ddot(4,&coords[2],3,&g_NTET[gg*4],1);
+      (coords_at_Gauss_nodes[gg])[0] = cblas_ddot(4,&coords[0],3,&get_gNTET()[gg*4],1);
+      (coords_at_Gauss_nodes[gg])[1] = cblas_ddot(4,&coords[1],3,&get_gNTET()[gg*4],1);
+      (coords_at_Gauss_nodes[gg])[2] = cblas_ddot(4,&coords[2],3,&get_gNTET()[gg*4],1);
     }
   }
 
@@ -412,9 +412,9 @@ PetscErrorCode FEMethod_Student::MakeBMatrix3D(
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
   if(fiit->get_space() != H1) SETERRQ(PETSC_COMM_SELF,1,"it has to be H1 space");
   if(fiit->get_max_rank() != 3) SETERRQ(PETSC_COMM_SELF,1,"it has to be rank 3");
-  const unsigned int g_dim = g_NTET.size()/4;
+  const int g_dim = get_dim_gNTET();
   BMatrix.resize(g_dim);
-  for(unsigned int gg = 0;gg<g_dim;gg++) {
+  for(int gg = 0;gg<g_dim;gg++) {
     ublas::matrix<FieldData> &diffMat = diffNMatrix[gg];
     ublas::matrix<FieldData> &BMat = BMatrix[gg];
     int m = diffMat.size1();
@@ -432,6 +432,63 @@ PetscErrorCode FEMethod_Student::MakeBMatrix3D(
     ublas::matrix_row<ublas::matrix<FieldData> >(BMat,5) = //dX/dz+dZ/dx
       ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,2)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,6);
   }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_Student::GetGaussRowFaceNMatrix(
+  EntityHandle ent,const string &field_name,
+  vector< ublas::matrix<FieldData> > &NMatrix,
+  EntityType type,EntityHandle edge_handle) {
+  PetscFunctionBegin;
+  N_Matrix_Type N_Matrix_nodes;
+  N_Matrix_EntType N_Matrix_edges;
+  N_Matrix_EntType N_Matrix_faces;
+  ierr = GetNMatrix_at_FaceGaussPoint(ent,field_name,
+    row_nodesGlobIndices,row_edgesGlobIndices,row_facesGlobIndices,
+    N_Matrix_nodes,N_Matrix_edges,N_Matrix_faces,
+    type,edge_handle); CHKERRQ(ierr);
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
+  if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
+  switch (type) {
+    case MBVERTEX: {
+      N_Matrix_Type::iterator miit = N_Matrix_nodes.find(fiit->get_MoFEMField_ptr());
+      if(miit == col_N_Matrix_nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+      NMatrix = miit->second;
+      }
+      break;
+    case MBTRI: {
+      int side_number;
+      try {
+	side_number = fe_ent_ptr->get_side_number_ptr(moab,ent)->side_number;
+      } catch (const char* msg) {
+	  SETERRQ(PETSC_COMM_SELF,1,msg);
+      }
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator fiiit;
+      fiiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,MBTRI,side_number));
+      if(fiiit == row_multiIndex->get<Composite_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"no such ent (side_number = %u)",side_number);
+      N_Matrix_EntType::iterator miit = N_Matrix_faces.find(fiiit->get_MoFEMEntity_ptr());
+      if(miit == N_Matrix_faces.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+      NMatrix = miit->second;
+      }
+      break;
+    case MBEDGE: {
+      int side_number;
+      try {
+	side_number = fe_ent_ptr->get_side_number_ptr(moab,edge_handle)->side_number;
+      } catch (const char* msg) {
+	  SETERRQ(PETSC_COMM_SELF,1,msg);
+      }
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiiit;
+      eiiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,MBEDGE,side_number));
+      if(eiiit == row_multiIndex->get<Composite_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"no such ent (side_number = %u)",side_number);
+      N_Matrix_EntType::iterator miit = N_Matrix_edges.find(eiiit->get_MoFEMEntity_ptr());
+      if(miit == N_Matrix_faces.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+      NMatrix = miit->second;
+      }
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+  }
+  
   PetscFunctionReturn(0);
 }
 

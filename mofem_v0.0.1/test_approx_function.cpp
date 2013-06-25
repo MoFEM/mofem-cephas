@@ -128,16 +128,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(0,"H1FIELD_L2"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level0,"FEAPPROX",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level1,"FEAPPROX",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level1,"FEAPPROX_L2",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"FEAPPROX",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"FEAPPROX",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"FEAPPROX_L2",MBTET); CHKERRQ(ierr);
 
   //set app. order
   ierr = mField.set_field_order(0,MBTET,"H1FIELD",3); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"H1FIELD",3); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"H1FIELD",3); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"H1FIELD",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTET,"H1FIELD_L2",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"H1FIELD_L2",3); CHKERRQ(ierr);
 
   moabField_Core core2(moab);
   moabField& mField2 = core2;
@@ -169,6 +169,8 @@ int main(int argc, char *argv[]) {
 
   struct MyFEMethod: public FEMethod_Student {
 
+    vector<double> g_NTET;
+
     Mat &Aij;
     Vec& rows_vec;
     MyFEMethod(Interface& _moab,Mat &_Aij,Vec& _rows_vec): FEMethod_Student(_moab,1),Aij(_Aij),rows_vec(_rows_vec) { 
@@ -178,6 +180,8 @@ int main(int argc, char *argv[]) {
     ParallelComm* pcomm;
     PetscLogDouble t1,t2;
     PetscLogDouble v1,v2;
+
+    vector<double> g_NTRI;
 
     double fun(double *fun_coords) { return exp(-fabs(fun_coords[0])/0.05); } //cblas_ddot(3,fun_coords,1,fun_coords,1); }
 
@@ -198,8 +202,36 @@ int main(int argc, char *argv[]) {
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(); CHKERRQ(ierr);
-      
+      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+
+      g_NTRI.resize(3*4);
+      ShapeMBTRI_GAUSS(&g_NTRI[0],G_TRI_X4,G_TRI_Y4,4); 
+
+      SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
+      SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+      SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
+      for(;siit!=hi_siit;siit++) {
+
+	ierr = ShapeFunctions_TRI(siit->ent,g_NTRI);  CHKERRQ(ierr);
+	vector< ublas::matrix<FieldData> > FaceNMatrix_nodes;
+	ierr = GetGaussRowFaceNMatrix(siit->ent,"H1FIELD",FaceNMatrix_nodes,MBVERTEX); CHKERRQ(ierr);
+	//copy(FaceNMatrix_nodes.begin(),FaceNMatrix_nodes.end(),ostream_iterator<ublas::matrix<FieldData> >(cerr," \n")); cerr << endl;
+
+	vector< ublas::matrix<FieldData> > FaceNMatrix_face;
+	ierr = GetGaussRowFaceNMatrix(siit->ent,"H1FIELD",FaceNMatrix_face,MBTRI); CHKERRQ(ierr);
+	//copy(FaceNMatrix_face.begin(),FaceNMatrix_face.end(),ostream_iterator<ublas::matrix<FieldData> >(cerr," \n")); cerr << endl;
+
+	SideNumber_multiIndex::nth_index<1>::type::iterator siiit = side_table.get<1>().lower_bound(boost::make_tuple(MBEDGE,0));
+	SideNumber_multiIndex::nth_index<1>::type::iterator hi_siiit = side_table.get<1>().upper_bound(boost::make_tuple(MBEDGE,6));
+	for(;siiit!=hi_siiit;siiit++) {
+	  ierr = GetGaussRowFaceNMatrix(siit->ent,"H1FIELD",FaceNMatrix_face,MBEDGE,siiit->ent); CHKERRQ(ierr);
+	  //cerr << "ee ";
+	  //copy(FaceNMatrix_face.begin(),FaceNMatrix_face.end(),ostream_iterator<ublas::matrix<FieldData> >(cerr," \n")); cerr << endl;
+	}
+
+
+      }
+     
       int row_mat = 0;
       vector<vector<DofIdx> > RowGlob(1+6+4+1);
       vector<vector<ublas::matrix<FieldData> > > rowNMatrices(1+6+4+1);
@@ -328,6 +360,9 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
+    vector<double> g_NTET;
+
+
     Tag th_val;
     MyEntMethod(Interface& _moab): EntMethod(_moab) {
       double def_VAL = 0;
@@ -370,6 +405,8 @@ int main(int argc, char *argv[]) {
     PetscLogDouble t1,t2;
     PetscLogDouble v1,v2;
 
+    vector<double> g_NTET;
+
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       FEMethod_Core::preProcess();
@@ -382,7 +419,7 @@ int main(int argc, char *argv[]) {
     }
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(); CHKERRQ(ierr);
+      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
       ierr = ParentData("FEAPPROX"); CHKERRQ(ierr);
       if(ParentMethod==NULL) SETERRQ(PETSC_COMM_SELF,1,"no parent element");
       if(ParentMethod->fe_ent_ptr==NULL) SETERRQ(PETSC_COMM_SELF,1,"no parent element");
@@ -417,11 +454,11 @@ int main(int argc, char *argv[]) {
 	assert(loc_coords[2]<=1);
 	G_Z[gg] = loc_coords[2];
       }
-      ParentMethod->g_NTET.resize(4*g_dim);
-      ShapeMBTET(&ParentMethod->g_NTET[0],&G_X[0],&G_Y[0],&G_Z[0],g_dim);
+      vector<double> ParentMethod_g_NTET(4*g_dim);
+      ShapeMBTET(&ParentMethod_g_NTET[0],&G_X[0],&G_Y[0],&G_Z[0],g_dim);
       ierr = ParentMethod->InitDataStructures(); CHKERRQ(ierr);
       ierr = ParentMethod->DataOp(); CHKERRQ(ierr);
-      ierr = ParentMethod->ShapeFunctions();
+      ierr = ParentMethod->ShapeFunctions(ParentMethod_g_NTET);
       ierr = ParentMethod->Data_at_GaussPoints(); CHKERRQ(ierr);
       Data_at_Gauss_pt &parent_data_at_gauss_pt = ParentMethod->data_at_gauss_pt;
       Data_at_Gauss_pt::iterator diit = parent_data_at_gauss_pt.find("H1FIELD");
@@ -473,6 +510,9 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
   struct MyFEMethodPostProc: public FEMethod_Student {
+    vector<double> g_NTET;
+
+
     Tag th_val;
     MyFEMethodPostProc(Interface& _moab): FEMethod_Student(_moab,1),moab_post_proc(mb_instance_post_proc) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -502,7 +542,7 @@ int main(int argc, char *argv[]) {
     }
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(); CHKERRQ(ierr);
+      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
 
       Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find("H1FIELD_L2");
       if(diit==data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no H1FIELD L2 !!!");

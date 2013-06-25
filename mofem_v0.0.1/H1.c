@@ -23,7 +23,7 @@
 #include<strings.h>
 #include<assert.h>
 
-PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[6],double *diff_edgeN[6],int GDIM) {
+PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM) {
   PetscFunctionBegin;
   double *edgeN01 = edgeN[0],*edgeN12 = edgeN[1],*edgeN20 = edgeN[2];
   double *diff_edgeN01 = diff_edgeN[0],*diff_edgeN12 = diff_edgeN[1],*diff_edgeN20 = diff_edgeN[2];
@@ -72,7 +72,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
     cblas_daxpy(P[1],diffN[2*0+1]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+1],L01,1,&diff_edgeN01[2*shift+1],2);
     //edge12
     shift = ii*(P[1]);
-    bzero(&diff_edgeN12[2*ii*(P[1]+1)],sizeof(double)*2*(P[1]));
+    bzero(&diff_edgeN12[2*shift],sizeof(double)*2*(P[1]));
     //diffX
     cblas_daxpy(P[1],N[node_shift+1]*N[node_shift+2],&diffL12[0*P[1]],1,&diff_edgeN12[2*shift+0],2);
     cblas_daxpy(P[1],diffN[2*1+0]*N[node_shift+2]+N[node_shift+1]*diffN[2*2+0],L12,1,&diff_edgeN12[2*shift+0],2);
@@ -311,7 +311,8 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,doubl
   for(;dd<3;dd++) {
     diff_ksiL0[dd] = ( diffN[1*3 + dd] - diffN[0*3 + dd] );
     diff_ksiL1[dd] = ( diffN[2*3 + dd] - diffN[0*3 + dd] );
-    diff_ksiL2[dd] = ( diffN[3*3 + dd] - diffN[0*3 + dd] ); }
+    diff_ksiL2[dd] = ( diffN[3*3 + dd] - diffN[0*3 + dd] ); 
+  }
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*4;
@@ -343,10 +344,8 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,doubl
       int dd = 0;
       for(;dd<3;dd++) {
 	double v2 = 
-	    diffN[3*0+dd]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3]+
-	    N[node_shift+0]*diffN[3*1+dd]*N[node_shift+2]*N[node_shift+3]+
-	    N[node_shift+0]*N[node_shift+1]*diffN[3*2+dd]*N[node_shift+3]+
-	    N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*diffN[3*3+dd];
+	    diffN[3*0+dd]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3] + N[node_shift+0]*diffN[3*1+dd]*N[node_shift+2]*N[node_shift+3]+
+	    N[node_shift+0]*N[node_shift+1]*diffN[3*2+dd]*N[node_shift+3] + N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*diffN[3*3+dd];
 	int jj = 0;
 	int pp0 = 0;
 	for(;pp0<(p-3);pp0++) {
@@ -354,8 +353,12 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,doubl
 	  for(;(pp0+pp1)<(p-3);pp1++) {
 	    int pp2 = 0;
 	    for(;(pp0+pp1+pp2)<(p-3);pp2++) {
+	      assert( (3*shift+3*(jj)+dd) < 3*P*GDIM );
+	      assert( (dd*(p-3)+pp0) < 3*(p-3) );
+	      assert( (dd*(p-3)+pp1) < 3*(p-3) );
+	      assert( (dd*(p-3)+pp2) < 3*(p-3) );
 	      diff_volumeN[3*shift+3*(jj++)+dd] = 
-		(diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2]+L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2]+L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2])*v +
+		( diffL0[dd*(p-3)+pp0]*L1[pp1]*L2[pp2] + L0[pp0]*diffL1[dd*(p-3)+pp1]*L2[pp2] + L0[pp0]*L1[pp1]*diffL2[dd*(p-3)+pp2] )*v +
 		L0[pp0]*L1[pp1]*L2[pp2]*v2;
 	    }
 	  }

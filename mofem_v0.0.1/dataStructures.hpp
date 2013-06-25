@@ -165,6 +165,7 @@ struct ptrWrapperRefMoFEMFiniteElement: public interface_RefMoFEMFiniteElement<R
   int wrapp;
   ptrWrapperRefMoFEMFiniteElement(const RefMoFEMFiniteElement *__ptr): interface_RefMoFEMFiniteElement<RefMoFEMFiniteElement>(__ptr),wrapp(1) {}
   ptrWrapperRefMoFEMFiniteElement(const ptrWrapperRefMoFEMFiniteElement &ref): interface_RefMoFEMFiniteElement<RefMoFEMFiniteElement>(ref) { 
+    wrapp = 1;
     assert(ref.wrapp == 1);
     (const_cast<ptrWrapperRefMoFEMFiniteElement&>(ref)).wrapp++;
   }
@@ -348,7 +349,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<MoFEMFE_name_mi_tag>, const_mem_fun<NumeredMoFEMFE::interface_type_MoFEMFE,string,&NumeredMoFEMFE::get_name> >,
     ordered_non_unique<
-      tag<MoFEMFE_Part_mi_tag>, member<NumeredMoFEMFE::NumeredMoFEMFE,unsigned int,&NumeredMoFEMFE::part> >,
+      tag<MoFEMFE_Part_mi_tag>, member<NumeredMoFEMFE,unsigned int,&NumeredMoFEMFE::part> >,
     ordered_non_unique<
       tag<Composite_mi_tag>,       
       composite_key<

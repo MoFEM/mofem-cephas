@@ -45,8 +45,8 @@ struct FEMethod_Core: public moabField::FEMethod {
   int verbose;
 
   double NTET[4],diffNTET[12],diffNTETinvJac[12];
+  double NTRI[3],diffNTRI[6];
 
-  vector<double> g_NTET;
   const EntityHandle* conn;
   vector<double> coords;
 
@@ -59,7 +59,6 @@ struct FEMethod_Core: public moabField::FEMethod {
 
   PetscErrorCode GlobIndices();
   PetscErrorCode DataOp();
-  PetscErrorCode ShapeFunctions();
   PetscErrorCode ParentData(const string &fe_name);
 
   typedef FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type dofs_by_Composite;
@@ -150,6 +149,13 @@ struct FEMethod_Core: public moabField::FEMethod {
 
   const EntMoFEMFE *fe_ent_ptr;
 
+  /**
+   * calulate element shape functions
+   *
+   * \param _gNTET_ vector of shape functions at Gauss pts.
+   */
+  PetscErrorCode ShapeFunctions(vector<double>& _gNTET_);
+
   vector< vector<double> > H1edgeN,diffH1edgeN;
   vector< vector<double> > H1faceN,diffH1faceN;
   vector<double> H1elemN,diffH1elemN;
@@ -158,6 +164,7 @@ struct FEMethod_Core: public moabField::FEMethod {
   vector< vector<double> > diffH1faceNinvJac;
   vector<double> diffH1elemNinvJac;
   vector<double> diffL2elemNinvJac;
+  /// get element shape functions
   PetscErrorCode get_ShapeFunction(
     vector<const double*> *shape_by_gauss_pt,
     vector<const double*> *diff_shape_by_gauss_pt,
@@ -167,11 +174,42 @@ struct FEMethod_Core: public moabField::FEMethod {
   vector<int> maxOrderFaceH1,maxOrderFaceHdiv,maxOrderFaceHcurl;
   int maxOrderElemH1,maxOrderElemHdiv,maxOrderElemHcurl,maxOrderElemL2;
 
-  PetscErrorCode InitDataStructures();
+  /**
+   * calculate element faces shape functions
+   *
+   * \param _gNTRI_ vector of shape functions at Gauss pts.
+   *
+   */
+  PetscErrorCode ShapeFunctions_TRI(EntityHandle ent,vector<double> &_gNTRI_);
+  vector<vector<double> > gNTRIonElem;
+  map<EntityHandle,map<EntityHandle,vector<double> > > H1edgeN_TRI,diffH1edgeN_TRI;
+  map<EntityHandle,vector<double> > H1faceN_TRI,diffH1faceN_TRI;
+  PetscErrorCode GetNMatrix_at_FaceGaussPoint(
+    EntityHandle ent,
+    const string& field_name,
+    GlobIndices_Type& nodesGlobIndices, 
+    GlobIndices_EntType& edgesGlobIndices,
+    GlobIndices_EntType& facesGlobIndices,
+    N_Matrix_Type& N_Matrix_nodes,
+    N_Matrix_EntType& N_Matrix_edges,
+    N_Matrix_EntType& N_Matrix_faces,
+    EntityType type = MBMAXTYPE,
+    EntityHandle edge_handle = no_handle);
 
+  PetscErrorCode InitDataStructures();
 
   PetscErrorCode ierr;
   ErrorCode rval;
+
+  int get_dim_gNTET() const { return gNTET_dim; };
+  const vector<double>& get_gNTET() const { return gNTET; };
+  int get_dim_gNTRI() const { return gNTRI_dim; };
+  const vector<double>& get_gNTRI() const { return gNTRI; };
+  private:
+  int gNTET_dim;
+  vector<double> gNTET;
+  int gNTRI_dim;
+  vector<double> gNTRI;  
 
 };
 

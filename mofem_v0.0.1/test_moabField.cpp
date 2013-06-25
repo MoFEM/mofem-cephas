@@ -175,15 +175,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_PRISMs(0,"DAMAGE_INTERFACE"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level0,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level1,"ELASTIC",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level1,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_bit_ref(bit_level0,"INTERFACE",MBPRISM); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
 
   /*ierr = mField.add_ents_to_MoFEMFE_by_MESHSET(Block5,"LINK"); CHKERRQ(ierr);
@@ -250,6 +250,8 @@ int main(int argc, char *argv[]) {
     Vec& rows_vec;
     MyFEMethod(Interface& _moab,Mat &_Aij,Vec& _rows_vec): FEMethod_Student(_moab,1),Aij(_Aij),rows_vec(_rows_vec) { }; 
 
+    vector<double> g_NTET;
+
     virtual PetscErrorCode preProcess() {
       PetscFunctionBegin;
       FEMethod_Core::preProcess();
@@ -260,7 +262,7 @@ int main(int argc, char *argv[]) {
 
     virtual PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(); CHKERRQ(ierr);
+      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
 
       ostringstream ss;
 

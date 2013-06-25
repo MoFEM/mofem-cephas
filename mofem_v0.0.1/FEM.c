@@ -112,12 +112,15 @@ void ShapeMBTRI_GAUSS(double *N,const double *X,const double *Y,const int G_DIM)
     N[3*ii+2] = N_MBTRI2(x,y);
   }
 }
-void ShapeDiffMBTRI(double *diffN) {
+PetscErrorCode ShapeDiffMBTRI(double *diffN) {
+  PetscFunctionBegin;
   diffN[0] = diffN_MBTRI0x; diffN[1] = diffN_MBTRI0y;
   diffN[2] = diffN_MBTRI1x; diffN[3] = diffN_MBTRI1y;
   diffN[4] = diffN_MBTRI2x; diffN[5] = diffN_MBTRI2y;
+  PetscFunctionReturn(0);
 }
-void ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal) {
+PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal) {
+  PetscFunctionBegin;
   double diffX_x,diffX_y,diffX_z;
   double diffY_x,diffY_y,diffY_z;
   diffX_x = 0.;diffX_y = 0.;diffX_z = 0.;
@@ -135,6 +138,7 @@ void ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal) {
   normal[1] = diffX_z*diffY_x - diffX_x*diffY_z;
   normal[2] = diffX_x*diffY_y - diffX_y*diffY_x;
   cblas_dscal(3,0.5,normal,1);
+  PetscFunctionReturn(0);
 }
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac) {
   int ii,jj,kk;
@@ -143,7 +147,7 @@ void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac) {
     for(jj = 0; jj<3; jj++) 	//space
       for(kk = 0; kk<3; kk++) 	//direvative of shape func.
 	Jac[ jj*3+kk ] += 
-	diffN[ ii*3+kk ]*coords[ ii*3+jj ];
+	  diffN[ ii*3+kk ]*coords[ ii*3+jj ];
 }
 void ShapeDiffMBTRIinvJ(double *diffN,double *invJac,double *diffNinvJac) {
   int ii = 0;

@@ -66,7 +66,7 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
  * \param sense of edges, it is array of inegers dim 3 (3-egdes of triangle)
  * \param p of edges
  */
-PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[6],double *diff_edgeN[6],int GDIM);
+PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM);
 PetscErrorCode H1_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM);
 PetscErrorCode H1_ShapeFaceNormalMBTRI_hierarchical(int order,int *order_edge,
   double *diffN,double *diffN_face,double *diffN_edge[],

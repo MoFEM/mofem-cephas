@@ -30,6 +30,14 @@ const int debug = 5;
 
 moabField_Core::moabField_Core(Interface& _moab,int _verbose): 
   moab(_moab),verbose(_verbose) {
+  const EntityHandle root_meshset = moab.get_root_set();
+  // Version
+  Tag th_version;
+  string version = "v0.0.1";
+  rval = moab.tag_get_handle("__MoFEM_VERSION",version.size()*sizeof(char),MB_TYPE_OPAQUE,
+    th_version,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,NULL); CHKERR(rval);
+  const char *ptr_version = version.c_str();
+  rval = moab.tag_set_data(th_version,&root_meshset,1,ptr_version); CHKERR_THROW(rval);
   //tags saved in vtk-files
   const int def_part = -1;
   rval = moab.tag_get_handle("PARTITION",1,MB_TYPE_INTEGER,th_Part,MB_TAG_CREAT|MB_TAG_SPARSE,&def_part); CHKERR(rval);
@@ -91,7 +99,6 @@ moabField_Core::moabField_Core(Interface& _moab,int _verbose):
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR(rval);
   const void* tag_data[1];
-  const EntityHandle root_meshset = moab.get_root_set();
   rval = moab.tag_get_by_ptr(th_FieldShift,&root_meshset,1,tag_data); CHKERR(rval);
   f_shift = (int*)tag_data[0];
   //FE
@@ -303,12 +310,14 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
 	assert(p.first->meshset == *mit);
 	//add field to ref ents
 	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = ref_entities.insert(RefMoFEMEntity(moab,*mit));
+	NOT_USED(p_ref_ent);
       } else {
 	Range ents;
 	rval = moab.get_entities_by_handle(*mit,ents,false); CHKERR_PETSC(rval);
 	Range::iterator eit = ents.begin();
 	for(;eit!=ents.end();eit++) {
 	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = ref_entities.insert(RefMoFEMEntity(moab,*eit));
+	  NOT_USED(p_ref_ent);
 	}
       }
     }
@@ -316,6 +325,7 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
     rval = moab.tag_get_data(th_FEId,&*mit,1,&BitFEId); CHKERR_PETSC(rval);
     if(BitFEId!=0) {
       pair<MoFEMFE_multiIndex::iterator,bool> p = finite_elements.insert(MoFEMFE(moab,*mit));
+      NOT_USED(p);
       assert(p.first->meshset == *mit);
       Range ents;
       rval = moab.get_entities_by_handle(*mit,ents,false); CHKERR_PETSC(rval);
@@ -855,6 +865,7 @@ PetscErrorCode moabField_Core::add_BitProblemId(const BitProblemId id,const stri
   rval = moab.tag_set_by_ptr(th_ProblemName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   //create entry
   pair<MoFEMProblem_multiIndex::iterator,bool> p = problems.insert(_MoFEMProblem_(moab,meshset));
+  NOT_USED(p);
   assert(p.second);
   if(verbose>0) {
     ostringstream ss;
@@ -937,7 +948,7 @@ PetscErrorCode moabField_Core::add_ents_to_MoFEMFE_by_TETs(const EntityHandle me
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::add_ents_to_MoFEMFE_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) {
+PetscErrorCode moabField_Core::add_ents_to_MoFEMFE_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   const BitFEId id = get_BitFEId(name);
@@ -1180,6 +1191,7 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
       FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(p.first->data_dofs);
       FEDofMoFEMEntity FEDof(side_number_ptr,&**viit_data);
       pair<FEDofMoFEMEntity_multiIndex::iterator,bool> p_dof = data_dofs.insert(FEDof);
+      NOT_USED(p_dof);
       //cout << *(p_dof.first) << endl;
     } catch (const char* msg) {
       SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -1286,7 +1298,7 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
     int size_col = fit->tag_col_uids_size/sizeof(UId);
     const UId *uids_col = (UId*)fit->tag_col_uids_data;
     for(ii = 0,uid = -1;ii<size_col;ii++) {
-      if( uid == (uids_row[ii] >> 7 )) continue;
+      if( uid == (uids_col[ii] >> 7 )) continue;
       uid = uids_col[ii];
       uid = uid >> 7; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_col[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
@@ -1303,7 +1315,7 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
     int size_data = fit->tag_data_uids_size/sizeof(UId);
     const UId *uids_data = (UId*)fit->tag_data_uids_data;
     for(ii = 0,uid = -1;ii<size_data;ii++) {
-      if( uid == (uids_row[ii] >> 7 )) continue;
+      if( uid == (uids_data[ii] >> 7 )) continue;
       uid = uids_data[ii];
       uid = uid >> 7; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_data[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
@@ -2826,7 +2838,6 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
   }
   EntityHandle meshset_for_bit_level;
   rval = moab.create_meshset(MESHSET_SET,meshset_for_bit_level); CHKERR_PETSC(rval);
-
   Range meshset_ents;
   rval = moab.get_entities_by_handle(meshset,meshset_ents,false); CHKERR_PETSC(rval);
   if(intersect(meshset_ents,side_ents3d).size() != side_ents3d.size()) {
@@ -2951,6 +2962,7 @@ PetscErrorCode moabField_Core::add_prism_to_Adj_prisms(const EntityHandle prism,
       EntityHandle face_side3 = no_handle,face_side4 = no_handle;
       for(;siit!=side_table.end();siit++) {
 	pair<AdjBasicMoFEMEntity_multiIndex::iterator,bool> p = Adj_prisms.insert(AdjBasicMoFEMEntity(prism,siit->ent));
+	NOT_USED(p);
 	EntityType type = moab.type_from_handle(siit->ent);
 	if(type == MBTRI && siit->side_number == 3) {
 	  face_side3 = siit->ent;

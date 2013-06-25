@@ -59,10 +59,10 @@ void print_mat_complex(__CLPK_doublecomplex *M,int m,int n);
 /// \param G_DIM number of Gauss points 
 void ShapeMBTRI_GAUSS(double *N,const double *X,const double *Y,const int G_DIM);
 /// calulate direvatives of shape functions
-void ShapeDiffMBTRI(double *diffN);
+PetscErrorCode ShapeDiffMBTRI(double *diffN);
 /// calulate face nornam
 /// \param coords is position of the nodes
-void ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal);
+PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal);
 /// calulate jacobioan 
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
 /// calulate direvatives of shape functions in space
@@ -109,6 +109,7 @@ void MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA);
 PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF);
 PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *det_xF);
 
+//TRI
 static const double G_TRI_X1[] = {
 3.3333333333333331e-01 
 };
@@ -139,6 +140,34 @@ static const double G_TRI_W4[] = {
 1.8195861825602258066e-01, 3.1804138174397683647e-01,
 1.8195861825602258066e-01, 3.1804138174397683647e-01
 };
+static const double G_TRI_X7[] = {
+0.333333333333333, 0.736712498968435, 0.736712498968435,
+0.237932366472434, 0.237932366472434, 0.025355134551932,
+0.025355134551932
+};
+static const double G_TRI_Y7[] = {
+0.333333333333333, 0.237932366472434, 0.025355134551932,
+0.736712498968435, 0.025355134551932, 0.736712498968435,
+0.237932366472434
+};
+static const double G_TRI_W7[] = {
+  0.375000000000000, 0.104166666666667, 0.104166666666667, 0.104166666666667, 0.104166666666667, 0.104166666666667, 0.104166666666667
+};
+static const double G_TRI_X13[] = {
+0.333333333333333, 0.479308067841923, 0.260345966079038, 0.260345966079038, 0.869739794195568,
+0.065130102902216, 0.065130102902216, 0.638444188569809, 0.638444188569809, 0.312865496004875,
+0.312865496004875, 0.048690315425316, 0.048690315425316
+};
+static const double G_TRI_Y13[] = {
+0.333333333333333, 0.260345966079038, 0.479308067841923, 0.260345966079038, 0.065130102902216,
+0.869739794195568, 0.065130102902216, 0.312865496004875, 0.048690315425316, 0.638444188569809,
+0.048690315425316, 0.638444188569809, 0.312865496004875
+};
+static const double G_TRI_W13[] = {
+ -0.149570044467670, 0.175615257433204, 0.175615257433204, 0.175615257433204, 0.053347235608839,
+  0.053347235608839, 0.053347235608839, 0.077113760890257, 0.077113760890257, 0.077113760890257,
+  0.077113760890257, 0.077113760890257, 0.077113760890257 };
+//TET
 static const double G_TET_X1[] = {
 0.25 
 };

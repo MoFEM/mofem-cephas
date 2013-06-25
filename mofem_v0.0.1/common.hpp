@@ -983,7 +983,7 @@ typedef multi_index_container<
       tag<Composite_mi_tag>, 
       composite_key<
 	EntMoFEMFE,
-	const_mem_fun<EntMoFEMFE::EntMoFEMFE,EntityHandle,&EntMoFEMFE::get_ent>,
+	const_mem_fun<EntMoFEMFE,EntityHandle,&EntMoFEMFE::get_ent>,
 	const_mem_fun<EntMoFEMFE::interface_type_MoFEMFE,string,&EntMoFEMFE::get_name> > >
   > > EntMoFEMFE_multiIndex;
 

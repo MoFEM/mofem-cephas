@@ -105,7 +105,7 @@ struct moabField {
   /**
    * \brief make vetices in the middle of edges in meshset and add them to refinment levels defined by bit
    *
-   * Takes entities form meshsets and queried recursively.
+   * Takes entities form meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
    * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies. 
    */
   virtual PetscErrorCode add_verices_in_the_middel_of_edges(
@@ -149,6 +149,7 @@ struct moabField {
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name) = 0;
+
   /** 
     * \brief set prisms part of the given field (works only for L2 space)
     *
@@ -192,7 +193,7 @@ struct moabField {
   virtual PetscErrorCode add_ents_to_MoFEMFE_by_TETs(const EntityHandle meshset,const string &name) = 0;
 
   /// add TET elements to the refinment level to finite element database given by name 
-  virtual PetscErrorCode add_ents_to_MoFEMFE_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) = 0;
+  virtual PetscErrorCode add_ents_to_MoFEMFE_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) = 0;
 
   /// add MESHSET element to finite element database given by name 
   virtual PetscErrorCode add_ents_to_MoFEMFE_by_MESHSET(const EntityHandle meshset,const string& name) = 0;
@@ -298,13 +299,21 @@ struct moabField {
    */
   virtual PetscErrorCode get_msId_3dENTS_sides(const EntityHandle SideSet,const bool recursive = false,int verb = -1) = 0;
 
-  /// split nodes and other entities of tetrahedrals in children sets
+  /**
+   * \brif split nodes and other entities of tetrahedrals in children sets and add prism elements
+   * 
+   * The all new entities (prisms, tets) are added to refinment level given by bit
+   */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const int msId,const Cubit_BC_bitset CubitBCType,
     const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
-  /// split nodes and other entities of tetrahedrals in children sets
+  /**
+   * \brif split nodes and other entities of tetrahedrals in children sets and add prism elements
+   * 
+   * The all new entities (prisms, tets) are added to refinment level given by bit
+   */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;

@@ -52,8 +52,11 @@ struct FEMethod_Student: public FEMethod_Core {
    * \brief Initate data structures for running FE methods
    *
    * It has to be run at the begining of the function
+   *
+   * \param _gNTET_ vector of shape of tetrahedral functions evaluated at Gauss points
    */
-  PetscErrorCode OpStudentStart();
+  PetscErrorCode OpStudentStart(vector<double>& _gNTET_);
+
   /**
    * \brief Finalise data structures for running FE methods
    *
@@ -246,6 +249,23 @@ struct FEMethod_Student: public FEMethod_Core {
    */ 
   PetscErrorCode MakeBMatrix3D(const string &field_name,
     vector<ublas::matrix<FieldData> > &diffNMatrix,vector<ublas::matrix<FieldData> > &BMatrix);
+
+   /** \brief Get shape functions for integration on the face
+   *
+   * Note that size of the global vector is determined by number of gauss
+   * points in shape functions on the face, face which is triangle g_dim =
+   * g_NTRI.size()/3
+   *
+   * \param EntityHandle moab entity handle to face (MBTRI) on tetrahedral (MBTET)
+   * \param field_name name of the approx. field 
+   * \param vector on return stores
+   * \param entity type on face (MBVERTEX, MBEDGE or MBTRI)
+   * \param entity hande on face (it need to be given when entity type is MBEDEGE)
+   * values of field at gauss points 
+   */
+  PetscErrorCode GetGaussRowFaceNMatrix(
+    EntityHandle ent,const string &field_name,vector< ublas::matrix<FieldData> > &diffNMatrix,
+    EntityType type = MBMAXTYPE,EntityHandle edge_handle = no_handle);
 
 };
 

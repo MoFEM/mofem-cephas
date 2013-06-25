@@ -126,7 +126,7 @@ struct moabField_Core: public moabField {
   PetscErrorCode add_ents_to_MoFEMFE_by_TETs(const EntityHandle meshset,const string &name);
   PetscErrorCode add_ents_to_MoFEMFE_by_MESHSET(const EntityHandle meshset,const string& name);
   PetscErrorCode add_ents_to_MoFEMFE_by_MESHSETs(const EntityHandle meshset,const string& name);
-  PetscErrorCode add_ents_to_MoFEMFE_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type);
+  PetscErrorCode add_ents_to_MoFEMFE_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type);
   BitFEId get_BitFEId(const string& name) const;
   string get_BitFEId_name(const BitFEId id) const;
   EntityHandle get_meshset_by_BitFEId(const BitFEId id) const;
