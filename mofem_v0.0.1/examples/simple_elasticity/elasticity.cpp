@@ -23,6 +23,8 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
+#include "../PostProcDisplacementOnMesh.hpp"
+
 /* 
  * From: Demkowicz
  * To discuss basic a priori error estimates, we return now to basic mathemat-
@@ -51,6 +53,7 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
+  //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
@@ -58,31 +61,40 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
+  //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
+  //We need that for code profiling
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
   ierr = PetscGetTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
+  //Create MoFEM (Joseph) database
   moabField_Core core(moab);
   moabField& mField = core;
 
+  //Get meshsets form CUBIT
   Range CubitSideSets_meshsets;
   ierr = mField.get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
+
+  // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+
+  /***/
+  //Define problem
 
   //Fields
   ierr = mField.add_BitFieldId("DISPLACEMENT",H1,3); CHKERRQ(ierr);
@@ -98,11 +110,14 @@ int main(int argc, char *argv[]) {
   //define problems
   ierr = mField.add_BitProblemId("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
-  //set finite elements for problems
+  //set finite elements for problem
   ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
+
+  /***/
+  //Declare problem
 
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
@@ -111,10 +126,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
+  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+
+  /****/
+  //build database
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -128,9 +147,13 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
+  /****/
+  //mesh partitioning 
+
   //partition
   ierr = mField.partition_problems("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create matrices
@@ -497,12 +520,14 @@ int main(int argc, char *argv[]) {
 
   };
 
+  //Get SideSet 1 and SideSet 2 defined in CUBIT
   Range SideSet1,SideSet2;
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet2.size());
 
+  //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
   ElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
@@ -531,55 +556,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  // Write Displacements DOFS on Vertices
-  struct MyEntMethod: public moabField::EntMethod {
-    ErrorCode rval;
-    PetscErrorCode ierr;
-
-    Tag th_disp;
-    MyEntMethod(Interface& _moab): EntMethod(_moab) {
-      double def_VAL[3] = {0,0,0};
-      // create TAG
-      rval = moab.tag_get_handle("DISPLACEMENTS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
-    }
-
-    vector<double> vals;
-    Range nodes;
-    
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscPrintf(PETSC_COMM_WORLD,"Start postporcess\n");
-      rval = moab.get_entities_by_type(0,MBVERTEX,nodes); CHKERR_PETSC(rval);
-      vals.resize(nodes.size()*3);
-      PetscFunctionReturn(0);
-    }
-    
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      if(dof_ptr->get_ent_type()!=MBVERTEX) PetscFunctionReturn(0);
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
-      double fval = dof_ptr->get_FieldData();
-      Range::iterator nit = find(nodes.begin(),nodes.end(),ent);
-      if(nit==nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      unsigned int pos = std::distance(nodes.begin(),nit);
-      pos = 3*pos+dof_rank;
-      if(pos>vals.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      vals[pos] = fval;
-      //cerr << pos << " --> " << fval << " ent " << ent << endl;
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      ierr = moab.tag_set_data(th_disp,nodes,&vals[0]); CHKERRQ(ierr);
-      PetscPrintf(PETSC_COMM_WORLD,"End postporcess\n");
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  MyEntMethod ent_method(moab);
+  PostProcDisplacementsEntMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {

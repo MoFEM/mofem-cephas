@@ -1,0 +1,76 @@
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ * FIXME: DESCRIPTION
+ */
+
+/* This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#include "moabField.hpp"
+#include "moabField_Core.hpp"
+#include "moabFEMethod_Student.hpp"
+
+using namespace MoFEM;
+
+// Write Displacements DOFS on Vertices
+struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
+    ErrorCode rval;
+    PetscErrorCode ierr;
+
+    Tag th_disp;
+    PostProcDisplacementsEntMethod(Interface& _moab): EntMethod(_moab) {
+      double def_VAL[3] = {0,0,0};
+      // create TAG
+      rval = moab.tag_get_handle("DISPLACEMENTS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+    }
+
+    vector<double> vals;
+    Range nodes;
+    
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscPrintf(PETSC_COMM_WORLD,"Start postporcess\n");
+      rval = moab.get_entities_by_type(0,MBVERTEX,nodes); CHKERR_PETSC(rval);
+      vals.resize(nodes.size()*3);
+      PetscFunctionReturn(0);
+    }
+    
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+
+      if(dof_ptr->get_ent_type()!=MBVERTEX) PetscFunctionReturn(0);
+      if(dof_ptr->get_name() != "DISPLACEMENT") PetscFunctionReturn(0);
+
+      EntityHandle ent = dof_ptr->get_ent();
+      int dof_rank = dof_ptr->get_dof_rank();
+      double fval = dof_ptr->get_FieldData();
+      Range::iterator nit = find(nodes.begin(),nodes.end(),ent);
+      if(nit==nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      unsigned int pos = std::distance(nodes.begin(),nit);
+      pos = 3*pos+dof_rank;
+      if(pos>vals.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      vals[pos] = fval;
+      //cerr << pos << " --> " << fval << " ent " << ent << endl;
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      ierr = moab.tag_set_data(th_disp,nodes,&vals[0]); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"End postporcess\n");
+      PetscFunctionReturn(0);
+    }
+
+};
+
