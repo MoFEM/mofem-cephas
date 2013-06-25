@@ -97,19 +97,9 @@ resolve_libraries(PROJECT_LIBS "
 #message(STATUS ${PETSCVAR_BLASLAPACK_LIB})
 message(STATUS ${PROJECT_LIBS})
 
-add_executable(test_moabField test_moabField.cpp)
-target_link_libraries(test_moabField mofem_Field ${PROJECT_LIBS})
-
-add_executable(test_mesh_refinment test_mesh_refinment.cpp)
-target_link_libraries(test_mesh_refinment mofem_Field ${PROJECT_LIBS})
-
-add_executable(test_approx_function test_approx_function.cpp)
-target_link_libraries(test_approx_function mofem_Field ${PROJECT_LIBS})
-
-add_executable(test_elasticity test_elasticity.cpp)
-target_link_libraries(test_elasticity mofem_Field ${PROJECT_LIBS})
 
 #add executable library form subdirectory
+add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
 
 

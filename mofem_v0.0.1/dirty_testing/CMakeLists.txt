@@ -16,8 +16,15 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(elasticity elasticity.cpp)
-target_link_libraries(elasticity mofem_Field ${PROJECT_LIBS})
+add_executable(test_moabField test_moabField.cpp)
+target_link_libraries(test_moabField mofem_Field ${PROJECT_LIBS})
 
+add_executable(test_mesh_refinment test_mesh_refinment.cpp)
+target_link_libraries(test_mesh_refinment mofem_Field ${PROJECT_LIBS})
 
+add_executable(test_approx_function test_approx_function.cpp)
+target_link_libraries(test_approx_function mofem_Field ${PROJECT_LIBS})
+
+add_executable(test_elasticity test_elasticity.cpp)
+target_link_libraries(test_elasticity mofem_Field ${PROJECT_LIBS})
 
