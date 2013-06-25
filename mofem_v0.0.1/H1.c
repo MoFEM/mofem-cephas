@@ -98,7 +98,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
   double diff_ksiL0[2],diff_ksiL1[2];
   double *diff_ksi_faces[] = { diff_ksiL0, diff_ksiL1 };
   int dd = 0;
-  for(;dd<3; dd++) {
+  for(;dd<2; dd++) {
     diff_ksi_faces[0][dd] = ( diffN[ 1*2+dd ] - diffN[ 0*2+dd ] );
     diff_ksi_faces[1][dd] = ( diffN[ 2*2+dd ] - diffN[ 0*2+dd ] ); 
   }

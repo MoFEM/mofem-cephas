@@ -109,6 +109,7 @@ void MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA);
 PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF);
 PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *det_xF);
 
+//http://people.sc.fsu.edu/~jburkardt/datasets/quadrature_rules_tet/quadrature_rules_tet.html
 //TRI
 static const double G_TRI_X1[] = {
 3.3333333333333331e-01 
@@ -215,7 +216,6 @@ static const double G_TET_W5[] = {
 0.45000000000000000, 0.45000000000000000, 
 0.45000000000000000 
 };
-//http://people.sc.fsu.edu/~jburkardt/datasets/quadrature_rules_tet/quadrature_rules_tet.html
 static const double G_TET_X10[] = {
   0.5684305841968444, 0.1438564719343852, 0.1438564719343852, 0.1438564719343852,
   0.0000000000000000, 0.5000000000000000, 0.5000000000000000, 0.5000000000000000,
