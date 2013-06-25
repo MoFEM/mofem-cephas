@@ -25,8 +25,11 @@ using namespace MoFEM;
 
 struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_Student {
 
+    //this is moab mesh of all refined elements
     Interface& moab_post_proc;
     Core mb_instance_post_proc;
+
+    //this is moab mesh for reference element
     Interface& moab_ref;
     Core mb_instance_ref;
 
@@ -130,6 +133,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_Student {
 	rval = moab_post_proc.create_element(MBTET,conn_post_proc,4,ref_tet); CHKERR_PETSC(rval);
       }
 
+      //Get displacements at Gauss points
       Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find("DISPLACEMENT");
       if(diit==data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no DISPLACEMENT !!!");
       vector< ublas::vector<FieldData> > &data = diit->second;
@@ -145,7 +149,8 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_Student {
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
       mit = node_map.begin();
       for(;viit!=GradU_at_GaussPt.end();viit++,mit++) {
-	ublas::matrix< FieldData > Strain = 0.5*( (*viit) + trans(*viit) );
+	ublas::matrix< FieldData > GardU = *viit;
+	ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
 	rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
       }
 
