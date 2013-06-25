@@ -23,6 +23,9 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
+#include "../PostProcDisplacementOnMesh.hpp"
+#include "../PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+
 /* 
  * From: Demkowicz
  * To discuss basic a priori error estimates, we return now to basic mathemat-
@@ -33,6 +36,7 @@
  * approxi- mation error. By definition, the best approximation error is always
  * bounded by the norm of the difference between the exact solution and any
  * particular choice of a function that “lives” in the FE space. */
+
 
 
 using namespace MoFEM;
@@ -565,8 +569,7 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-
-  PostProcFEMethod fe_post_proc_method(moab);
+  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
