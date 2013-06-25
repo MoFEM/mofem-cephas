@@ -28,3 +28,14 @@ target_link_libraries(test_approx_function mofem_Field ${PROJECT_LIBS})
 add_executable(test_elasticity test_elasticity.cpp)
 target_link_libraries(test_elasticity mofem_Field ${PROJECT_LIBS})
 
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../meshes/LShape.cub
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../meshes/LShapeCoarse.cub
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../meshes/LShapeDense.cub
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
+

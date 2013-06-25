@@ -442,13 +442,13 @@ PetscErrorCode get_MoFEMFE_dof_uid_view(
   const dofs_by_uid &dofs = dofs_moabfield.get<Unique_mi_tag>();
   const UId *uids = (UId*)tag_data;
   int size = tag_size/sizeof(UId);
-  vector<const value_type*> vec(size);
+  vector<const value_type*> vec;
   int ii = 0;
   for(;ii<size;ii++) {
     UId uid = uids[ii];
     typename dofs_by_uid::iterator miit = dofs.find(uid);
-    if(miit==dofs.end()) continue;//SETERRQ(PETSC_COMM_SELF,1,"data inconsystency");
-    vec[ii] = &*miit;
+    if(miit==dofs.end()) continue;
+    vec.push_back(&*miit);
   }
   if(operation_type==Interface::UNION) {
     dofs_view.insert(vec.begin(),vec.end());

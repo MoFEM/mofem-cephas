@@ -118,8 +118,10 @@ int main(int argc, char *argv[]) {
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
-
-
+  /*ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = mField.build_fields(); CHKERRQ(ierr);*/
 
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);

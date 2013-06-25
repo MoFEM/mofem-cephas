@@ -478,7 +478,7 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
   ents = intersect(ents,ents_of_id_meshset);
   vector<const void*> tag_data_order(ents.size());
   rval = moab.tag_get_by_ptr(miit->th_AppOrder,ents,&tag_data_order[0]); CHKERR_PETSC(rval);
-  //ent view
+  //ent view by field id (in set all MoabEnts has the same FieldId)
   typedef MoFEMEntity_multiIndex::index<BitFieldId_mi_tag>::type ent_set_by_id;
   ent_set_by_id& set = ents_moabfield.get<BitFieldId_mi_tag>();
   ent_set_by_id::iterator miit2 = set.lower_bound(id);
@@ -494,11 +494,20 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
     if(miit3!=ents_id_view.end()) {
       const ApproximationOrder old_ApproximationOrder = (*miit3)->get_max_order();
       if(old_ApproximationOrder==order) continue;
-      MoFEMEntity_multiIndex::iterator miit4 
-	= ents_moabfield.get<Unique_mi_tag>().find((*miit3)->get_unique_id());
+      MoFEMEntity_multiIndex::iterator miit4 = ents_moabfield.get<Unique_mi_tag>().find((*miit3)->get_unique_id());
       assert(miit4!=ents_moabfield.end());
-      bool success = ents_moabfield.modify(miit4,MoFEMEntity_change_order(moab,order));
-      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      //bool success = ents_moabfield.modify(miit4,MoFEMEntity_change_order(moab,order));
+      //if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      // in active dofs which are higher order than max_entity order
+      typedef DofMoFEMEntity_multiIndex::index<Identity_mi_tag>::type dof_set_by_identity;
+      dof_set_by_identity& set_identity = dofs_moabfield.get<Identity_mi_tag>();
+      dof_set_by_identity::iterator miit5 = set_identity.lower_bound(miit4->get_unique_id(),comp_DofMoFEMEntity_ent_uid());
+      dof_set_by_identity::iterator hi_miit6 = set_identity.upper_bound(miit4->get_unique_id(),comp_DofMoFEMEntity_ent_uid());
+      for(;miit5!=hi_miit6;miit5++) {
+	if(miit5->get_dof_order()<=order) continue;
+	bool success = dofs_moabfield.modify(miit5,DofMoFEMEntity_active_change(false));
+	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      }
     } else {
       *(ApproximationOrder*)tag_data_order[ee] = order;
       RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = ref_entities.get<MoABEnt_mi_tag>().find(*eit);
@@ -506,7 +515,9 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
       try { 
 	MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
 	if(moabent.get_order_nb_dofs(moabent.get_max_order())==0) continue; 
-	ents_moabfield.insert(moabent);
+	pair<MoFEMEntity_multiIndex::iterator,bool> e_miit = ents_moabfield.insert(moabent);
+	bool success = ents_moabfield.modify(e_miit.first,MoFEMEntity_change_order(moab,order));
+	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
       }
@@ -542,6 +553,7 @@ PetscErrorCode moabField_Core::dofs_NoField(const BitFieldId id) {
   try {
     MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
     e_miit = ents_moabfield.insert(moabent);
+    ierr = ents_moabfield.modify(e_miit.first,MoFEMEntity_change_order(moab,0)); CHKERRQ(ierr);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -595,52 +607,38 @@ PetscErrorCode moabField_Core::dofs_L2H1HcurlHdiv(const BitFieldId id,int verb) 
     // check if ent is in ref meshset
     RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = ref_entities.get<MoABEnt_mi_tag>().find(*eit);
     if(miit_ref_ent==ref_entities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
-    pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
+    //pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
+    MoFEMEntity_multiIndex::iterator e_miit = ents_moabfield.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
     // create mofem entity linked to ref ent
     try {
-      MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
-      // insert moabent into mofem databse
-      if(moabent.get_order_nb_dofs(moabent.get_max_order())==0) continue; 
-      e_miit = ents_moabfield.insert(moabent);
+      e_miit = ents_moabfield.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
     } catch (const char* msg) {
       SETERRQ(PETSC_COMM_SELF,1,msg);
     }
     // insert dofmoabent into mofem databse
-    pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
     int DD = 0;
     int oo = 0;
-    for(;oo<=e_miit.first->get_max_order();oo++) {
-      for(int dd = 0;dd<e_miit.first->get_order_nb_dofs_diff(oo);dd++) {
-	for(int rr = 0;rr<e_miit.first->get_max_rank();rr++,DD++) {
-	  d_miit.first = dofs_moabfield.project<0>(
-	    dofs_moabfield.get<Unique_mi_tag>().find(DofMoFEMEntity::get_unique_id_calculate(DD,&*(e_miit.first)))
-	  );
-	  if(d_miit.first==dofs_moabfield.end()) {
-	    DofMoFEMEntity mdof(&*(e_miit.first),oo,rr,DD);
-	    d_miit = dofs_moabfield.insert(mdof);
+    for(;oo<=e_miit->get_max_order();oo++) {
+      for(int dd = 0;dd<e_miit->get_order_nb_dofs_diff(oo);dd++) {
+	for(int rr = 0;rr<e_miit->get_max_rank();rr++,DD++) {
+	  DofMoFEMEntity mdof(&*(e_miit),oo,rr,DD);
+	  pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
+	  d_miit = dofs_moabfield.insert(mdof);
+	  if(d_miit.second) {
 	    bool success = dofs_moabfield.modify(d_miit.first,DofMoFEMEntity_active_change(true));
 	    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 	  } 
 	  //check ent
-	  assert(d_miit.first->get_ent()==e_miit.first->get_ent());
-	  assert(d_miit.first->get_ent_type()==e_miit.first->get_ent_type());
-	  assert(d_miit.first->get_id()==e_miit.first->get_id());
+	  assert(d_miit.first->get_ent()==e_miit->get_ent());
+	  assert(d_miit.first->get_ent_type()==e_miit->get_ent_type());
+	  assert(d_miit.first->get_id()==e_miit->get_id());
 	  //check dof
 	  assert(d_miit.first->get_dof_order()==oo);
-	  assert(d_miit.first->get_max_order()==e_miit.first->get_max_order());
+	  assert(d_miit.first->get_max_order()==e_miit->get_max_order());
 	}
       }
     }
-    assert(DD/e_miit.first->get_max_rank() == e_miit.first->get_order_nb_dofs(e_miit.first->get_max_order()));
-    typedef DofMoFEMEntity_multiIndex::index<Identity_mi_tag>::type dof_set_by_identity;
-    dof_set_by_identity& set_identity = dofs_moabfield.get<Identity_mi_tag>();
-    dof_set_by_identity::iterator miit2 = set_identity.lower_bound(e_miit.first->get_unique_id(),comp_DofMoFEMEntity_ent_uid());
-    dof_set_by_identity::iterator hi_miit2 = set_identity.upper_bound(e_miit.first->get_unique_id(),comp_DofMoFEMEntity_ent_uid());
-    for(;miit2!=hi_miit2;miit2++) {
-      if(miit2->get_dof_order()<=e_miit.first->get_max_order()) continue;
-      bool success = dofs_moabfield.modify(miit2,DofMoFEMEntity_active_change(false));
-      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-    }
+    assert(DD == e_miit->get_max_rank()*e_miit->get_order_nb_dofs(e_miit->get_max_order()));
   }
   PetscFunctionReturn(0);
 }
@@ -1151,7 +1149,7 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
 	  }
 	  unsigned long int  uid;
 	  try {
-	    uid = MoFEMEntity(moab,&*miit,&*ref_ent_miit,false).get_unique_id();
+	    uid = MoFEMEntity(moab,&*miit,&*ref_ent_miit).get_unique_id();
 	  } catch (const char* msg) {
 	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }

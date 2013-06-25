@@ -527,7 +527,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   const ApproximationRank* tag_dof_rank_data;
   int (*forder)(int);
   UId uid;
-  MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_mab_ent_ptr,bool modify_data = true);
+  MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_mab_ent_ptr);
   inline EntityHandle get_ent() const { return get_ref_ent(); }
   inline FieldData* get_FieldData() const { return const_cast<FieldData*>(tag_FieldData); }
   inline int get_order_nb_dofs(int order) const { return forder(order); }
@@ -577,8 +577,8 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_RefMoFEMEntity<MoFEMEntity> interface_type_ref_ent;
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_ent;
   static UId get_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
-    if(_dof_>128) THROW_AT_LINE("_dof)>128");
-    UId _uid_ = ((UId)_dof_)|(_ent_ptr_->get_unique_id()<<7);
+    if(_dof_>128) THROW_AT_LINE("_dof>128");
+    UId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_unique_id())<<7);
     return _uid_;
   }
   //

@@ -411,7 +411,7 @@ void problem_zero_nb_cols_change::operator()(_MoFEMProblem_ &e) {
 }
 
 //moab ent
-MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_ent_ptr,bool modify_data): 
+MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_ent_ptr): 
   interface_MoFEMField<MoFEMField>(_FieldData),interface_RefMoFEMEntity<RefMoFEMEntity>(_ref_ent_ptr),
   tag_order_data(NULL),tag_FieldData(NULL),tag_FieldData_size(0),tag_dof_order_data(NULL),tag_dof_rank_data(NULL) {
   const EntityType type = get_ent_type(); 
@@ -442,22 +442,6 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefM
   EntityHandle ent = get_ent();
   rval = moab.tag_get_by_ptr(field_ptr->th_AppOrder,&ent,1,(const void **)&tag_order_data); CHKERR(rval);
   uid = get_unique_id_calculate();
-  if(!modify_data) return;
-  const FieldSpace space = field_ptr->get_space();
-  switch (space) {
-    case NoField:
-      MoFEMEntity_change_order(moab,0/*no efMoFEMFEct*/)(*this);
-      break;
-    case L2:
-    case H1:
-    case Hcurl:
-    case Hdiv:
-    case L2_2D:
-      MoFEMEntity_change_order(moab,get_max_order())(*this);
-      break;
-    default:
-      THROW_AT_LINE("data inconsistency");
-  }
 }
 ostream& operator<<(ostream& os,const MoFEMEntity& e) {
   os << "ent_uid " << e.get_unique_id() << " entity "<< e.get_ent() << " type " << e.get_ent_type()
@@ -557,18 +541,18 @@ ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
   return os;
 }
 UId DofMoFEMEntity::get_unique_id_calculate() const {
-  return get_unique_id_calculate(dof,field_ptr);
+  return get_unique_id_calculate(dof,get_MoFEMEntity_ptr());
 }
 DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}
 void DofMoFEMEntity_active_change::operator()(DofMoFEMEntity &_dof_) {
   _dof_.active = active;
-  assert(active == (_dof_.get_dof_order()<=_dof_.get_max_order()));
+  assert((_dof_.get_dof_order()<=_dof_.get_max_order()));
 }
 bool comp_DofMoFEMEntity_ent_uid::operator()(UId ent_uid,const DofMoFEMEntity &_dof_) const {
-  return ent_uid < _dof_.field_ptr->get_unique_id();
+  return ent_uid < _dof_.get_MoFEMEntity_ptr()->get_unique_id();
 }
 bool comp_DofMoFEMEntity_ent_uid::operator()(const DofMoFEMEntity &_dof_,UId ent_uid) const {
-  return _dof_.field_ptr->get_unique_id() < ent_uid;
+  return _dof_.get_MoFEMEntity_ptr()->get_unique_id() < ent_uid;
 }
 
 //numered dof
