@@ -57,12 +57,7 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-  char mesh_out_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_out_file",mesh_out_file_name,255,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_out_file (MESH FILE NEEDED)");
-  }
-
+ 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR(rval); 
