@@ -27,17 +27,6 @@
 #include "../PostProcDisplacementOnMesh.hpp"
 #include "../PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-/* 
- * From: Demkowicz
- * To discuss basic a priori error estimates, we return now to basic mathemat-
- * ical issues. We have learned from Cea’s lemma that, for the coercive case,
- * the actual approximation error can always be bounded by the product of a
- * mesh-independent constant and the best approximation error. Thus, to es-
- * timate the approximation error, it is sufficient to estimate the best
- * approxi- mation error. By definition, the best approximation error is always
- * bounded by the norm of the difference between the exact solution and any
- * particular choice of a function that “lives” in the FE space. */
-
 using namespace MoFEM;
 
 ErrorCode rval;
