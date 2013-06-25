@@ -19,5 +19,10 @@
 add_executable(elasticity elasticity.cpp)
 target_link_libraries(elasticity mofem_Field ${PROJECT_LIBS})
 
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/LShape.cub
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

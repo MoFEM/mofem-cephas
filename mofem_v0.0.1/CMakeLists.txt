@@ -97,6 +97,9 @@ resolve_libraries(PROJECT_LIBS "
 #message(STATUS ${PETSCVAR_BLASLAPACK_LIB})
 message(STATUS ${PROJECT_LIBS})
 
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/INSTALL
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #add executable library form subdirectory
 add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
