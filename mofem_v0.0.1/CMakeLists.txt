@@ -102,7 +102,7 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #add executable library form subdirectory
-#add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
+add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
 
 
