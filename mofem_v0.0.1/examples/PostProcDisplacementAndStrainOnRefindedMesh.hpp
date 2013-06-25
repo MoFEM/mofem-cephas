@@ -149,7 +149,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_Student {
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
       mit = node_map.begin();
       for(;viit!=GradU_at_GaussPt.end();viit++,mit++) {
-	ublas::matrix< FieldData > GardU = *viit;
+	ublas::matrix< FieldData > GradU = *viit;
 	ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
 	rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
       }
