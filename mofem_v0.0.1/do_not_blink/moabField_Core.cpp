@@ -1864,6 +1864,13 @@ PetscErrorCode moabField_Core::add_verices_in_the_middel_of_edges(const EntityHa
     ss << "ref level " << bit << " nb. edges to refine " << edges.size() << endl;
     PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
   }
+  //This is for update Cubit Meshsets
+  Range CubitSideSets_meshsets;
+  // Get All Cubit Sise Sets into Range
+  ierr = get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
+
+
+
   eit = edges.begin();
   for(;eit!=edges.end();eit++) {
     RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator miit_view = ref_parent_ents_view.find(*eit);
