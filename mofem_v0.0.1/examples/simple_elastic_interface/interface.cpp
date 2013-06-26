@@ -48,9 +48,9 @@ struct InterfaceElasticFEMethod: public ElasticFEMethod {
       ierr = ElasticFEMethod::NeumannBC(traction2,SideSet2); CHKERRQ(ierr);
 
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction3(3);
-      traction2[0] = 0;
-      traction2[1] = -1;
-      traction2[2] = 0;
+      traction3[0] = 0;
+      traction3[1] = -1;
+      traction3[2] = 0;
       ierr = ElasticFEMethod::NeumannBC(traction3,SideSet3); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
@@ -118,6 +118,11 @@ int main(int argc, char *argv[]) {
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
+  //Interface
+  Range SideSetInterface;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSetInterface,true); CHKERRQ(ierr);
+
+
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -160,9 +165,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
@@ -207,7 +212,7 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  ElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  InterfaceElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
