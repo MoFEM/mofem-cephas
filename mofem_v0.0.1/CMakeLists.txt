@@ -21,6 +21,7 @@ cmake_minimum_required (VERSION 2.6)
 
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
+include(cmake/ExportFile.cmake)
 
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} ) 
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
