@@ -103,7 +103,7 @@ file(COPY
 
 #add executable library form subdirectory
 add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
 
 
 #example how to add new executable

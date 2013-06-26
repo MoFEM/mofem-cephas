@@ -24,8 +24,8 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
-#include "../PostProcDisplacementOnMesh.hpp"
-#include "../PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "PostProcDisplacementOnMesh.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 
