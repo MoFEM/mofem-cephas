@@ -286,7 +286,7 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
     CubitMeshSets base_meshset(moab,*mit);
     if((base_meshset.CubitBCType&Cubit_BC_bitset(NodeSet|SideSet|BlockSet)).any()) {
       pair<moabBaseMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(base_meshset);
-      if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"meshset not inesrted");
+      if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"meshset not inserted");
       ostringstream ss;
       if(verb > 2) {
 	//ss << "rank " << pcomm->rank() << " ";
@@ -344,7 +344,7 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
   	    p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_MESHSET(moab,&*p_ref_ent.first)));
 	    break;
 	  default:
-	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	    SETERRQ(PETSC_COMM_SELF,1,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");
 	}
       }
     }
