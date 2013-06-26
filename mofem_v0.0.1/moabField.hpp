@@ -84,7 +84,7 @@ struct moabField {
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more. 
-    * \param meshsset (need to be created first)
+    * \param meshsset 
     */
   virtual PetscErrorCode get_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) = 0;
 
@@ -127,7 +127,20 @@ struct moabField {
   /// add ents form ref level given by bit to meshset
   virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const EntityHandle meshset) = 0;
 
-  /// get childed entities form meshste containing parent entities 
+  /** \brief Get childed entities form meshste containing parent entities 
+    * 
+    * Serch for refained entities of given type whose paren are entities in the
+    * parent meshset. It can be used for example to transfer information about
+    * boundary conditions to refined mesh or splited mesh by interface
+    * elements. It is used by function refine_MESHSET, to update MESHSET finite elements.
+    * 
+    * \param paren meshset
+    * \param child_bit refinment level
+    * \param type of refined entity
+    * \param child_type meshset where child entities are stored
+    * \param recursive if true parent meshset is searched recurively
+    *
+   **/
   virtual PetscErrorCode refine_get_childern(
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
     const bool recursive = false, int verb = -1) = 0;
@@ -373,8 +386,28 @@ struct moabField {
     const NumeredDofMoFEMEntity *dof_ptr;
   };
 
-  // Loops
-  virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
+  /** \brief Make a loop over finite elements. 
+   *
+   * Thsis function is like swiss knife, is can be used to post-processing or matrix
+   * and vectors assembly. It makes loop over given finite element for given
+   * problem. The particular methods exectuted on each element are given by
+   * class derived form FEMethod. At beginig of each loop user definded
+   * function (method)  preProcess() is called, for each element operator() is
+   * executed, at the end loop finalizes with user defined function (method)
+   * postProcess().
+   *
+   * Methods are executed only for local elements at given processor.
+   *
+   * For more details pleas look to examples.
+   *
+   * \param problem_name \param fe_name \param method is class derived form
+   * moabField::FEMethod
+  **/ virtual PetscErrorCode loop_finite_elements(const string
+&problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
+
+  /** \brief Make a loop over entities
+    *
+    */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1) = 0;
 
 };

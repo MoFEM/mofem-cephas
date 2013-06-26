@@ -120,7 +120,6 @@ int main(int argc, char *argv[]) {
 
   //Interface
   EntityHandle meshset_interface;
-  rval = moab.create_meshset(MESHSET_SET,meshset_interface); CHKERR_PETSC(rval);
   ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
   ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
   // stl::bitset see for more details
@@ -130,6 +129,17 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level_interface;
   rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
   ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
+
+  //update BC for refned (interfaced) mesh
+  EntityHandle meshset_SideSet1; //Dirihlet BC is there
+  ierr = mField.get_msId_meshset(1,SideSet,meshset_SideSet1); CHKERRQ(ierr);
+  EntityHandle meshset_SideSet2; //Neumann BC is there
+  ierr = mField.get_msId_meshset(2,SideSet,meshset_SideSet2); CHKERRQ(ierr);
+  EntityHandle meshset_SideSet3; //Neumann BC is there
+  ierr = mField.get_msId_meshset(3,SideSet,meshset_SideSet3); CHKERRQ(ierr);
+  //ierr = mField.refine_get_childern(meshset_SideSet1,bit_level_interface,meshset_SideSet1,MBTRI,true); CHKERRQ(ierr);
+  //ierr = mField.refine_get_childern(meshset_SideSet2,bit_level_interface,meshset_SideSet2,MBTRI,true); CHKERRQ(ierr);
+  //ierr = mField.refine_get_childern(meshset_SideSet3,bit_level_interface,meshset_SideSet3,MBTRI,true); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;

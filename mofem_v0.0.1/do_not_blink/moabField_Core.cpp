@@ -2947,13 +2947,6 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
   }
   ierr = seed_ref_level_3D(meshset_for_bit_level,bit); CHKERRQ(ierr);
   rval = moab.delete_entities(&meshset_for_bit_level,1); CHKERR_PETSC(rval);
-  //This is for update Cubit Meshsets
-  Range CubitSideSets_meshsets;
-  // Get All Cubit Sise Sets into Range
-  ierr = get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
-  tit = side_ents3d.begin();
-
-
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::add_prism_to_Adj_prisms(const EntityHandle prism,int verb) {
