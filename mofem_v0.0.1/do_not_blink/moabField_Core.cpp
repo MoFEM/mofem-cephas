@@ -2923,44 +2923,37 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
     if(nb_new_conn==0) continue;
     ref_ents_by_ent_type::iterator miit_ref_ent = ref_ents_by_ent.find(*eit);
     if(miit_ref_ent == ref_ents_by_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
+    Range new_ent;
     switch (moab.type_from_handle(*eit)) {
       case MBTRI: {
-	  Range new_face;
-	  rval = moab.get_adjacencies(new_conn,3,2,true,new_face); CHKERR_PETSC(rval);
-	  if(new_face.size()!=1) {
-	    SETERRQ1(PETSC_COMM_SELF,1,"database insonistency, new_face.size() = %u",new_face.size());
-	  }
-	  if(new_ents.find(*new_face.begin())==new_ents.end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
-	  rval = moab.tag_set_data(th_RefParentHandle,&*new_face.begin(),1,&*eit); CHKERR_PETSC(rval);
-	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = ref_entities.insert(RefMoFEMEntity(moab,new_face[0]));
-	  ref_entities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
-	  //cerr << *p_ref_ent.first << endl;
-	  if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_face %u\n",new_face.size());
-	  if(add_iterfece_entities && (nb_new_conn >= 1)) {
+	  rval = moab.get_adjacencies(new_conn,3,2,true,new_ent); CHKERR_PETSC(rval);
+	  if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_ent %u\n",new_ent.size());
+	  if(add_iterfece_entities) {
 	    EntityHandle prism_conn[6] = { conn[0],conn[1],conn[2], new_conn[0],new_conn[1],new_conn[2] };
 	    EntityHandle prism = no_handle;
 	    rval = moab.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
 	    ierr = add_prism_to_Adj_prisms(prism,verb/*nb_new_conn < 3 ? 1 : 0*/); CHKERRQ(ierr);
 	    rval = moab.add_entities(meshset_for_bit_level,&prism,1); CHKERR_PETSC(rval);
 	  }
-	  new_ents_in_database.insert(new_face.begin(),new_face.end());
+
 	} break;
       case MBEDGE: {
-	  Range new_edge;
-	  rval = moab.get_adjacencies(new_conn,2,1,true,new_edge); CHKERR_PETSC(rval);
-	  if(new_edge.size()!=1) {
-	    SETERRQ1(PETSC_COMM_SELF,1,"database insonistency, new_edge.size() = %u",new_edge.size());
+	  rval = moab.get_adjacencies(new_conn,2,1,true,new_ent); CHKERR_PETSC(rval);
+	  if(new_ent.size()!=1) {
+	    SETERRQ1(PETSC_COMM_SELF,1,"database insonistency, new_ent.size() = %u",new_ent.size());
 	  }
-	  if(new_ents.find(*new_edge.begin())==new_ents.end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
-	  rval = moab.tag_set_data(th_RefParentHandle,&*new_edge.begin(),1,&*eit); CHKERR_PETSC(rval);
-	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = ref_entities.insert(RefMoFEMEntity(moab,new_edge[0]));
-	  ref_entities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
-	  if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_edge %u\n",new_edge.size());
-	  new_ents_in_database.insert(new_edge.begin(),new_edge.end());
 	} break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
     }
+    if(new_ent.size()!=1) {
+      SETERRQ1(PETSC_COMM_SELF,1,"database insonistency, new_ent.size() = %u",new_ent.size());
+    }
+    if(new_ents.find(*new_ent.begin())==new_ents.end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
+    rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERR_PETSC(rval);
+    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = ref_entities.insert(RefMoFEMEntity(moab,new_ent[0]));
+    ref_entities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
+    new_ents_in_database.insert(new_ent.begin(),new_ent.end());
   }
   //all other entities, some ents like triangles and faces on the side of tets
   Range side_adj_faces_and_edges;
@@ -2990,36 +2983,29 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
     if(nb_new_conn==0) continue;
     ref_ents_by_ent_type::iterator miit_ref_ent = ref_ents_by_ent.find(*eit);
     if(miit_ref_ent == ref_ents_by_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
+    Range new_ent;
     switch (moab.type_from_handle(*eit)) {
       case MBTRI: {
-	  Range new_face;
-	  rval = moab.get_adjacencies(new_conn,3,2,true,new_face); CHKERR_PETSC(rval);
-	  if(new_face.size()!=1) {
-	    SETERRQ1(PETSC_COMM_SELF,1,"database insonistency, new_face.size() = %u",new_face.size());
-	  }
-	  if(new_ents.find(*new_face.begin())==side_adj_faces_and_edges.end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
-	  rval = moab.tag_set_data(th_RefParentHandle,&*new_face.begin(),1,&*eit); CHKERR_PETSC(rval);
-	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = ref_entities.insert(RefMoFEMEntity(moab,new_face[0]));
-	  ref_entities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
+	  rval = moab.get_adjacencies(new_conn,3,2,true,new_ent); CHKERR_PETSC(rval);
 	}
 	break;
       case MBEDGE: {
-	  Range new_edge;
-	  rval = moab.get_adjacencies(new_conn,2,1,true,new_edge); CHKERR_PETSC(rval);
-	  if(new_edge.size()!=1) {
-	    SETERRQ1(PETSC_COMM_SELF,1,"database insonistency, new_edge.size() = %u",new_edge.size());
-	  }
-	  if(new_ents.find(*new_edge.begin())==side_adj_faces_and_edges.end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
-	  rval = moab.tag_set_data(th_RefParentHandle,&*new_edge.begin(),1,&*eit); CHKERR_PETSC(rval);
-	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = ref_entities.insert(RefMoFEMEntity(moab,new_edge[0]));
-	  ref_entities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
-	  if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_edge %u\n",new_edge.size());
-	  new_ents_in_database.insert(new_edge.begin(),new_edge.end());
+	  rval = moab.get_adjacencies(new_conn,2,1,true,new_ent); CHKERR_PETSC(rval);
 	}
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"database insonistency");   
     }
+    if(new_ent.size()!=1) {
+      SETERRQ1(PETSC_COMM_SELF,1,"database insonistency, new_ent.size() = %u",new_ent.size());
+    }
+    if(new_ents.find(*new_ent.begin())==side_adj_faces_and_edges.end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
+    rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERR_PETSC(rval);
+    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = ref_entities.insert(RefMoFEMEntity(moab,new_ent[0]));
+    ref_entities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
+    if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_ent %u\n",new_ent.size());
+    new_ents_in_database.insert(new_ent.begin(),new_ent.end());
+
   }
   //finalise by adding new tets and prism ti bitlelvel
   ierr = seed_ref_level_3D(meshset_for_bit_level,bit); CHKERRQ(ierr);
