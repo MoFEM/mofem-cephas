@@ -48,9 +48,9 @@ struct InterfaceElasticFEMethod: public ElasticFEMethod {
       ierr = ElasticFEMethod::NeumannBC(traction2,SideSet2); CHKERRQ(ierr);
 
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction3(3);
-      traction2[0] = 0;
-      traction2[1] = -1;
-      traction2[2] = 0;
+      traction3[0] = 0;
+      traction3[1] = -1;
+      traction3[2] = 0;
       ierr = ElasticFEMethod::NeumannBC(traction3,SideSet3); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
@@ -118,12 +118,25 @@ int main(int argc, char *argv[]) {
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
+  //Interface
+  EntityHandle meshset_interface;
+  rval = moab.create_meshset(MESHSET_SET,meshset_interface); CHKERR_PETSC(rval);
+  ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
+  ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
+  // stl::bitset see for more details
+  BitRefLevel bit_level_interface;
+  bit_level_interface.set(0);
+  ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
+  EntityHandle meshset_level_interface;
+  rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
+  ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
+
   // stl::bitset see for more details
   BitRefLevel bit_level0;
-  bit_level0.set(0);
+  bit_level0.set(1);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
   /***/
@@ -207,7 +220,7 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  ElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  InterfaceElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
