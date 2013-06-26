@@ -119,16 +119,24 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
   //Interface
-  Range SideSetInterface;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSetInterface,true); CHKERRQ(ierr);
-
+  EntityHandle meshset_interface;
+  rval = moab.create_meshset(MESHSET_SET,meshset_interface); CHKERR_PETSC(rval);
+  ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
+  ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
+  // stl::bitset see for more details
+  BitRefLevel bit_level_interface;
+  bit_level_interface.set(0);
+  ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
+  EntityHandle meshset_level_interface;
+  rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
+  ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
-  bit_level0.set(0);
+  bit_level0.set(1);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
   /***/
@@ -165,9 +173,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
