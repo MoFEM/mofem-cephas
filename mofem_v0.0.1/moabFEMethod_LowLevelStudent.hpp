@@ -22,7 +22,7 @@
 #define __MOABFEMETHOD_CORE_HPP__
 
 #include "moabField.hpp"
-#include "dataStructures.hpp"
+#include "Core_dataStructures.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -38,10 +38,10 @@ namespace MoFEM {
  * This class give user some data structures and methods on those that
  * structures which could be useful.
 */
-struct FEMethod_Core: public moabField::FEMethod {
+struct FEMethod_LowLevelStudent: public moabField::FEMethod {
 
   //
-  FEMethod_Core *ParentMethod;
+  FEMethod_LowLevelStudent *ParentMethod;
   int verbose;
 
   double NTET[4],diffNTET[12],diffNTETinvJac[12];
@@ -50,8 +50,8 @@ struct FEMethod_Core: public moabField::FEMethod {
   const EntityHandle* conn;
   vector<double> coords;
 
-  FEMethod_Core(Interface& _moab,int verbose = 0);
-  ~FEMethod_Core();
+  FEMethod_LowLevelStudent(Interface& _moab,int verbose = 0);
+  ~FEMethod_LowLevelStudent();
 
   PetscErrorCode preProcess();
   PetscErrorCode operator()();

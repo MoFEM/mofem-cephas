@@ -69,14 +69,15 @@ include_directories(
 )
 
 #SPECIFIC FROM NOW
+include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
 
 add_library(mofem_Field 
-  dataStructures.cpp
+  do_not_blink/Core_dataStructures.cpp
+  do_not_blink/Core_moabMeshMBTETRefine.cpp
+  do_not_blink/moabField_Core.cpp
   moabField.cpp
-  moabField_Core.cpp
-  moabFEMethod_Core.cpp
-  moabFEMethod_Student.cpp
-  meshRefine.cpp
+  moabFEMethod_LowLevelStudent.cpp
+  moabFEMethod_UpLevelStudent.cpp
   FEM.c
   H1.c
   L2.c
@@ -101,7 +102,11 @@ file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/INSTALL
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
+#inlude directories
+include_directories("${PROJECT_SOURCE_DIR}/third_party")
+
 #add executable library form subdirectory
+add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
 

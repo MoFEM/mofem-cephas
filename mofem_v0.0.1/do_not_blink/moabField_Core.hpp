@@ -22,7 +22,7 @@
 #define __MOABFIELD_CORE_HPP__
 
 #include "moabField.hpp"
-#include "dataStructures.hpp"
+#include "Core_dataStructures.hpp"
 
 namespace MoFEM {
 

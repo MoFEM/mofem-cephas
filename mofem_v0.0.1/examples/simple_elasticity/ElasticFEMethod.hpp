@@ -19,14 +19,14 @@
 
 using namespace MoFEM;
 
-struct ElasticFEMethod: public FEMethod_Student {
+struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     Mat &Aij;
     Vec& F,Diagonal;
     ElasticFEMethod(
       Interface& _moab,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      FEMethod_Student(_moab,1),Aij(_Aij),F(_F),
+      FEMethod_UpLevelStudent(_moab,1),Aij(_Aij),F(_F),
       lambda(_lambda),mu(_mu),
       SideSet1(_SideSet1),SideSet2(_SideSet2) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -81,7 +81,7 @@ struct ElasticFEMethod: public FEMethod_Student {
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      FEMethod_Core::preProcess();
+      FEMethod_LowLevelStudent::preProcess();
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n",pcomm->rank(),v2-v1,t2-t1);
       ierr = PetscGetTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);

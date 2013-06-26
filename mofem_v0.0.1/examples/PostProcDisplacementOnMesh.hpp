@@ -19,7 +19,7 @@
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
-#include "moabFEMethod_Student.hpp"
+#include "moabFEMethod_UpLevelStudent.hpp"
 
 using namespace MoFEM;
 

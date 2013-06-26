@@ -19,7 +19,7 @@
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
-#include "moabFEMethod_Student.hpp"
+#include "moabFEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -143,14 +143,14 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  struct ElasticFEMethod: public FEMethod_Student {
+  struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     Mat &Aij;
     Vec& F,Diagonal;
     ElasticFEMethod(
       Interface& _moab,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      FEMethod_Student(_moab,1),Aij(_Aij),F(_F),
+      FEMethod_UpLevelStudent(_moab,1),Aij(_Aij),F(_F),
       lambda(_lambda),mu(_mu),
       SideSet1(_SideSet1),SideSet2(_SideSet2) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      FEMethod_Core::preProcess();
+      FEMethod_LowLevelStudent::preProcess();
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n",pcomm->rank(),v2-v1,t2-t1);
       ierr = PetscGetTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
@@ -594,7 +594,7 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  struct PostProcFEMethod: public FEMethod_Student {
+  struct PostProcFEMethod: public FEMethod_UpLevelStudent {
 
     Interface& moab_post_proc;
     Core mb_instance_post_proc;
@@ -609,7 +609,7 @@ int main(int argc, char *argv[]) {
     PetscLogDouble t1,t2;
     PetscLogDouble v1,v2;
 
-    PostProcFEMethod(Interface& _moab): FEMethod_Student(_moab,1),
+    PostProcFEMethod(Interface& _moab): FEMethod_UpLevelStudent(_moab,1),
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
       max_level(2),init_ref(false) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -626,7 +626,7 @@ int main(int argc, char *argv[]) {
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
       ierr = PetscGetTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-      FEMethod_Core::preProcess();
+      FEMethod_LowLevelStudent::preProcess();
 
       if(init_ref) PetscFunctionReturn(0);
       

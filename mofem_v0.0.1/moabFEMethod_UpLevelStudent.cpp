@@ -1,4 +1,4 @@
-/** \file moabFEMethod_Core.cpp
+/** \file moabFEMethod_LowLevelStudent.cpp
  * \brief Myltindex containes, data structures and other low-level functions 
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
@@ -21,17 +21,17 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include<moabFEMethod_Student.hpp>
+#include<moabFEMethod_UpLevelStudent.hpp>
 #include<FEM.h>
 
 namespace MoFEM {
 
-FEMethod_Student::FEMethod_Student(Interface& _moab,int _verbose): FEMethod_Core(_moab,_verbose) {
+FEMethod_UpLevelStudent::FEMethod_UpLevelStudent(Interface& _moab,int _verbose): FEMethod_LowLevelStudent(_moab,_verbose) {
   double def_V = 0;
   rval = moab.tag_get_handle("Volume",1,MB_TYPE_DOUBLE,th_volume,MB_TAG_CREAT|MB_TAG_SPARSE,&def_V); CHKERR(rval);
 }
-FEMethod_Student::~FEMethod_Student() {}
-PetscErrorCode FEMethod_Student::OpStudentStart(vector<double>& _gNTET_) {
+FEMethod_UpLevelStudent::~FEMethod_UpLevelStudent() {}
+PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart(vector<double>& _gNTET_) {
   PetscFunctionBegin;
     fe_ent_ptr = fe_ptr->fe_ptr;
     ierr = InitDataStructures(); CHKERRQ(ierr);
@@ -69,11 +69,11 @@ PetscErrorCode FEMethod_Student::OpStudentStart(vector<double>& _gNTET_) {
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::OpStudentEnd() {
+PetscErrorCode FEMethod_UpLevelStudent::OpStudentEnd() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetRowIndices(const string &field_name,vector<DofIdx> &RowGlobDofs) {
+PetscErrorCode FEMethod_UpLevelStudent::GetRowIndices(const string &field_name,vector<DofIdx> &RowGlobDofs) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
@@ -82,7 +82,7 @@ PetscErrorCode FEMethod_Student::GetRowIndices(const string &field_name,vector<D
   RowGlobDofs = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetRowIndices(const string &field_name,EntityType type,vector<DofIdx> &RowGlobDofs,int side_number) {
+PetscErrorCode FEMethod_UpLevelStudent::GetRowIndices(const string &field_name,EntityType type,vector<DofIdx> &RowGlobDofs,int side_number) {
   PetscFunctionBegin;
   switch(type) {
     case MBEDGE:
@@ -119,7 +119,7 @@ PetscErrorCode FEMethod_Student::GetRowIndices(const string &field_name,EntityTy
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetColIndices(const string &field_name,vector<DofIdx> &ColGlobDofs) {
+PetscErrorCode FEMethod_UpLevelStudent::GetColIndices(const string &field_name,vector<DofIdx> &ColGlobDofs) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
@@ -128,7 +128,7 @@ PetscErrorCode FEMethod_Student::GetColIndices(const string &field_name,vector<D
   ColGlobDofs = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetColIndices(const string &field_name,EntityType type,vector<DofIdx> &ColGlobDofs,int side_number) {
+PetscErrorCode FEMethod_UpLevelStudent::GetColIndices(const string &field_name,EntityType type,vector<DofIdx> &ColGlobDofs,int side_number) {
   PetscFunctionBegin;
   switch(type) {
     case MBEDGE:
@@ -165,7 +165,7 @@ PetscErrorCode FEMethod_Student::GetColIndices(const string &field_name,EntityTy
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetDataVector(const string &field_name,ublas::vector<FieldData> &Data) {
+PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,ublas::vector<FieldData> &Data) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
@@ -174,7 +174,7 @@ PetscErrorCode FEMethod_Student::GetDataVector(const string &field_name,ublas::v
   Data = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetDataVector(const string &field_name,EntityType type,ublas::vector<FieldData> &Data,int side_number) {
+PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,EntityType type,ublas::vector<FieldData> &Data,int side_number) {
   PetscFunctionBegin;
   switch(type) {
     case MBEDGE:
@@ -211,21 +211,21 @@ PetscErrorCode FEMethod_Student::GetDataVector(const string &field_name,EntityTy
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussDataVector(const string &field_name,vector< ublas::vector<FieldData> > &Data) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussDataVector(const string &field_name,vector< ublas::vector<FieldData> > &Data) {
   PetscFunctionBegin;
   Data_at_Gauss_pt::iterator miit = data_at_gauss_pt.find(field_name);
   if(miit == data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   Data = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussDiffDataVector(const string &field_name,vector< ublas::matrix<FieldData> > &Data) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussDiffDataVector(const string &field_name,vector< ublas::matrix<FieldData> > &Data) {
   PetscFunctionBegin;
   DiffData_at_Gauss_pt::iterator miit = diff_data_at_gauss_pt.find(field_name);
   if(miit == diff_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   Data = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussRowNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &NMatrix) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &NMatrix) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
@@ -234,7 +234,7 @@ PetscErrorCode FEMethod_Student::GetGaussRowNMatrix(const string &field_name,vec
   NMatrix = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussRowNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &NMatrix,int side_number) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &NMatrix,int side_number) {
   switch(type) {
     case MBEDGE:
     case MBTRI: {
@@ -270,7 +270,7 @@ PetscErrorCode FEMethod_Student::GetGaussRowNMatrix(const string &field_name,Ent
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussColNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &NMatrix) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussColNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &NMatrix) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
@@ -279,7 +279,7 @@ PetscErrorCode FEMethod_Student::GetGaussColNMatrix(const string &field_name,vec
   NMatrix = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussColNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &NMatrix,int side_number) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussColNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &NMatrix,int side_number) {
   switch(type) {
     case MBEDGE:
     case MBTRI: {
@@ -315,7 +315,7 @@ PetscErrorCode FEMethod_Student::GetGaussColNMatrix(const string &field_name,Ent
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussRowDiffNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &diffNMatrix) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowDiffNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &diffNMatrix) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
@@ -324,7 +324,7 @@ PetscErrorCode FEMethod_Student::GetGaussRowDiffNMatrix(const string &field_name
   diffNMatrix = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussRowDiffNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &diffNMatrix,int side_number) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowDiffNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &diffNMatrix,int side_number) {
   switch(type) {
     case MBEDGE:
     case MBTRI: {
@@ -360,7 +360,7 @@ PetscErrorCode FEMethod_Student::GetGaussRowDiffNMatrix(const string &field_name
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussColDiffNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &diffNMatrix) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussColDiffNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &diffNMatrix) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
@@ -369,7 +369,7 @@ PetscErrorCode FEMethod_Student::GetGaussColDiffNMatrix(const string &field_name
   diffNMatrix = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussColDiffNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &diffNMatrix,int side_number) {
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussColDiffNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &diffNMatrix,int side_number) {
   switch(type) {
     case MBEDGE:
     case MBTRI: {
@@ -405,7 +405,7 @@ PetscErrorCode FEMethod_Student::GetGaussColDiffNMatrix(const string &field_name
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::MakeBMatrix3D(
+PetscErrorCode FEMethod_UpLevelStudent::MakeBMatrix3D(
   const string &field_name,vector<ublas::matrix<FieldData> > &diffNMatrix,vector<ublas::matrix<FieldData> > &BMatrix) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
@@ -434,7 +434,7 @@ PetscErrorCode FEMethod_Student::MakeBMatrix3D(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Student::GetGaussRowFaceNMatrix(
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowFaceNMatrix(
   EntityHandle ent,const string &field_name,
   vector< ublas::matrix<FieldData> > &NMatrix,
   EntityType type,EntityHandle edge_handle) {

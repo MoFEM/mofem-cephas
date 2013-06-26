@@ -19,7 +19,7 @@
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
-#include "moabFEMethod_Student.hpp"
+#include "moabFEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 

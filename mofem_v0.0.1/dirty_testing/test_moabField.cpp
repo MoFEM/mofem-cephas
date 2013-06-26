@@ -19,7 +19,7 @@
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
-#include "moabFEMethod_Student.hpp"
+#include "moabFEMethod_UpLevelStudent.hpp"
 
 using namespace MoFEM;
 
@@ -244,17 +244,17 @@ int main(int argc, char *argv[]) {
   Mat Aij_ELASTIC_MECHANICS_LEVEL0;
   ierr = mField2.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS_LEVEL0",&Aij_ELASTIC_MECHANICS_LEVEL0); CHKERRQ(ierr);
 
-  struct MyFEMethod: public FEMethod_Student {
+  struct MyFEMethod: public FEMethod_UpLevelStudent {
 
     Mat &Aij;
     Vec& rows_vec;
-    MyFEMethod(Interface& _moab,Mat &_Aij,Vec& _rows_vec): FEMethod_Student(_moab,1),Aij(_Aij),rows_vec(_rows_vec) { }; 
+    MyFEMethod(Interface& _moab,Mat &_Aij,Vec& _rows_vec): FEMethod_UpLevelStudent(_moab,1),Aij(_Aij),rows_vec(_rows_vec) { }; 
 
     vector<double> g_NTET;
 
     virtual PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      FEMethod_Core::preProcess();
+      FEMethod_LowLevelStudent::preProcess();
       g_NTET.resize(4*4);
       ShapeMBTET(&g_NTET[0],G_TET_X4,G_TET_Y4,G_TET_Z4,4);
       PetscFunctionReturn(0);

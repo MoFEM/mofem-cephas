@@ -22,8 +22,8 @@
 #define __MOABFEMETHOD_STUDENT_HPP__
 
 #include "moabField.hpp"
-#include "moabFEMethod_Core.hpp"
-#include "dataStructures.hpp"
+#include "moabFEMethod_LowLevelStudent.hpp"
+#include "Core_dataStructures.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -39,14 +39,14 @@ namespace MoFEM {
  * This class give user some data structures and methods on those that
  * structures which could be useful.
 */
-struct FEMethod_Student: public FEMethod_Core {
+struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
 
   double V;
   Tag th_volume;
   vector<ublas::vector<double,ublas::bounded_array<double, 3> > > coords_at_Gauss_nodes;
 
-  FEMethod_Student(Interface& _moab,int verbose = 0);
-  ~FEMethod_Student();
+  FEMethod_UpLevelStudent(Interface& _moab,int verbose = 0);
+  ~FEMethod_UpLevelStudent();
 
   /**
    * \brief Initate data structures for running FE methods

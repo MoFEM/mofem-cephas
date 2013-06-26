@@ -1,4 +1,4 @@
-/** \file moabFEMethod_Core.cpp
+/** \file moabFEMethod_LowLevelStudent.cpp
  * \brief Myltindex containes, data structures and other low-level functions 
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
@@ -21,25 +21,25 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include<moabFEMethod_Core.hpp>
+#include<moabFEMethod_LowLevelStudent.hpp>
 #include<FEM.h>
 
 namespace MoFEM {
 
 const int debug = 1;
 
-FEMethod_Core::FEMethod_Core(Interface& _moab,int _verbose): FEMethod(_moab),ParentMethod(NULL),verbose(_verbose),fe_ent_ptr(NULL) {
+FEMethod_LowLevelStudent::FEMethod_LowLevelStudent(Interface& _moab,int _verbose): FEMethod(_moab),ParentMethod(NULL),verbose(_verbose),fe_ent_ptr(NULL) {
   ShapeMBTET(NTET,G_TET_X1,G_TET_Y1,G_TET_Z1,1);
   ShapeDiffMBTET(diffNTET);
   ShapeMBTRI_GAUSS(NTRI,G_TRI_X1,G_TRI_Y1,1);
   ShapeDiffMBTRI(diffNTRI);
 }
-FEMethod_Core::~FEMethod_Core() {
+FEMethod_LowLevelStudent::~FEMethod_LowLevelStudent() {
   if(ParentMethod!=NULL) {
     delete ParentMethod;
   }
 }
-PetscErrorCode FEMethod_Core::GetDataView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FEDofMoFEMEntity_multiIndex_view &dof_view) {
+PetscErrorCode FEMethod_LowLevelStudent::GetDataView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FEDofMoFEMEntity_multiIndex_view &dof_view) {
   PetscFunctionBegin;
   dofs_by_Composite::iterator miit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number_low));
   dofs_by_Composite::iterator hi_miit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number_hi));
@@ -48,7 +48,7 @@ PetscErrorCode FEMethod_Core::GetDataView(const string &field_name,EntityType ty
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GetRowView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof_view) {
+PetscErrorCode FEMethod_LowLevelStudent::GetRowView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof_view) {
   PetscFunctionBegin;
   numered_dofs_by_Composite::iterator miit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number_low));
   numered_dofs_by_Composite::iterator hi_miit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number_hi));
@@ -57,7 +57,7 @@ PetscErrorCode FEMethod_Core::GetRowView(const string &field_name,EntityType typ
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GetColView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof_view) {
+PetscErrorCode FEMethod_LowLevelStudent::GetColView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof_view) {
   PetscFunctionBegin;
   numered_dofs_by_Composite::iterator miit = col_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number_low));
   numered_dofs_by_Composite::iterator hi_miit = col_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number_hi));
@@ -66,15 +66,15 @@ PetscErrorCode FEMethod_Core::GetColView(const string &field_name,EntityType typ
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::preProcess() {
+PetscErrorCode FEMethod_LowLevelStudent::preProcess() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::operator()() {
+PetscErrorCode FEMethod_LowLevelStudent::operator()() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::postProcess() {
+PetscErrorCode FEMethod_LowLevelStudent::postProcess() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
@@ -82,23 +82,23 @@ PetscErrorCode FEMethod_Core::postProcess() {
 //
 template <typename T>
 struct UnaryOP_PetscGlobalIdx {
-  DofIdx operator()(const T *it) { return FEMethod_Core::UnaryFunction_PetscGlobalIdx(it); }
+  DofIdx operator()(const T *it) { return FEMethod_LowLevelStudent::UnaryFunction_PetscGlobalIdx(it); }
 };
 template <typename T>
 struct UnaryOP_FieldData {
-  FieldData operator()(const T *it) { return FEMethod_Core::UnaryFunction_FieldData(it); }
+  FieldData operator()(const T *it) { return FEMethod_LowLevelStudent::UnaryFunction_FieldData(it); }
 };
 template <typename T>
 struct UnaryOP_ApproxRank {
-  DofIdx operator()(const T *it) { return FEMethod_Core::UnaryFunction_ApproxRank(it); }
+  DofIdx operator()(const T *it) { return FEMethod_LowLevelStudent::UnaryFunction_ApproxRank(it); }
 };
 template <typename T>
 struct UnaryOP_ApproxOrder {
-  DofIdx operator()(const T *it) { return FEMethod_Core::UnaryFunction_ApproxOrder(it); }
+  DofIdx operator()(const T *it) { return FEMethod_LowLevelStudent::UnaryFunction_ApproxOrder(it); }
 };
 template <typename T>
 struct UnaryOP_EntDofIdx {
-  DofIdx operator()(const T *it) { return FEMethod_Core::UnaryFunction_EntDofIdx(it); }
+  DofIdx operator()(const T *it) { return FEMethod_LowLevelStudent::UnaryFunction_EntDofIdx(it); }
 };
 //
 template <typename It,typename M1,typename M2,typename UnaryOp>
@@ -174,7 +174,7 @@ PetscErrorCode SetMaxOrder(const T &miit,
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::InitDataStructures() {
+PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
   PetscFunctionBegin;
   // node
   row_nodesGlobIndices.clear();
@@ -236,7 +236,7 @@ PetscErrorCode FEMethod_Core::InitDataStructures() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GlobIndices() {
+PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
   PetscFunctionBegin;
   if(fe_ptr==NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   FENumeredDofMoFEMEntity_multiIndex &rows_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*row_multiIndex);
@@ -308,10 +308,10 @@ PetscErrorCode FEMethod_Core::GlobIndices() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::ParentData(const string &fe_name) {
+PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &fe_name) {
   PetscFunctionBegin;
   if(ParentMethod == NULL) {
-    ParentMethod = new FEMethod_Core(moab,verbose);
+    ParentMethod = new FEMethod_LowLevelStudent(moab,verbose);
     ierr = ParentMethod->set_problem(problem_ptr); CHKERRQ(ierr);
     ierr = ParentMethod->set_dofs_multiIndex(dofs_moabfield); CHKERRQ(ierr);
     ierr = ParentMethod->set_fes_multiIndex(finite_elements); CHKERRQ(ierr);
@@ -342,7 +342,7 @@ PetscErrorCode FEMethod_Core::ParentData(const string &fe_name) {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::DataOp() {
+PetscErrorCode FEMethod_LowLevelStudent::DataOp() {
   PetscFunctionBegin;
   FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(*data_multiIndex);
   switch (fe_ent_ptr->get_ent_type()) {
@@ -380,7 +380,7 @@ PetscErrorCode FEMethod_Core::DataOp() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::ShapeFunctions(vector<double>& _gNTET) {
+PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions(vector<double>& _gNTET) {
   PetscFunctionBegin;
   const int cannonical_face_sense_p1[4][3] = { {0,1,3}, {1,2,3}, {0,3,2}/**/, {0,2,1}/**/ }; //secon index is offset (positive sense)
   const int cannonical_face_sense_m1[4][3] = { {0,3,1}, {1,3,2}, {0,2,3}, {0,1,2} }; //second index is offset (negative sense)
@@ -503,7 +503,7 @@ PetscErrorCode FEMethod_Core::ShapeFunctions(vector<double>& _gNTET) {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::get_ShapeFunction(
+PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
     vector<const double*> *shape_by_gauss_pt,
     vector<const double*> *diff_shape_by_gauss_pt,
     const MoFEMField* field_ptr,EntityType type,int side_number) {
@@ -602,7 +602,7 @@ PetscErrorCode FEMethod_Core::get_ShapeFunction(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::Data_at_GaussPoints() {
+PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
   PetscFunctionBegin;
   unsigned int g_dim,nb_Ns;
   switch (fe_ent_ptr->get_ent_type()) {
@@ -676,7 +676,7 @@ PetscErrorCode FEMethod_Core::Data_at_GaussPoints() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::DiffData_at_GaussPoints() {
+PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
   PetscFunctionBegin;
   unsigned int g_dim,nb_Ns;
   switch (fe_ent_ptr->get_ent_type()) {
@@ -786,7 +786,7 @@ PetscErrorCode FEMethod_Core::DiffData_at_GaussPoints() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GetNMatrix_at_GaussPoint(
+PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
     GlobIndices_Type& nodesGlobIndices, GlobIndices_EntType& edgesGlobIndices,
     GlobIndices_EntType& facesGlobIndices, GlobIndices_EntType& volumeGlobIndices,
     N_Matrix_Type& N_Matrix_nodes,
@@ -868,7 +868,7 @@ PetscErrorCode FEMethod_Core::GetNMatrix_at_GaussPoint(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GetRowNMatrix_at_GaussPoint() {
+PetscErrorCode FEMethod_LowLevelStudent::GetRowNMatrix_at_GaussPoint() {
   PetscFunctionBegin;
   ierr = GetNMatrix_at_GaussPoint(
     row_nodesGlobIndices,row_edgesGlobIndices,
@@ -877,7 +877,7 @@ PetscErrorCode FEMethod_Core::GetRowNMatrix_at_GaussPoint() {
     row_N_Matrix_faces, row_N_Matrix_elem); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GetColNMatrix_at_GaussPoint() {
+PetscErrorCode FEMethod_LowLevelStudent::GetColNMatrix_at_GaussPoint() {
   PetscFunctionBegin;
   ierr = GetNMatrix_at_GaussPoint(
     col_nodesGlobIndices,col_edgesGlobIndices,
@@ -886,7 +886,7 @@ PetscErrorCode FEMethod_Core::GetColNMatrix_at_GaussPoint() {
     col_N_Matrix_faces, col_N_Matrix_elem); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GetDiffNMatrix_at_GaussPoint(
+PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
     GlobIndices_Type& nodesGlobIndices, GlobIndices_EntType& edgesGlobIndices,
     GlobIndices_EntType& facesGlobIndices, GlobIndices_EntType& volumeGlobIndices,
     N_Matrix_Type& diffN_Matrix_nodes,
@@ -1003,7 +1003,7 @@ PetscErrorCode FEMethod_Core::GetDiffNMatrix_at_GaussPoint(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GetRowDiffNMatrix_at_GaussPoint() {
+PetscErrorCode FEMethod_LowLevelStudent::GetRowDiffNMatrix_at_GaussPoint() {
   PetscFunctionBegin;
   ierr = GetDiffNMatrix_at_GaussPoint(
     row_nodesGlobIndices,row_edgesGlobIndices,
@@ -1012,7 +1012,7 @@ PetscErrorCode FEMethod_Core::GetRowDiffNMatrix_at_GaussPoint() {
     row_diffN_Matrix_faces,row_diffN_Matrix_elem); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GetColDiffNMatrix_at_GaussPoint() {
+PetscErrorCode FEMethod_LowLevelStudent::GetColDiffNMatrix_at_GaussPoint() {
   PetscFunctionBegin;
   ierr = GetDiffNMatrix_at_GaussPoint(
     col_nodesGlobIndices,col_edgesGlobIndices,
@@ -1022,7 +1022,7 @@ PetscErrorCode FEMethod_Core::GetColDiffNMatrix_at_GaussPoint() {
   PetscFunctionReturn(0);
 }
 //TRI
-PetscErrorCode FEMethod_Core::ShapeFunctions_TRI(EntityHandle ent,vector<double> &_gNTRI_) {  
+PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vector<double> &_gNTRI_) {  
   PetscFunctionBegin;
   typedef SideNumber_multiIndex::nth_index<1>::type SideNumber_multiIndex_by_CompositeTag;
   SideNumber_multiIndex_by_CompositeTag& side_table = const_cast<SideNumber_multiIndex_by_CompositeTag&>(fe_ent_ptr->get_side_number_table().get<1>());
@@ -1113,7 +1113,7 @@ PetscErrorCode FEMethod_Core::ShapeFunctions_TRI(EntityHandle ent,vector<double>
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_Core::GetNMatrix_at_FaceGaussPoint(
+PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
     EntityHandle ent,const string& field_name,
     GlobIndices_Type& nodesGlobIndices, 
     GlobIndices_EntType& edgesGlobIndices,

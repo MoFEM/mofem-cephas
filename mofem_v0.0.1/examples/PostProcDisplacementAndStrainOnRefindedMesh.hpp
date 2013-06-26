@@ -19,11 +19,11 @@
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
-#include "moabFEMethod_Student.hpp"
+#include "moabFEMethod_UpLevelStudent.hpp"
 
 using namespace MoFEM;
 
-struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_Student {
+struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent {
 
     //this is moab mesh of all refined elements
     Interface& moab_post_proc;
@@ -41,7 +41,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_Student {
     PetscLogDouble t1,t2;
     PetscLogDouble v1,v2;
 
-    PostProcDisplacemenysAndStarinOnRefMesh(Interface& _moab): FEMethod_Student(_moab,1),
+    PostProcDisplacemenysAndStarinOnRefMesh(Interface& _moab): FEMethod_UpLevelStudent(_moab,1),
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
       max_level(2),init_ref(false) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -58,7 +58,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_Student {
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
       ierr = PetscGetTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-      FEMethod_Core::preProcess();
+      FEMethod_LowLevelStudent::preProcess();
 
       if(init_ref) PetscFunctionReturn(0);
       

@@ -19,7 +19,7 @@
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
-#include "moabFEMethod_Student.hpp"
+#include "moabFEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -167,13 +167,13 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField2.MatCreateMPIAIJWithArrays("PROBLEM_APPROXIMATION",&Aij); CHKERRQ(ierr);
 
-  struct MyFEMethod: public FEMethod_Student {
+  struct MyFEMethod: public FEMethod_UpLevelStudent {
 
     vector<double> g_NTET;
 
     Mat &Aij;
     Vec& rows_vec;
-    MyFEMethod(Interface& _moab,Mat &_Aij,Vec& _rows_vec): FEMethod_Student(_moab,1),Aij(_Aij),rows_vec(_rows_vec) { 
+    MyFEMethod(Interface& _moab,Mat &_Aij,Vec& _rows_vec): FEMethod_UpLevelStudent(_moab,1),Aij(_Aij),rows_vec(_rows_vec) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     }; 
 
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      FEMethod_Core::preProcess();
+      FEMethod_LowLevelStudent::preProcess();
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assemble\n");
@@ -396,8 +396,8 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file(mesh_out_file_name,"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  struct MyFEMethodProject: public FEMethod_Student {
-    MyFEMethodProject(Interface& _moab): FEMethod_Student(_moab,1) { 
+  struct MyFEMethodProject: public FEMethod_UpLevelStudent {
+    MyFEMethodProject(Interface& _moab): FEMethod_UpLevelStudent(_moab,1) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     }; 
 
@@ -409,7 +409,7 @@ int main(int argc, char *argv[]) {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      FEMethod_Core::preProcess();
+      FEMethod_LowLevelStudent::preProcess();
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Project\n",pcomm->rank(),v2-v1,t2-t1);
@@ -509,12 +509,12 @@ int main(int argc, char *argv[]) {
   ierr = mField2.loop_finite_elements("PROBLEM_APPROXIMATION_REF","FEAPPROX_L2",fe_proj_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
-  struct MyFEMethodPostProc: public FEMethod_Student {
+  struct MyFEMethodPostProc: public FEMethod_UpLevelStudent {
     vector<double> g_NTET;
 
 
     Tag th_val;
-    MyFEMethodPostProc(Interface& _moab): FEMethod_Student(_moab,1),moab_post_proc(mb_instance_post_proc) { 
+    MyFEMethodPostProc(Interface& _moab): FEMethod_UpLevelStudent(_moab,1),moab_post_proc(mb_instance_post_proc) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
       double def_VAL = 0;
       rval = moab_post_proc.tag_get_handle("H1FIELD_L2_VAL",1,MB_TYPE_DOUBLE,th_val,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
@@ -537,7 +537,7 @@ int main(int argc, char *argv[]) {
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
       ierr = PetscGetTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-      FEMethod_Core::preProcess();
+      FEMethod_LowLevelStudent::preProcess();
       PetscFunctionReturn(0);
     }
     PetscErrorCode operator()() {

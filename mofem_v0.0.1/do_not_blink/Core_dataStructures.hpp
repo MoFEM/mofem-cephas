@@ -1,4 +1,4 @@
-/** \file dataStructures.hpp
+/** \file Core_dataStructures.hpp
  * \brief Myltindex containes, data structures and other low-level functions 
  * 
  * Low level data structures not used directly by user
