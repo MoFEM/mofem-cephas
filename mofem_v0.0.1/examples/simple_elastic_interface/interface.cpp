@@ -29,6 +29,53 @@
 
 using namespace MoFEM;
 
+struct InterfaceElasticFEMethod: public ElasticFEMethod {
+
+  Range& SideSet3;
+
+  InterfaceElasticFEMethod(
+      Interface& _moab,Mat &_Aij,Vec& _F,
+      double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
+      ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2), SideSet3(_SideSet3) {};
+
+  PetscErrorCode NeumannBC() {
+      PetscFunctionBegin;
+      
+      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction2(3);
+      traction2[0] = 0;
+      traction2[1] = +1;
+      traction2[2] = 0;
+      ierr = ElasticFEMethod::NeumannBC(traction2,SideSet2); CHKERRQ(ierr);
+
+      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction3(3);
+      traction2[0] = 0;
+      traction2[1] = -1;
+      traction2[2] = 0;
+      ierr = ElasticFEMethod::NeumannBC(traction3,SideSet3); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+  }
+
+
+  PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = GetMatrices(); CHKERRQ(ierr);
+
+      //Assembly Aij and F
+      ierr = RhsAndLhs(); CHKERRQ(ierr);
+
+      //Neumann Boundary Conditions
+      ierr = NeumannBC(); CHKERRQ(ierr);
+
+      ierr = OpStudentEnd(); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+  }
+
+};
+
+
+
 ErrorCode rval;
 PetscErrorCode ierr;
 
@@ -113,9 +160,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
@@ -149,11 +196,13 @@ int main(int argc, char *argv[]) {
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   //Get SideSet 1 and SideSet 2 defined in CUBIT
-  Range SideSet1,SideSet2;
+  Range SideSet1,SideSet2,SideSet3;
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
 
   //Assemble F and Aij
   const double YoungModulus = 1;

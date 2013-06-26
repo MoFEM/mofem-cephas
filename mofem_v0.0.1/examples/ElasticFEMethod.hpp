@@ -131,20 +131,16 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode NeumannBC() {
+    PetscErrorCode NeumannBC(ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
+
       PetscFunctionBegin;
-      
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
-      traction[0] = 0;
-      traction[1] = 1;
-      traction[2] = 0;
 
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
       SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
       for(;siit!=hi_siit;siit++) {
-	Range::iterator fit = find(SideSet2.begin(),SideSet2.end(),siit->ent);
-	if(fit==SideSet2.end()) continue;
+	Range::iterator fit = find(SideSet.begin(),SideSet.end(),siit->ent);
+	if(fit==SideSet.end()) continue;
 
 	ierr = ShapeFunctions_TRI(siit->ent,g_NTRI);  CHKERRQ(ierr);
 
@@ -225,6 +221,21 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
 
       }
+
+      PetscFunctionReturn(0);
+
+    }
+
+
+    PetscErrorCode NeumannBC() {
+      PetscFunctionBegin;
+      
+      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
+      traction[0] = 0;
+      traction[1] = 1;
+      traction[2] = 0;
+
+      ierr = NeumannBC(traction,SideSet2); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -329,11 +340,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode operator()() {
+    PetscErrorCode RhsAndLhs() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-
       ublas::matrix<FieldData> K[row_mat][col_mat];
       ublas::vector<FieldData> f[row_mat];
       int g_dim = g_NTET.size()/4;
@@ -367,6 +375,16 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
       }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = GetMatrices(); CHKERRQ(ierr);
+
+      //Assembly Aij and F
+      ierr = RhsAndLhs(); CHKERRQ(ierr);
 
       //Neumann Boundary Conditions
       ierr = NeumannBC(); CHKERRQ(ierr);

@@ -16,11 +16,13 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-#include subdirectory
-include_directories("${PROJECT_SOURCE_DIR}/examples")
+add_executable(interface interface.cpp)
+target_link_libraries(interface mofem_Field ${PROJECT_LIBS})
 
-#add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_interface")
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/PeelTest.cub
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

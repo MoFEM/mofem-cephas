@@ -199,8 +199,8 @@ typedef PetscScalar FieldData;
 typedef bitset<8/*max number of finite elements*/> BitFEId;
 typedef bitset<8/*max number of problems*/> BitProblemId;
 //
-typedef unsigned short ApproximationOrder;
-typedef unsigned short ApproximationRank;
+typedef short ApproximationOrder;
+typedef short ApproximationRank;
 
 const EntityHandle no_handle = (EntityHandle)-1;
 
