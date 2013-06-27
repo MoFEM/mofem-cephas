@@ -126,10 +126,11 @@ struct MyElasticFEMethod: public ElasticFEMethod {
 
 struct InterfaceFEMethod: public MyElasticFEMethod {
 
+  double YoungModulus; 
+
   InterfaceFEMethod(
-      Interface& _moab,Mat &_Aij,Vec& _F,
-      double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
-	MyElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3) {};
+      Interface& _moab,Mat &_Aij,Vec& _F,double _YoungModulus,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
+	MyElasticFEMethod(_moab,_Aij,_F,0,0,_SideSet1,_SideSet2,_SideSet3),YoungModulus(_YoungModulus) {};
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -153,10 +154,6 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
     ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-    ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
-    ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
     // Note MAT_FLUSH_ASSEMBLY
     ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -169,8 +166,8 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
+      ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
+      //ierr = GetMatrices(); CHKERRQ(ierr);
 
       ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -292,9 +289,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
@@ -339,7 +336,10 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
+  const double alpha = 1e1;
   MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3);
+  InterfaceFEMethod IntMyFE(moab,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
+
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -349,8 +349,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",MyFE);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  //ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
+  //PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
 
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

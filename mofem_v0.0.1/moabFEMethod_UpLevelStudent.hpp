@@ -58,6 +58,15 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
   PetscErrorCode OpStudentStart_TET(vector<double>& _gNTET_);
 
   /**
+   * \brief Initate data structures for running FE methods
+   *
+   * It has to be run at the begining of the function
+   *
+   * \param _gNTRI_ vector of shape of tetrahedral functions evaluated at Gauss points
+   */
+  PetscErrorCode OpStudentStart_PRISM(vector<double>& _gNTRI_);
+
+  /**
    * \brief Finalise data structures for running FE methods
    *
    * It has to be run at the end of the function
