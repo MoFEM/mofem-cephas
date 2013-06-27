@@ -44,8 +44,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       Range SideSet1Edges,SideSet1Nodes;
       rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
       rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
-      SideSet1.insert(SideSet1Edges.begin(),SideSet1Edges.end());
-      SideSet1.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
+      SideSet1_.insert(SideSet1.begin(),SideSet1.end());
+      SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
+      SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
 
       //VEC & MAT Options
       //If index is set to -1 ingonre its assembly
@@ -63,6 +64,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     Range& SideSet1;
     Range& SideSet2;
+    Range SideSet1_;
 
     int row_mat,col_mat;
     vector<vector<DofIdx> > RowGlob;
@@ -314,8 +316,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       //Boundary Condition
       //Dirihlet form SideSet1
       DirihletBC.resize(0);
-      Range::iterator siit1 = SideSet1.begin();
-      for(;siit1!=SideSet1.end();siit1++) {
+      Range::iterator siit1 = SideSet1_.begin();
+      for(;siit1!=SideSet1_.end();siit1++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
 	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
 	for(;riit!=hi_riit;riit++) {

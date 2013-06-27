@@ -340,7 +340,6 @@ int main(int argc, char *argv[]) {
   MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3);
   InterfaceFEMethod IntMyFE(moab,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
 
-
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
