@@ -25,8 +25,18 @@
 
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM) {
   PetscFunctionBegin;
-  double *edgeN01 = edgeN[0],*edgeN12 = edgeN[1],*edgeN20 = edgeN[2];
-  double *diff_edgeN01 = diff_edgeN[0],*diff_edgeN12 = diff_edgeN[1],*diff_edgeN20 = diff_edgeN[2];
+  double *edgeN01 = NULL,*edgeN12 = NULL,*edgeN20 = NULL;
+  if(edgeN!=NULL) {
+    edgeN01 = edgeN[0];
+    edgeN12 = edgeN[1];
+    edgeN20 = edgeN[2];
+  }
+  double *diff_edgeN01 = NULL,*diff_edgeN12 = NULL,*diff_edgeN20 = NULL;
+  if(diff_edgeN!=NULL) {
+    diff_edgeN01 = diff_edgeN[0];
+    diff_edgeN12 = diff_edgeN[1];
+    diff_edgeN20 = diff_edgeN[2];
+  }
   int P[3];
   int ee = 0;
   for(;ee<3; ee++) P[ee] = NBEDGE_H1(p[ee]);
@@ -49,45 +59,49 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
     Lagrange_basis(P[1],ksi12,diff_ksi12,L12,diffL12,2);
     Lagrange_basis(P[2],ksi20,diff_ksi20,L20,diffL20,2);
     int shift;
-    //edge01
-    shift = ii*(P[0]);
-    cblas_dcopy(P[0],L01,1,&edgeN01[shift],1);
-    cblas_dscal(P[0],N[node_shift+0]*N[node_shift+1],&edgeN01[shift],1);
-    //edge12
-    shift = ii*(P[1]);
-    cblas_dcopy(P[1],L12,1,&edgeN12[shift],1);
-    cblas_dscal(P[1],N[node_shift+1]*N[node_shift+2],&edgeN12[shift],1);
-    //edge20
-    shift = ii*(P[2]);
-    cblas_dcopy(P[2],L20,1,&edgeN20[shift],1);
-    cblas_dscal(P[2],N[node_shift+0]*N[node_shift+2],&edgeN20[shift],1);
-    //edge01
-    shift = ii*(P[0]);
-    //diffX
-    bzero(&diff_edgeN01[2*shift],sizeof(double)*2*(P[0]));
-    cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[0*P[0]],1,&diff_edgeN01[2*shift+0],2);
-    cblas_daxpy(P[0],diffN[2*0+0]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+0],L01,1,&diff_edgeN01[2*shift+0],2);
-    //diffY
-    cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[1*P[0]],1,&diff_edgeN01[2*shift+1],2);
-    cblas_daxpy(P[1],diffN[2*0+1]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+1],L01,1,&diff_edgeN01[2*shift+1],2);
-    //edge12
-    shift = ii*(P[1]);
-    bzero(&diff_edgeN12[2*shift],sizeof(double)*2*(P[1]));
-    //diffX
-    cblas_daxpy(P[1],N[node_shift+1]*N[node_shift+2],&diffL12[0*P[1]],1,&diff_edgeN12[2*shift+0],2);
-    cblas_daxpy(P[1],diffN[2*1+0]*N[node_shift+2]+N[node_shift+1]*diffN[2*2+0],L12,1,&diff_edgeN12[2*shift+0],2);
-    //diffY
-    cblas_daxpy(P[1],N[node_shift+1]*N[node_shift+2],&diffL12[1*P[1]],1,&diff_edgeN12[2*shift+1],2);
-    cblas_daxpy(P[1],diffN[2*1+1]*N[node_shift+2]+N[node_shift+1]*diffN[2*2+1],L12,1,&diff_edgeN12[2*shift+1],2); 
-    //edge20
-    shift = ii*(P[2]);
-    bzero(&diff_edgeN20[2*shift],sizeof(double)*2*(P[2]));
-    //diffX
-    cblas_daxpy(P[2],N[node_shift+0]*N[node_shift+2],&diffL20[0*P[2]],1,&diff_edgeN20[2*shift+0],2);
-    cblas_daxpy(P[2],diffN[2*0+0]*N[node_shift+2]+N[node_shift+0]*diffN[2*2+0],L20,1,&diff_edgeN20[2*shift+0],2);
-    //diffY
-    cblas_daxpy(P[2],N[node_shift+0]*N[node_shift+2],&diffL20[1*P[2]],1,&diff_edgeN20[2*shift+1],2);
-    cblas_daxpy(P[2],diffN[2*0+1]*N[node_shift+2]+N[node_shift+0]*diffN[2*2+1],L20,1,&diff_edgeN20[2*shift+1],2);
+    if(edgeN!=NULL) {
+      //edge01
+      shift = ii*(P[0]);
+      cblas_dcopy(P[0],L01,1,&edgeN01[shift],1);
+      cblas_dscal(P[0],N[node_shift+0]*N[node_shift+1],&edgeN01[shift],1);
+      //edge12
+      shift = ii*(P[1]);
+      cblas_dcopy(P[1],L12,1,&edgeN12[shift],1);
+      cblas_dscal(P[1],N[node_shift+1]*N[node_shift+2],&edgeN12[shift],1);
+      //edge20
+      shift = ii*(P[2]);
+      cblas_dcopy(P[2],L20,1,&edgeN20[shift],1);
+      cblas_dscal(P[2],N[node_shift+0]*N[node_shift+2],&edgeN20[shift],1);
+    }
+    if(diff_edgeN!=NULL) {
+      //edge01
+      shift = ii*(P[0]);
+      //diffX
+      bzero(&diff_edgeN01[2*shift],sizeof(double)*2*(P[0]));
+      cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[0*P[0]],1,&diff_edgeN01[2*shift+0],2);
+      cblas_daxpy(P[0],diffN[2*0+0]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+0],L01,1,&diff_edgeN01[2*shift+0],2);
+      //diffY
+      cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[1*P[0]],1,&diff_edgeN01[2*shift+1],2);
+      cblas_daxpy(P[1],diffN[2*0+1]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+1],L01,1,&diff_edgeN01[2*shift+1],2);
+      //edge12
+      shift = ii*(P[1]);
+      bzero(&diff_edgeN12[2*shift],sizeof(double)*2*(P[1]));
+      //diffX
+      cblas_daxpy(P[1],N[node_shift+1]*N[node_shift+2],&diffL12[0*P[1]],1,&diff_edgeN12[2*shift+0],2);
+      cblas_daxpy(P[1],diffN[2*1+0]*N[node_shift+2]+N[node_shift+1]*diffN[2*2+0],L12,1,&diff_edgeN12[2*shift+0],2);
+      //diffY
+      cblas_daxpy(P[1],N[node_shift+1]*N[node_shift+2],&diffL12[1*P[1]],1,&diff_edgeN12[2*shift+1],2);
+      cblas_daxpy(P[1],diffN[2*1+1]*N[node_shift+2]+N[node_shift+1]*diffN[2*2+1],L12,1,&diff_edgeN12[2*shift+1],2); 
+      //edge20
+      shift = ii*(P[2]);
+      bzero(&diff_edgeN20[2*shift],sizeof(double)*2*(P[2]));
+      //diffX
+      cblas_daxpy(P[2],N[node_shift+0]*N[node_shift+2],&diffL20[0*P[2]],1,&diff_edgeN20[2*shift+0],2);
+      cblas_daxpy(P[2],diffN[2*0+0]*N[node_shift+2]+N[node_shift+0]*diffN[2*2+0],L20,1,&diff_edgeN20[2*shift+0],2);
+      //diffY
+      cblas_daxpy(P[2],N[node_shift+0]*N[node_shift+2],&diffL20[1*P[2]],1,&diff_edgeN20[2*shift+1],2);
+      cblas_daxpy(P[2],diffN[2*0+1]*N[node_shift+2]+N[node_shift+0]*diffN[2*2+1],L20,1,&diff_edgeN20[2*shift+1],2);
+    }
   }
   PetscFunctionReturn(0);
 }
@@ -125,7 +139,6 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
 	}
 	if(jj!=P) SETERRQ1(PETSC_COMM_SELF,1,"wrong order %d",jj);
     }
-    if(diff_faceN!=NULL)
     if(diff_faceN!=NULL) {
     int shift = ii*P;
       int dd = 0;

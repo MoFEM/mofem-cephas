@@ -154,7 +154,16 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
    *
    * \param _gNTET_ vector of shape functions at Gauss pts.
    */
-  PetscErrorCode ShapeFunctions(vector<double>& _gNTET_);
+  PetscErrorCode ShapeFunctions_TET(vector<double>& _gNTET_);
+
+  /**
+   * calculate element faces shape functions
+   *
+   * \param _gNTRI_ vector of shape functions at Gauss pts.
+   *
+   */
+  vector<double> gNTRIonPRISM;
+  PetscErrorCode ShapeFunctions_PRISM(vector<double>& _gNTRI_);
 
   vector< vector<double> > H1edgeN,diffH1edgeN;
   vector< vector<double> > H1faceN,diffH1faceN;
