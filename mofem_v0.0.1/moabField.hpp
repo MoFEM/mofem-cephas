@@ -259,7 +259,14 @@ struct moabField {
   /// erase inactive dofs form field
   virtual PetscErrorCode erase_inactive_dofs_moabfield() = 0;
 
-  /// store finite elements in database
+  /**
+    * \brief add finite elements to the meshset
+    *
+    * Add finite elements to de meshset. 
+    * \param name is problem name
+    * \param fe_name
+    * \param meshset
+    */
   virtual PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset) = 0;
 
   /// create ghost vector for problem

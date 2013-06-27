@@ -74,8 +74,6 @@ struct InterfaceElasticFEMethod: public ElasticFEMethod {
 
 };
 
-
-
 ErrorCode rval;
 PetscErrorCode ierr;
 
@@ -157,17 +155,22 @@ int main(int argc, char *argv[]) {
 
   //FE
   ierr = mField.add_MoFEMFE("ELASTIC"); CHKERRQ(ierr);
-
   //Define rows/cols and element data
   ierr = mField.modify_MoFEMFE_row_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_MoFEMFE_col_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_MoFEMFE_data_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  //FE Interface
+  ierr = mField.add_MoFEMFE("INTERFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_MoFEMFE_row_add_bit("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_MoFEMFE_col_add_bit("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_MoFEMFE_data_add_bit("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
 
   //define problems
   ierr = mField.add_BitProblemId("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //set finite elements for problem
   ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
@@ -180,6 +183,7 @@ int main(int argc, char *argv[]) {
 
   //add finite elements entities
   ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -263,6 +267,7 @@ int main(int argc, char *argv[]) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","INTERFACE",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
