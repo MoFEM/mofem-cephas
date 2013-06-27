@@ -243,6 +243,32 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       PetscFunctionReturn(0);
     }
+
+    PetscErrorCode ApplyDirihletBC() {
+      PetscFunctionBegin;
+      //Dirihlet form SideSet1
+      DirihletBC.resize(0);
+      Range::iterator siit1 = SideSet1_.begin();
+      for(;siit1!=SideSet1_.end();siit1++) {
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	for(;riit!=hi_riit;riit++) {
+	  if(riit->get_name()!="DISPLACEMENT") continue;
+	  // all fixed
+	  // if some ranks are selected then we could apply BC in particular direction
+	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+	  for(int cc = 0;cc<col_mat;cc++) {
+	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),riit->get_petsc_gloabl_dof_idx());
+	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	  }
+	  for(int rr = 0;rr<row_mat;rr++) {
+	    vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	    if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+	  }
+	}
+      }
+      PetscFunctionReturn(0);
+    }
     
     PetscErrorCode GetMatrices() {
       PetscFunctionBegin;
@@ -314,27 +340,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       }
 
       //Boundary Condition
-      //Dirihlet form SideSet1
-      DirihletBC.resize(0);
-      Range::iterator siit1 = SideSet1_.begin();
-      for(;siit1!=SideSet1_.end();siit1++) {
-	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	for(;riit!=hi_riit;riit++) {
-	  if(riit->get_name()!="DISPLACEMENT") continue;
-	  // all fixed
-	  // if some ranks are selected then we could apply BC in particular direction
-	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	  for(int cc = 0;cc<col_mat;cc++) {
-	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),riit->get_petsc_gloabl_dof_idx());
-	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	  }
-	  for(int rr = 0;rr<row_mat;rr++) {
-	    vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
-	    if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-	  }
-	}
-      }
+      ApplyDirihletBC();
       if(Diagonal!=PETSC_NULL) {
 	if(DirihletBC.size()>0) {
 	  DirihletBCDiagVal.resize(DirihletBC.size());
@@ -355,7 +361,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	for(int cc = 0;cc<col_mat;cc++) {
 	  for(int gg = 0;gg<g_dim;gg++) {
 	    ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-	    ublas::matrix<FieldData> &col_Mat = (rowBMatrices[cc])[gg];
+	    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
 	    ///K matrices
 	    if(gg == 0) {
 	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());

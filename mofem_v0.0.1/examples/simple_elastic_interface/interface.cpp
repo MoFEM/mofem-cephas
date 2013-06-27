@@ -167,7 +167,103 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
-      //ierr = GetMatrices(); CHKERRQ(ierr);
+
+      ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
+      for(int ii = 0;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
+      ublas::matrix<double> Dglob = prod( Dloc, R );
+      Dglob = prod( trans(R), Dglob );
+
+      //rows
+      RowGlob.resize(1+6+2);
+      rowNMatrices.resize(1+6+2);
+      row_mat = 0;
+      ierr = GetRowIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
+      row_mat++;
+      for(int ee = 0;ee<3;ee++) { //edges matrices
+	ierr = GetRowIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
+	if(RowGlob[row_mat].size()!=0) {
+	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
+	  row_mat++;
+	}
+      }
+      for(int ee = 0;ee<3;ee++) { //edges matrices
+	ierr = GetRowIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee+6); CHKERRQ(ierr);
+	if(RowGlob[row_mat].size()!=0) {
+	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee+6); CHKERRQ(ierr);
+	  row_mat++;
+	}
+      }
+      ierr = GetRowIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],3); CHKERRQ(ierr);
+      if(RowGlob[row_mat].size()!=0) {
+	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],3); CHKERRQ(ierr);
+	row_mat++;
+      }
+      ierr = GetRowIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],4); CHKERRQ(ierr);
+      if(RowGlob[row_mat].size()!=0) {
+	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],4); CHKERRQ(ierr);
+	row_mat++;
+      }
+      //cols
+      ColGlob.resize(1+6+2);
+      colNMatrices.resize(1+6+2);
+      col_mat = 0;
+      ierr = GetColIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetGaussColNMatrix("DISPLACEMENT",colNMatrices[col_mat]); CHKERRQ(ierr);
+      col_mat++;
+      for(int ee = 0;ee<3;ee++) { //edges matrices
+	ierr = GetColIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
+	if(ColGlob[col_mat].size()!=0) {
+	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
+	  col_mat++;
+	}
+      }
+      for(int ee = 0;ee<3;ee++) { //edges matrices
+	ierr = GetColIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee+6); CHKERRQ(ierr);
+	if(ColGlob[col_mat].size()!=0) {
+	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee+6); CHKERRQ(ierr);
+	  col_mat++;
+	}
+      }
+      ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],3); CHKERRQ(ierr);
+      if(ColGlob[col_mat].size()!=0) {
+	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],3); CHKERRQ(ierr);
+	col_mat++;
+      }
+      ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],4); CHKERRQ(ierr);
+      if(ColGlob[col_mat].size()!=0) {
+	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],4); CHKERRQ(ierr);
+	col_mat++;
+      }
+     
+      //Apply Dirihlet BC
+      ApplyDirihletBC();
+
+      //Assemble interface
+      ublas::matrix<FieldData> K[row_mat][col_mat];
+      int g_dim = g_NTRI.size()/3;
+      for(int rr = 0;rr<row_mat;rr++) {
+	for(int cc = 0;cc<col_mat;cc++) {
+	  for(int gg = 0;gg<g_dim;gg++) {
+	    ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
+	    ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
+	    ///K matrices
+	    if(gg == 0) {
+	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
+	    }
+	    double w = area3*G_TRI_W7[gg];
+	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
+	    K[rr][cc] += prod(NTD , col_Mat ); 
+	  }
+	}
+	if(RowGlob[rr].size()==0) continue;
+	for(int cc = 0;cc<col_mat;cc++) {
+	  if(ColGlob[cc].size()==0) continue;
+	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	}
+      }
 
       ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);

@@ -50,10 +50,11 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
   double area3,area4;
   double coords_face3[9];
   double coords_face4[9];
-  double normal3[3];
+  double normal3[3],tangent1[3],tangent2[3];
   double normal4[3];
   EntityHandle conn_face3[3];
   EntityHandle conn_face4[3];
+  ublas::matrix<double> R;
 
   FEMethod_UpLevelStudent(Interface& _moab,int verbose = 0);
   ~FEMethod_UpLevelStudent();
