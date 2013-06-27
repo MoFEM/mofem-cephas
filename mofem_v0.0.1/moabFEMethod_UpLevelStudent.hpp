@@ -41,9 +41,19 @@ namespace MoFEM {
 */
 struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
 
+  //TET
   double V;
   Tag th_volume;
   vector<ublas::vector<double,ublas::bounded_array<double, 3> > > coords_at_Gauss_nodes;
+
+  //PRISM
+  double area3,area4;
+  double coords_face3[9];
+  double coords_face4[9];
+  double normal3[3];
+  double normal4[3];
+  EntityHandle conn_face3[3];
+  EntityHandle conn_face4[3];
 
   FEMethod_UpLevelStudent(Interface& _moab,int verbose = 0);
   ~FEMethod_UpLevelStudent();

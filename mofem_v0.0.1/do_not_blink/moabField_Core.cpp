@@ -2928,14 +2928,14 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
       case MBTRI: {
 	  rval = moab.get_adjacencies(new_conn,3,2,true,new_ent); CHKERR_PETSC(rval);
 	  if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_ent %u\n",new_ent.size());
-	  if(add_iterfece_entities) {
+	  if(add_iterfece_entities&&(nb_new_conn>1)) {
 	    EntityHandle prism_conn[6] = { conn[0],conn[1],conn[2], new_conn[0],new_conn[1],new_conn[2] };
+	    //cerr << conn[0] << " " << conn[1] << " " << conn[2] << " ::: " << new_conn[0] << " " << new_conn[1] << " " << new_conn[2] << endl;
 	    EntityHandle prism = no_handle;
 	    rval = moab.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
 	    ierr = add_prism_to_Adj_prisms(prism,verb/*nb_new_conn < 3 ? 1 : 0*/); CHKERRQ(ierr);
 	    rval = moab.add_entities(meshset_for_bit_level,&prism,1); CHKERR_PETSC(rval);
 	  }
-
 	} break;
       case MBEDGE: {
 	  rval = moab.get_adjacencies(new_conn,2,1,true,new_ent); CHKERR_PETSC(rval);
@@ -3005,7 +3005,6 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
     ref_entities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
     if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_ent %u\n",new_ent.size());
     new_ents_in_database.insert(new_ent.begin(),new_ent.end());
-
   }
   //finalise by adding new tets and prism ti bitlelvel
   ierr = seed_ref_level_3D(meshset_for_bit_level,bit); CHKERRQ(ierr);

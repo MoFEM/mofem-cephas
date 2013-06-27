@@ -185,10 +185,14 @@ RefMoFEMFiniteElement_PRISM::RefMoFEMFiniteElement_PRISM(Interface &moab,const R
   for(int nn = 0;nn<6; nn++) {
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(conn[nn],nn,0,-1));
   }
+  map<EntityHandle,EntityHandle> node_map;
+  //face3
   rval = moab.side_element(prism,2,3,ent); CHKERR_THROW(rval);
   const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,3,0,-1));
+  //face4
   rval = moab.side_element(prism,2,4,ent); CHKERR_THROW(rval);
   const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,0,-1));
+  //edges
   rval = moab.side_element(prism,1,0,ent); CHKERR_THROW(rval);
   const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,-1));
   rval = moab.side_element(prism,1,1,ent); CHKERR_THROW(rval);

@@ -81,22 +81,35 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gN
   ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
   ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
 
+  SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
+  SideNumber_multiIndex::nth_index<1>::type::iterator siit3 = side_table.get<1>().find(boost::make_tuple(MBTRI,3));
+  SideNumber_multiIndex::nth_index<1>::type::iterator siit4 = side_table.get<1>().find(boost::make_tuple(MBTRI,4));
+	
+  ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
 
-  /*EntityHandle fe_handle = fe_ptr->get_ent();
-  V = Shape_intVolumeMBTET(diffNTET,&coords[0]); 
-  if( V <= 0 ) SETERRQ1(PETSC_COMM_SELF,1,"V < 0 for EntityHandle = %lu\n",fe_handle);
-  rval = moab.tag_set_data(th_volume,&fe_handle,1,&V); CHKERR_PETSC(rval);
+  int num_nodes;
+  const EntityHandle *conn_prism;
+  rval = moab.get_connectivity(fe_ent_ptr->get_ent(),conn_prism,num_nodes,true); CHKERR_PETSC(rval);
+  assert(num_nodes==6);
+  for(int nn = 0;nn<3;nn++) {
+    conn_face3[nn] = conn_prism[nn];
+    conn_face4[nn] = conn_prism[nn+3];
+    //cerr << conn_face3[nn] << " ::: " << conn_face4[nn] << endl;
+  }
 
-  const int g_dim = get_dim_gNTET();
-  coords_at_Gauss_nodes.resize(g_dim);
-  for(int gg = 0;gg<g_dim;gg++) {
-    coords_at_Gauss_nodes[gg].resize(3);
-    for(int dd = 0;dd<3;dd++) {
-      (coords_at_Gauss_nodes[gg])[0] = cblas_ddot(4,&coords[0],3,&get_gNTET()[gg*4],1);
-      (coords_at_Gauss_nodes[gg])[1] = cblas_ddot(4,&coords[1],3,&get_gNTET()[gg*4],1);
-      (coords_at_Gauss_nodes[gg])[2] = cblas_ddot(4,&coords[2],3,&get_gNTET()[gg*4],1);
-    }
-  }*/
+  //face3
+  rval = moab.get_coords(conn_face3,3,coords_face3); CHKERR_PETSC(rval);
+  ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face3,normal3); CHKERRQ(ierr);
+  area3 = cblas_dnrm2(3,normal3,1);
+  //face4
+  rval = moab.get_coords(conn_face4,3,coords_face4); CHKERR_PETSC(rval);
+  ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face4,normal4); CHKERRQ(ierr);
+  area4 = cblas_dnrm2(3,normal4,1);
+
+  /*copy(&normal3[0],&normal3[3],ostream_iterator<double>(cerr," "));
+  cerr << " -->  ";
+  copy(&normal4[0],&normal4[3],ostream_iterator<double>(cerr," "));
+  cerr << " : " << cblas_ddot(3,normal3,1,normal4,1)/(area3*area4) <<  endl;*/
 
   PetscFunctionReturn(0);
 }
