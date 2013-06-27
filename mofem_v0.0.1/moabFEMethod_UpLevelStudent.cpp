@@ -71,30 +71,18 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
 }
 PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gNTRI_) {
   PetscFunctionBegin;
-    fe_ent_ptr = fe_ptr->fe_ptr;
-    ierr = InitDataStructures(); CHKERRQ(ierr);
-    ierr = GlobIndices(); CHKERRQ(ierr);
-    ierr = DataOp(); CHKERRQ(ierr);
+  fe_ent_ptr = fe_ptr->fe_ptr;
+  ierr = InitDataStructures(); CHKERRQ(ierr);
+  ierr = GlobIndices(); CHKERRQ(ierr);
+  ierr = DataOp(); CHKERRQ(ierr);
 
-    ierr = ShapeFunctions_PRISM(_gNTRI_); CHKERRQ(ierr);
-    ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
+  ierr = ShapeFunctions_PRISM(_gNTRI_); CHKERRQ(ierr);
+  ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
+  ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
+  ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
 
 
-    /*
-    ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
-    ierr = DiffData_at_GaussPoints(); CHKERRQ(ierr);
-    ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
-    ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
-  try {
-    ierr = GetRowDiffNMatrix_at_GaussPoint(); CHKERRQ(ierr);
-    ierr = GetColDiffNMatrix_at_GaussPoint(); CHKERRQ(ierr);
-  } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "thorw in GetRowDiffNMatrix_at_GaussPoint(): " << ex.what() << endl;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  }
-
-  EntityHandle fe_handle = fe_ptr->get_ent();
+  /*EntityHandle fe_handle = fe_ptr->get_ent();
   V = Shape_intVolumeMBTET(diffNTET,&coords[0]); 
   if( V <= 0 ) SETERRQ1(PETSC_COMM_SELF,1,"V < 0 for EntityHandle = %lu\n",fe_handle);
   rval = moab.tag_set_data(th_volume,&fe_handle,1,&V); CHKERR_PETSC(rval);

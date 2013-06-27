@@ -660,8 +660,8 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	try {
 	  for(int gg = 0;gg<gNTRI_dim;gg++) {
 	    for(int nn = 0;nn<3;nn++) {
-	      gNTRIonPRISM[fe_ent_ptr->get_side_number_ptr(moab,conn_face3[nn])->side_number] = gNTRI[gg*3+nn]; 
-	      gNTRIonPRISM[fe_ent_ptr->get_side_number_ptr(moab,conn_face4[nn])->side_number] = gNTRI[gg*3+nn]; 
+	      gNTRIonPRISM[fe_ent_ptr->get_side_number_ptr(moab,conn_face3[nn])->side_number] = +gNTRI[gg*3+nn]; 
+	      gNTRIonPRISM[fe_ent_ptr->get_side_number_ptr(moab,conn_face4[nn])->side_number] = -gNTRI[gg*3+nn]; 
 	    }
 	  }
 	} catch (const char* msg) {
@@ -693,6 +693,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	}
 	ierr = H1_EdgeShapeFunctions_MBTRI(_edge_sense3_,_edge_order3_,&gNTRI[0],diffNTRI,_H1edgeN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	ierr = H1_EdgeShapeFunctions_MBTRI(_edge_sense4_,_edge_order4_,&gNTRI[0],diffNTRI,_H1edgeN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
+	for(int ee = 0;ee<3;ee++) {
+	  cblas_dscal(NBEDGE_H1(_edge_order4_[ee]),-1,_H1edgeN4_[ee],1);
+	}
 	//faces
 	int _face_order3_ = maxOrderFaceH1[siit3->side_number];
 	int _face_order4_ = maxOrderFaceH1[siit4->side_number];
@@ -704,6 +707,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	double *_faceN4_ = &(H1faceN[4][0]);
 	ierr = H1_FaceShapeFunctions_MBTRI(_face_order3_,&gNTRI[0],diffNTRI,_faceN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	ierr = H1_FaceShapeFunctions_MBTRI(_face_order4_,&gNTRI[0],diffNTRI,_faceN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
+	cblas_dscal(NBFACE_H1(_face_order4_),-1,_faceN4_,1);
       }
     }
     break;
@@ -834,10 +838,10 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	    }
 	    break;
 	    case MBTRI: {
-	      if(side_number == 3 || side_number == 4) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      if(side_number != 3 && side_number != 4) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTRI_dim;gg++) {
 		if(shape_by_gauss_pt!=NULL) {
-		  (*shape_by_gauss_pt)[gg] = &((H1elemN)[gg*NBVOLUME_H1(maxOrderElemH1)]);
+		  (*shape_by_gauss_pt)[gg] = &((H1faceN[side_number])[gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
 		}
 	      }
 	    }
@@ -1058,6 +1062,10 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
     case MBTET:
       g_dim = gNTET.size()/4;
       nb_Ns = 4;
+      break;
+    case MBPRISM:
+      g_dim = gNTRI.size()/3;
+      nb_Ns = 6;
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
