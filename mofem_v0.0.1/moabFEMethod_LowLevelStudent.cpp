@@ -144,6 +144,49 @@ PetscErrorCode MapDataTET(It &it,
   PetscFunctionReturn(0);
 }
 //
+template <typename It,typename M1,typename M2,typename UnaryOp>
+PetscErrorCode MapDataPRISM(It &it,
+  M1 &nodes,M2 &edges,M2 &faces,M2 &volume) {
+  PetscFunctionBegin;
+  ApproximationOrder max_order = it->get_max_order();
+  ApproximationRank max_rank = it->get_max_rank();
+  int side_number = it->side_number_ptr->side_number;
+  int nb_dofs_for_order;
+  const MoFEMField* field_ptr = it->get_MoFEMField_ptr();
+  const MoFEMEntity* ent_ptr = it->get_MoFEMEntity_ptr();
+  switch (it->get_ent_type()) {
+    case MBVERTEX:
+      assert(side_number>=0);
+      assert(side_number<6);
+      nb_dofs_for_order = 1;
+      nodes[field_ptr].resize(max_rank*6,-1);
+      (nodes[field_ptr])[side_number*max_rank + it->get_dof_rank()] =  UnaryOp()(&*it);
+      break;
+    case MBEDGE:
+      assert(side_number>=0);
+      assert(side_number<9);
+      nb_dofs_for_order = it->forder_edge(max_order);
+      edges[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
+      edges[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
+      break;
+    case MBTRI:
+      assert(side_number>=0);
+      assert(side_number<5);
+      nb_dofs_for_order = it->forder_face(max_order);
+      faces[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
+      faces[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
+      break;
+    case MBPRISM:
+      nb_dofs_for_order = it->forder_elem(max_order);
+      volume[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
+      volume[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  }
+  PetscFunctionReturn(0);
+}
+//
 template <typename T>
 PetscErrorCode SetMaxOrder(const T &miit,
   vector<int> *e,vector<int> *f,int *v) {
@@ -153,12 +196,14 @@ PetscErrorCode SetMaxOrder(const T &miit,
     break;
     case MBEDGE: {
       if(e == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      assert(e->size() > (unsigned int)miit->side_number_ptr->side_number);
       int &a = (*e)[miit->side_number_ptr->side_number];
       a = a < miit->get_max_order() ? miit->get_max_order() : a;
     }
     break;
     case MBTRI: {
       if(f == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      assert(f->size() > (unsigned int)miit->side_number_ptr->side_number);
       int &a = (*f)[miit->side_number_ptr->side_number];
       a = a < miit->get_max_order() ? miit->get_max_order() : a;
     }
@@ -231,6 +276,15 @@ PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
       maxOrderFaceHdiv.resize(4);
       maxOrderFaceHcurl.resize(4);
       break;
+    case MBPRISM:
+      // edge
+      maxOrderEdgeH1.resize(9);
+      maxOrderEdgeHdiv.resize(9);
+      // face
+      maxOrderFaceH1.resize(5);
+      maxOrderFaceHdiv.resize(5);
+      maxOrderFaceHcurl.resize(5);
+      break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
@@ -246,21 +300,29 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
     case MBTET: {
 	FENumeredDofMoFEMEntity_multiIndex::iterator miit = rows_dofs.begin();
 	for(;miit!=rows_dofs.end();miit++) {
-	  if(miit->get_space() == H1) {
-	    isH1 = true;
-	    ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
-	  }
-	  if(miit->get_space() == Hdiv) {
-	    isHdiv = true;
-	    ierr = SetMaxOrder(miit, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
-	  }
-	  if(miit->get_space() == Hcurl) {
-	    isHcurl = true;
-	    ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
-	  }
-	  if(miit->get_space() == L2) {
-	    ierr = SetMaxOrder(miit, NULL, NULL, &(maxOrderElemL2) ); CHKERRQ(ierr);
-	    isL2 = true;
+	  switch(miit->get_space()) {
+	    case H1: {
+	      isH1 = true;
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hdiv: {
+	      isHdiv = true;
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hcurl: {
+	      isHcurl = true;
+	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case L2: {
+	      ierr = SetMaxOrder(miit, NULL, NULL, &(maxOrderElemL2) ); CHKERRQ(ierr);
+	      isL2 = true;
+	    }
+	    break;
+	    default:
+	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
 	  }
 	  //PetscGlobIndices
 	  ierr = MapDataTET<
@@ -272,21 +334,29 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	}
 	miit = cols_dofs.begin();
 	for(;miit!=cols_dofs.end();miit++) {
-	  if(miit->get_space() == H1) {
-	    isH1 = true;
-	    ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
-	  }
-	  if(miit->get_space() == Hdiv) {
-	    isHdiv = true;
-	    ierr = SetMaxOrder(miit, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
-	  }
-	  if(miit->get_space() == Hcurl) {
-	    isHcurl = true;
-	    ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
-	  }
-	  if(miit->get_space() == L2) {
-	    ierr = SetMaxOrder(miit, NULL, NULL, &(maxOrderElemL2) ); CHKERRQ(ierr);
-	    isL2 = true;
+	  switch(miit->get_space()) {
+	    case H1: {
+	      isH1 = true;
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hdiv: {
+	      isHdiv = true;
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hcurl: {
+	      isHcurl = true;
+	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case L2: {
+	      ierr = SetMaxOrder(miit, NULL, NULL, &(maxOrderElemL2) ); CHKERRQ(ierr);
+	      isL2 = true;
+	    }
+	    break;
+	    default:
+	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
 	  }
 	  //PetscGlobIndices
 	  ierr = MapDataTET<
@@ -295,12 +365,47 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, col_nodesGlobIndices, col_edgesGlobIndices,
 	      col_facesGlobIndices, col_elemGlobIndices); CHKERRQ(ierr);
-
 	}
       }
       break;
     case MBPRISM: {
-      SETERRQ(PETSC_COMM_SELF,1,"Aaaaa.... not implemented yet");
+	FENumeredDofMoFEMEntity_multiIndex::iterator miit = rows_dofs.begin();
+	for(;miit!=rows_dofs.end();miit++) {
+	  switch(miit->get_space()) {
+	    case H1: {
+	      isH1 = true;
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    default:
+	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	  }
+	  MapDataPRISM<
+	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    GlobIndices_Type,GlobIndices_EntType,
+	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
+	      miit, row_nodesGlobIndices, row_edgesGlobIndices,
+	      row_facesGlobIndices, row_elemGlobIndices); CHKERRQ(ierr);
+	}
+	miit = cols_dofs.begin();
+	for(;miit!=cols_dofs.end();miit++) {
+	  switch(miit->get_space()) {
+	    case H1: {
+	      isH1 = true;
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    default:
+	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	  }
+	  MapDataPRISM<
+	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    GlobIndices_Type,GlobIndices_EntType,
+	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
+	      miit, col_nodesGlobIndices, col_edgesGlobIndices,
+	      col_facesGlobIndices, col_elemGlobIndices); CHKERRQ(ierr);
+	}
+	SETERRQ(PETSC_COMM_SELF,1,"Aaaaa.... not implemented yet");
     }
     break;
     default:

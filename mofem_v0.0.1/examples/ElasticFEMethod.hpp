@@ -26,7 +26,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     ElasticFEMethod(
       Interface& _moab,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      FEMethod_UpLevelStudent(_moab,1),Aij(_Aij),F(_F),
+      FEMethod_UpLevelStudent(_moab,1),Aij(_Aij),F(_F),Diagonal(PETSC_NULL),
       lambda(_lambda),mu(_mu),
       SideSet1(_SideSet1),SideSet2(_SideSet2) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -119,14 +119,16 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-      ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
+      if(Diagonal!=PETSC_NULL) {
+	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
+	ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
+      }
       ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = PetscGetTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-      ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       PetscFunctionReturn(0);
     }
@@ -331,10 +333,12 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  }
 	}
       }
-      if(DirihletBC.size()>0) {
-	DirihletBCDiagVal.resize(DirihletBC.size());
-	fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+      if(Diagonal!=PETSC_NULL) {
+	if(DirihletBC.size()>0) {
+	  DirihletBCDiagVal.resize(DirihletBC.size());
+	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
+	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+	}
       }
 
       PetscFunctionReturn(0);

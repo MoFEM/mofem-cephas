@@ -363,8 +363,25 @@ struct moabField {
     Interface& moab;
     FEMethod(Interface& _moab);
 
+    /** \brief function is run at the beginig of looop
+     *
+     * It is used to zeroing matrices and vectors, clalualtion of shape
+     * functions on reference element, preporocessing boundary conditions, etc.
+     */
     virtual PetscErrorCode preProcess();
+
+    /** \brief function is run for every finite element 
+     *
+     * It is used to calulate element local matrices and assembly. It can be
+     * used for post-processing.
+     */
     virtual PetscErrorCode operator()();
+
+    /** \brief function is run at the end of looop
+     *
+     * It is used to assembly matrices and vectors, calulating global varibles,
+     * f.e. total internal energy, ect.
+     */
     virtual PetscErrorCode postProcess();
 
     PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
@@ -398,7 +415,7 @@ struct moabField {
    * Thsis function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
    * problem. The particular methods exectuted on each element are given by
-   * class derived form FEMethod. At beginig of each loop user definded
+   * class derived form moabField::FEMethod. At beginig of each loop user definded
    * function (method)  preProcess() is called, for each element operator() is
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().

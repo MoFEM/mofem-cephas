@@ -1,0 +1,2 @@
+#example how to run
+mpirun -np 3 ./interface -my_file PeelTest.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -ksp_monitor 

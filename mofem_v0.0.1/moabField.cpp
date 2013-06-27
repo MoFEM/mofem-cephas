@@ -37,15 +37,17 @@ moabField::FEMethod::FEMethod(Interface& _moab): BasicMethod(), moab(_moab),
 
 PetscErrorCode moabField::FEMethod::preProcess() {
   PetscFunctionBegin;
+  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::FEMethod::postProcess() {
   PetscFunctionBegin;
+  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::FEMethod::operator()() {   
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::FEMethod::set_problem(const MoFEMProblem *_problem_ptr) {
@@ -111,15 +113,17 @@ PetscErrorCode moabField::BasicMethod::set_fes_data_multiIndex(const EntMoFEMFE_
 moabField::EntMethod::EntMethod(Interface& _moab): BasicMethod(), moab(_moab),problem_ptr(NULL),dof_ptr(NULL) {}
 PetscErrorCode moabField::EntMethod::preProcess() {
   PetscFunctionBegin;
+  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::EntMethod::postProcess() {
   PetscFunctionBegin;
+  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::EntMethod::operator()() {   
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::EntMethod::set_problem(const MoFEMProblem *_problem_ptr) {
