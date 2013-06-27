@@ -405,7 +405,6 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	      miit, col_nodesGlobIndices, col_edgesGlobIndices,
 	      col_facesGlobIndices, col_elemGlobIndices); CHKERRQ(ierr);
 	}
-	SETERRQ(PETSC_COMM_SELF,1,"Aaaaa.... not implemented yet");
     }
     break;
     default:
@@ -455,24 +454,54 @@ PetscErrorCode FEMethod_LowLevelStudent::DataOp() {
 	FEDofMoFEMEntity_multiIndex::iterator miit2 = data_dofs.begin();
 	if(miit2==data_dofs.end()) SETERRQ1(PETSC_COMM_SELF,1,"Aaaaaaa .... data_dofs size = %u",data_dofs.size());
 	for(;miit2!=data_dofs.end();miit2++) {
-	  if(miit2->get_space() == H1) {
-	    isH1 = true;
-	    ierr = SetMaxOrder(miit2, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
-	  }
-	  if(miit2->get_space() == Hdiv) {
-	    isHdiv = true;
-	    ierr = SetMaxOrder(miit2, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
-	  }
-	  if(miit2->get_space() == Hcurl) {
-	    isHcurl = true;
-	    ierr = SetMaxOrder(miit2, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
-	  }
-	  if(miit2->get_space() == L2) {
-	    ierr = SetMaxOrder(miit2, NULL, NULL, &(maxOrderElemL2) ); CHKERRQ(ierr);
-	    isL2 = true;
+	  switch(miit2->get_space()) {
+	    case H1: {
+	      isH1 = true;
+	      ierr = SetMaxOrder(miit2, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hdiv: {
+	      isHdiv = true;
+	      ierr = SetMaxOrder(miit2, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hcurl: {
+	      isHcurl = true;
+	      ierr = SetMaxOrder(miit2, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case L2: {
+	      ierr = SetMaxOrder(miit2, NULL, NULL, &(maxOrderElemL2) ); CHKERRQ(ierr);
+	      isL2 = true;
+	    }
+	    break;
+	    default:
+	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
 	  }
 	  //Data
 	  ierr = MapDataTET<
+	    FEDofMoFEMEntity_multiIndex::iterator, 
+	    Data_Type,Data_EntType,
+	    UnaryOP_FieldData<FEDofMoFEMEntity> >(
+	      miit2, data_nodes, data_edges, data_faces, data_elem); CHKERRQ(ierr);
+	}
+      }
+      break;
+    case MBPRISM: {
+	FEDofMoFEMEntity_multiIndex::iterator miit2 = data_dofs.begin();
+	if(miit2==data_dofs.end()) SETERRQ1(PETSC_COMM_SELF,1,"Aaaaaaa .... data_dofs size = %u",data_dofs.size());
+	for(;miit2!=data_dofs.end();miit2++) {
+	  switch(miit2->get_space()) {
+	    case H1: {
+	      isH1 = true;
+	      ierr = SetMaxOrder(miit2, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    default:
+	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	  }
+	  //Data
+	  ierr = MapDataPRISM<
 	    FEDofMoFEMEntity_multiIndex::iterator, 
 	    Data_Type,Data_EntType,
 	    UnaryOP_FieldData<FEDofMoFEMEntity> >(
