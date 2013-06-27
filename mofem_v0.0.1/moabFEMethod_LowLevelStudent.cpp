@@ -803,7 +803,53 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
     }
     break;
     case MBPRISM: {
-      SETERRQ(PETSC_COMM_SELF,1,"Aaaaa... not implemented yet");
+      if(shape_by_gauss_pt!=NULL) {
+	shape_by_gauss_pt->resize(gNTRI_dim,NULL);
+      }
+      if(diff_shape_by_gauss_pt!=NULL) {
+	SETERRQ(PETSC_COMM_SELF,1,"Aaaaa... not implemented yet");
+      }
+      int gg = 0;
+      switch (field_ptr->get_space()) {
+        case H1: {
+          switch (type) {
+	    case MBVERTEX: {
+	      if(side_number != -1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      for(;gg<gNTRI_dim;gg++) {
+		if(shape_by_gauss_pt!=NULL) {
+		  (*shape_by_gauss_pt)[gg] = &gNTRIonPRISM[6*gg];
+		}
+	      }
+	    }
+	    break;
+	    case MBEDGE: {
+	      if(side_number < 0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      if(side_number > 8) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      if(side_number > 2 && side_number < 6) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      for(;gg<gNTRI_dim;gg++) {
+		if(shape_by_gauss_pt!=NULL) {
+		  (*shape_by_gauss_pt)[gg] = &((H1edgeN[side_number])[gg*NBEDGE_H1(maxOrderEdgeH1[side_number])]);
+		}
+	      }
+	    }
+	    break;
+	    case MBTRI: {
+	      if(side_number == 3 || side_number == 4) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      for(;gg<gNTRI_dim;gg++) {
+		if(shape_by_gauss_pt!=NULL) {
+		  (*shape_by_gauss_pt)[gg] = &((H1elemN)[gg*NBVOLUME_H1(maxOrderElemH1)]);
+		}
+	      }
+	    }
+	    break;
+	    default:
+	      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	  }
+	}
+	break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
     }
     break;
     default:
@@ -818,6 +864,10 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
     case MBTET:
       g_dim = gNTET.size()/4;
       nb_Ns = 4;
+      break;
+    case MBPRISM:
+      g_dim = gNTRI.size()/3;
+      nb_Ns = 6;
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");

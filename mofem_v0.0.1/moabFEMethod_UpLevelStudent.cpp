@@ -77,21 +77,10 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gN
     ierr = DataOp(); CHKERRQ(ierr);
 
     ierr = ShapeFunctions_PRISM(_gNTRI_); CHKERRQ(ierr);
+    ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
 
-
-    /*EntityHandle Face3,Face4;
-    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
-    SideNumber_multiIndex::nth_index<1>::type::iterator siit3 = side_table.get<1>().find(boost::make_tuple(MBTRI,3));
-    SideNumber_multiIndex::nth_index<1>::type::iterator siit4 = side_table.get<1>().find(boost::make_tuple(MBTRI,4));
-    Face3 = siit3->ent;
-    Face4 = siit4->ent;*/
-
-    //Face3
-    //ierr = ShapeFunctions_TRI(Face3,_gNTRI_); CHKERRQ(ierr);
-   
 
     /*
-    ierr = ShapeFunctions(_gNTET_); CHKERRQ(ierr);
     ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
     ierr = DiffData_at_GaussPoints(); CHKERRQ(ierr);
     ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
