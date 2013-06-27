@@ -106,7 +106,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent {
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
       Range ref_nodes;
       rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBVERTEX,ref_nodes); CHKERR_PETSC(rval);

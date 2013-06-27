@@ -59,7 +59,7 @@ struct MyElasticFEMethod: public ElasticFEMethod {
 
   PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
 
       //Assembly Aij and F
@@ -169,7 +169,7 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
 
       ierr = OpStudentEnd(); CHKERRQ(ierr);

@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
       g_NTRI.resize(3*4);
       ShapeMBTRI_GAUSS(&g_NTRI[0],G_TRI_X4,G_TRI_Y4,4); 
@@ -419,7 +419,7 @@ int main(int argc, char *argv[]) {
     }
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = ParentData("FEAPPROX"); CHKERRQ(ierr);
       if(ParentMethod==NULL) SETERRQ(PETSC_COMM_SELF,1,"no parent element");
       if(ParentMethod->fe_ent_ptr==NULL) SETERRQ(PETSC_COMM_SELF,1,"no parent element");
@@ -542,7 +542,7 @@ int main(int argc, char *argv[]) {
     }
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
       Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find("H1FIELD_L2");
       if(diit==data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no H1FIELD L2 !!!");

@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
 
     virtual PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
       ostringstream ss;
 

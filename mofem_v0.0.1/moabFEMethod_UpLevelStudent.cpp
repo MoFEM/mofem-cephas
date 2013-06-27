@@ -31,7 +31,7 @@ FEMethod_UpLevelStudent::FEMethod_UpLevelStudent(Interface& _moab,int _verbose):
   rval = moab.tag_get_handle("Volume",1,MB_TYPE_DOUBLE,th_volume,MB_TAG_CREAT|MB_TAG_SPARSE,&def_V); CHKERR(rval);
 }
 FEMethod_UpLevelStudent::~FEMethod_UpLevelStudent() {}
-PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart(vector<double>& _gNTET_) {
+PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTET_) {
   PetscFunctionBegin;
     fe_ent_ptr = fe_ptr->fe_ptr;
     ierr = InitDataStructures(); CHKERRQ(ierr);

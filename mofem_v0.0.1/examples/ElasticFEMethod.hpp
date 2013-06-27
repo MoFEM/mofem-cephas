@@ -384,7 +384,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      ierr = OpStudentStart(g_NTET); CHKERRQ(ierr);
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
 
       //Assembly Aij and F
