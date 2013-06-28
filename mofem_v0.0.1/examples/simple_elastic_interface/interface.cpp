@@ -307,6 +307,79 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 
 };
 
+struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
+    PostProcCohesiveForces(Interface &_moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab) {};
+
+    vector<double> g_NTRI;
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
+      ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+      FEMethod_LowLevelStudent::preProcess();
+
+      if(init_ref) PetscFunctionReturn(0);
+      
+      double def_VAL[3] = {0,0,0};
+      // create TAG
+      rval = moab_post_proc.tag_get_handle("COHESIVE_FORCE_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+
+      double base_coords[] = {
+	//face3
+	0,0,0,
+	1,0,0,
+	0,1,0,
+	//face4
+	0,0,1,
+	1,0,1,
+	1,1,1 
+      };
+      EntityHandle nodes[6];
+      for(int nn = 0;nn<6;nn++) {
+	rval = moab_ref.create_vertex(&base_coords[3*nn],nodes[nn]); CHKERR_PETSC(rval);
+      }
+      EntityHandle prism;
+      rval = moab_ref.create_element(MBPRISM,nodes,6,prism); CHKERR_PETSC(rval);
+  
+      if(pcomm->rank()==0) {
+	moab_ref.write_file("debug.vtk","VTK",""); CHKERR_PETSC(rval);
+      }
+
+      //
+      moabField_Core core_ref(moab_ref);
+      moabField& mField_ref = core_ref;
+      ierr = mField_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+
+      for(int ll = 0;ll<max_level;ll++) {
+	PetscPrintf(PETSC_COMM_WORLD,"Refine Level %d\n",ll);
+	rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[ll]); CHKERR_PETSC(rval);
+	ierr = mField_ref.refine_get_ents(BitRefLevel().set(ll),meshset_level[ll]); CHKERRQ(ierr);
+	ierr = mField_ref.add_verices_in_the_middel_of_edges(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+	ierr = mField_ref.refine_PRISM(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+      }
+      rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[max_level]); CHKERR_PETSC(rval);
+      ierr = mField_ref.refine_get_ents(BitRefLevel().set(max_level),meshset_level[max_level]); CHKERRQ(ierr);
+
+      //
+      g_NTRI.resize(3*7);
+      ShapeMBTRI_GAUSS(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+
+
+      init_ref = true;
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+};
+
 ErrorCode rval;
 PetscErrorCode ierr;
 
@@ -420,9 +493,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
@@ -527,6 +600,14 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
+
+  PostProcCohesiveForces fe_post_proc_prisms(moab);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  if(pcomm->rank()==0) {
+    //rval = fe_post_proc_prisms.moab_post_proc.write_file("out_post_proc_prisms.vtk","VTK",""); CHKERR_PETSC(rval);
+  }
+
 
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

@@ -68,6 +68,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent {
 	0,1,0,
 	0,0,1 };
       
+      //
       EntityHandle nodes[4];
       for(int nn = 0;nn<4;nn++) {
 	rval = moab_ref.create_vertex(&base_coords[3*nn],nodes[nn]); CHKERR_PETSC(rval);
@@ -75,6 +76,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent {
       EntityHandle tet;
       rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
 
+      //
       moabField_Core core_ref(moab_ref);
       moabField& mField_ref = core_ref;
       ierr = mField_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);

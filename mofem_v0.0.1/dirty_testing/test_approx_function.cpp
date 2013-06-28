@@ -458,7 +458,7 @@ int main(int argc, char *argv[]) {
       ShapeMBTET(&ParentMethod_g_NTET[0],&G_X[0],&G_Y[0],&G_Z[0],g_dim);
       ierr = ParentMethod->InitDataStructures(); CHKERRQ(ierr);
       ierr = ParentMethod->DataOp(); CHKERRQ(ierr);
-      ierr = ParentMethod->ShapeFunctions(ParentMethod_g_NTET);
+      ierr = ParentMethod->ShapeFunctions_TET(ParentMethod_g_NTET);
       ierr = ParentMethod->Data_at_GaussPoints(); CHKERRQ(ierr);
       Data_at_Gauss_pt &parent_data_at_gauss_pt = ParentMethod->data_at_gauss_pt;
       Data_at_Gauss_pt::iterator diit = parent_data_at_gauss_pt.find("H1FIELD");
