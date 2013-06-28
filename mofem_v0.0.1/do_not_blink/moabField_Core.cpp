@@ -1836,9 +1836,27 @@ PetscErrorCode moabField_Core::add_verices_in_the_middel_of_edges(const EntityHa
   Range edges;
   rval = moab.get_entities_by_type(meshset,MBEDGE,edges,recursive);  CHKERR_PETSC(rval);
   if(edges.empty()) {
-    Range ents;
-    rval = moab.get_entities_by_dimension(meshset,3,ents,recursive); CHKERR_PETSC(rval);
-    rval = moab.get_adjacencies(ents,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+    Range tets;
+    rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(tets,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+    Range prisms;
+    rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,recursive); CHKERR_PETSC(rval);
+    for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
+      const EntityHandle* conn; 
+      int num_nodes; 
+      rval = moab.get_connectivity(*pit,conn,num_nodes,true);  CHKERR_PETSC(rval);
+      assert(num_nodes==6);
+      //
+      rval = moab.get_adjacencies(&conn[0],2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(&conn[1],2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+      EntityHandle conn_edge2[] = { conn[2], conn[0] };
+      rval = moab.get_adjacencies(conn_edge2,2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+      //
+      rval = moab.get_adjacencies(&conn[3],2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(&conn[4],2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+      EntityHandle conn_edge8[] = { conn[5], conn[3] };
+      rval = moab.get_adjacencies(conn_edge8,2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+    }
   }
   // refine edges on the other side of the prism
   typedef AdjBasicMoFEMEntity_multiIndex::index<MoABEnt_mi_tag2>::type AdjBasicMoFEMEntity_by_adj;
@@ -2928,7 +2946,7 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
       case MBTRI: {
 	  rval = moab.get_adjacencies(new_conn,3,2,true,new_ent); CHKERR_PETSC(rval);
 	  if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_ent %u\n",new_ent.size());
-	  if(add_iterfece_entities&&(nb_new_conn>1)) {
+	  if(add_iterfece_entities) {
 	    EntityHandle prism_conn[6] = { conn[0],conn[1],conn[2], new_conn[0],new_conn[1],new_conn[2] };
 	    //cerr << conn[0] << " " << conn[1] << " " << conn[2] << " ::: " << new_conn[0] << " " << new_conn[1] << " " << new_conn[2] << endl;
 	    EntityHandle prism = no_handle;
