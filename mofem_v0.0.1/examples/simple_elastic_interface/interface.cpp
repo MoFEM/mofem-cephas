@@ -432,7 +432,7 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  const double alpha = 1e1;
+  const double alpha = 0.001;
   MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3);
   InterfaceFEMethod IntMyFE(moab,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
 
