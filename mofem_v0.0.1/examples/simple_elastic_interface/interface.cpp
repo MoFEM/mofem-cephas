@@ -311,6 +311,8 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
     PostProcCohesiveForces(Interface &_moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab) {};
 
     vector<double> g_NTRI;
+    Range nodes_on_face3;
+    Range nodes_on_face4;
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -324,6 +326,7 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       double def_VAL[3] = {0,0,0};
       // create TAG
       rval = moab_post_proc.tag_get_handle("COHESIVE_FORCE_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+      rval = moab_post_proc.tag_get_handle("DISPLACEMENTS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
 
       double base_coords[] = {
 	//face3
@@ -367,10 +370,43 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       }
 
       //
-      std::vector<double> ref_coords;
-      rval = moab_ref.get_vertex_coordinates(ref_coords); CHKERR_PETSC(rval);
-      g_NTRI.resize(3*ref_coords.size()/3);
-      ShapeMBTRI(&g_NTRI[0],&ref_coords[0],&ref_coords[ref_coords.size()/3],ref_coords.size()/3);
+      Range ref_nodes;
+      rval = moab_ref.get_entities_by_type(0,MBVERTEX,ref_nodes); CHKERR_PETSC(rval);
+      std::vector<double> ref_coords(3*ref_nodes.size());
+      rval = moab_ref.get_coords(ref_nodes,&ref_coords[0]); CHKERR_PETSC(rval);
+      std::vector<double> ref_coordsf3(2*ref_nodes.size()/2);
+      std::vector<double> ref_coordsf4(2*ref_nodes.size()/2);
+      int nnn = 0,mmm = 0;
+      for(unsigned int nn = 0;nn<ref_nodes.size();nn++) {
+	if(ref_coords[3*nn+2]>0) {
+	  ref_coordsf4[mmm] = ref_coords[3*nn+0];
+	  mmm++;
+	  nodes_on_face4.insert(ref_nodes[nn]);
+	} else {
+	  ref_coordsf3[nnn] = ref_coords[3*nn+0];
+	  nnn++;
+	  nodes_on_face3.insert(ref_nodes[nn]);
+	}
+      }
+      assert(nnn == mmm);
+      nnn = 0; mmm = 0;
+      for(unsigned int nn = 0;nn<ref_nodes.size();nn++) {
+	if(ref_coords[3*nn+2]>0) {
+	  ref_coordsf4[nodes_on_face3.size()+mmm] = ref_coords[3*nn+1];
+	  mmm++;
+	} else {
+	  ref_coordsf3[nodes_on_face3.size()+nnn] = ref_coords[3*nn+1];
+	  nnn++;
+	}
+      }
+      assert(nnn == mmm);
+
+      assert(nodes_on_face3.size() == nodes_on_face4.size());
+      g_NTRI.resize(6*nodes_on_face3.size());
+      ShapeMBTRI(&g_NTRI[0],&ref_coordsf3[0],&ref_coordsf3[nodes_on_face3.size()],nodes_on_face3.size());
+      ShapeMBTRI(&g_NTRI[3*nodes_on_face3.size()],&ref_coordsf4[0],&ref_coordsf4[nodes_on_face4.size()],nodes_on_face4.size());
+
+      //cerr << ref_coords_z0.size() << " " << ref_nodes.size() << " " << g_NTRI.size() << endl;
 
       init_ref = true;
 
@@ -381,14 +417,69 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       PetscFunctionBegin;
       ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
 
-      //Range ref_nodes;
-      //rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBVERTEX,ref_nodes); CHKERR_PETSC(rval);
-      //if(3*ref_nodes.size()!=g_NTRI.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      //map<EntityHandle,EntityHandle> node_map;
+      //cerr << nodes_on_face3.size() << " " << g_NTRI.size() << " " << coords_at_Gauss_nodes.size() << endl;
+      if(6*nodes_on_face3.size()!=g_NTRI.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+
+      coords_at_Gauss_nodes.resize(2*nodes_on_face3.size());
+      for(unsigned int gg = 0;gg<nodes_on_face3.size();gg++) {
+	coords_at_Gauss_nodes[gg].resize(3);
+	coords_at_Gauss_nodes[nodes_on_face3.size()+gg].resize(3);
+	for(int dd = 0;dd<3;dd++) {
+	  (coords_at_Gauss_nodes[gg])[dd] = cblas_ddot(3,&coords_face3[dd],3,&get_gNTRI()[gg*3],1);
+	  (coords_at_Gauss_nodes[nodes_on_face3.size()+gg])[dd] = cblas_ddot(3,&coords_face4[dd],3,&get_gNTRI()[3*nodes_on_face3.size()+gg*3],1);
+	}
+      }
+
+      map<EntityHandle,EntityHandle> node_map;
+      Range::iterator nit = nodes_on_face3.begin();
+      for(int nn = 0;nit!=nodes_on_face3.end();nit++,nn++) {
+	EntityHandle &node = node_map[*nit];
+	rval = moab_post_proc.create_vertex(&(coords_at_Gauss_nodes[nn]).data()[0],node); CHKERR_PETSC(rval);
+      }
+      nit = nodes_on_face4.begin();
+      for(int nn = 0;nit!=nodes_on_face4.end();nit++,nn++) {
+	EntityHandle &node = node_map[*nit];
+	rval = moab_post_proc.create_vertex(&(coords_at_Gauss_nodes[nodes_on_face3.size()+nn]).data()[0],node); CHKERR_PETSC(rval);
+      }
+
+      Range ref_prisms;
+      rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBPRISM,ref_prisms); CHKERR_PETSC(rval);
+      Range::iterator pit = ref_prisms.begin();
+      for(;pit!=ref_prisms.end();pit++) {
+	const EntityHandle *conn_ref;
+        int num_nodes;
+	rval = moab_ref.get_connectivity(*pit,conn_ref,num_nodes,true); CHKERR_PETSC(rval);
+	assert(num_nodes==6);
+	EntityHandle conn_post_proc[num_nodes];
+	for(int nn = 0;nn<num_nodes;nn++) {
+	  map<EntityHandle,EntityHandle>::iterator mit = node_map.find(conn_ref[nn]);
+	  assert(mit!=node_map.end());
+	  conn_post_proc[nn] = node_map[conn_ref[nn]];
+	}
+	EntityHandle ref_prism;
+	rval = moab_post_proc.create_element(MBPRISM,conn_post_proc,6,ref_prism); CHKERR_PETSC(rval);
+      }
+
 
 
       PetscFunctionReturn(0);
     }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      ierr = PetscGetTime(&v2); CHKERRQ(ierr);
+      ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+      ParallelComm* pcomm_post_proc = ParallelComm::get_pcomm(&moab_post_proc,MYPCOMM_INDEX);
+      if(pcomm_post_proc == NULL) pcomm_post_proc =  new ParallelComm(&moab_post_proc,PETSC_COMM_WORLD);
+      for(unsigned int rr = 1; rr<pcomm_post_proc->size();rr++) {
+	Range prisms;
+	rval = moab_post_proc.get_entities_by_type(0,MBPRISM,prisms); CHKERR_PETSC(rval);
+	rval = pcomm_post_proc->broadcast_entities(rr,prisms); CHKERR(rval);
+      }
+      PetscFunctionReturn(0);
+    }
+
 
 };
 
@@ -617,7 +708,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
-    //rval = fe_post_proc_prisms.moab_post_proc.write_file("out_post_proc_prisms.vtk","VTK",""); CHKERR_PETSC(rval);
+    rval = fe_post_proc_prisms.moab_post_proc.write_file("out_post_proc_prisms.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
 
