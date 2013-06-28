@@ -50,30 +50,35 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
   double area3,area4;
   double coords_face3[9];
   double coords_face4[9];
-  double normal3[3],tangent1[3],tangent2[3];
+  double normal3[3];
   double normal4[3];
   EntityHandle conn_face3[3];
   EntityHandle conn_face4[3];
-  ublas::matrix<double> R;
 
   FEMethod_UpLevelStudent(Interface& _moab,int verbose = 0);
   ~FEMethod_UpLevelStudent();
 
-  /**
-   * \brief Initate data structures for running FE methods
+  /** \brief Initate data structures for running FE methods
    *
-   * It has to be run at the begining of the function
+   * It has to be run at the begining of the function when tetrahedral element
+   * is evaluated.
    *
-   * \param _gNTET_ vector of shape of tetrahedral functions evaluated at Gauss points
+   * \param _gNTET_ vector of shape of tetrahedral functions evaluated at Gauss
+   * points
    */
   PetscErrorCode OpStudentStart_TET(vector<double>& _gNTET_);
 
-  /**
-   * \brief Initate data structures for running FE methods
+  /** \brief Initate data structures for running FE methods
    *
-   * It has to be run at the begining of the function
+   * It has to be run at the begining of the function when Interface PRISM
+   * element is evaluated. The matrix element shape functions are calulated in
+   * the form that degrees of shepe functon on one face (face4), have negative
+   * value comparing to oposite face. For example 
+   * gap = ShapeN_FunForPrism * nodal_displacements.
    *
-   * \param _gNTRI_ vector of shape of tetrahedral functions evaluated at Gauss points
+   *
+   * \param _gNTRI_ vector of shape of tetrahedral functions evaluated at Gauss
+   * points
    */
   PetscErrorCode OpStudentStart_PRISM(vector<double>& _gNTRI_);
 

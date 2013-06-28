@@ -127,6 +127,8 @@ struct MyElasticFEMethod: public ElasticFEMethod {
 struct InterfaceFEMethod: public MyElasticFEMethod {
 
   double YoungModulus; 
+  ublas::matrix<double> R;
+  double tangent1[3],tangent2[3];
 
   InterfaceFEMethod(
       Interface& _moab,Mat &_Aij,Vec& _F,double _YoungModulus,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
@@ -164,85 +166,118 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
 
-      ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
-      for(int ii = 0;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
-      ublas::matrix<double> Dglob = prod( Dloc, R );
-      Dglob = prod( trans(R), Dglob );
+    //Rotation matrix
+    bzero(tangent1,3*sizeof(double));
+    bzero(tangent2,3*sizeof(double));
+    int ii = 0;
+    for(; ii<3; ii++) {
+	tangent1[0] += coords_face3[3*ii + 0]*diffNTRI[2*ii+0];
+	tangent1[1] += coords_face3[3*ii + 1]*diffNTRI[2*ii+0];
+	tangent1[2] += coords_face3[3*ii + 2]*diffNTRI[2*ii+0];
+	tangent2[0] += coords_face3[3*ii + 0]*diffNTRI[2*ii+1];
+	tangent2[1] += coords_face3[3*ii + 1]*diffNTRI[2*ii+1];
+	tangent2[2] += coords_face3[3*ii + 2]*diffNTRI[2*ii+1];
+    }
+    R = ublas::zero_matrix<double>(3,3);
+    ublas::matrix_row<ublas::matrix<double> > R_normal(R,0);
+    R_normal[0] = normal3[0];
+    R_normal[1] = normal3[1];
+    R_normal[2] = normal3[2];
+    R_normal /= area3;
+    ublas::matrix_row<ublas::matrix<double> > R_tangent1(R,1);
+    R_tangent1[0] = tangent1[0];
+    R_tangent1[1] = tangent1[1];
+    R_tangent1[2] = tangent1[2];
+    double nrm1 = cblas_dnrm2(3,tangent1,1);
+    R_tangent1 /= nrm1;
+    ublas::matrix_row<ublas::matrix<double> > R_tangent2(R,2);
+    R_tangent2[0] = tangent2[0];
+    R_tangent2[1] = tangent2[1];
+    R_tangent2[2] = tangent2[2];
+    double nrm2 = cblas_dnrm2(3,tangent2,1);
+    R_tangent2 /= nrm2;
+    //cerr << R << endl;
 
-      //rows
-      RowGlob.resize(1+6+2);
-      rowNMatrices.resize(1+6+2);
-      row_mat = 0;
-      ierr = GetRowIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
-      ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
-      row_mat++;
-      for(int ee = 0;ee<3;ee++) { //edges matrices
+    ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
+    ii = 0;
+    for(;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
+    ublas::matrix<double> Dglob = prod( Dloc, R );
+    Dglob = prod( trans(R), Dglob );
+
+    //rows
+    RowGlob.resize(1+6+2);
+    rowNMatrices.resize(1+6+2);
+    row_mat = 0;
+    ierr = GetRowIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
+    ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
+    row_mat++;
+    for(int ee = 0;ee<3;ee++) { //edges matrices
 	ierr = GetRowIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
 	  row_mat++;
 	}
-      }
-      for(int ee = 0;ee<3;ee++) { //edges matrices
+    }
+    for(int ee = 0;ee<3;ee++) { //edges matrices
 	ierr = GetRowIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee+6); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee+6); CHKERRQ(ierr);
 	  row_mat++;
 	}
-      }
-      ierr = GetRowIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],3); CHKERRQ(ierr);
-      if(RowGlob[row_mat].size()!=0) {
+    }
+    ierr = GetRowIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],3); CHKERRQ(ierr);
+    if(RowGlob[row_mat].size()!=0) {
 	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],3); CHKERRQ(ierr);
 	row_mat++;
-      }
-      ierr = GetRowIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],4); CHKERRQ(ierr);
-      if(RowGlob[row_mat].size()!=0) {
+    }
+    ierr = GetRowIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],4); CHKERRQ(ierr);
+    if(RowGlob[row_mat].size()!=0) {
 	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],4); CHKERRQ(ierr);
 	row_mat++;
-      }
-      //cols
-      ColGlob.resize(1+6+2);
-      colNMatrices.resize(1+6+2);
-      col_mat = 0;
-      ierr = GetColIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
-      ierr = GetGaussColNMatrix("DISPLACEMENT",colNMatrices[col_mat]); CHKERRQ(ierr);
-      col_mat++;
-      for(int ee = 0;ee<3;ee++) { //edges matrices
+    }
+    //cols
+    ColGlob.resize(1+6+2);
+    colNMatrices.resize(1+6+2);
+    col_mat = 0;
+    ierr = GetColIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
+    ierr = GetGaussColNMatrix("DISPLACEMENT",colNMatrices[col_mat]); CHKERRQ(ierr);
+    col_mat++;
+    for(int ee = 0;ee<3;ee++) { //edges matrices
 	ierr = GetColIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
 	  col_mat++;
 	}
-      }
-      for(int ee = 0;ee<3;ee++) { //edges matrices
+    }
+    for(int ee = 0;ee<3;ee++) { //edges matrices
 	ierr = GetColIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee+6); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee+6); CHKERRQ(ierr);
 	  col_mat++;
 	}
-      }
-      ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],3); CHKERRQ(ierr);
-      if(ColGlob[col_mat].size()!=0) {
+    }
+    ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],3); CHKERRQ(ierr);
+    if(ColGlob[col_mat].size()!=0) {
 	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],3); CHKERRQ(ierr);
 	col_mat++;
-      }
-      ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],4); CHKERRQ(ierr);
-      if(ColGlob[col_mat].size()!=0) {
+    }
+    ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],4); CHKERRQ(ierr);
+    if(ColGlob[col_mat].size()!=0) {
 	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],4); CHKERRQ(ierr);
 	col_mat++;
-      }
-     
-      //Apply Dirihlet BC
-      ApplyDirihletBC();
+    }
+   
+    //Apply Dirihlet BC
+    ApplyDirihletBC();
 
-      //Assemble interface
-      ublas::matrix<FieldData> K[row_mat][col_mat];
-      int g_dim = g_NTRI.size()/3;
-      for(int rr = 0;rr<row_mat;rr++) {
+    //Assemble interface
+    int g_dim = g_NTRI.size()/3;
+    ublas::matrix<FieldData> K[row_mat][col_mat];
+    for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = 0;cc<col_mat;cc++) {
 	  for(int gg = 0;gg<g_dim;gg++) {
 	    ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
@@ -263,11 +298,11 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
-      }
-
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
     }
+
+    ierr = OpStudentEnd(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
 
 };

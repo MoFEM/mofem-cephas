@@ -106,38 +106,6 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gN
   ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face4,normal4); CHKERRQ(ierr);
   area4 = cblas_dnrm2(3,normal4,1);
 
-  bzero(tangent1,3*sizeof(double));
-  bzero(tangent2,3*sizeof(double));
-  int ii = 0;
-  for(; ii<3; ii++) {
-    tangent1[0] += coords_face3[3*ii + 0]*diffNTRI[2*ii+0];
-    tangent1[1] += coords_face3[3*ii + 1]*diffNTRI[2*ii+0];
-    tangent1[2] += coords_face3[3*ii + 2]*diffNTRI[2*ii+0];
-    tangent2[0] += coords_face3[3*ii + 0]*diffNTRI[2*ii+1];
-    tangent2[1] += coords_face3[3*ii + 1]*diffNTRI[2*ii+1];
-    tangent2[2] += coords_face3[3*ii + 2]*diffNTRI[2*ii+1];
-  }
-  R = ublas::zero_matrix<double>(3,3);
-  ublas::matrix_row<ublas::matrix<double> > R_normal(R,0);
-  R_normal[0] = normal3[0];
-  R_normal[1] = normal3[1];
-  R_normal[2] = normal3[2];
-  R_normal /= area3;
-  ublas::matrix_row<ublas::matrix<double> > R_tangent1(R,1);
-  R_tangent1[0] = tangent1[0];
-  R_tangent1[1] = tangent1[1];
-  R_tangent1[2] = tangent1[2];
-  double nrm1 = cblas_dnrm2(3,tangent1,1);
-  R_tangent1 /= nrm1;
-  ublas::matrix_row<ublas::matrix<double> > R_tangent2(R,2);
-  R_tangent2[0] = tangent2[0];
-  R_tangent2[1] = tangent2[1];
-  R_tangent2[2] = tangent2[2];
-  double nrm2 = cblas_dnrm2(3,tangent2,1);
-  R_tangent2 /= nrm2;
-
-  //cerr << R << endl;
-
   /*copy(&normal3[0],&normal3[3],ostream_iterator<double>(cerr," "));
   cerr << " -->  ";
   copy(&normal4[0],&normal4[3],ostream_iterator<double>(cerr," "));
