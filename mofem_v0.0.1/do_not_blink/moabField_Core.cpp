@@ -1839,23 +1839,43 @@ PetscErrorCode moabField_Core::add_verices_in_the_middel_of_edges(const EntityHa
     Range tets;
     rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERR_PETSC(rval);
     rval = moab.get_adjacencies(tets,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
-    Range prisms;
-    rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,recursive); CHKERR_PETSC(rval);
-    for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
-      const EntityHandle* conn; 
-      int num_nodes; 
-      rval = moab.get_connectivity(*pit,conn,num_nodes,true);  CHKERR_PETSC(rval);
-      assert(num_nodes==6);
-      //
-      rval = moab.get_adjacencies(&conn[0],2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(&conn[1],2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
-      EntityHandle conn_edge2[] = { conn[2], conn[0] };
-      rval = moab.get_adjacencies(conn_edge2,2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
-      //
-      rval = moab.get_adjacencies(&conn[3],2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(&conn[4],2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
-      EntityHandle conn_edge8[] = { conn[5], conn[3] };
-      rval = moab.get_adjacencies(conn_edge8,2,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+    if(tets.empty()) {
+      Range prisms;
+      rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,recursive); CHKERR_PETSC(rval);
+      for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
+        const EntityHandle* conn; 
+        int num_nodes; 
+        rval = moab.get_connectivity(*pit,conn,num_nodes,true);  CHKERR_PETSC(rval);
+        assert(num_nodes==6);
+        //
+        Range edge;
+        rval = moab.get_adjacencies(&conn[0],2,1,true,edge); CHKERR_PETSC(rval);
+        assert(edge.size()==1);
+        edges.insert(edge[0]);
+        edge.clear();
+        rval = moab.get_adjacencies(&conn[1],2,1,true,edge); CHKERR_PETSC(rval);
+        assert(edge.size()==1);
+        edges.insert(edge[0]);
+        EntityHandle conn_edge2[] = { conn[2], conn[0] };
+        edge.clear();
+        rval = moab.get_adjacencies(conn_edge2,2,1,true,edge); CHKERR_PETSC(rval);
+        assert(edge.size()==1);
+        edges.insert(edge[0]);
+        //
+        edge.clear();
+        rval = moab.get_adjacencies(&conn[3],2,1,true,edge); CHKERR_PETSC(rval);
+        assert(edge.size()==1);
+        edges.insert(edge[0]);
+        edge.clear();
+        rval = moab.get_adjacencies(&conn[4],2,1,true,edge); CHKERR_PETSC(rval);
+        assert(edge.size()==1);
+        edges.insert(edge[0]);
+        EntityHandle conn_edge8[] = { conn[5], conn[3] };
+        edge.clear();
+        rval = moab.get_adjacencies(conn_edge8,2,1,true,edge); CHKERR_PETSC(rval);
+        assert(edge.size()==1);
+        edges.insert(edge[0]);
+      }
     }
   }
   // refine edges on the other side of the prism

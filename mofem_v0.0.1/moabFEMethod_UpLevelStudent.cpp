@@ -111,6 +111,20 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gN
   copy(&normal4[0],&normal4[3],ostream_iterator<double>(cerr," "));
   cerr << " : " << cblas_ddot(3,normal3,1,normal4,1)/(area3*area4) <<  endl;*/
 
+  const int g_dim = get_dim_gNTET();
+  coords_at_Gauss_nodes.resize(2*g_dim);
+  for(int gg = 0;gg<g_dim;gg++) {
+    coords_at_Gauss_nodes[gg].resize(3);
+    for(int dd = 0;dd<3;dd++) {
+      (coords_at_Gauss_nodes[gg])[0] = cblas_ddot(3,&coords_face3[0],3,&get_gNTRI()[gg*3],1);
+      (coords_at_Gauss_nodes[gg])[1] = cblas_ddot(3,&coords_face3[1],3,&get_gNTRI()[gg*3],1);
+      (coords_at_Gauss_nodes[gg])[2] = cblas_ddot(3,&coords_face3[2],3,&get_gNTRI()[gg*3],1);
+      (coords_at_Gauss_nodes[g_dim+gg])[0] = cblas_ddot(3,&coords_face4[0],3,&get_gNTRI()[gg*3],1);
+      (coords_at_Gauss_nodes[g_dim+gg])[1] = cblas_ddot(3,&coords_face4[1],3,&get_gNTRI()[gg*3],1);
+      (coords_at_Gauss_nodes[g_dim+gg])[2] = cblas_ddot(3,&coords_face4[2],3,&get_gNTRI()[gg*3],1);
+    }
+  }
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_UpLevelStudent::OpStudentEnd() {

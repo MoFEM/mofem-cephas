@@ -333,7 +333,7 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 	//face4
 	0,0,1,
 	1,0,1,
-	1,1,1 
+	0,1,1 
       };
       EntityHandle nodes[6];
       for(int nn = 0;nn<6;nn++) {
@@ -341,11 +341,12 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       }
       EntityHandle prism;
       rval = moab_ref.create_element(MBPRISM,nodes,6,prism); CHKERR_PETSC(rval);
+      //create faces using get_adjacencies
+      Range ref_faces;
+      rval = moab_ref.get_adjacencies(&nodes[0],3,2,true,ref_faces,Interface::UNION); CHKERR_PETSC(rval);
+      Range faces;
+      rval = moab_ref.get_adjacencies(&nodes[3],3,2,true,ref_faces,Interface::UNION); CHKERR_PETSC(rval);
   
-      if(pcomm->rank()==0) {
-	moab_ref.write_file("debug.vtk","VTK",""); CHKERR_PETSC(rval);
-      }
-
       //
       moabField_Core core_ref(moab_ref);
       moabField& mField_ref = core_ref;
@@ -361,10 +362,15 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[max_level]); CHKERR_PETSC(rval);
       ierr = mField_ref.refine_get_ents(BitRefLevel().set(max_level),meshset_level[max_level]); CHKERRQ(ierr);
 
-      //
-      g_NTRI.resize(3*7);
-      ShapeMBTRI_GAUSS(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+      if(pcomm->rank()==0) {
+	moab_ref.write_file("debug.vtk","VTK",""); CHKERR_PETSC(rval);
+      }
 
+      //
+      std::vector<double> ref_coords;
+      rval = moab_ref.get_vertex_coordinates(ref_coords); CHKERR_PETSC(rval);
+      g_NTRI.resize(3*ref_coords.size()/3);
+      ShapeMBTRI_GAUSS(&g_NTRI[0],&ref_coords[0],&ref_coords[ref_coords.size()/3],&ref_coords[2*ref_coords.size()/3],ref_coords.size()/3);
 
       init_ref = true;
 
@@ -374,6 +380,12 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
+
+      //Range ref_nodes;
+      //rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBVERTEX,ref_nodes); CHKERR_PETSC(rval);
+      //if(3*ref_nodes.size()!=g_NTRI.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      //map<EntityHandle,EntityHandle> node_map;
+
 
       PetscFunctionReturn(0);
     }
