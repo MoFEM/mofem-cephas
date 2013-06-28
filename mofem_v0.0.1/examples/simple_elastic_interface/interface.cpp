@@ -83,7 +83,7 @@ struct MyElasticFEMethod: public ElasticFEMethod {
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
     g_NTRI.resize(3*7);
-    ShapeMBTRI_GAUSS(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
     // See FEAP - - A Finite Element Analysis Program
     D_lambda = ublas::zero_matrix<FieldData>(6,6);
     for(int rr = 0;rr<3;rr++) {
@@ -145,7 +145,7 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
     g_NTRI.resize(3*7);
-    ShapeMBTRI_GAUSS(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
 
     PetscFunctionReturn(0);
   }
@@ -370,7 +370,7 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       std::vector<double> ref_coords;
       rval = moab_ref.get_vertex_coordinates(ref_coords); CHKERR_PETSC(rval);
       g_NTRI.resize(3*ref_coords.size()/3);
-      ShapeMBTRI_GAUSS(&g_NTRI[0],&ref_coords[0],&ref_coords[ref_coords.size()/3],&ref_coords[2*ref_coords.size()/3],ref_coords.size()/3);
+      ShapeMBTRI(&g_NTRI[0],&ref_coords[0],&ref_coords[ref_coords.size()/3],ref_coords.size()/3);
 
       init_ref = true;
 

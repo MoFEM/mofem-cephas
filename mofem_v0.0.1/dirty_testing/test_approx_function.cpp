@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
       g_NTRI.resize(3*4);
-      ShapeMBTRI_GAUSS(&g_NTRI[0],G_TRI_X4,G_TRI_Y4,4); 
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X4,G_TRI_Y4,4); 
 
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
       SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));

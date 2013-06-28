@@ -90,7 +90,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
       g_NTRI.resize(3*7);
-      ShapeMBTRI_GAUSS(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
       ierr = VecZeroEntries(F); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

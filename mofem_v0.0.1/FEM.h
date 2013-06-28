@@ -57,7 +57,7 @@ void print_mat_complex(__CLPK_doublecomplex *M,int m,int n);
 /// \param X array of Guass X coordinates 
 /// \param X array of Guass Y coordinates 
 /// \param G_DIM number of Gauss points 
-void ShapeMBTRI_GAUSS(double *N,const double *X,const double *Y,const int G_DIM);
+void ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM);
 /// calulate direvatives of shape functions
 PetscErrorCode ShapeDiffMBTRI(double *diffN);
 /// calulate face nornam
