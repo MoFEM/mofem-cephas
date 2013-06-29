@@ -313,6 +313,9 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
     vector<double> g_NTRI;
     vector<EntityHandle> nodes_on_face3;
     vector<EntityHandle> nodes_on_face4;
+  
+    Tag th_cohesive_force;
+    Tag th_gap;
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -325,7 +328,8 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       
       double def_VAL[3] = {0,0,0};
       // create TAG
-      rval = moab_post_proc.tag_get_handle("COHESIVE_FORCE_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+      rval = moab_post_proc.tag_get_handle("COHESIVE_FORCE_VAL",3,MB_TYPE_DOUBLE,th_cohesive_force,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+      rval = moab_post_proc.tag_get_handle("GAP_VAL",3,MB_TYPE_DOUBLE,th_gap,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
       rval = moab_post_proc.tag_get_handle("DISPLACEMENTS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
 
       double base_coords[] = {
@@ -462,20 +466,32 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 
       //face3
       for(unsigned int gg = 0;gg<nodes_on_face3.size();gg++) {
+	double *nodeNTRI = &g_NTRI[gg*3];
+	EntityHandle node = node_map[nodes_on_face3[gg]];
+	//gap
+	double gap[] = {0,0,0};
+	rval = moab_post_proc.tag_set_data(th_gap,&node,1,gap); CHKERR_PETSC(rval);
+	double *gap_ptr;
+	rval = moab_post_proc.tag_get_by_ptr(th_gap,&node,1,(const void **)&gap_ptr); CHKERR_PETSC(rval);
+	//disp
+	double disp[] = {0,0,0};
+	rval = moab_post_proc.tag_set_data(th_disp,&node,1,disp); CHKERR_PETSC(rval);
+	double *disp_ptr;
+	rval = moab_post_proc.tag_get_by_ptr(th_disp,&node,1,(const void **)&disp_ptr); CHKERR_PETSC(rval);
 	//nodes
 	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
 	  dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,0));
 	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
 	  hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,2));
-	double *nodeNTRI = &g_NTRI[gg*3];
-	EntityHandle node = node_map[nodes_on_face3[gg]];
-	double disp[] = {0,0,0};
-	rval = moab_post_proc.tag_set_data(th_disp,&node,1,disp); CHKERR_PETSC(rval);
-	double *disp_ptr;
-	rval = moab_post_proc.tag_get_by_ptr(th_disp,&node,1,(const void **)&disp_ptr); CHKERR_PETSC(rval);
 	for(;dit!=hi_dit;dit++) {
 	  //cerr << *dit << endl;
 	  disp_ptr[dit->get_dof_rank()] += nodeNTRI[dit->side_number_ptr->side_number]*dit->get_FieldData();
+	  gap_ptr[dit->get_dof_rank()] -= nodeNTRI[dit->side_number_ptr->side_number]*dit->get_FieldData();
+	}
+	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,3));
+	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,5));
+	for(;dit!=hi_dit;dit++) {
+	  gap_ptr[dit->get_dof_rank()] += nodeNTRI[dit->side_number_ptr->side_number-3]*dit->get_FieldData();
 	}
 	//edges
 	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,0));
@@ -486,6 +502,16 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
 	  double val = _H1edgeN_[gg*nb_dofs_H1edge + dof];
 	  disp_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
+	} 
+	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,6));
+	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,8));
+	for(;dit!=hi_dit;dit++) {
+	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
+	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
+	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
+	  double val = _H1edgeN_[gg*nb_dofs_H1edge + dof];
+	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
 	//facse
 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
@@ -496,22 +522,32 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
 	  double val = _H1faceN_[gg*nb_dofs_H1face + dof];
 	  disp_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
+	}
+ 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+	for(;dit!=hi_dit;dit++) {
+	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
+	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
+	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
+	  double val = _H1faceN_[gg*nb_dofs_H1face + dof];
+	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
       }
 
       //face4
       for(unsigned int gg = 0;gg<nodes_on_face4.size();gg++) {
-	//nodes
-	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
-	  dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,3));
-	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
-	  hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,5));
 	double *nodeNTRI = &g_NTRI[3*nodes_on_face3.size()+gg*3];
 	EntityHandle node = node_map[nodes_on_face4[gg]];
 	double disp[] = {0,0,0};
 	rval = moab_post_proc.tag_set_data(th_disp,&node,1,disp); CHKERR_PETSC(rval);
 	double *disp_ptr;
 	rval = moab_post_proc.tag_get_by_ptr(th_disp,&node,1,(const void **)&disp_ptr); CHKERR_PETSC(rval);
+	//nodes
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
+	  dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,3));
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
+	  hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,5));
 	for(;dit!=hi_dit;dit++) {
 	  //cerr << *dit << " " << nodeNTRI[dit->side_number_ptr->side_number] << " " << dit->get_FieldData() << endl;
 	  disp_ptr[dit->get_dof_rank()] += nodeNTRI[dit->side_number_ptr->side_number-3]*dit->get_FieldData();
