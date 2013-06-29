@@ -311,8 +311,8 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
     PostProcCohesiveForces(Interface &_moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab) {};
 
     vector<double> g_NTRI;
-    Range nodes_on_face3;
-    Range nodes_on_face4;
+    vector<EntityHandle> nodes_on_face3;
+    vector<EntityHandle> nodes_on_face4;
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -380,12 +380,12 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       for(unsigned int nn = 0;nn<ref_nodes.size();nn++) {
 	if(ref_coords[3*nn+2]>0) {
 	  ref_coordsf4[mmm] = ref_coords[3*nn+0];
+	  nodes_on_face4.push_back(ref_nodes[nn]);
 	  mmm++;
-	  nodes_on_face4.insert(ref_nodes[nn]);
 	} else {
 	  ref_coordsf3[nnn] = ref_coords[3*nn+0];
+	  nodes_on_face3.push_back(ref_nodes[nn]);
 	  nnn++;
-	  nodes_on_face3.insert(ref_nodes[nn]);
 	}
       }
       assert(nnn == mmm);
@@ -431,7 +431,7 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       }
 
       map<EntityHandle,EntityHandle> node_map;
-      Range::iterator nit = nodes_on_face3.begin();
+      vector<EntityHandle>::iterator nit = nodes_on_face3.begin();
       for(int nn = 0;nit!=nodes_on_face3.end();nit++,nn++) {
 	EntityHandle &node = node_map[*nit];
 	rval = moab_post_proc.create_vertex(&(coords_at_Gauss_nodes[nn]).data()[0],node); CHKERR_PETSC(rval);
@@ -460,8 +460,47 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 	rval = moab_post_proc.create_element(MBPRISM,conn_post_proc,6,ref_prism); CHKERR_PETSC(rval);
       }
 
+      //face3
+      for(unsigned int gg = 0;gg<nodes_on_face3.size();gg++) {
+	//nodes
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
+	  dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,0));
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
+	  hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,2));
+	double *nodeNTRI = &g_NTRI[gg*3];
+	EntityHandle node = node_map[nodes_on_face3[gg]];
+	double disp[] = {0,0,0};
+	rval = moab_post_proc.tag_set_data(th_disp,&node,1,disp); CHKERR_PETSC(rval);
+	double *disp_ptr;
+	rval = moab_post_proc.tag_get_by_ptr(th_disp,&node,1,(const void **)&disp_ptr); CHKERR_PETSC(rval);
+	for(;dit!=hi_dit;dit++) {
+	  //cerr << *dit << endl;
+	  disp_ptr[dit->get_dof_rank()] += nodeNTRI[dit->side_number_ptr->side_number]*dit->get_FieldData();
+	}
+	//edges
+	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,0));
+	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,2));
+	for(;dit!=hi_dit;dit++) {
+	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
+	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
+	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
+	  double val = _H1edgeN_[gg*nb_dofs_H1edge + dof];
+	  disp_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	} 
+	//facse
+	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
+	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
+	for(;dit!=hi_dit;dit++) {
+	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
+	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
+	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
+	  double val = _H1faceN_[gg*nb_dofs_H1face + dof];
+	  disp_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	} 
+      }
 
-
+      
+      
       PetscFunctionReturn(0);
     }
 
@@ -596,9 +635,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",3); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/

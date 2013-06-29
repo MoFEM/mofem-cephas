@@ -75,7 +75,7 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gN
   ierr = DataOp(); CHKERRQ(ierr);
 
   ierr = ShapeFunctions_PRISM(_gNTRI_); CHKERRQ(ierr);
-  ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
+  //ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
   ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
   ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
 
@@ -221,9 +221,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,E
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
+      eiit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == data_multiIndex->get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       switch(type) {
 	case MBEDGE: {
 	  Data_EntType::iterator miit = data_edges.find(eiit->get_MoFEMEntity_ptr());
@@ -241,9 +241,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,E
     } break;
     case MBTET:
     case MBPRISM: {
-      FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator eiit;
-      eiit = col_multiIndex->get<MoABEnt_mi_tag>().find(fe_ent_ptr->get_ent());
-      if(eiit == col_multiIndex->get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator eiit;
+      eiit = data_multiIndex->get<MoABEnt_mi_tag>().find(fe_ent_ptr->get_ent());
+      if(eiit == data_multiIndex->get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       Data_EntType::iterator miit = data_elem.find(eiit->get_MoFEMEntity_ptr());
       if(miit == data_elem.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       Data = miit->second;

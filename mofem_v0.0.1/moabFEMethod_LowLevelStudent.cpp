@@ -869,10 +869,10 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
       g_dim = gNTET.size()/4;
       nb_Ns = 4;
       break;
-    case MBPRISM:
+    /*case MBPRISM:
       g_dim = gNTRI.size()/3;
       nb_Ns = 6;
-      break;
+      break;*/
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
   }
