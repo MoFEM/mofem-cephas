@@ -499,7 +499,49 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 	} 
       }
 
-      
+      //face4
+      for(unsigned int gg = 0;gg<nodes_on_face4.size();gg++) {
+	//nodes
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
+	  dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,3));
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator 
+	  hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,5));
+	double *nodeNTRI = &g_NTRI[3*nodes_on_face3.size()+gg*3];
+	EntityHandle node = node_map[nodes_on_face4[gg]];
+	double disp[] = {0,0,0};
+	rval = moab_post_proc.tag_set_data(th_disp,&node,1,disp); CHKERR_PETSC(rval);
+	double *disp_ptr;
+	rval = moab_post_proc.tag_get_by_ptr(th_disp,&node,1,(const void **)&disp_ptr); CHKERR_PETSC(rval);
+	for(;dit!=hi_dit;dit++) {
+	  //cerr << *dit << " " << nodeNTRI[dit->side_number_ptr->side_number] << " " << dit->get_FieldData() << endl;
+	  disp_ptr[dit->get_dof_rank()] += nodeNTRI[dit->side_number_ptr->side_number-3]*dit->get_FieldData();
+	}
+	//edges
+	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,6));
+	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,8));
+	for(;dit!=hi_dit;dit++) {
+	  //cerr << *dit << endl;
+	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
+	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
+	  //cerr << nb_dofs_H1edge << endl;
+	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
+	  //cerr << dof << endl;
+	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + dof];
+	  //cerr << val << endl;
+	  disp_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); //*minus*/
+	} 
+	//facse
+	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+	for(;dit!=hi_dit;dit++) {
+	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
+	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
+	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
+	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + dof];
+	  disp_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
+	} 
+      }
+
       
       PetscFunctionReturn(0);
     }
