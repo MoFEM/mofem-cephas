@@ -33,6 +33,8 @@ struct MyElasticFEMethod: public ElasticFEMethod {
 
   Range& SideSet3;
 
+  MyElasticFEMethod(Interface& _moab): ElasticFEMethod(_moab),SideSet3(dummy) {};
+
   MyElasticFEMethod(
       Interface& _moab,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
@@ -123,12 +125,16 @@ struct MyElasticFEMethod: public ElasticFEMethod {
 
 };
 
-
 struct InterfaceFEMethod: public MyElasticFEMethod {
 
   double YoungModulus; 
   ublas::matrix<double> R;
+  ublas::matrix<double> Dglob;
   double tangent1[3],tangent2[3];
+
+  InterfaceFEMethod(
+      Interface& _moab,double _YoungModulus): 
+      MyElasticFEMethod(_moab),YoungModulus(_YoungModulus) {};
 
   InterfaceFEMethod(
       Interface& _moab,Mat &_Aij,Vec& _F,double _YoungModulus,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
@@ -166,11 +172,8 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode operator()() {
+  PetscErrorCode CalcR() {
     PetscFunctionBegin;
-    ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
-
-    //Rotation matrix
     bzero(tangent1,3*sizeof(double));
     bzero(tangent2,3*sizeof(double));
     int ii = 0;
@@ -201,12 +204,28 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
     double nrm2 = cblas_dnrm2(3,tangent2,1);
     R_tangent2 /= nrm2;
     //cerr << R << endl;
+    PetscFunctionReturn(0);
+  }
 
+  PetscErrorCode CalcDglob() {
+    PetscFunctionBegin;
     ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
-    ii = 0;
+    int ii = 0;
     for(;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
-    ublas::matrix<double> Dglob = prod( Dloc, R );
+    Dglob = prod( Dloc, R );
     Dglob = prod( trans(R), Dglob );
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
+
+    //Rotation matrix
+    ierr = CalcR(); CHKERRQ(ierr);
+
+    //Dglob
+    ierr = CalcDglob(); CHKERRQ(ierr);
 
     //rows
     RowGlob.resize(1+6+2);
@@ -307,8 +326,12 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 
 };
 
-struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
-    PostProcCohesiveForces(Interface &_moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab) {};
+struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAndStarinOnRefMesh_Base {
+  
+    PostProcCohesiveForces(Interface &_moab,double _YoungModulus): 
+      InterfaceFEMethod(_moab,_YoungModulus), PostProcDisplacemenysAndStarinOnRefMesh_Base() {
+      pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    };
 
     vector<double> g_NTRI;
     vector<EntityHandle> nodes_on_face3;
@@ -316,6 +339,7 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
   
     Tag th_cohesive_force;
     Tag th_gap;
+    Tag th_disp;
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -464,6 +488,14 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 	rval = moab_post_proc.create_element(MBPRISM,conn_post_proc,6,ref_prism); CHKERR_PETSC(rval);
       }
 
+      //Rotation matrix
+      ierr = CalcR(); CHKERRQ(ierr);
+
+      //Dglob
+      ierr = CalcDglob(); CHKERRQ(ierr);
+
+      //cerr << Dglob << endl;
+
       //face3
       for(unsigned int gg = 0;gg<nodes_on_face3.size();gg++) {
 	double *nodeNTRI = &g_NTRI[gg*3];
@@ -533,6 +565,15 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 	  double val = _H1faceN_[gg*nb_dofs_H1face + dof];
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
+	
+	ublas::vector<double,ublas::bounded_array<double, 3> > Gap(3);
+	Gap[0] = gap_ptr[0];
+ 	Gap[1] = gap_ptr[1];
+ 	Gap[2] = gap_ptr[2];  
+	ublas::vector<double,ublas::bounded_array<double, 3> > Trac(3);
+	Trac = prod(Dglob,Gap);
+	rval = moab_post_proc.tag_set_data(th_cohesive_force,&node,1,&Trac.data()[0]); CHKERR_PETSC(rval);
+
       }
 
       //face4
@@ -604,6 +645,15 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + dof];
 	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
 	}
+
+	ublas::vector<double,ublas::bounded_array<double, 3> > Gap(3);
+	Gap[0] = gap_ptr[0];
+ 	Gap[1] = gap_ptr[1];
+ 	Gap[2] = gap_ptr[2];  
+	ublas::vector<double,ublas::bounded_array<double, 3> > Trac(3);
+	Trac = prod(Dglob,Gap);
+	rval = moab_post_proc.tag_set_data(th_cohesive_force,&node,1,&Trac.data()[0]); CHKERR_PETSC(rval);
+
       }
 
       
@@ -614,7 +664,6 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
       PetscFunctionBegin;
       ierr = PetscGetTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       ParallelComm* pcomm_post_proc = ParallelComm::get_pcomm(&moab_post_proc,MYPCOMM_INDEX);
       if(pcomm_post_proc == NULL) pcomm_post_proc =  new ParallelComm(&moab_post_proc,PETSC_COMM_WORLD);
       for(unsigned int rr = 1; rr<pcomm_post_proc->size();rr++) {
@@ -622,6 +671,7 @@ struct PostProcCohesiveForces: public PostProcDisplacemenysAndStarinOnRefMesh {
 	rval = moab_post_proc.get_entities_by_type(0,MBPRISM,prisms); CHKERR_PETSC(rval);
 	rval = pcomm_post_proc->broadcast_entities(rr,prisms); CHKERR(rval);
       }
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       PetscFunctionReturn(0);
     }
 
@@ -741,9 +791,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
@@ -849,7 +899,7 @@ int main(int argc, char *argv[]) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
-  PostProcCohesiveForces fe_post_proc_prisms(moab);
+  PostProcCohesiveForces fe_post_proc_prisms(moab,YoungModulus*alpha);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {

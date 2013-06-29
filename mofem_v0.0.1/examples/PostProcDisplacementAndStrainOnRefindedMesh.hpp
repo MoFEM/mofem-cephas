@@ -23,8 +23,7 @@
 
 using namespace MoFEM;
 
-struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent {
-
+struct PostProcDisplacemenysAndStarinOnRefMesh_Base {
     //this is moab mesh of all refined elements
     Interface& moab_post_proc;
     Core mb_instance_post_proc;
@@ -37,17 +36,22 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent {
     vector<EntityHandle> meshset_level;
     bool init_ref;
 
+    PostProcDisplacemenysAndStarinOnRefMesh_Base(): 
+      moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
+      max_level(2),init_ref(false) {
+      meshset_level.resize(max_level+1);
+    }
+};
+
+struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent,PostProcDisplacemenysAndStarinOnRefMesh_Base {
+
     ParallelComm* pcomm;
     PetscLogDouble t1,t2;
     PetscLogDouble v1,v2;
 
-    PostProcDisplacemenysAndStarinOnRefMesh(Interface& _moab): FEMethod_UpLevelStudent(_moab,1),
-      moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
-      max_level(2),init_ref(false) {
+    PostProcDisplacemenysAndStarinOnRefMesh(Interface& _moab): 
+      FEMethod_UpLevelStudent(_moab,1),PostProcDisplacemenysAndStarinOnRefMesh_Base() {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-
-      meshset_level.resize(max_level+1);
-
     }
 
     Tag th_disp,th_strain;

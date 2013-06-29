@@ -21,8 +21,14 @@ using namespace MoFEM;
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
-    Mat &Aij;
-    Vec& F,Diagonal;
+    Mat Aij;
+    Vec F,Diagonal;
+    Range dummy;
+
+    ElasticFEMethod(
+      Interface& _moab): FEMethod_UpLevelStudent(_moab,1),
+      Aij(PETSC_NULL),F(PETSC_NULL),SideSet1(dummy),SideSet2(dummy) {};
+
     ElasticFEMethod(
       Interface& _moab,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
@@ -40,17 +46,20 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       colDiffNMatrices.resize(1+6+4+1);
       colBMatrices.resize(1+6+4+1);
 
-      //
-      Range SideSet1Edges,SideSet1Nodes;
-      rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
-      rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
-      SideSet1_.insert(SideSet1.begin(),SideSet1.end());
-      SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
-      SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
+      if(F!=PETSC_NULL) {
+	//
+	Range SideSet1Edges,SideSet1Nodes;
+	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
+	rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
+	SideSet1_.insert(SideSet1.begin(),SideSet1.end());
+	SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
+	SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
 
-      //VEC & MAT Options
-      //If index is set to -1 ingonre its assembly
-      VecSetOption(F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+	//VEC & MAT Options
+	//If index is set to -1 ingonre its assembly
+	VecSetOption(F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+      }
+
     }; 
 
     ErrorCode rval;
