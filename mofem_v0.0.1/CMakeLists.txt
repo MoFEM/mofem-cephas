@@ -76,6 +76,7 @@ add_library(mofem_Field
   do_not_blink/Core_dataStructures.cpp
   do_not_blink/Core_moabMeshMBTETRefine.cpp
   do_not_blink/moabField_Core.cpp
+  complex_for_lazy/complex_for_lazy.c
   moabField.cpp
   moabFEMethod_LowLevelStudent.cpp
   moabFEMethod_UpLevelStudent.cpp

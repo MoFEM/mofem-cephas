@@ -1,0 +1,787 @@
+void SpatialGradientOfDeformation(__CLPK_doublecomplex *xh,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xF) {
+  __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.};
+  cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xh,3,inv_xH,3,&tmp2,xF,3);
+}
+void CauchyGreenDeformation(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC) {
+  //Note: is symmetric
+  bzero(xC,sizeof(__CLPK_doublecomplex)*9);
+  __CLPK_doublecomplex tmp1 = {1,0},tmp2 = {0,0};
+  cblas_zsyrk(CblasRowMajor,CblasUpper,CblasTrans,3,3,&tmp1,xF,3,&tmp2,xC,3);
+  int ii=0,jj;
+  for(;ii<3;ii++) {
+    for(jj=0;jj<ii;jj++) {
+      xC[ii*3+jj].r = xC[jj*3+ii].r; 
+      xC[ii*3+jj].i = xC[jj*3+ii].i; 
+  }}
+}
+void TakeIm(__CLPK_doublecomplex *xA,double *imA) {
+  int jj,ii = 0;
+  for(;ii<3;ii++) {
+    for(jj=0;jj<3;jj++) {
+      imA[ii*3+jj] = xA[ii*3+jj].i;
+    } } }
+void TakeRe(__CLPK_doublecomplex *xA,double *reA) {
+  int jj,ii = 0;
+  for(;ii<3;ii++) {
+    for(jj=0;jj<3;jj++) {
+      reA[ii*3+jj] = xA[ii*3+jj].r; 
+    } 
+  } 
+}
+void PiolaKrihoff1_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xP_PullBack) {
+  __CLPK_doublecomplex tmp2 = {0,0};
+  cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xP,3,inv_xH,3,&tmp2,xP_PullBack,3);
+}
+void ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xStress,__CLPK_doublecomplex *xStress_PullBack) {
+  __CLPK_doublecomplex tmp2 = {0,0};
+  cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xStress,3,inv_xH,3,&tmp2,xStress_PullBack,3);
+}
+//assert(info ==0); 
+//assert(det_xF.r >= 0); 
+#define COMP_STRESSES \
+  SpatialGradientOfDeformation(xh,inv_xH,xF); \
+  DeterminantComplexGradient(xF,&det_xF); \
+  SpatialGradientOfDeformation(xh,inv_xH,xF); \
+  CauchyGreenDeformation(xF,xC); \
+  StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); \
+  PiolaKirhoiff2(lambda,mu,xF,xC,&det_xF,xS,matctx); \
+  PilaKirhoff1(lambda,mu,xF,xS,xP); \
+  PiolaKrihoff1_PullBack(&det_xH,inv_xH,xP,xP_PullBack); \
+  ElshebyStress(&xPsi,xF,xP,xSigma); \
+  ElshebyStress_PullBack(&det_xH,inv_xH,xSigma,xSigma_PullBack); 
+void Fint_Hh(double alpha,double lambda,double mu,void *matctx,double *diffN,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *Fint_H,double *Fint_h,double *Fint_iH,double *Fint_ih) {
+  double H[9],iH[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  if(dofs_iX != NULL) {
+    GradientOfDeformation(diffN,dofs_iX,iH);   
+  } else {
+    bzero(iH,9*sizeof(double));
+  } 
+  double h[9],ih[9];
+  GradientOfDeformation(diffN,dofs_x,h); 
+  if(dofs_ix != NULL) {
+    GradientOfDeformation(diffN,dofs_ix,ih);   
+  } else {
+    bzero(ih,9*sizeof(double));
+  } 
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],xPsi,det_xF,det_xH;
+  double reP[9],reSigma[9],imP[9],imSigma[9];
+  MakeComplexTensor(h,ih,xh);   
+  MakeComplexTensor(H,iH,xH);
+  cblas_zcopy(9,xH,1,inv_xH,1);
+  DeterminantComplexGradient(xH,&det_xH);
+  InvertComplexGradient(inv_xH);
+  COMP_STRESSES
+  TakeRe(xP_PullBack,reP);
+  TakeRe(xSigma_PullBack,reSigma);
+  TakeIm(xP_PullBack,imP);
+  TakeIm(xSigma_PullBack,imSigma);
+  int node = 0;
+  for(;node<4;node++) {
+    if(Fint_H!=NULL) {
+      Fint_H[3*node + 0] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reSigma[0],1);
+      Fint_H[3*node + 1] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reSigma[3],1);
+      Fint_H[3*node + 2] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reSigma[6],1); }
+    if(Fint_h!=NULL) {
+      Fint_h[3*node + 0] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reP[0],1);
+      Fint_h[3*node + 1] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reP[3],1);
+      Fint_h[3*node + 2] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reP[6],1); }
+    if(Fint_iH!=NULL) {
+      Fint_iH[3*node + 0] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
+      Fint_iH[3*node + 1] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
+      Fint_iH[3*node + 2] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }
+    if(Fint_ih!=NULL) {
+      Fint_ih[3*node + 0] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
+      Fint_ih[3*node + 1] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
+      Fint_ih[3*node + 2] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); 
+  }}
+}
+void Fext_h(double alpha,double *NTRI,double *tractions,double *Fext) {
+  double trac[3];
+  trac[0] = cblas_ddot(3,NTRI,1,&tractions[0],3);
+  trac[1] = cblas_ddot(3,NTRI,1,&tractions[1],3);
+  trac[2] = cblas_ddot(3,NTRI,1,&tractions[2],3);
+  int node = 0;
+  for(;node<3;node++) {
+    Fext[3*node + 0] = alpha*NTRI[node]*trac[0];
+    Fext[3*node + 1] = alpha*NTRI[node]*trac[1];
+    Fext[3*node + 2] = alpha*NTRI[node]*trac[2]; 
+  }
+}
+void Tangent_hh(double alpha,double eps,double lambda,double mu,void *matctx,double *diffN,double *dofs_X,double *dofs_x,double *K,double *Koff) {
+  double H[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  double h[9];
+  GradientOfDeformation(diffN,dofs_x,h); 
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  double _idofs_x[12],_ih[9],imP[9],imSigma[9];
+  MakeComplexTensor(H,ZERO,xH); 
+  cblas_zcopy(9,xH,1,inv_xH,1);
+  DeterminantComplexGradient(xH,&det_xH);
+  InvertComplexGradient(inv_xH);
+  int dd = 0;
+  for(;dd<12;dd++) {
+    bzero(_idofs_x,sizeof(double)*12);
+    _idofs_x[dd] = eps;
+    GradientOfDeformation(diffN,_idofs_x,_ih); 
+    MakeComplexTensor(h,_ih,xh); 
+    COMP_STRESSES
+    TakeIm(xP_PullBack,imP);
+    cblas_dscal(9,1./eps,imP,1);
+    TakeIm(xSigma_PullBack,imSigma);
+    cblas_dscal(9,1./eps,imSigma,1);
+    int node = 0;
+    for(;node<4;node++) {
+      if(K!=NULL) {
+	K[3*12*node + 0*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
+	K[3*12*node + 1*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
+	K[3*12*node + 2*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
+      if(Koff!=NULL) {
+	Koff[3*12*node + 0*12 + dd] = alpha*(cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1));
+	Koff[3*12*node + 1*12 + dd] = alpha*(cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1));
+	Koff[3*12*node + 2*12 + dd] = alpha*(cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1)); }}
+  }
+}
+void Tangent_HH(double alpha,double eps,double lambda,double mu,void *matctx,double *diffN,double *dofs_X,double *dofs_x,double *K,double *Koff) {
+  double H[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  double h[9];
+  GradientOfDeformation(diffN,dofs_x,h); 
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  double _idofs_X[12],_iH[9],imP[9],imSigma[9];
+  MakeComplexTensor(h,ZERO,xh); 
+  int dd = 0;
+  for(;dd<12;dd++) {
+    bzero(_idofs_X,sizeof(double)*12);
+    _idofs_X[dd] = eps;
+    GradientOfDeformation(diffN,_idofs_X,_iH); 
+    MakeComplexTensor(H,_iH,xH); 
+    cblas_zcopy(9,xH,1,inv_xH,1);
+    DeterminantComplexGradient(xH,&det_xH);
+    InvertComplexGradient(inv_xH);
+    COMP_STRESSES
+    TakeIm(xP_PullBack,imP);
+    cblas_dscal(9,1./eps,imP,1);
+    TakeIm(xSigma_PullBack,imSigma);
+    cblas_dscal(9,1./eps,imSigma,1);
+    int node = 0;
+    for(;node<4;node++) {
+      if(K!=NULL) {
+	K[3*12*node + 0*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
+	K[3*12*node + 1*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
+	K[3*12*node + 2*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }
+      if(Koff!=NULL) {
+	Koff[3*12*node + 0*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
+	Koff[3*12*node + 1*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
+	Koff[3*12*node + 2*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }}
+  }
+}
+
+#define HIERARHICAL_APPROX \
+  int ee = 0; \
+  for(;ee<6;ee++) { \
+    if(NBEDGE_H1(order_edge[ee])==0) continue; \
+    double edge_h[9]; \
+    bzero(edge_h,9*sizeof(double)); \
+    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])]); \
+    EdgeGradientOfDeformation_hierachical(order_edge[ee],diff,dofs_x_edge[ee],edge_h); \
+    cblas_daxpy(9,1,edge_h,1,h,1); } \
+  int ff = 0; \
+  for(;ff<4;ff++) { \
+    if(NBFACE_H1(order_face[ff])==0) continue; \
+    double face_h[9]; \
+    bzero(face_h,9*sizeof(double)); \
+    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])]); \
+    FaceGradientOfDeformation_hierachical(order_face[ff],diff,dofs_x_face[ff],face_h); \
+    cblas_daxpy(9,1,face_h,1,h,1); } \
+  if(NBVOLUME_H1(order_volume)>0) { \
+    double volume_h[9]; \
+    bzero(volume_h,9*sizeof(double)); \
+    double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)]); \
+    VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_x_volume,volume_h); \
+    cblas_daxpy(9,1,volume_h,1,h,1); }
+
+void ComputeEneregyAtGauss_Point_hierarchical(
+  int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
+  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
+  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *rePsi,double *reP,double *reSigma,double *reF,double *intPsi,
+  int G_DIM,const double *G_W) {
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  double H[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],xPsi,det_xF,det_xH;
+  MakeComplexTensor(H,ZERO,xH);
+  cblas_zcopy(9,xH,1,inv_xH,1);
+  DeterminantComplexGradient(xH,&det_xH);
+  InvertComplexGradient(inv_xH);
+  *intPsi = 0;
+  int gg = 0;
+  for(;gg<G_DIM;gg++) {
+    double h[9];
+    GradientOfDeformation(diffN,dofs_x_node,h); 
+    if(order_edge!=NULL) {
+      HIERARHICAL_APPROX 
+    }
+    MakeComplexTensor(h,ZERO,xh); 
+    COMP_STRESSES
+    rePsi[gg] = xPsi.r;
+    *intPsi += alpha*G_W[gg]*det_xH.r*xPsi.r; 
+  }
+}
+void Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
+  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
+  double *dofs_X,double *dofs_x_node,double *dofs_iX,double *dofs_ix_node,
+  double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *Fint_H,double *Fint_h,
+  double *Fint_h_edge[],double *Fint_h_face[],double *Fint_h_volume,
+  double *Fint_iH,double *Fint_ih,
+  double *Fint_ih_edge[],double *Fint_ih_face[],double *Fint_ih_volume,
+  int G_DIM,const double *G_W) {
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  double H[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],xPsi,det_xF,det_xH;
+  double reP[9],reSigma[9],imP[9],imSigma[9];
+  if(dofs_iX == NULL) {
+    MakeComplexTensor(H,ZERO,xH);
+  } else {
+    double iH[9];
+    GradientOfDeformation(diffN,dofs_iX,iH);
+    MakeComplexTensor(H,iH,xH);
+  }
+  cblas_zcopy(9,xH,1,inv_xH,1);
+  DeterminantComplexGradient(xH,&det_xH);
+  InvertComplexGradient(inv_xH);
+  int gg = 0;
+  for(;gg<G_DIM;gg++) {
+    double h[9],ih[9];
+    GradientOfDeformation(diffN,dofs_x_node,h); 
+    if(dofs_ix_node != NULL) {
+      GradientOfDeformation(diffN,dofs_ix_node,ih);
+    } else {
+      bzero(ih,9*sizeof(double));
+    }
+    HIERARHICAL_APPROX
+    MakeComplexTensor(h,ih,xh);
+    COMP_STRESSES
+    TakeRe(xP_PullBack,reP);
+    TakeRe(xSigma_PullBack,reSigma);
+    TakeIm(xP_PullBack,imP);
+    TakeIm(xSigma_PullBack,imSigma);
+    int node = 0;
+    for(;node<4;node++) {
+      if(Fint_H!=NULL) {
+	Fint_H[3*node + 0] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&reSigma[0],1);
+	Fint_H[3*node + 1] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&reSigma[3],1);
+	Fint_H[3*node + 2] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&reSigma[6],1); }
+      if(Fint_h!=NULL) {
+	Fint_h[3*node + 0] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&reP[0],1);
+	Fint_h[3*node + 1] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&reP[3],1);
+	Fint_h[3*node + 2] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&reP[6],1); }
+      if(Fint_iH!=NULL) {
+	Fint_iH[3*node + 0] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
+	Fint_iH[3*node + 1] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
+	Fint_iH[3*node + 2] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }
+      if(Fint_ih!=NULL) {
+	Fint_ih[3*node + 0] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
+	Fint_ih[3*node + 1] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
+	Fint_ih[3*node + 2] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
+    }
+    ee = 0;
+    for(;ee<6;ee++) {
+      int pp = 0;
+      for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
+	double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])+3*pp]);
+	if(Fint_h_edge!=NULL)
+	if(Fint_h_edge[ee]!=NULL) {
+	  (Fint_h_edge[ee])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[0],1);
+	  (Fint_h_edge[ee])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[3],1);
+	  (Fint_h_edge[ee])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[6],1); }
+	if(Fint_ih_edge!=NULL)
+	if(Fint_ih_edge[ee]!=NULL) {
+	  (Fint_ih_edge[ee])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	  (Fint_ih_edge[ee])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	  (Fint_ih_edge[ee])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
+    } 
+    ff = 0;
+    for(;ff<4;ff++) {
+      int pp = 0;
+      for(;pp<NBFACE_H1(order_face[ff]);pp++) {
+	double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])+3*pp]);
+	if(Fint_h_face!=NULL) 
+	if(Fint_h_face[ff]!=NULL) {
+	  (Fint_h_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[0],1);
+	  (Fint_h_face[ff])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[3],1);
+	  (Fint_h_face[ff])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[6],1); }
+	if(Fint_ih_face!=NULL) 
+	if(Fint_ih_face[ff]!=NULL) {
+	  (Fint_ih_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	  (Fint_ih_face[ff])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	  (Fint_ih_face[ff])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
+    }
+    int pp = 0;
+    for(;pp<NBVOLUME_H1(order_volume);pp++) {
+      double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)+3*pp]);
+      if(Fint_h_volume!=NULL) {
+	(Fint_h_volume)[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[0],1);
+	(Fint_h_volume)[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[3],1);
+	(Fint_h_volume)[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[6],1); }
+      if(Fint_ih_volume!=NULL) {
+	(Fint_ih_volume)[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	(Fint_ih_volume)[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	(Fint_ih_volume)[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }
+    }
+  }
+}
+void Tangent_HH_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
+  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *K,double *Koff,double *Koff_edge[6],double *Koff_face[4],double *Koff_volume,int G_DIM,const double *G_W) {
+  double H[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  double _idofs_X[12],_iH[9],imP[9],imSigma[9];
+  if(K!=NULL) bzero(K,12*12*sizeof(double));
+  if(Koff!=NULL) bzero(Koff,12*12*sizeof(double));
+  //zero edges
+  int ee = 0;	
+  for(;ee<6;ee++) {
+    if(NBEDGE_H1(order_edge[ee])==0) continue;
+    int nb = 3*NBEDGE_H1(order_edge[ee]);
+    if(Koff_edge[ee]!=NULL) bzero(Koff_edge[ee],nb*12*sizeof(double)); 
+  }
+  //zero faces
+  int ff = 0;	
+  for(;ff<4;ff++) {
+    if(NBFACE_H1(order_face[ff])==0) continue;
+    int nb = 3*NBFACE_H1(order_face[ff]);
+    if(Koff_face[ff]!=NULL) bzero(Koff_face[ff],nb*12*sizeof(double)); 
+  }
+  //zero volume
+  if(NBVOLUME_H1(order_volume)!=0) {
+    int nb = 3*NBVOLUME_H1(order_volume);
+    if(Koff_volume!=NULL) bzero(Koff_volume,nb*12*sizeof(double)); 
+  }
+  int dd = 0;
+  for(;dd<12;dd++) {
+    bzero(_idofs_X,sizeof(double)*12);
+    _idofs_X[dd] = eps;
+    GradientOfDeformation(diffN,_idofs_X,_iH); 
+    MakeComplexTensor(H,_iH,xH); 
+    cblas_zcopy(9,xH,1,inv_xH,1);
+    DeterminantComplexGradient(xH,&det_xH);
+    InvertComplexGradient(inv_xH);
+    int gg = 0;
+    for(;gg<G_DIM;gg++) {
+      double h[9];
+      GradientOfDeformation(diffN,dofs_x_node,h); 
+      HIERARHICAL_APPROX
+      MakeComplexTensor(h,ZERO,xh); 
+      COMP_STRESSES
+      TakeIm(xP_PullBack,imP);
+      cblas_dscal(9,1./eps,imP,1);
+      TakeIm(xSigma_PullBack,imSigma);
+      cblas_dscal(9,1./eps,imSigma,1);
+      int node = 0;
+      for(;node<4;node++) {
+	if(K!=NULL) {
+	  K[3*12*node + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
+	  K[3*12*node + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
+	  K[3*12*node + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }
+	if(Koff!=NULL) {
+	  Koff[3*12*node + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
+	  Koff[3*12*node + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
+	  Koff[3*12*node + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }}
+      ee = 0;
+      for(;ee<6;ee++) {		
+        int pp = 0;
+        for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
+	  double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])+3*pp]);
+	  if(Koff_edge[ee]!=NULL) {
+	    (Koff_edge[ee])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	    (Koff_edge[ee])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	    (Koff_edge[ee])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
+      ff = 0;
+      for(;ff<4;ff++) {		
+        int pp = 0;
+        for(;pp<NBFACE_H1(order_face[ff]);pp++) {
+	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])+3*pp]);
+	  if(Koff_face[ff]!=NULL) {
+	    (Koff_face[ff])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	    (Koff_face[ff])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	    (Koff_face[ff])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
+      int pp = 0;
+      for(;pp<NBVOLUME_H1(order_volume);pp++) {
+	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)+3*pp]);
+	if(Koff_volume!=NULL) {
+	  (Koff_volume)[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+  	  (Koff_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	  (Koff_volume)[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
+  }}
+}
+void Tangent_hh_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
+  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W) {
+  double H[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  double _idofs_x[12],_ih[9],imP[9],imSigma[9];
+  MakeComplexTensor(H,ZERO,xH); 
+  cblas_zcopy(9,xH,1,inv_xH,1);
+  DeterminantComplexGradient(xH,&det_xH);
+  InvertComplexGradient(inv_xH);
+  if(K!=NULL) bzero(K,12*12*sizeof(double));
+  if(Koff!=NULL) bzero(Koff,12*12*sizeof(double));
+  //zero edges
+  int ee = 0;	
+  for(;ee<6;ee++) {
+    if(NBEDGE_H1(order_edge[ee])==0) continue;
+    int nb = 3*NBEDGE_H1(order_edge[ee]);
+    if(K_edge[ee]!=NULL) bzero(K_edge[ee],12*nb*sizeof(double)); }
+  //zero faces
+  int ff = 0;	
+  for(;ff<4;ff++) {
+    if(NBFACE_H1(order_face[ff])==0) continue;
+    int nb = 3*NBFACE_H1(order_face[ff]);
+    if(K_face[ff]!=NULL) bzero(K_face[ff],nb*12*sizeof(double)); }
+  //zero volume
+  if(NBVOLUME_H1(order_volume)!=0) {
+    int nb = 3*NBVOLUME_H1(order_volume);
+    if(K_volume!=NULL) bzero(K_volume,nb*12*sizeof(double)); }
+  int gg = 0;
+  for(;gg<G_DIM;gg++) {
+    double h[9];
+    GradientOfDeformation(diffN,dofs_x_node,h); 
+    HIERARHICAL_APPROX
+    int dd = 0;
+    for(;dd<12;dd++) {
+      bzero(_idofs_x,sizeof(double)*12);
+      _idofs_x[dd] = eps;
+      GradientOfDeformation(diffN,_idofs_x,_ih); 
+      MakeComplexTensor(h,_ih,xh); 
+      COMP_STRESSES
+      TakeIm(xP_PullBack,imP);
+      cblas_dscal(9,1./eps,imP,1);
+      TakeIm(xSigma_PullBack,imSigma);
+      cblas_dscal(9,1./eps,imSigma,1);
+      int node = 0;
+      for(;node<4;node++) {
+	if(K!=NULL) {
+	  K[3*12*node + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
+	  K[3*12*node + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
+	  K[3*12*node + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
+	if(Koff!=NULL) {
+	  Koff[3*12*node + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
+	  Koff[3*12*node + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
+	  Koff[3*12*node + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }}
+      ee = 0;
+      for(;ee<6;ee++) {
+        int pp = 0;
+        for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
+	  double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])+3*pp]);
+	  if(K_edge[ee]!=NULL) {
+	    (K_edge[ee])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	    (K_edge[ee])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	    (K_edge[ee])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
+      ff = 0;
+      for(;ff<4;ff++) {
+        int pp = 0;
+        for(;pp<NBFACE_H1(order_face[ff]);pp++) {
+	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])+3*pp]);
+	  if(K_face[ff]!=NULL) {
+	    (K_face[ff])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	    (K_face[ff])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	    (K_face[ff])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
+      int pp = 0;
+      for(;pp<NBVOLUME_H1(order_volume);pp++) {
+	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)+3*pp]);
+	if(K_volume!=NULL) {
+	  (K_volume)[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+  	  (K_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	  (K_volume)[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
+  }}
+}
+void Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
+  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *K[6],double *Koff[6],
+  double *K_edge[6][6],double *K_face[4][6],double *K_volume[6],
+  int G_DIM,const double *G_W) {
+  double H[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  double _ih[9],imP[9],imSigma[9];
+  MakeComplexTensor(H,ZERO,xH); 
+  cblas_zcopy(9,xH,1,inv_xH,1);
+  DeterminantComplexGradient(xH,&det_xH);
+  InvertComplexGradient(inv_xH);
+  int ee = 0;	
+  for(;ee<6;ee++) {
+    if(NBEDGE_H1(order_edge[ee])==0) continue;
+    int nb = 3*NBEDGE_H1(order_edge[ee]);
+    if(K!=NULL) if(K[ee]!=NULL) bzero(K[ee],12*nb*sizeof(double));
+    if(Koff!=NULL) if(Koff[ee]!=NULL) bzero(Koff[ee],12*nb*sizeof(double));
+    int EE = 0;
+    for(;EE<6;EE++) {
+      int nb2 = 3*NBEDGE_H1(order_edge[EE]);
+      if(K_edge[EE][ee]!=NULL) bzero(K_edge[EE][ee],nb2*nb*sizeof(double)); }
+    int FF = 0;
+    for(;FF<4;FF++) {
+      int nb2 = 3*NBFACE_H1(order_face[FF]);
+      if(K_face[FF][ee]!=NULL) bzero(K_face[FF][ee],nb2*nb*sizeof(double)); }
+    int nb2 = 3*NBVOLUME_H1(order_volume);
+    if(K_volume[ee]!=NULL) bzero(K_volume[ee],nb*nb2*sizeof(double)); }
+  int EE = 0;
+  for(;EE<6;EE++) {
+    int nb_edge_dofs = 3*NBEDGE_H1(order_edge[EE]);
+    if(nb_edge_dofs == 0) continue;
+    double _idofs_x[nb_edge_dofs];
+    int gg = 0;
+    for(;gg<G_DIM;gg++) {
+      double h[9];
+      GradientOfDeformation(diffN,dofs_x_node,h); 
+      HIERARHICAL_APPROX
+      int dd = 0;
+      for(;dd<nb_edge_dofs;dd++) {
+	bzero(_idofs_x,sizeof(double)*nb_edge_dofs);
+	_idofs_x[dd] = eps;   
+	double *diff_edge = &(diffN_edge[EE])[gg*3*NBEDGE_H1(order_edge[EE])];
+	EdgeGradientOfDeformation_hierachical(order_edge[EE],diff_edge,_idofs_x,_ih); 
+        MakeComplexTensor(h,_ih,xh); 
+        COMP_STRESSES
+        TakeIm(xP_PullBack,imP);
+        cblas_dscal(9,1./eps,imP,1);
+        TakeIm(xSigma_PullBack,imSigma);
+        cblas_dscal(9,1./eps,imSigma,1);
+        int node = 0;
+        for(;node<4;node++) {
+	  if(K!=NULL) if(K[EE]!=NULL) {
+	    (K[EE])[3*node*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
+	    (K[EE])[3*node*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
+	    (K[EE])[3*node*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
+	  if(Koff!=NULL) if(Koff[EE]!=NULL) {
+	    (Koff[EE])[3*node*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
+	    (Koff[EE])[3*node*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
+	    (Koff[EE])[3*node*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }}
+        ee = 0;
+        for(;ee<6;ee++) {
+          int pp = 0;
+          for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
+	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])+3*pp+0]);
+	    if(K_edge[ee][EE]!=NULL) {
+	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
+	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
+        ff = 0;
+        for(;ff<4;ff++) {
+          int pp = 0;
+          for(;pp<NBFACE_H1(order_face[ff]);pp++) {
+	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])+3*pp+0]);
+	    if(K_face[ff][EE]!=NULL) {
+	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
+	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
+	int pp = 0;
+	for(;pp<NBVOLUME_H1(order_volume);pp++) {
+	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)+3*pp]);
+	  if(K_volume!=NULL) {
+	    (K_volume[EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	    (K_volume[EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	    (K_volume[EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
+    }}}
+}
+void Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
+  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *K[4],double *Koff[4],
+  double *K_edge[6][4],double *K_face[4][4],double *K_volume[4],
+  int G_DIM,const double *G_W) {
+  double H[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  double _ih[9],imP[9],imSigma[9];
+  MakeComplexTensor(H,ZERO,xH); 
+  cblas_zcopy(9,xH,1,inv_xH,1);
+  DeterminantComplexGradient(xH,&det_xH);
+  InvertComplexGradient(inv_xH);
+  int ff = 0;	
+  for(;ff<4;ff++) {
+    if(NBFACE_H1(order_face[ff])==0) continue;
+    int nb = 3*NBFACE_H1(order_face[ff]);
+    if(K[ff]!=NULL) bzero(K[ff],12*nb*sizeof(double));
+    if(Koff[ff]!=NULL) bzero(Koff[ff],12*nb*sizeof(double));
+    int EE = 0;
+    for(;EE<6;EE++) {
+      int nb2 = 3*NBEDGE_H1(order_edge[EE]);
+      if(K_edge[EE][ff]!=NULL) bzero(K_edge[EE][ff],nb2*nb*sizeof(double)); }
+    int FF = 0;
+    for(;FF<4;FF++) {
+      int nb2 = 3*NBFACE_H1(order_face[FF]);
+      if(K_face[FF][ff]!=NULL) bzero(K_face[FF][ff],nb2*nb*sizeof(double)); }
+    int nb2 = 3*NBVOLUME_H1(order_volume);
+    if(K_volume[ff]!=NULL) bzero(K_volume[ff],nb*nb2*sizeof(double)); }
+  int FF = 0;
+  for(;FF<4;FF++) {
+    int nb_face_dofs = 3*NBFACE_H1(order_face[FF]);
+    if(nb_face_dofs == 0) continue;
+    double _idofs_x[nb_face_dofs];
+    int dd = 0;
+    for(;dd<nb_face_dofs;dd++) {
+      bzero(_idofs_x,sizeof(double)*nb_face_dofs);
+      _idofs_x[dd] = eps;   
+      int gg = 0;
+      for(;gg<G_DIM;gg++) {
+	double h[9];
+	GradientOfDeformation(diffN,dofs_x_node,h); 
+        HIERARHICAL_APPROX
+	double *diff_face = &(diffN_face[FF])[gg*3*NBFACE_H1(order_face[FF])];
+	FaceGradientOfDeformation_hierachical(order_face[FF],diff_face,_idofs_x,_ih); 
+        MakeComplexTensor(h,_ih,xh); 
+        COMP_STRESSES
+        TakeIm(xP_PullBack,imP);
+        cblas_dscal(9,1./eps,imP,1);
+        TakeIm(xSigma_PullBack,imSigma);
+        cblas_dscal(9,1./eps,imSigma,1);
+        int node = 0;
+        for(;node<4;node++) {
+	  if(K[FF]!=NULL) {
+	    (K[FF])[3*node*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
+	    (K[FF])[3*node*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
+	    (K[FF])[3*node*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
+	  if(Koff[FF]!=NULL) {
+	    (Koff[FF])[3*node*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
+	    (Koff[FF])[3*node*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
+	    (Koff[FF])[3*node*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }}
+        ee = 0;
+        for(;ee<6;ee++) {
+          int pp = 0;
+          for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
+	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])+3*pp+0]);
+	    if(K_edge[ee][FF]!=NULL) {
+	      (K_edge[ee][FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	      (K_edge[ee][FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
+	      (K_edge[ee][FF])[3*pp*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
+        ff = 0;
+        for(;ff<4;ff++) {
+          int pp = 0;
+          for(;pp<NBFACE_H1(order_face[ff]);pp++) {
+	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])+3*pp+0]);
+	    if(K_face[ff][FF]!=NULL) {
+	      (K_face[ff][FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	      (K_face[ff][FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
+	      (K_face[ff][FF])[3*pp*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
+	int pp = 0;
+	for(;pp<NBVOLUME_H1(order_volume);pp++) {
+	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)+3*pp]);
+	  if(K_volume!=NULL) {
+	    (K_volume[FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	    (K_volume[FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	    (K_volume[FF])[3*pp*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
+    }}}
+}
+void Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
+  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W) {
+  double H[9];
+  GradientOfDeformation(diffN,dofs_X,H); 
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  double _ih[9],imP[9],imSigma[9];
+  MakeComplexTensor(H,ZERO,xH); 
+  cblas_zcopy(9,xH,1,inv_xH,1);
+  DeterminantComplexGradient(xH,&det_xH);
+  InvertComplexGradient(inv_xH);
+  int nb_dofs_volume = 3*NBVOLUME_H1(order_volume);
+  if(K!=NULL) bzero(K,nb_dofs_volume*12*sizeof(double));
+  if(Koff!=NULL) bzero(Koff,nb_dofs_volume*12*sizeof(double));
+  //zero edges
+  int ee = 0;	
+  for(;ee<6;ee++) {
+    if(NBEDGE_H1(order_edge[ee])==0) continue;
+    int nb2 = 3*NBEDGE_H1(order_edge[ee]);
+    if(K_edge[ee]!=NULL) bzero(K_edge[ee],nb_dofs_volume*nb2*sizeof(double)); }
+  //zero faces
+  int ff = 0;	
+  for(;ff<4;ff++) {
+    if(NBFACE_H1(order_face[ff])==0) continue;
+    int nb2 = 3*NBFACE_H1(order_face[ff]);
+    if(K_face[ff]!=NULL) bzero(K_face[ff],nb_dofs_volume*nb2*sizeof(double)); }
+  //zero volume
+  if(NBVOLUME_H1(order_volume)!=0) {
+    if(K_volume!=NULL) bzero(K_volume,nb_dofs_volume*nb_dofs_volume*sizeof(double)); }
+  double _idofs_x[nb_dofs_volume];
+  int gg = 0;
+  for(;gg<G_DIM;gg++) {
+    double h[9];
+    GradientOfDeformation(diffN,dofs_x_node,h); 
+    HIERARHICAL_APPROX
+    int dd = 0;
+    for(;dd<nb_dofs_volume;dd++) {
+      bzero(_idofs_x,sizeof(double)*nb_dofs_volume);
+      _idofs_x[dd] = eps;
+      double *diff_volume = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)]);
+      VolumeGradientOfDeformation_hierachical(order_volume,diff_volume,_idofs_x,_ih); 
+      MakeComplexTensor(h,_ih,xh); 
+      COMP_STRESSES
+      TakeIm(xP_PullBack,imP);
+      cblas_dscal(9,1./eps,imP,1);
+      TakeIm(xSigma_PullBack,imSigma);
+      cblas_dscal(9,1./eps,imSigma,1);
+      int node = 0;
+      for(;node<4;node++) {
+	if(K!=NULL) {
+	  K[3*node*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
+	  K[3*node*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
+	  K[3*node*nb_dofs_volume + 2*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
+	if(Koff!=NULL) {
+	  Koff[3*node*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
+	  Koff[3*node*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
+	  Koff[3*node*nb_dofs_volume + 2*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }}
+      ee = 0;
+      for(;ee<6;ee++) {
+        int pp = 0;
+        for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
+	  double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])+3*pp]);
+	  if(K_edge[ee]!=NULL) {
+	    (K_edge[ee])[3*pp*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	    (K_edge[ee])[3*pp*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	    (K_edge[ee])[3*pp*nb_dofs_volume + 2*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
+      ff = 0;
+      for(;ff<4;ff++) {
+        int pp = 0;
+        for(;pp<NBFACE_H1(order_face[ff]);pp++) {
+	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])+3*pp]);
+	  if(K_face[ff]!=NULL) {
+	    (K_face[ff])[3*pp*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	    (K_face[ff])[3*pp*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	    (K_face[ff])[3*pp*nb_dofs_volume + 2*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
+      int pp = 0;
+      for(;pp<NBVOLUME_H1(order_volume);pp++) {
+	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)+3*pp]);
+	if(K_volume!=NULL) {
+	  (K_volume)[3*pp*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+  	  (K_volume)[3*pp*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	  (K_volume)[3*pp*nb_dofs_volume + 2*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
+  }}
+}
+

@@ -17,12 +17,16 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef __MOABSNES_HPP__
+#define __MOABSNES_HPP__
+
 #include "moabField.hpp"
 #include <petsc.h>
 #include <petscmat.h>
 #include <petscsnes.h>
 
-using namespace MoFEM;
+
+namespace MoFEM {
 
 struct moabSnesCtx {
 
@@ -33,13 +37,16 @@ struct moabSnesCtx {
   Interface &moab;
   ParallelComm* pcomm;
 
-  moabSnes(moabField &_mField): 
+  moabSnesCtx(moabField &_mField): 
     mField(_mField),moab(_mField.get_moab()) {
     pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   }
 
   const moabField& get_mField() const { return mField; }
   const Interface& get_moab() const { return moab; }
-  SNES get_snses() const { return snes; };
 
 };
+
+}
+
+#endif // __MOABSNES_HPP__
