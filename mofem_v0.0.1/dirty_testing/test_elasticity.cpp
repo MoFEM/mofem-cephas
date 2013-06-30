@@ -23,6 +23,8 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
+#include "moabSnes.hpp"
+
 /* 
  * From: Demkowicz
  * To discuss basic a priori error estimates, we return now to basic mathemat-
