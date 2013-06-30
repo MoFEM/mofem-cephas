@@ -340,39 +340,17 @@ struct moabField {
 
   struct SnesMethod {
     SNES snes;
-    PetscErrorCode set_snes(SNES _snes) { 
-      PetscFunctionBegin;
-      snes = _snes;
-      PetscFunctionReturn(0);
-    }
+    PetscErrorCode set_snes(SNES _snes);
+    //
     Vec snes_x,snes_f;
-    PetscErrorCode set_x(Vec _x) {
-      PetscFunctionBegin;
-      snes_x = _x;
-      PetscFunctionReturn(0);
-    }
-    PetscErrorCode set_f(Vec _f) {
-      PetscFunctionBegin;
-      snes_f = _f;
-      PetscFunctionReturn(0);
-    }
+    PetscErrorCode set_x(Vec _x);
+    PetscErrorCode set_f(Vec _f);
+    //
     Mat *snes_A,*snes_B;
     MatStructure *snes_flag;
-    PetscErrorCode set_A(Mat *_A) {
-      PetscFunctionBegin;
-      snes_A = _A;
-      PetscFunctionReturn(0);
-    }
-    PetscErrorCode set_B(Mat *_B) {
-      PetscFunctionBegin;
-      snes_A = _B;
-      PetscFunctionReturn(0);
-    }
-    PetscErrorCode set_flag(MatStructure *_flag) {
-      PetscFunctionBegin;
-      snes_flag = _flag;
-      PetscFunctionReturn(0);
-    }
+    PetscErrorCode set_A(Mat *_A);
+    PetscErrorCode set_B(Mat *_B);
+    PetscErrorCode set_flag(MatStructure *_flag); 
   };
 
   struct BasicMethod: public SnesMethod {
@@ -383,6 +361,10 @@ struct moabField {
     PetscErrorCode set_fes_multiIndex(const MoFEMFE_multiIndex *_finite_elements);
     PetscErrorCode set_fes_data_multiIndex(const EntMoFEMFE_multiIndex *_finite_elements_data);
     PetscErrorCode set_adjacencies(const MoFEMAdjacencies_multiIndex *_fem_adjacencies);
+    //
+    virtual PetscErrorCode preProcess() = 0;
+    virtual PetscErrorCode operator()() = 0;
+    virtual PetscErrorCode postProcess() = 0;
     //
     const MoFEMField_multiIndex *moabfields;
     const DofMoFEMEntity_multiIndex *dofs_moabfield;
@@ -405,21 +387,21 @@ struct moabField {
      * It is used to zeroing matrices and vectors, clalualtion of shape
      * functions on reference element, preporocessing boundary conditions, etc.
      */
-    virtual PetscErrorCode preProcess();
+    PetscErrorCode preProcess();
 
     /** \brief function is run for every finite element 
      *
      * It is used to calulate element local matrices and assembly. It can be
      * used for post-processing.
      */
-    virtual PetscErrorCode operator()();
+    PetscErrorCode operator()();
 
     /** \brief function is run at the end of looop
      *
      * It is used to assembly matrices and vectors, calulating global varibles,
      * f.e. total internal energy, ect.
      */
-    virtual PetscErrorCode postProcess();
+    PetscErrorCode postProcess();
 
     PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_fe(const NumeredMoFEMFE *_fe_ptr); 
@@ -437,9 +419,9 @@ struct moabField {
     Interface& moab;
     EntMethod(Interface& _moab);
     
-    virtual PetscErrorCode preProcess();
-    virtual PetscErrorCode operator()();
-    virtual PetscErrorCode postProcess();
+    PetscErrorCode preProcess();
+    PetscErrorCode operator()();
+    PetscErrorCode postProcess();
     
     PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_dof(const NumeredDofMoFEMEntity *_dof_ptr);

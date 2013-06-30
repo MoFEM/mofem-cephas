@@ -44,13 +44,33 @@ namespace MoFEM {
 */
 struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
-  FEMethod_ComplexForLazy(Interface& _moab,int verbose = 0): 
-    FEMethod_UpLevelStudent(_moab,verbose) {}
+  FEMethod_ComplexForLazy(Interface& _moab,int _verbose = 0): 
+    FEMethod_UpLevelStudent(_moab,_verbose) {
+    pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  }
+    
+  ErrorCode rval;  
+  PetscErrorCode ierr;
+  ParallelComm* pcomm;
 
-  PetscErrorCode GetTangent() {};
-  PetscErrorCode GerResidual() {};
+  PetscLogDouble t1,t2;
+  PetscLogDouble v1,v2;
 
-}
+  vector<vector<DofIdx> > RowGlob;
+  vector<vector<DofIdx> > ColGlob;
+  vector<vector<ublas::matrix<FieldData> > > rowNMatrices;
+  vector<vector<ublas::matrix<FieldData> > > rowDiffNMatrices;
+  vector<vector<ublas::matrix<FieldData> > > rowBMatrices;
+  vector<vector<ublas::matrix<FieldData> > > colNMatrices;
+  vector<vector<ublas::matrix<FieldData> > > colDiffNMatrices;
+  vector<vector<ublas::matrix<FieldData> > > colBMatrices;
+
+  PetscErrorCode GetIndices();
+  PetscErrorCode GetTangent();
+  PetscErrorCode GerResidual();
+
+
+};
 
 }
 
