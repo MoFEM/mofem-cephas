@@ -18,8 +18,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __MOABFEMETHOD_CORE_HPP__
-#define __MOABFEMETHOD_CORE_HPP__
+#ifndef __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
+#define __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
 
 #include "moabField.hpp"
 #include "Core_dataStructures.hpp"
@@ -224,4 +224,4 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
 
 }
 
-#endif //__MOABFEMETHOD_CORE_HPP__
+#endif // __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__

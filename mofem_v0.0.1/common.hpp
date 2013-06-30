@@ -130,6 +130,8 @@
 #include<petscao.h>
 #include<petscbt.h>
 #include<petsclog.h>
+#include<petscsnes.h>
+
 
 #ifdef __APPLE__
   #include <Accelerate/Accelerate.h>

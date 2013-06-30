@@ -32,19 +32,21 @@ static void StrainEnergy_NeoHookean(double lambda,double mu,__CLPK_doublecomplex
 static void PiolaKirhoiff2_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
 static void Strain_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
 static void PiolaKirhoiff2_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
-
+//
 static void (*tab_func_Strain_energy[])(double,double,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,void*) = {
   StrainEnergy_Hooke,StrainEnergy_Kirchhoff,StrainEnergy_NeoHookean,Strain_EberleinHolzapfel1
 };
 static void (*tab_func_PiolaKirhoiff2[])(double lambda,double mu,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,void*) = {
   PiolaKirhoiff2_Hooke,PiolaKirhoiff2_Kirchhoff,PiolaKirhoiff2_NeoHookean,PiolaKirhoiff2_EberleinHolzapfel1
 };
+//
 void StrainEnergy(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
   tab_func_Strain_energy[ph_eq_vol](lambda,mu,xF,xC,xJ,xPsi,ctx);
 }
 void PiolaKirhoiff2(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
   tab_func_PiolaKirhoiff2[ph_eq_vol](lambda,mu,xF,xC,xJ,xS,ctx);
 }
+//*************************//
 void PilaKirhoff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP) {
   if(ph_eq_vol == hooke) {
     cblas_zcopy(9,xS,1,xP,1);
@@ -65,6 +67,7 @@ void ElshebyStress(__CLPK_doublecomplex *xPsi,__CLPK_doublecomplex *xF,__CLPK_do
   xSigma[3*1+1].i += (*xPsi).i;
   xSigma[3*2+2].i += (*xPsi).i;
 }
+//*************************//
 //Hooke
 static void StrainEnergy_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
   double complex Psi = 0,tr_epsilon = 0;

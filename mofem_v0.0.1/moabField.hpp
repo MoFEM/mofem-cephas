@@ -338,7 +338,44 @@ struct moabField {
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
-  struct BasicMethod {
+  struct SnesMethod {
+    SNES snes;
+    PetscErrorCode set_snes(SNES _snes) { 
+      PetscFunctionBegin;
+      snes = _snes;
+      PetscFunctionReturn(0);
+    }
+    Vec snes_x,snes_f;
+    PetscErrorCode set_x(Vec _x) {
+      PetscFunctionBegin;
+      snes_x = _x;
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode set_f(Vec _f) {
+      PetscFunctionBegin;
+      snes_f = _f;
+      PetscFunctionReturn(0);
+    }
+    Mat *snes_A,*snes_B;
+    MatStructure *snes_flag;
+    PetscErrorCode set_A(Mat *_A) {
+      PetscFunctionBegin;
+      snes_A = _A;
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode set_B(Mat *_B) {
+      PetscFunctionBegin;
+      snes_A = _B;
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode set_flag(MatStructure *_flag) {
+      PetscFunctionBegin;
+      snes_flag = _flag;
+      PetscFunctionReturn(0);
+    }
+  };
+
+  struct BasicMethod: public SnesMethod {
     BasicMethod();    
 
     PetscErrorCode set_moabfields(const MoFEMField_multiIndex *_moabfields);

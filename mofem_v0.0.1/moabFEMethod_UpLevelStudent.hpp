@@ -18,8 +18,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __MOABFEMETHOD_STUDENT_HPP__
-#define __MOABFEMETHOD_STUDENT_HPP__
+#ifndef __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
+#define __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 
 #include "moabField.hpp"
 #include "moabFEMethod_LowLevelStudent.hpp"
@@ -296,4 +296,4 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
 
 }
 
-#endif //__MOABFEMETHOD_STUDENT_HPP__
+#endif // __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
