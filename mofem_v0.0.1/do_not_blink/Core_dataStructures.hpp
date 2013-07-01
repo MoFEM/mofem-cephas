@@ -80,7 +80,6 @@ struct MoFEMFE_Part_mi_tag {};
 struct BitRefLevel_mi_tag {};
 struct ParentEntType_mi_tag {};
 struct MeshSetEnt_mi_tag{};
-struct Composite_mi_tag2 {};
 struct CubitMeshSets_mi_tag {};
 
 struct ltstr
