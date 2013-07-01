@@ -260,6 +260,7 @@ struct Unique_mi_tag {};
 struct MoABEnt_mi_tag {};
 struct EntType_mi_tag {};
 struct Composite_mi_tag {};
+struct Composite_mi_tag2 {};
 struct Identity_mi_tag {};
 struct MoFEMFE_Meshset_mi_tag {};
 struct BitFEId_mi_tag {};
@@ -793,7 +794,14 @@ typedef multi_index_container<
 	    member<SideNumber,int,&SideNumber::side_number>,
 	    member<FENumeredDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber*,&FENumeredDofMoFEMEntity::side_number_ptr>
 	  >
-      > >
+      > >,
+    ordered_non_unique<
+      tag<Composite_mi_tag2>, 
+      composite_key<
+	FENumeredDofMoFEMEntity,
+	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_field,string,&FENumeredDofMoFEMEntity::get_name>,
+	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FENumeredDofMoFEMEntity::get_ent_type>
+	> >
   > > FENumeredDofMoFEMEntity_multiIndex;
 
 typedef multi_index_container<
