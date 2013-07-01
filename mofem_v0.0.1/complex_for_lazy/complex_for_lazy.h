@@ -25,11 +25,12 @@
 #include "H1HdivHcurlL2.h"
 #include "complex.h"
 
-enum phisical_equation_volume { hooke = 0, stvenant_kirchhoff = 1,neohookean = 2,eberleinholzapfel1 = 3};
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+enum phisical_equation_volume { hooke = 0, stvenant_kirchhoff = 1,neohookean = 2,eberleinholzapfel1 = 3};
+
 
 void TakeIm(__CLPK_doublecomplex *xA,double *imA);
 void TakeRe(__CLPK_doublecomplex *xA,double *reA);
@@ -38,18 +39,8 @@ void SpatialGradientOfDeformation(__CLPK_doublecomplex *xh,__CLPK_doublecomplex 
 void CauchyGreenDeformation(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC);
 void PiolaKrihoff1_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xP_PullBack);
 void ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xStress,__CLPK_doublecomplex *xStress_PullBack);
-void ComputeEneregyAtGauss_Point_hierarchical(
-  int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
-  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
-  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
-  double *rePsi,double *reP,double *reSigma,double *reF,double *intPsi,
-  int G_DIM,const double *G_W);
 
-void Fint_Hh(double alpha,double lambda,double mu,void *matctx,double *diffN,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *Fint_H,double *Fint_h,double *Fint_iH,double *Fint_ih);
-void Fext_h(double alpha,double *NTRI,double *tractions,double *Fext);
-void Tangent_hh(double alpha,double eps,double lambda,double mu,void *matctx,double *diffN,double *dofs_X,double *dofs_x,double *K,double *Koff);
-void Tangent_HH(double alpha,double eps,double lambda,double mu,void *matctx,double *diffN,double *dofs_X,double *dofs_x,double *K,double *Koff);
-void Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
+PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_iX,double *dofs_ix_node,
   double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
@@ -58,27 +49,27 @@ void Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,doubl
   double *Fint_iH,double *Fint_ih,
   double *Fint_ih_edge[],double *Fint_ih_face[],double *Fint_ih_volume,
   int G_DIM,const double *G_W);
-void Tangent_HH_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K,double *Koff,double *Koff_edge[6],double *Koff_face[4],double *Koff_volume,int G_DIM,const double *G_W);
-void Tangent_hh_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W);
-void Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K[6],double *Koff[6],
   double *K_edge[6][6],double *K_face[4][6],double *K_volume[6],
   int G_DIM,const double *G_W);
-void Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K[4],double *Koff[4],
   double *K_edge[6][4],double *K_face[4][4],double *K_volume[4],
   int G_DIM,const double *G_W);
-void Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W);

@@ -52,11 +52,11 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
   double eps;
 
-  FEMethod_ComplexForLazy(Interface& _moab,
+  FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
     double _lambda,double _mu,
     int _verbose = 0): 
     FEMethod_UpLevelStudent(_moab,_verbose),
-    type_of_analysis(type_of_analysis),
+    type_of_analysis(_type),
     lambda(_lambda),mu(_mu),
     eps(1e-12) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -70,6 +70,11 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
       Kfaceh_data.resize(4);
       Kedgeh.resize(6);
       Kfaceh.resize(4);
+      dofs_x.resize(12);
+      dofs_x_edge_data.resize(6);
+      dofs_x_face_data.resize(4);
+      dofs_x_edge.resize(6);
+      dofs_x_face.resize(4);
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
       g_NTRI.resize(3*7);
@@ -83,9 +88,6 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   ErrorCode rval;  
   PetscErrorCode ierr;
   ParallelComm* pcomm;
-
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
 
   vector<vector<DofIdx> > RowGlob;
   vector<vector<DofIdx> > ColGlob;

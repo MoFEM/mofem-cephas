@@ -66,18 +66,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetColView(const string &field_name,Ent
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_LowLevelStudent::preProcess() {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod_LowLevelStudent::operator()() {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod_LowLevelStudent::postProcess() {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
-}
+
 
 //
 template <typename T>

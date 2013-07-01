@@ -337,11 +337,9 @@ PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF) {
   __CLPK_integer LWORK = 4;
   __CLPK_integer info;
   info = lapack_zgetrf(3,3,xF,3,IPIV);
-  if(info == 0) SETERRQ(PETSC_COMM_SELF,1,"info == 0");
-  //assert(info == 0);
+  if(info != 0) SETERRQ(PETSC_COMM_SELF,1,"info == 0");
   info = lapack_zgetri(3,xF,3,IPIV,WORK,LWORK);
-  if(info == 0) SETERRQ(PETSC_COMM_SELF,1,"info == 0");
-  //assert(info == 0);
+  if(info != 0) SETERRQ(PETSC_COMM_SELF,1,"info == 0");
   PetscFunctionReturn(0);
 }
 PetscErrorCode InvertComplexSymmMatrix3by3(__CLPK_doublecomplex *xC) {

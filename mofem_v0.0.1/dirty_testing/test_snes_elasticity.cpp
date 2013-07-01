@@ -88,15 +88,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = mField.add_BitFieldId("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_BitFieldId("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_MoFEMFE("ELASTIC"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = mField.modify_MoFEMFE_row_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_MoFEMFE_row_add_bit("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_MoFEMFE_col_add_bit("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_MoFEMFE_data_add_bit("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //define problems
   ierr = mField.add_BitProblemId("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -108,22 +108,22 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
 
   //add entitities (by tets) to the field
-  ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
-  /*ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",1); CHKERRQ(ierr);
+  /*ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",1); CHKERRQ(ierr);
   ierr = mField.build_fields(); CHKERRQ(ierr);*/
 
   //build finite elemnts
@@ -149,7 +149,37 @@ int main(int argc, char *argv[]) {
   struct ElasticFEMethod: public FEMethod_ComplexForLazy {
     ElasticFEMethod(Interface& _moab,
       double _lambda,double _mu,
-      int _verbose = 0): FEMethod_ComplexForLazy(_moab,_lambda,_mu,_verbose) {};
+      int _verbose = 0): FEMethod_ComplexForLazy(_moab,spatail_analysis,_lambda,_mu,_verbose) {
+    };
+
+  PetscLogDouble t1,t2;
+  PetscLogDouble v1,v2;
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndices(); CHKERRQ(ierr);
+    ierr = GetTangent(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    ierr = PetscGetTime(&v2); CHKERRQ(ierr);
+    ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+
+    PetscFunctionReturn(0);
+  }
+
+
   };
 
 
@@ -199,7 +229,7 @@ int main(int argc, char *argv[]) {
     MyEntMethod(Interface& _moab): EntMethod(_moab) {
       double def_VAL[3] = {0,0,0};
       // create TAG
-      rval = moab.tag_get_handle("DISPLACEMENTS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+      rval = moab.tag_get_handle("SPATIAL_POSITIONS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
     }
 
     vector<double> vals;
@@ -239,7 +269,7 @@ int main(int argc, char *argv[]) {
   };
 
   MyEntMethod ent_method(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -319,7 +349,7 @@ int main(int argc, char *argv[]) {
 
       double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0};
       // create TAG
-      rval = moab_post_proc.tag_get_handle("DISPLACEMENTS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+      rval = moab_post_proc.tag_get_handle("SPATIAL_POSITIONS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
       rval = moab_post_proc.tag_get_handle("STRAIN_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
 
       init_ref = true;
@@ -356,8 +386,8 @@ int main(int argc, char *argv[]) {
 	rval = moab_post_proc.create_element(MBTET,conn_post_proc,4,ref_tet); CHKERR_PETSC(rval);
       }
 
-      Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find("DISPLACEMENT");
-      if(diit==data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no DISPLACEMENT !!!");
+      Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find("SPATIAL_POSITION");
+      if(diit==data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no SPATIAL_POSITION !!!");
       vector< ublas::vector<FieldData> > &data = diit->second;
       vector< ublas::vector<FieldData> >::iterator vit = data.begin();
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
@@ -367,7 +397,7 @@ int main(int argc, char *argv[]) {
 
       //Strains to Noades in PostProc Mesh
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-      ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+      ierr = GetGaussDiffDataVector("SPATIAL_POSITION",GradU_at_GaussPt); CHKERRQ(ierr);
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
       mit = node_map.begin();
       for(;viit!=GradU_at_GaussPt.end();viit++,mit++) {

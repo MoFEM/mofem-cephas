@@ -53,10 +53,6 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   FEMethod_LowLevelStudent(Interface& _moab,int verbose = 0);
   ~FEMethod_LowLevelStudent();
 
-  PetscErrorCode preProcess();
-  PetscErrorCode operator()();
-  PetscErrorCode postProcess();
-
   PetscErrorCode GlobIndices();
   PetscErrorCode DataOp();
   PetscErrorCode ParentData(const string &fe_name);

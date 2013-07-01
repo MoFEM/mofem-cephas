@@ -1,3 +1,5 @@
+static PetscErrorCode ierr;
+
 void SpatialGradientOfDeformation(__CLPK_doublecomplex *xh,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xF) {
   __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.};
   cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xh,3,inv_xH,3,&tmp2,xF,3);
@@ -40,7 +42,7 @@ void ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *i
 //assert(det_xF.r >= 0); 
 #define COMP_STRESSES \
   SpatialGradientOfDeformation(xh,inv_xH,xF); \
-  DeterminantComplexGradient(xF,&det_xF); \
+  ierr = DeterminantComplexGradient(xF,&det_xF); CHKERRQ(ierr); \
   SpatialGradientOfDeformation(xh,inv_xH,xF); \
   CauchyGreenDeformation(xF,xC); \
   StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); \
@@ -49,139 +51,6 @@ void ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *i
   PiolaKrihoff1_PullBack(&det_xH,inv_xH,xP,xP_PullBack); \
   ElshebyStress(&xPsi,xF,xP,xSigma); \
   ElshebyStress_PullBack(&det_xH,inv_xH,xSigma,xSigma_PullBack); 
-void Fint_Hh(double alpha,double lambda,double mu,void *matctx,double *diffN,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *Fint_H,double *Fint_h,double *Fint_iH,double *Fint_ih) {
-  double H[9],iH[9];
-  GradientOfDeformation(diffN,dofs_X,H); 
-  if(dofs_iX != NULL) {
-    GradientOfDeformation(diffN,dofs_iX,iH);   
-  } else {
-    bzero(iH,9*sizeof(double));
-  } 
-  double h[9],ih[9];
-  GradientOfDeformation(diffN,dofs_x,h); 
-  if(dofs_ix != NULL) {
-    GradientOfDeformation(diffN,dofs_ix,ih);   
-  } else {
-    bzero(ih,9*sizeof(double));
-  } 
-  double ZERO[9];
-  bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],xPsi,det_xF,det_xH;
-  double reP[9],reSigma[9],imP[9],imSigma[9];
-  MakeComplexTensor(h,ih,xh);   
-  MakeComplexTensor(H,iH,xH);
-  cblas_zcopy(9,xH,1,inv_xH,1);
-  DeterminantComplexGradient(xH,&det_xH);
-  InvertComplexGradient(inv_xH);
-  COMP_STRESSES
-  TakeRe(xP_PullBack,reP);
-  TakeRe(xSigma_PullBack,reSigma);
-  TakeIm(xP_PullBack,imP);
-  TakeIm(xSigma_PullBack,imSigma);
-  int node = 0;
-  for(;node<4;node++) {
-    if(Fint_H!=NULL) {
-      Fint_H[3*node + 0] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reSigma[0],1);
-      Fint_H[3*node + 1] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reSigma[3],1);
-      Fint_H[3*node + 2] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reSigma[6],1); }
-    if(Fint_h!=NULL) {
-      Fint_h[3*node + 0] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reP[0],1);
-      Fint_h[3*node + 1] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reP[3],1);
-      Fint_h[3*node + 2] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&reP[6],1); }
-    if(Fint_iH!=NULL) {
-      Fint_iH[3*node + 0] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
-      Fint_iH[3*node + 1] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
-      Fint_iH[3*node + 2] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }
-    if(Fint_ih!=NULL) {
-      Fint_ih[3*node + 0] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
-      Fint_ih[3*node + 1] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
-      Fint_ih[3*node + 2] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); 
-  }}
-}
-void Fext_h(double alpha,double *NTRI,double *tractions,double *Fext) {
-  double trac[3];
-  trac[0] = cblas_ddot(3,NTRI,1,&tractions[0],3);
-  trac[1] = cblas_ddot(3,NTRI,1,&tractions[1],3);
-  trac[2] = cblas_ddot(3,NTRI,1,&tractions[2],3);
-  int node = 0;
-  for(;node<3;node++) {
-    Fext[3*node + 0] = alpha*NTRI[node]*trac[0];
-    Fext[3*node + 1] = alpha*NTRI[node]*trac[1];
-    Fext[3*node + 2] = alpha*NTRI[node]*trac[2]; 
-  }
-}
-void Tangent_hh(double alpha,double eps,double lambda,double mu,void *matctx,double *diffN,double *dofs_X,double *dofs_x,double *K,double *Koff) {
-  double H[9];
-  GradientOfDeformation(diffN,dofs_X,H); 
-  double h[9];
-  GradientOfDeformation(diffN,dofs_x,h); 
-  double ZERO[9];
-  bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
-  double _idofs_x[12],_ih[9],imP[9],imSigma[9];
-  MakeComplexTensor(H,ZERO,xH); 
-  cblas_zcopy(9,xH,1,inv_xH,1);
-  DeterminantComplexGradient(xH,&det_xH);
-  InvertComplexGradient(inv_xH);
-  int dd = 0;
-  for(;dd<12;dd++) {
-    bzero(_idofs_x,sizeof(double)*12);
-    _idofs_x[dd] = eps;
-    GradientOfDeformation(diffN,_idofs_x,_ih); 
-    MakeComplexTensor(h,_ih,xh); 
-    COMP_STRESSES
-    TakeIm(xP_PullBack,imP);
-    cblas_dscal(9,1./eps,imP,1);
-    TakeIm(xSigma_PullBack,imSigma);
-    cblas_dscal(9,1./eps,imSigma,1);
-    int node = 0;
-    for(;node<4;node++) {
-      if(K!=NULL) {
-	K[3*12*node + 0*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
-	K[3*12*node + 1*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
-	K[3*12*node + 2*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
-      if(Koff!=NULL) {
-	Koff[3*12*node + 0*12 + dd] = alpha*(cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1));
-	Koff[3*12*node + 1*12 + dd] = alpha*(cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1));
-	Koff[3*12*node + 2*12 + dd] = alpha*(cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1)); }}
-  }
-}
-void Tangent_HH(double alpha,double eps,double lambda,double mu,void *matctx,double *diffN,double *dofs_X,double *dofs_x,double *K,double *Koff) {
-  double H[9];
-  GradientOfDeformation(diffN,dofs_X,H); 
-  double h[9];
-  GradientOfDeformation(diffN,dofs_x,h); 
-  double ZERO[9];
-  bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
-  double _idofs_X[12],_iH[9],imP[9],imSigma[9];
-  MakeComplexTensor(h,ZERO,xh); 
-  int dd = 0;
-  for(;dd<12;dd++) {
-    bzero(_idofs_X,sizeof(double)*12);
-    _idofs_X[dd] = eps;
-    GradientOfDeformation(diffN,_idofs_X,_iH); 
-    MakeComplexTensor(H,_iH,xH); 
-    cblas_zcopy(9,xH,1,inv_xH,1);
-    DeterminantComplexGradient(xH,&det_xH);
-    InvertComplexGradient(inv_xH);
-    COMP_STRESSES
-    TakeIm(xP_PullBack,imP);
-    cblas_dscal(9,1./eps,imP,1);
-    TakeIm(xSigma_PullBack,imSigma);
-    cblas_dscal(9,1./eps,imSigma,1);
-    int node = 0;
-    for(;node<4;node++) {
-      if(K!=NULL) {
-	K[3*12*node + 0*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
-	K[3*12*node + 1*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
-	K[3*12*node + 2*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }
-      if(Koff!=NULL) {
-	Koff[3*12*node + 0*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
-	Koff[3*12*node + 1*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
-	Koff[3*12*node + 2*12 + dd] = alpha*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }}
-  }
-}
 
 #define HIERARHICAL_APPROX \
   int ee = 0; \
@@ -190,7 +59,7 @@ void Tangent_HH(double alpha,double eps,double lambda,double mu,void *matctx,dou
     double edge_h[9]; \
     bzero(edge_h,9*sizeof(double)); \
     double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])]); \
-    EdgeGradientOfDeformation_hierachical(order_edge[ee],diff,dofs_x_edge[ee],edge_h); \
+    H1_EdgeGradientOfDeformation_hierachical(order_edge[ee],diff,dofs_x_edge[ee],edge_h); \
     cblas_daxpy(9,1,edge_h,1,h,1); } \
   int ff = 0; \
   for(;ff<4;ff++) { \
@@ -198,45 +67,16 @@ void Tangent_HH(double alpha,double eps,double lambda,double mu,void *matctx,dou
     double face_h[9]; \
     bzero(face_h,9*sizeof(double)); \
     double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])]); \
-    FaceGradientOfDeformation_hierachical(order_face[ff],diff,dofs_x_face[ff],face_h); \
+    H1_FaceGradientOfDeformation_hierachical(order_face[ff],diff,dofs_x_face[ff],face_h); \
     cblas_daxpy(9,1,face_h,1,h,1); } \
   if(NBVOLUME_H1(order_volume)>0) { \
     double volume_h[9]; \
     bzero(volume_h,9*sizeof(double)); \
     double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)]); \
-    VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_x_volume,volume_h); \
+    H1_VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_x_volume,volume_h); \
     cblas_daxpy(9,1,volume_h,1,h,1); }
 
-void ComputeEneregyAtGauss_Point_hierarchical(
-  int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
-  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
-  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
-  double *rePsi,double *reP,double *reSigma,double *reF,double *intPsi,
-  int G_DIM,const double *G_W) {
-  double ZERO[9];
-  bzero(ZERO,sizeof(double)*9);
-  double H[9];
-  GradientOfDeformation(diffN,dofs_X,H); 
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],xPsi,det_xF,det_xH;
-  MakeComplexTensor(H,ZERO,xH);
-  cblas_zcopy(9,xH,1,inv_xH,1);
-  DeterminantComplexGradient(xH,&det_xH);
-  InvertComplexGradient(inv_xH);
-  *intPsi = 0;
-  int gg = 0;
-  for(;gg<G_DIM;gg++) {
-    double h[9];
-    GradientOfDeformation(diffN,dofs_x_node,h); 
-    if(order_edge!=NULL) {
-      HIERARHICAL_APPROX 
-    }
-    MakeComplexTensor(h,ZERO,xh); 
-    COMP_STRESSES
-    rePsi[gg] = xPsi.r;
-    *intPsi += alpha*G_W[gg]*det_xH.r*xPsi.r; 
-  }
-}
-void Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
+PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_iX,double *dofs_ix_node,
   double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
@@ -245,6 +85,7 @@ void Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,doubl
   double *Fint_iH,double *Fint_ih,
   double *Fint_ih_edge[],double *Fint_ih_face[],double *Fint_ih_volume,
   int G_DIM,const double *G_W) {
+  PetscFunctionBegin;
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
   double H[9];
@@ -259,8 +100,8 @@ void Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,doubl
     MakeComplexTensor(H,iH,xH);
   }
   cblas_zcopy(9,xH,1,inv_xH,1);
-  DeterminantComplexGradient(xH,&det_xH);
-  InvertComplexGradient(inv_xH);
+  ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
+  ierr = InvertComplexGradient(inv_xH); CHKERRQ(ierr);
   int gg = 0;
   for(;gg<G_DIM;gg++) {
     double h[9],ih[9];
@@ -341,11 +182,13 @@ void Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,doubl
 	(Fint_ih_volume)[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }
     }
   }
+  PetscFunctionReturn(0);
 }
-void Tangent_HH_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K,double *Koff,double *Koff_edge[6],double *Koff_face[4],double *Koff_volume,int G_DIM,const double *G_W) {
+  PetscFunctionBegin;
   double H[9];
   GradientOfDeformation(diffN,dofs_X,H); 
   double ZERO[9];
@@ -380,8 +223,8 @@ void Tangent_HH_hierachical(int *order_edge,int *order_face,int order_volume,dou
     GradientOfDeformation(diffN,_idofs_X,_iH); 
     MakeComplexTensor(H,_iH,xH); 
     cblas_zcopy(9,xH,1,inv_xH,1);
-    DeterminantComplexGradient(xH,&det_xH);
-    InvertComplexGradient(inv_xH);
+    ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
+    ierr = InvertComplexGradient(inv_xH); CHKERRQ(ierr);
     int gg = 0;
     for(;gg<G_DIM;gg++) {
       double h[9];
@@ -429,11 +272,13 @@ void Tangent_HH_hierachical(int *order_edge,int *order_face,int order_volume,dou
   	  (Koff_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	  (Koff_volume)[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
   }}
+  PetscFunctionReturn(0);
 }
-void Tangent_hh_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W) {
+  PetscFunctionBegin;
   double H[9];
   GradientOfDeformation(diffN,dofs_X,H); 
   double ZERO[9];
@@ -442,8 +287,8 @@ void Tangent_hh_hierachical(int *order_edge,int *order_face,int order_volume,dou
   double _idofs_x[12],_ih[9],imP[9],imSigma[9];
   MakeComplexTensor(H,ZERO,xH); 
   cblas_zcopy(9,xH,1,inv_xH,1);
-  DeterminantComplexGradient(xH,&det_xH);
-  InvertComplexGradient(inv_xH);
+  ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
+  ierr = InvertComplexGradient(inv_xH); CHKERRQ(ierr);
   if(K!=NULL) bzero(K,12*12*sizeof(double));
   if(Koff!=NULL) bzero(Koff,12*12*sizeof(double));
   //zero edges
@@ -514,13 +359,15 @@ void Tangent_hh_hierachical(int *order_edge,int *order_face,int order_volume,dou
   	  (K_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	  (K_volume)[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
   }}
+  PetscFunctionReturn(0);
 }
-void Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K[6],double *Koff[6],
   double *K_edge[6][6],double *K_face[4][6],double *K_volume[6],
   int G_DIM,const double *G_W) {
+  PetscFunctionBegin;
   double H[9];
   GradientOfDeformation(diffN,dofs_X,H); 
   double ZERO[9];
@@ -529,8 +376,8 @@ void Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volum
   double _ih[9],imP[9],imSigma[9];
   MakeComplexTensor(H,ZERO,xH); 
   cblas_zcopy(9,xH,1,inv_xH,1);
-  DeterminantComplexGradient(xH,&det_xH);
-  InvertComplexGradient(inv_xH);
+  ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
+  ierr = InvertComplexGradient(inv_xH); CHKERRQ(ierr);
   int ee = 0;	
   for(;ee<6;ee++) {
     if(NBEDGE_H1(order_edge[ee])==0) continue;
@@ -562,7 +409,7 @@ void Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volum
 	bzero(_idofs_x,sizeof(double)*nb_edge_dofs);
 	_idofs_x[dd] = eps;   
 	double *diff_edge = &(diffN_edge[EE])[gg*3*NBEDGE_H1(order_edge[EE])];
-	EdgeGradientOfDeformation_hierachical(order_edge[EE],diff_edge,_idofs_x,_ih); 
+	H1_EdgeGradientOfDeformation_hierachical(order_edge[EE],diff_edge,_idofs_x,_ih); 
         MakeComplexTensor(h,_ih,xh); 
         COMP_STRESSES
         TakeIm(xP_PullBack,imP);
@@ -605,13 +452,15 @@ void Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volum
 	    (K_volume[EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	    (K_volume[EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
     }}}
+  PetscFunctionReturn(0);
 }
-void Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K[4],double *Koff[4],
   double *K_edge[6][4],double *K_face[4][4],double *K_volume[4],
   int G_DIM,const double *G_W) {
+  PetscFunctionBegin;
   double H[9];
   GradientOfDeformation(diffN,dofs_X,H); 
   double ZERO[9];
@@ -620,8 +469,8 @@ void Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volum
   double _ih[9],imP[9],imSigma[9];
   MakeComplexTensor(H,ZERO,xH); 
   cblas_zcopy(9,xH,1,inv_xH,1);
-  DeterminantComplexGradient(xH,&det_xH);
-  InvertComplexGradient(inv_xH);
+  ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
+  ierr = InvertComplexGradient(inv_xH); CHKERRQ(ierr);
   int ff = 0;	
   for(;ff<4;ff++) {
     if(NBFACE_H1(order_face[ff])==0) continue;
@@ -653,7 +502,7 @@ void Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volum
 	GradientOfDeformation(diffN,dofs_x_node,h); 
         HIERARHICAL_APPROX
 	double *diff_face = &(diffN_face[FF])[gg*3*NBFACE_H1(order_face[FF])];
-	FaceGradientOfDeformation_hierachical(order_face[FF],diff_face,_idofs_x,_ih); 
+	H1_FaceGradientOfDeformation_hierachical(order_face[FF],diff_face,_idofs_x,_ih); 
         MakeComplexTensor(h,_ih,xh); 
         COMP_STRESSES
         TakeIm(xP_PullBack,imP);
@@ -696,11 +545,13 @@ void Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volum
 	    (K_volume[FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	    (K_volume[FF])[3*pp*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
     }}}
+  PetscFunctionReturn(0);
 }
-void Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W) {
+  PetscFunctionBegin;
   double H[9];
   GradientOfDeformation(diffN,dofs_X,H); 
   double ZERO[9];
@@ -709,8 +560,8 @@ void Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_vol
   double _ih[9],imP[9],imSigma[9];
   MakeComplexTensor(H,ZERO,xH); 
   cblas_zcopy(9,xH,1,inv_xH,1);
-  DeterminantComplexGradient(xH,&det_xH);
-  InvertComplexGradient(inv_xH);
+  ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
+  ierr = InvertComplexGradient(inv_xH); CHKERRQ(ierr);
   int nb_dofs_volume = 3*NBVOLUME_H1(order_volume);
   if(K!=NULL) bzero(K,nb_dofs_volume*12*sizeof(double));
   if(Koff!=NULL) bzero(Koff,nb_dofs_volume*12*sizeof(double));
@@ -740,7 +591,7 @@ void Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_vol
       bzero(_idofs_x,sizeof(double)*nb_dofs_volume);
       _idofs_x[dd] = eps;
       double *diff_volume = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)]);
-      VolumeGradientOfDeformation_hierachical(order_volume,diff_volume,_idofs_x,_ih); 
+      H1_VolumeGradientOfDeformation_hierachical(order_volume,diff_volume,_idofs_x,_ih); 
       MakeComplexTensor(h,_ih,xh); 
       COMP_STRESSES
       TakeIm(xP_PullBack,imP);
@@ -783,5 +634,6 @@ void Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_vol
   	  (K_volume)[3*pp*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	  (K_volume)[3*pp*nb_dofs_volume + 2*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
   }}
+  PetscFunctionReturn(0);
 }
 
