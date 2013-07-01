@@ -66,9 +66,19 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
       faceNinvJac.resize(4);
       diff_edgeNinvJac.resize(6);
       diff_faceNinvJac.resize(4);
+      Kedgeh_data.resize(6);
+      Kfaceh_data.resize(4);
+      Kedgeh.resize(6);
+      Kfaceh.resize(4);
+      g_NTET.resize(4*45);
+      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+      g_NTRI.resize(3*7);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+      g_TET_W = G_TET_W45;
   }
 
   vector<double> g_NTET,g_NTRI;
+  const double *g_TET_W;
     
   ErrorCode rval;  
   PetscErrorCode ierr;
@@ -92,21 +102,26 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   vector<double*> diff_edgeNinvJac;
   vector<double*> diff_faceNinvJac;
   double *diff_volumeNinvJac;
-  
-  vector<double*> diff_edgeNinvJac;
-  vector<double*> diff_faceNinvJac;
-  double *diff_volumeNinvJac;
 
+  ublas::matrix<double> Khh,Kvolumeh;
+  vector<ublas::matrix<double> > Kedgeh_data,Kfaceh_data;
+  vector<double*> Kedgeh,Kfaceh;
+
+  ublas::vector<double> dofs_x,dofs_x_volume;
+  vector<ublas::vector<double> > dofs_x_edge_data,dofs_x_face_data;
+  vector<double*> dofs_x_edge,dofs_x_face;
+  
   PetscErrorCode GetIndices();
   PetscErrorCode GetTangent();
   PetscErrorCode GetFint();
   PetscErrorCode GetFext();
 
+  PetscErrorCode OpComplexForLazyStart();
+
   private:
   vector<int> order_edges;
   vector<int> order_faces;
   int order_volume;
-
 
 };
 

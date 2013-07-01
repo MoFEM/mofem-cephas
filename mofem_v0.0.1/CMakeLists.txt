@@ -71,6 +71,7 @@ include_directories(
 
 #SPECIFIC FROM NOW
 include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
+include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 
 add_library(mofem_Field 
   do_not_blink/Core_dataStructures.cpp

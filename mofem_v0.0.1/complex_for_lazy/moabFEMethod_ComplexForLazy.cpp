@@ -23,6 +23,11 @@
 
 namespace MoFEM {
 
+PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
+  PetscFunctionBegin;
+  ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
   PetscFunctionBegin;
   switch (fe_ent_ptr->get_ent_type()) {
@@ -94,31 +99,50 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
 	ierr = GetGaussColDiffNMatrix("SPATIAL_POSITION",MBTET,colDiffNMatrices[1+ee+ff]); CHKERRQ(ierr);
 	ierr = MakeBMatrix3D("SPATIAL_POSITION",colDiffNMatrices[1+ee+ff],colBMatrices[1+ee+ff]);  CHKERRQ(ierr);
       }
+      //data edge
       ee = 0;
       for(;ee<6;ee++) {
-	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-	eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("SPATIAL_POSITION",MBEDGE,ff));
+	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit,hi_eiit;
+	eiit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBEDGE,ee));
 	if(eiit!=row_multiIndex->get<Composite_mi_tag>().end()) {
 	  order_edges[ee] = eiit->get_max_order();
+	  hi_eiit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBEDGE,ee));
+	  dofs_x_edge_data[ee].resize(distance(eiit,hi_eiit));
+	  assert(dofs_x_edge_data[ee].size() == (unsigned int)NBEDGE_H1(order_edges[ee]));
+	  for(int dd = 0;eiit!=hi_eiit;eiit++,dd++) dofs_x_edge_data[ee][dd] = eiit->get_FieldData(); 
 	} else {
 	  order_edges[ee] = 0;
 	}
       }
+      //data face
       ff = 0;
       for(;ff<4;ff++) {
-	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator fiit;
-	fiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("SPATIAL_POSITION",MBTRI,ff));
+	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator fiit,hi_fiit;
+	fiit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBTRI,ff));
 	if(fiit!=row_multiIndex->get<Composite_mi_tag>().end()) {
-	  order_faces[ee] = fiit->get_max_order();
+	  order_faces[ff] = fiit->get_max_order();
+	  hi_fiit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBTRI,ff));
+	  dofs_x_face_data[ff].resize(distance(fiit,hi_fiit));
+	  assert(dofs_x_face_data[ff].size() == (unsigned int)NBFACE_H1(order_faces[ff]));
+	  for(int dd = 0;fiit!=hi_fiit;fiit++,dd++) dofs_x_face_data[ff][dd] = fiit->get_FieldData(); 
 	} else {
 	  order_faces[ee] = 0;
 	}
       }
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit;
-      viit = row_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple("SPATIAL_POSITION",MBTET));
+      //data voolume
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit,hi_viit;
+      viit = row_multiIndex->get<Composite_mi_tag2>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBTET));
       order_volume = viit->get_max_order();
-      
-
+      hi_viit = row_multiIndex->get<Composite_mi_tag2>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBTET));
+      dofs_x_volume.resize(distance(viit,hi_viit));
+      assert(dofs_x_volume.size() == (unsigned int)NBFACE_H1(order_volume));
+      for(int dd = 0;viit!=hi_viit;viit++,dd++) dofs_x_volume[dd] = viit->get_FieldData(); 
+      //data nodes
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator niit,hi_niit;
+      niit = row_multiIndex->get<Composite_mi_tag2>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBVERTEX));
+      hi_niit = row_multiIndex->get<Composite_mi_tag2>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBVERTEX));
+      assert(distance(niit,hi_niit)==12);   
+      for(int dd = 0;niit!=hi_niit;niit++,dd++) dofs_x[dd] = niit->get_FieldData(); 
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
       } 
@@ -135,12 +159,30 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   case MBTET: {
     unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
     switch(sub_analysis_type) {
-      case spatail_analysis:
-	Tangent_hh_hierachical(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
-	  diffNTETinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
-	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
-	  Khh,NULL,Kedgeh,Kfaceh,Kvolumeh,g_dim,g_w); 
-	Tangent_hh_hierachical_edge(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
+      case spatail_analysis: {
+	assert(12 == RowGlob[0].size());
+	Khh = ublas::zero_matrix<double>(12,12);
+	assert((unsigned int)NBVOLUME_H1(order_volume) == RowGlob[1+6+4].size());
+	Kvolumeh = ublas::zero_matrix<double>(RowGlob[1+6+4].size(),12);
+	diff_volumeNinvJac = &diffH1elemNinvJac[0];
+	int ee = 0;
+	for(;ee<6;ee++) {
+	  assert((unsigned int)NBEDGE_H1(order_edges[ee]) == RowGlob[1+ee].size());
+	  Kedgeh_data[ee] = ublas::zero_matrix<double>(RowGlob[1+ee].size(),12);
+	    diff_edgeNinvJac[ee] = &(diffH1edgeNinvJac[ee])[0]; 
+	}
+	int ff = 0;
+	for(;ff<4;ff++) {
+	  assert((unsigned int)NBFACE_H1(order_faces[ff]) == RowGlob[1+6+ff].size());
+	  Kfaceh_data[ff] = ublas::zero_matrix<double>(RowGlob[1+6+ff].size(),12);
+	  diff_faceNinvJac[ff] = &(diffH1faceNinvJac[ff])[0];
+	}
+	int g_dim = get_dim_gNTET();
+	Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps,lambda,mu,ptr_matctx, 
+	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&dofs_x_volume[0], 
+	  &Khh.data()[0],NULL,&Kedgeh[0],&Kfaceh[0],&Kvolumeh.data()[0],g_dim,g_TET_W); 
+	/*Tangent_hh_hierachical_edge(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  diffNTETinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
 	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
 	  Khedge,NULL,Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
@@ -154,7 +196,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  diffNTETinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
 	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
 	  Khvolume,NULL,Khh_edgevolume,Khh_facevolume,Khh_volumevolume, 
-	  g_dim,g_w);
+	  g_dim,g_w);*/
+      }
       break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"no implemented");
