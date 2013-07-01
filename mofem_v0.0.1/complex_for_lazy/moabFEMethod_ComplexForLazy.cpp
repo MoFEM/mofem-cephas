@@ -114,8 +114,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
 	  order_faces[ee] = 0;
 	}
       }
-      //FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator viit;
-      //viit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("SPATIAL_POSITION",MBTET,ff));
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit;
+      viit = row_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple("SPATIAL_POSITION",MBTET));
+      order_volume = viit->get_max_order();
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
       } 

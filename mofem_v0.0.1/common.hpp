@@ -783,7 +783,14 @@ typedef multi_index_container<
 	    member<SideNumber,int,&SideNumber::side_number>,
 	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
 	  >
-      > >
+      > >,
+    ordered_non_unique<
+      tag<Composite_mi_tag2>, 
+      composite_key<
+	FEDofMoFEMEntity,
+	  const_mem_fun<FEDofMoFEMEntity::interface_type_field,string,&FEDofMoFEMEntity::get_name>,
+	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>
+	> >
   > > FEDofMoFEMEntity_multiIndex;
 
 typedef multi_index_container<
