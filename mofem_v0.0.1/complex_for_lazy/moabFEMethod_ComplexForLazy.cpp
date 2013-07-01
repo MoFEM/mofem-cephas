@@ -21,8 +21,43 @@
 #include "FEM.h"
 #include "complex_for_lazy.h"
 
+extern "C" {
+void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
+  double circumcenter[3],double *xi,double *eta,double *zeta);
+void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
+  double circumcenter[3],double *xi,double *eta);
+}
+
 namespace MoFEM {
 
+FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
+    double _lambda,double _mu, int _verbose): 
+    FEMethod_UpLevelStudent(_moab,_verbose), type_of_analysis(_type), lambda(_lambda),mu(_mu), eps(1e-12) {
+  pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  order_edges.resize(6);
+  order_faces.resize(4);
+  edgeNinvJac.resize(6);
+  faceNinvJac.resize(4);
+  diff_edgeNinvJac.resize(6);
+  diff_faceNinvJac.resize(4);
+  Kedgeh_data.resize(6);
+  Kfaceh_data.resize(4);
+  dofs_x.resize(12);
+  dofs_x_edge_data.resize(6);
+  dofs_x_face_data.resize(4);
+  dofs_x_edge.resize(6);
+  dofs_x_face.resize(4);
+  Khh_edgeedge_data.resize(6,6);
+  Khh_faceedge_data.resize(4,6);
+  Khedge_data.resize(6);
+  Khh_volumeedge_data.resize(6);
+  //
+  g_NTET.resize(4*45);
+  ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+  g_NTRI.resize(3*7);
+  ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+  g_TET_W = G_TET_W45;
+}
 PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
   PetscFunctionBegin;
   ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
@@ -165,31 +200,48 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	assert(12 == RowGlob[0].size());
 	Khh = ublas::zero_matrix<double>(12,12);
 	assert(3*(unsigned int)NBVOLUME_H1(order_volume) == RowGlob[1+6+4].size());
-	Kvolumeh = ublas::zero_matrix<double>(RowGlob[1+6+4].size(),12);
+	Kvolumeh.resize(RowGlob[1+6+4].size(),12);
 	diff_volumeNinvJac = &diffH1elemNinvJac[0];
 	int ee = 0;
 	for(;ee<6;ee++) {
 	  assert(3*(unsigned int)NBEDGE_H1(order_edges[ee]) == RowGlob[1+ee].size());
-	  Kedgeh_data[ee] = ublas::zero_matrix<double>(RowGlob[1+ee].size(),12);
+	  Kedgeh_data[ee].resize(RowGlob[1+ee].size(),12);
+	  Kedgeh[ee] = &Kedgeh_data[ee].data()[0];
 	  diff_edgeNinvJac[ee] = &(diffH1edgeNinvJac[ee])[0]; 
+	  for(int eee = 0;eee<6;eee++) {
+	    Khh_edgeedge_data(eee,ee).resize(RowGlob[1+eee].size(),RowGlob[1+ee].size());
+	    Khh_edgeedge[eee][ee] = &Khh_edgeedge_data(eee,ee).data()[0];
+	  }
+	  for(int fff = 0;fff<4;fff++) {
+	    Khh_faceedge_data(fff,ee).resize(RowGlob[1+6+fff].size(),RowGlob[1+ee].size());
+	    Khh_faceedge[fff][ee] = &Khh_faceedge_data(fff,ee).data()[0];
+	  }
+	  Khedge_data[ee].resize(12,RowGlob[1+ee].size());
+	  Khedge[ee] = &Khedge_data[ee].data()[0];
+	  Khh_volumeedge_data[ee].resize(RowGlob[1+6+4].size(),RowGlob[1+ee].size());
+	  Khh_volumeedge[ee] = & Khh_volumeedge_data[ee].data()[0];
 	}
 	int ff = 0;
 	for(;ff<4;ff++) {
 	  assert(3*(unsigned int)NBFACE_H1(order_faces[ff]) == RowGlob[1+6+ff].size());
 	  Kfaceh_data[ff] = ublas::zero_matrix<double>(RowGlob[1+6+ff].size(),12);
+	  Kfaceh[ff] = &Kfaceh_data[ff].data()[0];
 	  diff_faceNinvJac[ff] = &(diffH1faceNinvJac[ff])[0];
 	}
+	double center[3]; 
+	tetcircumcenter_tp(&coords[0],&coords[3],&coords[6],&coords[9],center,NULL,NULL,NULL); 
+	double r = cblas_dnrm2(3,center,1);
 	int g_dim = get_dim_gNTET();
-	ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps,lambda,mu,ptr_matctx,
+	ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&dofs_x_volume[0], 
-	  &Khh.data()[0],NULL,&Kedgeh[0],&Kfaceh[0],&Kvolumeh.data()[0],g_dim,g_TET_W); CHKERRQ(ierr);
-	/*Tangent_hh_hierachical_edge(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
-	  diffNTETinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
-	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
-	  Khedge,NULL,Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
-	  g_dim,g_w); 
-	Tangent_hh_hierachical_face(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
+	  &Khh.data()[0],NULL,Kedgeh,Kfaceh,&Kvolumeh.data()[0],g_dim,g_TET_W); CHKERRQ(ierr);
+	ierr = Tangent_hh_hierachical_edge(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
+	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&dofs_x_volume[0], 
+	  &Khedge[0],NULL,Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
+	  g_dim,g_TET_W); CHKERRQ(ierr);
+	/*Tangent_hh_hierachical_face(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  diffNTETinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
 	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
 	  Khface,NULL,Khh_edgeface,Khh_faceface,Khh_volumeface, 

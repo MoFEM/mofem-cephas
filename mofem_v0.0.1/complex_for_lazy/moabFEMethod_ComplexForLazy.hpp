@@ -53,34 +53,7 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   double eps;
 
   FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
-    double _lambda,double _mu,
-    int _verbose = 0): 
-    FEMethod_UpLevelStudent(_moab,_verbose),
-    type_of_analysis(_type),
-    lambda(_lambda),mu(_mu),
-    eps(1e-12) {
-      pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-      order_edges.resize(6);
-      order_faces.resize(4);
-      edgeNinvJac.resize(6);
-      faceNinvJac.resize(4);
-      diff_edgeNinvJac.resize(6);
-      diff_faceNinvJac.resize(4);
-      Kedgeh_data.resize(6);
-      Kfaceh_data.resize(4);
-      Kedgeh.resize(6);
-      Kfaceh.resize(4);
-      dofs_x.resize(12);
-      dofs_x_edge_data.resize(6);
-      dofs_x_face_data.resize(4);
-      dofs_x_edge.resize(6);
-      dofs_x_face.resize(4);
-      g_NTET.resize(4*45);
-      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      g_NTRI.resize(3*7);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
-      g_TET_W = G_TET_W45;
-  }
+    double _lambda,double _mu,int _verbose = 0);
 
   vector<double> g_NTET,g_NTRI;
   const double *g_TET_W;
@@ -105,9 +78,19 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   vector<double*> diff_faceNinvJac;
   double *diff_volumeNinvJac;
 
+  //Tangent_hh_hierachical
   ublas::matrix<double> Khh,Kvolumeh;
   vector<ublas::matrix<double> > Kedgeh_data,Kfaceh_data;
-  vector<double*> Kedgeh,Kfaceh;
+  double* Kedgeh[6];
+  double* Kfaceh[4];
+  //Tangent_hh_hierachical_edge
+  vector<ublas::matrix<double> > Khedge_data,Khh_volumeedge_data;
+  double* Khedge[6];
+  double* Khh_volumeedge[6];
+  ublas::matrix<ublas::matrix<double> > Khh_edgeedge_data;
+  ublas::matrix<ublas::matrix<double> > Khh_faceedge_data;
+  double* Khh_edgeedge[6][6];
+  double* Khh_faceedge[4][6];
 
   ublas::vector<double> dofs_x,dofs_x_volume;
   vector<ublas::vector<double> > dofs_x_edge_data,dofs_x_face_data;

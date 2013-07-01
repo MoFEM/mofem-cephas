@@ -74,6 +74,7 @@ include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
 include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 
 add_library(mofem_Field 
+  third_party/tetcircumcenter.c
   do_not_blink/Core_dataStructures.cpp
   do_not_blink/Core_moabMeshMBTETRefine.cpp
   do_not_blink/moabField_Core.cpp

@@ -146,6 +146,48 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
+  struct SetPositionsEntMethod: public moabField::EntMethod {
+    ErrorCode rval;
+    PetscErrorCode ierr;
+
+    EntityHandle node;
+    double coords[3];
+
+    SetPositionsEntMethod(Interface& _moab): EntMethod(_moab),node(no_handle) {}
+    
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscPrintf(PETSC_COMM_WORLD,"Start Set Positions\n");
+      PetscFunctionReturn(0);
+    } 
+     
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      if(dof_ptr->get_ent_type()!=MBVERTEX) PetscFunctionReturn(0);
+      EntityHandle ent = dof_ptr->get_ent();
+      int dof_rank = dof_ptr->get_dof_rank();
+      double &fval = dof_ptr->get_FieldData();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+      fval = coords[dof_rank];
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      PetscPrintf(PETSC_COMM_WORLD,"End Set Positions\n");
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  SetPositionsEntMethod set_positions(moab);
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,set_positions); CHKERRQ(ierr);
+
+
+
   struct ElasticFEMethod: public FEMethod_ComplexForLazy {
     ElasticFEMethod(Interface& _moab,
       double _lambda,double _mu,
@@ -178,7 +220,6 @@ int main(int argc, char *argv[]) {
 
     PetscFunctionReturn(0);
   }
-
 
   };
 
