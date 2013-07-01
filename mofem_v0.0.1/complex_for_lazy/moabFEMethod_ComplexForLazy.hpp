@@ -61,9 +61,14 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
     eps(1e-12) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
       order_edges.resize(6);
-      order_faces.resize(6);
+      order_faces.resize(4);
+      edgeNinvJac.resize(6);
+      faceNinvJac.resize(4);
+      diff_edgeNinvJac.resize(6);
+      diff_faceNinvJac.resize(4);
   }
 
+  vector<double> g_NTET,g_NTRI;
     
   ErrorCode rval;  
   PetscErrorCode ierr;
@@ -80,6 +85,17 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   vector<vector<ublas::matrix<FieldData> > > colNMatrices;
   vector<vector<ublas::matrix<FieldData> > > colDiffNMatrices;
   vector<vector<ublas::matrix<FieldData> > > colBMatrices;
+
+  vector<double*> edgeNinvJac;
+  vector<double*> faceNinvJac;
+  double *volumeN;
+  vector<double*> diff_edgeNinvJac;
+  vector<double*> diff_faceNinvJac;
+  double *diff_volumeNinvJac;
+  
+  vector<double*> diff_edgeNinvJac;
+  vector<double*> diff_faceNinvJac;
+  double *diff_volumeNinvJac;
 
   PetscErrorCode GetIndices();
   PetscErrorCode GetTangent();

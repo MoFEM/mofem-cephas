@@ -117,6 +117,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit;
       viit = row_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple("SPATIAL_POSITION",MBTET));
       order_volume = viit->get_max_order();
+      
+
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
       } 
@@ -131,37 +133,28 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   PetscFunctionBegin;
   switch (fe_ent_ptr->get_ent_type()) {
   case MBTET: {
-
-
-    /*FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit,hi_eiit;
-    eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,MBEDGE,0));
-    hi_eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,MBEDGE,6));*/
-
-
     unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
     switch(sub_analysis_type) {
       case spatail_analysis:
-	/*
 	Tangent_hh_hierachical(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
-	  diffNinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
+	  diffNTETinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
 	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
 	  Khh,NULL,Kedgeh,Kfaceh,Kvolumeh,g_dim,g_w); 
 	Tangent_hh_hierachical_edge(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
-	  diffNinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
+	  diffNTETinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
 	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
 	  Khedge,NULL,Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
 	  g_dim,g_w); 
 	Tangent_hh_hierachical_face(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
-	  diffNinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
+	  diffNTETinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
 	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
 	  Khface,NULL,Khh_edgeface,Khh_faceface,Khh_volumeface, 
 	  g_dim,g_w); 
 	Tangent_hh_hierachical_volume(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
-	  diffNinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
+	  diffNTETinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
 	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
 	  Khvolume,NULL,Khh_edgevolume,Khh_facevolume,Khh_volumevolume, 
 	  g_dim,g_w);
-	*/
       break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"no implemented");
