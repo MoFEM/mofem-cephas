@@ -63,7 +63,7 @@ struct moabField {
     * \brief get entities form CUBIT/meshset 
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more. 
+    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
     * \param entities form meshset
     * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
     */
@@ -73,7 +73,7 @@ struct moabField {
     * \brief get entities form CUBIT/meshset 
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more. 
+    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
     * \param entities form meshset
     * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
     */
@@ -83,7 +83,7 @@ struct moabField {
     * \brief get meshset form CUBIT Id and CUBIT type
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more. 
+    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
     * \param meshsset 
     */
   virtual PetscErrorCode get_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) = 0;
@@ -357,6 +357,7 @@ struct moabField {
     BasicMethod();    
 
     PetscErrorCode set_moabfields(const MoFEMField_multiIndex *_moabfields);
+    PetscErrorCode set_ents_multiIndex(const MoFEMEntity_multiIndex *_ents_moabfield);
     PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
     PetscErrorCode set_fes_multiIndex(const MoFEMFE_multiIndex *_finite_elements);
     PetscErrorCode set_fes_data_multiIndex(const EntMoFEMFE_multiIndex *_finite_elements_data);
@@ -367,6 +368,7 @@ struct moabField {
     virtual PetscErrorCode postProcess() = 0;
     //
     const MoFEMField_multiIndex *moabfields;
+    const MoFEMEntity_multiIndex *ents_moabfield;
     const DofMoFEMEntity_multiIndex *dofs_moabfield;
     const MoFEMFE_multiIndex *finite_elements;
     const EntMoFEMFE_multiIndex *finite_elements_data;

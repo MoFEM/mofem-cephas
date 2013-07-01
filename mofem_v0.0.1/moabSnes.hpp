@@ -38,6 +38,7 @@ struct moabSnesCtx {
   ParallelComm* pcomm;
 
   string problem_name;
+
   typedef vector< pair<string,moabField::FEMethod*> > loops_to_do_type;
   loops_to_do_type loops_to_do;
 
@@ -45,7 +46,6 @@ struct moabSnesCtx {
     mField(_mField),moab(_mField.get_moab()),
     problem_name(_problem_name) {
     pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-
   }
 
   const moabField& get_mField() const { return mField; }

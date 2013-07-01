@@ -59,7 +59,7 @@ PetscErrorCode moabField::SnesMethod::set_flag(MatStructure *_flag) {
   PetscFunctionReturn(0);
 }
 moabField::BasicMethod::BasicMethod():
-  moabfields(NULL),dofs_moabfield(NULL),
+  moabfields(NULL),ents_moabfield(NULL),dofs_moabfield(NULL),
   finite_elements(NULL),finite_elements_data(NULL),fem_adjacencies(NULL) {};
 
 moabField::FEMethod::FEMethod(Interface& _moab): BasicMethod(), moab(_moab),
@@ -115,6 +115,12 @@ PetscErrorCode moabField::BasicMethod::set_moabfields(const MoFEMField_multiInde
   PetscFunctionBegin;
   if(_moabfields == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
   moabfields = _moabfields;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode moabField::BasicMethod::set_ents_multiIndex(const MoFEMEntity_multiIndex* _ents_moabfield) {
+  PetscFunctionBegin;
+  if(_ents_moabfield == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  ents_moabfield = _ents_moabfield;
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::BasicMethod::set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield) {

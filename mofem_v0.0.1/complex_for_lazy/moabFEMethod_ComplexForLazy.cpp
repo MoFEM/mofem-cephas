@@ -94,6 +94,28 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
 	ierr = GetGaussColDiffNMatrix("SPATIAL_POSITION",MBTET,colDiffNMatrices[1+ee+ff]); CHKERRQ(ierr);
 	ierr = MakeBMatrix3D("SPATIAL_POSITION",colDiffNMatrices[1+ee+ff],colBMatrices[1+ee+ff]);  CHKERRQ(ierr);
       }
+      ee = 0;
+      for(;ee<6;ee++) {
+	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
+	eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("SPATIAL_POSITION",MBEDGE,ff));
+	if(eiit!=row_multiIndex->get<Composite_mi_tag>().end()) {
+	  order_edges[ee] = eiit->get_max_order();
+	} else {
+	  order_edges[ee] = 0;
+	}
+      }
+      ff = 0;
+      for(;ff<4;ff++) {
+	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator fiit;
+	fiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("SPATIAL_POSITION",MBTRI,ff));
+	if(fiit!=row_multiIndex->get<Composite_mi_tag>().end()) {
+	  order_faces[ee] = fiit->get_max_order();
+	} else {
+	  order_faces[ee] = 0;
+	}
+      }
+      //FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator viit;
+      //viit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("SPATIAL_POSITION",MBTET,ff));
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
       } 
@@ -106,10 +128,55 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   PetscFunctionBegin;
+  switch (fe_ent_ptr->get_ent_type()) {
+  case MBTET: {
 
+
+    /*FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit,hi_eiit;
+    eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,MBEDGE,0));
+    hi_eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,MBEDGE,6));*/
+
+
+    unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
+    switch(sub_analysis_type) {
+      case spatail_analysis:
+	/*
+	Tangent_hh_hierachical(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
+	  diffNinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
+	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
+	  Khh,NULL,Kedgeh,Kfaceh,Kvolumeh,g_dim,g_w); 
+	Tangent_hh_hierachical_edge(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
+	  diffNinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
+	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
+	  Khedge,NULL,Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
+	  g_dim,g_w); 
+	Tangent_hh_hierachical_face(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
+	  diffNinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
+	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
+	  Khface,NULL,Khh_edgeface,Khh_faceface,Khh_volumeface, 
+	  g_dim,g_w); 
+	Tangent_hh_hierachical_volume(order_edges,order_faces,order_volume,V,eps*r,lambda,mu,ptr_matctx, 
+	  diffNinvJac,diff_edgeNinvJac,diff_faceNinvJac,diff_volumeNinvJac, 
+	  dofs_X,dofs_x,dofs_x_edge,dofs_x_face,dofs_x_volume, 
+	  Khvolume,NULL,Khh_edgevolume,Khh_facevolume,Khh_volumevolume, 
+	  g_dim,g_w);
+	*/
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+    }
+  }
+  break;
+  default:
+    SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+  }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_ComplexForLazy::GerResidual() {
+PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
+  PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_ComplexForLazy::GetFext() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }

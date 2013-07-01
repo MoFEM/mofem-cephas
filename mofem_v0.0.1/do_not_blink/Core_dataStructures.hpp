@@ -201,25 +201,6 @@ typedef multi_index_container<
 	const_mem_fun<ptrWrapperRefMoFEMFiniteElement::interface_type_RefMoFEMFiniteElement,int,&ptrWrapperRefMoFEMFiniteElement::get_BitRefEdges_ulong> > >
   > > RefMoFEMFiniteElement_multiIndex;
 
-/** 
- * \typedef MoFEMEntity_multiIndex
- * MultiIndex container keeps MoFEMEntity
- * 
- * \param Unique_mi_tag MoFEMEntity::get_unique_id
- * \param BitFieldId_mi_tag MoFEMEntity::interface_type_field::get_id
- field_* \param MoABEnt_mi_tag MoFEMEntity::BasicMoFEMEntity::ent
- */
-typedef multi_index_container<
-  MoFEMEntity,
-  indexed_by<
-    hashed_unique<
-      tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
-    ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_field,BitFieldId,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
-    ordered_non_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
-  > > MoFEMEntity_multiIndex;
-
 typedef multi_index_container<
   const MoFEMEntity*,
   indexed_by<

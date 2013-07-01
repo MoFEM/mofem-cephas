@@ -3109,6 +3109,7 @@ PetscErrorCode moabField_Core::loop_finite_elements(const string &problem_name,c
   if(miit==hi_miit) PetscFunctionReturn(0);
   ierr = method.set_problem(&*p_miit); CHKERRQ(ierr);
   ierr = method.set_moabfields(&moabfields); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&ents_moabfield); CHKERRQ(ierr);
   ierr = method.set_dofs_multiIndex(&dofs_moabfield); CHKERRQ(ierr);
   ierr = method.set_fes_multiIndex(&finite_elements); CHKERRQ(ierr);
   ierr = method.set_fes_data_multiIndex(&finite_elements_data); CHKERRQ(ierr);
@@ -3141,6 +3142,7 @@ PetscErrorCode moabField_Core::loop_dofs(const string &problem_name,const string
   problems_by_name::iterator p_miit = problems_set.find(problem_name);
   if(p_miit == problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem not in databse %s",problem_name.c_str());
   ierr = method.set_moabfields(&moabfields); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&ents_moabfield); CHKERRQ(ierr);
   ierr = method.set_dofs_multiIndex(&dofs_moabfield); CHKERRQ(ierr);
   ierr = method.set_fes_multiIndex(&finite_elements); CHKERRQ(ierr);
   ierr = method.set_fes_data_multiIndex(&finite_elements_data); CHKERRQ(ierr);

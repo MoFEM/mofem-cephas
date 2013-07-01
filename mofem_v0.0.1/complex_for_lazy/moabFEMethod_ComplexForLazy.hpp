@@ -44,10 +44,26 @@ namespace MoFEM {
 */
 struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
-  FEMethod_ComplexForLazy(Interface& _moab,int _verbose = 0): 
-    FEMethod_UpLevelStudent(_moab,_verbose) {
-    pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  enum analysis { spatail_analysis = 1, material_analysis = 1<<1 };
+  analysis type_of_analysis;
+
+  double lambda,mu;
+  void *ptr_matctx;
+
+  double eps;
+
+  FEMethod_ComplexForLazy(Interface& _moab,
+    double _lambda,double _mu,
+    int _verbose = 0): 
+    FEMethod_UpLevelStudent(_moab,_verbose),
+    type_of_analysis(type_of_analysis),
+    lambda(_lambda),mu(_mu),
+    eps(1e-12) {
+      pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+      order_edges.resize(6);
+      order_faces.resize(6);
   }
+
     
   ErrorCode rval;  
   PetscErrorCode ierr;
@@ -67,7 +83,13 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
   PetscErrorCode GetIndices();
   PetscErrorCode GetTangent();
-  PetscErrorCode GerResidual();
+  PetscErrorCode GetFint();
+  PetscErrorCode GetFext();
+
+  private:
+  vector<int> order_edges;
+  vector<int> order_faces;
+  int order_volume;
 
 
 };
