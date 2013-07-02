@@ -210,6 +210,7 @@ int main(int argc, char *argv[]) {
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndices(); CHKERRQ(ierr);
     ierr = GetTangent(); CHKERRQ(ierr);
+    ierr = GetFint(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   PetscErrorCode postProcess() {
