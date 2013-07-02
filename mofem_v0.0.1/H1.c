@@ -162,46 +162,6 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode H1_ShapeFaceNormalMBTRI_hierarchical(int order,int *order_edge,
-  double *diffN,double *diffN_face,double *diffN_edge[],
-  double *coords,double *coords_face,double *coords_edge[],double *normal) {
-  PetscFunctionBegin;
-  double diffX_x,diffX_y,diffX_z;
-  double diffY_x,diffY_y,diffY_z;
-  diffX_x = 0.;diffX_y = 0.;diffX_z = 0.;
-  diffY_x = 0.;diffY_y = 0.;diffY_z = 0.;
-  int ii = 0;
-  for(; ii<3; ii++) {
-    diffX_x += coords[3*ii + 0]*diffN[2*ii+0];
-    diffX_y += coords[3*ii + 1]*diffN[2*ii+0];
-    diffX_z += coords[3*ii + 2]*diffN[2*ii+0];
-    diffY_x += coords[3*ii + 0]*diffN[2*ii+1];
-    diffY_y += coords[3*ii + 1]*diffN[2*ii+1];
-    diffY_z += coords[3*ii + 2]*diffN[2*ii+1]; }
-  if(NBFACE_H1(order)>0) {
-    diffX_x += cblas_ddot(NBFACE_H1(order),&coords_face[0],3,&diffN_face[0],2);
-    diffX_y += cblas_ddot(NBFACE_H1(order),&coords_face[1],3,&diffN_face[0],2);
-    diffX_z += cblas_ddot(NBFACE_H1(order),&coords_face[2],3,&diffN_face[0],2);
-    diffY_x += cblas_ddot(NBFACE_H1(order),&coords_face[0],3,&diffN_face[1],2);
-    diffY_y += cblas_ddot(NBFACE_H1(order),&coords_face[1],3,&diffN_face[1],2);
-    diffY_z += cblas_ddot(NBFACE_H1(order),&coords_face[2],3,&diffN_face[1],2); 
-  }
-  if(NBEDGE_H1(order)>0) {
-    int ii = 0;
-    for(;ii<3;ii++) {
-      diffX_x += cblas_ddot(NBEDGE_H1(order_edge[ii]),&(coords_edge[ii])[0],3,&(diffN_edge[ii])[0],2);
-      diffX_y += cblas_ddot(NBEDGE_H1(order_edge[ii]),&(coords_edge[ii])[1],3,&(diffN_edge[ii])[0],2);
-      diffX_z += cblas_ddot(NBEDGE_H1(order_edge[ii]),&(coords_edge[ii])[2],3,&(diffN_edge[ii])[0],2);
-      diffY_x += cblas_ddot(NBEDGE_H1(order_edge[ii]),&(coords_edge[ii])[0],3,&(diffN_edge[ii])[1],2);
-      diffY_y += cblas_ddot(NBEDGE_H1(order_edge[ii]),&(coords_edge[ii])[1],3,&(diffN_edge[ii])[1],2);
-      diffY_z += cblas_ddot(NBEDGE_H1(order_edge[ii]),&(coords_edge[ii])[2],3,&(diffN_edge[ii])[1],2); 
-    }
-  }
-  normal[0] = diffX_y*diffY_z - diffX_z*diffY_y;
-  normal[1] = diffX_z*diffY_x - diffX_x*diffY_z;
-  normal[2] = diffX_x*diffY_y - diffX_y*diffY_x;
-  PetscFunctionReturn(0);
-}
 PetscErrorCode H1_EdgeShapeFunctions_MBTET(int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM) {
   PetscFunctionBegin;
   int P[6];

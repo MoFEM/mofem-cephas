@@ -73,6 +73,15 @@ PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W);
+PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
+  double *Fext,double *Fext_egde[],double *Fext_face,
+  double *iFext,double *iFext_egde[],double *iFext_face,
+  int g_dim,double *g_w);
 
 void EdgeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 void FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);

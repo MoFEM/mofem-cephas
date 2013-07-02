@@ -640,4 +640,198 @@ PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int
   }}
   PetscFunctionReturn(0);
 }
-
+PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
+  double *Fext,double *Fext_edge[],double *Fext_face,
+  double *iFext,double *iFext_edge[],double *iFext_face,
+  int g_dim,double *g_w) {
+  PetscFunctionBegin;
+  int dd,nn,ee,gg;
+  if(Fext!=NULL) {
+    bzero(Fext,9*sizeof(double));
+  }
+  if(iFext!=NULL) {
+    bzero(iFext,9*sizeof(double));
+  }
+  if(Fext_edge!=NULL) {
+    ee = 0;
+    for(;ee<3;ee++) {
+      int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
+      if(nb_dofs_edge!=0) continue;
+      bzero(Fext_edge[ee],nb_dofs_edge*sizeof(double));
+    }
+  }  
+  if(iFext_edge!=NULL) {
+    ee = 0;
+    for(;ee<3;ee++) {
+      int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
+      bzero(iFext_edge[ee],nb_dofs_edge*sizeof(double));
+    }
+  } 
+  if(Fext_face!=NULL) {
+    int nb_dofs_face = NBFACE_H1(order);
+    if(nb_dofs_face!=0) {
+      bzero(Fext_face,nb_dofs_face*sizeof(double));
+    }
+  } 
+  if(iFext_face!=NULL) {
+    int nb_dofs_face = NBFACE_H1(order);
+    if(nb_dofs_face!=0) {
+      bzero(iFext_face,nb_dofs_face*sizeof(double));
+    }
+  }
+  double complex diffX_x_node,diffX_y_node,diffX_z_node;
+  double complex diffY_x_node,diffY_y_node,diffY_z_node;
+  diffX_x_node = 0.;diffX_y_node = 0.;diffX_z_node = 0.;
+  diffY_x_node = 0.;diffY_y_node = 0.;diffY_z_node = 0.;
+  nn = 0;
+  for(; nn<3; nn++) {
+    diffX_x_node += dofs_x[3*nn + 0]*diffN[2*nn+0];
+    diffX_y_node += dofs_x[3*nn + 1]*diffN[2*nn+0];
+    diffX_z_node += dofs_x[3*nn + 2]*diffN[2*nn+0];
+    diffY_x_node += dofs_x[3*nn + 0]*diffN[2*nn+1];
+    diffY_y_node += dofs_x[3*nn + 1]*diffN[2*nn+1];
+    diffY_z_node += dofs_x[3*nn + 2]*diffN[2*nn+1]; 
+    if(idofs_x!=NULL) {
+      diffX_x_node += I*idofs_x[3*nn + 0]*diffN[2*nn+0];
+      diffX_y_node += I*idofs_x[3*nn + 1]*diffN[2*nn+0];
+      diffX_z_node += I*idofs_x[3*nn + 2]*diffN[2*nn+0];
+      diffY_x_node += I*idofs_x[3*nn + 0]*diffN[2*nn+1];
+      diffY_y_node += I*idofs_x[3*nn + 1]*diffN[2*nn+1];
+      diffY_z_node += I*idofs_x[3*nn + 2]*diffN[2*nn+1]; 
+    }
+  }
+  double complex diffX_x,diffX_y,diffX_z;
+  double complex diffY_x,diffY_y,diffY_z;
+  diffX_x = diffX_x_node;diffX_y = diffX_y_node;diffX_z = diffX_z_node;
+  diffY_x = diffY_x_node;diffY_y = diffY_y_node;diffY_z = diffY_z_node;
+  gg = 0;
+  for(;gg<g_dim;gg++) {
+    double traction[3];
+    dd = 0;
+    for(;dd<3;dd++) {
+      traction[dd] = cblas_ddot(4,&N[gg*3],1,&t[dd],3);
+    }
+    int nb_dofs_face = NBFACE_H1(order);
+    if(nb_dofs_face>0) {
+      dd = 0;
+      for(;dd<3;dd++) {
+	traction[dd] += cblas_ddot(nb_dofs_face,&N_face[gg*nb_dofs_face],1,&t_face[dd],3);
+      }
+      diffX_x += cblas_ddot(nb_dofs_face,&dofs_x_face[0],3,&diffN_face[0],2);
+      diffX_y += cblas_ddot(nb_dofs_face,&dofs_x_face[1],3,&diffN_face[0],2);
+      diffX_z += cblas_ddot(nb_dofs_face,&dofs_x_face[2],3,&diffN_face[0],2);
+      diffY_x += cblas_ddot(nb_dofs_face,&dofs_x_face[0],3,&diffN_face[1],2);
+      diffY_y += cblas_ddot(nb_dofs_face,&dofs_x_face[1],3,&diffN_face[1],2);
+      diffY_z += cblas_ddot(nb_dofs_face,&dofs_x_face[2],3,&diffN_face[1],2); 
+      if(idofs_x_face!=NULL) {
+        diffX_x += cblas_ddot(nb_dofs_face,&dofs_x_face[0],3,&diffN_face[0],2);
+        diffX_y += cblas_ddot(nb_dofs_face,&dofs_x_face[1],3,&diffN_face[0],2);
+        diffX_z += cblas_ddot(nb_dofs_face,&dofs_x_face[2],3,&diffN_face[0],2);
+        diffY_x += cblas_ddot(nb_dofs_face,&dofs_x_face[0],3,&diffN_face[1],2);
+        diffY_y += cblas_ddot(nb_dofs_face,&dofs_x_face[1],3,&diffN_face[1],2);
+        diffY_z += cblas_ddot(nb_dofs_face,&dofs_x_face[2],3,&diffN_face[1],2); 
+      }
+    }
+    ee = 0;
+    for(;ee<3;ee++) {
+      int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
+      if(nb_dofs_edge>0) {
+	dd = 0;
+	for(;dd<3;dd++) {
+	  traction[dd] += cblas_ddot(nb_dofs_edge,&(N_edge[ee][gg*nb_dofs_face]),1,&t_face[dd],3);
+	}
+        diffX_x += cblas_ddot(nb_dofs_edge,&(dofs_x_edge[ee])[0],3,&(diffN_edge[ee])[0],2);
+        diffX_y += cblas_ddot(nb_dofs_edge,&(dofs_x_edge[ee])[1],3,&(diffN_edge[ee])[0],2);
+        diffX_z += cblas_ddot(nb_dofs_edge,&(dofs_x_edge[ee])[2],3,&(diffN_edge[ee])[0],2);
+        diffY_x += cblas_ddot(nb_dofs_edge,&(dofs_x_edge[ee])[0],3,&(diffN_edge[ee])[1],2);
+        diffY_y += cblas_ddot(nb_dofs_edge,&(dofs_x_edge[ee])[1],3,&(diffN_edge[ee])[1],2);
+        diffY_z += cblas_ddot(nb_dofs_edge,&(dofs_x_edge[ee])[2],3,&(diffN_edge[ee])[1],2); 
+      }
+    }
+    double complex normal[3];
+    normal[0] = diffX_y*diffY_z - diffX_z*diffY_y;
+    normal[1] = diffX_z*diffY_x - diffX_x*diffY_z;
+    normal[2] = diffX_x*diffY_y - diffX_y*diffY_x;
+    double normal_real[3];
+    double normal_imag[3];
+    dd = 0;
+    for(;dd<3;dd++) {
+      normal_real[dd] = creal(normal[dd]);
+      normal_imag[dd] = cimag(normal[dd]);
+    }
+    if(Fext!=NULL) {
+      nn = 0;
+      for(;nn<3;nn++) {
+	dd = 0;
+	for(;dd<3;dd++) {
+	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd];
+	}
+      }
+    }
+    if(iFext!=NULL) {
+      nn = 0;
+      for(;nn<4;nn++) {
+	dd = 0;
+	for(;dd<3;dd++) {
+	  iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd];
+	}
+      }
+    }
+    if(Fext_edge!=NULL) {
+      ee = 0;
+      for(;ee<3;ee++) {
+	int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
+	if(nb_dofs_edge == 0) continue;
+	int nn = 0;
+	for(;nn<nb_dofs_edge;nn++) {
+	  dd = 0;
+	  for(;dd<3;dd++) {
+	    Fext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal[dd];
+	  }
+	}
+      }
+    }
+    if(iFext_edge!=NULL) {
+      ee = 0;
+      for(;ee<3;ee++) {
+	int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
+	if(nb_dofs_edge == 0) continue;
+	nn = 0;
+	for(;nn<nb_dofs_edge;nn++) {
+	  dd = 0;
+	  for(;dd<3;dd++) {
+	    iFext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal[dd];
+	  }
+	}
+      }
+    }
+    if(Fext_face!=NULL) {
+      int nb_dofs_face = NBFACE_H1(order);
+      if(nb_dofs_face!=0) {
+	nn = 0;
+	for(;nn<nb_dofs_face;nn++) {
+	  for(;dd<3;dd++) {
+	    Fext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal[dd];
+	  }
+	}
+      }
+    }
+    if(iFext_face!=NULL) {
+      int nb_dofs_face = NBFACE_H1(order);
+      if(nb_dofs_face!=0) {
+	nn = 0;
+	for(;nn<nb_dofs_face;nn++) {
+	  for(;dd<3;dd++) {
+	    iFext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal[dd];
+	  }
+	}
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
