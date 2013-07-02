@@ -92,7 +92,15 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
   double *Fext,double *Fext_egde[],double *Fext_face,
   double *iFext,double *iFext_egde[],double *iFext_face,
   int g_dim,double *g_w);
-PetscErrorCode Kext_hh_hierarchical(int order,int *order_edge,
+PetscErrorCode Kext_hh_hierarchical(double eps,int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *idofs_x,
+  double *Kext_hh,double* Kext_egdeh[3],double *Kext_faceh,
+  int g_dim,double *g_w);
+/*PetscErrorCode Kext_hh_hierarchical(int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
@@ -115,7 +123,7 @@ PetscErrorCode Kext_hh_hierarchical_face(int order,int *order_edge,
   double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
   double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
   double *Khext_face,double *Kext_faceegde[3],double *Kext_faceface,
-  int g_dim,double *g_w);
+  int g_dim,double *g_w);*/
 
 void EdgeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 void FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
