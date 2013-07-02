@@ -91,6 +91,20 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   ublas::matrix<ublas::matrix<double> > Khh_faceedge_data;
   double* Khh_edgeedge[6][6];
   double* Khh_faceedge[4][6];
+  //Tangent_hh_hierachical_face
+  vector<ublas::matrix<double> > Khface_data,Khh_volumeface_data;
+  double* Khface[4];
+  double* Khh_volumeface[4];
+  ublas::matrix<ublas::matrix<double> > Khh_faceface_data;
+  ublas::matrix<ublas::matrix<double> > Khh_edgeface_data;
+  double* Khh_faceface[4][4];
+  double* Khh_edgeface[6][4];
+  //Tangent_hh_hierachical_volume
+  ublas::matrix<double> Khvolume;
+  vector<ublas::matrix<double> > Khh_edgevolume_data,Khh_facevolume_data;
+  double *Khh_edgevolume[6];
+  double *Khh_facevolume[4];
+  ublas::matrix<double> Khh_volumevolume;
 
   ublas::vector<double> dofs_x,dofs_x_volume;
   vector<ublas::vector<double> > dofs_x_edge_data,dofs_x_face_data;

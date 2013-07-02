@@ -476,7 +476,9 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
     if(NBFACE_H1(order_face[ff])==0) continue;
     int nb = 3*NBFACE_H1(order_face[ff]);
     if(K[ff]!=NULL) bzero(K[ff],12*nb*sizeof(double));
-    if(Koff[ff]!=NULL) bzero(Koff[ff],12*nb*sizeof(double));
+    if(Koff!=NULL) {
+      if(Koff[ff]!=NULL) bzero(Koff[ff],12*nb*sizeof(double));
+    }
     int EE = 0;
     for(;EE<6;EE++) {
       int nb2 = 3*NBEDGE_H1(order_edge[EE]);
@@ -515,10 +517,12 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
 	    (K[FF])[3*node*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[0],1);
 	    (K[FF])[3*node*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
 	    (K[FF])[3*node*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
+	  if(Koff!=NULL) {
 	  if(Koff[FF]!=NULL) {
 	    (Koff[FF])[3*node*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[0],1);
 	    (Koff[FF])[3*node*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
 	    (Koff[FF])[3*node*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }}
+	}
         ee = 0;
         for(;ee<6;ee++) {
           int pp = 0;
