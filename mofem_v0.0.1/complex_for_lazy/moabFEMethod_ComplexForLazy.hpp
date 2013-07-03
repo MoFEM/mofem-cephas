@@ -55,6 +55,7 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
     double _lambda,double _mu,int _verbose = 0);
 
+  int g_TRI_dim;
   vector<double> g_NTET,g_NTRI;
   const double *g_TET_W,*g_TRI_W;
     
@@ -122,17 +123,49 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   PetscErrorCode GetFint();
 
   int face_order;
+  EntityHandle GetFaceIndicesAndData_face;
   vector<int> FaceEdgeOrder;
   vector<DofIdx> FaceIndices;
-  vector<FieldData> FaceData;
+  ublas::vector<double> FaceData;
+  vector<double> N_face;
+  vector<double> diffN_face;
   vector<DofIdx> NodeIndices;
-  vector<FieldData> NodeData;
+  ublas::vector<double> NodeData;
   vector<vector<DofIdx> > EdgeIndices_data;
-  vector<vector<FieldData> > EdgeData_data;
+  vector<ublas::vector<double> > EdgeData_data;
+  double *EdgeData[3];
+  vector<vector<double> > N_edge_data;
+  vector<vector<double> > diffN_edge_data;
+  double* N_edge[3];
+  double* diffN_edge[3];
+
   vector<int> FaceEdgeSense;
   PetscErrorCode GetFaceIndicesAndData(EntityHandle face);
-  PetscErrorCode GetTangentExt();
-  PetscErrorCode GetFExt();
+
+  ublas::vector<double> FExt;
+  vector<ublas::vector<double> > FExt_edge_data;
+  double *FExt_edge[3];
+  ublas::vector<double> FExt_face;
+  PetscErrorCode GetFExt(EntityHandle face,double *t,double *t_edge[],double *t_face);
+
+  //Kext_hh_hierarchical
+  ublas::matrix<double> Kext_hh;
+  vector<ublas::matrix<double> > Kext_egdeh_data;
+  double* Kext_edgeh[3];
+  ublas::matrix<double> Kext_faceh;
+  //Kext_hh_hierarchical_edge
+  vector<ublas::matrix<double> > Khext_edge_data;
+  double* Khext_edge[3];
+  ublas::matrix<ublas::matrix<double> > Kext_edgeegde_data;
+  double *Kext_edgeedge[3][3];
+  vector<ublas::matrix<double> > Kext_faceedge_data;
+  double *Kext_face_edge[3];
+  //Kext_hh_hierarchical_face
+  ublas::matrix<double> Kext_hface;
+  vector<ublas::matrix<double> > Kext_edgeface_data;
+  double* Kext_edgeface[3];
+  ublas::matrix<double> Kext_faceface;
+  PetscErrorCode GetTangentExt(EntityHandle face,double *t,double *t_edge[],double *t_face);
 
   PetscErrorCode OpComplexForLazyStart();
 

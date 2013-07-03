@@ -728,15 +728,19 @@ PetscErrorCode Traction_hierarchical(int order,int *order_edge,
   PetscFunctionBegin;
   int dd,ee;
   for(dd = 0;dd<3;dd++) traction[dd] = cblas_ddot(4,&N[gg*3],1,&t[dd],3);
-  int nb_dofs_face = NBFACE_H1(order);
-  if(nb_dofs_face>0) {
-    for(dd = 0;dd<3;dd++) traction[dd] += cblas_ddot(nb_dofs_face,&N_face[gg*nb_dofs_face],1,&t_face[dd],3);
+  if(t_face!=NULL) {
+    int nb_dofs_face = NBFACE_H1(order);
+    if(nb_dofs_face>0) {
+      for(dd = 0;dd<3;dd++) traction[dd] += cblas_ddot(nb_dofs_face,&N_face[gg*nb_dofs_face],1,&t_face[dd],3);
+    }
   }
-  ee = 0;
-  for(;ee<3;ee++) {
-    int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
-    if(nb_dofs_edge>0) {
-      for(dd = 0;dd<3;dd++) traction[dd] += cblas_ddot(nb_dofs_edge,&(N_edge[ee][gg*nb_dofs_face]),1,&t_face[dd],3);
+  if(t_edge!=NULL) {
+    ee = 0;
+    for(;ee<3;ee++) {
+      int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
+      if(nb_dofs_edge>0) {
+	for(dd = 0;dd<3;dd++) traction[dd] += cblas_ddot(nb_dofs_edge,&(N_edge[ee][gg*nb_dofs_edge]),1,&(t_edge[ee][dd]),3);
+      }
     }
   }
   PetscFunctionReturn(0);
@@ -749,7 +753,7 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
   double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
   double *Fext,double *Fext_edge[],double *Fext_face,
   double *iFext,double *iFext_edge[],double *iFext_face,
-  int g_dim,double *g_w) {
+  int g_dim,const double *g_w) {
   PetscFunctionBegin;
   int dd,nn,ee,gg;
   if(Fext!=NULL) bzero(Fext,9*sizeof(double));

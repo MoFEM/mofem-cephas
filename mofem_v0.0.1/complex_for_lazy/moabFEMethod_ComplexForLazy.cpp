@@ -69,9 +69,11 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type
   //
   g_NTET.resize(4*45);
   ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+  g_TET_W = G_TET_W45;
+  //
   g_NTRI.resize(3*7);
   ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
-  g_TET_W = G_TET_W45;
+  g_TRI_dim = 7;
   g_TRI_W = G_TRI_W7;
 }
 PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
@@ -357,11 +359,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt() {
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
 PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face) {
   PetscFunctionBegin;
   typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dofs_iterator;
@@ -380,6 +377,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
       FaceData[dd] = fiiit->get_FieldData();
     }
   }
+  N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
+  diffN_face.resize(2*g_TRI_dim*NBFACE_H1(face_order));
+  ierr = H1_FaceShapeFunctions_MBTRI(face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
   NodeIndices.resize(12);
   NodeData.resize(12);
   const EntityHandle* conn_face; 
@@ -399,6 +399,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
   EdgeData_data.resize(3);
   FaceEdgeSense.resize(3);
   FaceEdgeOrder.resize(3);
+  N_edge_data.resize(3);
+  diffN_edge_data.resize(3);
   int ee = 0;
   for(;ee<3;ee++) {
     EntityHandle edge;
@@ -416,14 +418,71 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
 	EdgeIndices_data[ee][dd] = eiit->get_petsc_gloabl_dof_idx();
 	EdgeData_data[ee][dd] = eiit->get_FieldData();
       }
+      EdgeData[ee] = &(EdgeData_data[ee].data()[0]);
+      N_edge_data[ee].resize(g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
+      diffN_edge_data[ee].resize(2*g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
+      N_edge[ee] = &(N_edge_data[ee][0]);
+      diffN_edge[ee] = &(diffN_edge_data[ee][0]);
     }
   }
+  ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&g_NTRI[0],diffNTRI,N_edge,diffN_edge,g_TRI_dim); CHKERRQ(ierr);
+  GetFaceIndicesAndData_face = face;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_ComplexForLazy::GetFExt() {
+PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,double *t_edge[],double *t_face) {
   PetscFunctionBegin;
+  if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData(face) before call of this function");
+  FExt.resize(9);
+  FExt_edge_data.resize(3);
+  int ee = 0;
+  for(;ee<3;ee++) {
+    FExt_edge_data[ee].resize(EdgeIndices_data[ee].size());
+    FExt_edge[ee] = &FExt_edge_data[ee].data()[0];
+  }
+  FExt_face.resize(FaceIndices.size());
+  ierr = Fext_h_hierarchical(
+    face_order,&FaceEdgeOrder[0],//2
+    &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
+    t,t_edge,t_face,//11
+    &NodeData.data()[0],EdgeData,&FaceData.data()[0],//14
+    NULL,NULL,NULL,//17
+    &FExt.data()[0],FExt_edge,&FExt_face.data()[0],//20
+    NULL,NULL,NULL,//23
+    g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *t,double *t_edge[],double *t_face) {
+  PetscFunctionBegin;
+  if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData(face) before call of this function");
+  NOT_USED(t);
+  NOT_USED(t_edge);
+  NOT_USED(t_face);
+  /*PetscErrorCode Kext_hh_hierarchical(double eps,int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *idofs_x,
+  double *Kext_hh,double* Kext_egdeh[3],double *Kext_faceh,
+  int g_dim,double *g_w);
+  PetscErrorCode Kext_hh_hierarchical_edge(double eps,int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *idofs_x_edge[],double *Khext_edge[3],double *Kext_edgeegde[3][3],double *Kext_faceedge[3],
+  int g_dim,double *g_w);
+  PetscErrorCode Kext_hh_hierarchical_face(double eps,int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *idofs_x_face,
+  double *Kext_hface,double *Kext_egdeface[3],double *Kext_faceface,*/
+
+  PetscFunctionReturn(0);
+}
+
 
 }
 

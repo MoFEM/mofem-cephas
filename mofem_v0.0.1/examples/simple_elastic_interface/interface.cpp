@@ -89,7 +89,6 @@ struct MyElasticFEMethod: public ElasticFEMethod {
 
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n",pcomm->rank(),v2-v1,t2-t1);
 
-    FEMethod_LowLevelStudent::preProcess();
     ierr = PetscGetTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
@@ -155,7 +154,6 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n",pcomm->rank(),v2-v1,t2-t1);
 
-    FEMethod_LowLevelStudent::preProcess();
     ierr = PetscGetTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
@@ -356,7 +354,6 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
       ierr = PetscGetTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-      FEMethod_LowLevelStudent::preProcess();
 
       if(init_ref) PetscFunctionReturn(0);
       

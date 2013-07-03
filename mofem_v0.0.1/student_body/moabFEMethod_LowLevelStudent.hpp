@@ -210,7 +210,8 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   const vector<double>& get_gNTET() const { return gNTET; };
   int get_dim_gNTRI() const { return gNTRI.size()/3; };
   const vector<double>& get_gNTRI() const { return gNTRI; };
-  private:
+
+  protected:
   vector<double> gNTET;
   vector<double> gNTRI;  
 

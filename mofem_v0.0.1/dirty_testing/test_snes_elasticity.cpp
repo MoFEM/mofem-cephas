@@ -207,6 +207,8 @@ int main(int argc, char *argv[]) {
   }
   PetscErrorCode operator()() {
     PetscFunctionBegin;
+
+
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndices(); CHKERRQ(ierr);
     ierr = GetTangent(); CHKERRQ(ierr);
@@ -217,7 +219,10 @@ int main(int argc, char *argv[]) {
     rval = moab.get_adjacencies(&tet,1,2,false,faces); CHKERR_PETSC(rval);
     for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
       ierr = GetFaceIndicesAndData(*fit); CHKERRQ(ierr);
+      ublas::vector<double> t(9);
+      ierr = GetFExt(*fit,&t.data()[0],NULL,NULL); CHKERRQ(ierr);
     }
+
 
 
     PetscFunctionReturn(0);
