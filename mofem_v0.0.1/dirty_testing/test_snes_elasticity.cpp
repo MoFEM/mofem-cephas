@@ -211,6 +211,15 @@ int main(int argc, char *argv[]) {
     ierr = GetIndices(); CHKERRQ(ierr);
     ierr = GetTangent(); CHKERRQ(ierr);
     ierr = GetFint(); CHKERRQ(ierr);
+    
+    EntityHandle tet = fe_ent_ptr->get_ent();
+    Range faces;
+    rval = moab.get_adjacencies(&tet,1,2,false,faces); CHKERR_PETSC(rval);
+    for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
+      ierr = GetFaceIndicesAndData(*fit); CHKERRQ(ierr);
+    }
+
+
     PetscFunctionReturn(0);
   }
   PetscErrorCode postProcess() {

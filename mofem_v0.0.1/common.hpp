@@ -263,6 +263,7 @@ struct MoABEnt_mi_tag {};
 struct EntType_mi_tag {};
 struct Composite_mi_tag {};
 struct Composite_mi_tag2 {};
+struct Composite_mi_tag3 {};
 struct Identity_mi_tag {};
 struct MoFEMFE_Meshset_mi_tag {};
 struct BitFEId_mi_tag {};
@@ -790,6 +791,13 @@ typedef multi_index_container<
 	FEDofMoFEMEntity,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_field,string,&FEDofMoFEMEntity::get_name>,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>
+	> >,
+    ordered_non_unique<
+      tag<Composite_mi_tag3>, 
+      composite_key<
+	FEDofMoFEMEntity,
+	  const_mem_fun<FEDofMoFEMEntity::interface_type_field,string,&FEDofMoFEMEntity::get_name>,
+	  const_mem_fun<FEDofMoFEMEntity::interface_type_dof,EntityHandle,&FEDofMoFEMEntity::get_ent>
 	> >
   > > FEDofMoFEMEntity_multiIndex;
 
@@ -829,6 +837,13 @@ typedef multi_index_container<
 	FENumeredDofMoFEMEntity,
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_field,string,&FENumeredDofMoFEMEntity::get_name>,
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FENumeredDofMoFEMEntity::get_ent_type>
+	> >,
+    ordered_non_unique<
+      tag<Composite_mi_tag3>, 
+      composite_key<
+	FENumeredDofMoFEMEntity,
+	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_field,string,&FENumeredDofMoFEMEntity::get_name>,
+	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_dof,EntityHandle,&FENumeredDofMoFEMEntity::get_ent>
 	> >
   > > FENumeredDofMoFEMEntity_multiIndex;
 

@@ -356,7 +356,70 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_ComplexForLazy::GetFext() {
+PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt() {
+  PetscFunctionBegin;
+
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face) {
+  PetscFunctionBegin;
+  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dofs_iterator;
+  dofs_iterator fiit,hi_fiit;
+  fiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",face));
+  if(fiit==row_multiIndex->get<Composite_mi_tag3>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+  if(fiit->get_ent_type()!=MBTRI) SETERRQ(PETSC_COMM_SELF,1,"works only for facec");
+  hi_fiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",face));
+  FaceIndices.resize(distance(fiit,hi_fiit));
+  FaceData.resize(distance(fiit,hi_fiit));
+  face_order = fiit->get_max_order();
+  int dd = 0;
+  if(NBFACE_H1(face_order)>0) {
+    for(dofs_iterator fiiit = fiit;fiiit!=hi_fiit;fiiit++,dd++) {
+      FaceIndices[dd] = fiiit->get_petsc_gloabl_dof_idx();
+      FaceData[dd] = fiiit->get_FieldData();
+    }
+  }
+  NodeIndices.resize(12);
+  NodeData.resize(12);
+  const EntityHandle* conn_face; 
+  int num_nodes; 
+  rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+  int nn = 0;
+  for(dd = 0;nn<4;nn++) {
+    dofs_iterator niit,hi_niit;
+    niit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
+    hi_niit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
+    for(;niit!=hi_niit;niit++,dd++) {
+      NodeIndices[dd] = niit->get_petsc_gloabl_dof_idx();
+      NodeData[dd] = niit->get_FieldData();
+    }
+  }
+  EdgeIndices_data.resize(3);
+  EdgeData_data.resize(3);
+  FaceEdgeSense.resize(3);
+  FaceEdgeOrder.resize(3);
+  int ee = 0;
+  for(;ee<3;ee++) {
+    EntityHandle edge;
+    rval = moab.side_element(face,1,ee,edge); CHKERR_PETSC(rval);
+    int side_number,offset;
+    rval = moab.side_number(face,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
+    dofs_iterator eiit,hi_eiit;
+    eiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",edge));
+    hi_eiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",edge));
+    FaceEdgeOrder[ee] = eiit->get_max_order();
+    if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
+      EdgeIndices_data[ee].resize(distance(eiit,hi_eiit));
+      EdgeData_data[ee].resize(distance(eiit,hi_eiit));
+      for(dd = 0;eiit!=hi_eiit;eiit++,dd++) {
+	EdgeIndices_data[ee][dd] = eiit->get_petsc_gloabl_dof_idx();
+	EdgeData_data[ee][dd] = eiit->get_FieldData();
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_ComplexForLazy::GetFExt() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }

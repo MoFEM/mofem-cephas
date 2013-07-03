@@ -120,7 +120,19 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   PetscErrorCode GetIndices();
   PetscErrorCode GetTangent();
   PetscErrorCode GetFint();
-  PetscErrorCode GetFext();
+
+  int face_order;
+  vector<int> FaceEdgeOrder;
+  vector<DofIdx> FaceIndices;
+  vector<FieldData> FaceData;
+  vector<DofIdx> NodeIndices;
+  vector<FieldData> NodeData;
+  vector<vector<DofIdx> > EdgeIndices_data;
+  vector<vector<FieldData> > EdgeData_data;
+  vector<int> FaceEdgeSense;
+  PetscErrorCode GetFaceIndicesAndData(EntityHandle face);
+  PetscErrorCode GetTangentExt();
+  PetscErrorCode GetFExt();
 
   PetscErrorCode OpComplexForLazyStart();
 
