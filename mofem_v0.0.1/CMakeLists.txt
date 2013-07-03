@@ -72,6 +72,7 @@ include_directories(
 #SPECIFIC FROM NOW
 include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
 include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
+include_directories("${PROJECT_SOURCE_DIR}/student_body")
 
 add_library(mofem_Field 
   third_party/tetcircumcenter.c
@@ -80,9 +81,9 @@ add_library(mofem_Field
   do_not_blink/moabField_Core.cpp
   complex_for_lazy/complex_for_lazy.c
   complex_for_lazy/moabFEMethod_ComplexForLazy.cpp
+  student_body/moabFEMethod_LowLevelStudent.cpp
+  student_body/moabFEMethod_UpLevelStudent.cpp
   moabField.cpp
-  moabFEMethod_LowLevelStudent.cpp
-  moabFEMethod_UpLevelStudent.cpp
   FEM.c
   H1.c
   L2.c
