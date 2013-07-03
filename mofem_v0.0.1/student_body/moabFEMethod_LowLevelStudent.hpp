@@ -206,14 +206,12 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  int get_dim_gNTET() const { return gNTET_dim; };
+  int get_dim_gNTET() const { return gNTET.size()/4; };
   const vector<double>& get_gNTET() const { return gNTET; };
-  int get_dim_gNTRI() const { return gNTRI_dim; };
+  int get_dim_gNTRI() const { return gNTRI.size()/3; };
   const vector<double>& get_gNTRI() const { return gNTRI; };
   private:
-  int gNTET_dim;
   vector<double> gNTET;
-  int gNTRI_dim;
   vector<double> gNTRI;  
 
 };

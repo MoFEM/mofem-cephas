@@ -92,7 +92,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      FEMethod_LowLevelStudent::preProcess();
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
       ierr = PetscGetTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);

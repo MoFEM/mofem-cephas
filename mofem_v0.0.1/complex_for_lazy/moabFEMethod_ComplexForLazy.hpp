@@ -56,7 +56,7 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
     double _lambda,double _mu,int _verbose = 0);
 
   vector<double> g_NTET,g_NTRI;
-  const double *g_TET_W;
+  const double *g_TET_W,*g_TRI_W;
     
   ErrorCode rval;  
   PetscErrorCode ierr;

@@ -68,12 +68,12 @@ moabField::FEMethod::FEMethod(Interface& _moab): BasicMethod(), moab(_moab),
 
 PetscErrorCode moabField::FEMethod::preProcess() {
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
+  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class (preProcess)");
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::FEMethod::postProcess() {
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
+  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class (postProcess)");
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::FEMethod::operator()() {   

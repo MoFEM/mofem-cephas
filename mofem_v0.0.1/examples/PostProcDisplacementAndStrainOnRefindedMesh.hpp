@@ -62,7 +62,6 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent,P
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
       ierr = PetscGetTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-      FEMethod_LowLevelStudent::preProcess();
 
       if(init_ref) PetscFunctionReturn(0);
       

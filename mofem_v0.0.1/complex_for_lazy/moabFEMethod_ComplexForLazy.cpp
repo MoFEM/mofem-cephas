@@ -72,6 +72,7 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type
   g_NTRI.resize(3*7);
   ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
   g_TET_W = G_TET_W45;
+  g_TRI_W = G_TRI_W7;
 }
 PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
   PetscFunctionBegin;

@@ -560,7 +560,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	    }
 	  }
 	}
-	gNTET_dim = gNTET.size()/4;
+	int gNTET_dim = get_dim_gNTET();
 	if(isH1) {
 	  int _edges_order_[6];
 	  copy(maxOrderEdgeH1.begin(),maxOrderEdgeH1.end(),&_edges_order_[0]);
@@ -628,7 +628,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _gNTRI_) {
   PetscFunctionBegin;
   gNTRI = _gNTRI_;
-  gNTRI_dim = gNTRI.size()/3;
+  int gNTRI_dim = get_dim_gNTRI();
   switch (fe_ent_ptr->get_ent_type()) {
     case MBPRISM: {
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -710,6 +710,8 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
     vector<const double*> *diff_shape_by_gauss_pt,
     const MoFEMField* field_ptr,EntityType type,int side_number) {
   PetscFunctionBegin;
+  int gNTET_dim = get_dim_gNTET();
+  int gNTRI_dim = get_dim_gNTRI();
   switch (fe_ent_ptr->get_ent_type()) {
     case MBTET: {
       int gg = 0;
@@ -1285,7 +1287,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
   SideNumber* side = fe_ent_ptr->get_side_number_ptr(moab,ent);
   if(side->get_ent_type()!=MBTRI) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
   gNTRI = _gNTRI_;
-  gNTRI_dim = gNTRI.size()/3;
+  int gNTRI_dim = get_dim_gNTRI();
   if(isH1) {
     switch(fe_ent_ptr->get_ent_type()) {
       case MBTET: {
