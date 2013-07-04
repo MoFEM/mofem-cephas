@@ -473,10 +473,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     }
 
   }
-  ierr = Kext_hh_hierarchical_edge(eps,face_order,&FaceEdgeOrder[0],
+  /*ierr = Kext_hh_hierarchical_edge(eps,face_order,&FaceEdgeOrder[0],
     &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
     t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
-    Kext_hedge,Kext_edgeegde,Kext_faceedge,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+    Kext_hedge,Kext_edgeegde,Kext_faceedge,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);*/
 
 
   /*PetscErrorCode Kext_hh_hierarchical_face(double eps,int order,int *order_edge,
