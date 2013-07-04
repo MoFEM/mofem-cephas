@@ -156,10 +156,10 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   //Kext_hh_hierarchical_edge
   vector<ublas::matrix<double> > Kext_hedge_data;
   double* Kext_hedge[3];
-  ublas::matrix<ublas::matrix<double> > Kext_edgeegde_data;
+  ublas::matrix<ublas::matrix<double> > Kext_edgeedge_data;
   double *Kext_edgeedge[3][3];
   vector<ublas::matrix<double> > Kext_faceedge_data;
-  double *Kext_face_edge[3];
+  double *Kext_faceedge[3];
   //Kext_hh_hierarchical_face
   ublas::matrix<double> Kext_hface;
   vector<ublas::matrix<double> > Kext_edgeface_data;

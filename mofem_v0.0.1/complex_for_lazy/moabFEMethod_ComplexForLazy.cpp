@@ -466,27 +466,37 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
     t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
     &Kext_hh.data()[0],Kext_edgeh,&Kext_faceh.data()[0],g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  //
   Kext_hedge_data.resize(3);
+  Kext_edgeedge_data.resize(3,3);
   for(ee = 0;ee<3;ee++) {
+    Kext_hedge_data[ee].resize(9,EdgeIndices_data[ee].size());
+    Kext_hedge[ee] = &Kext_hedge_data[ee].data()[0];
     for(int eee = 0;eee<3;eee++) {
-      Kext_hedge_data[ee].resize(EdgeIndices_data[ee].size(),EdgeIndices_data[eee].size());
+      Kext_edgeedge_data(ee,eee).resize(EdgeIndices_data[ee].size(),EdgeIndices_data[eee].size());
+      Kext_edgeedge[ee][eee] = &Kext_edgeedge_data(ee,eee).data()[0];
     }
-
+    Kext_faceedge_data[ee].resize(FaceIndices.size(),EdgeIndices_data[ee].size());
+    Kext_faceedge[ee] = &Kext_faceedge_data[ee].data()[0];
   }
-  /*ierr = Kext_hh_hierarchical_edge(eps,face_order,&FaceEdgeOrder[0],
+  ierr = Kext_hh_hierarchical_edge(eps,face_order,&FaceEdgeOrder[0],
     &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
     t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
-    Kext_hedge,Kext_edgeegde,Kext_faceedge,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);*/
-
-
-  /*PetscErrorCode Kext_hh_hierarchical_face(double eps,int order,int *order_edge,
-  double *N,double *N_face,double *N_edge[],
-  double *diffN,double *diffN_face,double *diffN_edge[],
-  double *t,double *t_edge[],double *t_face,
-  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
-  double *idofs_x_face,
-  double *Kext_hface,double *Kext_egdeface[3],double *Kext_faceface,*/
-
+    Kext_hedge,Kext_edgeedge,Kext_faceedge,
+    g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  //
+  Kext_hface.resize(9,FaceIndices.size());
+  Kext_edgeface_data.resize(3);
+  for(ee = 0;ee<3;ee++) {
+    Kext_edgeface_data[ee].resize(EdgeIndices_data[ee].size(),FaceIndices.size());
+    Kext_edgeface[ee] = &Kext_edgeface_data[ee].data()[0];
+  }
+  Kext_faceface.resize(FaceIndices.size(),FaceIndices.size());
+  ierr = Kext_hh_hierarchical_face(eps,face_order,&FaceEdgeOrder[0],
+    &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+    t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
+    &Kext_hface.data()[0],Kext_edgeface,&Kext_faceface.data()[0],
+    g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

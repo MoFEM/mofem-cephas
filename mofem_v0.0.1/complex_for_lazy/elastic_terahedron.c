@@ -878,7 +878,7 @@ PetscErrorCode Kext_hh_hierarchical_edge(double eps,int order,int *order_edge,
   double *t,double *t_edge[],double *t_face,
   double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
   double* Kext_hedge[3],double* Kext_edgeedge[3][3],double *Kext_faceedge[3],
-  int g_dim,double *g_w) {
+  int g_dim,const double *g_w) {
   PetscFunctionBegin;
   int gg,dd,ii,nn,ee,EE;
   int nb_dofs_face = NBFACE_H1(order);
@@ -941,7 +941,7 @@ PetscErrorCode Kext_hh_hierarchical_face(double eps,int order,int *order_edge,
   double *t,double *t_edge[],double *t_face,
   double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
   double *Kext_hface,double *Kext_edgeface[3],double *Kext_faceface,
-  int g_dim,double *g_w) {
+  int g_dim,const double *g_w) {
   PetscFunctionBegin;
   int gg,dd,ii,nn,ee;
   int nb_dofs_face = NBFACE_H1(order);
