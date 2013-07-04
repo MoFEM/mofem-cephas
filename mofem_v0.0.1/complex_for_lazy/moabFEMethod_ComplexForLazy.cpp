@@ -462,19 +462,24 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     Kext_edgeh[ee] = &Kext_edgeh_data[ee].data()[0];
   }
   Kext_faceh.resize(FaceIndices.size(),9);
-  idofs_x.resize(9);
   ierr = Kext_hh_hierarchical(eps,face_order,&FaceEdgeOrder[0],
     &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
-    t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],&idofs_x.data()[0],
+    t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
     &Kext_hh.data()[0],Kext_edgeh,&Kext_faceh.data()[0],g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
-  /*PetscErrorCode Kext_hh_hierarchical_edge(double eps,int order,int *order_edge,
-  double *N,double *N_face,double *N_edge[],
-  double *diffN,double *diffN_face,double *diffN_edge[],
-  double *t,double *t_edge[],double *t_face,
-  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
-  double *idofs_x_edge[],double *Khext_edge[3],double *Kext_edgeegde[3][3],double *Kext_faceedge[3],
-  int g_dim,double *g_w);
-  PetscErrorCode Kext_hh_hierarchical_face(double eps,int order,int *order_edge,
+  Kext_hedge_data.resize(3);
+  for(ee = 0;ee<3;ee++) {
+    for(int eee = 0;eee<3;eee++) {
+      Kext_hedge_data[ee].resize(EdgeIndices_data[ee].size(),EdgeIndices_data[eee].size());
+    }
+
+  }
+  ierr = Kext_hh_hierarchical_edge(eps,face_order,&FaceEdgeOrder[0],
+    &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+    t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
+    Kext_hedge,Kext_edgeegde,Kext_faceedge,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+
+
+  /*PetscErrorCode Kext_hh_hierarchical_face(double eps,int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
