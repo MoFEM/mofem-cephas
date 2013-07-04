@@ -99,7 +99,7 @@ PetscErrorCode Kext_hh_hierarchical(double eps,int order,int *order_edge,
   double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
   double *idofs_x,
   double *Kext_hh,double* Kext_egdeh[3],double *Kext_faceh,
-  int g_dim,double *g_w);
+  int g_dim,const double *g_w);
 PetscErrorCode Kext_hh_hierarchical_edge(double eps,int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *diffN,double *diffN_face,double *diffN_edge[],

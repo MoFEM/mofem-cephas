@@ -454,18 +454,20 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
 PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *t,double *t_edge[],double *t_face) {
   PetscFunctionBegin;
   if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData(face) before call of this function");
-  NOT_USED(t);
-  NOT_USED(t_edge);
-  NOT_USED(t_face);
-  /*PetscErrorCode Kext_hh_hierarchical(double eps,int order,int *order_edge,
-  double *N,double *N_face,double *N_edge[],
-  double *diffN,double *diffN_face,double *diffN_edge[],
-  double *t,double *t_edge[],double *t_face,
-  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
-  double *idofs_x,
-  double *Kext_hh,double* Kext_egdeh[3],double *Kext_faceh,
-  int g_dim,double *g_w);
-  PetscErrorCode Kext_hh_hierarchical_edge(double eps,int order,int *order_edge,
+  Kext_hh.resize(9,9);
+  Kext_edgeh_data.resize(3);
+  int ee = 0;
+  for(;ee<3;ee++) {
+    Kext_edgeh_data[ee].resize(EdgeIndices_data[ee].size(),9);
+    Kext_edgeh[ee] = &Kext_edgeh_data[ee].data()[0];
+  }
+  Kext_faceh.resize(FaceIndices.size(),9);
+  idofs_x.resize(9);
+  ierr = Kext_hh_hierarchical(eps,face_order,&FaceEdgeOrder[0],
+    &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+    t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],&idofs_x.data()[0],
+    &Kext_hh.data()[0],Kext_edgeh,&Kext_faceh.data()[0],g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  /*PetscErrorCode Kext_hh_hierarchical_edge(double eps,int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,

@@ -148,9 +148,11 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   ublas::vector<double> FExt_face;
   PetscErrorCode GetFExt(EntityHandle face,double *t,double *t_edge[],double *t_face);
 
+  //idofs
+  ublas::vector<double> idofs_x;
   //Kext_hh_hierarchical
   ublas::matrix<double> Kext_hh;
-  vector<ublas::matrix<double> > Kext_egdeh_data;
+  vector<ublas::matrix<double> > Kext_edgeh_data;
   double* Kext_edgeh[3];
   ublas::matrix<double> Kext_faceh;
   //Kext_hh_hierarchical_edge
