@@ -758,6 +758,17 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
+  /*BitRefLevel bit_level1;
+  bit_level1.set(2);
+  ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
+  ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
+  ierr = mField.refine_PRISM(meshset_level0,bit_level1); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet1,bit_level1,meshset_SideSet1,MBTRI,true,3); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet2,bit_level1,meshset_SideSet2,MBTRI,true,3); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level1,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);*/
+
+  BitRefLevel problem_bit_level = bit_level0;
+
   /***/
   //Define problem
 
@@ -784,7 +795,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
 
   /***/
   //Declare problem
@@ -793,8 +804,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"INTERFACE",MBPRISM); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -813,7 +824,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = mField.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
 
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);

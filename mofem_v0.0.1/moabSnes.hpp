@@ -25,7 +25,6 @@
 #include <petscmat.h>
 #include <petscsnes.h>
 
-
 namespace MoFEM {
 
 struct moabSnesCtx {
@@ -35,49 +34,52 @@ struct moabSnesCtx {
 
   moabField &mField;
   Interface &moab;
-  ParallelComm* pcomm;
 
   string problem_name;
 
-  typedef vector< pair<string,moabField::FEMethod*> > loops_to_do_type;
-  loops_to_do_type loops_to_do;
+  typedef pair<string,moabField::FEMethod*> loop_pair_type;
+  typedef vector<loop_pair_type > loops_to_do_type;
+  loops_to_do_type loops_to_do_Mat;
+  loops_to_do_type loops_to_do_Rhs;
 
   moabSnesCtx(moabField &_mField,const string &_problem_name): 
-    mField(_mField),moab(_mField.get_moab()),
-    problem_name(_problem_name) {
-    pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  }
+    mField(_mField),moab(_mField.get_moab()),problem_name(_problem_name) {}
 
   const moabField& get_mField() const { return mField; }
   const Interface& get_moab() const { return moab; }
+  loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
+  loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
 
   friend PetscErrorCode SnesFunc(SNES snes,Vec x,Vec f,moabSnesCtx *);
+  friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ctx);
 
 };
 
-PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,moabSnesCtx *ctx) {
+PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  moabSnesCtx::loops_to_do_type::iterator lit = ctx->loops_to_do.begin();
-  for(;lit!=ctx->loops_to_do.end();lit++) {
+  moabSnesCtx* snes_ctx = (moabSnesCtx*)ctx;
+  moabSnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Rhs.begin();
+  for(;lit!=snes_ctx->loops_to_do_Rhs.end();lit++) {
     ierr = lit->second->set_snes(snes); CHKERRQ(ierr);
     ierr = lit->second->set_x(x); CHKERRQ(ierr);
     ierr = lit->second->set_f(f); CHKERRQ(ierr);
-    ierr = ctx->mField.loop_finite_elements(ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,moabSnesCtx *ctx) {
+PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ctx) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  moabSnesCtx::loops_to_do_type::iterator lit = ctx->loops_to_do.begin();
-  for(;lit!=ctx->loops_to_do.end();lit++) {
+  moabSnesCtx* snes_ctx = (moabSnesCtx*)ctx;
+  moabSnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Mat.begin();
+  for(;lit!=snes_ctx->loops_to_do_Mat.end();lit++) {
     ierr = lit->second->set_snes(snes); CHKERRQ(ierr);
     ierr = lit->second->set_x(x); CHKERRQ(ierr);
     ierr = lit->second->set_A(A); CHKERRQ(ierr);
     ierr = lit->second->set_B(B); CHKERRQ(ierr);
     ierr = lit->second->set_flag(flag); CHKERRQ(ierr);
-    ierr = ctx->mField.loop_finite_elements(ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }

@@ -237,7 +237,6 @@ int main(int argc, char *argv[]) {
 
   };
 
-
   Range SideSet1,SideSet2;
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
@@ -247,7 +246,31 @@ int main(int argc, char *argv[]) {
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
   ElasticFEMethod MyFE(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+
+  moabSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
+  /*struct LoopContext {
+    enum context { Rhs, Mat };
+    context ctx;
+    LoopContext(context _ctx): ctx(ctx);
+  }
+  LoopContext for_Rhs(LoopContext::Rhs);
+  LoopContext for_Mat(*/
+  
+  SNES snes;
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
+  ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+
+  moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
+  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
+  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
+
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
+  //ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
   PetscFinalize();
