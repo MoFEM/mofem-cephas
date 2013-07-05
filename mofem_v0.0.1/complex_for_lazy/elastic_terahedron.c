@@ -728,7 +728,7 @@ PetscErrorCode Traction_hierarchical(int order,int *order_edge,
   double *traction,int gg) {
   PetscFunctionBegin;
   int dd,ee;
-  for(dd = 0;dd<3;dd++) traction[dd] = cblas_ddot(4,&N[gg*3],1,&t[dd],3);
+  for(dd = 0;dd<3;dd++) traction[dd] = cblas_ddot(3,&N[gg*3],1,&t[dd],3);
   if(t_face!=NULL) {
     int nb_dofs_face = NBFACE_H1(order);
     if(nb_dofs_face>0) {
@@ -773,8 +773,10 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
   }
   gg = 0;
   for(;gg<g_dim;gg++) {
-    double traction[3];
+    double traction[3] = {0,0,0};
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+    if(traction[0]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    if(traction[1]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     __CLPK_doublecomplex xnormal[3];
     ierr = Normal_hierarchical(
       order,order_edge,diffN,diffN_face,diffN_edge,
@@ -789,9 +791,9 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     nn = 0;
     for(;nn<3;nn++) {
       if(Fext!=NULL) 
-	for(dd = 0;dd<3;dd++) Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd];
+	for(dd = 0;dd<3;dd++) Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd]*traction[2];
       if(iFext!=NULL) 
-	for(dd = 0;dd<3;dd++) iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd];
+	for(dd = 0;dd<3;dd++) iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
     }
     ee = 0;
     for(;ee<3;ee++) {
@@ -800,18 +802,18 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
       int nn = 0;
       for(;nn<nb_dofs_edge;nn++) {
 	if(Fext_edge!=NULL) 
-	  for(dd = 0;dd<3;dd++) Fext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal_real[dd];
+	  for(dd = 0;dd<3;dd++) Fext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal_real[dd]*traction[2];
 	if(iFext_edge!=NULL) 
-	  for(dd = 0;dd<3;dd++) iFext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal_imag[dd];
+	  for(dd = 0;dd<3;dd++) iFext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal_imag[dd]*traction[2];
       }
     }
     if(nb_dofs_face!=0) {
       nn = 0;
       for(;nn<nb_dofs_face;nn++) {
 	if(Fext_face!=NULL) 
-	  for(dd = 0;dd<3;dd++) Fext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal_real[dd];
+	  for(dd = 0;dd<3;dd++) Fext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal_real[dd]*traction[2];
 	if(iFext_face!=NULL) 
-	  for(dd = 0;dd<3;dd++) iFext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal_imag[dd];
+	  for(dd = 0;dd<3;dd++) iFext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal_imag[dd]*traction[2];
       }
     }
   }
@@ -822,7 +824,7 @@ PetscErrorCode Kext_hh_hierarchical(double eps,int order,int *order_edge,
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
   double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
-  double *Kext_hh,double* Kext_edgeh[3],double *Kext_faceh,
+  double *Kext_hh,double* Kext_edgeh[],double *Kext_faceh,
   int g_dim,const double *g_w) {
   PetscFunctionBegin;
   int gg,dd,ii,nn,ee;
@@ -838,8 +840,10 @@ PetscErrorCode Kext_hh_hierarchical(double eps,int order,int *order_edge,
     bzero(Kext_faceh,9*nb_dofs_face*sizeof(double));
   }
   for(gg = 0;gg<g_dim;gg++) {
-    double traction[3];
+    double traction[3] = {0,0,0};
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+    if(traction[0]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    if(traction[1]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     __CLPK_doublecomplex xnormal[3];
     double idofs_x[9];
     for(ii = 0;ii<9;ii++) {
@@ -853,19 +857,22 @@ PetscErrorCode Kext_hh_hierarchical(double eps,int order,int *order_edge,
       for(dd = 0;dd<3;dd++) normal_imag[dd] = xnormal[dd].i;
       nn = 0;
       for(;nn<3;nn++) {
-	for(dd = 0;dd<3;dd++) Kext_hh[ii+3*9*nn+9*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd];
+	for(dd = 0;dd<3;dd++) Kext_hh[ii+9*3*nn+9*nn] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
       }
       if(Kext_edgeh!=NULL) {
 	for(ee = 0;ee<3;ee++) {
 	  int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
-	  for(nn = 0;nb_dofs_edge;nn++) {
-	    for(dd = 0;dd<3;dd++) Kext_edgeh[ee][ii+3*9*nn + 9*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd];
+	  for(nn = 0;nn<nb_dofs_edge;nn++) {
+	    for(dd = 0;dd<3;dd++) {
+	      assert(ii+9*3*nn + 9*dd < 3*nb_dofs_edge*9);
+	      Kext_edgeh[ee][ii+9*3*nn + 9*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
+	    }
 	  }
 	}
       }
       if(Kext_faceh!=NULL) {
 	for(nn = 0;nn<nb_dofs_face;nn++) {
-	  for(dd = 0;dd<3;dd++) Kext_faceh[ii+3*9*nn+9*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd];
+	  for(dd = 0;dd<3;dd++) Kext_faceh[ii+3*9*nn+9*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
 	}
       }
     }
@@ -896,15 +903,17 @@ PetscErrorCode Kext_hh_hierarchical_edge(double eps,int order,int *order_edge,
     }
   }
   for(gg = 0;gg<g_dim;gg++) {
-    double traction[3];
+    double traction[3]  = {0,0,0};
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+    if(traction[0]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    if(traction[1]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     for(EE = 0;EE<3;EE++) {
       int nb_dofs_edge_EE = NBEDGE_H1(order_edge[EE]);
       double* idofs_x_edge[3] = { NULL, NULL, NULL };
-      double idofs_x_edge_EE[nb_dofs_edge_EE];
+      double idofs_x_edge_EE[3*nb_dofs_edge_EE];
       idofs_x_edge[EE] = idofs_x_edge_EE;
-      for(ii = 0;ii<9;ii++) {
-        bzero(idofs_x_edge_EE,nb_dofs_edge_EE*sizeof(double));
+      for(ii = 0;ii<3*nb_dofs_edge_EE;ii++) {
+        bzero(idofs_x_edge_EE,3*nb_dofs_edge_EE*sizeof(double));
         idofs_x_edge_EE[ii] = eps;
 	__CLPK_doublecomplex xnormal[3];
 	ierr = Normal_hierarchical(
@@ -915,19 +924,19 @@ PetscErrorCode Kext_hh_hierarchical_edge(double eps,int order,int *order_edge,
 	for(dd = 0;dd<3;dd++) normal_imag[dd] = xnormal[dd].i;
         nn = 0;
         for(;nn<3;nn++) {
-	  for(dd = 0;dd<3;dd++) Kext_hedge[EE][ii+3*nb_dofs_edge_EE*nn+nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd];
+	  for(dd = 0;dd<3;dd++) Kext_hedge[EE][ii+3*nb_dofs_edge_EE*nn+nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
         }
         if(Kext_edgeedge!=NULL) {
 	 for(ee = 0;ee<3;ee++) {
 	  int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
-  	  for(nn = 0;nb_dofs_edge;nn++) {
-  	    for(dd = 0;dd<3;dd++) Kext_edgeedge[EE][ee][ii+3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd];
+  	  for(nn = 0;nn<nb_dofs_edge;nn++) {
+  	    for(dd = 0;dd<3;dd++) Kext_edgeedge[EE][ee][ii+3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
   	  }
 	 }
         }
         if(Kext_faceedge!=NULL) {
 	  for(nn = 0;nn<nb_dofs_face;nn++) {
-	    for(dd = 0;dd<3;dd++) Kext_faceedge[EE][ii+3*nb_dofs_edge_EE*nn+nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd];
+	    for(dd = 0;dd<3;dd++) Kext_faceedge[EE][ii+3*nb_dofs_edge_EE*nn+nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
 	  }
         }
       }
@@ -956,11 +965,13 @@ PetscErrorCode Kext_hh_hierarchical_face(double eps,int order,int *order_edge,
     bzero(Kext_faceface,nb_dofs_face*nb_dofs_face*sizeof(double));
   }
   for(gg = 0;gg<g_dim;gg++) {
-    double traction[3];
+    double traction[3] = {0,0,0}; 
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
-    double idofs_x_face[nb_dofs_face];
+    if(traction[0]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    if(traction[1]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    double idofs_x_face[3*nb_dofs_face];
     for(ii = 0;ii<nb_dofs_face;ii++) {
-      bzero(idofs_x_face,9*sizeof(double));
+      bzero(idofs_x_face,3*nb_dofs_face*sizeof(double));
       idofs_x_face[ii] = eps;
       __CLPK_doublecomplex xnormal[3];
       ierr = Normal_hierarchical(
@@ -971,19 +982,19 @@ PetscErrorCode Kext_hh_hierarchical_face(double eps,int order,int *order_edge,
       for(dd = 0;dd<3;dd++) normal_imag[dd] = xnormal[dd].i;
       nn = 0;
       for(;nn<3;nn++) {
-	for(dd = 0;dd<3;dd++) Kext_hface[ii+3*nb_dofs_face*nn+nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd];
+	for(dd = 0;dd<3;dd++) Kext_hface[ii+3*nb_dofs_face*nn+nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
       }
       if(Kext_edgeface!=NULL) {
 	for(ee = 0;ee<3;ee++) {
 	  int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
-	  for(nn = 0;nb_dofs_edge;nn++) {
-	    for(dd = 0;dd<3;dd++) Kext_edgeface[ee][ii+3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd];
+	  for(nn = 0;nn<nb_dofs_edge;nn++) {
+	    for(dd = 0;dd<3;dd++) Kext_edgeface[ee][ii+3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
 	  }
 	}
       }
       if(Kext_faceface!=NULL) {
 	for(nn = 0;nn<nb_dofs_face;nn++) {
-	  for(dd = 0;dd<3;dd++) Kext_faceface[ii+3*nb_dofs_face*nn+nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd];
+	  for(dd = 0;dd<3;dd++) Kext_faceface[ii+3*nb_dofs_face*nn+nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
 	}
       }
     }

@@ -24,6 +24,7 @@
 #include "FEM.h"
 #include "H1HdivHcurlL2.h"
 #include "complex.h"
+#include "assert.h"
 
 #ifdef __cplusplus
 extern "C" {

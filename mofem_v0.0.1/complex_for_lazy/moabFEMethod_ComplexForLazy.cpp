@@ -458,17 +458,19 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
   Kext_edgeh_data.resize(3);
   int ee = 0;
   for(;ee<3;ee++) {
+    assert((unsigned int)3*NBEDGE_H1(FaceEdgeOrder[ee]) == EdgeIndices_data[ee].size());
     Kext_edgeh_data[ee].resize(EdgeIndices_data[ee].size(),9);
     Kext_edgeh[ee] = &Kext_edgeh_data[ee].data()[0];
   }
   Kext_faceh.resize(FaceIndices.size(),9);
   ierr = Kext_hh_hierarchical(eps,face_order,&FaceEdgeOrder[0],
-    &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+    &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
     t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
     &Kext_hh.data()[0],Kext_edgeh,&Kext_faceh.data()[0],g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
   //
   Kext_hedge_data.resize(3);
   Kext_edgeedge_data.resize(3,3);
+  Kext_faceedge_data.resize(3);
   for(ee = 0;ee<3;ee++) {
     Kext_hedge_data[ee].resize(9,EdgeIndices_data[ee].size());
     Kext_hedge[ee] = &Kext_hedge_data[ee].data()[0];
@@ -480,7 +482,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     Kext_faceedge[ee] = &Kext_faceedge_data[ee].data()[0];
   }
   ierr = Kext_hh_hierarchical_edge(eps,face_order,&FaceEdgeOrder[0],
-    &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+    &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
     t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
     Kext_hedge,Kext_edgeedge,Kext_faceedge,
     g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
@@ -493,7 +495,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
   }
   Kext_faceface.resize(FaceIndices.size(),FaceIndices.size());
   ierr = Kext_hh_hierarchical_face(eps,face_order,&FaceEdgeOrder[0],
-    &gNTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+    &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
     t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
     &Kext_hface.data()[0],Kext_edgeface,&Kext_faceface.data()[0],
     g_TRI_dim,g_TRI_W); CHKERRQ(ierr);

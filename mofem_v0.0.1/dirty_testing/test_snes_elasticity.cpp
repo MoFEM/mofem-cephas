@@ -219,11 +219,10 @@ int main(int argc, char *argv[]) {
     rval = moab.get_adjacencies(&tet,1,2,false,faces); CHKERR_PETSC(rval);
     for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
       ierr = GetFaceIndicesAndData(*fit); CHKERRQ(ierr);
-      ublas::vector<double> t(9);
+      ublas::vector<double> t(9,0);
       ierr = GetFExt(*fit,&t.data()[0],NULL,NULL); CHKERRQ(ierr);
+      ierr = GetTangentExt(*fit,&t.data()[0],NULL,NULL); CHKERRQ(ierr);
     }
-
-
 
     PetscFunctionReturn(0);
   }
