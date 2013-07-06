@@ -356,8 +356,6 @@ struct MoFEMAdjacencies_change_by_what {
   * _MoFEMProblem_ hidden from user
   */
 struct _MoFEMProblem_: public MoFEMProblem {
-  NumeredDofMoFEMEntity_multiIndex numered_dofs_rows;
-  NumeredDofMoFEMEntity_multiIndex numered_dofs_cols;
   NumeredMoFEMFE_multiIndex numered_finite_elements;
   _MoFEMProblem_(Interface &moab,const EntityHandle _meshset): MoFEMProblem(moab,_meshset) {};
 };

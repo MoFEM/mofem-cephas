@@ -26,6 +26,8 @@
 #include "moabSnes.hpp"
 #include "moabFEMethod_ComplexForLazy.hpp"
 
+#include "complex_for_lazy.h"
+
 /* 
  * From: Demkowicz
  * To discuss basic a priori error estimates, we return now to basic mathemat-
@@ -114,9 +116,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
-  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",3); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
   //build field
@@ -186,35 +188,256 @@ int main(int argc, char *argv[]) {
   SetPositionsEntMethod set_positions(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,set_positions); CHKERRQ(ierr);
 
-
-
   struct ElasticFEMethod: public FEMethod_ComplexForLazy {
+
+    Range& SideSet1;
+    Range& SideSet2;
+    Range SideSet1_;
+    vector<DofIdx> DirihletBC;
+    vector<FieldData> DirihletBCDiagVal;
+    Vec Diagonal;
+
+    Tag th_res;
+
     ElasticFEMethod(Interface& _moab,
-      double _lambda,double _mu,
-      int _verbose = 0): FEMethod_ComplexForLazy(_moab,spatail_analysis,_lambda,_mu,_verbose) {
+      double _lambda,double _mu, Range &_SideSet1,Range &_SideSet2, int _verbose = 0): 
+      FEMethod_ComplexForLazy(_moab,spatail_analysis,_lambda,_mu,_verbose),
+      SideSet1(_SideSet1),SideSet2(_SideSet2) {
+      
+      Range SideSet1Edges,SideSet1Nodes;
+      rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
+      rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
+      SideSet1_.insert(SideSet1.begin(),SideSet1.end());
+      SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
+      SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
+
+      double def_VAL[3] = {0,0,0};
+      // create TAG
+      rval = moab.tag_get_handle("RESIDUAL_VAL",3,MB_TYPE_DOUBLE,th_res,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+
     };
+
+    PetscErrorCode ApplyDirihletBC() {
+      PetscFunctionBegin;
+      //Dirihlet form SideSet1
+      DirihletBC.resize(0);
+      Range::iterator siit1 = SideSet1_.begin();
+      for(;siit1!=SideSet1_.end();siit1++) {
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	for(;riit!=hi_riit;riit++) {
+	  if(riit->get_name()!="SPATIAL_POSITION") continue;
+	  // all fixed
+	  // if some ranks are selected then we could apply BC in particular direction
+	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+	  for(int cc = 0;cc<(1+6+4+1);cc++) {
+	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),riit->get_petsc_gloabl_dof_idx());
+	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	  }
+	  for(int rr = 0;rr<(1+6+4+1);rr++) {
+	    vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	    if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+	  }
+	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode ApplyDirihletBCFace() {
+      PetscFunctionBegin;
+      vector<DofIdx>::iterator dit = DirihletBC.begin();
+      for(;dit!=DirihletBC.end();dit++) {
+	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
+	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
+	for(int ee = 0;ee<6;ee++) {
+	  it = find(FaceEdgeIndices_data[ee].begin(),FaceEdgeIndices_data[ee].end(),*dit);
+	  if(it!=FaceEdgeIndices_data[ee].end()) *it = -1; // of idx is set -1 row is not assembled
+	}
+      }
+      PetscFunctionReturn(0);
+    }
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
     ierr = PetscGetTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-
+    //set_PhysicalEquationNumber(neohookean);
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	Diagonal = PETSC_NULL;
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatZeroEntries(*snes_A); CHKERRQ(ierr);
+	ierr = VecDuplicate(snes_f,&Diagonal); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
     PetscFunctionReturn(0);
   }
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
-
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndices(); CHKERRQ(ierr);
-    ierr = GetTangent(); CHKERRQ(ierr);
-    ierr = GetFint(); CHKERRQ(ierr);
-    
-    EntityHandle tet = fe_ent_ptr->get_ent();
+
+    ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+    if(Diagonal!=PETSC_NULL) {
+	if(DirihletBC.size()>0) {
+	  DirihletBCDiagVal.resize(DirihletBC.size());
+	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
+	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+	}
+    }
+
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
+    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
+
+    double t[] = { 0,0,1e-2, 0,0,1e-2, 0,0,1e-2 };
+
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+        ierr = GetFint(); CHKERRQ(ierr);
+	VecSetOption(snes_f, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+	//cerr << "Fint_h " << Fint_h << endl;
+	ierr = VecSetValues(snes_f,RowGlob[i_nodes].size(),&(RowGlob[i_nodes][0]),&(Fint_h.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	for(int ee = 0;ee<6;ee++) {
+	  if(RowGlob[1+ee].size()>0) {
+	    ierr = VecSetValues(snes_f,RowGlob[1+ee].size(),&(RowGlob[1+ee][0]),&(Fint_h_edge_data[ee].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}
+	for(int ff = 0;ff<4;ff++) {
+	  if(RowGlob[1+6+ff].size()>0) {
+	    ierr = VecSetValues(snes_f,RowGlob[1+6+ff].size(),&(RowGlob[1+6+ff][0]),&(Fint_h_face_data[ff].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}
+	for(;siit!=hi_siit;siit++) {
+	  Range::iterator fit = find(SideSet2.begin(),SideSet2.end(),siit->ent);
+	  if(fit==SideSet2.end()) continue;
+	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
+	  ierr = GetFExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
+	  //cerr << "FExt " << FExt << endl;
+	  //cerr << "FaceNodeIndices.size() " << FaceNodeIndices.size() << endl;
+	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
+	  ierr = VecSetValues(snes_f,FaceNodeIndices.size(),&(FaceNodeIndices[0]),&*FExt.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	  for(int ee = 0;ee<3;ee++) {
+	    if(FaceEdgeIndices_data[ee].size()>0) {
+	      ierr = VecSetValues(snes_f,FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),&*FExt_edge_data[ee].data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	    }
+	  }
+	  if(FaceIndices.size()>0) {
+	    ierr = VecSetValues(snes_f,FaceIndices.size(),&(FaceIndices[0]),&*FExt_face.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}
+      }
+      break;
+      case ctx_SNESSetJacobian:
+	ierr = GetTangent(); CHKERRQ(ierr);
+	//cerr << "Khh " << Khh << endl;
+	ierr = MatSetValues(*snes_A,
+	  RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
+	  ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
+	  &*(Khh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	//
+	for(int ee = 0;ee<6;ee++) {
+	  ierr = MatSetValues(*snes_A,
+	    RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
+	    ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
+	    &*(Kedgeh_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_A,
+	    RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
+	    ColGlob[1+ee].size(),&*(ColGlob[1+ee].begin()),
+	    &*(Khedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  for(int eee = 0;eee<6;eee++) {
+	    ierr = MatSetValues(*snes_A,
+	      RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
+	      ColGlob[1+eee].size(),&*(ColGlob[1+eee].begin()),
+	      &*(Khh_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  for(int fff = 0;fff<4;fff++) {
+	    ierr = MatSetValues(*snes_A,
+	      RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
+	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
+	      &*(Khh_edgeface_data(ee,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}
+	for(int ff = 0;ff<4;ff++) {
+	  ierr = MatSetValues(*snes_A,
+	    RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
+	    ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
+	    &*(Kfaceh_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_A,
+	    RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
+	    ColGlob[1+6+ff].size(),&*(ColGlob[1+6+ff].begin()),
+	    &*(Khedge_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  for(int eee = 0;eee<6;eee++) {
+	    ierr = MatSetValues(*snes_A,
+	      RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
+	      ColGlob[1+eee].size(),&*(ColGlob[1+eee].begin()),
+	      &*(Khh_faceedge_data(ff,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  for(int fff = 0;fff<4;fff++) {
+	    ierr = MatSetValues(*snes_A,
+	      RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
+	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
+	      &*(Khh_faceface_data(ff,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}
+	//
+	/*for(;siit!=hi_siit;siit++) {
+	  Range::iterator fit = find(SideSet2.begin(),SideSet2.end(),siit->ent);
+	  if(fit==SideSet2.end()) continue;
+	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
+	  ierr = GetTangentExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
+	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_A,
+	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	    &*(KExt_hh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  for(int ee = 0;ee<3;ee++) {
+	    if(FaceNodeIndices.size()==0) continue;
+	    ierr = MatSetValues(*snes_A,
+	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	      &*(KExt_edgeh_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(*snes_A,
+	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+	      &*(KExt_hedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    for(int eee = 0;eee<3;eee++) {
+	      ierr = MatSetValues(*snes_A,
+		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+		FaceEdgeIndices_data[eee].size(),&(FaceEdgeIndices_data[eee][0]),
+		&*(KExt_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    }
+	    ierr = MatSetValues(*snes_A,
+	      FaceIndices.size(),&(FaceIndices[0]),
+	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+	      &*(KExt_faceedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(*snes_A,
+	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+	      FaceIndices.size(),&(FaceIndices[0]),
+	      &*(KExt_edgeface_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  ierr = MatSetValues(*snes_A,
+	    FaceIndices.size(),&(FaceIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
+	    &*(KExt_faceface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}*/
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    /*EntityHandle tet = fe_ent_ptr->get_ent();
     Range faces;
     rval = moab.get_adjacencies(&tet,1,2,false,faces); CHKERR_PETSC(rval);
     for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
@@ -222,16 +445,53 @@ int main(int argc, char *argv[]) {
       ublas::vector<double> t(9,0);
       ierr = GetFExt(*fit,&t.data()[0],NULL,NULL); CHKERRQ(ierr);
       ierr = GetTangentExt(*fit,&t.data()[0],NULL,NULL); CHKERRQ(ierr);
-    }
+    }*/
 
     PetscFunctionReturn(0);
   }
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	NumeredDofMoFEMEntity_multiIndex& numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+	NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator niit,hi_niit;
+	niit = numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+	hi_niit= numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problem_ptr->get_nb_local_dofs_row());
+	PetscScalar *array;
+	ierr = VecGetArray(snes_f,&array); CHKERRQ(ierr);
+	Range local_ents;
+	for(;niit!=hi_niit;niit++) {
+	  local_ents.insert(niit->get_ent());
+	}
+	rval = moab.tag_set_data(th_res,local_ents,array); CHKERR_PETSC(rval);
+	ierr = VecRestoreArray(snes_f,&array); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
+	ierr = MatDiagonalSet(*snes_A,Diagonal,ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(*snes_A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	//Matrix View
+	//MatView(*snes_A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+	//std::string wait;
+	//std::cin >> wait;
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+
+    }
+
     ierr = PetscGetTime(&v2); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscFunctionReturn(0);
   }
 
@@ -245,16 +505,9 @@ int main(int argc, char *argv[]) {
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  ElasticFEMethod MyFE(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  ElasticFEMethod MyFE(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
 
   moabSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
-  /*struct LoopContext {
-    enum context { Rhs, Mat };
-    context ctx;
-    LoopContext(context _ctx): ctx(ctx);
-  }
-  LoopContext for_Rhs(LoopContext::Rhs);
-  LoopContext for_Mat(*/
   
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -268,13 +521,24 @@ int main(int argc, char *argv[]) {
   moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
 
+  Vec D;
+  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
+  int its;
+  ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   //ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-
-  PetscFinalize();
-  return 0;
+  //PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  //PetscFinalize();
+  //return 0;
 
   //Matrix View
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
@@ -282,7 +546,7 @@ int main(int argc, char *argv[]) {
   //std::cin >> wait;
 
   //Solver
-  KSP solver;
+  /*KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
@@ -293,6 +557,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  */
 
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -389,7 +654,6 @@ int main(int argc, char *argv[]) {
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
       ierr = PetscGetTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-      FEMethod_LowLevelStudent::preProcess();
 
       if(init_ref) PetscFunctionReturn(0);
       
@@ -514,7 +778,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+  //ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);

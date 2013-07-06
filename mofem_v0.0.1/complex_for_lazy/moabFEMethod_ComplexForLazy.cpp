@@ -63,7 +63,7 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type
   Khh_edgevolume_data.resize(6);
   Khh_facevolume_data.resize(4);
   //
-  Fblock_x.resize(12);
+  Fint_h.resize(12);
   Fint_h_edge_data.resize(6);
   Fint_h_face_data.resize(4);
   //
@@ -83,6 +83,7 @@ PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
   PetscFunctionBegin;
+  try{
   switch (fe_ent_ptr->get_ent_type()) {
     case MBTET: {
       RowGlob.resize(1+6+4+1);
@@ -166,6 +167,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
 	  for(int dd = 0;eiit!=hi_eiit;eiit++,dd++) dofs_x_edge_data[ee][dd] = eiit->get_FieldData(); 
 	} else {
 	  order_edges[ee] = 0;
+	  dofs_x_edge[ee] = NULL;
 	}
       }
       //data face
@@ -181,21 +183,26 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
 	  assert(dofs_x_face_data[ff].size() == 3*(unsigned int)NBFACE_H1(order_faces[ff]));
 	  for(int dd = 0;fiit!=hi_fiit;fiit++,dd++) dofs_x_face_data[ff][dd] = fiit->get_FieldData(); 
 	} else {
-	  order_faces[ee] = 0;
+	  order_faces[ff] = 0;
+	  dofs_x_face[ff] = 0;
 	}
       }
       //data voolume
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit,hi_viit;
       viit = row_multiIndex->get<Composite_mi_tag2>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBTET));
-      order_volume = viit->get_max_order();
       hi_viit = row_multiIndex->get<Composite_mi_tag2>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBTET));
-      dofs_x_volume.resize(distance(viit,hi_viit));
-      assert(dofs_x_volume.size() == (unsigned int)NBFACE_H1(order_volume));
-      for(int dd = 0;viit!=hi_viit;viit++,dd++) dofs_x_volume[dd] = viit->get_FieldData(); 
+      if(viit!=hi_viit) {
+	order_volume = viit->get_max_order();
+	dofs_x_volume.resize(distance(viit,hi_viit));
+	assert(dofs_x_volume.size() == (unsigned int)NBFACE_H1(order_volume));
+	for(int dd = 0;viit!=hi_viit;viit++,dd++) dofs_x_volume[dd] = viit->get_FieldData(); 
+      } else {
+	order_volume = 0;
+      }
       //data nodes
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator niit,hi_niit;
-      niit = row_multiIndex->get<Composite_mi_tag2>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBVERTEX));
-      hi_niit = row_multiIndex->get<Composite_mi_tag2>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBVERTEX));
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator niit,hi_niit;
+      niit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBVERTEX,0));
+      hi_niit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBVERTEX,4));
       assert(distance(niit,hi_niit)==12);   
       for(int dd = 0;niit!=hi_niit;niit++,dd++) dofs_x[dd] = niit->get_FieldData(); 
       } catch (const char* msg) {
@@ -206,21 +213,27 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
     default:
     SETERRQ(PETSC_COMM_SELF,1,"no implemented");
   }
+  } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   PetscFunctionBegin;
+  try {
   switch (fe_ent_ptr->get_ent_type()) {
   case MBTET: {
     int ee = 0;
     for(;ee<6;ee++) {
-	diff_edgeNinvJac[ee] = &(diffH1edgeNinvJac[ee])[0]; 
+	diff_edgeNinvJac[ee] = &*diffH1edgeNinvJac[ee].begin(); 
     }
     int ff = 0;
     for(;ff<4;ff++) {
-      diff_faceNinvJac[ff] = &(diffH1faceNinvJac[ff])[0];
+      diff_faceNinvJac[ff] = &*diffH1faceNinvJac[ff].begin();
     }
-    diff_volumeNinvJac = &diffH1elemNinvJac[0];
+    diff_volumeNinvJac = &*diffH1elemNinvJac.begin();
     double center[3]; 
     tetcircumcenter_tp(&coords[0],&coords[3],&coords[6],&coords[9],center,NULL,NULL,NULL); 
     double r = cblas_dnrm2(3,center,1);
@@ -234,43 +247,43 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	for(;ee<6;ee++) {
 	  assert(3*(unsigned int)NBEDGE_H1(order_edges[ee]) == RowGlob[1+ee].size());
 	  Kedgeh_data[ee].resize(RowGlob[1+ee].size(),12);
-	  Kedgeh[ee] = &Kedgeh_data[ee].data()[0];
+	  Kedgeh[ee] = &*Kedgeh_data[ee].data().begin();
 	  for(int eee = 0;eee<6;eee++) {
 	    Khh_edgeedge_data(eee,ee).resize(RowGlob[1+eee].size(),RowGlob[1+ee].size());
-	    Khh_edgeedge[eee][ee] = &Khh_edgeedge_data(eee,ee).data()[0];
+	    Khh_edgeedge[eee][ee] = &*Khh_edgeedge_data(eee,ee).data().begin();
 	  }
 	  for(int fff = 0;fff<4;fff++) {
 	    Khh_faceedge_data(fff,ee).resize(RowGlob[1+6+fff].size(),RowGlob[1+ee].size());
-	    Khh_faceedge[fff][ee] = &Khh_faceedge_data(fff,ee).data()[0];
+	    Khh_faceedge[fff][ee] = &*Khh_faceedge_data(fff,ee).data().begin();
 	  }
 	  Khedge_data[ee].resize(12,RowGlob[1+ee].size());
-	  Khedge[ee] = &Khedge_data[ee].data()[0];
+	  Khedge[ee] = &*Khedge_data[ee].data().begin();
 	  Khh_volumeedge_data[ee].resize(RowGlob[1+6+4].size(),RowGlob[1+ee].size());
-	  Khh_volumeedge[ee] = & Khh_volumeedge_data[ee].data()[0];
+	  Khh_volumeedge[ee] = &*Khh_volumeedge_data[ee].data().begin();
 	  //
 	  Khh_edgevolume_data[ee].resize(RowGlob[1+ee].size(),RowGlob[1+6+4].size());
-	  Khh_edgevolume[ee] = &Khh_edgevolume_data[ee].data()[0];
+	  Khh_edgevolume[ee] = &*Khh_edgevolume_data[ee].data().begin();
 	}
 	ff = 0;
 	for(;ff<4;ff++) {
 	  assert(3*(unsigned int)NBFACE_H1(order_faces[ff]) == RowGlob[1+6+ff].size());
 	  Kfaceh_data[ff] = ublas::zero_matrix<double>(RowGlob[1+6+ff].size(),12);
-	  Kfaceh[ff] = &Kfaceh_data[ff].data()[0];
+	  Kfaceh[ff] = &*Kfaceh_data[ff].data().begin();
 	  Khface_data[ff].resize(12,RowGlob[1+6+ff].size());
-	  Khface[ff] = &Khface_data[ff].data()[0];
+	  Khface[ff] = &*Khface_data[ff].data().begin();
 	  Khh_volumeface_data[ff].resize(RowGlob[1+6+4].size(),RowGlob[1+6+ff].size());
-	  Khh_volumeface[ff] = &Khface_data[ff].data()[0];
+	  Khh_volumeface[ff] = &*Khface_data[ff].data().begin();
 	  for(int fff = 0;fff<4;fff++) {
 	    Khh_faceface_data(fff,ff).resize(RowGlob[1+6+fff].size(),RowGlob[1+6+ff].size());
-	    Khh_faceface[fff][ff] = &Khh_faceface_data(fff,ff).data()[0];
+	    Khh_faceface[fff][ff] = &*Khh_faceface_data(fff,ff).data().begin();
 	  }
 	  for(int eee = 0;eee<6;eee++) {
 	    Khh_edgeface_data(eee,ff).resize(RowGlob[1+eee].size(),RowGlob[1+6+ff].size());
-	    Khh_edgeface[eee][ff] = &Khh_edgeface_data(eee,ff).data()[0];
+	    Khh_edgeface[eee][ff] = &*Khh_edgeface_data(eee,ff).data().begin();
 	  }
 	  //
 	  Khh_facevolume_data[ff].resize(RowGlob[1+6+ff].size(),RowGlob[1+6+4].size());
-	  Khh_facevolume[ff] = &Khh_facevolume_data[ff].data()[0];
+	  Khh_facevolume[ff] = &*Khh_facevolume_data[ff].data().begin();
 	}
 	Khvolume.resize(12,RowGlob[1+6+4].size());
 	Khh_volumevolume.resize(RowGlob[1+6+4].size(),RowGlob[1+6+4].size());
@@ -280,22 +293,22 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
       case spatail_analysis: {
 	ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&dofs_x_volume[0], 
-	  &Khh.data()[0],NULL,Kedgeh,Kfaceh,&Kvolumeh.data()[0],g_dim,g_TET_W); CHKERRQ(ierr);
+	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	  &*Khh.data().begin(),NULL,Kedgeh,Kfaceh,&*Kvolumeh.data().begin(),g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_edge(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&dofs_x_volume[0], 
+	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	  &Khedge[0],NULL,Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_face(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&dofs_x_volume[0], 
+	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	  &Khface[0],NULL,Khh_edgeface,Khh_faceface,Khh_volumeface, 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_volume(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],diff_volumeNinvJac, 
-	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&dofs_x_volume[0], 
-	  &Khvolume.data()[0],NULL,Khh_edgevolume,Khh_facevolume,&Khh_volumevolume.data()[0], 
+	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	  &*Khvolume.data().begin(),NULL,Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(), 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
       }
       break;
@@ -307,96 +320,129 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   default:
     SETERRQ(PETSC_COMM_SELF,1,"no implemented");
   }
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
   PetscFunctionBegin;
+  try {
   switch (fe_ent_ptr->get_ent_type()) {
-  case MBTET: {
-    int ee = 0;
-    for(;ee<6;ee++) {
-	diff_edgeNinvJac[ee] = &(diffH1edgeNinvJac[ee])[0]; 
-    }
-    int ff = 0;
-    for(;ff<4;ff++) {
-      diff_faceNinvJac[ff] = &(diffH1faceNinvJac[ff])[0];
-    }
-    diff_volumeNinvJac = &diffH1elemNinvJac[0];
-    int g_dim = get_dim_gNTET();
-    if(type_of_analysis&spatail_analysis) {
-      ee = 0;
+    case MBTET: {
+      int ee = 0;
       for(;ee<6;ee++) {
-	Fint_h_edge_data[ee].resize(RowGlob[1+ee].size());
-	Fint_h_edge[ee] = &Fint_h_edge_data[ee].data()[0];
+  	diff_edgeNinvJac[ee] = &(diffH1edgeNinvJac[ee])[0]; 
       }
-      ff = 0;
+      int ff = 0;
       for(;ff<4;ff++) {
-	Fint_h_face_data[ff].resize(RowGlob[1+6+ff].size());
-	Fint_h_face[ff] = &Fint_h_face_data[ff].data()[0];
+        diff_faceNinvJac[ff] = &(diffH1faceNinvJac[ff])[0];
       }
-      Fint_h_volume.resize(RowGlob[1+6+4].size());
-    }
-    unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
-    switch(sub_analysis_type) {
-      case spatail_analysis: {
-	ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,lambda,mu,ptr_matctx, 
-	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &coords[0],&dofs_x[0],NULL,NULL,
-	  &dofs_x_edge[0],&dofs_x_face[0],&dofs_x_volume[0], 
-	  NULL,&Fblock_x.data()[0],Fint_h_edge,Fint_h_face,&Fint_h_volume.data()[0],
-	  NULL,NULL,NULL,NULL,NULL,
-	  g_dim,g_TET_W); CHKERRQ(ierr);
+      diff_volumeNinvJac = &diffH1elemNinvJac[0];
+      int g_dim = get_dim_gNTET();
+      if(type_of_analysis&spatail_analysis) {
+        ee = 0;
+        for(;ee<6;ee++) {
+	  if(RowGlob[1+ee].size()!=0) {
+	    Fint_h_edge_data[ee].resize(RowGlob[1+ee].size());
+	    Fint_h_edge[ee] = &Fint_h_edge_data[ee].data()[0];
+	  } else {
+	    Fint_h_edge[ee] = NULL;
+	  }
+        }
+        ff = 0;
+        for(;ff<4;ff++) {
+	  if(RowGlob[1+6+ff].size()!=0) {
+	    Fint_h_face_data[ff].resize(RowGlob[1+6+ff].size());
+	    Fint_h_face[ff] = &Fint_h_face_data[ff].data()[0];
+	  } else {
+	    Fint_h_face[ff] = NULL;
+	  }
+        }
+	if(RowGlob[1+6+4].size()!=0) {
+	  Fint_h_volume.resize(RowGlob[1+6+4].size());
+	}
       }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+      unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
+      switch(sub_analysis_type) {
+        case spatail_analysis: {
+  	//cerr << "coords " << coords << endl;
+  	//cerr << "dofs_x " << dofs_x << endl;
+  	ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,lambda,mu,ptr_matctx, 
+  	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+  	  &coords[0],&*dofs_x.data().begin(),NULL,NULL,
+  	  &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+  	  NULL,&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
+  	  NULL,NULL,NULL,NULL,NULL,
+  	  g_dim,g_TET_W); CHKERRQ(ierr);
+        }
+        break;
+        default:
+	 SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+      }
     }
+    break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"no implemented");
   }
-  break;
-  default:
-    SETERRQ(PETSC_COMM_SELF,1,"no implemented");
-  }
-
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face) {
   PetscFunctionBegin;
   typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dofs_iterator;
-  dofs_iterator fiit,hi_fiit;
-  fiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",face));
-  if(fiit==row_multiIndex->get<Composite_mi_tag3>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
-  if(fiit->get_ent_type()!=MBTRI) SETERRQ(PETSC_COMM_SELF,1,"works only for facec");
-  hi_fiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",face));
-  FaceIndices.resize(distance(fiit,hi_fiit));
-  FaceData.resize(distance(fiit,hi_fiit));
-  face_order = fiit->get_max_order();
-  int dd = 0;
-  if(NBFACE_H1(face_order)>0) {
-    for(dofs_iterator fiiit = fiit;fiiit!=hi_fiit;fiiit++,dd++) {
-      FaceIndices[dd] = fiiit->get_petsc_gloabl_dof_idx();
-      FaceData[dd] = fiiit->get_FieldData();
-    }
-  }
-  N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
-  diffN_face.resize(2*g_TRI_dim*NBFACE_H1(face_order));
-  ierr = H1_FaceShapeFunctions_MBTRI(face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
-  NodeIndices.resize(12);
-  NodeData.resize(12);
+  try {
+  FaceNodeIndices.resize(9);
+  FaceNodeData.resize(9);
   const EntityHandle* conn_face; 
   int num_nodes; 
   rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-  int nn = 0;
-  for(dd = 0;nn<4;nn++) {
+  int nn = 0,dd = 0;
+  for(;nn<3;nn++) {
     dofs_iterator niit,hi_niit;
+    dofs_iterator col_niit,hi_col_niit;
     niit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
     hi_niit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
-    for(;niit!=hi_niit;niit++,dd++) {
-      NodeIndices[dd] = niit->get_petsc_gloabl_dof_idx();
-      NodeData[dd] = niit->get_FieldData();
+    col_niit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
+    hi_col_niit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
+    for(;niit!=hi_niit;niit++,col_niit++,dd++) {
+      assert(col_niit->get_petsc_gloabl_dof_idx() == niit->get_petsc_gloabl_dof_idx());
+      FaceNodeIndices[dd] = niit->get_petsc_gloabl_dof_idx();
+      FaceNodeData[dd] = niit->get_FieldData();
     }
   }
-  EdgeIndices_data.resize(3);
-  EdgeData_data.resize(3);
+  if(dd != 9) {
+    SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET"); 
+  }
+  dofs_iterator fiit,hi_fiit;
+  fiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",face));
+  hi_fiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",face));
+  if(fiit!=hi_fiit) {
+    FaceIndices.resize(distance(fiit,hi_fiit));
+    FaceData.resize(distance(fiit,hi_fiit));
+    face_order = fiit->get_max_order();
+    assert((unsigned int)3*NBFACE_H1(face_order)==distance(fiit,hi_fiit));
+    dd = 0;
+    if(NBFACE_H1(face_order)>0) {
+      for(dofs_iterator fiiit = fiit;fiiit!=hi_fiit;fiiit++,dd++) {
+	FaceIndices[dd] = fiiit->get_petsc_gloabl_dof_idx();
+	FaceData[dd] = 0;//fiiit->get_FieldData();
+      }
+    }
+    N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
+    diffN_face.resize(2*g_TRI_dim*NBFACE_H1(face_order));
+    ierr = H1_FaceShapeFunctions_MBTRI(face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
+  } else {
+    face_order = 0;
+  }
+  FaceEdgeIndices_data.resize(3);
+  FaceEdgeData_data.resize(3);
   FaceEdgeSense.resize(3);
   FaceEdgeOrder.resize(3);
   N_edge_data.resize(3);
@@ -410,95 +456,131 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     dofs_iterator eiit,hi_eiit;
     eiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",edge));
     hi_eiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",edge));
-    FaceEdgeOrder[ee] = eiit->get_max_order();
-    if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
-      EdgeIndices_data[ee].resize(distance(eiit,hi_eiit));
-      EdgeData_data[ee].resize(distance(eiit,hi_eiit));
-      for(dd = 0;eiit!=hi_eiit;eiit++,dd++) {
-	EdgeIndices_data[ee][dd] = eiit->get_petsc_gloabl_dof_idx();
-	EdgeData_data[ee][dd] = eiit->get_FieldData();
+    if(eiit!=hi_eiit) {
+      FaceEdgeOrder[ee] = eiit->get_max_order();
+      if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
+	assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(eiit,hi_eiit));
+	FaceEdgeIndices_data[ee].resize(distance(eiit,hi_eiit));
+	FaceEdgeData_data[ee].resize(distance(eiit,hi_eiit));
+	for(dd = 0;eiit!=hi_eiit;eiit++,dd++) {
+	  FaceEdgeIndices_data[ee][dd] = eiit->get_petsc_gloabl_dof_idx();
+	  FaceEdgeData_data[ee][dd] = 0;//eiit->get_FieldData();
+	}
+	EdgeData[ee] = &(FaceEdgeData_data[ee].data()[0]);
+	N_edge_data[ee].resize(g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
+	diffN_edge_data[ee].resize(2*g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
+	N_edge[ee] = &(N_edge_data[ee][0]);
+	diffN_edge[ee] = &(diffN_edge_data[ee][0]);
       }
-      EdgeData[ee] = &(EdgeData_data[ee].data()[0]);
-      N_edge_data[ee].resize(g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
-      diffN_edge_data[ee].resize(2*g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
-      N_edge[ee] = &(N_edge_data[ee][0]);
-      diffN_edge[ee] = &(diffN_edge_data[ee][0]);
+    } else {
+      FaceEdgeOrder[ee] = 0;
+      EdgeData[ee] = NULL;
     }
   }
   ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&g_NTRI[0],diffNTRI,N_edge,diffN_edge,g_TRI_dim); CHKERRQ(ierr);
   GetFaceIndicesAndData_face = face;
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,double *t_edge[],double *t_face) {
   PetscFunctionBegin;
+  try {
   if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData(face) before call of this function");
   FExt.resize(9);
   FExt_edge_data.resize(3);
   int ee = 0;
   for(;ee<3;ee++) {
-    FExt_edge_data[ee].resize(EdgeIndices_data[ee].size());
-    FExt_edge[ee] = &FExt_edge_data[ee].data()[0];
+    if(FaceEdgeIndices_data[ee].size()>0) {
+      if((unsigned int)3*NBEDGE_H1(FaceEdgeOrder[ee])!=FaceEdgeIndices_data[ee].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+      FExt_edge_data[ee].resize(FaceEdgeIndices_data[ee].size());
+      FExt_edge[ee] = &*FExt_edge_data[ee].data().begin();
+    } else {
+      if(NBEDGE_H1(FaceEdgeOrder[ee])!=0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+      FExt_edge[ee] = NULL;
+    }
   }
   FExt_face.resize(FaceIndices.size());
+  const EntityHandle* conn_face;
+  ublas::vector<double> coords_face;
+  coords_face.resize(9);
+  int num_nodes;
+  rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
   ierr = Fext_h_hierarchical(
     face_order,&FaceEdgeOrder[0],//2
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
     t,t_edge,t_face,//11
-    &NodeData.data()[0],EdgeData,&FaceData.data()[0],//14
+    /*&*FaceNodeData.data().begin()*/&*coords_face.data().begin(),EdgeData,&*FaceData.data().begin(),//14
     NULL,NULL,NULL,//17
-    &FExt.data()[0],FExt_edge,&FExt_face.data()[0],//20
+    &*FExt.data().begin(),FExt_edge,&*FExt_face.data().begin(),//20
     NULL,NULL,NULL,//23
     g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *t,double *t_edge[],double *t_face) {
   PetscFunctionBegin;
+  try {
   if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData(face) before call of this function");
-  Kext_hh.resize(9,9);
-  Kext_edgeh_data.resize(3);
+  KExt_hh.resize(9,9);
+  KExt_edgeh_data.resize(3);
   int ee = 0;
   for(;ee<3;ee++) {
-    assert((unsigned int)3*NBEDGE_H1(FaceEdgeOrder[ee]) == EdgeIndices_data[ee].size());
-    Kext_edgeh_data[ee].resize(EdgeIndices_data[ee].size(),9);
-    Kext_edgeh[ee] = &Kext_edgeh_data[ee].data()[0];
+    assert((unsigned int)3*NBEDGE_H1(FaceEdgeOrder[ee]) == FaceEdgeIndices_data[ee].size());
+    KExt_edgeh_data[ee].resize(FaceEdgeIndices_data[ee].size(),9);
+    KExt_edgeh[ee] = &*KExt_edgeh_data[ee].data().begin();
   }
-  Kext_faceh.resize(FaceIndices.size(),9);
-  ierr = Kext_hh_hierarchical(eps,face_order,&FaceEdgeOrder[0],
+  KExt_faceh.resize(FaceIndices.size(),9);
+  ierr = KExt_hh_hierarchical(eps,face_order,&FaceEdgeOrder[0],
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
-    t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
-    &Kext_hh.data()[0],Kext_edgeh,&Kext_faceh.data()[0],g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+    t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+    &*KExt_hh.data().begin(),KExt_edgeh,&*KExt_faceh.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  //KExt_hh = trans( KExt_hh );
   //
-  Kext_hedge_data.resize(3);
-  Kext_edgeedge_data.resize(3,3);
-  Kext_faceedge_data.resize(3);
+  KExt_hedge_data.resize(3);
+  KExt_edgeedge_data.resize(3,3);
+  KExt_faceedge_data.resize(3);
   for(ee = 0;ee<3;ee++) {
-    Kext_hedge_data[ee].resize(9,EdgeIndices_data[ee].size());
-    Kext_hedge[ee] = &Kext_hedge_data[ee].data()[0];
+    KExt_hedge_data[ee].resize(9,FaceEdgeIndices_data[ee].size());
+    KExt_hedge[ee] = &*KExt_hedge_data[ee].data().begin();
     for(int eee = 0;eee<3;eee++) {
-      Kext_edgeedge_data(ee,eee).resize(EdgeIndices_data[ee].size(),EdgeIndices_data[eee].size());
-      Kext_edgeedge[ee][eee] = &Kext_edgeedge_data(ee,eee).data()[0];
+      KExt_edgeedge_data(ee,eee).resize(FaceEdgeIndices_data[ee].size(),FaceEdgeIndices_data[eee].size());
+      KExt_edgeedge[ee][eee] = &*KExt_edgeedge_data(ee,eee).data().begin();
     }
-    Kext_faceedge_data[ee].resize(FaceIndices.size(),EdgeIndices_data[ee].size());
-    Kext_faceedge[ee] = &Kext_faceedge_data[ee].data()[0];
+    KExt_faceedge_data[ee].resize(FaceIndices.size(),FaceEdgeIndices_data[ee].size());
+    KExt_faceedge[ee] = &*KExt_faceedge_data[ee].data().begin();
   }
-  ierr = Kext_hh_hierarchical_edge(eps,face_order,&FaceEdgeOrder[0],
+  ierr = KExt_hh_hierarchical_edge(eps,face_order,&FaceEdgeOrder[0],
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
-    t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
-    Kext_hedge,Kext_edgeedge,Kext_faceedge,
+    t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+    KExt_hedge,KExt_edgeedge,KExt_faceedge,
     g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
   //
-  Kext_hface.resize(9,FaceIndices.size());
-  Kext_edgeface_data.resize(3);
+  KExt_hface.resize(9,FaceIndices.size());
+  KExt_edgeface_data.resize(3);
   for(ee = 0;ee<3;ee++) {
-    Kext_edgeface_data[ee].resize(EdgeIndices_data[ee].size(),FaceIndices.size());
-    Kext_edgeface[ee] = &Kext_edgeface_data[ee].data()[0];
+    KExt_edgeface_data[ee].resize(FaceEdgeIndices_data[ee].size(),FaceIndices.size());
+    KExt_edgeface[ee] = &*KExt_edgeface_data[ee].data().begin();
   }
-  Kext_faceface.resize(FaceIndices.size(),FaceIndices.size());
-  ierr = Kext_hh_hierarchical_face(eps,face_order,&FaceEdgeOrder[0],
+  KExt_faceface.resize(FaceIndices.size(),FaceIndices.size());
+  ierr = KExt_hh_hierarchical_face(eps,face_order,&FaceEdgeOrder[0],
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
-    t,t_edge,t_face,&NodeData.data()[0],EdgeData,&FaceData.data()[0],
-    &Kext_hface.data()[0],Kext_edgeface,&Kext_faceface.data()[0],
+    t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+    &*KExt_hface.data().begin(),KExt_edgeface,&*KExt_faceface.data().begin(),
     g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
   PetscFunctionReturn(0);
 }
 

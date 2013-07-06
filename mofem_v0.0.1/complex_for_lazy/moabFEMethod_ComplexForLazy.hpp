@@ -44,6 +44,8 @@ namespace MoFEM {
 */
 struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
+  enum eRowGlob { i_nodes = 0, i_edge0, i_edge1, i_edge2, i_edge3, i_edge4, i_edge5, 
+    i_face0, i_face1, i_face2, i_face3, i_volume };
   enum analysis { spatail_analysis = 1, material_analysis = 1<<1 };
   analysis type_of_analysis;
 
@@ -107,7 +109,7 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   double *Khh_facevolume[4];
   ublas::matrix<double> Khh_volumevolume;
   //Fint
-  ublas::vector<double> Fblock_x,Fint_h_volume;
+  ublas::vector<double> Fint_h,Fint_h_volume;
   vector<ublas::vector<double> > Fint_h_edge_data;
   vector<ublas::vector<double> > Fint_h_face_data;
   double* Fint_h_edge[6];
@@ -129,10 +131,10 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   ublas::vector<double> FaceData;
   vector<double> N_face;
   vector<double> diffN_face;
-  vector<DofIdx> NodeIndices;
-  ublas::vector<double> NodeData;
-  vector<vector<DofIdx> > EdgeIndices_data;
-  vector<ublas::vector<double> > EdgeData_data;
+  vector<DofIdx> FaceNodeIndices;
+  ublas::vector<double> FaceNodeData;
+  vector<vector<DofIdx> > FaceEdgeIndices_data;
+  vector<ublas::vector<double> > FaceEdgeData_data;
   double *EdgeData[3];
   vector<vector<double> > N_edge_data;
   vector<vector<double> > diffN_edge_data;
@@ -148,23 +150,23 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   ublas::vector<double> FExt_face;
   PetscErrorCode GetFExt(EntityHandle face,double *t,double *t_edge[],double *t_face);
 
-  //Kext_hh_hierarchical
-  ublas::matrix<double> Kext_hh;
-  vector<ublas::matrix<double> > Kext_edgeh_data;
-  double* Kext_edgeh[3];
-  ublas::matrix<double> Kext_faceh;
-  //Kext_hh_hierarchical_edge
-  vector<ublas::matrix<double> > Kext_hedge_data;
-  double* Kext_hedge[3];
-  ublas::matrix<ublas::matrix<double> > Kext_edgeedge_data;
-  double *Kext_edgeedge[3][3];
-  vector<ublas::matrix<double> > Kext_faceedge_data;
-  double *Kext_faceedge[3];
-  //Kext_hh_hierarchical_face
-  ublas::matrix<double> Kext_hface;
-  vector<ublas::matrix<double> > Kext_edgeface_data;
-  double* Kext_edgeface[3];
-  ublas::matrix<double> Kext_faceface;
+  //KExt_hh_hierarchical
+  ublas::matrix<double> KExt_hh;
+  vector<ublas::matrix<double> > KExt_edgeh_data;
+  double* KExt_edgeh[3];
+  ublas::matrix<double> KExt_faceh;
+  //KExt_hh_hierarchical_edge
+  vector<ublas::matrix<double> > KExt_hedge_data;
+  double* KExt_hedge[3];
+  ublas::matrix<ublas::matrix<double> > KExt_edgeedge_data;
+  double *KExt_edgeedge[3][3];
+  vector<ublas::matrix<double> > KExt_faceedge_data;
+  double *KExt_faceedge[3];
+  //KExt_hh_hierarchical_face
+  ublas::matrix<double> KExt_hface;
+  vector<ublas::matrix<double> > KExt_edgeface_data;
+  double* KExt_edgeface[3];
+  ublas::matrix<double> KExt_faceface;
   PetscErrorCode GetTangentExt(EntityHandle face,double *t,double *t_edge[],double *t_face);
 
   PetscErrorCode OpComplexForLazyStart();

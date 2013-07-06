@@ -1052,6 +1052,8 @@ struct MoFEMProblem {
   DofIdx* tag_ghost_nbdof_data_col;
   BitFEId* tag_BitFEId_data;
   BitRefLevel* tag_BitRefLevel;
+  NumeredDofMoFEMEntity_multiIndex numered_dofs_rows;
+  NumeredDofMoFEMEntity_multiIndex numered_dofs_cols;
   MoFEMProblem(Interface &moab,const EntityHandle _meshset);
   inline BitProblemId get_id() const { return *((BitProblemId*)tag_id_data); }
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }

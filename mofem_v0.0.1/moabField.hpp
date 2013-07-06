@@ -339,6 +339,13 @@ struct moabField {
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
   struct SnesMethod {
+    enum snes_context { ctx_SNESSetFunction, ctx_SNESSetJacobian, ctx_SNESNone };
+    //
+    snes_context ctx;
+    SnesMethod(): ctx(ctx_SNESNone) {};
+    //
+    PetscErrorCode set_ctx(const snes_context ctx_);
+    //
     SNES snes;
     PetscErrorCode set_snes(SNES _snes);
     //

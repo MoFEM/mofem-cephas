@@ -52,7 +52,7 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
   }
 
   EntityHandle fe_handle = fe_ptr->get_ent();
-  V = Shape_intVolumeMBTET(diffNTET,&coords[0]); 
+  V = Shape_intVolumeMBTET(diffNTET,&*coords.data().begin()); 
   if( V <= 0 ) SETERRQ1(PETSC_COMM_SELF,1,"V < 0 for EntityHandle = %lu\n",fe_handle);
   rval = moab.tag_set_data(th_volume,&fe_handle,1,&V); CHKERR_PETSC(rval);
 

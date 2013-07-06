@@ -28,6 +28,11 @@
 namespace MoFEM {
 
 
+PetscErrorCode moabField::SnesMethod::set_ctx(const snes_context ctx_) {
+  PetscFunctionBegin;
+  ctx = ctx_;
+  PetscFunctionReturn(0);
+}
 PetscErrorCode moabField::SnesMethod::set_snes(SNES _snes) { 
   PetscFunctionBegin;
   snes = _snes;

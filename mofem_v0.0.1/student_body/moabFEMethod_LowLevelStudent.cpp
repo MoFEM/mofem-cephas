@@ -253,7 +253,7 @@ PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
   int num_nodes;
   rval = moab.get_connectivity(fe_handle,conn,num_nodes,true); CHKERR_PETSC(rval);
   coords.resize(num_nodes*3);
-  rval = moab.get_coords(conn,num_nodes,&coords[0]); CHKERR_PETSC(rval);
+  rval = moab.get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
   switch(fe_ent_ptr->get_ent_type()) {
     case MBTET: 
       // edge
