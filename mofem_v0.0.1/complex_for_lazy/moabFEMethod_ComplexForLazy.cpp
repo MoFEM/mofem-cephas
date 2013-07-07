@@ -71,10 +71,10 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type
   ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
   g_TET_W = G_TET_W45;
   //
-  g_NTRI.resize(3*7);
-  ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
-  g_TRI_dim = 7;
-  g_TRI_W = G_TRI_W7;
+  g_NTRI.resize(3*13);
+  ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+  g_TRI_dim = 13;
+  g_TRI_W = G_TRI_W13;
 }
 PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
   PetscFunctionBegin;
@@ -504,12 +504,12 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
     }
   }
   FExt_face.resize(FaceIndices.size());
-  /*const EntityHandle* conn_face;
+  const EntityHandle* conn_face;
   ublas::vector<double> coords_face;
   coords_face.resize(9);
   int num_nodes;
   rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);*/
+  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
   ierr = Fext_h_hierarchical(
     face_order,&FaceEdgeOrder[0],//2
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
@@ -579,6 +579,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     KExt_edgeface_data[ee].resize(FaceEdgeIndices_data[ee].size(),FaceIndices.size());
     KExt_edgeface[ee] = &*KExt_edgeface_data[ee].data().begin();
   }
+  assert(FaceIndices.size() = (unsigned int)3*NBFACE_H1(face_order));
   KExt_faceface.resize(FaceIndices.size(),FaceIndices.size());
   ierr = KExt_hh_hierarchical_face(r*eps,face_order,&FaceEdgeOrder[0],
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,

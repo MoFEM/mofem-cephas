@@ -974,19 +974,19 @@ PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
 	for(dd = 0;dd<3;dd++) normal_imag[dd] = xnormal[dd].i/eps;
         nn = 0;
         for(;nn<3;nn++) {
-	  for(dd = 0;dd<3;dd++) KExt_hedge[EE][ii+3*nb_dofs_edge_EE*nn+nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
+	  for(dd = 0;dd<3;dd++) KExt_hedge[EE][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
         }
         if(KExt_edgeedge!=NULL) {
 	 for(ee = 0;ee<3;ee++) {
 	  int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
   	  for(nn = 0;nn<nb_dofs_edge;nn++) {
-  	    for(dd = 0;dd<3;dd++) KExt_edgeedge[EE][ee][ii+3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
+  	    for(dd = 0;dd<3;dd++) KExt_edgeedge[EE][ee][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
   	  }
 	 }
         }
         if(KExt_faceedge!=NULL) {
 	  for(nn = 0;nn<nb_dofs_face;nn++) {
-	    for(dd = 0;dd<3;dd++) KExt_faceedge[EE][ii+3*nb_dofs_edge_EE*nn+nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
+	    for(dd = 0;dd<3;dd++) KExt_faceedge[EE][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
 	  }
         }
       }
@@ -1032,19 +1032,19 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
       for(dd = 0;dd<3;dd++) normal_imag[dd] = xnormal[dd].i/eps;
       nn = 0;
       for(;nn<3;nn++) {
-	for(dd = 0;dd<3;dd++) KExt_hface[ii+3*nb_dofs_face*nn+nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
+	for(dd = 0;dd<3;dd++) KExt_hface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
       }
       if(KExt_edgeface!=NULL) {
 	for(ee = 0;ee<3;ee++) {
 	  int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
 	  for(nn = 0;nn<nb_dofs_edge;nn++) {
-	    for(dd = 0;dd<3;dd++) KExt_edgeface[ee][ii+3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
+	    for(dd = 0;dd<3;dd++) KExt_edgeface[ee][ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
 	  }
 	}
       }
       if(KExt_faceface!=NULL) {
 	for(nn = 0;nn<nb_dofs_face;nn++) {
-	  for(dd = 0;dd<3;dd++) KExt_faceface[ii+3*nb_dofs_face*nn+nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
+	  for(dd = 0;dd<3;dd++) KExt_faceface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
 	}
       }
     }

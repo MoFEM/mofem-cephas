@@ -116,9 +116,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
-  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",5); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
   //build field
@@ -573,8 +573,8 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  for(int step = 1;step<20; step++) {
-    ierr = MyFE.set_t_val(1e-3*step); CHKERRQ(ierr);
+  for(int step = 1;step<200; step++) {
+    ierr = MyFE.set_t_val(-1e-4*step); CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
@@ -690,7 +690,7 @@ int main(int argc, char *argv[]) {
 
     PostProcFEMethod(Interface& _moab): FEMethod_UpLevelStudent(_moab,1),
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
-      max_level(2),init_ref(false) {
+      max_level(4),init_ref(false) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
       meshset_level.resize(max_level+1);
