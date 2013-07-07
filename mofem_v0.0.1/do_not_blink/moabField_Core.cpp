@@ -2643,13 +2643,17 @@ PetscErrorCode moabField_Core::set_local_VecCreateGhost(const string &name,RowCo
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
+  Vec Vlocal;
+  VecGhostGetLocalForm(V,&Vlocal);
   PetscInt size;
   ierr = VecGetLocalSize(V,&size); CHKERRQ(ierr);
-  if(size!=nb_local_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+  if(size!=nb_local_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: check ghost vector, problem with nb. of local nodes"); 
+  ierr = VecGetLocalSize(Vlocal,&size); CHKERRQ(ierr);
+  if(size!=nb_local_dofs+nb_ghost_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: check ghost vector, problem with nb. of ghost nodes"); 
   dofs_by_local_idx::iterator miit = dofs->lower_bound(0);
   dofs_by_local_idx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
   PetscScalar *array;
-  VecGetArray(V,&array);
+  VecGetArray(Vlocal,&array);
   DofIdx ii = 0;
   switch (scatter_mode) {
     case SCATTER_FORWARD:
@@ -2679,7 +2683,8 @@ PetscErrorCode moabField_Core::set_local_VecCreateGhost(const string &name,RowCo
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
-  VecRestoreArray(V,&array);
+  VecRestoreArray(Vlocal,&array);
+  VecDestroy(&Vlocal);
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
@@ -2711,8 +2716,8 @@ PetscErrorCode moabField_Core::set_global_VecCreateGhost(const string &name,RowC
   ierr = VecScatterEnd(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   PetscInt size;
   ierr = VecGetSize(V_glob,&size); CHKERRQ(ierr);
-  if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-  if(size!=distance(miit,hi_miit)) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+  if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
+  if(size!=distance(miit,hi_miit)) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
   PetscScalar *array;
   VecGetArray(V_glob,&array);
   DofIdx ii = 0;

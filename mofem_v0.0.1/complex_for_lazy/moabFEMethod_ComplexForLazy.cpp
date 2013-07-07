@@ -32,7 +32,7 @@ namespace MoFEM {
 
 FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
     double _lambda,double _mu, int _verbose): 
-    FEMethod_UpLevelStudent(_moab,_verbose), type_of_analysis(_type), lambda(_lambda),mu(_mu), eps(1e-12) {
+    FEMethod_UpLevelStudent(_moab,_verbose), type_of_analysis(_type), lambda(_lambda),mu(_mu), eps(1e-6) {
   pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   order_edges.resize(6);
   order_faces.resize(4);
