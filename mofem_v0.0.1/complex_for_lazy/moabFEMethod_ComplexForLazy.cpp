@@ -432,7 +432,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     if(NBFACE_H1(face_order)>0) {
       for(dofs_iterator fiiit = fiit;fiiit!=hi_fiit;fiiit++,dd++) {
 	FaceIndices[dd] = fiiit->get_petsc_gloabl_dof_idx();
-	FaceData[dd] = 0;//fiiit->get_FieldData();
+	FaceData[dd] = fiiit->get_FieldData();
       }
     }
     N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
@@ -464,9 +464,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
 	FaceEdgeData_data[ee].resize(distance(eiit,hi_eiit));
 	for(dd = 0;eiit!=hi_eiit;eiit++,dd++) {
 	  FaceEdgeIndices_data[ee][dd] = eiit->get_petsc_gloabl_dof_idx();
-	  FaceEdgeData_data[ee][dd] = 0;//eiit->get_FieldData();
+	  FaceEdgeData_data[ee][dd] = eiit->get_FieldData();
 	}
-	EdgeData[ee] = &(FaceEdgeData_data[ee].data()[0]);
+	EdgeData[ee] = &*(FaceEdgeData_data[ee].data().begin());
 	N_edge_data[ee].resize(g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
 	diffN_edge_data[ee].resize(2*g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
 	N_edge[ee] = &(N_edge_data[ee][0]);
@@ -477,7 +477,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
       EdgeData[ee] = NULL;
     }
   }
-  ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&g_NTRI[0],diffNTRI,N_edge,diffN_edge,g_TRI_dim); CHKERRQ(ierr);
+  ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&g_NTRI[0],&diffNTRI[0],N_edge,diffN_edge,g_TRI_dim); CHKERRQ(ierr);
   GetFaceIndicesAndData_face = face;
   } catch (const std::exception& ex) {
     ostringstream ss;
@@ -497,24 +497,24 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
     if(FaceEdgeIndices_data[ee].size()>0) {
       if((unsigned int)3*NBEDGE_H1(FaceEdgeOrder[ee])!=FaceEdgeIndices_data[ee].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
       FExt_edge_data[ee].resize(FaceEdgeIndices_data[ee].size());
-      FExt_edge[ee] = &*FExt_edge_data[ee].data().begin();
+      FExt_edge[ee] = &*(FExt_edge_data[ee].data().begin());
     } else {
       if(NBEDGE_H1(FaceEdgeOrder[ee])!=0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
       FExt_edge[ee] = NULL;
     }
   }
   FExt_face.resize(FaceIndices.size());
-  const EntityHandle* conn_face;
+  /*const EntityHandle* conn_face;
   ublas::vector<double> coords_face;
   coords_face.resize(9);
   int num_nodes;
   rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
+  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);*/
   ierr = Fext_h_hierarchical(
     face_order,&FaceEdgeOrder[0],//2
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
     t,t_edge,t_face,//11
-    /*&*FaceNodeData.data().begin()*/&*coords_face.data().begin(),EdgeData,&*FaceData.data().begin(),//14
+    &*FaceNodeData.data().begin()/*&*coords_face.data().begin()*/,EdgeData,&*FaceData.data().begin(),//14
     NULL,NULL,NULL,//17
     &*FExt.data().begin(),FExt_edge,&*FExt_face.data().begin(),//20
     NULL,NULL,NULL,//23

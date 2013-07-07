@@ -43,9 +43,9 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
   int dd = 0;
   double diff_ksi01[2],diff_ksi12[2],diff_ksi20[2];
   for(;dd<2;dd++) {
-    diff_ksi01[dd] = (diffN[1*3+dd] - diffN[0*3+dd])*sense[0];
-    diff_ksi12[dd] = (diffN[2*3+dd] - diffN[1*3+dd])*sense[1];
-    diff_ksi20[dd] = (diffN[0*3+dd] - diffN[2*3+dd])*sense[2]; 
+    diff_ksi01[dd] = (diffN[1*2+dd] - diffN[0*2+dd])*sense[0];
+    diff_ksi12[dd] = (diffN[2*2+dd] - diffN[1*2+dd])*sense[1];
+    diff_ksi20[dd] = (diffN[0*2+dd] - diffN[2*2+dd])*sense[2]; 
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -53,8 +53,8 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
     double ksi01 = (N[node_shift+1] - N[node_shift+0])*sense[0];
     double ksi12 = (N[node_shift+2] - N[node_shift+1])*sense[1];
     double ksi20 = (N[node_shift+0] - N[node_shift+2])*sense[2];
-    double L01[P[0]],L12[P[2]],L20[P[1]];
-    double diffL01[2*P[0]],diffL12[2*P[2]],diffL20[2*P[1]];
+    double L01[P[0]],L12[P[1]],L20[P[2]];
+    double diffL01[2*P[0]],diffL12[2*P[1]],diffL20[2*P[2]];
     Lagrange_basis(P[0],ksi01,diff_ksi01,L01,diffL01,2); 
     Lagrange_basis(P[1],ksi12,diff_ksi12,L12,diffL12,2);
     Lagrange_basis(P[2],ksi20,diff_ksi20,L20,diffL20,2);

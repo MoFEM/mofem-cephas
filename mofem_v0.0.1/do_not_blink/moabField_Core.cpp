@@ -2629,19 +2629,19 @@ PetscErrorCode moabField_Core::set_local_VecCreateGhost(const string &name,RowCo
   DofIdx nb_local_dofs;
   switch (rc) {
     case Row:
-      nb_local_dofs = p_miit->get_nb_local_dofs_row();
+      nb_local_dofs = p_miit->get_nb_local_dofs_row()+p_miit->get_nb_ghost_dofs_row();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
       break;
     case Col:
-      nb_local_dofs = p_miit->get_nb_local_dofs_col();
+      nb_local_dofs = p_miit->get_nb_local_dofs_col()+p_miit->get_nb_ghost_dofs_col();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_cols.get<PetscLocalIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
-  PetscInt size;
-  ierr = VecGetLocalSize(V,&size); CHKERRQ(ierr);
-  if(size!=nb_local_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+  //PetscInt size;
+  //ierr = VecGetLocalSize(V,&size); CHKERRQ(ierr);
+  //if(size!=nb_local_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
   dofs_by_local_idx::iterator miit = dofs->lower_bound(0);
   dofs_by_local_idx::iterator hi_miit = dofs->upper_bound(nb_local_dofs);
   PetscScalar *array;
@@ -2666,7 +2666,7 @@ PetscErrorCode moabField_Core::set_local_VecCreateGhost(const string &name,RowCo
 	  for(;miit!=hi_miit;miit++,ii++) miit->get_FieldData() = array[ii];
 	  break;
 	case ADD_VALUES:
-	  for(;miit!=hi_miit;miit++,ii++) miit->get_FieldData() = array[ii];	  
+	  for(;miit!=hi_miit;miit++,ii++) miit->get_FieldData() += array[ii];	  
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");

@@ -116,9 +116,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
-  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
   //build field
@@ -253,6 +253,8 @@ int main(int argc, char *argv[]) {
 	  it = find(FaceEdgeIndices_data[ee].begin(),FaceEdgeIndices_data[ee].end(),*dit);
 	  if(it!=FaceEdgeIndices_data[ee].end()) *it = -1; // of idx is set -1 row is not assembled
 	}
+	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
+	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
       }
       PetscFunctionReturn(0);
     }
@@ -379,7 +381,7 @@ int main(int argc, char *argv[]) {
 	  ierr = MatSetValues(*snes_A,
 	    RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
 	    ColGlob[1+6+ff].size(),&*(ColGlob[1+6+ff].begin()),
-	    &*(Khedge_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    &*(Khface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  for(int eee = 0;eee<6;eee++) {
 	    ierr = MatSetValues(*snes_A,
 	      RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
@@ -394,7 +396,7 @@ int main(int argc, char *argv[]) {
 	  }
 	}
 	//
-	/*for(;siit!=hi_siit;siit++) {
+	for(;siit!=hi_siit;siit++) {
 	  Range::iterator fit = find(SideSet2.begin(),SideSet2.end(),siit->ent);
 	  if(fit==SideSet2.end()) continue;
 	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
@@ -429,9 +431,15 @@ int main(int argc, char *argv[]) {
 	      &*(KExt_edgeface_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  }
 	  ierr = MatSetValues(*snes_A,
+	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
+	    &*(KExt_hface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_A,
+	    FaceIndices.size(),&(FaceIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	    &*(KExt_faceh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_A,
 	    FaceIndices.size(),&(FaceIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
 	    &*(KExt_faceface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	}*/
+	}
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
