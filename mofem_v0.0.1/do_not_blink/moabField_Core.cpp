@@ -1574,27 +1574,29 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
   nb_row_ghost_dofs = 0;
   nb_col_ghost_dofs = 0;
   if(pcomm->size()>1) {
-    MoFEMEntity *MoFEMEntity_ptr = NULL;
     NumeredDofMoFEMEntity_multiIndex_uid_view idx_view;
     NumeredMoFEMFE_multiIndex::index<Unique_mi_tag>::type &numered_finite_elements 
       = const_cast<NumeredMoFEMFE_multiIndex::index<Unique_mi_tag>::type&>(p_miit->numered_finite_elements.get<Unique_mi_tag>());
-    MoFEMAdjacencies_multiIndex::index<Unique_MoABEnt_mi_tag>::type &adj_by_Unique_MoABEnt_mi_tag
-      = adjacencies.get<Unique_MoABEnt_mi_tag>();
-    NumeredDofMoFEMEntity_multiIndex_uid_view ghost_idx_col_view,ghost_idx_row_view;
+    MoFEMAdjacencies_multiIndex::index<Unique_MoABEnt_mi_tag>::type &adj_by_Unique_MoABEnt_mi_tag = adjacencies.get<Unique_MoABEnt_mi_tag>();
     NumeredDofMoFEMEntitys_by_part *dof_by_part_no_const[2] = {
-      const_cast<NumeredDofMoFEMEntitys_by_part*>(&p_miit->numered_dofs_rows.get<Part_mi_tag>()),
-      const_cast<NumeredDofMoFEMEntitys_by_part*>(&p_miit->numered_dofs_cols.get<Part_mi_tag>()) };
+      const_cast<NumeredDofMoFEMEntitys_by_part*>(&p_miit->numered_dofs_cols.get<Part_mi_tag>()),
+      const_cast<NumeredDofMoFEMEntitys_by_part*>(&p_miit->numered_dofs_rows.get<Part_mi_tag>()) 
+    };
     NumeredDofMoFEMEntity_multiIndex *numered_dofs[2]= { 
       const_cast<NumeredDofMoFEMEntity_multiIndex*>(&p_miit->numered_dofs_cols),
-      const_cast<NumeredDofMoFEMEntity_multiIndex*>(&p_miit->numered_dofs_cols) };
+      const_cast<NumeredDofMoFEMEntity_multiIndex*>(&p_miit->numered_dofs_rows) 
+    };
     NumeredDofMoFEMEntitys_by_unique_id *dof_by_uid_no_const[2] = {
       const_cast<NumeredDofMoFEMEntitys_by_unique_id*>(&p_miit->numered_dofs_cols.get<Unique_mi_tag>()),
-      const_cast<NumeredDofMoFEMEntitys_by_unique_id*>(&p_miit->numered_dofs_rows.get<Unique_mi_tag>()) };
+      const_cast<NumeredDofMoFEMEntitys_by_unique_id*>(&p_miit->numered_dofs_rows.get<Unique_mi_tag>()) 
+    };
     by_what by[2] = { by_row,by_col };
     by_what by_other[2] = { by_col, by_row };
+    NumeredDofMoFEMEntity_multiIndex_uid_view ghost_idx_col_view,ghost_idx_row_view;
     NumeredDofMoFEMEntity_multiIndex_uid_view *ghost_idx_view[2] = { &ghost_idx_col_view, &ghost_idx_row_view };
-    DofIdx nb_local_dofs[2] = { *((DofIdx*)p_miit->tag_local_nbdof_data_col), *((DofIdx*)p_miit->tag_local_nbdof_data_col) };
+    DofIdx nb_local_dofs[2] = { *((DofIdx*)p_miit->tag_local_nbdof_data_col), *((DofIdx*)p_miit->tag_local_nbdof_data_row) };
     DofIdx *nb_ghost_dofs[2] = { &nb_col_ghost_dofs, &nb_row_ghost_dofs };
+    MoFEMEntity *MoFEMEntity_ptr = NULL;
     for(int ss = 0; ss<2; ss++) {
       NumeredDofMoFEMEntitys_by_part::iterator miit_dof_by_part = dof_by_part_no_const[ss]->lower_bound(pcomm->rank());
       NumeredDofMoFEMEntitys_by_part::iterator hi_miit_dof_by_part = dof_by_part_no_const[ss]->upper_bound(pcomm->rank());
@@ -2609,7 +2611,7 @@ PetscErrorCode moabField_Core::VecCreateGhost(const string &name,RowColData rc,V
   if(count != nb_ghost_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
   vector<DofIdx> ghost_idx(count);
   vector<DofIdx>::iterator vit = ghost_idx.begin();
-  for(;miit!=hi_miit;miit++,vit++) *vit = miit->petsc_local_dof_idx;
+  for(;miit!=hi_miit;miit++,vit++) *vit = miit->petsc_gloabl_dof_idx;
   ierr = ::VecCreateGhost(PETSC_COMM_WORLD,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -2626,24 +2628,26 @@ PetscErrorCode moabField_Core::set_local_VecCreateGhost(const string &name,RowCo
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
   problems_by_name::iterator p_miit = problems_set.find(name);
   dofs_by_local_idx *dofs;
-  DofIdx nb_local_dofs;
+  DofIdx nb_local_dofs,nb_ghost_dofs;
   switch (rc) {
     case Row:
-      nb_local_dofs = p_miit->get_nb_local_dofs_row()+p_miit->get_nb_ghost_dofs_row();
+      nb_local_dofs = p_miit->get_nb_local_dofs_row();
+      nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
       break;
     case Col:
-      nb_local_dofs = p_miit->get_nb_local_dofs_col()+p_miit->get_nb_ghost_dofs_col();
+      nb_local_dofs = p_miit->get_nb_local_dofs_col();
+      nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_cols.get<PetscLocalIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
-  //PetscInt size;
-  //ierr = VecGetLocalSize(V,&size); CHKERRQ(ierr);
-  //if(size!=nb_local_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+  PetscInt size;
+  ierr = VecGetLocalSize(V,&size); CHKERRQ(ierr);
+  if(size!=nb_local_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
   dofs_by_local_idx::iterator miit = dofs->lower_bound(0);
-  dofs_by_local_idx::iterator hi_miit = dofs->upper_bound(nb_local_dofs);
+  dofs_by_local_idx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
   PetscScalar *array;
   VecGetArray(V,&array);
   DofIdx ii = 0;
