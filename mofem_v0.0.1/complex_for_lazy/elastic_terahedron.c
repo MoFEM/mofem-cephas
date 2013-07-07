@@ -344,7 +344,8 @@ PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_
   //zero volume
   if(NBVOLUME_H1(order_volume)!=0) {
     int nb = 3*NBVOLUME_H1(order_volume);
-    if(K_volume!=NULL) bzero(K_volume,nb*12*sizeof(double)); }
+    if(K_volume!=NULL) bzero(K_volume,nb*12*sizeof(double)); 
+  }
   int gg = 0;
   for(;gg<G_DIM;gg++) {
     double h[9];
@@ -429,9 +430,11 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
     int FF = 0;
     for(;FF<4;FF++) {
       int nb2 = 3*NBFACE_H1(order_face[FF]);
-      if(K_face[FF][ee]!=NULL) bzero(K_face[FF][ee],nb2*nb*sizeof(double)); }
+      if(K_face[FF][ee]!=NULL) bzero(K_face[FF][ee],nb2*nb*sizeof(double)); 
+    }
     int nb2 = 3*NBVOLUME_H1(order_volume);
-    if(K_volume[ee]!=NULL) bzero(K_volume[ee],nb*nb2*sizeof(double)); }
+    if(K_volume[ee]!=NULL) bzero(K_volume[ee],nb*nb2*sizeof(double)); 
+  }
   int EE = 0;
   for(;EE<6;EE++) {
     int nb_edge_dofs = 3*NBEDGE_H1(order_edge[EE]);
@@ -524,9 +527,11 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
     int FF = 0;
     for(;FF<4;FF++) {
       int nb2 = 3*NBFACE_H1(order_face[FF]);
-      if(K_face[FF][ff]!=NULL) bzero(K_face[FF][ff],nb2*nb*sizeof(double)); }
+      if(K_face[FF][ff]!=NULL) bzero(K_face[FF][ff],nb2*nb*sizeof(double)); 
+    }
     int nb2 = 3*NBVOLUME_H1(order_volume);
-    if(K_volume[ff]!=NULL) bzero(K_volume[ff],nb*nb2*sizeof(double)); }
+    if(K_volume[ff]!=NULL) bzero(K_volume[ff],nb*nb2*sizeof(double)); 
+  }
   int FF = 0;
   for(;FF<4;FF++) {
     int nb_face_dofs = 3*NBFACE_H1(order_face[FF]);
@@ -612,16 +617,19 @@ PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int
   for(;ee<6;ee++) {
     if(NBEDGE_H1(order_edge[ee])==0) continue;
     int nb2 = 3*NBEDGE_H1(order_edge[ee]);
-    if(K_edge[ee]!=NULL) bzero(K_edge[ee],nb_dofs_volume*nb2*sizeof(double)); }
+    if(K_edge[ee]!=NULL) bzero(K_edge[ee],nb_dofs_volume*nb2*sizeof(double)); 
+  }
   //zero faces
   int ff = 0;	
   for(;ff<4;ff++) {
     if(NBFACE_H1(order_face[ff])==0) continue;
     int nb2 = 3*NBFACE_H1(order_face[ff]);
-    if(K_face[ff]!=NULL) bzero(K_face[ff],nb_dofs_volume*nb2*sizeof(double)); }
+    if(K_face[ff]!=NULL) bzero(K_face[ff],nb_dofs_volume*nb2*sizeof(double)); 
+  }
   //zero volume
   if(NBVOLUME_H1(order_volume)!=0) {
-    if(K_volume!=NULL) bzero(K_volume,nb_dofs_volume*nb_dofs_volume*sizeof(double)); }
+    if(K_volume!=NULL) bzero(K_volume,nb_dofs_volume*nb_dofs_volume*sizeof(double)); 
+  }
   double _idofs_x[nb_dofs_volume];
   int gg = 0;
   for(;gg<G_DIM;gg++) {
@@ -997,7 +1005,7 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
   int gg,dd,ii,nn,ee;
   int nb_dofs_face = NBFACE_H1(order);
   bzero(KExt_hface,9*3*nb_dofs_face*sizeof(double));
-  if(KExt_edgeface!=NULL) {
+  if(KExt_edgeface!=NULL) {	
     for(ee = 0;ee<3;ee++) {
       int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
       bzero(KExt_edgeface[ee],3*nb_dofs_face*3*nb_dofs_edge*sizeof(double));

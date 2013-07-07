@@ -50,7 +50,7 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type
   Khh_faceedge_data.resize(4,6);
   //Tangent_hh_hierachical_face
   Khface_data.resize(6);
-  Khh_volumeface_data.resize(6);
+  Khh_volumeface_data.resize(4);
   Khh_faceface_data.resize(4,4);
   Khh_edgeface_data.resize(6,4);
   //
@@ -194,7 +194,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       if(viit!=hi_viit) {
 	order_volume = viit->get_max_order();
 	dofs_x_volume.resize(distance(viit,hi_viit));
-	assert(dofs_x_volume.size() == (unsigned int)NBFACE_H1(order_volume));
+	assert(dofs_x_volume.size() == (unsigned int)3*NBVOLUME_H1(order_volume));
 	for(int dd = 0;viit!=hi_viit;viit++,dd++) dofs_x_volume[dd] = viit->get_FieldData(); 
       } else {
 	order_volume = 0;
@@ -241,8 +241,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     if(type_of_analysis&spatail_analysis) {
 	assert(12 == RowGlob[0].size());
 	Khh = ublas::zero_matrix<double>(12,12);
-	assert(3*(unsigned int)NBVOLUME_H1(order_volume) == RowGlob[1+6+4].size());
-	Kvolumeh.resize(RowGlob[1+6+4].size(),12);
 	ee = 0;
 	for(;ee<6;ee++) {
 	  assert(3*(unsigned int)NBEDGE_H1(order_edges[ee]) == RowGlob[1+ee].size());
@@ -258,10 +256,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  }
 	  Khedge_data[ee].resize(12,RowGlob[1+ee].size());
 	  Khedge[ee] = &*Khedge_data[ee].data().begin();
-	  Khh_volumeedge_data[ee].resize(RowGlob[1+6+4].size(),RowGlob[1+ee].size());
+	  Khh_volumeedge_data[ee].resize(RowGlob[i_volume].size(),RowGlob[1+ee].size());
 	  Khh_volumeedge[ee] = &*Khh_volumeedge_data[ee].data().begin();
-	  //
-	  Khh_edgevolume_data[ee].resize(RowGlob[1+ee].size(),RowGlob[1+6+4].size());
+	  Khh_edgevolume_data[ee].resize(RowGlob[1+ee].size(),RowGlob[i_volume].size());
 	  Khh_edgevolume[ee] = &*Khh_edgevolume_data[ee].data().begin();
 	}
 	ff = 0;
@@ -271,8 +268,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  Kfaceh[ff] = &*Kfaceh_data[ff].data().begin();
 	  Khface_data[ff].resize(12,RowGlob[1+6+ff].size());
 	  Khface[ff] = &*Khface_data[ff].data().begin();
-	  Khh_volumeface_data[ff].resize(RowGlob[1+6+4].size(),RowGlob[1+6+ff].size());
-	  Khh_volumeface[ff] = &*Khface_data[ff].data().begin();
 	  for(int fff = 0;fff<4;fff++) {
 	    Khh_faceface_data(fff,ff).resize(RowGlob[1+6+fff].size(),RowGlob[1+6+ff].size());
 	    Khh_faceface[fff][ff] = &*Khh_faceface_data(fff,ff).data().begin();
@@ -282,11 +277,15 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    Khh_edgeface[eee][ff] = &*Khh_edgeface_data(eee,ff).data().begin();
 	  }
 	  //
-	  Khh_facevolume_data[ff].resize(RowGlob[1+6+ff].size(),RowGlob[1+6+4].size());
+	  Khh_volumeface_data[ff].resize(RowGlob[i_volume].size(),RowGlob[1+6+ff].size());
+	  Khh_volumeface[ff] = &*Khh_volumeface_data[ff].data().begin();
+	  Khh_facevolume_data[ff].resize(RowGlob[1+6+ff].size(),RowGlob[i_volume].size());
 	  Khh_facevolume[ff] = &*Khh_facevolume_data[ff].data().begin();
 	}
-	Khvolume.resize(12,RowGlob[1+6+4].size());
-	Khh_volumevolume.resize(RowGlob[1+6+4].size(),RowGlob[1+6+4].size());
+	assert(3*(unsigned int)NBVOLUME_H1(order_volume) == RowGlob[i_volume].size());
+	Kvolumeh.resize(RowGlob[i_volume].size(),12);
+	Khvolume.resize(12,RowGlob[i_volume].size());
+	Khh_volumevolume.resize(RowGlob[i_volume].size(),RowGlob[i_volume].size());
     }
     unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
     switch(sub_analysis_type) {
@@ -361,8 +360,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	    Fint_h_face[ff] = NULL;
 	  }
         }
-	if(RowGlob[1+6+4].size()!=0) {
-	  Fint_h_volume.resize(RowGlob[1+6+4].size());
+	if(RowGlob[i_volume].size()!=0) {
+	  assert(RowGlob[i_volume].size() == (unsigned int)3*NBVOLUME_H1(order_volume));
+	  Fint_h_volume.resize(RowGlob[i_volume].size());
 	}
       }
       unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;

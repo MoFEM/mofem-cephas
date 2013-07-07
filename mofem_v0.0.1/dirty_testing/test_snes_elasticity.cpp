@@ -116,9 +116,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
-  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
   //build field
@@ -305,7 +305,8 @@ int main(int argc, char *argv[]) {
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 
-    double t[] = { 0,0,1e-2, 0,0,1e-2, 0,0,1e-2 };
+    double t_val = 5e-3;
+    double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
 
     switch(ctx) {
       case ctx_SNESSetFunction: { 
@@ -322,6 +323,9 @@ int main(int argc, char *argv[]) {
 	  if(RowGlob[1+6+ff].size()>0) {
 	    ierr = VecSetValues(snes_f,RowGlob[1+6+ff].size(),&(RowGlob[1+6+ff][0]),&(Fint_h_face_data[ff].data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	  }
+	}
+	if(RowGlob[i_volume].size()>0) {
+	  ierr = VecSetValues(snes_f,RowGlob[i_volume].size(),&(RowGlob[i_volume][0]),&(Fint_h_volume.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	}
 	for(;siit!=hi_siit;siit++) {
 	  Range::iterator fit = find(SideSet2.begin(),SideSet2.end(),siit->ent);
@@ -372,6 +376,14 @@ int main(int argc, char *argv[]) {
 	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
 	      &*(Khh_edgeface_data(ee,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  }
+	  ierr = MatSetValues(*snes_A,
+	    RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
+	    ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
+	    &*(Khh_edgevolume_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_A,
+	    RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
+	    ColGlob[1+ee].size(),&*(ColGlob[1+ee].begin()),
+	    &*(Khh_volumeedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	}
 	for(int ff = 0;ff<4;ff++) {
 	  ierr = MatSetValues(*snes_A,
@@ -394,7 +406,27 @@ int main(int argc, char *argv[]) {
 	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
 	      &*(Khh_faceface_data(ff,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  }
+	  ierr = MatSetValues(*snes_A,
+	    RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
+	    ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
+	    &*(Khh_facevolume_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_A,
+	    RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
+	    ColGlob[1+6+ff].size(),&*(ColGlob[1+6+ff].begin()),
+	    &*(Khh_volumeface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	}
+	ierr = MatSetValues(*snes_A,
+	  RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
+	  ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
+	  &*(Kvolumeh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValues(*snes_A,
+	  RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
+	  ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
+	  &*(Khvolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValues(*snes_A,
+	  RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
+	  ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
+	  &*(Khh_volumevolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	//
 	for(;siit!=hi_siit;siit++) {
 	  Range::iterator fit = find(SideSet2.begin(),SideSet2.end(),siit->ent);
