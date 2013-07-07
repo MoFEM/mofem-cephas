@@ -530,6 +530,15 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
   PetscFunctionBegin;
   try {
   if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData(face) before call of this function");
+  const EntityHandle* conn_face;
+  ublas::vector<double> coords_face;
+  coords_face.resize(9);
+  int num_nodes;
+  rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
+  double normal[3];
+  ierr = ShapeFaceNormalMBTRI(diffNTRI,&*coords_face.data().begin(),normal); CHKERRQ(ierr);
+  double r = cblas_dnrm2(3,normal,1);
   KExt_hh.resize(9,9);
   KExt_edgeh_data.resize(3);
   int ee = 0;
@@ -539,7 +548,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     KExt_edgeh[ee] = &*KExt_edgeh_data[ee].data().begin();
   }
   KExt_faceh.resize(FaceIndices.size(),9);
-  ierr = KExt_hh_hierarchical(eps,face_order,&FaceEdgeOrder[0],
+  ierr = KExt_hh_hierarchical(r*eps,face_order,&FaceEdgeOrder[0],
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
     t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
     &*KExt_hh.data().begin(),KExt_edgeh,&*KExt_faceh.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
@@ -558,7 +567,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     KExt_faceedge_data[ee].resize(FaceIndices.size(),FaceEdgeIndices_data[ee].size());
     KExt_faceedge[ee] = &*KExt_faceedge_data[ee].data().begin();
   }
-  ierr = KExt_hh_hierarchical_edge(eps,face_order,&FaceEdgeOrder[0],
+  ierr = KExt_hh_hierarchical_edge(r*eps,face_order,&FaceEdgeOrder[0],
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
     t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
     KExt_hedge,KExt_edgeedge,KExt_faceedge,
@@ -571,7 +580,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     KExt_edgeface[ee] = &*KExt_edgeface_data[ee].data().begin();
   }
   KExt_faceface.resize(FaceIndices.size(),FaceIndices.size());
-  ierr = KExt_hh_hierarchical_face(eps,face_order,&FaceEdgeOrder[0],
+  ierr = KExt_hh_hierarchical_face(r*eps,face_order,&FaceEdgeOrder[0],
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
     t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
     &*KExt_hface.data().begin(),KExt_edgeface,&*KExt_faceface.data().begin(),

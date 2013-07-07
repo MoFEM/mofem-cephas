@@ -144,9 +144,9 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
       int dd = 0;
       for(;dd<2;dd++) {
 	double v2 = 
-	    diffN[dd]*N[node_shift+1]*N[node_shift+2]+
-	    N[node_shift+0]*diffN[dd]*N[node_shift+2]+
-	    N[node_shift+0]*N[node_shift+1]*diffN[dd];
+	    diffN[0*2+dd]*N[node_shift+1]*N[node_shift+2]+
+	    N[node_shift+0]*diffN[1*2+dd]*N[node_shift+2]+
+	    N[node_shift+0]*N[node_shift+1]*diffN[2*2+dd];
 	int jj = 0;
 	int pp0 = 0;
 	for(;pp0<(p-2);pp0++) {

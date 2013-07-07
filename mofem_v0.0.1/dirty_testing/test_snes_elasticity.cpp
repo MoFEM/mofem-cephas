@@ -190,6 +190,13 @@ int main(int argc, char *argv[]) {
 
   struct ElasticFEMethod: public FEMethod_ComplexForLazy {
 
+    double t_val;
+    PetscErrorCode set_t_val(double t_val_) {
+      PetscFunctionBegin;
+      t_val = t_val_;
+      PetscFunctionReturn(0);
+    }
+    
     Range& SideSet1;
     Range& SideSet2;
     Range SideSet1_;
@@ -267,7 +274,7 @@ int main(int argc, char *argv[]) {
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
     ierr = PetscGetTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-    //set_PhysicalEquationNumber(neohookean);
+    set_PhysicalEquationNumber(neohookean);
     switch(ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
@@ -305,7 +312,6 @@ int main(int argc, char *argv[]) {
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 
-    double t_val = 5e-3;
     double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
 
     switch(ctx) {
@@ -566,10 +572,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
-  int its;
-  ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+
+  for(int step = 1;step<20; step++) {
+    ierr = MyFE.set_t_val(1e-3*step); CHKERRQ(ierr);
+    ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
+    int its;
+    ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+  }
+  
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
