@@ -93,8 +93,8 @@ struct MyElasticFEMethod: public ElasticFEMethod {
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    g_NTRI.resize(3*7);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+    g_NTRI.resize(3*13);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
     // See FEAP - - A Finite Element Analysis Program
     D_lambda = ublas::zero_matrix<FieldData>(6,6);
     for(int rr = 0;rr<3;rr++) {
@@ -856,7 +856,7 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  const double alpha = 0.001;
+  const double alpha = 20;
   MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3);
   InterfaceFEMethod IntMyFE(moab,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
 

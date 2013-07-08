@@ -579,7 +579,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     KExt_edgeface_data[ee].resize(FaceEdgeIndices_data[ee].size(),FaceIndices.size());
     KExt_edgeface[ee] = &*KExt_edgeface_data[ee].data().begin();
   }
-  assert(FaceIndices.size() = (unsigned int)3*NBFACE_H1(face_order));
+  assert(FaceIndices.size() == (unsigned int)3*NBFACE_H1(face_order));
   KExt_faceface.resize(FaceIndices.size(),FaceIndices.size());
   ierr = KExt_hh_hierarchical_face(r*eps,face_order,&FaceEdgeOrder[0],
     &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
