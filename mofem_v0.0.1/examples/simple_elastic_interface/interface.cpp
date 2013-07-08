@@ -313,7 +313,7 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 	    if(gg == 0) {
 	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
 	    }
-	    double w = area3*G_TRI_W7[gg];
+	    double w = area3*G_TRI_W13[gg];
 	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
 	    K[rr][cc] += prod(NTD , col_Mat ); 
 	  }
