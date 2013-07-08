@@ -23,6 +23,7 @@
 #include<strings.h>
 #include<assert.h>
 
+// Shape functions for MBTRI and H1 approximation
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM) {
   PetscFunctionBegin;
   double *edgeN01 = NULL,*edgeN12 = NULL,*edgeN20 = NULL;
