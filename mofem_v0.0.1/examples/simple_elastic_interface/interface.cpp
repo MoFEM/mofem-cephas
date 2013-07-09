@@ -218,8 +218,9 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
   PetscErrorCode CalcDglob() {
     PetscFunctionBegin;
     ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
-    int ii = 0;
-    for(;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
+    //int ii = 0;
+    //for(;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
+    Dloc(0,0) = YoungModulus;
     Dglob = prod( Dloc, R );
     Dglob = prod( trans(R), Dglob );
     PetscFunctionReturn(0);
@@ -776,7 +777,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.refine_get_childern(meshset_SideSet2,bit_level1,meshset_SideSet2,MBTRI,true,3); CHKERRQ(ierr);
   ierr = mField.refine_get_childern(meshset_SideSet3,bit_level1,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);
 
-  BitRefLevel problem_bit_level = bit_level0;
+  BitRefLevel problem_bit_level = bit_level1;
 
   /***/
   //Define problem
@@ -818,9 +819,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",0); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",0); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",5); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
