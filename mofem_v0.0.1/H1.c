@@ -107,7 +107,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode H1_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM) {
+PetscErrorCode H1_FaceShapeFunctions_MBTRI(int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM) {
   PetscFunctionBegin;
   int P = NBFACE_H1(p);
   if(P == 0) PetscFunctionReturn(0);
@@ -116,16 +116,16 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
   int dd = 0;
   if(diff_faceN!=NULL) {
     for(;dd<2; dd++) {
-      diff_ksi_faces[0][dd] = ( diffN[ 1*2+dd ] - diffN[ 0*2+dd ] );
-      diff_ksi_faces[1][dd] = ( diffN[ 2*2+dd ] - diffN[ 0*2+dd ] ); 
+      diff_ksi_faces[0][dd] = ( diffN[ face_nodes[1]*2+dd ] - diffN[ face_nodes[0]*2+dd ] );
+      diff_ksi_faces[1][dd] = ( diffN[ face_nodes[2]*2+dd ] - diffN[ face_nodes[0]*2+dd ] ); 
     }
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*3;
     double ksi_faces[8];
-    ksi_faces[0] = N[ node_shift+1 ] - N[ node_shift+0 ];
-    ksi_faces[1] = N[ node_shift+2 ] - N[ node_shift+0 ];
+    ksi_faces[0] = N[ node_shift+face_nodes[1] ] - N[ node_shift+face_nodes[0] ];
+    ksi_faces[1] = N[ node_shift+face_nodes[2] ] - N[ node_shift+face_nodes[0] ];
     double L0[ p-2 ],L1[ p-2 ];
     double diffL0[ 2*(p-2) ],diffL1[ 2*(p-2) ];
     Lagrange_basis(p-2,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2); 

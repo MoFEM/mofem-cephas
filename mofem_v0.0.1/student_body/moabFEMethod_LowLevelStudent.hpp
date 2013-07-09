@@ -159,7 +159,6 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
    *
    */
   vector<double> gNTRIonPRISM;
-  vector<double> gNTRIonFACE3,gNTRIonFACE4;
   PetscErrorCode ShapeFunctions_PRISM(vector<double>& _gNTRI_);
 
   vector< vector<double> > H1edgeN,diffH1edgeN;

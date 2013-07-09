@@ -437,7 +437,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     }
     N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
     diffN_face.resize(2*g_TRI_dim*NBFACE_H1(face_order));
-    ierr = H1_FaceShapeFunctions_MBTRI(face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
+    int face_nodes[] = { 0,1,2 };
+    ierr = H1_FaceShapeFunctions_MBTRI(face_nodes,face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
   } else {
     face_order = 0;
   }
