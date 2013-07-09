@@ -158,8 +158,8 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    g_NTRI.resize(3*7);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+    g_NTRI.resize(3*13);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
 
     PetscFunctionReturn(0);
   }
@@ -400,9 +400,9 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
       rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[max_level]); CHKERR_PETSC(rval);
       ierr = mField_ref.refine_get_ents(BitRefLevel().set(max_level),meshset_level[max_level]); CHKERRQ(ierr);
 
-      if(pcomm->rank()==0) {
-	moab_ref.write_file("debug.vtk","VTK",""); CHKERR_PETSC(rval);
-      }
+      //if(pcomm->rank()==0) {
+	//moab_ref.write_file("debug.vtk","VTK",""); CHKERR_PETSC(rval);
+      //}
 
       //
       Range ref_nodes;
@@ -460,8 +460,8 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	coords_at_Gauss_nodes[gg].resize(3);
 	coords_at_Gauss_nodes[nodes_on_face3.size()+gg].resize(3);
 	for(int dd = 0;dd<3;dd++) {
-	  (coords_at_Gauss_nodes[gg])[dd] = cblas_ddot(3,&coords_face3[dd],3,&get_gNTRI()[gg*3],1);
-	  (coords_at_Gauss_nodes[nodes_on_face3.size()+gg])[dd] = cblas_ddot(3,&coords_face4[dd],3,&get_gNTRI()[3*nodes_on_face3.size()+gg*3],1);
+	  (coords_at_Gauss_nodes[gg])[dd] = cblas_ddot(3,&coords_face3[dd],3,&g_NTRI[gg*3],1);
+	  (coords_at_Gauss_nodes[nodes_on_face3.size()+gg])[dd] = cblas_ddot(3,&coords_face4[dd],3,&g_NTRI[3*nodes_on_face3.size()+gg*3],1);
 	}
       }
 
@@ -536,10 +536,19 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,0));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,2));
 	for(;dit!=hi_dit;dit++) {
-	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
-	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1edgeN_[gg*nb_dofs_H1edge + dof];
+	  int side_number = dit->side_number_ptr->side_number;	
+	  assert(side_number >= 0);
+	  assert(side_number <= 2);
+	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[side_number]);
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  /*cerr << "side_number " << side_number 
+	    << " " << dit->get_EntDofIdx() 
+	    << " " << approx_dof 
+	    << " " << nb_dofs_H1edge 
+	    << " " << H1edgeN[side_number].size()
+	    << endl;*/
+	  double *_H1edgeN_ = &*H1edgeN[side_number].begin();
+	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
 	  disp_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
 	} 
@@ -548,18 +557,18 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1edgeN_[gg*nb_dofs_H1edge + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
-	//facse
+	//faces
 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1faceN_[gg*nb_dofs_H1face + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
 	  disp_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
 	}
@@ -568,8 +577,8 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1faceN_[gg*nb_dofs_H1face + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
 	
@@ -618,8 +627,8 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + approx_dof];
 	  disp_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); //*minus*/
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); //*minus*/
 	}
@@ -628,28 +637,28 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + approx_dof];
 	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); //*minus*/
 	}
-	//facse
+	//faces
 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + dof];
-	  disp_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + approx_dof];
+	  disp_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); //*minus/
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	}
- 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,4));
-	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+ 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
+	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + approx_dof];
 	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
 	}
 
@@ -758,16 +767,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
-  /*BitRefLevel bit_level1;
+  BitRefLevel bit_level1;
   bit_level1.set(2);
   ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_PRISM(meshset_level0,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_get_childern(meshset_SideSet1,bit_level1,meshset_SideSet1,MBTRI,true,3); CHKERRQ(ierr);
   ierr = mField.refine_get_childern(meshset_SideSet2,bit_level1,meshset_SideSet2,MBTRI,true,3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level1,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);*/
+  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level1,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);
 
-  BitRefLevel problem_bit_level = bit_level0;
+  BitRefLevel problem_bit_level = bit_level1;
 
   /***/
   //Define problem
@@ -809,9 +818,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",5); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
@@ -855,8 +864,8 @@ int main(int argc, char *argv[]) {
 
   //Assemble F and Aij
   const double YoungModulus = 1;
-  const double PoissonRatio = 0.25;
-  const double alpha = 20;
+  const double PoissonRatio = 0.0;
+  const double alpha = 0.05;
   MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3);
   InterfaceFEMethod IntMyFE(moab,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
 

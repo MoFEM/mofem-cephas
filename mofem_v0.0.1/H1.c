@@ -42,10 +42,12 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
   for(;ee<3; ee++) P[ee] = NBEDGE_H1(p[ee]);
   int dd = 0;
   double diff_ksi01[2],diff_ksi12[2],diff_ksi20[2];
-  for(;dd<2;dd++) {
-    diff_ksi01[dd] = (diffN[1*2+dd] - diffN[0*2+dd])*sense[0];
-    diff_ksi12[dd] = (diffN[2*2+dd] - diffN[1*2+dd])*sense[1];
-    diff_ksi20[dd] = (diffN[0*2+dd] - diffN[2*2+dd])*sense[2]; 
+  if(diff_edgeN!=NULL) {
+    for(;dd<2;dd++) {
+      diff_ksi01[dd] = (diffN[1*2+dd] - diffN[0*2+dd])*sense[0];
+      diff_ksi12[dd] = (diffN[2*2+dd] - diffN[1*2+dd])*sense[1];
+      diff_ksi20[dd] = (diffN[0*2+dd] - diffN[2*2+dd])*sense[2]; 
+    }
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -112,9 +114,11 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
   double diff_ksiL0[2],diff_ksiL1[2];
   double *diff_ksi_faces[] = { diff_ksiL0, diff_ksiL1 };
   int dd = 0;
-  for(;dd<2; dd++) {
-    diff_ksi_faces[0][dd] = ( diffN[ 1*2+dd ] - diffN[ 0*2+dd ] );
-    diff_ksi_faces[1][dd] = ( diffN[ 2*2+dd ] - diffN[ 0*2+dd ] ); 
+  if(diff_faceN!=NULL) {
+    for(;dd<2; dd++) {
+      diff_ksi_faces[0][dd] = ( diffN[ 1*2+dd ] - diffN[ 0*2+dd ] );
+      diff_ksi_faces[1][dd] = ( diffN[ 2*2+dd ] - diffN[ 0*2+dd ] ); 
+    }
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {

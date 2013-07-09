@@ -38,7 +38,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh_Base {
 
     PostProcDisplacemenysAndStarinOnRefMesh_Base(): 
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
-      max_level(2),init_ref(false) {
+      max_level(3),init_ref(false) {
       meshset_level.resize(max_level+1);
     }
 };
