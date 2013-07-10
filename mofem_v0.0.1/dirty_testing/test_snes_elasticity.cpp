@@ -109,29 +109,29 @@ int main(int argc, char *argv[]) {
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = mField.add_BitFieldId("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_BitFieldId("LAMBDA",NoField,1); CHKERRQ(ierr);
+  ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_MoFEMFE("ELASTIC"); CHKERRQ(ierr);
-  ierr = mField.add_MoFEMFE("ARC_LENGHT"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("ARC_LENGHT"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = mField.modify_MoFEMFE_row_add_bit("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = mField.modify_MoFEMFE_row_add_bit("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
   //elem data
-  ierr = mField.modify_MoFEMFE_data_add_bit("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("ARC_LENGHT","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //define problems
-  ierr = mField.add_BitProblemId("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //set finite elements for problems
-  ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
   ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",3); CHKERRQ(ierr);

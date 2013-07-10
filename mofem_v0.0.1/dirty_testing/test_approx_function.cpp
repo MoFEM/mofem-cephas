@@ -97,27 +97,27 @@ int main(int argc, char *argv[]) {
   ierr = mField.refine_get_ents(bit_level1,meshset_level1); CHKERRQ(ierr);
 
   //add fields
-  ierr = mField.add_BitFieldId("H1FIELD",H1,1); CHKERRQ(ierr);
-  ierr = mField.add_BitFieldId("H1FIELD_L2",L2,1); CHKERRQ(ierr);
+  ierr = mField.add_field("H1FIELD",H1,1); CHKERRQ(ierr);
+  ierr = mField.add_field("H1FIELD_L2",L2,1); CHKERRQ(ierr);
 
   //add finite elements
-  ierr = mField.add_MoFEMFE("FEAPPROX"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("FEAPPROX","H1FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("FEAPPROX","H1FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("FEAPPROX","H1FIELD"); CHKERRQ(ierr);
-  ierr = mField.add_MoFEMFE("FEAPPROX_L2"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("FEAPPROX_L2","H1FIELD_L2"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("FEAPPROX_L2","H1FIELD_L2"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("FEAPPROX_L2","H1FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("FEAPPROX_L2","H1FIELD_L2"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("FEAPPROX"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("FEAPPROX","H1FIELD"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("FEAPPROX","H1FIELD"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FEAPPROX","H1FIELD"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("FEAPPROX_L2"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("FEAPPROX_L2","H1FIELD_L2"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("FEAPPROX_L2","H1FIELD_L2"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FEAPPROX_L2","H1FIELD"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FEAPPROX_L2","H1FIELD_L2"); CHKERRQ(ierr);
 
   //add problems 
-  ierr = mField.add_BitProblemId("PROBLEM_APPROXIMATION"); CHKERRQ(ierr);
-  ierr = mField.add_BitProblemId("PROBLEM_APPROXIMATION_REF"); CHKERRQ(ierr);
+  ierr = mField.add_problem("PROBLEM_APPROXIMATION"); CHKERRQ(ierr);
+  ierr = mField.add_problem("PROBLEM_APPROXIMATION_REF"); CHKERRQ(ierr);
 
   //define problems and finite elements
-  ierr = mField.modify_problem_MoFEMFE_add_bit("PROBLEM_APPROXIMATION","FEAPPROX"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("PROBLEM_APPROXIMATION_REF","FEAPPROX_L2"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("PROBLEM_APPROXIMATION","FEAPPROX"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("PROBLEM_APPROXIMATION_REF","FEAPPROX_L2"); CHKERRQ(ierr);
 
   //set level
   ierr = mField.modify_problem_ref_level_add_bit("PROBLEM_APPROXIMATION",bit_level0); CHKERRQ(ierr);
@@ -128,9 +128,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(0,"H1FIELD_L2"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"FEAPPROX",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"FEAPPROX",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"FEAPPROX_L2",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"FEAPPROX",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"FEAPPROX",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"FEAPPROX_L2",MBTET); CHKERRQ(ierr);
 
   //set app. order
   ierr = mField.set_field_order(0,MBTET,"H1FIELD",3); CHKERRQ(ierr);

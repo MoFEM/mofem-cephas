@@ -83,21 +83,21 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Fields
-  ierr = mField.add_BitFieldId("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_MoFEMFE("ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = mField.modify_MoFEMFE_row_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
 
   //define problems
-  ierr = mField.add_BitProblemId("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //set finite elements for problem
-  ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)

@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle out_meshset_ref;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_ref); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_FE(bit_level2,out_meshset_ref); CHKERRQ(ierr);
+  ierr = mField.refine_get_finite_elements(bit_level2,out_meshset_ref); CHKERRQ(ierr);
   rval = moab.write_file(mesh_out_file_name,"VTK","",&out_meshset_ref,1); CHKERR_PETSC(rval);
 
   PetscFinalize();
