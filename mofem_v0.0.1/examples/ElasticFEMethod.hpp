@@ -238,7 +238,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     }
 
-
     PetscErrorCode NeumannBC() {
       PetscFunctionBegin;
       

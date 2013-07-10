@@ -155,10 +155,53 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
 
+  struct MyElasticFEMethod: public ElasticFEMethod {
+    MyElasticFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,
+      double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
+      ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
+      _SideSet1,_SideSet2) {};
+
+    PetscErrorCode NeumannBC() {
+      PetscFunctionBegin;
+      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
+      traction[0] = 0;
+      traction[1] = 0;
+      traction[2] = 1;
+      ierr = ElasticFEMethod::NeumannBC(traction,SideSet2); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+      ierr = GetMatrices(); CHKERRQ(ierr);
+
+      //Dirihlet Boundary Condition
+      ApplyDirihletBC();
+      if(Diagonal!=PETSC_NULL) {
+	if(DirihletBC.size()>0) {
+	  DirihletBCDiagVal.resize(DirihletBC.size());
+	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
+	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+	}
+      }
+
+      //Assembly Aij and F
+      ierr = RhsAndLhs(); CHKERRQ(ierr);
+
+      //Neumann Boundary Conditions
+      ierr = NeumannBC(); CHKERRQ(ierr);
+
+      ierr = OpStudentEnd(); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+  };
+
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  ElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
