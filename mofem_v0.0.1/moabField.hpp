@@ -149,7 +149,7 @@ struct moabField {
     * \brief add appeoximation field
     *
     * \param name of the field
-    * \param space approximation space
+    * \param space approximation space (H1, Hdiv, Hcurl, L2 and NoField (dofs adjacent to meshset) 
     * \prama rank of the field, f.e. temeraure has rank 1, displacement in 3d has rank 3
     */
   virtual PetscErrorCode add_BitFieldId(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1) = 0;

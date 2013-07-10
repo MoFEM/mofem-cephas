@@ -543,13 +543,15 @@ PetscErrorCode moabField_Core::dofs_NoField(const BitFieldId id) {
   //find fiels
   field_set_by_id::iterator miit = set_id.find(id);
   if(miit == set_id.end()) SETERRQ(PETSC_COMM_SELF,1,"field no found");
-  //
+  //serch if field meshset is in database
   RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = ref_entities.get<MoABEnt_mi_tag>().find(miit->meshset);
   if(miit_ref_ent==ref_entities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
   pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
   try {
+    //create database entity
     MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
     e_miit = ents_moabfield.insert(moabent);
+    //this is nor real field in space (set order to zero)
     bool success = ents_moabfield.modify(e_miit.first,MoFEMEntity_change_order(moab,0));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   } catch (const char* msg) {
@@ -557,17 +559,21 @@ PetscErrorCode moabField_Core::dofs_NoField(const BitFieldId id) {
   }
   assert(e_miit.first->get_ent()==miit->meshset);
   ApproximationRank rank = 0;
+  //create dofs on this entity (nb. of dofs is equal to rank)
   for(;rank<e_miit.first->get_max_rank();rank++) {
     pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
+    //check if dof is in darabase
     d_miit.first = dofs_moabfield.project<0>(
       dofs_moabfield.get<Unique_mi_tag>().find(DofMoFEMEntity::get_unique_id_calculate(rank,&*(e_miit.first)))
     );
+    //if dof is not in databse
     if(d_miit.first==dofs_moabfield.end()) {
+      //insert dof
       d_miit = dofs_moabfield.insert(DofMoFEMEntity(&*(e_miit.first),0,rank,rank));
       bool success = dofs_moabfield.modify(d_miit.first,DofMoFEMEntity_active_change(true));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
-    //check ent
+    //check consistency
     assert(d_miit.first->get_ent()==e_miit.first->get_MoFEMField_ptr()->meshset);
     assert(d_miit.first->get_ent_type()==e_miit.first->get_ent_type());
     assert(d_miit.first->get_id()==e_miit.first->get_id());
