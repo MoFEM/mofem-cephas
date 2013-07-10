@@ -55,7 +55,7 @@ PetscErrorCode moabField::SnesMethod::set_A(Mat *_A) {
 }
 PetscErrorCode moabField::SnesMethod::set_B(Mat *_B) {
   PetscFunctionBegin;
-  snes_A = _B;
+  snes_B = _B;
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::SnesMethod::set_flag(MatStructure *_flag) {

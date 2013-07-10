@@ -115,7 +115,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = MatZeroEntries(*snes_A); CHKERRQ(ierr);
+	ierr = MatZeroEntries(*snes_B); CHKERRQ(ierr);
 	ierr = VecDuplicate(snes_f,&Diagonal); CHKERRQ(ierr);
       }
       break;
@@ -190,80 +190,80 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
       case ctx_SNESSetJacobian:
 	ierr = GetTangent(); CHKERRQ(ierr);
 	//cerr << "Khh " << Khh << endl;
-	ierr = MatSetValues(*snes_A,
+	ierr = MatSetValues(*snes_B,
 	  RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
 	  ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
 	  &*(Khh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	//
 	for(int ee = 0;ee<6;ee++) {
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
 	    ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
 	    &*(Kedgeh_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
 	    ColGlob[1+ee].size(),&*(ColGlob[1+ee].begin()),
 	    &*(Khedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  for(int eee = 0;eee<6;eee++) {
-	    ierr = MatSetValues(*snes_A,
+	    ierr = MatSetValues(*snes_B,
 	      RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
 	      ColGlob[1+eee].size(),&*(ColGlob[1+eee].begin()),
 	      &*(Khh_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  }
 	  for(int fff = 0;fff<4;fff++) {
-	    ierr = MatSetValues(*snes_A,
+	    ierr = MatSetValues(*snes_B,
 	      RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
 	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
 	      &*(Khh_edgeface_data(ee,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  }
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
 	    ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
 	    &*(Khh_edgevolume_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
 	    ColGlob[1+ee].size(),&*(ColGlob[1+ee].begin()),
 	    &*(Khh_volumeedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	}
 	for(int ff = 0;ff<4;ff++) {
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
 	    ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
 	    &*(Kfaceh_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
 	    ColGlob[1+6+ff].size(),&*(ColGlob[1+6+ff].begin()),
 	    &*(Khface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  for(int eee = 0;eee<6;eee++) {
-	    ierr = MatSetValues(*snes_A,
+	    ierr = MatSetValues(*snes_B,
 	      RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
 	      ColGlob[1+eee].size(),&*(ColGlob[1+eee].begin()),
 	      &*(Khh_faceedge_data(ff,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  }
 	  for(int fff = 0;fff<4;fff++) {
-	    ierr = MatSetValues(*snes_A,
+	    ierr = MatSetValues(*snes_B,
 	      RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
 	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
 	      &*(Khh_faceface_data(ff,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  }
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
 	    ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
 	    &*(Khh_facevolume_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
 	    ColGlob[1+6+ff].size(),&*(ColGlob[1+6+ff].begin()),
 	    &*(Khh_volumeface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	}
-	ierr = MatSetValues(*snes_A,
+	ierr = MatSetValues(*snes_B,
 	  RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
 	  ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
 	  &*(Kvolumeh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValues(*snes_A,
+	ierr = MatSetValues(*snes_B,
 	  RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
 	  ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
 	  &*(Khvolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValues(*snes_A,
+	ierr = MatSetValues(*snes_B,
 	  RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
 	  ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
 	  &*(Khh_volumevolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
@@ -274,41 +274,41 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
 	  ierr = GetTangentExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
 	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
 	    &*(KExt_hh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  for(int ee = 0;ee<3;ee++) {
 	    if(FaceNodeIndices.size()==0) continue;
-	    ierr = MatSetValues(*snes_A,
+	    ierr = MatSetValues(*snes_B,
 	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
 	      &*(KExt_edgeh_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValues(*snes_A,
+	    ierr = MatSetValues(*snes_B,
 	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
 	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 	      &*(KExt_hedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	    for(int eee = 0;eee<3;eee++) {
-	      ierr = MatSetValues(*snes_A,
+	      ierr = MatSetValues(*snes_B,
 		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 		FaceEdgeIndices_data[eee].size(),&(FaceEdgeIndices_data[eee][0]),
 		&*(KExt_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	    }
-	    ierr = MatSetValues(*snes_A,
+	    ierr = MatSetValues(*snes_B,
 	      FaceIndices.size(),&(FaceIndices[0]),
 	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 	      &*(KExt_faceedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValues(*snes_A,
+	    ierr = MatSetValues(*snes_B,
 	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 	      FaceIndices.size(),&(FaceIndices[0]),
 	      &*(KExt_edgeface_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  }
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
 	    &*(KExt_hface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    FaceIndices.size(),&(FaceIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
 	    &*(KExt_faceh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_A,
+	  ierr = MatSetValues(*snes_B,
 	    FaceIndices.size(),&(FaceIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
 	    &*(KExt_faceface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	}
@@ -332,12 +332,12 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
       case ctx_SNESSetJacobian: {
 	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-	ierr = MatDiagonalSet(*snes_A,Diagonal,ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatDiagonalSet(*snes_B,Diagonal,ADD_VALUES); CHKERRQ(ierr);
 	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(*snes_A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	//Matrix View
-	//MatView(*snes_A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+	//MatView(*snes_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
 	//std::string wait;
 	//std::cin >> wait;
       }
