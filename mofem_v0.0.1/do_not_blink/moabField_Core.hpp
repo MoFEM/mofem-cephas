@@ -144,8 +144,13 @@ struct moabField_Core: public moabField {
 
   //build problem, adjacencies,MoFEMFE and dofs
   PetscErrorCode build_fields(int verb = -1);
+
+  ///add entity EntFe to finite element data databse and resolve dofs on that entity
   PetscErrorCode build_finite_element(const EntMoFEMFE &EntFe,int verb = -1);
+
+  //loop over all finite elements, resolve its meshsets, and resolve dofs on that entities
   PetscErrorCode build_finite_elements(int verb = -1);
+
   PetscErrorCode build_adjacencies(const BitRefLevel bit);
   PetscErrorCode build_problems(int verb = -1);
 

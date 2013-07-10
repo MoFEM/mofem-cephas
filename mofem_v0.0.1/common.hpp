@@ -313,7 +313,7 @@ typedef multi_index_container<
   indexed_by<
     hashed_unique<
       member<SideNumber,EntityHandle,&SideNumber::ent> >,
-    ordered_unique<
+    ordered_non_unique<
       composite_key<
 	SideNumber,
 	const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type>,
@@ -646,21 +646,10 @@ struct interface_NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<T> {
  */
 struct BaseFEDofMoFEMEntity {
   UId fe_dof_id;
-  SideNumber *side_number_ptr;
   BaseFEDofMoFEMEntity(SideNumber *_side_number_ptr): side_number_ptr(_side_number_ptr) {};
+  PetscErrorCode get_fe_dof_id_calculate(const DofMoFEMEntity *dof_ptr);
   inline UId get_fe_dof_id() const { return fe_dof_id; }
-  inline PetscErrorCode get_fe_dof_id_calculate(const DofMoFEMEntity *dof_ptr) { 
-    PetscFunctionBegin;
-    DofIdx dof = dof_ptr->dof;
-    int side_number = side_number_ptr->side_number;
-    assert(dof < (DofIdx)bitset<7>().set().to_ulong());
-    assert(side_number < (int)bitset<4>().set().to_ulong());
-    bitset<7> b_dof(dof);
-    bitset<4> b_side_number(side_number);
-    fe_dof_id = b_dof.to_ulong() | ( b_side_number.to_ulong()<<b_dof.size() );
-    assert(fe_dof_id < bitset<sizeof(unsigned long)*8>().set().to_ulong());
-    PetscFunctionReturn(0);
-  }
+  SideNumber *side_number_ptr;
 };
 
 /**
@@ -765,6 +754,8 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_dof,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
     ordered_non_unique<
+      tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_field,string,&FEDofMoFEMEntity::get_name> >,
+    ordered_non_unique<
       tag<SideNumber_mi_tag>,
 	key_from_key<
 	    member<SideNumber,int,&SideNumber::side_number>,
@@ -810,6 +801,8 @@ typedef multi_index_container<
       tag<Unique_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_dof,UId,&FENumeredDofMoFEMEntity::get_unique_id> >,
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_dof,EntityHandle,&FENumeredDofMoFEMEntity::get_ent> >,
+    ordered_non_unique<
+      tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_field,string,&FENumeredDofMoFEMEntity::get_name> >,
     ordered_non_unique<
       tag<SideNumber_mi_tag>,
 	key_from_key<
@@ -948,16 +941,10 @@ struct EntMoFEMFE: public interface_MoFEMFE<MoFEMFE>,interface_RefMoFEMFiniteEle
   PetscErrorCode get_MoFEMFE_col_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_EntMoFEMFE_dof_uid_view(
-    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
-    const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFE_row_dof_uid_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFE_col_dof_uid_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
-    const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_EntMoFEMFE_dof_uid_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   //

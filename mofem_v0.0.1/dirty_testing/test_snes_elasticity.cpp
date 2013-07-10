@@ -55,10 +55,74 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
   }
 
-
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     ierr = FEMethod_DriverComplexForLazy::operator()(SideSet1_,SideSet2); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	Diagonal = PETSC_NULL;
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = VecDuplicate(snes_f,&Diagonal); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct ArcLenghtElemFEMethod: public moabField::FEMethod {
+
+  ArcLenghtElemFEMethod(Interface& _moab): FEMethod(_moab) {}
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    ierr = MatZeroEntries(*snes_A); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    ierr = MatAssemblyBegin(*snes_A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(*snes_A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+  
+    switch(ctx) {
+      case ctx_SNESSetFunction: {
+      }
+      break; 
+      case ctx_SNESSetJacobian: {
+	FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+	dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("LAMBDA");
+	hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("LAMBDA");
+	//only one LAMBDA
+	if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	ierr = MatSetValue(*snes_A,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1,INSERT_VALUES); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+    }
+    
     PetscFunctionReturn(0);
   }
 
@@ -123,6 +187,7 @@ int main(int argc, char *argv[]) {
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
   //elem data
   ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -132,6 +197,7 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ARC_LENGHT"); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
@@ -153,7 +219,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGHT,BitRefLevel().set()); CHKERRQ(ierr);
   //finally add created meshset to the ARC_LENGHT finite element
   ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);
-
 
   //set app. order
   ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",3); CHKERRQ(ierr);
@@ -197,6 +262,8 @@ int main(int argc, char *argv[]) {
   const double PoissonRatio = 0.25;
   ArcLenghtElasticFEMethod MyFE(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
 
+  ArcLenghtElemFEMethod MyArcMethod(moab);
+
   moabSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
   
   SNES snes;
@@ -209,6 +276,7 @@ int main(int argc, char *argv[]) {
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
   moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
+  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
 
   Vec D;
@@ -251,7 +319,6 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
-
 
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

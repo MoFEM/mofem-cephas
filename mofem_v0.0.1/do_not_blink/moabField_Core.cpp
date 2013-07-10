@@ -1033,25 +1033,29 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
   dof_set_by_identity& set_identity = dofs_moabfield.get<Identity_mi_tag>();
   EntityHandle fe_ent = EntFe.get_ent();
   pair<EntMoFEMFE_multiIndex::iterator,bool> p = finite_elements_data.insert(EntFe);
-  // get id of mofem fields for row, col and data
+  //get id of mofem fields for row, col and data
   enum IntLoop { Row = 0,Col,Data,Last };
   BitFieldId FEAdj_fields[Last] = { 
     EntFe.get_BitFieldId_row(), EntFe.get_BitFieldId_col(), EntFe.get_BitFieldId_data() 
   };
-  // get refinment level
+  //get refinment level
   const BitRefLevel& bit_ref_MoFEMFE = p.first->get_BitRefLevel();
   Range tets,faces,edges,nodes,meshsets,adj_ents,ent_ents;
   Range::iterator eit_eit;
   DofMoFEMEntity_multiIndex_uid_view MoFEMFE_dof_uid_view[Last];
+  //lopp over all fields in database
   for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
     // common field id for Row, Col and Data
     BitFieldId id_common = 0;
+    //check if the field (ii) is added to finite element
     for(int ss = 0;ss<Last;ss++) id_common |= FEAdj_fields[ss]&BitFieldId().set(ii);
     if( id_common.none() ) continue;
+    //find in database data associated with the field (ii)
     field_by_id::iterator miit = moabfields_by_id.find(BitFieldId().set(ii));
-    assert(miit!=moabfields_by_id.end());
-    // get field space
+    if(miit==moabfields_by_id.end()) SETERRQ(PETSC_COMM_SELF,1,"data incosistency");
+    //get field (ii) space
     FieldSpace space = miit->get_space();
+    //resolve antities on element
     switch (moab.type_from_handle(fe_ent)) {
       case MBTET:
 	 switch (space) {
@@ -1090,12 +1094,14 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
 	      adj_ents.insert(fe_ent); 
 	      break;
 	    default:
-	    SETERRQ(PETSC_COMM_SELF,1,"this fild is not implemented for PRISM finite element");
+	      SETERRQ(PETSC_COMM_SELF,1,"this fild is not implemented for PRISM finite element");
 	  }
 	  }
          break;
       case MBENTITYSET: 
+	 //get all meshsets in finite element meshset 
 	 rval = moab.get_entities_by_type(fe_ent,MBENTITYSET,ent_ents,false); CHKERR_PETSC(rval);
+	 //resolve recusively all ents in the meshset
 	 rval = moab.get_entities_by_handle(fe_ent,ent_ents,true); CHKERR_PETSC(rval); 
 	 eit_eit = ent_ents.begin();
 	 for(;eit_eit!=ent_ents.end();eit_eit++) {
@@ -1134,6 +1140,7 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
 	    break;
 	    case NoField:
 	      if(moab.type_from_handle(*eit_eit)==MBENTITYSET) {
+		//if field (ii) has space NoField only add dofs which associated with the meshsets
 		if(moabfields_by_meshset.find(*eit_eit)!=moabfields_by_meshset.end()) {
 		  adj_ents.insert(*eit_eit);
 		}
@@ -1149,28 +1156,30 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
     }
     Range::iterator eit2 = adj_ents.begin();
     for(;eit2!=adj_ents.end();eit2++) {
-	  ref_ent_by_ent::iterator ref_ent_miit = ref_entities.get<MoABEnt_mi_tag>().find(*eit2);
-	  if(ref_ent_miit==ref_entities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"ref ent not in database"); 
-	  const BitRefLevel& bit_ref_ent = ref_ent_miit->get_BitRefLevel();
-	  if(!(bit_ref_MoFEMFE&bit_ref_ent).any()) {
-	    ostringstream ss;
-	    ss << "inconsitency in database" << " type " << moab.type_from_handle(*eit2) << " bits " << bit_ref_MoFEMFE << " " << bit_ref_ent;
-	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-	  }
-	  unsigned long int  uid;
-	  try {
-	    uid = MoFEMEntity(moab,&*miit,&*ref_ent_miit).get_unique_id();
-	  } catch (const char* msg) {
-	    SETERRQ(PETSC_COMM_SELF,1,msg);
-	  }
-	  dof_set_by_identity::iterator ents_miit2 = set_identity.lower_bound(uid,comp_DofMoFEMEntity_ent_uid());
-	  dof_set_by_identity::iterator ents_hi_miit2 = set_identity.upper_bound(uid,comp_DofMoFEMEntity_ent_uid());
-	  for(int ss = 0;ss<Last;ss++) {
-	    if( !(FEAdj_fields[ss].test(ii)) ) continue;
-	    dof_set_by_identity::iterator ents_miit3 = ents_miit2;
-	    for(;ents_miit3!=ents_hi_miit2;ents_miit3++) MoFEMFE_dof_uid_view[ss].insert(&*ents_miit3);
-	  }
+      ref_ent_by_ent::iterator ref_ent_miit = ref_entities.get<MoABEnt_mi_tag>().find(*eit2);
+      if(ref_ent_miit==ref_entities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"ref ent not in database"); 
+      const BitRefLevel& bit_ref_ent = ref_ent_miit->get_BitRefLevel();
+      if(!(bit_ref_MoFEMFE&bit_ref_ent).any()) {
+	ostringstream ss;
+	ss << "inconsitency in database" << " type " << moab.type_from_handle(*eit2) << " bits " << bit_ref_MoFEMFE << " " << bit_ref_ent;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
+      unsigned long int  uid;
+      try {
+	uid = MoFEMEntity(moab,&*miit,&*ref_ent_miit).get_unique_id();
+      } catch (const char* msg) {
+	SETERRQ(PETSC_COMM_SELF,1,msg);
+      }
+      dof_set_by_identity::iterator ents_miit2 = set_identity.lower_bound(uid,comp_DofMoFEMEntity_ent_uid());
+      dof_set_by_identity::iterator ents_hi_miit2 = set_identity.upper_bound(uid,comp_DofMoFEMEntity_ent_uid());
+      for(int ss = 0;ss<Last;ss++) {
+	if( !(FEAdj_fields[ss].test(ii)) ) continue;
+	dof_set_by_identity::iterator ents_miit3 = ents_miit2;
+	for(;ents_miit3!=ents_hi_miit2;ents_miit3++) {
+	  MoFEMFE_dof_uid_view[ss].insert(&*ents_miit3);
+	}
+      }
+    }
   }
   try {
       for(int ss = 0;ss<Last;ss++) {
@@ -1193,12 +1202,23 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
   DofMoFEMEntity_multiIndex_active_view::iterator viit_data = data_view.begin();
   for(;viit_data!=data_view.end();viit_data++) {
     try {
-      SideNumber *side_number_ptr = p.first->get_side_number_ptr(moab,(*viit_data)->get_ent());
-      FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(p.first->data_dofs);
-      FEDofMoFEMEntity FEDof(side_number_ptr,&**viit_data);
-      //add dofs to finite element multi_index database
-      pair<FEDofMoFEMEntity_multiIndex::iterator,bool> p_dof = data_dofs.insert(FEDof);
-      NOT_USED(p_dof);
+      switch((*viit_data)->get_space()) {
+	case H1:
+	case Hdiv:
+	case Hcurl:
+	case L2: 
+	case NoField:
+	{
+	  SideNumber *side_number_ptr = p.first->get_side_number_ptr(moab,(*viit_data)->get_ent());
+	  FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(p.first->data_dofs);
+	  FEDofMoFEMEntity FEDof(side_number_ptr,&**viit_data);
+	  //add dofs to finite element multi_index database
+	  data_dofs.insert(FEDof);
+	}
+	break;
+	default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
     } catch (const char* msg) {
       SETERRQ(PETSC_COMM_SELF,1,msg);
     }
@@ -1218,12 +1238,6 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
     DofMoFEMEntity_multiIndex_uid_view::iterator miit_col = MoFEMFE_col_dof_uid_view.begin();
     ss << "cols dofs" << endl;
     for(;miit_col!=MoFEMFE_col_dof_uid_view.end();miit_col++) ss << **miit_col << endl;
-    //data
-    DofMoFEMEntity_multiIndex_uid_view EntMoFEMFE_dof_uid_view;
-    ierr = p.first->get_EntMoFEMFE_dof_uid_view(dofs_moabfield,EntMoFEMFE_dof_uid_view); CHKERRQ(ierr);
-    DofMoFEMEntity_multiIndex_uid_view::iterator miit_data = EntMoFEMFE_dof_uid_view.begin();
-    ss << "data dofs" << endl;
-    for(;miit_data!=EntMoFEMFE_dof_uid_view.end();miit_data++) ss << **miit_data << endl;
     PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
   }
   PetscFunctionReturn(0);
@@ -1231,18 +1245,17 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
 PetscErrorCode moabField_Core::build_finite_elements(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  //enum IntLoop { Row = 0,Col,Data,Last };
   typedef RefMoFEMFiniteElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFE_by_ent;
   MoFEMFE_multiIndex::iterator MoFEMFE_miit = finite_elements.begin();
   // loop Finite Elements
   for(;MoFEMFE_miit!=finite_elements.end();MoFEMFE_miit++) {
     if(verbose>0) PetscPrintf(PETSC_COMM_WORLD,"Build Finite Elements %s\n",MoFEMFE_miit->get_name().c_str());
-    // get finite element meshset
+    //get finite element meshset
     EntityHandle meshset = get_meshset_by_BitFEId(MoFEMFE_miit->get_id());
     // get entities from finite element meshset // if meshset 
     Range MoFEMFE_ents;
     rval = moab.get_entities_by_handle(meshset,MoFEMFE_ents,false); CHKERR_PETSC(rval);
-    // loop meshset Ents and add finite elements
+    //loop meshset Ents and add finite elements
     Range::iterator eit = MoFEMFE_ents.begin();
     for(;eit!=MoFEMFE_ents.end();eit++) {
       // check if is in ref_finite_elements database
@@ -1500,8 +1513,9 @@ PetscErrorCode moabField_Core::partition_problems(const string &name,int verb) {
   NumeredDofMoFEMEntitys_by_idx::iterator miit_dofs_row = dofs_row_by_idx_no_const.begin();
   NumeredDofMoFEMEntitys_by_idx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
   for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++,miit_dofs_col++) {
-    if(miit_dofs_row->get_unique_id()!=miit_dofs_col->get_unique_id()) SETERRQ(PETSC_COMM_SELF,1,"inconsitent data");
-    if(miit_dofs_row->dof_idx!=miit_dofs_col->dof_idx) SETERRQ(PETSC_COMM_SELF,1,"inconsitent data");
+    if(miit_dofs_col==dofs_col_by_idx_no_const.end()) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, nb. of rows is not equal to number for columns");
+    if(miit_dofs_row->get_unique_id()!=miit_dofs_col->get_unique_id()) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, rows not equal columns");
+    if(miit_dofs_row->dof_idx!=miit_dofs_col->dof_idx) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, rows not equal columns");
     assert(petsc_idx[miit_dofs_row->dof_idx]>=0);
     assert(petsc_idx[miit_dofs_row->dof_idx]<(int)p_miit->get_nb_dofs_row());
     bool success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_part_change(part_number[miit_dofs_row->dof_idx],petsc_idx[miit_dofs_row->dof_idx]));

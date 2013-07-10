@@ -171,10 +171,12 @@ RefMoFEMFiniteElement_MESHSET::RefMoFEMFiniteElement_MESHSET(Interface &moab,con
 }
 SideNumber* RefMoFEMFiniteElement_MESHSET::get_side_number_ptr(Interface &moab,EntityHandle ent) const { 
   NOT_USED(moab);
-  SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
-  if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
-  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
+  NOT_USED(ent);
+  SideNumber_multiIndex::iterator miit;
+  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,-1,0,-1)).first;
   return const_cast<SideNumber*>(&*miit);
+  THROW_AT_LINE("not implemented");
+  return NULL;
 }
 RefMoFEMFiniteElement_PRISM::RefMoFEMFiniteElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMFiniteElement(moab,_RefMoFEMEntity_ptr) {
   switch (ref_ptr->get_ent_type()) {
@@ -578,6 +580,18 @@ ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   return os;
 }
 
+PetscErrorCode BaseFEDofMoFEMEntity::get_fe_dof_id_calculate(const DofMoFEMEntity *dof_ptr) {
+  PetscFunctionBegin;
+  DofIdx dof = dof_ptr->dof;
+  int side_number = side_number_ptr->side_number;
+  assert(dof < (DofIdx)bitset<7>().set().to_ulong());
+  assert(side_number < (int)bitset<4>().set().to_ulong());
+  bitset<7> b_dof(dof);
+  bitset<4> b_side_number(side_number);
+  fe_dof_id = b_dof.to_ulong() | ( b_side_number.to_ulong()<<b_dof.size() );
+  assert(fe_dof_id < bitset<sizeof(unsigned long)*8>().set().to_ulong());
+  PetscFunctionReturn(0);
+}
 FEDofMoFEMEntity::FEDofMoFEMEntity(
   SideNumber *_side_number_ptr,
   const DofMoFEMEntity *_DofMoFEMEntity_ptr): 
@@ -733,14 +747,6 @@ PetscErrorCode EntMoFEMFE::get_MoFEMFE_col_dof_uid_view(
   ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFE::get_EntMoFEMFE_dof_uid_view(
-    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
-    const int operation_type) const {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_data_uids_data,tag_data_uids_size); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
 PetscErrorCode EntMoFEMFE::get_MoFEMFE_row_dof_uid_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
@@ -757,22 +763,6 @@ PetscErrorCode EntMoFEMFE::get_MoFEMFE_col_dof_uid_view(
   ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFE::get_EntMoFEMFE_dof_uid_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
-    const int operation_type) const {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_data_uids_data,tag_data_uids_size); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-/**
-  \param side_number Side number in canonical ordering of <em>child</em> with respect to 
-  <em>parent</em>
-  \param sense Sense of <em>child</em> with respect to <em>parent</em>, assuming ordering of 
-  <em>child</em> as given by get_connectivity called on <em>child</em>; sense is 1, -1
-  for forward/reverse sense, resp.
-  \param offset Offset between first vertex of <em>child</em> and first vertex of side 
-*/
 PetscErrorCode EntMoFEMFE::get_uid_side_number(
   Interface &moab,const unsigned long int _ent_uid_,
   const DofMoFEMEntity_multiIndex &dofs_moabfield,
@@ -812,9 +802,6 @@ PetscErrorCode MoFEMAdjacencies::get_ent_adj_dofs_bridge(
     case by_col: 
       ierr = EntMoFEMFE_ptr->get_MoFEMFE_col_dof_uid_view(dofs_moabfield,uids_view,operation_type); CHKERRQ(ierr);
       break;
-    case by_data:
-      ierr = EntMoFEMFE_ptr->get_EntMoFEMFE_dof_uid_view(dofs_moabfield,uids_view,operation_type); CHKERRQ(ierr);
-      break;
     default:
       ostringstream ss;
       ss << "don't know that to do for elem " << EntMoFEMFE_ptr->get_name() << " and field " << MoFEMEntity_ptr->get_name();
@@ -833,9 +820,6 @@ PetscErrorCode MoFEMAdjacencies::get_ent_adj_dofs_bridge(
       break;
     case by_col: 
       ierr = EntMoFEMFE_ptr->get_MoFEMFE_col_dof_uid_view(dofs_moabproblem,uids_view,operation_type); CHKERRQ(ierr);
-      break;
-    case by_data:
-      ierr = EntMoFEMFE_ptr->get_EntMoFEMFE_dof_uid_view(dofs_moabproblem,uids_view,operation_type); CHKERRQ(ierr);
       break;
     default: 
       ostringstream ss;
