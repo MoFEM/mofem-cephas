@@ -1,18 +1,19 @@
 reset
 
-brick x 1 y 2 z 0.2
-brick x 2 y 1 z 0.2
+brick x 10 y 2 z 1
+webcut volume 1 with plane yplane imprint merge
 
-move Curve 23  midpoint location curve 11  include_merged
-unite volume all 
+#move Curve 23  midpoint location curve 11  include_merged
+#unite volume all 
 
-Sideset 1 surface 3 
-Sideset 2 surface 12 
-#create Displacement  on surface 3  dof all fix 0 
-#create Displacement  on surface 12  dof all fix 0 
+Sideset 1 surface 16 9 
+Sideset 2 surface 13
+Sideset 3 surface 11
+Sideset 4 surface 7
 
 volume all scheme Tetmesh
-volume all size auto factor 6
+volume all size auto factor 7
 mesh volume all
 
-save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/LShapeDense.cub" overwrite
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/PeelTest.cub" overwrite
+

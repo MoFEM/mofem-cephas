@@ -752,13 +752,13 @@ int main(int argc, char *argv[]) {
   //update BC for refined (with interface) mesh
   EntityHandle meshset_SideSet1; //Dirihlet BC is there
   ierr = mField.get_msId_meshset(1,SideSet,meshset_SideSet1); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet1,bit_level_interface,meshset_SideSet1,MBTRI,true,3); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet1,bit_level_interface,meshset_SideSet1,MBTRI,true); CHKERRQ(ierr);
   EntityHandle meshset_SideSet2; //Dirihlet BC is there
   ierr = mField.get_msId_meshset(2,SideSet,meshset_SideSet2); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet2,bit_level_interface,meshset_SideSet2,MBTRI,true,3); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet2,bit_level_interface,meshset_SideSet2,MBTRI,true); CHKERRQ(ierr);
   EntityHandle meshset_SideSet3; //Dirihlet BC is there
   ierr = mField.get_msId_meshset(3,SideSet,meshset_SideSet3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level_interface,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level_interface,meshset_SideSet3,MBTRI,true); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
@@ -768,16 +768,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
-  BitRefLevel bit_level1;
+  /*BitRefLevel bit_level1;
   bit_level1.set(2);
   ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_PRISM(meshset_level0,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_get_childern(meshset_SideSet1,bit_level1,meshset_SideSet1,MBTRI,true,3); CHKERRQ(ierr);
   ierr = mField.refine_get_childern(meshset_SideSet2,bit_level1,meshset_SideSet2,MBTRI,true,3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level1,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level1,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);*/
 
-  BitRefLevel problem_bit_level = bit_level1;
+  BitRefLevel problem_bit_level = bit_level0;
 
   /***/
   //Define problem
