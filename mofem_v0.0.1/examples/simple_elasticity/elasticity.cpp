@@ -161,12 +161,15 @@ int main(int argc, char *argv[]) {
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
       _SideSet1,_SideSet2) {};
 
+    /// Set Numan Boundart Conditions on SideSet2
     PetscErrorCode NeumannBC() {
       PetscFunctionBegin;
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
-      traction[0] = 0;
-      traction[1] = 0;
-      traction[2] = 1;
+      //Set Direction of Traction On SideSet2
+      traction[0] = 0; //X
+      traction[1] = 0; //Y 
+      traction[2] = 1; //Z
+      //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
       ierr = ElasticFEMethod::NeumannBC(traction,SideSet2); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
