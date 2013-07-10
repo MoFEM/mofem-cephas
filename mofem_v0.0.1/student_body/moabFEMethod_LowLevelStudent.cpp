@@ -644,6 +644,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
       if(isH1) {
 	//PRISM shape functions at Gauss pts.
 	gNTRIonPRISM.resize(6*gNTRI_dim);
+	vector<double> gNTRI3(3*gNTRI_dim),gNTRI4(3*gNTRI_dim);
 	try {
 	  for(int nn = 0;nn<3;nn++) {
 	    int side_number3 = fe_ent_ptr->get_side_number_ptr(moab,conn_face3[nn])->side_number;
@@ -654,6 +655,8 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	      double val = gNTRI[gg*3+nn];
 	      gNTRIonPRISM[gg*6+side_number3] = +val; 
 	      gNTRIonPRISM[gg*6+side_number4] = -val; 
+	      gNTRI3[gg*3+side_number3] = val;
+	      gNTRI4[gg*3+side_number4-3] = val;
 	    }
 	  }
 	} catch (const char* msg) {
@@ -673,7 +676,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	  H1edgeN[ee].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order3_[ee]));
 	  _edgeN3_[ee] = &*H1edgeN[ee].begin();
 	}
-	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense3_,_face_edge_order3_,&gNTRI[0],NULL,_edgeN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
+	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense3_,_face_edge_order3_,&gNTRI3[0],NULL,_edgeN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	//face 4, edges
 	int _face_edge_sense4_[3];
 	int _face_edge_order4_[3];
@@ -687,7 +690,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	  H1edgeN[6+ee].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order4_[ee]));
 	  _edgeN4_[ee] = &*H1edgeN[6+ee].begin();
 	}
-	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense4_,_face_edge_order4_,&gNTRI[0],NULL,_edgeN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
+	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense4_,_face_edge_order4_,&gNTRI4[0],NULL,_edgeN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	ee = 0;
 	for(;ee<3;ee++) {
 	  cblas_dscal(gNTRI_dim*NBEDGE_H1(_face_edge_order4_[ee]),-1,_edgeN4_[ee],1);
