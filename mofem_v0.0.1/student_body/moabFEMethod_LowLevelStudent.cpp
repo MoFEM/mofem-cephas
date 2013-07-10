@@ -660,10 +660,6 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
 	} 
 	H1edgeN.resize(9);
-	const int prims_face_edge_conn3[3][2] = { {0,1}, {1,2}, {2,0} };
-	const int prims_face_edge_conn4[3][2] = { {3,4}, {4,5}, {5,3} };
-	const EntityHandle *conn_prism;
-	rval = moab.get_connectivity(fe_ent_ptr->get_ent(),conn_prism,num_nodes,true); CHKERR_PETSC(rval); assert(num_nodes==6);
 	//face 3, edges
 	int _face_edge_sense3_[3];
 	int _face_edge_order3_[3];
@@ -671,17 +667,8 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	int ee = 0;
 	for(;ee<3;ee++) {
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().find(boost::make_tuple(MBEDGE,ee));
-	  const EntityHandle *conn_edge;
-	  rval = moab.get_connectivity(siit->ent,conn_edge,num_nodes,true); CHKERR_PETSC(rval); assert(num_nodes==2);
-	  assert( conn_edge[0] == conn_prism[prims_face_edge_conn3[ee][0]] || conn_edge[0] == conn_prism[prims_face_edge_conn3[ee][1]] );
-	  assert( conn_edge[1] == conn_prism[prims_face_edge_conn3[ee][0]] || conn_edge[1] == conn_prism[prims_face_edge_conn3[ee][1]] );
-	  if( conn_edge[0] == conn_prism[prims_face_edge_conn3[ee][0]] && conn_edge[1] == conn_prism[prims_face_edge_conn3[ee][1]] )
-	    _face_edge_sense3_[ee] = +1;
-	  else
-	  if( conn_edge[1] ==  conn_prism[prims_face_edge_conn3[ee][0]] && conn_edge[0] == conn_prism[prims_face_edge_conn3[ee][1]] ) 
-	    _face_edge_sense3_[ee] = -1;
-	  else 
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  int face_edge_side_number,face_edge_offset;
+	  rval = moab.side_number(siit3->ent,siit->ent,face_edge_side_number,_face_edge_sense3_[ee],face_edge_offset); CHKERR_PETSC(rval);
 	  _face_edge_order3_[ee] = maxOrderEdgeH1[ee];
 	  H1edgeN[ee].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order3_[ee]));
 	  _edgeN3_[ee] = &*H1edgeN[ee].begin();
@@ -694,17 +681,8 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	ee = 0;
 	for(;ee<3;ee++) {
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().find(boost::make_tuple(MBEDGE,6+ee));
-	  const EntityHandle *conn_edge;
-	  rval = moab.get_connectivity(siit->ent,conn_edge,num_nodes,true); CHKERR_PETSC(rval); assert(num_nodes==2);
-	  assert( conn_edge[0] == conn_prism[prims_face_edge_conn4[ee][0]] || conn_edge[0] == conn_prism[prims_face_edge_conn4[ee][1]] );
-	  assert( conn_edge[1] == conn_prism[prims_face_edge_conn4[ee][0]] || conn_edge[1] == conn_prism[prims_face_edge_conn4[ee][1]] );
-	  if( conn_edge[0] ==  conn_prism[prims_face_edge_conn4[ee][0]] && conn_edge[1] == conn_prism[prims_face_edge_conn4[ee][1]] )
-	    _face_edge_sense4_[ee] = +1;
-	  else
-	  if( conn_edge[1] ==  conn_prism[prims_face_edge_conn4[ee][0]] && conn_edge[0] == conn_prism[prims_face_edge_conn4[ee][1]] ) 
-	    _face_edge_sense4_[ee] = -1;
-	  else 
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  int face_edge_side_number,face_edge_offset;
+	  rval = moab.side_number(siit4->ent,siit->ent,face_edge_side_number,_face_edge_sense4_[ee],face_edge_offset); CHKERR_PETSC(rval);
 	  _face_edge_order4_[ee] = maxOrderEdgeH1[6+ee];
 	  H1edgeN[6+ee].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order4_[ee]));
 	  _edgeN4_[ee] = &*H1edgeN[6+ee].begin();
