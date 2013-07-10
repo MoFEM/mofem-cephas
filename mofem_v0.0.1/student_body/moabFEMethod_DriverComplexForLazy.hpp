@@ -106,7 +106,6 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
     ierr = PetscGetTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-    set_PhysicalEquationNumber(neohookean);
     switch(ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
