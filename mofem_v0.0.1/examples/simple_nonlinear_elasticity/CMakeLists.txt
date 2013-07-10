@@ -19,9 +19,9 @@
 add_executable(nonlinear_elasticity nonlinear_elasticity.cpp)
 target_link_libraries(nonlinear_elasticity mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/LShape.cub" "/" export_files_LShape)
-cm_export_file("../../meshes/LShapeCoarse.cub" "/" export_files_LShape)
-cm_export_file("../../meshes/LShapeDense.cub" "/" export_files_LShape)
+cm_export_file("../../meshes/LShape.cub" "/" export_files_LShape_nonlinearelasticity)
+cm_export_file("../../meshes/LShapeCoarse.cub" "/" export_files_LShape_nonlinearelasticity)
+cm_export_file("../../meshes/LShapeDense.cub" "/" export_files_LShape_nonlinearelasticity)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

@@ -83,7 +83,7 @@ PetscErrorCode moabField::FEMethod::postProcess() {
 }
 PetscErrorCode moabField::FEMethod::operator()() {   
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
+  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class (operator)");
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::FEMethod::set_problem(const MoFEMProblem *_problem_ptr) {

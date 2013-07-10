@@ -32,28 +32,39 @@
 
 #include "complex_for_lazy.h"
 
+using namespace boost::numeric;
+
+namespace MoFEM {
+
 struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 
     enum bc_type { fixed_x = 1,fixed_y = 1<<1, fixed_z = 1<<2 };
 
+    double t_val;
+    PetscErrorCode set_t_val(double t_val_) {
+      PetscFunctionBegin;
+      t_val = t_val_;
+      PetscFunctionReturn(0);
+    }
+
     FEMethod_DriverComplexForLazy(Interface& _moab,
       double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy(_moab,spatail_analysis,_lambda,_mu,_verbose) {
-    };
+      FEMethod_ComplexForLazy(_moab,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
 
-    PetscErrorCode ApplyDirihletBC(Range &SideSet,bc_type = fixed_x|fixed_y|fixed_z) {
+    vector<DofIdx> DirihletBC;
+    PetscErrorCode ApplyDirihletBC(Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z) {
       PetscFunctionBegin;
       //Dirihlet form SideSet1
       DirihletBC.resize(0);
-      Range::iterator siit1 = SideSet1_.begin();
-      for(;siit1!=SideSet1_.end();siit1++) {
+      Range::iterator siit1 = SideSet.begin();
+      for(;siit1!=SideSet.end();siit1++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
 	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
 	for(;riit!=hi_riit;riit++) {
-	  if(riit->get_name()!="SPATIAL_POSITION") continue;
-	  if(riit->get_dof_rank()==0) if(!(bc_type&fixed_x)) continue;
-	  if(riit->get_dof_rank()==1) if(!(bc_type&fixed_y)) continue;
-	  if(riit->get_dof_rank()==2) if(!(bc_type&fixed_z)) continue;
+	  if(riit->get_name()!=field_name) continue;
+	  if(riit->get_dof_rank()==0) if(!(bc&fixed_x)) continue;
+	  if(riit->get_dof_rank()==1) if(!(bc&fixed_y)) continue;
+	  if(riit->get_dof_rank()==2) if(!(bc&fixed_z)) continue;
 	  // all fixed
 	  // if some ranks are selected then we could apply BC in particular direction
 	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
@@ -70,7 +81,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode ApplyDirihletBCFace(Range &SideSet) {
+    PetscErrorCode ApplyDirihletBCFace() {
       PetscFunctionBegin;
       vector<DofIdx>::iterator dit = DirihletBC.begin();
       for(;dit!=DirihletBC.end();dit++) {
@@ -89,6 +100,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
 
+  Vec Diagonal;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
@@ -113,13 +125,16 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     }
     PetscFunctionReturn(0);
   }
-  PetscErrorCode operator()() {
+
+  vector<FieldData> DirihletBCDiagVal;
+
+  PetscErrorCode operator()(Range& DirihletSideSet,Range NeumannSideSet) {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndices(); CHKERRQ(ierr);
 
-    ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+    ierr = ApplyDirihletBC(DirihletSideSet); CHKERRQ(ierr);
     if(Diagonal!=PETSC_NULL) {
 	if(DirihletBC.size()>0) {
 	  DirihletBCDiagVal.resize(DirihletBC.size());
@@ -154,8 +169,8 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 	  ierr = VecSetValues(snes_f,RowGlob[i_volume].size(),&(RowGlob[i_volume][0]),&(Fint_h_volume.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	}
 	for(;siit!=hi_siit;siit++) {
-	  Range::iterator fit = find(SideSet2.begin(),SideSet2.end(),siit->ent);
-	  if(fit==SideSet2.end()) continue;
+	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
+	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
 	  ierr = GetFExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
 	  //cerr << "FExt " << FExt << endl;
@@ -255,8 +270,8 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 	  &*(Khh_volumevolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	//
 	for(;siit!=hi_siit;siit++) {
-	  Range::iterator fit = find(SideSet2.begin(),SideSet2.end(),siit->ent);
-	  if(fit==SideSet2.end()) continue;
+	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
+	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
 	  ierr = GetTangentExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
 	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
@@ -340,7 +355,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 
 };
 
-
+}
 
 #endif
 

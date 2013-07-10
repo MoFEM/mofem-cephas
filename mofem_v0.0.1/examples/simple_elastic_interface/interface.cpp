@@ -335,10 +335,10 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 
 };
 
-struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAndStarinOnRefMesh_Base {
+struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
   
     PostProcCohesiveForces(Interface &_moab,double _YoungModulus): 
-      InterfaceFEMethod(_moab,_YoungModulus), PostProcDisplacemenysAndStarinOnRefMesh_Base() {
+      InterfaceFEMethod(_moab,_YoungModulus), PostProcOnRefMesh_Base() {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     };
 

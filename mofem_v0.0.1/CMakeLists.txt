@@ -71,8 +71,8 @@ include_directories(
 
 #SPECIFIC FROM NOW
 include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
-include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 include_directories("${PROJECT_SOURCE_DIR}/student_body")
+include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 
 add_library(mofem_Field 
   third_party/tetcircumcenter.c
