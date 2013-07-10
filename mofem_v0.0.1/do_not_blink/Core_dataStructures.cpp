@@ -169,6 +169,13 @@ RefMoFEMFiniteElement_MESHSET::RefMoFEMFiniteElement_MESHSET(Interface &moab,con
       THROW_AT_LINE("this work only for MESHSETs");
   }
 }
+SideNumber* RefMoFEMFiniteElement_MESHSET::get_side_number_ptr(Interface &moab,EntityHandle ent) const { 
+  NOT_USED(moab);
+  SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
+  if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
+  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
+  return const_cast<SideNumber*>(&*miit);
+}
 RefMoFEMFiniteElement_PRISM::RefMoFEMFiniteElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMFiniteElement(moab,_RefMoFEMEntity_ptr) {
   switch (ref_ptr->get_ent_type()) {
     case MBPRISM:

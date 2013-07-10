@@ -185,7 +185,7 @@ struct moabField {
   virtual PetscErrorCode list_field() const = 0;
 
   /// \brief get field meshset
-  virtual EntityHandle get_meshset_by_BitFieldId(const string& name) const = 0;
+  virtual EntityHandle get_field_meshset(const string& name) const = 0;
 
   /**
     * \brief add finite element

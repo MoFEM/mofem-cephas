@@ -141,6 +141,19 @@ int main(int argc, char *argv[]) {
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  
+  //this entity will carray data for this finite element
+  EntityHandle meshset_FE_ARC_LENGHT;
+  rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGHT); CHKERR_PETSC(rval);
+  //get LAMBDA field meshset
+  EntityHandle meshset_field_LAMBDA = mField.get_field_meshset("LAMBDA");
+  //add LAMBDA field meshset to finite element ARC_LENGHT
+  rval = moab.add_entities(meshset_FE_ARC_LENGHT,&meshset_field_LAMBDA,1); CHKERR_PETSC(rval);
+  //add finite element ARC_LENGHT meshset to refinment database (all ref bit leveles)
+  ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGHT,BitRefLevel().set()); CHKERRQ(ierr);
+  //finally add created meshset to the ARC_LENGHT finite element
+  ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);
+
 
   //set app. order
   ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",3); CHKERRQ(ierr);

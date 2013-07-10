@@ -427,12 +427,7 @@ struct RefMoFEMFiniteElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
 struct RefMoFEMFiniteElement_MESHSET: public RefMoFEMFiniteElement {
   RefMoFEMFiniteElement_MESHSET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
   const RefMoFEMFiniteElement* get_RefMoFEMFiniteElement() const { return this; }
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { 
-    NOT_USED(moab);
-    NOT_USED(ent);
-    assert(0);
-    return NULL; 
-  };
+  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
 };
 
 /**

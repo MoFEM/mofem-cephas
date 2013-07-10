@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   /*ierr = mField.add_ents_to_finite_element_by_MESHSET(Block5,"LINK"); CHKERRQ(ierr);
   EntityHandle meshset_FE_ARC_LENGHT;
   rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGHT); CHKERR_PETSC(rval);
-  EntityHandle meshset_field_LAMBDA = mField.get_meshset_by_BitFieldId("LAMBDA");
+  EntityHandle meshset_field_LAMBDA = mField.get_field_meshset("LAMBDA");
   rval = moab.add_entities(meshset_FE_ARC_LENGHT,&meshset_field_LAMBDA,1); CHKERR_PETSC(rval);
   rval = moab.add_entities(meshset_FE_ARC_LENGHT,&Block5,1); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGHT,BitRefLevel().set()); CHKERRQ(ierr);

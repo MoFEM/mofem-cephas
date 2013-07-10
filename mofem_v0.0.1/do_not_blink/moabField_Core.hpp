@@ -114,8 +114,8 @@ struct moabField_Core: public moabField {
   PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1);
   BitFieldId get_BitFieldId(const string& name) const;
   string get_BitFieldId_name(const BitFieldId id) const;
-  EntityHandle get_meshset_by_BitFieldId(const BitFieldId id) const;
-  EntityHandle get_meshset_by_BitFieldId(const string& name) const;
+  EntityHandle get_field_meshset(const BitFieldId id) const;
+  EntityHandle get_field_meshset(const string& name) const;
 
   //MoFEMFE
   PetscErrorCode add_finite_element(const string &MoFEMFE_name);

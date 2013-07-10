@@ -162,15 +162,15 @@ string moabField_Core::get_BitFieldId_name(const BitFieldId id) const {
   field_set_by_id::iterator miit = set.find(id);
   return miit->get_name();
 }
-EntityHandle moabField_Core::get_meshset_by_BitFieldId(const BitFieldId id) const {
+EntityHandle moabField_Core::get_field_meshset(const BitFieldId id) const {
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set = moabfields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
   if(miit==set.end()) THROW_AT_LINE("field not in databse");
   return miit->meshset;
 }
-EntityHandle moabField_Core::get_meshset_by_BitFieldId(const string& name) const {
-  return get_meshset_by_BitFieldId(get_BitFieldId(name));
+EntityHandle moabField_Core::get_field_meshset(const string& name) const {
+  return get_field_meshset(get_BitFieldId(name));
 }
 BitFieldId moabField_Core::get_field_shift() {
   assert((unsigned int)*f_shift<BitFieldId().set().to_ulong());
@@ -373,7 +373,7 @@ PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle mesh
   *build_MoFEM = 0;
   EntityHandle idm = no_handle;
   try {
-    idm = get_meshset_by_BitFieldId(id);
+    idm = get_field_meshset(id);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -427,7 +427,7 @@ PetscErrorCode moabField_Core::add_ents_to_field_by_PRISMs(const EntityHandle me
   *build_MoFEM = 0;
   EntityHandle idm = no_handle;
   try {
-    idm = get_meshset_by_BitFieldId(id);
+    idm = get_field_meshset(id);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -468,7 +468,7 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
   if(miit==set_id.end()) SETERRQ(PETSC_COMM_SELF,1,"no id found"); 
   EntityHandle idm = no_handle;
   try {
-   idm = get_meshset_by_BitFieldId(id);
+   idm = get_field_meshset(id);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -1194,12 +1194,11 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
   for(;viit_data!=data_view.end();viit_data++) {
     try {
       SideNumber *side_number_ptr = p.first->get_side_number_ptr(moab,(*viit_data)->get_ent());
-      //cout << side_number_ptr->side_number << " " << **viit_data << endl;
       FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(p.first->data_dofs);
       FEDofMoFEMEntity FEDof(side_number_ptr,&**viit_data);
+      //add dofs to finite element multi_index database
       pair<FEDofMoFEMEntity_multiIndex::iterator,bool> p_dof = data_dofs.insert(FEDof);
       NOT_USED(p_dof);
-      //cout << *(p_dof.first) << endl;
     } catch (const char* msg) {
       SETERRQ(PETSC_COMM_SELF,1,msg);
     }
