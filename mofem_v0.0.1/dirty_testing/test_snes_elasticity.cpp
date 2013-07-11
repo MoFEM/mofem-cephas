@@ -68,14 +68,12 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	Diagonal = PETSC_NULL;
       }
       break;
       case ctx_SNESSetJacobian: {
 	ierr = VecDuplicate(snes_f,&Diagonal); CHKERRQ(ierr);
+	//ierr = MatZeroEntries(*snes_B); CHKERRQ(ierr);
       }
       break;
       default:
@@ -92,31 +90,51 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    ierr = MatZeroEntries(*snes_B); CHKERRQ(ierr);
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatZeroEntries(*snes_B); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-  
+
+    FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+    dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("LAMBDA");
+    hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("LAMBDA");
+    //only one LAMBDA
+    if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+
     switch(ctx) {
       case ctx_SNESSetFunction: {
+	double res_lambda;;
+	PetscScalar *array;
+	ierr = VecGetArray(snes_x,&array); CHKERRQ(ierr);
+	res_lambda = array[dit->get_petsc_local_dof_idx()];
+	res_lambda -= 1e-4;
+	ierr = VecRestoreArray(snes_x,&array); CHKERRQ(ierr);
+	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),res_lambda,ADD_VALUES); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"snes res_lambda = %6.4e\n",res_lambda);  
       }
       break; 
       case ctx_SNESSetJacobian: {
-	FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
-	dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("LAMBDA");
-	hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("LAMBDA");
-	//only one LAMBDA
-	if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	ierr = MatSetValue(*snes_B,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1,INSERT_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValue(*snes_B,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
@@ -126,12 +144,39 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-
 };
 
 struct MatShellCtx {
+  moabField& mField;
   Mat Aij;
-  MatShellCtx(Mat _Aij): Aij(_Aij) {};
+  Vec F_lambda,b;
+  MatShellCtx(moabField& _mField,Mat _Aij): mField(_mField),Aij(_Aij) {
+    mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F_lambda);
+    mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&b);
+  };
+  PetscErrorCode get_lambda(Vec ksp_x,double *lambda) {
+    PetscFunctionBegin;
+    const MoFEMProblem *problem_ptr;
+    ierr = mField.get_problems_database("ELASTIC_MECHANICS",&problem_ptr); CHKERRQ(ierr);
+    //get problem dofs
+    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit;
+    dit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
+    DofIdx lambda_dof_index = dit->get_petsc_local_dof_idx();
+    int part = dit->part;
+    if(lambda_dof_index!=-1) {
+      PetscScalar *array;
+      ierr = VecGetArray(ksp_x,&array); CHKERRQ(ierr);
+      *lambda = array[lambda_dof_index];
+      ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
+    } 
+    MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
+    PetscFunctionReturn(0);
+  }
+  ~MatShellCtx() {
+    VecDestroy(&F_lambda);
+    VecDestroy(&b);
+  }
 };
 
 
@@ -141,6 +186,10 @@ PetscErrorCode mult_shell(Mat A,Vec x,Vec f) {
   MatShellGetContext(A,&void_ctx);
   MatShellCtx *ctx = (MatShellCtx*)void_ctx;
   ierr = MatMult(ctx->Aij,x,f); CHKERRQ(ierr);
+  double lambda,res_lambda;
+  ierr = ctx->get_lambda(x,&lambda); CHKERRQ(ierr);
+  ierr = ctx->get_lambda(f,&res_lambda); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,"lambda = %6.4e res_lambda = %6.4e\n",lambda,res_lambda);
   PetscFunctionReturn(0);
 }
 
@@ -267,9 +316,9 @@ int main(int argc, char *argv[]) {
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
   PetscInt m,n;
   MatGetLocalSize(Aij,&m,&n);
-  MatShellCtx MatCtx(Aij);
+  MatShellCtx* MatCtx = new MatShellCtx(mField,Aij);
   Mat ShellAij;
-  ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)&MatCtx,&ShellAij); CHKERRQ(ierr);
+  ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)MatCtx,&ShellAij); CHKERRQ(ierr);
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))mult_shell); CHKERRQ(ierr);
 
   SetPositionsEntMethod set_positions(moab);
@@ -279,7 +328,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet2.size());
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
@@ -293,11 +342,18 @@ int main(int argc, char *argv[]) {
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
   ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
-
   ierr = SNESSetJacobian(snes,ShellAij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
+  KSP ksp;
+  ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
+  PC pc;
+  ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
+
+
+
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
+  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
   loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
   moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
@@ -350,6 +406,7 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellAij); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+  delete MatCtx;
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
@@ -357,7 +414,9 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
-  PetscFinalize();
+  ierr = PetscFinalize(); CHKERRQ(ierr);
+
+  return 0;
 
 }
 

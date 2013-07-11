@@ -69,6 +69,8 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
     ierr = lit->second->set_snes(snes); CHKERRQ(ierr);
     ierr = lit->second->set_x(x); CHKERRQ(ierr);
     ierr = lit->second->set_f(f); CHKERRQ(ierr);
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Rhs: %s\n",lit->first.c_str());
+    //PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
     ierr = lit->second->set_ctx(moabField::SnesMethod::ctx_SNESNone);
   }
@@ -86,6 +88,8 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ct
     ierr = lit->second->set_A(A); CHKERRQ(ierr);
     ierr = lit->second->set_B(B); CHKERRQ(ierr);
     ierr = lit->second->set_flag(flag); CHKERRQ(ierr);
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Mat: %s\n",lit->first.c_str());
+    //PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
     ierr = lit->second->set_ctx(moabField::SnesMethod::ctx_SNESNone);
   }

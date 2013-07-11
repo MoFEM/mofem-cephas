@@ -189,9 +189,12 @@ struct moabField_Core: public moabField {
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
   PetscErrorCode add_prism_to_Adj_prisms(const EntityHandle prism,int verb = -1);
 
-  // loops
+  //loops
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
+
+  //get multi_index form database
+  PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr);
 
   //constructor
   moabField_Core(Interface& _moab,int _verbose = 1);

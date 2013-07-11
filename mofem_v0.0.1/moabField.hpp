@@ -454,13 +454,18 @@ struct moabField {
    *
    * \param problem_name \param fe_name \param method is class derived form
    * moabField::FEMethod
-  **/ virtual PetscErrorCode loop_finite_elements(const string
-&problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
+  **/ 
+  virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over entities
     *
     */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1) = 0;
+
+  /** \brief Get problem database (datastructure) 
+    *
+    */
+  virtual PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
 };
 
