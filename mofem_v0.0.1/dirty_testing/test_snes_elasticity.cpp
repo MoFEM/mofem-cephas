@@ -66,6 +66,9 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
     ierr = FEMethod_DriverComplexForLazy::preProcess(); CHKERRQ(ierr);
     switch(ctx) {
       case ctx_SNESSetFunction: { 
+      	ierr = VecZeroEntries(F_lambda); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
@@ -98,15 +101,15 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-	  ierr = CalulateFint(snes_f); CHKERRQ(ierr);
+	  ierr = CalculateFint(snes_f); CHKERRQ(ierr);
 	  double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
-	  ierr = CaluateFext(F_lambda,t,NeumannSideSet); CHKERRQ(ierr);
+	  ierr = CaluclateFext(F_lambda,t,NeumannSideSet); CHKERRQ(ierr);
 	}
 	break;
       case ctx_SNESSetJacobian: {
 	  ierr = CalculateTangent(*snes_B); CHKERRQ(ierr);
 	  double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
-	  ierr = CalulateTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
+	  ierr = CalculateTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
 	}
 	break;
       default:
@@ -161,6 +164,8 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
+  double lambda;
+
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
@@ -175,8 +180,8 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 	double res_lambda;;
 	PetscScalar *array;
 	ierr = VecGetArray(snes_x,&array); CHKERRQ(ierr);
-	res_lambda = array[dit->get_petsc_local_dof_idx()];
-	res_lambda -= 1e-4;
+	lambda = array[dit->get_petsc_local_dof_idx()];
+	res_lambda = lambda - 1.;
 	ierr = VecRestoreArray(snes_x,&array); CHKERRQ(ierr);
 	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"snes res_lambda = %6.4e\n",res_lambda);  
@@ -201,7 +206,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 	ierr = VecGhostUpdateEnd(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(F_lambda); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(F_lambda); CHKERRQ(ierr);
-	ierr = VecAXPY(snes_f,1.,F_lambda); CHKERRQ(ierr);
+	ierr = VecAXPY(snes_f,lambda,F_lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);

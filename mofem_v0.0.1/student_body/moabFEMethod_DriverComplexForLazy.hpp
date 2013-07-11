@@ -127,7 +127,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 
   vector<FieldData> DirihletBCDiagVal;
   
-  PetscErrorCode CalulateFint(Vec f) {
+  PetscErrorCode CalculateFint(Vec f) {
     PetscFunctionBegin;
 
     switch(ctx) {
@@ -251,7 +251,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 
   }
 
-  PetscErrorCode CaluateFext(Vec f,double *t,Range& NeumannSideSet) {
+  PetscErrorCode CaluclateFext(Vec f,double *t,Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -287,7 +287,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalulateTangentExt(Mat B,double *t,Range& NeumannSideSet) {
+  PetscErrorCode CalculateTangentExt(Mat B,double *t,Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -368,13 +368,13 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-	ierr = CalulateFint(snes_f); CHKERRQ(ierr);
-	ierr = CaluateFext(snes_f,t,NeumannSideSet); CHKERRQ(ierr);
+	ierr = CalculateFint(snes_f); CHKERRQ(ierr);
+	ierr = CaluclateFext(snes_f,t,NeumannSideSet); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
 	ierr = CalculateTangent(*snes_B); CHKERRQ(ierr);
-	ierr = CalulateTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
+	ierr = CalculateTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
