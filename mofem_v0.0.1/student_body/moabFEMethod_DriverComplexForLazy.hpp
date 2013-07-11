@@ -126,8 +126,230 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
   }
 
   vector<FieldData> DirihletBCDiagVal;
+  
+  PetscErrorCode CalulateFint(Vec f) {
+    PetscFunctionBegin;
 
-  PetscErrorCode operator()(Range& DirihletSideSet,Range NeumannSideSet) {
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+        ierr = GetFint(); CHKERRQ(ierr);
+	VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+	//cerr << "Fint_h " << Fint_h << endl;
+	ierr = VecSetValues(f,RowGlob[i_nodes].size(),&(RowGlob[i_nodes][0]),&(Fint_h.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	for(int ee = 0;ee<6;ee++) {
+	  if(RowGlob[1+ee].size()>0) {
+	    ierr = VecSetValues(f,RowGlob[1+ee].size(),&(RowGlob[1+ee][0]),&(Fint_h_edge_data[ee].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}
+	for(int ff = 0;ff<4;ff++) {
+	  if(RowGlob[1+6+ff].size()>0) {
+	    ierr = VecSetValues(f,RowGlob[1+6+ff].size(),&(RowGlob[1+6+ff][0]),&(Fint_h_face_data[ff].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}
+	if(RowGlob[i_volume].size()>0) {
+	  ierr = VecSetValues(f,RowGlob[i_volume].size(),&(RowGlob[i_volume][0]),&(Fint_h_volume.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	}
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode CalculateTangent(Mat B) {
+    PetscFunctionBegin;
+
+    switch(ctx) {
+      case ctx_SNESSetJacobian:
+	ierr = GetTangent(); CHKERRQ(ierr);
+	//cerr << "Khh " << Khh << endl;
+	ierr = MatSetValues(B,
+	  RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
+	  ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
+	  &*(Khh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	//
+	for(int ee = 0;ee<6;ee++) {
+	  ierr = MatSetValues(B,
+	    RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
+	    ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
+	    &*(Kedgeh_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
+	    ColGlob[1+ee].size(),&*(ColGlob[1+ee].begin()),
+	    &*(Khedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  for(int eee = 0;eee<6;eee++) {
+	    ierr = MatSetValues(B,
+	      RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
+	      ColGlob[1+eee].size(),&*(ColGlob[1+eee].begin()),
+	      &*(Khh_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  for(int fff = 0;fff<4;fff++) {
+	    ierr = MatSetValues(B,
+	      RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
+	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
+	      &*(Khh_edgeface_data(ee,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  ierr = MatSetValues(B,
+	    RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
+	    ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
+	    &*(Khh_edgevolume_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
+	    ColGlob[1+ee].size(),&*(ColGlob[1+ee].begin()),
+	    &*(Khh_volumeedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	for(int ff = 0;ff<4;ff++) {
+	  ierr = MatSetValues(B,
+	    RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
+	    ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
+	    &*(Kfaceh_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
+	    ColGlob[1+6+ff].size(),&*(ColGlob[1+6+ff].begin()),
+	    &*(Khface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  for(int eee = 0;eee<6;eee++) {
+	    ierr = MatSetValues(B,
+	      RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
+	      ColGlob[1+eee].size(),&*(ColGlob[1+eee].begin()),
+	      &*(Khh_faceedge_data(ff,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  for(int fff = 0;fff<4;fff++) {
+	    ierr = MatSetValues(B,
+	      RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
+	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
+	      &*(Khh_faceface_data(ff,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  ierr = MatSetValues(B,
+	    RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
+	    ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
+	    &*(Khh_facevolume_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
+	    ColGlob[1+6+ff].size(),&*(ColGlob[1+6+ff].begin()),
+	    &*(Khh_volumeface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	ierr = MatSetValues(B,
+	  RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
+	  ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
+	  &*(Kvolumeh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValues(B,
+	  RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
+	  ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
+	  &*(Khvolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValues(B,
+	  RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
+	  ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
+	  &*(Khh_volumevolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+
+  }
+
+  PetscErrorCode CaluateFext(Vec f,double *t,Range& NeumannSideSet) {
+    PetscFunctionBegin;
+
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
+    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
+
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+	for(;siit!=hi_siit;siit++) {
+	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
+	  if(fit==NeumannSideSet.end()) continue;
+	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
+	  ierr = GetFExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
+	  //cerr << "FExt " << FExt << endl;
+	  //cerr << "FaceNodeIndices.size() " << FaceNodeIndices.size() << endl;
+	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
+	  ierr = VecSetValues(f,FaceNodeIndices.size(),&(FaceNodeIndices[0]),&*FExt.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	  for(int ee = 0;ee<3;ee++) {
+	    if(FaceEdgeIndices_data[ee].size()>0) {
+	      ierr = VecSetValues(f,FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),&*FExt_edge_data[ee].data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	    }
+	  }
+	  if(FaceIndices.size()>0) {
+	    ierr = VecSetValues(f,FaceIndices.size(),&(FaceIndices[0]),&*FExt_face.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode CalulateTangentExt(Mat B,double *t,Range& NeumannSideSet) {
+    PetscFunctionBegin;
+
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
+    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
+
+    switch(ctx) {
+      case ctx_SNESSetJacobian:
+	for(;siit!=hi_siit;siit++) {
+	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
+	  if(fit==NeumannSideSet.end()) continue;
+	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
+	  ierr = GetTangentExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
+	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	    &*(KExt_hh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  for(int ee = 0;ee<3;ee++) {
+	    if(FaceNodeIndices.size()==0) continue;
+	    ierr = MatSetValues(B,
+	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	      &*(KExt_edgeh_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(B,
+	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+	      &*(KExt_hedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    for(int eee = 0;eee<3;eee++) {
+	      ierr = MatSetValues(B,
+		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+		FaceEdgeIndices_data[eee].size(),&(FaceEdgeIndices_data[eee][0]),
+		&*(KExt_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    }
+	    ierr = MatSetValues(B,
+	      FaceIndices.size(),&(FaceIndices[0]),
+	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+	      &*(KExt_faceedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(B,
+	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+	      FaceIndices.size(),&(FaceIndices[0]),
+	      &*(KExt_edgeface_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  ierr = MatSetValues(B,
+	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
+	    &*(KExt_hface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    FaceIndices.size(),&(FaceIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	    &*(KExt_faceh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    FaceIndices.size(),&(FaceIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
+	    &*(KExt_faceface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()(Range& DirihletSideSet,Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
@@ -142,176 +364,17 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 	}
     }
 
-    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
-    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
-    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-
     double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
 
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-        ierr = GetFint(); CHKERRQ(ierr);
-	VecSetOption(snes_f, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
-	//cerr << "Fint_h " << Fint_h << endl;
-	ierr = VecSetValues(snes_f,RowGlob[i_nodes].size(),&(RowGlob[i_nodes][0]),&(Fint_h.data()[0]),ADD_VALUES); CHKERRQ(ierr);
-	for(int ee = 0;ee<6;ee++) {
-	  if(RowGlob[1+ee].size()>0) {
-	    ierr = VecSetValues(snes_f,RowGlob[1+ee].size(),&(RowGlob[1+ee][0]),&(Fint_h_edge_data[ee].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-	  }
-	}
-	for(int ff = 0;ff<4;ff++) {
-	  if(RowGlob[1+6+ff].size()>0) {
-	    ierr = VecSetValues(snes_f,RowGlob[1+6+ff].size(),&(RowGlob[1+6+ff][0]),&(Fint_h_face_data[ff].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-	  }
-	}
-	if(RowGlob[i_volume].size()>0) {
-	  ierr = VecSetValues(snes_f,RowGlob[i_volume].size(),&(RowGlob[i_volume][0]),&(Fint_h_volume.data()[0]),ADD_VALUES); CHKERRQ(ierr);
-	}
-	for(;siit!=hi_siit;siit++) {
-	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
-	  if(fit==NeumannSideSet.end()) continue;
-	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
-	  ierr = GetFExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
-	  //cerr << "FExt " << FExt << endl;
-	  //cerr << "FaceNodeIndices.size() " << FaceNodeIndices.size() << endl;
-	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
-	  ierr = VecSetValues(snes_f,FaceNodeIndices.size(),&(FaceNodeIndices[0]),&*FExt.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-	  for(int ee = 0;ee<3;ee++) {
-	    if(FaceEdgeIndices_data[ee].size()>0) {
-	      ierr = VecSetValues(snes_f,FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),&*FExt_edge_data[ee].data().begin(),ADD_VALUES); CHKERRQ(ierr);
-	    }
-	  }
-	  if(FaceIndices.size()>0) {
-	    ierr = VecSetValues(snes_f,FaceIndices.size(),&(FaceIndices[0]),&*FExt_face.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-	  }
-	}
+	ierr = CalulateFint(snes_f); CHKERRQ(ierr);
+	ierr = CaluateFext(snes_f,t,NeumannSideSet); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
-	ierr = GetTangent(); CHKERRQ(ierr);
-	//cerr << "Khh " << Khh << endl;
-	ierr = MatSetValues(*snes_B,
-	  RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
-	  ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
-	  &*(Khh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	//
-	for(int ee = 0;ee<6;ee++) {
-	  ierr = MatSetValues(*snes_B,
-	    RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
-	    ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
-	    &*(Kedgeh_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_B,
-	    RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
-	    ColGlob[1+ee].size(),&*(ColGlob[1+ee].begin()),
-	    &*(Khedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  for(int eee = 0;eee<6;eee++) {
-	    ierr = MatSetValues(*snes_B,
-	      RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
-	      ColGlob[1+eee].size(),&*(ColGlob[1+eee].begin()),
-	      &*(Khh_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  }
-	  for(int fff = 0;fff<4;fff++) {
-	    ierr = MatSetValues(*snes_B,
-	      RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
-	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
-	      &*(Khh_edgeface_data(ee,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  }
-	  ierr = MatSetValues(*snes_B,
-	    RowGlob[1+ee].size(),&*(RowGlob[1+ee].begin()),
-	    ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
-	    &*(Khh_edgevolume_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_B,
-	    RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
-	    ColGlob[1+ee].size(),&*(ColGlob[1+ee].begin()),
-	    &*(Khh_volumeedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	}
-	for(int ff = 0;ff<4;ff++) {
-	  ierr = MatSetValues(*snes_B,
-	    RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
-	    ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
-	    &*(Kfaceh_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_B,
-	    RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
-	    ColGlob[1+6+ff].size(),&*(ColGlob[1+6+ff].begin()),
-	    &*(Khface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  for(int eee = 0;eee<6;eee++) {
-	    ierr = MatSetValues(*snes_B,
-	      RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
-	      ColGlob[1+eee].size(),&*(ColGlob[1+eee].begin()),
-	      &*(Khh_faceedge_data(ff,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  }
-	  for(int fff = 0;fff<4;fff++) {
-	    ierr = MatSetValues(*snes_B,
-	      RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
-	      ColGlob[1+6+fff].size(),&*(ColGlob[1+6+fff].begin()),
-	      &*(Khh_faceface_data(ff,fff).data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  }
-	  ierr = MatSetValues(*snes_B,
-	    RowGlob[1+6+ff].size(),&*(RowGlob[1+6+ff].begin()),
-	    ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
-	    &*(Khh_facevolume_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_B,
-	    RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
-	    ColGlob[1+6+ff].size(),&*(ColGlob[1+6+ff].begin()),
-	    &*(Khh_volumeface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	}
-	ierr = MatSetValues(*snes_B,
-	  RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
-	  ColGlob[i_nodes].size(),&*(ColGlob[i_nodes].begin()),
-	  &*(Kvolumeh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValues(*snes_B,
-	  RowGlob[i_nodes].size(),&*(RowGlob[i_nodes].begin()),
-	  ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
-	  &*(Khvolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValues(*snes_B,
-	  RowGlob[i_volume].size(),&*(RowGlob[i_volume].begin()),
-	  ColGlob[i_volume].size(),&*(ColGlob[i_volume].begin()),
-	  &*(Khh_volumevolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	//
-	for(;siit!=hi_siit;siit++) {
-	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
-	  if(fit==NeumannSideSet.end()) continue;
-	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
-	  ierr = GetTangentExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
-	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_B,
-	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
-	    &*(KExt_hh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  for(int ee = 0;ee<3;ee++) {
-	    if(FaceNodeIndices.size()==0) continue;
-	    ierr = MatSetValues(*snes_B,
-	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
-	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
-	      &*(KExt_edgeh_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValues(*snes_B,
-	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
-	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
-	      &*(KExt_hedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	    for(int eee = 0;eee<3;eee++) {
-	      ierr = MatSetValues(*snes_B,
-		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
-		FaceEdgeIndices_data[eee].size(),&(FaceEdgeIndices_data[eee][0]),
-		&*(KExt_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	    }
-	    ierr = MatSetValues(*snes_B,
-	      FaceIndices.size(),&(FaceIndices[0]),
-	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
-	      &*(KExt_faceedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValues(*snes_B,
-	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
-	      FaceIndices.size(),&(FaceIndices[0]),
-	      &*(KExt_edgeface_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  }
-	  ierr = MatSetValues(*snes_B,
-	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
-	    &*(KExt_hface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_B,
-	    FaceIndices.size(),&(FaceIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
-	    &*(KExt_faceh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(*snes_B,
-	    FaceIndices.size(),&(FaceIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
-	    &*(KExt_faceface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	}
+	ierr = CalculateTangent(*snes_B); CHKERRQ(ierr);
+	ierr = CalulateTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");

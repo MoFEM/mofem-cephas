@@ -40,9 +40,13 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
   Range& SideSet1;
   Range& SideSet2;
   Range SideSet1_;
+  Range& SideSetArcLenght;
 
-  ArcLenghtElasticFEMethod(Interface& _moab,double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy(_moab,_lambda,_mu,_verbose), SideSet1(_SideSet1),SideSet2(_SideSet2)  {
+  ArcLenghtElasticFEMethod(Interface& _moab,double _lambda,double _mu,
+      Range &_SideSet1,Range &_SideSet2,Range _SideSetArcLenght,
+      int _verbose = 0): 
+      FEMethod_DriverComplexForLazy(_moab,_lambda,_mu,_verbose), 
+      SideSet1(_SideSet1),SideSet2(_SideSet2),SideSetArcLenght(_SideSetArcLenght)  {
 
     set_PhysicalEquationNumber(neohookean);
 
@@ -57,23 +61,58 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-    ierr = FEMethod_DriverComplexForLazy::operator()(SideSet1_,SideSet2); CHKERRQ(ierr);
+
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndices(); CHKERRQ(ierr);
+
+    Range& DirihletSideSet = SideSet1_;
+    Range& NeumannSideSet = SideSet2;
+
+    ierr = ApplyDirihletBC(DirihletSideSet); CHKERRQ(ierr);
+    if(Diagonal!=PETSC_NULL) {
+	if(DirihletBC.size()>0) {
+	  DirihletBCDiagVal.resize(DirihletBC.size());
+	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
+	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+	}
+    }
+
+    double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
+
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = CalulateFint(snes_f); CHKERRQ(ierr);
+	ierr = CaluateFext(snes_f,t,NeumannSideSet); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian:
+	ierr = CalculateTangent(*snes_B); CHKERRQ(ierr);
+	ierr = CalulateTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+
+    FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+    dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("SPATIAL_POSITION");
+    hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("SPATIAL_POSITION");
+
+  
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode preProcess() {
+  PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-	Diagonal = PETSC_NULL;
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = VecDuplicate(snes_f,&Diagonal); CHKERRQ(ierr);
-	//ierr = MatZeroEntries(*snes_B); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
+	ierr = MatDiagonalSet(*snes_B,Diagonal,ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
       }
       break;
       default:
@@ -86,29 +125,21 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
 struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
-  ArcLenghtElemFEMethod(Interface& _moab): FEMethod(_moab) {}
+  Vec F_lambda,b;
+  ArcLenghtElemFEMethod(Interface& _moab,Vec _F_lambda,Vec _b): FEMethod(_moab),F_lambda(_F_lambda),b(_b) {}
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = MatZeroEntries(*snes_B); CHKERRQ(ierr);
       }
       break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
     PetscFunctionReturn(0);
   }
 
@@ -144,16 +175,43 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	//ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
+	//ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
+	//ierr = MatDiagonalSet(*snes_B,Diagonal,ADD_VALUES); CHKERRQ(ierr);
+	//ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	//Matrix View
+	//MatView(*snes_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+	//std::string wait;
+	//std::cin >> wait;
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+
 };
 
 struct MatShellCtx {
   moabField& mField;
   Mat Aij;
   Vec F_lambda,b;
-  MatShellCtx(moabField& _mField,Mat _Aij): mField(_mField),Aij(_Aij) {
-    mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F_lambda);
-    mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&b);
-  };
+  MatShellCtx(moabField& _mField,Mat _Aij,Vec _F_lambda,Vec _b): mField(_mField),Aij(_Aij),F_lambda(_F_lambda),b(_b) {};
   PetscErrorCode get_lambda(Vec ksp_x,double *lambda) {
     PetscFunctionBegin;
     const MoFEMProblem *problem_ptr;
@@ -173,10 +231,7 @@ struct MatShellCtx {
     MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
     PetscFunctionReturn(0);
   }
-  ~MatShellCtx() {
-    VecDestroy(&F_lambda);
-    VecDestroy(&b);
-  }
+  ~MatShellCtx() { }
   friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 };
 PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
@@ -195,7 +250,8 @@ PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
 struct PCShellCtx {
   PC pc;
   Mat ShellAij,Aij;
-  PCShellCtx(Mat _ShellAij,Mat _Aij): ShellAij(_ShellAij),Aij(_Aij) {
+  Vec F_lambda,b;
+  PCShellCtx(Mat _ShellAij,Mat _Aij,Vec _F_lambda,Vec _b): ShellAij(_ShellAij),Aij(_Aij),F_lambda(_F_lambda),b(_b) {
     PCCreate(PETSC_COMM_WORLD,&pc);
   }
   ~PCShellCtx() {
@@ -343,12 +399,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
+  Vec F_lambda,b;
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F_lambda); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&b); CHKERRQ(ierr);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
   PetscInt m,n;
   MatGetLocalSize(Aij,&m,&n);
-  MatShellCtx* MatCtx = new MatShellCtx(mField,Aij);
+  MatShellCtx* MatCtx = new MatShellCtx(mField,Aij,F_lambda,b);
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)MatCtx,&ShellAij); CHKERRQ(ierr);
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_lenght_mult_shell); CHKERRQ(ierr);
@@ -364,9 +423,9 @@ int main(int argc, char *argv[]) {
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  ArcLenghtElasticFEMethod MyFE(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  ArcLenghtElasticFEMethod MyFE(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet2);
 
-  ArcLenghtElemFEMethod MyArcMethod(moab);
+  ArcLenghtElemFEMethod MyArcMethod(moab,F_lambda,b);
 
   moabSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
   
@@ -381,18 +440,19 @@ int main(int argc, char *argv[]) {
   ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
-  PCShellCtx* PCCtx = new PCShellCtx(Aij,ShellAij);
+  PCShellCtx* PCCtx = new PCShellCtx(Aij,ShellAij,F_lambda,b);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
   ierr = PCShellSetContext(pc,PCCtx); CHKERRQ(ierr);
   ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
   ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
 
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
   loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
   moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+
 
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
@@ -439,6 +499,8 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = VecDestroy(&F_lambda); CHKERRQ(ierr);
+  ierr = VecDestroy(&b); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellAij); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   delete MatCtx;

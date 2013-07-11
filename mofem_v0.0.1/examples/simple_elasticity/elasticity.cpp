@@ -113,9 +113,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",5); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
@@ -166,9 +166,9 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
       //Set Direction of Traction On SideSet2
-      traction[0] = 0; //X
+      traction[0] = 1; //X
       traction[1] = 0; //Y 
-      traction[2] = 1; //Z
+      traction[2] = 0; //Z
       //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
       ierr = ElasticFEMethod::NeumannBC(traction,SideSet2); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
 
   //Assemble F and Aij
   const double YoungModulus = 1;
-  const double PoissonRatio = 0.25;
+  const double PoissonRatio = 0.0;
   MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
