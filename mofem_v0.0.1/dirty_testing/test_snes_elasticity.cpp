@@ -177,10 +177,9 @@ struct MatShellCtx {
     VecDestroy(&F_lambda);
     VecDestroy(&b);
   }
+  friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 };
-
-
-PetscErrorCode mult_shell(Mat A,Vec x,Vec f) {
+PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   PetscFunctionBegin;
   void *void_ctx;
   MatShellGetContext(A,&void_ctx);
@@ -190,6 +189,39 @@ PetscErrorCode mult_shell(Mat A,Vec x,Vec f) {
   ierr = ctx->get_lambda(x,&lambda); CHKERRQ(ierr);
   ierr = ctx->get_lambda(f,&res_lambda); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"lambda = %6.4e res_lambda = %6.4e\n",lambda,res_lambda);
+  PetscFunctionReturn(0);
+}
+
+struct PCShellCtx {
+  PC pc;
+  Mat ShellAij,Aij;
+  PCShellCtx(Mat _ShellAij,Mat _Aij): ShellAij(_ShellAij),Aij(_Aij) {
+    PCCreate(PETSC_COMM_WORLD,&pc);
+  }
+  ~PCShellCtx() {
+    PCDestroy(&pc);
+  }
+  friend PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
+  friend PetscErrorCode pc_setup_arc_length(PC pc);
+};
+PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
+  PetscFunctionBegin;
+  void *void_ctx;
+  ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+  PCShellCtx *ctx = (PCShellCtx*)void_ctx;
+  ierr = PCApply(ctx->pc,pc_f,pc_x); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode pc_setup_arc_length(PC pc) {
+  PetscFunctionBegin;
+  void *void_ctx;
+  ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+  PCShellCtx *ctx = (PCShellCtx*)void_ctx;
+  ierr = PCSetFromOptions(ctx->pc); CHKERRQ(ierr);
+  MatStructure flag;
+  ierr = PCGetOperators(pc,&ctx->ShellAij,&ctx->Aij,&flag); CHKERRQ(ierr);
+  ierr = PCSetOperators(ctx->pc,ctx->ShellAij,ctx->Aij,flag); CHKERRQ(ierr);
+  ierr = PCSetUp(ctx->pc); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -319,7 +351,7 @@ int main(int argc, char *argv[]) {
   MatShellCtx* MatCtx = new MatShellCtx(mField,Aij);
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)MatCtx,&ShellAij); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))mult_shell); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_lenght_mult_shell); CHKERRQ(ierr);
 
   SetPositionsEntMethod set_positions(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,set_positions); CHKERRQ(ierr);
@@ -349,8 +381,11 @@ int main(int argc, char *argv[]) {
   ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
-
-
+  PCShellCtx* PCCtx = new PCShellCtx(Aij,ShellAij);
+  ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
+  ierr = PCShellSetContext(pc,PCCtx); CHKERRQ(ierr);
+  ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
+  ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
 
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
@@ -407,6 +442,7 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&ShellAij); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   delete MatCtx;
+  delete PCCtx;
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
