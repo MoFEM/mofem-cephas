@@ -36,16 +36,18 @@ static char help[] = "...\n\n";
 
 struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
-
+  Vec F_lambda,b;
   Range& SideSet1;
   Range& SideSet2;
   Range SideSet1_;
   Range& SideSetArcLenght;
 
   ArcLenghtElasticFEMethod(Interface& _moab,double _lambda,double _mu,
+      Vec _F_lambda,Vec _b,
       Range &_SideSet1,Range &_SideSet2,Range _SideSetArcLenght,
       int _verbose = 0): 
       FEMethod_DriverComplexForLazy(_moab,_lambda,_mu,_verbose), 
+      F_lambda(_F_lambda),b(_b),
       SideSet1(_SideSet1),SideSet2(_SideSet2),SideSetArcLenght(_SideSetArcLenght)  {
 
     set_PhysicalEquationNumber(neohookean);
@@ -58,6 +60,23 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
     SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
 
   }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    ierr = FEMethod_DriverComplexForLazy::preProcess(); CHKERRQ(ierr);
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
@@ -77,27 +96,26 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	}
     }
 
-    double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
-
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-	ierr = CalulateFint(snes_f); CHKERRQ(ierr);
-	ierr = CaluateFext(snes_f,t,NeumannSideSet); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetJacobian:
-	ierr = CalculateTangent(*snes_B); CHKERRQ(ierr);
-	ierr = CalulateTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
+	  ierr = CalulateFint(snes_f); CHKERRQ(ierr);
+	  double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
+	  ierr = CaluateFext(F_lambda,t,NeumannSideSet); CHKERRQ(ierr);
+	}
+	break;
+      case ctx_SNESSetJacobian: {
+	  ierr = CalculateTangent(*snes_B); CHKERRQ(ierr);
+	  double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
+	  ierr = CalulateTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
+	}
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
 
-
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
     dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("SPATIAL_POSITION");
     hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("SPATIAL_POSITION");
-
   
     PetscFunctionReturn(0);
   }
@@ -179,6 +197,11 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionBegin;
     switch(ctx) {
       case ctx_SNESSetFunction: { 
+	ierr = VecGhostUpdateBegin(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(F_lambda); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(F_lambda); CHKERRQ(ierr);
+	ierr = VecAXPY(snes_f,1.,F_lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
@@ -423,7 +446,10 @@ int main(int argc, char *argv[]) {
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  ArcLenghtElasticFEMethod MyFE(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet2);
+  ArcLenghtElasticFEMethod MyFE(moab,
+    LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
+    F_lambda,b,
+    SideSet1,SideSet2,SideSet2);
 
   ArcLenghtElemFEMethod MyArcMethod(moab,F_lambda,b);
 

@@ -70,7 +70,6 @@ struct SetPositionsEntMethod: public moabField::EntMethod {
 
 struct ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
-
   Range& SideSet1;
   Range& SideSet2;
   Range SideSet1_;
