@@ -69,6 +69,9 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
       	ierr = VecZeroEntries(F_lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      	ierr = VecZeroEntries(b); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(b,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(b,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
@@ -119,6 +122,11 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
     dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("SPATIAL_POSITION");
     hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("SPATIAL_POSITION");
+    for(;dit!=hi_dit;dit++) {
+      if(dit->get_ent_type()!=MBVERTEX) continue;
+      if(find(SideSetArcLenght.begin(),SideSetArcLenght.end(),dit->get_ent())==SideSetArcLenght.end()) continue;
+      ierr = VecSetValue(b,dit->get_petsc_gloabl_dof_idx(),2*dit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
+    }
   
     PetscFunctionReturn(0);
   }
@@ -127,6 +135,14 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
     PetscFunctionBegin;
     switch(ctx) {
       case ctx_SNESSetFunction: { 
+	ierr = VecGhostUpdateBegin(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(F_lambda); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(F_lambda); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(b,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(b,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(b); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(b); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
@@ -146,8 +162,12 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
 struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
+  Vec GhostLambda;
   Vec F_lambda,b;
-  ArcLenghtElemFEMethod(Interface& _moab,Vec _F_lambda,Vec _b): FEMethod(_moab),F_lambda(_F_lambda),b(_b) {}
+  ArcLenghtElemFEMethod(Interface& _moab,Vec _F_lambda,Vec _b): FEMethod(_moab),F_lambda(_F_lambda),b(_b) {
+    PetscInt ghosts[1] = {0};
+    VecCreateGhost(PETSC_COMM_WORLD,1,1,1,ghosts,&GhostLambda);
+  }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -164,8 +184,6 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  double lambda;
-
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
@@ -177,10 +195,11 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
     switch(ctx) {
       case ctx_SNESSetFunction: {
-	double res_lambda;;
+	double res_lambda,lambda;
 	PetscScalar *array;
 	ierr = VecGetArray(snes_x,&array); CHKERRQ(ierr);
 	lambda = array[dit->get_petsc_local_dof_idx()];
+	ierr = VecSetValue(GhostLambda,0,lambda,INSERT_VALUES); CHKERRQ(ierr);
 	res_lambda = lambda - 1.;
 	ierr = VecRestoreArray(snes_x,&array); CHKERRQ(ierr);
 	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),res_lambda,ADD_VALUES); CHKERRQ(ierr);
@@ -202,11 +221,12 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionBegin;
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-	ierr = VecGhostUpdateBegin(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(F_lambda); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(F_lambda); CHKERRQ(ierr);
-	ierr = VecAXPY(snes_f,lambda,F_lambda); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(GhostLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(GhostLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	double *lambda;
+	ierr = VecGetArray(GhostLambda,&lambda); CHKERRQ(ierr);
+	ierr = VecAXPY(snes_f,*lambda,F_lambda); CHKERRQ(ierr);
+	ierr = VecRestoreArray(GhostLambda,&lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
@@ -369,7 +389,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_col("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
   //elem data
   ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);

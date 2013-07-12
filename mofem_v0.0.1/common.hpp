@@ -485,6 +485,7 @@ struct MoFEMField {
     * \param _meshset meshset which keeps entities for this field
     */
   MoFEMField(Interface &moab,const EntityHandle _meshset);					
+  inline EntityHandle get_meshset() const { return meshset; };
   inline BitFieldId get_id() const { return *((BitFieldId*)tag_id_data); }; 			
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };	
   inline FieldSpace get_space() const { return *tag_space_data; };
@@ -501,6 +502,7 @@ template <typename T>
 struct interface_MoFEMField {
   const T *field_ptr;
   interface_MoFEMField(const T *_field_ptr): field_ptr(_field_ptr) {};
+  inline EntityHandle get_meshset() const { return field_ptr->get_meshset(); };
   inline BitFieldId get_id() const { return field_ptr->get_id(); };
   inline unsigned int get_bit_number() const { return field_ptr->get_bit_number(); }
   inline string get_name() const { return field_ptr->get_name(); };
@@ -627,6 +629,7 @@ struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
   unsigned int part;
   inline DofIdx get_petsc_gloabl_dof_idx() const { return petsc_gloabl_dof_idx;  }
   inline DofIdx get_petsc_local_dof_idx() const { return petsc_local_dof_idx; }
+  inline DofIdx get_part() const { return part;  }
   NumeredDofMoFEMEntity(const DofIdx idx,const DofMoFEMEntity* _DofMoFEMEntity_ptr);
   inline bool operator<(const NumeredDofMoFEMEntity& _dof) const { return get_unique_id()<_dof.get_unique_id(); }
   friend ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e);
@@ -641,6 +644,7 @@ struct interface_NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<T> {
   inline DofIdx get_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->dof_idx; }
   inline DofIdx get_petsc_gloabl_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_petsc_gloabl_dof_idx();  }
   inline DofIdx get_petsc_local_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_petsc_local_dof_idx(); }
+  inline DofIdx get_part() const { return interface_DofMoFEMEntity<T>::field_ptr->get_part();;  }
 };
 
 /**
