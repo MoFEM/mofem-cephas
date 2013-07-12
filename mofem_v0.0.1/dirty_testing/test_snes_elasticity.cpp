@@ -327,10 +327,12 @@ PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   MatShellGetContext(A,&void_ctx);
   MatShellCtx *ctx = (MatShellCtx*)void_ctx;
   ierr = MatMult(ctx->Aij,x,f); CHKERRQ(ierr);
-  double lambda,res_lambda;
+  double b_dot_x;
+  ierr = VecDot(ctx->b,x,&b_dot_x); CHKERRQ(ierr);
+  double lambda;
   ierr = ctx->set_lambda(x,&lambda,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ctx->set_lambda(f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"lambda = %6.4e res_lambda = %6.4e\n",lambda,res_lambda);
+  PetscPrintf(PETSC_COMM_WORLD,"lambda = %6.4e\n",lambda);
+  //ierr = VecAXPY(f,-lambda,ctx->F_lambda); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -370,9 +372,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   double lambda;
   lambda = (res_lambda - b_dot_x_int)/b_dot_x_lambda;
   if(lambda != lambda) SETERRQ(PETSC_COMM_SELF,1,"b \\dot x_lambda = 0\nCheck constrint vector, SideSet, ect.");
-  
-
-
+  //ierr = ctx->set_lambda(x,&lambda,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode pc_setup_arc_length(PC pc) {
