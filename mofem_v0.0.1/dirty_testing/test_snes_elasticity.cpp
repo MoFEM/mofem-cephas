@@ -255,7 +255,6 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 	ierr = VecAssemblyEnd(GhostLambda); CHKERRQ(ierr);
 	double *lambda;
 	ierr = VecGetArray(GhostLambda,&lambda); CHKERRQ(ierr);
-	//double lambda = 1;
 	ierr = VecAXPY(snes_f,*lambda,F_lambda); CHKERRQ(ierr);
 	ierr = VecRestoreArray(GhostLambda,&lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -283,7 +282,6 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-
 };
 
 struct MatShellCtx {
@@ -292,7 +290,7 @@ struct MatShellCtx {
   Mat Aij;
   Vec F_lambda,b;
   MatShellCtx(moabField& _mField,Mat _Aij,Vec _F_lambda,Vec _b): mField(_mField),Aij(_Aij),F_lambda(_F_lambda),b(_b) {};
-  PetscErrorCode get_lambda(Vec ksp_x,double *lambda) {
+  PetscErrorCode set_lambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
     PetscFunctionBegin;
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problems_database("ELASTIC_MECHANICS",&problem_ptr); CHKERRQ(ierr);
@@ -305,7 +303,16 @@ struct MatShellCtx {
     if(lambda_dof_index!=-1) {
       PetscScalar *array;
       ierr = VecGetArray(ksp_x,&array); CHKERRQ(ierr);
-      *lambda = array[lambda_dof_index];
+      switch(scattermode) {
+	case SCATTER_FORWARD:
+	  *lambda = array[lambda_dof_index];
+	  break;
+	case SCATTER_REVERSE:
+	  array[lambda_dof_index] = *lambda;
+	  break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
       ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
     } 
     MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
@@ -321,8 +328,8 @@ PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   MatShellCtx *ctx = (MatShellCtx*)void_ctx;
   ierr = MatMult(ctx->Aij,x,f); CHKERRQ(ierr);
   double lambda,res_lambda;
-  ierr = ctx->get_lambda(x,&lambda); CHKERRQ(ierr);
-  ierr = ctx->get_lambda(f,&res_lambda); CHKERRQ(ierr);
+  ierr = ctx->set_lambda(x,&lambda,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = ctx->set_lambda(f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"lambda = %6.4e res_lambda = %6.4e\n",lambda,res_lambda);
   PetscFunctionReturn(0);
 }
@@ -330,8 +337,9 @@ PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
 struct PCShellCtx {
   PC pc;
   Mat ShellAij,Aij;
-  Vec F_lambda,b;
-  PCShellCtx(Mat _ShellAij,Mat _Aij,Vec _F_lambda,Vec _b): ShellAij(_ShellAij),Aij(_Aij),F_lambda(_F_lambda),b(_b) {
+  Vec x_lambda;
+  PCShellCtx(Mat _ShellAij,Mat _Aij,Vec _x_lambda): 
+    ShellAij(_ShellAij),Aij(_Aij),x_lambda(_x_lambda) {
     PCCreate(PETSC_COMM_WORLD,&pc);
   }
   ~PCShellCtx() {
@@ -344,8 +352,27 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   PetscFunctionBegin;
   void *void_ctx;
   ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
-  PCShellCtx *ctx = (PCShellCtx*)void_ctx;
-  ierr = PCApply(ctx->pc,pc_f,pc_x); CHKERRQ(ierr);
+  PCShellCtx *PCCtx = (PCShellCtx*)void_ctx;
+  void *void_MatCtx;
+  MatShellGetContext(PCCtx->ShellAij,&void_MatCtx);
+  MatShellCtx *MatCtx = (MatShellCtx*)void_MatCtx;
+  double res_lambda;
+  ierr = MatCtx->set_lambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = PCApply(PCCtx->pc,pc_f,pc_x); CHKERRQ(ierr);
+  ierr = PCApply(PCCtx->pc,MatCtx->F_lambda,PCCtx->x_lambda); CHKERRQ(ierr);
+  // b \dot pc_x - res_lambda = 0
+  // pc_x = x_int + lambda*x_lambda
+  // b \dot x_int + lambda*(b \dot x_lambda) - res_lambda = 0
+  // lambda = (res_lambda - b \dot x_int)/(b \cdot x_lambda)
+  double b_dot_x_int,b_dot_x_lambda;
+  ierr = VecDot(MatCtx->b,pc_x,&b_dot_x_int); CHKERRQ(ierr);
+  ierr = VecDot(MatCtx->b,PCCtx->x_lambda,&b_dot_x_lambda); CHKERRQ(ierr);
+  double lambda;
+  lambda = (res_lambda - b_dot_x_int)/b_dot_x_lambda;
+  if(lambda != lambda) SETERRQ(PETSC_COMM_SELF,1,"b \\dot x_lambda = 0\nCheck constrint vector, SideSet, ect.");
+  
+
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode pc_setup_arc_length(PC pc) {
@@ -478,9 +505,11 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-  Vec F_lambda,b;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F_lambda); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&b); CHKERRQ(ierr);
+  Vec F_lambda,b,x_lambda;
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F_lambda); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&b); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&x_lambda); CHKERRQ(ierr);
+
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
@@ -522,7 +551,7 @@ int main(int argc, char *argv[]) {
   ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
-  PCShellCtx* PCCtx = new PCShellCtx(Aij,ShellAij,F_lambda,b);
+  PCShellCtx* PCCtx = new PCShellCtx(Aij,ShellAij,x_lambda);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
   ierr = PCShellSetContext(pc,PCCtx); CHKERRQ(ierr);
   ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
@@ -584,6 +613,7 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = VecDestroy(&F_lambda); CHKERRQ(ierr);
   ierr = VecDestroy(&b); CHKERRQ(ierr);
+  ierr = VecDestroy(&x_lambda); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellAij); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   delete MatCtx;
