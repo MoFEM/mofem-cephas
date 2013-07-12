@@ -41,6 +41,8 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
   Range& SideSet2;
   Range SideSet1_;
   Range& SideSetArcLenght;
+  Range SideSetArcLenght_;
+
 
   ArcLenghtElasticFEMethod(Interface& _moab,double _lambda,double _mu,
       Vec _F_lambda,Vec _b,
@@ -58,6 +60,8 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
     SideSet1_.insert(SideSet1.begin(),SideSet1.end());
     SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
     SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
+
+    rval = moab.get_connectivity(SideSetArcLenght,SideSetArcLenght_,true); CHKERR_THROW(rval);
 
   }
 
@@ -119,15 +123,24 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
 
-    FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
-    dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("SPATIAL_POSITION");
-    hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("SPATIAL_POSITION");
-    for(;dit!=hi_dit;dit++) {
-      if(dit->get_ent_type()!=MBVERTEX) continue;
-      if(find(SideSetArcLenght.begin(),SideSetArcLenght.end(),dit->get_ent())==SideSetArcLenght.end()) continue;
-      ierr = VecSetValue(b,dit->get_petsc_gloabl_dof_idx(),2*dit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
-    }
+    switch(ctx) {
+      case ctx_SNESSetFunction: { 
   
+	FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+	dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("SPATIAL_POSITION");
+	hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("SPATIAL_POSITION");
+	for(;dit!=hi_dit;dit++) {
+	  if(dit->get_ent_type()!=MBVERTEX) continue;
+	  if(find(SideSetArcLenght_.begin(),SideSetArcLenght_.end(),dit->get_ent())==SideSetArcLenght.end()) continue;
+	  ierr = VecSetValue(b,dit->get_petsc_gloabl_dof_idx(),2*dit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
+	}
+
+      }
+      break;
+      default:
+      break;
+    }
+ 
     PetscFunctionReturn(0);
   }
 
@@ -143,6 +156,7 @@ struct ArcLenghtElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	ierr = VecGhostUpdateEnd(b,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(b); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(b); CHKERRQ(ierr);
+	//ierr = VecView(b,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
