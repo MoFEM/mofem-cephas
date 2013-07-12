@@ -1,0 +1,26 @@
+reset
+
+create sphere radius 1.05 
+create sphere radius 0.95
+
+subtract volume 2 from volume 1
+
+ brick x 4 y 4 z 4
+move Volume 4 x 0 y -2 z 0 include_merged
+subtract volume 4 from volume 3
+
+create Cylinder height 4 radius 0.2
+
+rotate Volume 5 angle 90  about X include_merged
+move Volume 5 x 0.05 y 0 z 0 include_merged  
+
+chop volume 3 with volume 5 keep
+
+delete volume 3
+delete volume 5
+
+volume all scheme Tetmesh
+volume all size auto factor 7
+mesh volume all
+
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/dome.cub" overwrite
