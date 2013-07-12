@@ -265,10 +265,10 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionBegin;
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-	ierr = VecGhostUpdateBegin(GhostLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(GhostLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(GhostLambda); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(GhostLambda); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(GhostLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(GhostLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	double *lambda;
 	ierr = VecGetArray(GhostLambda,&lambda); CHKERRQ(ierr);
 	ierr = VecAXPY(snes_f,*lambda,F_lambda); CHKERRQ(ierr);
