@@ -138,8 +138,10 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	for(;dit!=hi_dit;dit++) {
 	  if(dit->get_ent_type()!=MBVERTEX) continue;
 	  if(find(SideSetArcLenght_.begin(),SideSetArcLenght_.end(),dit->get_ent())==SideSetArcLenght.end()) continue;
-	  ierr = VecSetValue(b,dit->get_petsc_gloabl_dof_idx(),1,INSERT_VALUES); CHKERRQ(ierr);
-	  ierr = VecSetValue(db,dit->get_petsc_gloabl_dof_idx(),1,INSERT_VALUES); CHKERRQ(ierr);
+	  //(x0+dx)*(x0+dx) - s = 0
+	  //x0*x0 + 2x0*dx + dx*dx - s = 0
+	  ierr = VecSetValue(b,dit->get_petsc_gloabl_dof_idx(),dit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
+	  ierr = VecSetValue(db,dit->get_petsc_gloabl_dof_idx(),2.*dit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
 	}
       }
       break;
@@ -158,13 +160,9 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	ierr = VecGhostUpdateEnd(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(F_lambda); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(F_lambda); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(b,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(b,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(b); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(b); CHKERRQ(ierr);
 	//ierr = VecView(b,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(db); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(db); CHKERRQ(ierr);
       }
@@ -241,13 +239,14 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
       case ctx_SNESSetFunction: {
 	double res_lambda,lambda;
 	PetscScalar *array;
+	res_lambda = b_dot_x - (s0 + s);
+	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),res_lambda,ADD_VALUES); CHKERRQ(ierr);
+	//
 	ierr = VecGetArray(snes_x,&array); CHKERRQ(ierr);
 	lambda = array[dit->get_petsc_local_dof_idx()];
 	ierr = VecRestoreArray(snes_x,&array); CHKERRQ(ierr);
 	ierr = VecSetValue(GhostLambda,0,lambda,INSERT_VALUES); CHKERRQ(ierr);
-	res_lambda = /*lambda - s;*/b_dot_x - (s0 + s);
-	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),res_lambda,ADD_VALUES); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"snes res_lambda = %6.4e, b_dot_d - s0 = %6.4e\n",res_lambda,b_dot_x-s0);  
+	PetscPrintf(PETSC_COMM_WORLD,"snes res_lambda = %6.4e, b_dot_d - s0 = %6.4e lambda = %6.4e\n",res_lambda,b_dot_x-s0,lambda);  
       }
       break; 
       case ctx_SNESSetJacobian: {
@@ -280,10 +279,6 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
       }
       break;
       case ctx_SNESSetJacobian: {
-	//ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-	//ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-	//ierr = MatDiagonalSet(*snes_B,Diagonal,ADD_VALUES); CHKERRQ(ierr);
-	//ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	//Matrix View
@@ -381,7 +376,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   ierr = PCApply(PCCtx->pc,MatCtx->F_lambda,PCCtx->x_lambda); CHKERRQ(ierr);
   // b \dot pc_x - res_lambda = 0
   // pc_x = x_int + lambda*x_lambda
-  // b \dot x_int + lambda*(b \dot x_lambda) 0 res_lambda = 0
+  // b \dot x_int + lambda*(b \dot x_lambda) - res_lambda = 0
   // lambda = (res_lambda - b \dot x_int)/(b \cdot x_lambda)
   double db_dot_x_int,db_dot_x_lambda;
   ierr = VecDot(MatCtx->db,pc_x,&db_dot_x_int); CHKERRQ(ierr);
@@ -596,7 +591,7 @@ int main(int argc, char *argv[]) {
 
   ierr = MyFE.set_t_val(-1e-4); CHKERRQ(ierr);
 
-  for(int step = 1;step<15; step++) {
+  for(int step = 1;step<20; step++) {
     ierr = MyArcMethod.set_s(5e-2); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D\n",step); CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
