@@ -32,8 +32,6 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = "...\n\n";
-
 struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
   Vec F_lambda,b,db;
@@ -403,6 +401,11 @@ PetscErrorCode pc_setup_arc_length(PC pc) {
   PetscFunctionReturn(0);
 }
 
+static char help[] = "\
+-my_file mesh file name\n\
+-my_sr reduction of step size\n\
+-my_ms maximal number of steps\n\n";
+
 int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -417,6 +420,18 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+  }
+
+  PetscScalar step_size_reduction;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    step_size_reduction = 1.;
+  }
+
+  PetscInt max_steps;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ms",&max_steps,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    max_steps = 5;
   }
  
   const char *option;
@@ -439,6 +454,7 @@ int main(int argc, char *argv[]) {
   rval = moab.tag_get_by_ptr(th_step,&root,1,tag_data_step); CHKERR(rval);
   int& step= *(int *)tag_data_step[0];
   //end of data stored for restart
+  step_size *= step_size_reduction;
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -613,7 +629,7 @@ int main(int argc, char *argv[]) {
 
   int its_d = 4;
   double gamma = 0.5;
-  for(;step<200; step++) {
+  for(;step<max_steps; step++) {
     ierr = MyArcMethod.set_s(step_size); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D dlambda = %6.4e\n",step,step_size); CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
