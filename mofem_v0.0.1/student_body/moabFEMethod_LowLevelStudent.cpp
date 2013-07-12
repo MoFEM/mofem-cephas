@@ -127,8 +127,10 @@ PetscErrorCode MapDataTET(It &it,
       volume[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
       volume[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
       break;
+    case MBENTITYSET:
+      break;
     default:
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
   PetscFunctionReturn(0);
 }
@@ -309,6 +311,8 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	      isL2 = true;
 	    }
 	    break;
+	    case NoField:
+	    break;
 	    default:
 	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
 	  }
@@ -342,6 +346,8 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	      ierr = SetMaxOrder(miit, NULL, NULL, &(maxOrderElemL2) ); CHKERRQ(ierr);
 	      isL2 = true;
 	    }
+	    break;
+	    case NoField:
 	    break;
 	    default:
 	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -462,6 +468,8 @@ PetscErrorCode FEMethod_LowLevelStudent::DataOp() {
 	      ierr = SetMaxOrder(miit2, NULL, NULL, &(maxOrderElemL2) ); CHKERRQ(ierr);
 	      isL2 = true;
 	    }
+	    break;
+	    case NoField: 
 	    break;
 	    default:
 	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");

@@ -1070,6 +1070,11 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
   	  case L2:
   	   adj_ents.insert(fe_ent);
   	   break;
+	  case NoField: {
+	      EntityHandle field_meshset = miit->get_meshset();
+	      adj_ents.insert(field_meshset);
+	   }
+	   break;
       	  default:
   	   SETERRQ(PETSC_COMM_SELF,1,"this fild is not implemented for TET finite element");
 	 }
