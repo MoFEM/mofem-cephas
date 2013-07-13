@@ -529,9 +529,9 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);
 
     //set app. order
-    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",5); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",5); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",5); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",4); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
   }
 
@@ -625,7 +625,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = MyFE.set_t_val(-1e-4); CHKERRQ(ierr);
+  ierr = MyFE.set_t_val(1e-4); CHKERRQ(ierr);
 
   int its_d = 4;
   double gamma = 0.5;
@@ -640,6 +640,13 @@ int main(int argc, char *argv[]) {
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
 	rval = moab.write_file("restart.h5m"); CHKERR_PETSC(rval);
+	EntityHandle out_meshset;
+	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+	ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+	ostringstream sss;
+	sss << "out_" << step << ".vtk";
+	rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
       }
     }
   }

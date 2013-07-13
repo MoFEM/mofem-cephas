@@ -44,5 +44,9 @@ file(COPY
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/../meshes/LShapeDense.cub
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../meshes/dome.cub
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
 
 
