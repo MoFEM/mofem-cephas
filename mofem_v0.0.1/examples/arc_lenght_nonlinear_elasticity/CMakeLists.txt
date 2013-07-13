@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+
 #include subdirectory
-include_directories("${PROJECT_SOURCE_DIR}/examples")
+include_directories("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
 
-#add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_elasticity")
+add_executable(arc_lenght_nonlinear_elasticity arc_lenght_nonlinear_elasticity.cpp)
+target_link_libraries(arc_lenght_nonlinear_elasticity mofem_Field ${PROJECT_LIBS})
 
+cm_export_file("../../meshes/dome.cub" "/" export_files_arc_lenght_nonlinearelasticity)
 
-
-
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

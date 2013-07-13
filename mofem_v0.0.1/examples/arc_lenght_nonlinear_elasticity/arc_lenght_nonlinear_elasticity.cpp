@@ -25,7 +25,20 @@
 #include "PostProcDisplacementOnMesh.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
+#include "moabField.hpp"
+#include "moabField_Core.hpp"
+#include "moabFEMethod_UpLevelStudent.hpp"
+#include "cholesky.hpp"
+#include <petscksp.h>
+
+#include "moabSnes.hpp"
+#include "moabFEMethod_ComplexForLazy.hpp"
+#include "moabFEMethod_DriverComplexForLazy.hpp"
+
+#include "complex_for_lazy.h"
+
 #include "nonlinear_elasticity.hpp"
+
 
 using namespace MoFEM;
 
