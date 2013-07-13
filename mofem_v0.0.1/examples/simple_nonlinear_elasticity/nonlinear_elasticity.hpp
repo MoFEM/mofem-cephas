@@ -17,6 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef __NONLINEAR_ELASTICITY_HPP__
+#define __NONLINEAR_ELASTICITY_HPP__
+
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
@@ -29,7 +32,7 @@
 
 #include "complex_for_lazy.h"
 
-using namespace MoFEM;
+namespace MoFEM {
 
 struct SetPositionsEntMethod: public moabField::EntMethod {
     ErrorCode rval;
@@ -98,3 +101,6 @@ struct ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
 };
 
+}
+
+#endif //__NONLINEAR_ELASTICITY_HPP__
