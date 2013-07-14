@@ -263,7 +263,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
       dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
       hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
       for(;dit!=hi_dit;dit++) {
-	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",dit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
+	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
 	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
       }
     }

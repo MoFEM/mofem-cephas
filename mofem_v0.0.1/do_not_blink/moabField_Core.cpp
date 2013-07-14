@@ -42,8 +42,8 @@ moabField_Core::moabField_Core(Interface& _moab,int _verbose):
   const int def_part = -1;
   rval = moab.tag_get_handle("PARTITION",1,MB_TYPE_INTEGER,th_Part,MB_TAG_CREAT|MB_TAG_SPARSE,&def_part); CHKERR(rval);
   //Tags Ref
-  rval = moab.tag_get_handle("_RefParentHandle",sizeof(EntityHandle),MB_TYPE_OPAQUE,th_RefParentHandle,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&no_handle); CHKERR(rval); //CHKERR_THROW(rval);
-  //rval = moab.tag_get_handle("_RefParentHandle",1,MB_TYPE_HANDLE,th_RefParentHandle,MB_TAG_CREAT|MB_TAG_SPARSE,&no_handle); CHKERR(rval); CHKERR_THROW(rval);
+  //rval = moab.tag_get_handle("_RefParentHandle",sizeof(EntityHandle),MB_TYPE_OPAQUE,th_RefParentHandle,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&no_handle); CHKERR(rval); //CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_RefParentHandle",1,MB_TYPE_HANDLE,th_RefParentHandle,MB_TAG_CREAT|MB_TAG_SPARSE,&root_meshset); CHKERR(rval); CHKERR_THROW(rval);
   const int def_type[] = {0,0};
   rval = moab.tag_get_handle("_RefType",2,MB_TYPE_INTEGER,th_RefType,MB_TAG_CREAT|MB_TAG_SPARSE,def_type); CHKERR(rval);
   BitRefLevel def_bit_level = 0;
