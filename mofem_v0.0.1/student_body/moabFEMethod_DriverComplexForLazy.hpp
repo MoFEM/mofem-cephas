@@ -52,19 +52,25 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
       FEMethod_ComplexForLazy(_moab,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
 
     vector<DofIdx> DirihletBC;
-    PetscErrorCode ApplyDirihletBC(Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z) {
+    PetscErrorCode ApplyDirihletBC(Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z,bool zero_bc = true) {
       PetscFunctionBegin;
       //Dirihlet form SideSet1
-      DirihletBC.resize(0);
+      if(zero_bc) DirihletBC.resize(0);
       Range::iterator siit1 = SideSet.begin();
       for(;siit1!=SideSet.end();siit1++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
 	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
 	for(;riit!=hi_riit;riit++) {
 	  if(riit->get_name()!=field_name) continue;
-	  if(riit->get_dof_rank()==0) if(!(bc&fixed_x)) continue;
-	  if(riit->get_dof_rank()==1) if(!(bc&fixed_y)) continue;
-	  if(riit->get_dof_rank()==2) if(!(bc&fixed_z)) continue;
+    	  unsigned int my_bc = 0;
+	  switch(riit->get_dof_rank()) {
+	    case 0: my_bc = fixed_x; break;
+	    case 1: my_bc = fixed_y; break;
+	    case 2: my_bc = fixed_z; break;
+	    default:
+	      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	  }
+	  if((bc&my_bc) == 0) continue;
 	  // all fixed
 	  // if some ranks are selected then we could apply BC in particular direction
 	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
@@ -87,7 +93,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
       for(;dit!=DirihletBC.end();dit++) {
 	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
 	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-	for(int ee = 0;ee<6;ee++) {
+	for(int ee = 0;ee<3;ee++) {
 	  it = find(FaceEdgeIndices_data[ee].begin(),FaceEdgeIndices_data[ee].end(),*dit);
 	  if(it!=FaceEdgeIndices_data[ee].end()) *it = -1; // of idx is set -1 row is not assembled
 	}
@@ -261,6 +267,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     switch(ctx) {
       case ctx_SNESSetFunction: { 
 	for(;siit!=hi_siit;siit++) {
+	  VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
 	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
 	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);

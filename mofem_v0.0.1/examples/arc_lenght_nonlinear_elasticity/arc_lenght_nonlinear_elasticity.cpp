@@ -197,18 +197,25 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,set_positions); CHKERRQ(ierr);
   }
 
-  Range SideSet1,SideSet2;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
+  Range SideSet1,SideSet2,SideSet3,SideSet4;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,1,SideSet1,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
+  ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSet4,true); CHKERRQ(ierr);
+  Range NodeSet1;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
+
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. edges in SideSet 1 : %u\n",SideSet1.size());
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 4 : %u\n",SideSet4.size());
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
   MyElasticFEMethod MyFE(moab,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
-    F_lambda,b,db,
-    SideSet1,SideSet2,SideSet2);
+    F_lambda,b,db,SideSet1,SideSet2,SideSet3,SideSet4,NodeSet1);
 
   ArcLenghtElemFEMethod MyArcMethod(moab,F_lambda,b);
 
@@ -251,7 +258,7 @@ int main(int argc, char *argv[]) {
   double gamma = 0.5;
   for(;step<max_steps; step++) {
     ierr = MyArcMethod.set_s(step_size); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D dlambda = %6.4e\n",step,step_size); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
@@ -264,17 +271,13 @@ int main(int argc, char *argv[]) {
     PostProcDisplacementsEntMethod ent_method(moab,"SPATIAL_POSITION");
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
     //
+    ierr = MyFE.potsProcessLoadPath(); CHKERRQ(ierr);
+    //
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
-	rval = moab.write_file("restart.h5m"); CHKERR_PETSC(rval);
-	//
-	EntityHandle out_meshset;
-	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
 	ostringstream sss;
-	sss << "out_" << step << ".vtk";
-	rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+	sss << "restart_" << step << ".h5m";
+	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
       }
     }
   }
