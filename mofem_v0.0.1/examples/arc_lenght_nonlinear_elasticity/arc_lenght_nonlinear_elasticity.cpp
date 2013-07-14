@@ -149,9 +149,9 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);
 
     //set app. order
-    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",3); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",3); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",3); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
   }
 
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
 
   ierr = MyFE.set_t_val(1e-4); CHKERRQ(ierr);
 
-  int its_d = 4;
+  int its_d = 5;
   double gamma = 0.5;
   for(;step<max_steps; step++) {
     ierr = MyArcMethod.set_s(step_size); CHKERRQ(ierr);

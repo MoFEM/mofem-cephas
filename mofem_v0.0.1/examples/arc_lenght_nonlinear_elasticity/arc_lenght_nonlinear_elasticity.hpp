@@ -95,7 +95,7 @@ PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   ierr = VecDot(ctx->db,x,&db_dot_x); CHKERRQ(ierr);
   double f_lambda;
   ierr = ctx->set_lambda(f,&f_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
-  f_lambda /*+*/= db_dot_x;
+  f_lambda += db_dot_x;
   ierr = ctx->set_lambda(f,&f_lambda,SCATTER_REVERSE); CHKERRQ(ierr);
   double lambda;
   ierr = ctx->set_lambda(x,&lambda,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -312,7 +312,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
   Vec GhostLambda,GhostDiag;
   Vec F_lambda,b;
   double beta;
-  ArcLenghtElemFEMethod(Interface& _moab,Vec _F_lambda,Vec _b): FEMethod(_moab),F_lambda(_F_lambda),b(_b),beta(0) {
+  ArcLenghtElemFEMethod(Interface& _moab,Vec _F_lambda,Vec _b): FEMethod(_moab),F_lambda(_F_lambda),b(_b),beta(1e-3) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
@@ -324,6 +324,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     }
   }
 
+  PetscInt iter;
   double s0;
   double b_dot_x;
   double F_lambda2;
@@ -332,11 +333,17 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     switch(ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = VecDot(snes_x,b,&b_dot_x); CHKERRQ(ierr);
-	PetscInt iter;
 	ierr = SNESGetIterationNumber(snes,&iter); CHKERRQ(ierr);
 	if(iter == 0) {
 	  ierr = VecDot(snes_x,b,&s0); CHKERRQ(ierr);
 	  ierr = VecDot(F_lambda,F_lambda,&F_lambda2); CHKERRQ(ierr);
+	  DofMoFEMEntity_multiIndex& dofs_moabfield_no_const = const_cast<DofMoFEMEntity_multiIndex&>(*dofs_moabfield);
+	  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+	  dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+	  hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
+	  if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  double lambda = dit->get_FieldData();
+	  s0 += lambda*lambda*beta*F_lambda2;
 	}
       }
       break;
@@ -379,12 +386,9 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 	ierr = VecGetArray(snes_x,&array); CHKERRQ(ierr);
 	lambda = array[dit->get_petsc_local_dof_idx()];
 	ierr = VecRestoreArray(snes_x,&array); CHKERRQ(ierr);
-	double diag;
-	if(lambda*beta == 0) {
-	  diag = 1;
-	} else {
-	  diag = 2*lambda*beta*F_lambda2;
-	}
+	const double eps = 1e-12;
+	double diag = 2*lambda*beta*F_lambda2;
+	if(fabs(diag) < eps) diag = eps;
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
 	ierr = MatSetValue(*snes_B,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),diag,ADD_VALUES); CHKERRQ(ierr);
       }
@@ -477,7 +481,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   ierr = VecDot(MatCtx->db,pc_x,&db_dot_x_int); CHKERRQ(ierr);
   ierr = VecDot(MatCtx->db,PCCtx->x_lambda,&db_dot_x_lambda); CHKERRQ(ierr);
   double dlambda;
-  dlambda = (res_lambda - db_dot_x_int)/(db_dot_x_lambda);//+MatCtx->diag_lambda);
+  dlambda = (res_lambda - db_dot_x_int)/(db_dot_x_lambda+MatCtx->diag_lambda);
   if(dlambda != dlambda) SETERRQ(PETSC_COMM_SELF,1,"db \\dot x_lambda = 0\nCheck constrint vector, SideSet, ect.");
   //PetscPrintf(PETSC_COMM_WORLD,"pc dlambda = %6.4e\n",dlambda);
   ierr = VecAXPY(pc_x,dlambda,PCCtx->x_lambda); CHKERRQ(ierr);
