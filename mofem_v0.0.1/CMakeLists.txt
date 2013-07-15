@@ -71,8 +71,9 @@ include_directories(
 
 #SPECIFIC FROM NOW
 include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
-include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 include_directories("${PROJECT_SOURCE_DIR}/student_body")
+include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
+include_directories("${PROJECT_SOURCE_DIR}/third_party")
 
 add_library(mofem_Field 
   third_party/tetcircumcenter.c
@@ -107,9 +108,6 @@ message(STATUS ${PROJECT_LIBS})
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/INSTALL
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
-
-#inlude directories
-include_directories("${PROJECT_SOURCE_DIR}/third_party")
 
 #add executable library form subdirectory
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")

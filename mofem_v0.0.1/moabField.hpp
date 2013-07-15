@@ -122,7 +122,7 @@ struct moabField {
     const bool recursive = false,int verb = -1) = 0;
 
   /// add FEs form ref level given by bit to meshset
-  virtual PetscErrorCode refine_get_FE(const BitRefLevel &bit,const EntityHandle meshset) = 0;
+  virtual PetscErrorCode refine_get_finite_elements(const BitRefLevel &bit,const EntityHandle meshset) = 0;
 
   /// add ents form ref level given by bit to meshset
   virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const EntityHandle meshset) = 0;
@@ -149,10 +149,10 @@ struct moabField {
     * \brief add appeoximation field
     *
     * \param name of the field
-    * \param space approximation space
+    * \param space approximation space (H1, Hdiv, Hcurl, L2 and NoField (dofs adjacent to meshset) 
     * \prama rank of the field, f.e. temeraure has rank 1, displacement in 3d has rank 3
     */
-  virtual PetscErrorCode add_BitFieldId(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1) = 0;
+  virtual PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1) = 0;
 
   /** 
     * \brief set tetrahedrals part of the given field 
@@ -185,46 +185,46 @@ struct moabField {
   virtual PetscErrorCode list_field() const = 0;
 
   /// \brief get field meshset
-  virtual EntityHandle get_meshset_by_BitFieldId(const string& name) const = 0;
+  virtual EntityHandle get_field_meshset(const string& name) const = 0;
 
   /**
     * \brief add finite element
     * \param name finite elenent name
     */
-  virtual PetscErrorCode add_MoFEMFE(const string &MoFEMFE_name) = 0;
+  virtual PetscErrorCode add_finite_element(const string &MoFEMFE_name) = 0;
 
   /// \brief set field data which element use
-  virtual PetscErrorCode modify_MoFEMFE_data_add_bit(const string &MoFEMFE_name,const string &name_filed) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFE_name,const string &name_filed) = 0;
 
   /// \brief set field row
-  virtual PetscErrorCode modify_MoFEMFE_row_add_bit(const string &MoFEMFE_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFE_name,const string &name_row) = 0;
 
   /// \brief set field col
-  virtual PetscErrorCode modify_MoFEMFE_col_add_bit(const string &MoFEMFE_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFE_name,const string &name_row) = 0;
 
   /// add TET elements form meshset to finite element database given by name 
-  virtual PetscErrorCode add_ents_to_MoFEMFE_by_TETs(const EntityHandle meshset,const string &name) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name) = 0;
 
   /// add TET elements to the refinment level to finite element database given by name 
-  virtual PetscErrorCode add_ents_to_MoFEMFE_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) = 0;
 
   /// add MESHSET element to finite element database given by name 
-  virtual PetscErrorCode add_ents_to_MoFEMFE_by_MESHSET(const EntityHandle meshset,const string& name) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name) = 0;
 
   /// add MESHSETs contained in meshset to finite element database given by name 
-  virtual PetscErrorCode add_ents_to_MoFEMFE_by_MESHSETs(const EntityHandle meshset,const string& name) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_by_MESHSETs(const EntityHandle meshset,const string& name) = 0;
 
   /// list finite elements in database
-  virtual PetscErrorCode list_MoFEMFE() const = 0;
+  virtual PetscErrorCode list_finite_elements() const = 0;
 
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
 
   /// add problem
-  virtual PetscErrorCode add_BitProblemId(const string& name) = 0;
+  virtual PetscErrorCode add_problem(const string& name) = 0;
 
   /// \brief add finite element to problem
-  virtual PetscErrorCode modify_problem_MoFEMFE_add_bit(const string &name_problem,const string &MoFEMFE_name) = 0;
+  virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFE_name) = 0;
 
   /// \brief add ref level to problem
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
@@ -454,13 +454,18 @@ struct moabField {
    *
    * \param problem_name \param fe_name \param method is class derived form
    * moabField::FEMethod
-  **/ virtual PetscErrorCode loop_finite_elements(const string
-&problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
+  **/ 
+  virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over entities
     *
     */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1) = 0;
+
+  /** \brief Get problem database (datastructure) 
+    *
+    */
+  virtual PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
 };
 

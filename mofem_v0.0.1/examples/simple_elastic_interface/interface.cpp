@@ -158,8 +158,8 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    g_NTRI.resize(3*7);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+    g_NTRI.resize(3*13);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
 
     PetscFunctionReturn(0);
   }
@@ -218,8 +218,9 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
   PetscErrorCode CalcDglob() {
     PetscFunctionBegin;
     ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
-    int ii = 0;
-    for(;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
+    //int ii = 0;
+    //for(;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
+    Dloc(0,0) = YoungModulus;
     Dglob = prod( Dloc, R );
     Dglob = prod( trans(R), Dglob );
     PetscFunctionReturn(0);
@@ -313,7 +314,7 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 	    if(gg == 0) {
 	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
 	    }
-	    double w = area3*G_TRI_W7[gg];
+	    double w = area3*G_TRI_W13[gg];
 	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
 	    K[rr][cc] += prod(NTD , col_Mat ); 
 	  }
@@ -334,10 +335,10 @@ struct InterfaceFEMethod: public MyElasticFEMethod {
 
 };
 
-struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAndStarinOnRefMesh_Base {
+struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
   
     PostProcCohesiveForces(Interface &_moab,double _YoungModulus): 
-      InterfaceFEMethod(_moab,_YoungModulus), PostProcDisplacemenysAndStarinOnRefMesh_Base() {
+      InterfaceFEMethod(_moab,_YoungModulus), PostProcOnRefMesh_Base() {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     };
 
@@ -400,9 +401,9 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
       rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[max_level]); CHKERR_PETSC(rval);
       ierr = mField_ref.refine_get_ents(BitRefLevel().set(max_level),meshset_level[max_level]); CHKERRQ(ierr);
 
-      if(pcomm->rank()==0) {
-	moab_ref.write_file("debug.vtk","VTK",""); CHKERR_PETSC(rval);
-      }
+      //if(pcomm->rank()==0) {
+	//moab_ref.write_file("debug.vtk","VTK",""); CHKERR_PETSC(rval);
+      //}
 
       //
       Range ref_nodes;
@@ -460,8 +461,8 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	coords_at_Gauss_nodes[gg].resize(3);
 	coords_at_Gauss_nodes[nodes_on_face3.size()+gg].resize(3);
 	for(int dd = 0;dd<3;dd++) {
-	  (coords_at_Gauss_nodes[gg])[dd] = cblas_ddot(3,&coords_face3[dd],3,&get_gNTRI()[gg*3],1);
-	  (coords_at_Gauss_nodes[nodes_on_face3.size()+gg])[dd] = cblas_ddot(3,&coords_face4[dd],3,&get_gNTRI()[3*nodes_on_face3.size()+gg*3],1);
+	  (coords_at_Gauss_nodes[gg])[dd] = cblas_ddot(3,&coords_face3[dd],3,&g_NTRI[gg*3],1);
+	  (coords_at_Gauss_nodes[nodes_on_face3.size()+gg])[dd] = cblas_ddot(3,&coords_face4[dd],3,&g_NTRI[3*nodes_on_face3.size()+gg*3],1);
 	}
       }
 
@@ -536,10 +537,19 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,0));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,2));
 	for(;dit!=hi_dit;dit++) {
-	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
-	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1edgeN_[gg*nb_dofs_H1edge + dof];
+	  int side_number = dit->side_number_ptr->side_number;	
+	  assert(side_number >= 0);
+	  assert(side_number <= 2);
+	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[side_number]);
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  /*cerr << "side_number " << side_number 
+	    << " " << dit->get_EntDofIdx() 
+	    << " " << approx_dof 
+	    << " " << nb_dofs_H1edge 
+	    << " " << H1edgeN[side_number].size()
+	    << endl;*/
+	  double *_H1edgeN_ = &*H1edgeN[side_number].begin();
+	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
 	  disp_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
 	} 
@@ -548,18 +558,18 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1edgeN_[gg*nb_dofs_H1edge + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
-	//facse
+	//faces
 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1faceN_[gg*nb_dofs_H1face + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
 	  disp_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
 	}
@@ -568,8 +578,8 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1faceN_[gg*nb_dofs_H1face + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
 	
@@ -618,8 +628,8 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + approx_dof];
 	  disp_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); //*minus*/
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); //*minus*/
 	}
@@ -628,28 +638,28 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcDisplacemenysAnd
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + approx_dof];
 	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); //*minus*/
 	}
-	//facse
+	//faces
 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + dof];
-	  disp_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + approx_dof];
+	  disp_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); //*minus/
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	}
- 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,4));
-	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+ 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
+	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int dof = ceil(dit->get_EntDofIdx()/dit->get_max_rank());
-	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + dof];
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + approx_dof];
 	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
 	}
 
@@ -742,13 +752,13 @@ int main(int argc, char *argv[]) {
   //update BC for refined (with interface) mesh
   EntityHandle meshset_SideSet1; //Dirihlet BC is there
   ierr = mField.get_msId_meshset(1,SideSet,meshset_SideSet1); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet1,bit_level_interface,meshset_SideSet1,MBTRI,true,3); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet1,bit_level_interface,meshset_SideSet1,MBTRI,true); CHKERRQ(ierr);
   EntityHandle meshset_SideSet2; //Dirihlet BC is there
   ierr = mField.get_msId_meshset(2,SideSet,meshset_SideSet2); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet2,bit_level_interface,meshset_SideSet2,MBTRI,true,3); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet2,bit_level_interface,meshset_SideSet2,MBTRI,true); CHKERRQ(ierr);
   EntityHandle meshset_SideSet3; //Dirihlet BC is there
   ierr = mField.get_msId_meshset(3,SideSet,meshset_SideSet3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level_interface,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);
+  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level_interface,meshset_SideSet3,MBTRI,true); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
@@ -773,26 +783,26 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Fields
-  ierr = mField.add_BitFieldId("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_MoFEMFE("ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
   //Define rows/cols and element data
-  ierr = mField.modify_MoFEMFE_row_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   //FE Interface
-  ierr = mField.add_MoFEMFE("INTERFACE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("INTERFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
 
   //define problems
-  ierr = mField.add_BitProblemId("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //set finite elements for problem
-  ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
@@ -804,14 +814,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",5); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
@@ -855,8 +865,8 @@ int main(int argc, char *argv[]) {
 
   //Assemble F and Aij
   const double YoungModulus = 1;
-  const double PoissonRatio = 0.25;
-  const double alpha = 20;
+  const double PoissonRatio = 0.0;
+  const double alpha = 0.05;
   MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3);
   InterfaceFEMethod IntMyFE(moab,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
 

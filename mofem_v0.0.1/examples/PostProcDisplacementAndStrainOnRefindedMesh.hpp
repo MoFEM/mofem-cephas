@@ -23,7 +23,7 @@
 
 using namespace MoFEM;
 
-struct PostProcDisplacemenysAndStarinOnRefMesh_Base {
+struct PostProcOnRefMesh_Base {
     //this is moab mesh of all refined elements
     Interface& moab_post_proc;
     Core mb_instance_post_proc;
@@ -36,25 +36,25 @@ struct PostProcDisplacemenysAndStarinOnRefMesh_Base {
     vector<EntityHandle> meshset_level;
     bool init_ref;
 
-    PostProcDisplacemenysAndStarinOnRefMesh_Base(): 
+    PostProcOnRefMesh_Base(): 
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
-      max_level(2),init_ref(false) {
+      max_level(3),init_ref(false) {
       meshset_level.resize(max_level+1);
     }
 };
 
-struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent,PostProcDisplacemenysAndStarinOnRefMesh_Base {
-
+struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOnRefMesh_Base {
     ParallelComm* pcomm;
     PetscLogDouble t1,t2;
     PetscLogDouble v1,v2;
 
-    PostProcDisplacemenysAndStarinOnRefMesh(Interface& _moab): 
-      FEMethod_UpLevelStudent(_moab,1),PostProcDisplacemenysAndStarinOnRefMesh_Base() {
+    string field_name;
+    PostProcDisplacementsOnRefMesh(Interface& _moab,string _field_name = "DISPLACEMENT"): 
+      FEMethod_UpLevelStudent(_moab),PostProcOnRefMesh_Base(), field_name(_field_name) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     }
 
-    Tag th_disp,th_strain;
+    Tag th_disp;
     vector<double> g_NTET;
 
     PetscErrorCode preProcess() {
@@ -99,17 +99,20 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent,P
       g_NTET.resize(4*ref_coords.size()/3);
       ShapeMBTET(&g_NTET[0],&ref_coords[0],&ref_coords[ref_coords.size()/3],&ref_coords[2*ref_coords.size()/3],ref_coords.size()/3);
 
-      double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0};
+      double def_VAL[3] = {0,0,0};
       // create TAG
-      rval = moab_post_proc.tag_get_handle("DISPLACEMENTS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
-      rval = moab_post_proc.tag_get_handle("STRAIN_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+      string tag_name = field_name+"_VAL";
+      rval = moab_post_proc.tag_get_handle(tag_name.c_str(),3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
 
       init_ref = true;
 
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode operator()() {
+
+    map<EntityHandle,EntityHandle> node_map;
+
+    PetscErrorCode do_operator() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
@@ -117,8 +120,8 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent,P
       rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBVERTEX,ref_nodes); CHKERR_PETSC(rval);
       if(4*ref_nodes.size()!=g_NTET.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       if(ref_nodes.size()!=coords_at_Gauss_nodes.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      map<EntityHandle,EntityHandle> node_map;
       Range::iterator nit = ref_nodes.begin();
+      node_map.clear();
       for(int nn = 0;nit!=ref_nodes.end();nit++,nn++) {
 	EntityHandle &node = node_map[*nit];
 	rval = moab_post_proc.create_vertex(&(coords_at_Gauss_nodes[nn]).data()[0],node); CHKERR_PETSC(rval);
@@ -139,8 +142,8 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent,P
       }
 
       //Get displacements at Gauss points
-      Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find("DISPLACEMENT");
-      if(diit==data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no DISPLACEMENT !!!");
+      Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find(field_name);
+      if(diit==data_at_gauss_pt.end()) SETERRQ1(PETSC_COMM_SELF,1,"no field_name %s !!!",field_name.c_str());
       vector< ublas::vector<FieldData> > &data = diit->second;
       vector< ublas::vector<FieldData> >::iterator vit = data.begin();
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
@@ -148,19 +151,14 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent,P
 	rval = moab_post_proc.tag_set_data(th_disp,&mit->second,1,&vit->data()[0]); CHKERR_PETSC(rval);
       }
 
-      //Strains to Noades in PostProc Mesh
-      vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-      ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
-      vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
-      mit = node_map.begin();
-      for(;viit!=GradU_at_GaussPt.end();viit++,mit++) {
-	ublas::matrix< FieldData > GradU = *viit;
-	ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
-	rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
-      }
-
       PetscFunctionReturn(0);
     }
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      ierr = do_operator(); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
@@ -176,6 +174,70 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public FEMethod_UpLevelStudent,P
       }
       PetscFunctionReturn(0);
     }
+
+};
+
+struct PostProcDisplacemenysAndStarinOnRefMesh: public PostProcDisplacementsOnRefMesh {
+
+
+    Tag th_strain;
+    PostProcDisplacemenysAndStarinOnRefMesh(Interface& _moab): PostProcDisplacementsOnRefMesh(_moab) {
+      double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0};
+      rval = moab_post_proc.tag_get_handle("STRAIN_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+
+      ierr = do_operator(); CHKERRQ(ierr);
+
+      //Strains to Noades in PostProc Mesh
+      vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+      ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
+      vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+      map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+      for(;viit!=GradU_at_GaussPt.end();viit++,mit++) {
+	ublas::matrix< FieldData > GradU = *viit;
+	ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+	rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+
+};
+
+
+struct PostProcFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh {
+
+
+    Tag th_strain;
+    PostProcFieldsAndGradientOnRefMesh(Interface& _moab): PostProcDisplacementsOnRefMesh(_moab,"SPATIAL_POSITION") {
+      double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0};
+      rval = moab_post_proc.tag_get_handle("F_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+
+      ierr = do_operator(); CHKERRQ(ierr);
+
+      //Strains to Noades in PostProc Mesh
+      vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+      ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
+      vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+      map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+      for(;viit!=GradU_at_GaussPt.end();viit++,mit++) {
+	ublas::matrix< FieldData > F = *viit;
+	rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(F.data()[0])); CHKERR_PETSC(rval);
+      }
+
+      PetscFunctionReturn(0);
+    }
+
 
 };
 

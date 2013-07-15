@@ -97,8 +97,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      g_NTRI.resize(3*7);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7); 
+      g_NTRI.resize(3*13);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
       ierr = VecZeroEntries(F); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -199,7 +199,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	ublas::vector<FieldData> f_ext_nodes = ublas::zero_vector<FieldData>(FaceNMatrix_nodes[0].size2());
 	int g_dim = get_dim_gNTRI();
 	for(int gg = 0;gg<g_dim;gg++) {
-	  double w = area*G_TRI_W7[gg];
+	  double w = area*G_TRI_W13[gg];
 	  f_ext_nodes += w*prod(trans(FaceNMatrix_nodes[gg]), traction);
 	}
 	ierr = VecSetValues(F,RowGlob_nodes.size(),&(RowGlob_nodes)[0],&(f_ext_nodes.data())[0],ADD_VALUES); CHKERRQ(ierr);
@@ -212,7 +212,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    vector<ublas::matrix<FieldData> >& FaceNMatrix_edge = FaceNMatrix_edges[siiit->side_number];
 	    ublas::vector<FieldData> f_ext_edges = ublas::zero_vector<FieldData>(FaceNMatrix_edge[0].size2());
 	    for(int gg = 0;gg<g_dim;gg++) {
-	      double w = area*G_TRI_W7[gg];
+	      double w = area*G_TRI_W13[gg];
 	      f_ext_edges += w*prod(trans(FaceNMatrix_edge[gg]), traction);
 	    }
 	    if(RowGlob_edge.size()!=f_ext_edges.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_edge.size()!=f_ext_edges.size()");
@@ -224,7 +224,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	if(RowGlob_face.size()>0) {
 	  ublas::vector<FieldData> f_ext_faces = ublas::zero_vector<FieldData>(FaceNMatrix_face[0].size2());
 	  for(int gg = 0;gg<g_dim;gg++) {
-	    double w = area*G_TRI_W7[gg];
+	    double w = area*G_TRI_W13[gg];
 	    f_ext_faces += w*prod(trans(FaceNMatrix_face[gg]), traction);
 	  }
 	  if(RowGlob_face.size()!=f_ext_faces.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_face.size()!=f_ext_faces.size()");
@@ -237,7 +237,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
 
     }
-
 
     PetscErrorCode NeumannBC() {
       PetscFunctionBegin;

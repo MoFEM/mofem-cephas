@@ -92,14 +92,14 @@ struct moabField_Core: public moabField {
   PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = true);
   PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
-  PetscErrorCode refine_get_FE(const BitRefLevel &bit,const EntityHandle meshset);
+  PetscErrorCode refine_get_finite_elements(const BitRefLevel &bit,const EntityHandle meshset);
   PetscErrorCode refine_get_ents(const BitRefLevel &bit,const EntityHandle meshset);
   PetscErrorCode refine_get_childern(
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
     const bool recursive = false, int verb = -1);
 
   //field
-  PetscErrorCode add_BitFieldId(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,int verb = -1);
+  PetscErrorCode add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name);
   PetscErrorCode add_ents_to_field_by_PRISMs(const EntityHandle meshset,const BitFieldId id);
@@ -111,32 +111,32 @@ struct moabField_Core: public moabField {
   PetscErrorCode list_dof_by_id(const BitFieldId id) const;
   PetscErrorCode list_ent_by_id(const BitFieldId id) const;
   PetscErrorCode list_field() const;
-  PetscErrorCode add_BitFieldId(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1);
+  PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1);
   BitFieldId get_BitFieldId(const string& name) const;
   string get_BitFieldId_name(const BitFieldId id) const;
-  EntityHandle get_meshset_by_BitFieldId(const BitFieldId id) const;
-  EntityHandle get_meshset_by_BitFieldId(const string& name) const;
+  EntityHandle get_field_meshset(const BitFieldId id) const;
+  EntityHandle get_field_meshset(const string& name) const;
 
   //MoFEMFE
-  PetscErrorCode add_MoFEMFE(const string &MoFEMFE_name);
-  PetscErrorCode modify_MoFEMFE_data_add_bit(const string &MoFEMFE_name,const string &name_filed);
-  PetscErrorCode modify_MoFEMFE_row_add_bit(const string &MoFEMFE_name,const string &name_row);
-  PetscErrorCode modify_MoFEMFE_col_add_bit(const string &MoFEMFE_name,const string &name_col);
-  PetscErrorCode add_ents_to_MoFEMFE_by_TETs(const EntityHandle meshset,const BitFEId id);
-  PetscErrorCode add_ents_to_MoFEMFE_by_TETs(const EntityHandle meshset,const string &name);
-  PetscErrorCode add_ents_to_MoFEMFE_by_MESHSET(const EntityHandle meshset,const string& name);
-  PetscErrorCode add_ents_to_MoFEMFE_by_MESHSETs(const EntityHandle meshset,const string& name);
-  PetscErrorCode add_ents_to_MoFEMFE_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type);
+  PetscErrorCode add_finite_element(const string &MoFEMFE_name);
+  PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFE_name,const string &name_filed);
+  PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFE_name,const string &name_row);
+  PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFE_name,const string &name_col);
+  PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name);
+  PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name);
+  PetscErrorCode add_ents_to_finite_element_by_MESHSETs(const EntityHandle meshset,const string& name);
+  PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type);
   BitFEId get_BitFEId(const string& name) const;
   string get_BitFEId_name(const BitFEId id) const;
   EntityHandle get_meshset_by_BitFEId(const BitFEId id) const;
   EntityHandle get_meshset_by_BitFEId(const string& name) const;
-  PetscErrorCode list_MoFEMFE() const;
+  PetscErrorCode list_finite_elements() const;
 
   //problem
-  PetscErrorCode add_BitProblemId(const BitProblemId id,const string& name);
-  PetscErrorCode add_BitProblemId(const string& name);
-  PetscErrorCode modify_problem_MoFEMFE_add_bit(const string &name_problem,const string &MoFEMFE_name);
+  PetscErrorCode add_problem(const BitProblemId id,const string& name);
+  PetscErrorCode add_problem(const string& name);
+  PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFE_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
   PetscErrorCode problem_partition(const BitProblemId id);
   BitProblemId get_BitProblemId(const string& name) const;
@@ -144,8 +144,13 @@ struct moabField_Core: public moabField {
 
   //build problem, adjacencies,MoFEMFE and dofs
   PetscErrorCode build_fields(int verb = -1);
+
+  ///add entity EntFe to finite element data databse and resolve dofs on that entity
   PetscErrorCode build_finite_element(const EntMoFEMFE &EntFe,int verb = -1);
+
+  //loop over all finite elements, resolve its meshsets, and resolve dofs on that entities
   PetscErrorCode build_finite_elements(int verb = -1);
+
   PetscErrorCode build_adjacencies(const BitRefLevel bit);
   PetscErrorCode build_problems(int verb = -1);
 
@@ -184,9 +189,12 @@ struct moabField_Core: public moabField {
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
   PetscErrorCode add_prism_to_Adj_prisms(const EntityHandle prism,int verb = -1);
 
-  // loops
+  //loops
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
+
+  //get multi_index form database
+  PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr);
 
   //constructor
   moabField_Core(Interface& _moab,int _verbose = 1);

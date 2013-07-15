@@ -95,75 +95,75 @@ int main(int argc, char *argv[]) {
   ierr = mField.refine_get_ents(bit_level1,meshset_level1); CHKERRQ(ierr);
 
   //add fields
-  ierr = mField.add_BitFieldId("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_BitFieldId("DAMAGE",L2,1); CHKERRQ(ierr);
-  ierr = mField.add_BitFieldId("LAMBDA",NoField,1); CHKERRQ(ierr);
-  ierr = mField.add_BitFieldId("DAMAGE_INTERFACE",L2_2D,1); CHKERRQ(ierr);
+  ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("DAMAGE",L2,1); CHKERRQ(ierr);
+  ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
+  ierr = mField.add_field("DAMAGE_INTERFACE",L2_2D,1); CHKERRQ(ierr);
 
   //add finite elements
-  ierr = mField.add_MoFEMFE("ELASTIC"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("ELASTIC","DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.add_MoFEMFE("FE_DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("FE_DAMAGE","DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("FE_DAMAGE","DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("FE_DAMAGE","DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("FE_DAMAGE","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.add_MoFEMFE("COUPLING_WITH_DAMAGE1"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("COUPLING_WITH_DAMAGE1","DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("COUPLING_WITH_DAMAGE1","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("COUPLING_WITH_DAMAGE1","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("COUPLING_WITH_DAMAGE1","DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.add_MoFEMFE("COUPLING_WITH_DAMAGE2"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("COUPLING_WITH_DAMAGE2","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("COUPLING_WITH_DAMAGE2","DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("COUPLING_WITH_DAMAGE2","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("COUPLING_WITH_DAMAGE2","DAMAGE"); CHKERRQ(ierr);
-  /*ierr = mField.add_MoFEMFE("ARC_LENGHT"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("ARC_LENGHT","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("ARC_LENGHT","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.add_MoFEMFE("LINK"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("LINK","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("LINK","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("LINK","SPATIAL_POSITION"); CHKERRQ(ierr);*/
-  ierr = mField.add_MoFEMFE("INTERFACE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_row_add_bit("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_col_add_bit("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_MoFEMFE_data_add_bit("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("FE_DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("FE_DAMAGE","DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("FE_DAMAGE","DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FE_DAMAGE","DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FE_DAMAGE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("COUPLING_WITH_DAMAGE1"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("COUPLING_WITH_DAMAGE1","DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("COUPLING_WITH_DAMAGE1","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("COUPLING_WITH_DAMAGE1","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("COUPLING_WITH_DAMAGE1","DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("COUPLING_WITH_DAMAGE2"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("COUPLING_WITH_DAMAGE2","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("COUPLING_WITH_DAMAGE2","DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("COUPLING_WITH_DAMAGE2","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("COUPLING_WITH_DAMAGE2","DAMAGE"); CHKERRQ(ierr);
+  /*ierr = mField.add_finite_element("ARC_LENGHT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ARC_LENGHT","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("LINK"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("LINK","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("LINK","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("LINK","SPATIAL_POSITION"); CHKERRQ(ierr);*/
+  ierr = mField.add_finite_element("INTERFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
 
   //add problems 
-  ierr = mField.add_BitProblemId("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.add_BitProblemId("DAMAGE_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.add_BitProblemId("COUPLED_DAMAGE_MECHANICS"); CHKERRQ(ierr);
-  //ierr = mField.add_BitProblemId("LINK_PROBLEM"); CHKERRQ(ierr);
-  //ierr = mField.add_BitProblemId("ARC_LENGHT_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.add_BitProblemId("ELASTIC_MECHANICS_LEVEL0"); CHKERRQ(ierr);
+  ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.add_problem("DAMAGE_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.add_problem("COUPLED_DAMAGE_MECHANICS"); CHKERRQ(ierr);
+  //ierr = mField.add_problem("LINK_PROBLEM"); CHKERRQ(ierr);
+  //ierr = mField.add_problem("ARC_LENGHT_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.add_problem("ELASTIC_MECHANICS_LEVEL0"); CHKERRQ(ierr);
 
 
   //define problems and finite elements
-  ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
-  //ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS","LINK"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("DAMAGE_MECHANICS","FE_DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("COUPLED_DAMAGE_MECHANICS","ELASTIC"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("COUPLED_DAMAGE_MECHANICS","FE_DAMAGE"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("COUPLED_DAMAGE_MECHANICS","COUPLING_WITH_DAMAGE1"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("COUPLED_DAMAGE_MECHANICS","COUPLING_WITH_DAMAGE2"); CHKERRQ(ierr);
-  //ierr = mField.modify_problem_MoFEMFE_add_bit("COUPLED_DAMAGE_MECHANICS","LINK"); CHKERRQ(ierr);
-  //ierr = mField.modify_problem_MoFEMFE_add_bit("COUPLED_DAMAGE_MECHANICS","ARC_LENGHT"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS_LEVEL0","ELASTIC"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("ELASTIC_MECHANICS_LEVEL0","INTERFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  //ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","LINK"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("DAMAGE_MECHANICS","FE_DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("COUPLED_DAMAGE_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("COUPLED_DAMAGE_MECHANICS","FE_DAMAGE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("COUPLED_DAMAGE_MECHANICS","COUPLING_WITH_DAMAGE1"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("COUPLED_DAMAGE_MECHANICS","COUPLING_WITH_DAMAGE2"); CHKERRQ(ierr);
+  //ierr = mField.modify_problem_add_finite_element("COUPLED_DAMAGE_MECHANICS","LINK"); CHKERRQ(ierr);
+  //ierr = mField.modify_problem_add_finite_element("COUPLED_DAMAGE_MECHANICS","ARC_LENGHT"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS_LEVEL0","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS_LEVEL0","INTERFACE"); CHKERRQ(ierr);
 
   /*//special elments
-  ierr = mField.modify_problem_MoFEMFE_add_bit("LINK_PROBLEM","LINK"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_MoFEMFE_add_bit("ARC_LENGHT_PROBLEM","ARC_LENGHT"); CHKERRQ(ierr);*/
+  ierr = mField.modify_problem_add_finite_element("LINK_PROBLEM","LINK"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ARC_LENGHT_PROBLEM","ARC_LENGHT"); CHKERRQ(ierr);*/
   
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level1); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("COUPLED_DAMAGE_MECHANICS",bit_level1); CHKERRQ(ierr);
@@ -175,25 +175,25 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_PRISMs(0,"DAMAGE_INTERFACE"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"ELASTIC",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_EntType_by_bit_ref(bit_level0,"INTERFACE",MBPRISM); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
 
-  /*ierr = mField.add_ents_to_MoFEMFE_by_MESHSET(Block5,"LINK"); CHKERRQ(ierr);
+  /*ierr = mField.add_ents_to_finite_element_by_MESHSET(Block5,"LINK"); CHKERRQ(ierr);
   EntityHandle meshset_FE_ARC_LENGHT;
   rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGHT); CHKERR_PETSC(rval);
-  EntityHandle meshset_field_LAMBDA = mField.get_meshset_by_BitFieldId("LAMBDA");
+  EntityHandle meshset_field_LAMBDA = mField.get_field_meshset("LAMBDA");
   rval = moab.add_entities(meshset_FE_ARC_LENGHT,&meshset_field_LAMBDA,1); CHKERR_PETSC(rval);
   rval = moab.add_entities(meshset_FE_ARC_LENGHT,&Block5,1); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGHT,BitRefLevel().set()); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_MoFEMFE_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);*/
+  ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);*/
 
   //set app. order
   ierr = mField.set_field_order(0,MBTET,"DAMAGE",0); CHKERRQ(ierr);
@@ -345,7 +345,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle out_meshset;
   rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-  //ierr = mField2.refine_get_FE(bit_level1,out_meshset); CHKERRQ(ierr);
+  //ierr = mField2.refine_get_finite_elements(bit_level1,out_meshset); CHKERRQ(ierr);
   ierr = mField2.problem_get_FE("ELASTIC_MECHANICS_LEVEL0","ELASTIC",out_meshset); CHKERRQ(ierr);
 
   moab.write_file(mesh_out_file_name,"VTK","",&out_meshset,1);

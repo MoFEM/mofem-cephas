@@ -19,7 +19,6 @@
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
 
 using namespace MoFEM;
 
@@ -28,11 +27,14 @@ struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
 
+
     Tag th_disp;
-    PostProcDisplacementsEntMethod(Interface& _moab): EntMethod(_moab) {
+    string field_name;
+    PostProcDisplacementsEntMethod(Interface& _moab,string _field_name = "DISPLACEMENT"): EntMethod(_moab),field_name(_field_name) {
       double def_VAL[3] = {0,0,0};
       // create TAG
-      rval = moab.tag_get_handle("DISPLACEMENTS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+      string tag_name = field_name+"_VAL";
+      rval = moab.tag_get_handle(tag_name.c_str(),3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
     }
 
     vector<double> vals;
@@ -50,7 +52,7 @@ struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
       PetscFunctionBegin;
 
       if(dof_ptr->get_ent_type()!=MBVERTEX) PetscFunctionReturn(0);
-      if(dof_ptr->get_name() != "DISPLACEMENT") PetscFunctionReturn(0);
+      if(dof_ptr->get_name() != field_name) PetscFunctionReturn(0);
 
       EntityHandle ent = dof_ptr->get_ent();
       int dof_rank = dof_ptr->get_dof_rank();

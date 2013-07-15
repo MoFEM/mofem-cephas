@@ -32,7 +32,9 @@ namespace MoFEM {
 
 FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
     double _lambda,double _mu, int _verbose): 
-    FEMethod_UpLevelStudent(_moab,_verbose), type_of_analysis(_type), lambda(_lambda),mu(_mu), eps(1e-6) {
+    FEMethod_UpLevelStudent(_moab,_verbose), type_of_analysis(_type), 
+    lambda(_lambda),mu(_mu), eps(1e-6),
+    field_name("SPATIAL_POSITION") {
   pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   order_edges.resize(6);
   order_faces.resize(4);
@@ -96,71 +98,71 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       colBMatrices.resize(1+6+4+1);
       try {
       //nodes
-      ierr = GetRowIndices("SPATIAL_POSITION",RowGlob[0]); CHKERRQ(ierr);
-      ierr = GetColIndices("SPATIAL_POSITION",ColGlob[0]); CHKERRQ(ierr);
+      ierr = GetRowIndices(field_name,RowGlob[0]); CHKERRQ(ierr);
+      ierr = GetColIndices(field_name,ColGlob[0]); CHKERRQ(ierr);
       //row
-      ierr = GetGaussRowNMatrix("SPATIAL_POSITION",rowNMatrices[0]); CHKERRQ(ierr);
-      ierr = GetGaussRowDiffNMatrix("SPATIAL_POSITION",rowDiffNMatrices[0]); CHKERRQ(ierr);
-      ierr = MakeBMatrix3D("SPATIAL_POSITION",rowDiffNMatrices[0],rowBMatrices[0]);  CHKERRQ(ierr);
+      ierr = GetGaussRowNMatrix(field_name,rowNMatrices[0]); CHKERRQ(ierr);
+      ierr = GetGaussRowDiffNMatrix(field_name,rowDiffNMatrices[0]); CHKERRQ(ierr);
+      ierr = MakeBMatrix3D(field_name,rowDiffNMatrices[0],rowBMatrices[0]);  CHKERRQ(ierr);
       //col
-      ierr = GetGaussColNMatrix("SPATIAL_POSITION",colNMatrices[0]); CHKERRQ(ierr);
-      ierr = GetGaussColDiffNMatrix("SPATIAL_POSITION",colDiffNMatrices[0]); CHKERRQ(ierr);
-      ierr = MakeBMatrix3D("SPATIAL_POSITION",colDiffNMatrices[0],colBMatrices[0]);  CHKERRQ(ierr);
+      ierr = GetGaussColNMatrix(field_name,colNMatrices[0]); CHKERRQ(ierr);
+      ierr = GetGaussColDiffNMatrix(field_name,colDiffNMatrices[0]); CHKERRQ(ierr);
+      ierr = MakeBMatrix3D(field_name,colDiffNMatrices[0],colBMatrices[0]);  CHKERRQ(ierr);
       //edges
       int ee = 0;
       for(;ee<6;ee++) { //edges matrices
-	ierr = GetRowIndices("SPATIAL_POSITION",MBEDGE,RowGlob[1+ee],ee); CHKERRQ(ierr);
+	ierr = GetRowIndices(field_name,MBEDGE,RowGlob[1+ee],ee); CHKERRQ(ierr);
 	if(RowGlob[1+ee].size()!=0) {
-	  ierr = GetGaussRowNMatrix("SPATIAL_POSITION",MBEDGE,rowNMatrices[1+ee],ee); CHKERRQ(ierr);
-	  ierr = GetGaussRowDiffNMatrix("SPATIAL_POSITION",MBEDGE,rowDiffNMatrices[1+ee],ee); CHKERRQ(ierr);
-	  ierr = MakeBMatrix3D("SPATIAL_POSITION",rowDiffNMatrices[1+ee],rowBMatrices[1+ee]);  CHKERRQ(ierr);
+	  ierr = GetGaussRowNMatrix(field_name,MBEDGE,rowNMatrices[1+ee],ee); CHKERRQ(ierr);
+	  ierr = GetGaussRowDiffNMatrix(field_name,MBEDGE,rowDiffNMatrices[1+ee],ee); CHKERRQ(ierr);
+	  ierr = MakeBMatrix3D(field_name,rowDiffNMatrices[1+ee],rowBMatrices[1+ee]);  CHKERRQ(ierr);
 	}
-	ierr = GetColIndices("SPATIAL_POSITION",MBEDGE,ColGlob[1+ee],ee); CHKERRQ(ierr);
+	ierr = GetColIndices(field_name,MBEDGE,ColGlob[1+ee],ee); CHKERRQ(ierr);
 	if(ColGlob[1+ee].size()>0) {
-	  ierr = GetGaussColNMatrix("SPATIAL_POSITION",MBEDGE,colNMatrices[1+ee],ee); CHKERRQ(ierr);
-	  ierr = GetGaussColDiffNMatrix("SPATIAL_POSITION",MBEDGE,colDiffNMatrices[1+ee],ee); CHKERRQ(ierr);
-	  ierr = MakeBMatrix3D("SPATIAL_POSITION",colDiffNMatrices[1+ee],colBMatrices[1+ee]);  CHKERRQ(ierr);
+	  ierr = GetGaussColNMatrix(field_name,MBEDGE,colNMatrices[1+ee],ee); CHKERRQ(ierr);
+	  ierr = GetGaussColDiffNMatrix(field_name,MBEDGE,colDiffNMatrices[1+ee],ee); CHKERRQ(ierr);
+	  ierr = MakeBMatrix3D(field_name,colDiffNMatrices[1+ee],colBMatrices[1+ee]);  CHKERRQ(ierr);
 	}
       }
       assert(ee == 6);
       //faces
       int ff = 0;
       for(;ff<4;ff++) { //faces matrices
-	ierr = GetRowIndices("SPATIAL_POSITION",MBTRI,RowGlob[1+ee+ff],ff); CHKERRQ(ierr);
+	ierr = GetRowIndices(field_name,MBTRI,RowGlob[1+ee+ff],ff); CHKERRQ(ierr);
 	if(RowGlob[1+ee+ff].size()!=0) {
-	  ierr = GetGaussRowNMatrix("SPATIAL_POSITION",MBTRI,rowNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
-	  ierr = GetGaussRowDiffNMatrix("SPATIAL_POSITION",MBTRI,rowDiffNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
-	  ierr = MakeBMatrix3D("SPATIAL_POSITION",rowDiffNMatrices[1+ee+ff],rowBMatrices[1+ee+ff]);  CHKERRQ(ierr);
+	  ierr = GetGaussRowNMatrix(field_name,MBTRI,rowNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
+	  ierr = GetGaussRowDiffNMatrix(field_name,MBTRI,rowDiffNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
+	  ierr = MakeBMatrix3D(field_name,rowDiffNMatrices[1+ee+ff],rowBMatrices[1+ee+ff]);  CHKERRQ(ierr);
 	}
-	ierr = GetColIndices("SPATIAL_POSITION",MBTRI,ColGlob[1+ee+ff],ff); CHKERRQ(ierr);
+	ierr = GetColIndices(field_name,MBTRI,ColGlob[1+ee+ff],ff); CHKERRQ(ierr);
 	if(ColGlob[1+ee+ff].size()!=0) {
-	  ierr = GetGaussColNMatrix("SPATIAL_POSITION",MBTRI,colNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
-	  ierr = GetGaussColDiffNMatrix("SPATIAL_POSITION",MBTRI,colDiffNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
-	  ierr = MakeBMatrix3D("SPATIAL_POSITION",colDiffNMatrices[1+ee+ff],colBMatrices[1+ee+ff]);  CHKERRQ(ierr);
+	  ierr = GetGaussColNMatrix(field_name,MBTRI,colNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
+	  ierr = GetGaussColDiffNMatrix(field_name,MBTRI,colDiffNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
+	  ierr = MakeBMatrix3D(field_name,colDiffNMatrices[1+ee+ff],colBMatrices[1+ee+ff]);  CHKERRQ(ierr);
 	}
       }
       assert(ff == 4);
       //volumes
-      ierr = GetRowIndices("SPATIAL_POSITION",MBTET,RowGlob[1+ee+ff]); CHKERRQ(ierr);
+      ierr = GetRowIndices(field_name,MBTET,RowGlob[1+ee+ff]); CHKERRQ(ierr);
       if(RowGlob[1+ee+ff].size()!=0) {
-	ierr = GetGaussRowNMatrix("SPATIAL_POSITION",MBTET,rowNMatrices[1+ee+ff]); CHKERRQ(ierr);
-	ierr = GetGaussRowDiffNMatrix("SPATIAL_POSITION",MBTET,rowDiffNMatrices[1+ee+ff]); CHKERRQ(ierr);
-	ierr = MakeBMatrix3D("SPATIAL_POSITION",rowDiffNMatrices[1+ee+ff],rowBMatrices[1+ee+ff]);  CHKERRQ(ierr);
+	ierr = GetGaussRowNMatrix(field_name,MBTET,rowNMatrices[1+ee+ff]); CHKERRQ(ierr);
+	ierr = GetGaussRowDiffNMatrix(field_name,MBTET,rowDiffNMatrices[1+ee+ff]); CHKERRQ(ierr);
+	ierr = MakeBMatrix3D(field_name,rowDiffNMatrices[1+ee+ff],rowBMatrices[1+ee+ff]);  CHKERRQ(ierr);
       }
-      ierr = GetColIndices("SPATIAL_POSITION",MBTET,ColGlob[1+ee+ff]); CHKERRQ(ierr);
+      ierr = GetColIndices(field_name,MBTET,ColGlob[1+ee+ff]); CHKERRQ(ierr);
       if(ColGlob[1+ee+ff].size()!=0) {
-	ierr = GetGaussColNMatrix("SPATIAL_POSITION",MBTET,colNMatrices[1+ee+ff]); CHKERRQ(ierr);
-	ierr = GetGaussColDiffNMatrix("SPATIAL_POSITION",MBTET,colDiffNMatrices[1+ee+ff]); CHKERRQ(ierr);
-	ierr = MakeBMatrix3D("SPATIAL_POSITION",colDiffNMatrices[1+ee+ff],colBMatrices[1+ee+ff]);  CHKERRQ(ierr);
+	ierr = GetGaussColNMatrix(field_name,MBTET,colNMatrices[1+ee+ff]); CHKERRQ(ierr);
+	ierr = GetGaussColDiffNMatrix(field_name,MBTET,colDiffNMatrices[1+ee+ff]); CHKERRQ(ierr);
+	ierr = MakeBMatrix3D(field_name,colDiffNMatrices[1+ee+ff],colBMatrices[1+ee+ff]);  CHKERRQ(ierr);
       }
       //data edge
       ee = 0;
       for(;ee<6;ee++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit,hi_eiit;
-	eiit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBEDGE,ee));
+	eiit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,MBEDGE,ee));
 	if(eiit!=row_multiIndex->get<Composite_mi_tag>().end()) {
 	  order_edges[ee] = eiit->get_max_order();
-	  hi_eiit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBEDGE,ee));
+	  hi_eiit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,MBEDGE,ee));
 	  dofs_x_edge_data[ee].resize(distance(eiit,hi_eiit));
 	  dofs_x_edge[ee] = &dofs_x_edge_data[ee].data()[0];
 	  assert(dofs_x_edge_data[ee].size() == 3*(unsigned int)NBEDGE_H1(order_edges[ee]));
@@ -174,10 +176,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       ff = 0;
       for(;ff<4;ff++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator fiit,hi_fiit;
-	fiit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBTRI,ff));
+	fiit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,MBTRI,ff));
 	if(fiit!=row_multiIndex->get<Composite_mi_tag>().end()) {
 	  order_faces[ff] = fiit->get_max_order();
-	  hi_fiit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBTRI,ff));
+	  hi_fiit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,MBTRI,ff));
 	  dofs_x_face_data[ff].resize(distance(fiit,hi_fiit));
 	  dofs_x_face[ff] = &dofs_x_face_data[ff].data()[0];
 	  assert(dofs_x_face_data[ff].size() == 3*(unsigned int)NBFACE_H1(order_faces[ff]));
@@ -189,8 +191,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       }
       //data voolume
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit,hi_viit;
-      viit = row_multiIndex->get<Composite_mi_tag2>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBTET));
-      hi_viit = row_multiIndex->get<Composite_mi_tag2>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBTET));
+      viit = row_multiIndex->get<Composite_mi_tag2>().lower_bound(boost::make_tuple(field_name,MBTET));
+      hi_viit = row_multiIndex->get<Composite_mi_tag2>().upper_bound(boost::make_tuple(field_name,MBTET));
       if(viit!=hi_viit) {
 	order_volume = viit->get_max_order();
 	dofs_x_volume.resize(distance(viit,hi_viit));
@@ -201,8 +203,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       }
       //data nodes
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator niit,hi_niit;
-      niit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("SPATIAL_POSITION",MBVERTEX,0));
-      hi_niit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("SPATIAL_POSITION",MBVERTEX,4));
+      niit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX,0));
+      hi_niit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX,4));
       assert(distance(niit,hi_niit)==12);   
       for(int dd = 0;niit!=hi_niit;niit++,dd++) dofs_x[dd] = niit->get_FieldData(); 
       } catch (const char* msg) {
@@ -407,10 +409,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
   for(;nn<3;nn++) {
     dofs_iterator niit,hi_niit;
     dofs_iterator col_niit,hi_col_niit;
-    niit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
-    hi_niit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
-    col_niit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
-    hi_col_niit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",conn_face[nn]));
+    niit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(field_name,conn_face[nn]));
+    hi_niit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(field_name,conn_face[nn]));
+    col_niit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(field_name,conn_face[nn]));
+    hi_col_niit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(field_name,conn_face[nn]));
     for(;niit!=hi_niit;niit++,col_niit++,dd++) {
       assert(col_niit->get_petsc_gloabl_dof_idx() == niit->get_petsc_gloabl_dof_idx());
       FaceNodeIndices[dd] = niit->get_petsc_gloabl_dof_idx();
@@ -421,8 +423,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET"); 
   }
   dofs_iterator fiit,hi_fiit;
-  fiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",face));
-  hi_fiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",face));
+  fiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(field_name,face));
+  hi_fiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(field_name,face));
   if(fiit!=hi_fiit) {
     FaceIndices.resize(distance(fiit,hi_fiit));
     FaceData.resize(distance(fiit,hi_fiit));
@@ -437,7 +439,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     }
     N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
     diffN_face.resize(2*g_TRI_dim*NBFACE_H1(face_order));
-    ierr = H1_FaceShapeFunctions_MBTRI(face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
+    int face_nodes[] = { 0,1,2 };
+    ierr = H1_FaceShapeFunctions_MBTRI(face_nodes,face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
   } else {
     face_order = 0;
   }
@@ -454,8 +457,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     int side_number,offset;
     rval = moab.side_number(face,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
     dofs_iterator eiit,hi_eiit;
-    eiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("SPATIAL_POSITION",edge));
-    hi_eiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("SPATIAL_POSITION",edge));
+    eiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(field_name,edge));
+    hi_eiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(field_name,edge));
     if(eiit!=hi_eiit) {
       FaceEdgeOrder[ee] = eiit->get_max_order();
       if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
