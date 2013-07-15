@@ -65,13 +65,32 @@ struct ArcLenghtCtx {
     PetscFunctionReturn(0);
   }
 
-
   double s0;
   double F_lambda2;
   double diag_lambda;
-  Vec F_lambda,b,db,x_lambda,y_residual;
-  ArcLenghtCtx(Vec _F_lambda,Vec _b,Vec _db,Vec _x_lambda,Vec _y_residual): 
-    F_lambda(_F_lambda),b(_b),db(_db),x_lambda(_x_lambda),y_residual(_y_residual) {}
+  Vec F_lambda,b,db,x_lambda,y_residual,x0,dx;
+  ArcLenghtCtx(moabField &mField,const string &problem_name) {
+
+    mField.VecCreateGhost(problem_name,Col,&F_lambda);
+    mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&b);
+    mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&db);
+    mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&x_lambda);
+    mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&y_residual);
+    mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&x0);
+    mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&dx);
+
+  }
+
+  ~ArcLenghtCtx() {
+    VecDestroy(&F_lambda);
+    VecDestroy(&b);
+    VecDestroy(&db);
+    VecDestroy(&x_lambda);
+    VecDestroy(&y_residual);
+    VecDestroy(&x0);
+  }
+
+
 };
 
 struct MySnesCtx: public moabSnesCtx {
@@ -274,7 +293,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	for(;dit!=hi_dit;dit++) {
 	  //if(dit->get_ent_type()!=MBVERTEX) continue;
 	  //if(find(NodeSet1.begin(),NodeSet1.end(),dit->get_ent())==NodeSet1.end()) continue;
-	  //(x0+dx)*(x0+dx) + (lambd+dlambda)^2*beta^2*F_lambda*F_Lambda - s = 0
+	  //(x0+dx)*(x0+dx) + (lambd+dlambda)^2*beta*F_lambda*F_Lambda - s = 0
 	  //x0*x0 + 2x0*dx + dx*dx + (lambda^2+2*lambda*dlmabda+dlambda^2)*(....) - s = 0
 	  ierr = VecSetValue(arc_ptr->b,dit->get_petsc_gloabl_dof_idx(),dit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
 	  ierr = VecSetValue(arc_ptr->db,dit->get_petsc_gloabl_dof_idx(),2.*dit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
@@ -362,6 +381,8 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 	ierr = VecDot(snes_x,arc_ptr->b,&b_dot_x); CHKERRQ(ierr);
 	ierr = SNESGetIterationNumber(snes,&iter); CHKERRQ(ierr);
 	if(iter == 0) {
+	  ierr = VecCopy(snes_x,arc_ptr->x0); CHKERRQ(ierr);
+
 	  ierr = VecDot(snes_x,arc_ptr->b,&arc_ptr->s0); CHKERRQ(ierr);
 	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
 	  DofMoFEMEntity_multiIndex& dofs_moabfield_no_const = const_cast<DofMoFEMEntity_multiIndex&>(*dofs_moabfield);
@@ -371,7 +392,10 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 	  if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  double lambda = dit->get_FieldData();
 	  arc_ptr->s0 += lambda*lambda*arc_ptr->beta*arc_ptr->F_lambda2;
+	  arc_ptr->s0 = sqrt(arc_ptr->s0);
 	}
+	ierr = VecCopy(snes_x,arc_ptr->dx); CHKERRQ(ierr);
+	ierr = VecAXPY(arc_ptr->dx,arc_ptr->x0); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
@@ -402,7 +426,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 	ierr = VecRestoreArray(snes_x,&array); CHKERRQ(ierr);
 	ierr = VecSetValue(GhostLambda,0,lambda,INSERT_VALUES); CHKERRQ(ierr);
 	//
-	res_lambda = b_dot_x + lambda*lambda*arc_ptr->beta*arc_ptr->F_lambda2  - (arc_ptr->s0 + arc_ptr->s);
+	res_lambda = b_dot_x + lambda*lambda*arc_ptr->beta*arc_ptr->F_lambda2  - pow(arc_ptr->s0 + arc_ptr->s,2);
 	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),res_lambda,ADD_VALUES); CHKERRQ(ierr);
       }
       break; 
@@ -604,7 +628,6 @@ PetscErrorCode snes_apply_arc_lenght(_p_SNES *snes,Vec x) {
       PCShellCtx *PCCtx = (PCShellCtx*)void_pc_ctx;
       ierr = PCApply(PCCtx->pc,F,SnesCtx->arc_ptr->y_residual); CHKERRQ(ierr);
       ierr = PCApply(PCCtx->pc,SnesCtx->arc_ptr->F_lambda,SnesCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
-      
 
     }
 

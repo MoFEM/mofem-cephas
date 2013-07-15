@@ -177,20 +177,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-  Vec F_lambda,b,db,x_lambda,y_residual;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F_lambda); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&b); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&db); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&x_lambda); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&y_residual); CHKERRQ(ierr);
-
-  ArcLenghtCtx ArcCtx(F_lambda,b,db,x_lambda,y_residual);
+  
+  ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
   PetscInt m,n;
   MatGetLocalSize(Aij,&m,&n);
-  MatShellCtx* MatCtx = new MatShellCtx(mField,Aij,&ArcCtx);
+  MatShellCtx* MatCtx = new MatShellCtx(mField,Aij,ArcCtx);
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)MatCtx,&ShellAij); CHKERRQ(ierr);
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_lenght_mult_shell); CHKERRQ(ierr);
@@ -218,10 +212,10 @@ int main(int argc, char *argv[]) {
   const double PoissonRatio = 0.25;
   MyElasticFEMethod MyFE(moab,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
-    &ArcCtx,SideSet1,SideSet2,SideSet3,SideSet4,NodeSet1);
+    ArcCtx,SideSet1,SideSet2,SideSet3,SideSet4,NodeSet1);
 
-  ArcLenghtElemFEMethod MyArcMethod(moab,&ArcCtx);
-  MySnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",&ArcCtx);
+  ArcLenghtElemFEMethod MyArcMethod(moab,ArcCtx);
+  MySnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
   
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -241,7 +235,7 @@ int main(int argc, char *argv[]) {
   ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
-  PCShellCtx* PCCtx = new PCShellCtx(Aij,ShellAij,&ArcCtx);
+  PCShellCtx* PCCtx = new PCShellCtx(Aij,ShellAij,ArcCtx);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
   ierr = PCShellSetContext(pc,PCCtx); CHKERRQ(ierr);
   ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
@@ -266,7 +260,7 @@ int main(int argc, char *argv[]) {
   int its_d = 5;
   double gamma = 0.5;
   for(;step<max_steps; step++) {
-    ierr = ArcCtx.set_s(step_size,1e-3); CHKERRQ(ierr);
+    ierr = ArcCtx->set_s(step_size,1e-3); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
@@ -320,15 +314,11 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = VecDestroy(&F_lambda); CHKERRQ(ierr);
-  ierr = VecDestroy(&b); CHKERRQ(ierr);
-  ierr = VecDestroy(&db); CHKERRQ(ierr);
-  ierr = VecDestroy(&x_lambda); CHKERRQ(ierr);
-  ierr = VecDestroy(&y_residual); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellAij); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   delete MatCtx;
   delete PCCtx;
+  delete ArcCtx;
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
