@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
       _SideSet1,_SideSet2) {};
 
-    /// Set Numan Boundart Conditions on SideSet2
+    /// Set Neumann Boundary Conditions on SideSet2
     PetscErrorCode NeumannBC() {
       PetscFunctionBegin;
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
