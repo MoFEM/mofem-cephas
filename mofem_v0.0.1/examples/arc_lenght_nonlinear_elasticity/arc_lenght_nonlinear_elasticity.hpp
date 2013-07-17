@@ -218,12 +218,6 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	//dx
 	ierr = VecCopy(snes_x,arc_ptr->dx); CHKERRQ(ierr);
 	ierr = VecAXPY(arc_ptr->dx,-1,arc_ptr->x0); CHKERRQ(ierr);
-	//db
-      	ierr = VecZeroEntries(arc_ptr->db); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(arc_ptr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(arc_ptr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecCopy(arc_ptr->dx,arc_ptr->db); CHKERRQ(ierr);
-	ierr = VecScale(arc_ptr->db,2); CHKERRQ(ierr);
 	//dlambda
 	NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
 	  = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
@@ -241,6 +235,12 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	int part = dit->part;
 	MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
 	PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e\n",arc_ptr->dlambda);
+	//db
+      	ierr = VecZeroEntries(arc_ptr->db); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(arc_ptr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(arc_ptr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecCopy(arc_ptr->dx,arc_ptr->db); CHKERRQ(ierr);
+	ierr = VecScale(arc_ptr->db,2); CHKERRQ(ierr);
 	//dx2
 	ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
       }
@@ -536,13 +536,13 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   double db_dot_pc_x,db_dot_x_lambda;
   ierr = VecDot(PCCtx->arc_ptr->db,pc_x,&db_dot_pc_x); CHKERRQ(ierr);
   ierr = VecDot(PCCtx->arc_ptr->db,PCCtx->arc_ptr->x_lambda,&db_dot_x_lambda); CHKERRQ(ierr);
-  double denominator = db_dot_x_lambda+PCCtx->arc_ptr->diag;
+  double denominator = PCCtx->arc_ptr->diag-db_dot_x_lambda;
   double res_lambda;
   ierr = MatCtx->set_lambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
   //cerr << "pc res_lambda " << res_lambda << endl;
   double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
   if(ddlambda != ddlambda) SETERRQ(PETSC_COMM_SELF,1,"problem with constraint");
-  ierr = VecAXPY(pc_x,ddlambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
+  ierr = VecAXPY(pc_x,-ddlambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
   ierr = MatCtx->set_lambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

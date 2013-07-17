@@ -225,9 +225,9 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   //
-  //ierr = SNESSetType(snes,SNESSHELL); CHKERRQ(ierr);
-  //ierr = SNESShellSetContext(snes,&SnesCtx); CHKERRQ(ierr);
-  //ierr = SNESShellSetSolve(snes,snes_apply_arc_lenght); CHKERRQ(ierr);
+  ierr = SNESSetType(snes,SNESSHELL); CHKERRQ(ierr);
+  ierr = SNESShellSetContext(snes,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESShellSetSolve(snes,snes_apply_arc_lenght); CHKERRQ(ierr);
   //
 
   KSP ksp;
