@@ -113,6 +113,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     ierr = PetscGetTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     switch(ctx) {
+      case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -137,6 +138,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     PetscFunctionBegin;
 
     switch(ctx) {
+      case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
         ierr = GetFint(); CHKERRQ(ierr);
 	VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
@@ -168,6 +170,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     PetscFunctionBegin;
 
     switch(ctx) {
+      case ctx_SNESNone:
       case ctx_SNESSetJacobian:
 	ierr = GetTangent(); CHKERRQ(ierr);
 	//cerr << "Khh " << Khh << endl;
@@ -265,6 +268,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 
     switch(ctx) {
+      case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	for(;siit!=hi_siit;siit++) {
 	  VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 

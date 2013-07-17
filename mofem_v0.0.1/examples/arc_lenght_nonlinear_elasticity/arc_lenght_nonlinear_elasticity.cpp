@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
   //data stored on mesh for restart
   Tag th_step_size,th_step;
-  double def_step_size = 5e-2;
+  double def_step_size = 1;
   moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size); 
   int def_step = 1;
   moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step); 
@@ -225,12 +225,11 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   //
-  ierr = SNESSetType(snes,SNESSHELL); CHKERRQ(ierr);
-  ierr = SNESShellSetContext(snes,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESShellSetSolve(snes,snes_apply_arc_lenght); CHKERRQ(ierr);
+  //ierr = SNESSetType(snes,SNESSHELL); CHKERRQ(ierr);
+  //ierr = SNESShellSetContext(snes,&SnesCtx); CHKERRQ(ierr);
+  //ierr = SNESShellSetSolve(snes,snes_apply_arc_lenght); CHKERRQ(ierr);
   //
 
-  
   KSP ksp;
   ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
   PC pc;
@@ -248,25 +247,27 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
 
-
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = MyFE.set_t_val(1e-4); CHKERRQ(ierr);
+  ierr = MyFE.set_t_val(1); CHKERRQ(ierr);
 
   int its_d = 5;
   double gamma = 0.5;
   for(;step<max_steps; step++) {
-    ierr = ArcCtx->set_s(step_size,1e-3); CHKERRQ(ierr);
+    ierr = ArcCtx->set_s(step_size,1); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
+    ierr = MyFE.set_x(D); CHKERRQ(ierr);
+    ierr = MyFE.set_f(F); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
-    step_size *= pow((double)its_d/(double)its,gamma);
+    step_size *= pow((double)its_d/(double)(its+1),gamma);
     //
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

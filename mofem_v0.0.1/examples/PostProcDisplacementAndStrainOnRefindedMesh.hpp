@@ -241,3 +241,34 @@ struct PostProcFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh
 
 };
 
+struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinOnRefMesh {
+
+  Tag th_stress;
+  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(Interface& _moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab) {
+    double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0};
+    rval = moab_post_proc.tag_get_handle("STRESS_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+  }
+
+  PetscErrorCode operator()() {
+      PetscFunctionBegin;
+
+      ierr = do_operator(); CHKERRQ(ierr);
+
+      //Strains to Noades in PostProc Mesh
+      vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+      ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
+      vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+      map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+      for(;viit!=GradU_at_GaussPt.end();viit++,mit++) {
+	ublas::matrix< FieldData > GradU = *viit;
+	ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+	rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
+	//caluate stress and save it into tag
+	// .... 
+
+      }
+
+      PetscFunctionReturn(0);
+  }
+
+};
