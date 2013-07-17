@@ -863,7 +863,7 @@ typedef multi_index_container<
       tag<PetscLocalIdx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::petsc_local_dof_idx> >,
     ordered_non_unique< 
       tag<Part_mi_tag>, member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> >,
-    hashed_non_unique<
+    ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_dof,EntityHandle,&NumeredDofMoFEMEntity::get_ent> >
   > > NumeredDofMoFEMEntity_multiIndex;
 

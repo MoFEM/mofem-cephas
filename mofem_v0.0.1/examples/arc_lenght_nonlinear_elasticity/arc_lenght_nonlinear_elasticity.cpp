@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
   //data stored on mesh for restart
   Tag th_step_size,th_step;
-  double def_step_size = 5e-2;
+  double def_step_size = 1;
   moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size); 
   int def_step = 1;
   moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step); 
@@ -149,9 +149,9 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);
 
     //set app. order
-    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",4); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",4); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",1); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
   }
 
@@ -177,17 +177,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-  Vec F_lambda,b,db,x_lambda;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F_lambda); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&b); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&db); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&x_lambda); CHKERRQ(ierr);
+  
+  ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
   PetscInt m,n;
   MatGetLocalSize(Aij,&m,&n);
-  MatShellCtx* MatCtx = new MatShellCtx(mField,Aij,F_lambda,db);
+  MatShellCtx* MatCtx = new MatShellCtx(mField,Aij,ArcCtx);
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)MatCtx,&ShellAij); CHKERRQ(ierr);
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_lenght_mult_shell); CHKERRQ(ierr);
@@ -197,22 +194,28 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,set_positions); CHKERRQ(ierr);
   }
 
-  Range SideSet1,SideSet2;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
+  Range SideSet1,SideSet2,SideSet3,SideSet4;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,1,SideSet1,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
+  ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSet4,true); CHKERRQ(ierr);
+  Range NodeSet1;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
+
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. edges in SideSet 1 : %u\n",SideSet1.size());
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 4 : %u\n",SideSet4.size());
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
   MyElasticFEMethod MyFE(moab,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
-    F_lambda,b,db,
-    SideSet1,SideSet2,SideSet2);
+    ArcCtx,SideSet1,SideSet2,SideSet3,SideSet4,NodeSet1);
 
-  ArcLenghtElemFEMethod MyArcMethod(moab,F_lambda,b);
-
-  moabSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
+  ArcLenghtElemFEMethod MyArcMethod(moab,ArcCtx);
+  MySnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
   
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -221,11 +224,17 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetJacobian(snes,ShellAij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
+  //
+  //ierr = SNESSetType(snes,SNESSHELL); CHKERRQ(ierr);
+  //ierr = SNESShellSetContext(snes,&SnesCtx); CHKERRQ(ierr);
+  //ierr = SNESShellSetSolve(snes,snes_apply_arc_lenght); CHKERRQ(ierr);
+  //
+
   KSP ksp;
   ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
-  PCShellCtx* PCCtx = new PCShellCtx(Aij,ShellAij,x_lambda);
+  PCShellCtx* PCCtx = new PCShellCtx(Aij,ShellAij,ArcCtx);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
   ierr = PCShellSetContext(pc,PCCtx); CHKERRQ(ierr);
   ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
@@ -238,25 +247,27 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
 
-
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = MyFE.set_t_val(1e-4); CHKERRQ(ierr);
+  ierr = MyFE.set_t_val(1); CHKERRQ(ierr);
 
-  int its_d = 4;
+  int its_d = 5;
   double gamma = 0.5;
   for(;step<max_steps; step++) {
-    ierr = MyArcMethod.set_s(step_size); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D dlambda = %6.4e\n",step,step_size); CHKERRQ(ierr);
+    ierr = ArcCtx->set_s(step_size,1); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
+    ierr = MyFE.set_x(D); CHKERRQ(ierr);
+    ierr = MyFE.set_f(F); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
-    step_size *= pow((double)its_d/(double)its,gamma);
+    step_size *= pow((double)its_d/(double)(its+1),gamma);
     //
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -264,17 +275,13 @@ int main(int argc, char *argv[]) {
     PostProcDisplacementsEntMethod ent_method(moab,"SPATIAL_POSITION");
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
     //
+    ierr = MyFE.potsProcessLoadPath(); CHKERRQ(ierr);
+    //
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
-	rval = moab.write_file("restart.h5m"); CHKERR_PETSC(rval);
-	//
-	EntityHandle out_meshset;
-	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
 	ostringstream sss;
-	sss << "out_" << step << ".vtk";
-	rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+	sss << "restart_" << step << ".h5m";
+	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
       }
     }
   }
@@ -308,14 +315,11 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = VecDestroy(&F_lambda); CHKERRQ(ierr);
-  ierr = VecDestroy(&b); CHKERRQ(ierr);
-  ierr = VecDestroy(&db); CHKERRQ(ierr);
-  ierr = VecDestroy(&x_lambda); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellAij); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   delete MatCtx;
   delete PCCtx;
+  delete ArcCtx;
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
