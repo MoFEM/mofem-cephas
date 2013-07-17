@@ -57,15 +57,30 @@ PetscErrorCode ierr;
 
 struct ArcLenghtCtx {
 
-  double s,beta;
-  PetscErrorCode set_s(double _s,double _beta) { 
+  double s,beta,alpha;
+  PetscErrorCode set_s(double _s) { 
     PetscFunctionBegin;
     s = _s;
+    PetscFunctionReturn(0);
+  }
+
+PetscErrorCode set_alpha_and_beta(double _alpha,double _beta) { 
+    PetscFunctionBegin;
+    alpha = _alpha;
     beta = _beta;
     PetscFunctionReturn(0);
   }
 
-  double diag,dx2,dlambda,F_lambda2,res_lambda,;
+
+  double dlambda;
+  PetscErrorCode set_dlambda(double _dlambda) {
+    PetscFunctionBegin;
+    dlambda = _dlambda;
+    PetscFunctionReturn(0);
+  } 
+
+
+  double diag,dx2,F_lambda2,res_lambda,;
   Vec F_lambda,db,x_lambda,y_residual,x0,dx;
   ArcLenghtCtx(moabField &mField,const string &problem_name) {
 
@@ -98,14 +113,15 @@ struct MySnesCtx: public moabSnesCtx {
 };
 
 struct MatShellCtx {
+
+  double scale_lambda;
   moabField& mField;
 
   Mat Aij;
   ArcLenghtCtx* arc_ptr;
-  MatShellCtx(moabField& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr): mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr) {};
+  MatShellCtx(moabField& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr): scale_lambda(1),mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr) {};
   PetscErrorCode set_lambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
     PetscFunctionBegin;
-
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problems_database("ELASTIC_MECHANICS",&problem_ptr); CHKERRQ(ierr);
     //get problem dofs
@@ -134,6 +150,7 @@ struct MatShellCtx {
     PetscFunctionReturn(0);
   }
   ~MatShellCtx() { }
+
   friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 };
 PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
@@ -147,9 +164,59 @@ PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   double db_dot_x;
   ierr = VecDot(ctx->arc_ptr->db,x,&db_dot_x); CHKERRQ(ierr);
   double f_lambda;
-  f_lambda = ctx->arc_ptr->diag*lambda + db_dot_x;
+  f_lambda = ctx->scale_lambda*(ctx->arc_ptr->diag*lambda + db_dot_x);
   ierr = ctx->set_lambda(f,&f_lambda,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAXPY(f,lambda,ctx->arc_ptr->F_lambda); CHKERRQ(ierr);
+  ierr = VecAXPY(f,-lambda,ctx->arc_ptr->F_lambda); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+struct PCShellCtx {
+  PC pc;
+  Mat ShellAij,Aij;
+  ArcLenghtCtx* arc_ptr;
+  PCShellCtx(Mat _ShellAij,Mat _Aij,ArcLenghtCtx* _arc_ptr): 
+    ShellAij(_ShellAij),Aij(_Aij),arc_ptr(_arc_ptr) {
+    PCCreate(PETSC_COMM_WORLD,&pc);
+  }
+  ~PCShellCtx() {
+    PCDestroy(&pc);
+  }
+  friend PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
+  friend PetscErrorCode pc_setup_arc_length(PC pc);
+};
+PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
+  PetscFunctionBegin;
+  void *void_ctx;
+  ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+  PCShellCtx *PCCtx = (PCShellCtx*)void_ctx;
+  void *void_MatCtx;
+  MatShellGetContext(PCCtx->ShellAij,&void_MatCtx);
+  MatShellCtx *MatCtx = (MatShellCtx*)void_MatCtx;
+  ierr = PCApply(PCCtx->pc,pc_f,pc_x); CHKERRQ(ierr);
+  ierr = PCApply(PCCtx->pc,PCCtx->arc_ptr->F_lambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
+  double db_dot_pc_x,db_dot_x_lambda;
+  ierr = VecDot(PCCtx->arc_ptr->db,pc_x,&db_dot_pc_x); CHKERRQ(ierr);
+  ierr = VecDot(PCCtx->arc_ptr->db,PCCtx->arc_ptr->x_lambda,&db_dot_x_lambda); CHKERRQ(ierr);
+  double denominator = MatCtx->scale_lambda*PCCtx->arc_ptr->diag+MatCtx->scale_lambda*db_dot_x_lambda;
+  double res_lambda;
+  ierr = MatCtx->set_lambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
+  double ddlambda = (res_lambda - MatCtx->scale_lambda*db_dot_pc_x)/denominator;
+  //cerr << res_lambda << " " << ddlambda << " " << db_dot_pc_x << " " << db_dot_x_lambda << " " << PCCtx->arc_ptr->diag << endl;
+  if(ddlambda != ddlambda) SETERRQ(PETSC_COMM_SELF,1,"problem with constraint");
+  ierr = VecAXPY(pc_x,ddlambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
+  ierr = MatCtx->set_lambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode pc_setup_arc_length(PC pc) {
+  PetscFunctionBegin;
+  void *void_ctx;
+  ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
+  PCShellCtx *ctx = (PCShellCtx*)void_ctx;
+  ierr = PCSetFromOptions(ctx->pc); CHKERRQ(ierr);
+  MatStructure flag;
+  ierr = PCGetOperators(pc,&ctx->ShellAij,&ctx->Aij,&flag); CHKERRQ(ierr);
+  ierr = PCSetOperators(ctx->pc,ctx->ShellAij,ctx->Aij,flag); CHKERRQ(ierr);
+  ierr = PCSetUp(ctx->pc); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -208,41 +275,11 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
     ierr = FEMethod_DriverComplexForLazy::preProcess(); CHKERRQ(ierr);
     switch(ctx) {
       case ctx_SNESNone:
-	//dx0
-	ierr = VecCopy(snes_x,arc_ptr->x0); CHKERRQ(ierr);
       case ctx_SNESSetFunction: { 
 	//F_lambda
       	ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	//dx
-	ierr = VecCopy(snes_x,arc_ptr->dx); CHKERRQ(ierr);
-	ierr = VecAXPY(arc_ptr->dx,-1,arc_ptr->x0); CHKERRQ(ierr);
-	//dlambda
-	NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
-	  = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-	NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
-	dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
-	hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
-	if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	if(dit->get_petsc_local_dof_idx()!=-1) {
-	  double *array;
-	  ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
-	  arc_ptr->dlambda = array[dit->get_petsc_local_dof_idx()];
-	  array[dit->get_petsc_local_dof_idx()] = 0;
-	  ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
-	}
-	int part = dit->part;
-	MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
-	PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e\n",arc_ptr->dlambda);
-	//db
-      	ierr = VecZeroEntries(arc_ptr->db); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(arc_ptr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(arc_ptr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecCopy(arc_ptr->dx,arc_ptr->db); CHKERRQ(ierr);
-	ierr = VecScale(arc_ptr->db,2); CHKERRQ(ierr);
-	//dx2
-	ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
@@ -318,25 +355,6 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode potsProcessLoadPath() {
-    PetscFunctionBegin;
-    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
-    lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
-    if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
-    Range::iterator nit = NodeSet1.begin();
-    for(;nit!=NodeSet1.end();nit++) {
-      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
-      dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
-      hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
-      for(;dit!=hi_dit;dit++) {
-	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
-	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
-      }
-    }
-    PetscFunctionReturn(0);
-  }
-
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(ctx) {
@@ -355,31 +373,6 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	//F_lambda2
 	ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\tFlambda^2 = %6.4e\n",arc_ptr->F_lambda2);
-	if(ctx == ctx_SNESNone) {
-	  NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
-	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-	  NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
-	  dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
-	  hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
-	  if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(dit->get_petsc_local_dof_idx()!=-1) {
-	    double *array;
-	    ierr = VecGetArray(snes_x,&array); CHKERRQ(ierr);
-	    double lambda_old = array[dit->get_petsc_local_dof_idx()];
-	    double dlambda = sqrt(pow(arc_ptr->s,2)/(pow(arc_ptr->beta,2)*arc_ptr->F_lambda2));
-	    if(!(dlambda == dlambda)) {
-	      ostringstream sss;
-	      sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
-	      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
-	    }
-	    array[dit->get_petsc_local_dof_idx()] = lambda_old + dlambda;
-	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-	      lambda_old,
-	      array[dit->get_petsc_local_dof_idx()],
-	      dlambda);
-	    ierr = VecRestoreArray(snes_x,&array); CHKERRQ(ierr);
-	  }
-	}
       }
       break;
       case ctx_SNESSetJacobian: {
@@ -391,6 +384,25 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
       break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode potsProcessLoadPath() {
+    PetscFunctionBegin;
+    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
+    lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
+    if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
+    Range::iterator nit = NodeSet1.begin();
+    for(;nit!=NodeSet1.end();nit++) {
+      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
+      dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
+      hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+      for(;dit!=hi_dit;dit++) {
+	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
+	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+      }
     }
     PetscFunctionReturn(0);
   }
@@ -415,14 +427,30 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionBegin;
     switch(ctx) {
       case ctx_SNESSetFunction: { 
+	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
+	ierr = calulate_db(); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
       }
       break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      break;
     }
+    PetscFunctionReturn(0);
+  }
+
+  double calulate_lambda_int() {
+    PetscFunctionBegin;
+    return arc_ptr->alpha*arc_ptr->dx2 + pow(arc_ptr->dlambda,2)*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode calulate_db() {
+    PetscFunctionBegin;
+    //db
+    ierr = VecCopy(arc_ptr->dx,arc_ptr->db); CHKERRQ(ierr);
+    ierr = VecScale(arc_ptr->db,2*arc_ptr->alpha); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -437,7 +465,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
     switch(ctx) {
       case ctx_SNESSetFunction: {
-	arc_ptr->res_lambda = arc_ptr->dx2 + pow(arc_ptr->dlambda,2)*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2 - pow(arc_ptr->s,2);
+	arc_ptr->res_lambda = calulate_lambda_int() - pow(arc_ptr->s,2);
 	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
       }
@@ -449,8 +477,8 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
       }
       break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"no implemented");
-    }
+      break;
+    }	
     
     PetscFunctionReturn(0);
   }
@@ -464,10 +492,6 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	double fnorm;
-	ierr = VecNormBegin(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
-	ierr = VecNormEnd(snes_f,NORM_2,&fnorm);CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
 	//add F_lambda
 	NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
 	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
@@ -475,9 +499,10 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 	dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
 	hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
 	if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	ierr = VecAXPY(snes_f,dit->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	ierr = VecAXPY(snes_f,-dit->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",dit->get_FieldData());  
-	//double fnorm;
+	//snes_f norm
+	double fnorm;
 	ierr = VecNormBegin(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
 	ierr = VecNormEnd(snes_f,NORM_2,&fnorm);CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
@@ -502,62 +527,83 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
       }
       break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      break;
     }
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode calulate_dx_and_dlambda(Vec x) {
+    PetscFunctionBegin;
+    //dx
+    ierr = VecCopy(x,arc_ptr->dx); CHKERRQ(ierr);
+    ierr = VecAXPY(arc_ptr->dx,-1,arc_ptr->x0); CHKERRQ(ierr);
+    //dlambda
+    NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
+	  = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+    dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+    hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
+    if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    if(dit->get_petsc_local_dof_idx()!=-1) {
+	  double *array;
+	  ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
+	  arc_ptr->dlambda = array[dit->get_petsc_local_dof_idx()];
+	  array[dit->get_petsc_local_dof_idx()] = 0;
+	  ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
+    }
+    int part = dit->part;
+    MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
+    //dx2
+    ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arc_ptr->dlambda,arc_ptr->dx2);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode calculate_init_dlambda(double *dlambda) {
+
+      PetscFunctionBegin;
+
+      *dlambda = sqrt(pow(arc_ptr->s,2)/(pow(arc_ptr->beta,2)*arc_ptr->F_lambda2));
+      if(!(*dlambda == *dlambda)) {
+	      ostringstream sss;
+	      sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
+	      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode set_dlambda_to_x(Vec x,double dlambda) {
+      PetscFunctionBegin;
+
+      NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
+	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+      NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+      dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+      hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
+      if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+
+      if(dit->get_petsc_local_dof_idx()!=-1) {
+	    double *array;
+	    ierr = VecGetArray(x,&array); CHKERRQ(ierr);
+	    double lambda_old = array[dit->get_petsc_local_dof_idx()];
+	    if(!(dlambda == dlambda)) {
+	      ostringstream sss;
+	      sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
+	      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+	    }
+	    array[dit->get_petsc_local_dof_idx()] = lambda_old + dlambda;
+	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
+	      lambda_old, array[dit->get_petsc_local_dof_idx()], dlambda);
+	    ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
+      }
+
+      PetscFunctionReturn(0);
+  }
+
+
 };
 
-struct PCShellCtx {
-  PC pc;
-  Mat ShellAij,Aij;
-  ArcLenghtCtx* arc_ptr;
-  PCShellCtx(Mat _ShellAij,Mat _Aij,ArcLenghtCtx* _arc_ptr): 
-    ShellAij(_ShellAij),Aij(_Aij),arc_ptr(_arc_ptr) {
-    PCCreate(PETSC_COMM_WORLD,&pc);
-  }
-  ~PCShellCtx() {
-    PCDestroy(&pc);
-  }
-  friend PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
-  friend PetscErrorCode pc_setup_arc_length(PC pc);
-};
-PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
-  PetscFunctionBegin;
-  void *void_ctx;
-  ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
-  PCShellCtx *PCCtx = (PCShellCtx*)void_ctx;
-  void *void_MatCtx;
-  MatShellGetContext(PCCtx->ShellAij,&void_MatCtx);
-  MatShellCtx *MatCtx = (MatShellCtx*)void_MatCtx;
-  ierr = PCApply(PCCtx->pc,pc_f,pc_x); CHKERRQ(ierr);
-  ierr = PCApply(PCCtx->pc,PCCtx->arc_ptr->F_lambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
-  double db_dot_pc_x,db_dot_x_lambda;
-  ierr = VecDot(PCCtx->arc_ptr->db,pc_x,&db_dot_pc_x); CHKERRQ(ierr);
-  ierr = VecDot(PCCtx->arc_ptr->db,PCCtx->arc_ptr->x_lambda,&db_dot_x_lambda); CHKERRQ(ierr);
-  double denominator = PCCtx->arc_ptr->diag-db_dot_x_lambda;
-  double res_lambda;
-  ierr = MatCtx->set_lambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
-  //cerr << "pc res_lambda " << res_lambda << endl;
-  double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
-  if(ddlambda != ddlambda) SETERRQ(PETSC_COMM_SELF,1,"problem with constraint");
-  ierr = VecAXPY(pc_x,-ddlambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
-  ierr = MatCtx->set_lambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode pc_setup_arc_length(PC pc) {
-  PetscFunctionBegin;
-  void *void_ctx;
-  ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
-  PCShellCtx *ctx = (PCShellCtx*)void_ctx;
-  ierr = PCSetFromOptions(ctx->pc); CHKERRQ(ierr);
-  MatStructure flag;
-  ierr = PCGetOperators(pc,&ctx->ShellAij,&ctx->Aij,&flag); CHKERRQ(ierr);
-  ierr = PCSetOperators(ctx->pc,ctx->ShellAij,ctx->Aij,flag); CHKERRQ(ierr);
-  ierr = PCSetUp(ctx->pc); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
 PetscErrorCode snes_apply_arc_lenght(_p_SNES *snes,Vec x) {
   PetscFunctionBegin;
   
@@ -690,6 +736,23 @@ PetscErrorCode snes_apply_arc_lenght(_p_SNES *snes,Vec x) {
 
   PetscFunctionReturn(0);
 }
+
+/*struct StroreField: public EntMethod {
+
+  string storaga_field_name;
+  StroreField(Interface& _moab,string _storaga_field_name): EntMethod(_moab),storaga_field_name(_storaga_field_name) {}
+
+  PetscErrorCode preProcess() {
+  }
+
+  PetscErrorCode operator()() {
+  }
+
+  PetscErrorCode postProcess() {
+  }
+
+
+};*/
 
 }
 

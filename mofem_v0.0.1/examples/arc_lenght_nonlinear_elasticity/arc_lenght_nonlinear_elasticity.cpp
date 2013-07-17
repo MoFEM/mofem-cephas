@@ -102,6 +102,10 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
     ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
 
+    ////Field for ArcLenght
+    //ierr = mField.add_field("DX_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+    //ierr = mField.add_field("DX_LAMBDA",NoField,1); CHKERRQ(ierr);
+
     //FE
     ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
     ierr = mField.add_finite_element("ARC_LENGHT"); CHKERRQ(ierr);
@@ -253,22 +257,67 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = MyFE.set_t_val(1); CHKERRQ(ierr);
+  ierr = MyFE.set_t_val(-1); CHKERRQ(ierr);
 
-  int its_d = 5;
-  double gamma = 0.5;
+  int its_d = 6;
+  double gamma = 0.5,reduction;
   for(;step<max_steps; step++) {
-    ierr = ArcCtx->set_s(step_size,1); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
-    ierr = MyFE.set_x(D); CHKERRQ(ierr);
-    ierr = MyFE.set_f(F); CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+
+    if(step == 1) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
+      ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
+      ierr = ArcCtx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+      ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
+      ierr = MyFE.set_x(D); CHKERRQ(ierr);
+      ierr = MyFE.set_f(F); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+      ierr = MyArcMethod.set_x(D); CHKERRQ(ierr);
+      ierr = MyArcMethod.set_f(F); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
+      double dlambda;
+      ierr = MyArcMethod.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);
+      ierr = MyArcMethod.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+    } else if(step == 2) {
+      ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+      ierr = MyArcMethod.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
+      step_size = sqrt(MyArcMethod.calulate_lambda_int());
+      ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
+      double dlambda = ArcCtx->dlambda;
+      double dx_nrm;
+      ierr = VecNorm(ArcCtx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,
+	"Load Setp %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+	step,step_size,dlambda,dx_nrm,ArcCtx->dx2); CHKERRQ(ierr);
+      ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
+      ierr = VecAXPY(D,1.,ArcCtx->dx); CHKERRQ(ierr);
+      ierr = MyArcMethod.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+    } else {
+      ierr = MyArcMethod.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
+      step_size *= reduction;
+      ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
+      double dlambda = reduction*ArcCtx->dlambda;
+      double dx_nrm;
+      ierr = VecScale(ArcCtx->dx,reduction); CHKERRQ(ierr);
+      ierr = VecNorm(ArcCtx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,
+	"Load Setp %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+	step,step_size,dlambda,dx_nrm,ArcCtx->dx2); CHKERRQ(ierr);
+      ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
+      ierr = VecAXPY(D,1.,ArcCtx->dx); CHKERRQ(ierr);
+      ierr = MyArcMethod.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+
+    }
+
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
-    step_size *= pow((double)its_d/(double)(its+1),gamma);
-    //
+
+    if(step > 1) {
+      reduction = pow((double)its_d/(double)(its+1),gamma);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
+    }
+
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //
