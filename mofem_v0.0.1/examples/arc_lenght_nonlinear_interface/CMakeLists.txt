@@ -16,13 +16,12 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(nonlinear_elasticity nonlinear_elasticity.cpp)
-target_link_libraries(nonlinear_elasticity mofem_Field ${PROJECT_LIBS})
+add_executable(arc_lenght_interface arc_lenght_interface.cpp)
+target_link_libraries(arc_lenght_interface mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/LShape.cub" "/" export_files_nonlinear_elasticity)
-cm_export_file("../../meshes/LShapeCoarse.cub" "/" export_files_nonlinear_elasticity)
-cm_export_file("../../meshes/LShapeDense.cub" "/" export_files_nonlinear_elasticity)
+cm_export_file("../../meshes/PeelTest.cub" "/" export_files_arc_lenght_interface)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
