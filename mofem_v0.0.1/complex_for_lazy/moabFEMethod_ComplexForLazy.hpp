@@ -64,7 +64,6 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
     
   ErrorCode rval;  
   PetscErrorCode ierr;
-  ParallelComm* pcomm;
 
   vector<vector<DofIdx> > RowGlob;
   vector<vector<DofIdx> > ColGlob;

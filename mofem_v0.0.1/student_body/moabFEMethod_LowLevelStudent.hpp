@@ -39,6 +39,7 @@ namespace MoFEM {
  * structures which could be useful.
 */
 struct FEMethod_LowLevelStudent: public moabField::FEMethod {
+  Interface& moab;
 
   //
   FEMethod_LowLevelStudent *ParentMethod;

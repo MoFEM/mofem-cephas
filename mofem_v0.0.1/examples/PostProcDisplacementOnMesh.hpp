@@ -26,11 +26,11 @@ using namespace MoFEM;
 struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
-
+    Interface& moab;
 
     Tag th_disp;
     string field_name;
-    PostProcDisplacementsEntMethod(Interface& _moab,string _field_name = "DISPLACEMENT"): EntMethod(_moab),field_name(_field_name) {
+    PostProcDisplacementsEntMethod(Interface& _moab,string _field_name = "DISPLACEMENT"): EntMethod(),moab(_moab),field_name(_field_name) {
       double def_VAL[3] = {0,0,0};
       // create TAG
       string tag_name = field_name+"_VAL";

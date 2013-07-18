@@ -28,7 +28,7 @@ namespace MoFEM {
 
 const int debug = 1;
 
-FEMethod_LowLevelStudent::FEMethod_LowLevelStudent(Interface& _moab,int _verbose): FEMethod(_moab),ParentMethod(NULL),verbose(_verbose),fe_ent_ptr(NULL) {
+FEMethod_LowLevelStudent::FEMethod_LowLevelStudent(Interface& _moab,int _verbose): FEMethod(),moab(_moab),ParentMethod(NULL),verbose(_verbose),fe_ent_ptr(NULL) {
   ShapeMBTET(NTET,G_TET_X1,G_TET_Y1,G_TET_Z1,1);
   ShapeDiffMBTET(diffNTET);
   ShapeMBTRI(NTRI,G_TRI_X1,G_TRI_Y1,1);

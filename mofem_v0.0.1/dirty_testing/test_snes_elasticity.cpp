@@ -181,6 +181,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 };
 
 struct ArcLenghtElemFEMethod: public moabField::FEMethod {
+  Interface& moab;
 
   double s;
   PetscErrorCode set_s(double _s) { 
@@ -191,7 +192,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
   Vec GhostLambda;
   Vec F_lambda,b;
-  ArcLenghtElemFEMethod(Interface& _moab,Vec _F_lambda,Vec _b): FEMethod(_moab),F_lambda(_F_lambda),b(_b) {
+  ArcLenghtElemFEMethod(Interface& _moab,Vec _F_lambda,Vec _b): FEMethod(),moab(_moab),F_lambda(_F_lambda),b(_b) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {

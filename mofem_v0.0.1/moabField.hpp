@@ -388,8 +388,7 @@ struct moabField {
     * It can be used to calulate stiffnes matrices, residuals, load vectors etc.
     */  
   struct FEMethod: public BasicMethod {
-    Interface& moab;
-    FEMethod(Interface& _moab);
+    FEMethod();
 
     /** \brief function is run at the beginig of looop
      *
@@ -425,8 +424,7 @@ struct moabField {
   };
 
   struct EntMethod: public BasicMethod {
-    Interface& moab;
-    EntMethod(Interface& _moab);
+    EntMethod();
     
     PetscErrorCode preProcess();
     PetscErrorCode operator()();

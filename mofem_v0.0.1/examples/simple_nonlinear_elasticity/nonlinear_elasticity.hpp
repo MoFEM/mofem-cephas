@@ -37,11 +37,12 @@ namespace MoFEM {
 struct SetPositionsEntMethod: public moabField::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
+    Interface& moab;
 
     EntityHandle node;
     double coords[3];
 
-    SetPositionsEntMethod(Interface& _moab): EntMethod(_moab),node(no_handle) {}
+    SetPositionsEntMethod(Interface& _moab): EntMethod(),moab(_moab),node(no_handle) {}
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
