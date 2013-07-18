@@ -2753,20 +2753,20 @@ PetscErrorCode moabField_Core::set_global_VecCreateGhost(const string &name,RowC
   }
   dofs_by_global_idx::iterator miit = dofs->lower_bound(0);
   dofs_by_global_idx::iterator hi_miit = dofs->upper_bound(nb_dofs);
-  VecScatter ctx;
-  Vec V_glob;
-  ierr = VecScatterCreateToAll(V,&ctx,&V_glob); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  PetscInt size;
-  ierr = VecGetSize(V_glob,&size); CHKERRQ(ierr);
-  if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
-  if(size!=distance(miit,hi_miit)) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
-  PetscScalar *array;
-  VecGetArray(V_glob,&array);
   DofIdx ii = 0;
   switch (scatter_mode) {
-    case SCATTER_REVERSE:
+    case SCATTER_REVERSE: {
+      VecScatter ctx;
+      Vec V_glob;
+      ierr = VecScatterCreateToAll(V,&ctx,&V_glob); CHKERRQ(ierr);
+      ierr = VecScatterBegin(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecScatterEnd(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      PetscInt size;
+      ierr = VecGetSize(V_glob,&size); CHKERRQ(ierr);
+      if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
+      if(size!=distance(miit,hi_miit)) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
+      PetscScalar *array;
+      ierr = VecGetArray(V_glob,&array); CHKERRQ(ierr);
       switch (mode) {
 	case INSERT_VALUES:
 	  for(;miit!=hi_miit;miit++,ii++) miit->get_FieldData() = array[ii];
@@ -2777,13 +2777,14 @@ PetscErrorCode moabField_Core::set_global_VecCreateGhost(const string &name,RowC
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
+      ierr = VecRestoreArray(V_glob,&array); CHKERRQ(ierr);
+      ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
+      ierr = VecDestroy(&V_glob); CHKERRQ(ierr);
     break;
+    }
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
-  VecRestoreArray(V,&array);
-  VecScatterDestroy(&ctx);
-  VecDestroy(&V_glob);
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,const bool recursive,int verb) {
@@ -3328,18 +3329,18 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
   if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
     SETERRQ(PETSC_COMM_SELF,1,"fiedls has to have same rank");
   }
-  VecScatter ctx;
-  Vec V_glob;
-  ierr = VecScatterCreateToAll(V,&ctx,&V_glob); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  PetscInt size;
-  ierr = VecGetSize(V_glob,&size); CHKERRQ(ierr);
-  if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
-  PetscScalar *array;
-  VecGetArray(V_glob,&array);
   switch (scatter_mode) {
-    case SCATTER_REVERSE:
+    case SCATTER_REVERSE: {
+      Vec V_glob;
+      VecScatter ctx;
+      ierr = VecScatterCreateToAll(V,&ctx,&V_glob); CHKERRQ(ierr);
+      ierr = VecScatterBegin(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecScatterEnd(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      PetscInt size;
+      ierr = VecGetSize(V_glob,&size); CHKERRQ(ierr);
+      if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
+      PetscScalar *array;
+      VecGetArray(V_glob,&array);
       switch (mode) {
 	case INSERT_VALUES:
 	  for(;miit!=hi_miit;miit++) {
@@ -3381,19 +3382,22 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
+      ierr = VecRestoreArray(V_glob,&array); CHKERRQ(ierr);
+      ierr = VecDestroy(&V_glob); CHKERRQ(ierr);
+      ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
+    }
     break;
     case SCATTER_FORWARD:
       switch (mode) {
 	case INSERT_VALUES:
 	  for(;miit!=hi_miit;miit++) {
-	    if(miit->get_petsc_gloabl_dof_idx()>=size) {
-	      SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
-	    }
 	    DofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator diiiit;
 	    diiiit = dofs_moabfield.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
 	    if(diiiit==dofs_moabfield.get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no data to fill the vector");
-	    array[miit->get_petsc_gloabl_dof_idx()] = diiiit->get_FieldData();
+	    ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
 	  }
+	  ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -3402,9 +3406,6 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
-  VecRestoreArray(V,&array);
-  VecScatterDestroy(&ctx);
-  VecDestroy(&V_glob);
   PetscFunctionReturn(0);
 }
 
