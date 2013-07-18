@@ -329,8 +329,9 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
 	}
       }
     }
-    rval = moab.tag_get_data(th_FEId,&*mit,1,&field_id); CHKERR_PETSC(rval);
-    if(field_id!=0) {
+    BitFieldId fe_id;
+    rval = moab.tag_get_data(th_FEId,&*mit,1,&fe_id); CHKERR_PETSC(rval);
+    if(fe_id!=0) {
       pair<MoFEMFE_multiIndex::iterator,bool> p = finite_elements.insert(MoFEMFE(moab,*mit));
       if(verb > 0) {
      	ostringstream ss;
@@ -3348,6 +3349,8 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
 	    DofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator diiiit;
 	    diiiit = dofs_moabfield.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
 	    if(diiiit==dofs_moabfield.get<Composite_mi_tag>().end()) {
+	      EntityHandle ent = miit->get_ent();
+	      rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERR_PETSC(rval);
 	      //create field moabent
 	      ApproximationOrder order = miit->get_max_order();
 	      MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());

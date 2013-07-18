@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   double& step_size = *(double *)tag_data_step_size[0];
   const void* tag_data_step[1];
   rval = moab.tag_get_by_ptr(th_step,&root,1,tag_data_step); CHKERR_PETSC(rval);
-  int& step= *(int *)tag_data_step[0];
+  int& step = *(int *)tag_data_step[0];
   //end of data stored for restart
 
   PetscLogDouble t1,t2;
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     SetPositionsEntMethod set_positions(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,set_positions); CHKERRQ(ierr);
   } else {
-    ierr = mField.set_other_global_VecCreateGhost("ELASTIC_MECHANICS","SPATIAL_POSITION","DX_SPATIAL_POSITION",Row,ArcCtx->dx,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    //ierr = mField.set_other_global_VecCreateGhost("ELASTIC_MECHANICS","SPATIAL_POSITION","DX_SPATIAL_POSITION",Row,ArcCtx->dx,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   }
 
   Range SideSet1,SideSet2,SideSet3,SideSet4;
@@ -264,7 +264,13 @@ int main(int argc, char *argv[]) {
   ierr = MyFE.set_t_val(-1); CHKERRQ(ierr);
 
   int its_d = 6;
-  double gamma = 0.5,reduction = step_size_reduction;
+  double gamma = 0.5,reduction;
+  /*if(step == 1) {
+    step_size = step_size_reduction;
+  } else {
+    reduction = step_size_reduction;
+  }*/
+  step = 1;
   for(;step<max_steps; step++) {
 
     if(step == 1) {
