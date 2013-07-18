@@ -17,7 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-using namespace MoFEM;
+#ifndef __ELASTICFEMETHOD_HPP__
+#define __ELASTICFEMETHOD_HPP__
+
+namespace MoFEM {
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
@@ -413,3 +416,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     }
 
   };
+
+}
+
+#endif //__ELASTICFEMETHOD_HPP__

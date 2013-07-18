@@ -17,6 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef __POSTPROCDISPLACEMENTONMESH_HPP__
+#define __POSTPROCDISPLACEMENTONMESH_HPP__
+
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
 
@@ -76,3 +79,4 @@ struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
 
 };
 
+#endif // __POSTPROCDISPLACEMENTONMESH_HPP__

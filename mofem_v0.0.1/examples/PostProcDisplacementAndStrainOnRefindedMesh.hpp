@@ -17,6 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
+#define __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
+
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
@@ -272,3 +275,6 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
   }
 
 };
+
+#endif //__POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
+
