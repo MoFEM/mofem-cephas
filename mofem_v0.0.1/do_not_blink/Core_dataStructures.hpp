@@ -236,7 +236,7 @@ typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
     ordered_non_unique<
-      const_mem_fun<DofMoFEMEntity::interface_type_ref_ent,EntityType,&DofMoFEMEntity::get_ent_type> >
+      const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type> >
   > > DofMoFEMEntity_multiIndex_ent_type_view;
 
 struct NumeredDofMoFEMEntity_part_change {

@@ -63,18 +63,21 @@ int main(int argc, char *argv[]) {
   //data stored on mesh for restart
   Tag th_step_size,th_step;
   double def_step_size = 1;
-  moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size); 
+  rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);  
+  if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
+  CHKERR(rval);
   int def_step = 1;
-  moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step); 
+  rval = moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step);  
+  if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
+  CHKERR(rval);
   const void* tag_data_step_size[1];
   EntityHandle root = moab.get_root_set();
-  rval = moab.tag_get_by_ptr(th_step_size,&root,1,tag_data_step_size); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_step_size,&root,1,tag_data_step_size); CHKERR_PETSC(rval);
   double& step_size = *(double *)tag_data_step_size[0];
   const void* tag_data_step[1];
-  rval = moab.tag_get_by_ptr(th_step,&root,1,tag_data_step); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_step,&root,1,tag_data_step); CHKERR_PETSC(rval);
   int& step= *(int *)tag_data_step[0];
   //end of data stored for restart
-  step_size *= step_size_reduction;
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -102,9 +105,8 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
     ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
 
-    ////Field for ArcLenght
-    //ierr = mField.add_field("DX_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
-    //ierr = mField.add_field("DX_LAMBDA",NoField,1); CHKERRQ(ierr);
+    //Field for ArcLenght
+    ierr = mField.add_field("DX_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
 
     //FE
     ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -196,6 +198,8 @@ int main(int argc, char *argv[]) {
   if(step==1) {
     SetPositionsEntMethod set_positions(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,set_positions); CHKERRQ(ierr);
+  } else {
+    ierr = mField.set_other_global_VecCreateGhost("ELASTIC_MECHANICS","SPATIAL_POSITION","DX_SPATIAL_POSITION",Row,ArcCtx->dx,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   }
 
   Range SideSet1,SideSet2,SideSet3,SideSet4;
@@ -229,9 +233,9 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   //
-  ierr = SNESSetType(snes,SNESSHELL); CHKERRQ(ierr);
+  /*ierr = SNESSetType(snes,SNESSHELL); CHKERRQ(ierr);
   ierr = SNESShellSetContext(snes,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESShellSetSolve(snes,snes_apply_arc_lenght); CHKERRQ(ierr);
+  ierr = SNESShellSetSolve(snes,snes_apply_arc_lenght); CHKERRQ(ierr);*/
   //
 
   KSP ksp;
@@ -260,7 +264,7 @@ int main(int argc, char *argv[]) {
   ierr = MyFE.set_t_val(-1); CHKERRQ(ierr);
 
   int its_d = 6;
-  double gamma = 0.5,reduction;
+  double gamma = 0.5,reduction = step_size_reduction;
   for(;step<max_steps; step++) {
 
     if(step == 1) {
@@ -320,6 +324,8 @@ int main(int argc, char *argv[]) {
 
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_other_global_VecCreateGhost("ELASTIC_MECHANICS","SPATIAL_POSITION","DX_SPATIAL_POSITION",Row,ArcCtx->dx,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
     //
     PostProcDisplacementsEntMethod ent_method(moab,"SPATIAL_POSITION");
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);

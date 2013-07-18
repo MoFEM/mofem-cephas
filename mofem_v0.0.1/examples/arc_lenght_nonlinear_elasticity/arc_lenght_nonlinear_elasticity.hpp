@@ -55,7 +55,28 @@ namespace MoFEM {
 ErrorCode rval;
 PetscErrorCode ierr;
 
-struct ArcLenghtCtx {
+struct ArcLenghtCtx_DataOnMesh {
+  Interface &moab;
+  const void* tag_data_dlambda[1];
+  ArcLenghtCtx_DataOnMesh(moabField &mField): moab(mField.get_moab()) {
+    Tag th_dlambda;
+    double def_dlambda = 0;
+    rval = moab.tag_get_handle("_DLAMBDA",1,MB_TYPE_DOUBLE,th_dlambda,MB_TAG_CREAT|MB_TAG_MESH,&def_dlambda);  
+    if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
+    CHKERR_THROW(rval);
+    EntityHandle root = moab.get_root_set();
+    rval = moab.tag_get_by_ptr(th_dlambda,&root,1,tag_data_dlambda); CHKERR_THROW(rval);
+  }
+};
+
+struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
+
+  double& dlambda; //reference to moab data see ArcLenghtCtc_DataOnMesh and constructor ArcLenghtCtx
+  PetscErrorCode set_dlambda(double _dlambda) {
+    PetscFunctionBegin;
+    dlambda = _dlambda;
+    PetscFunctionReturn(0);
+  } 
 
   double s,beta,alpha;
   PetscErrorCode set_s(double _s) { 
@@ -64,7 +85,7 @@ struct ArcLenghtCtx {
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode set_alpha_and_beta(double _alpha,double _beta) { 
+  PetscErrorCode set_alpha_and_beta(double _alpha,double _beta) { 
     PetscFunctionBegin;
     alpha = _alpha;
     beta = _beta;
@@ -72,17 +93,9 @@ PetscErrorCode set_alpha_and_beta(double _alpha,double _beta) {
   }
 
 
-  double dlambda;
-  PetscErrorCode set_dlambda(double _dlambda) {
-    PetscFunctionBegin;
-    dlambda = _dlambda;
-    PetscFunctionReturn(0);
-  } 
-
-
   double diag,dx2,F_lambda2,res_lambda,;
   Vec F_lambda,db,x_lambda,y_residual,x0,dx;
-  ArcLenghtCtx(moabField &mField,const string &problem_name) {
+  ArcLenghtCtx(moabField &mField,const string &problem_name): ArcLenghtCtx_DataOnMesh(mField), dlambda(*(double *)tag_data_dlambda[0]) {
 
     mField.VecCreateGhost(problem_name,Row,&F_lambda);
     mField.VecCreateGhost(problem_name,Row,&db);
@@ -736,23 +749,6 @@ PetscErrorCode snes_apply_arc_lenght(_p_SNES *snes,Vec x) {
 
   PetscFunctionReturn(0);
 }
-
-/*struct StroreField: public EntMethod {
-
-  string storaga_field_name;
-  StroreField(Interface& _moab,string _storaga_field_name): EntMethod(_moab),storaga_field_name(_storaga_field_name) {}
-
-  PetscErrorCode preProcess() {
-  }
-
-  PetscErrorCode operator()() {
-  }
-
-  PetscErrorCode postProcess() {
-  }
-
-
-};*/
 
 }
 

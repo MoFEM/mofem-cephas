@@ -467,6 +467,24 @@ struct moabField {
     */
   virtual PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
+  /** \brief Copy Field to Another
+    *
+    */
+  //NOT TESTED DONT USE virtual PetscErrorCode set_other_filed_values(const string& fiel_name,const string& cpy_field_name,InsertMode mode,ScatterMode scatter_mode) = 0;
+
+  /** \brief Copy vector to field which is not part of the problem
+    *
+    * \param name problem name
+    * \param field_name field name used for indexing petsc vectors used in the problem
+    * \param cpy_field field name where data from vector are stored
+    * \param RowColData for row or column
+    * \param V vector
+    * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+    * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    */
+  virtual PetscErrorCode set_other_global_VecCreateGhost(
+    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+
 };
 
 }
