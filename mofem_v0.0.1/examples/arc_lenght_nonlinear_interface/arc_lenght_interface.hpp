@@ -27,6 +27,7 @@
 #include "PostProcDisplacementOnMesh.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "ElasticFEMethodForInterface.hpp"
+#include "ArcLeghtTools.hpp"
 
 #ifdef __cplusplus
 extern "C" {

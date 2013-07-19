@@ -17,8 +17,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ARCLEGHTTOOLS_HPP__
-#define __ARCLEGHTTOOLS_HPP__
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
@@ -38,9 +36,8 @@
 #include "moabFEMethod_ComplexForLazy.hpp"
 #include "moabFEMethod_DriverComplexForLazy.hpp"
 
-#include "complex_for_lazy.h"
-
-#include "nonlinear_elasticity.hpp"
+#ifndef __ARCLEGHTTOOLS_HPP__
+#define __ARCLEGHTTOOLS_HPP__
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,10 +49,10 @@ extern "C" {
 
 namespace MoFEM {
 
-ErrorCode rval;
-PetscErrorCode ierr;
-
 struct ArcLenghtCtx_DataOnMesh {
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
   Interface &moab;
   const void* tag_data_dlambda[1];
   ArcLenghtCtx_DataOnMesh(moabField &mField): moab(mField.get_moab()) {
@@ -70,6 +67,9 @@ struct ArcLenghtCtx_DataOnMesh {
 };
 
 struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
 
   double& dlambda; //reference to moab data see ArcLenghtCtc_DataOnMesh and constructor ArcLenghtCtx
   PetscErrorCode set_dlambda(double _dlambda) {
@@ -117,15 +117,22 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
 
 };
 
-struct MySnesCtx: public moabSnesCtx {
+struct ArcLenghtSnesCtx: public moabSnesCtx {
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
 
   ArcLenghtCtx* arc_ptr;
-  MySnesCtx(moabField &_mField,const string &_problem_name,ArcLenghtCtx* _arc_ptr):
+  ArcLenghtSnesCtx(moabField &_mField,const string &_problem_name,ArcLenghtCtx* _arc_ptr):
     moabSnesCtx(_mField,_problem_name),arc_ptr(_arc_ptr) {}
 
 };
 
 struct MatShellCtx {
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
 
   double scale_lambda;
   moabField& mField;
@@ -168,6 +175,7 @@ struct MatShellCtx {
 };
 PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
   MatShellCtx *ctx = (MatShellCtx*)void_ctx;
@@ -199,6 +207,7 @@ struct PCShellCtx {
 };
 PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
   void *void_ctx;
   ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
   PCShellCtx *PCCtx = (PCShellCtx*)void_ctx;
@@ -222,6 +231,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
 }
 PetscErrorCode pc_setup_arc_length(PC pc) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
   void *void_ctx;
   ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
   PCShellCtx *ctx = (PCShellCtx*)void_ctx;
@@ -236,15 +246,13 @@ PetscErrorCode pc_setup_arc_length(PC pc) {
 
 PetscErrorCode snes_apply_arc_lenght(_p_SNES *snes,Vec x) {
   PetscFunctionBegin;
+
+  PetscErrorCode ierr;
   
   PetscInt           lits;
   MatStructure       flg = DIFFERENT_NONZERO_PATTERN;
   Vec                Y,F;
   KSPConvergedReason kspreason;
-
-  /*void *void_snes_ctx;
-  ierr = SNESShellGetContext(snes,&void_snes_ctx); CHKERRQ(ierr);
-  MySnesCtx *SnesCtx = (MySnesCtx*)void_snes_ctx;*/
 
   ierr = SNESSetUpMatrices(snes);CHKERRQ(ierr);
 

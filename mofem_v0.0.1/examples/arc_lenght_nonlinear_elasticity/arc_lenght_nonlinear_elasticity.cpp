@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
     ArcCtx,SideSet1,SideSet2,SideSet3,SideSet4,NodeSet1);
 
   ArcLenghtElemFEMethod MyArcMethod(moab,ArcCtx);
-  MySnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
+  ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
   
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);

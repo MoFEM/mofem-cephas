@@ -53,8 +53,8 @@ extern "C" {
 
 namespace MoFEM {
 
-//ErrorCode rval;
-//PetscErrorCode ierr;
+ErrorCode rval;
+PetscErrorCode ierr;
 
 struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
