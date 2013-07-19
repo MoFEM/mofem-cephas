@@ -410,7 +410,7 @@ void problem_row_change::operator()(_MoFEMProblem_ &e) {
     (*(DofIdx*)e.tag_nbdof_data_row)++;
   }
 }
-problem_col_change::problem_col_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {};
+problem_col_change::problem_col_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
 void problem_col_change::operator()(_MoFEMProblem_ &e) { 
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
     = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity((*(DofIdx*)e.tag_nbdof_data_col),dof_ptr)); 
@@ -557,7 +557,7 @@ DofMoFEMEntity::DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const Approxi
   ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = _dof_order;
   ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof] = _dof_rank;
   uid = get_unique_id_calculate();
-};
+}
 ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
   os << "dof_uid " << e.get_unique_id() 
     << " dof_order " << e.get_dof_order()
@@ -585,7 +585,7 @@ bool comp_DofMoFEMEntity_ent_uid::operator()(const DofMoFEMEntity &_dof_,UId ent
 //numered dof
 NumeredDofMoFEMEntity::NumeredDofMoFEMEntity(const DofIdx idx,const DofMoFEMEntity* _DofMoFEMEntity_ptr): 
     interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr),
-    dof_idx(idx),petsc_gloabl_dof_idx(-1),petsc_local_dof_idx(-1),part(-1) {};
+    dof_idx(idx),petsc_gloabl_dof_idx(-1),petsc_local_dof_idx(-1),part(-1) {}
 ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   os << "idx " << e.dof_idx << " part " << e.part 
     << " petsc idx " << e.petsc_gloabl_dof_idx 

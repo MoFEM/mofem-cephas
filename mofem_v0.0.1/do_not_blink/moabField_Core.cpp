@@ -3316,7 +3316,6 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
-  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit = ents_moabfield.get<FieldName_mi_tag>().upper_bound(field_name);
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = moabfields.get<FieldName_mi_tag>().find(cpy_field_name);
   if(cpy_fit==moabfields.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"cpy field < %s > not found, (top tip: check spelling)",field_name.c_str());

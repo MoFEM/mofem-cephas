@@ -408,7 +408,7 @@ template<typename Tag>
 void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFEMEntity_multiIndex &dofs,Tag* = 0) {
   const typename boost::multi_index::index<DofMoFEMEntity_multiIndex,Tag>::type& i = get<Tag>(dofs);
   vec_dof.insert(vec_dof.end(),i.begin(),i.end());
-};
+}
 
 template <typename T,typename V>
 PetscErrorCode get_MoFEMFE_dof_uid_view(
@@ -435,7 +435,7 @@ PetscErrorCode get_MoFEMFE_dof_uid_view(
     assert(0);
   }
   PetscFunctionReturn(0);
-};
+}
 
 /**
  * \brief test if MoFEM is comapatibele with linked version of moab

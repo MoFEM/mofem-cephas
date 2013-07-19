@@ -352,10 +352,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode RhsAndLhs() {
+    PetscErrorCode Rhs() {
       PetscFunctionBegin;
       ublas::matrix<FieldData> K[row_mat][col_mat];
-      ublas::vector<FieldData> f[row_mat];
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = 0;cc<col_mat;cc++) {
@@ -371,6 +370,21 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    K[rr][cc] += prod(BTD , col_Mat ); // int BT*D*B
 	  }
 	}
+	for(int cc = 0;cc<col_mat;cc++) {
+	  if(ColGlob[cc].size()==0) continue;
+	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode Lhs() {
+      PetscFunctionBegin;
+      ublas::vector<FieldData> f[row_mat];
+      int g_dim = g_NTET.size()/4;
+      for(int rr = 0;rr<row_mat;rr++) {
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
 	  if(gg == 0) f[rr] = ublas::zero_vector<FieldData>(row_Mat.size2());
@@ -380,13 +394,14 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	if(RowGlob[rr].size()!=f[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	if(RowGlob[rr].size()==0) continue;
 	ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
-	for(int cc = 0;cc<col_mat;cc++) {
-	  if(ColGlob[cc].size()==0) continue;
-	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
-	}
       }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode RhsAndLhs() {
+      PetscFunctionBegin;
+      ierr = Rhs(); CHKERRQ(ierr);
+      ierr = Lhs(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 

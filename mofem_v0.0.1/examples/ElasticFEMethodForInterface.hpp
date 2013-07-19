@@ -230,9 +230,8 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode operator()() {
+  PetscErrorCode RhsAndLhs() {
     PetscFunctionBegin;
-    ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
 
     //Rotation matrix
     ierr = CalcR(); CHKERRQ(ierr);
@@ -331,6 +330,16 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
 	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
     }
+
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
+
+    ierr = RhsAndLhs(); CHKERRQ(ierr);
 
     ierr = OpStudentEnd(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
