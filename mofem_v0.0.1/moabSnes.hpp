@@ -42,8 +42,14 @@ struct moabSnesCtx {
   loops_to_do_type loops_to_do_Mat;
   loops_to_do_type loops_to_do_Rhs;
 
+  PetscLogEvent USER_EVENT_SnesRhs;
+  PetscLogEvent USER_EVENT_SnesMat;
+
   moabSnesCtx(moabField &_mField,const string &_problem_name): 
-    mField(_mField),moab(_mField.get_moab()),problem_name(_problem_name) {}
+    mField(_mField),moab(_mField.get_moab()),problem_name(_problem_name) {
+    PetscLogEventRegister("LoopSnesRhs",0,&USER_EVENT_SnesRhs);
+    PetscLogEventRegister("LoopSnesMat",0,&USER_EVENT_SnesMat);
+  }
 
   const moabField& get_mField() const { return mField; }
   const Interface& get_moab() const { return moab; }
@@ -59,6 +65,7 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   moabSnesCtx* snes_ctx = (moabSnesCtx*)ctx;
+  PetscLogEventBegin(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
   ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = snes_ctx->mField.set_local_VecCreateGhost(snes_ctx->problem_name,Row,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -74,12 +81,14 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
     ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
     ierr = lit->second->set_ctx(moabField::SnesMethod::ctx_SNESNone);
   }
+  PetscLogEventEnd(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
   PetscFunctionReturn(0);
 }
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ctx) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   moabSnesCtx* snes_ctx = (moabSnesCtx*)ctx;
+  PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
   moabSnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Mat.begin();
   for(;lit!=snes_ctx->loops_to_do_Mat.end();lit++) {
     ierr = lit->second->set_ctx(moabField::SnesMethod::ctx_SNESSetJacobian);
@@ -93,6 +102,7 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ct
     ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
     ierr = lit->second->set_ctx(moabField::SnesMethod::ctx_SNESNone);
   }
+  PetscLogEventEnd(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
   PetscFunctionReturn(0);
 }
 

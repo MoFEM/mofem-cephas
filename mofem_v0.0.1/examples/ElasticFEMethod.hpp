@@ -362,12 +362,13 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
 	    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
 	    ///K matrices
-	    if(gg == 0) {
-	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
-	    }
 	    double w = V*G_TET_W45[gg];
 	    ublas::matrix<FieldData> BTD = prod( trans(row_Mat), w*D );
-	    K[rr][cc] += prod(BTD , col_Mat ); // int BT*D*B
+	    if(gg == 0) {
+	      K[rr][cc] = prod(BTD , col_Mat ); // int BT*D*B
+	    } else {
+	      K[rr][cc] += prod(BTD , col_Mat ); // int BT*D*B
+	    }
 	  }
 	}
 	for(int cc = 0;cc<col_mat;cc++) {

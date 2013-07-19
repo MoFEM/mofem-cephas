@@ -312,6 +312,11 @@ struct moabField_Core: public moabField {
   
   //low level finite element data
   double diffN_TET[12]; 
+
+  //Petsc Logs
+  PetscLogEvent USER_EVENT_preProcess;
+  PetscLogEvent USER_EVENT_operator;
+  PetscLogEvent USER_EVENT_postProcess;
 };
 
 }

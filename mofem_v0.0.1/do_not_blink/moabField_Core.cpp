@@ -144,6 +144,11 @@ moabField_Core::moabField_Core(Interface& _moab,int _verbose):
   map_from_mesh(3); 
   //
   ShapeDiffMBTET(diffN_TET); 
+  // Petsc Logs
+  PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
+  PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
+  PetscLogEventRegister("FE_postProcess",0,&USER_EVENT_postProcess);
+
 }
 moabField_Core::~moabField_Core() {
 }
@@ -3167,21 +3172,27 @@ PetscErrorCode moabField_Core::loop_finite_elements(const string &problem_name,c
   ierr = method.set_fes_multiIndex(&finite_elements); CHKERRQ(ierr);
   ierr = method.set_fes_data_multiIndex(&finite_elements_data); CHKERRQ(ierr);
   ierr = method.set_adjacencies(&adjacencies); CHKERRQ(ierr);
+  PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
   ierr = method.preProcess(); CHKERRQ(ierr);
+  PetscLogEventEnd(USER_EVENT_preProcess,0,0,0,0);
   for(;miit!=hi_miit;miit++) {
     ierr = method.set_fe(&*miit); CHKERRQ(ierr);
     ierr = method.set_data_multIndex( const_cast<FEDofMoFEMEntity_multiIndex*>(&(miit->fe_ptr->data_dofs)) ); CHKERRQ(ierr);
     ierr = method.set_row_multIndex( const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&(miit->rows_dofs)) ); CHKERRQ(ierr);
     ierr = method.set_col_multIndex( const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&(miit->cols_dofs)) ); CHKERRQ(ierr);
     try {
+      PetscLogEventBegin(USER_EVENT_operator,0,0,0,0);
       ierr = method(); CHKERRQ(ierr);
+      PetscLogEventEnd(USER_EVENT_operator,0,0,0,0);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
   }
+  PetscLogEventBegin(USER_EVENT_postProcess,0,0,0,0);
   ierr = method.postProcess(); CHKERRQ(ierr);
+  PetscLogEventEnd(USER_EVENT_postProcess,0,0,0,0);
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb) {
