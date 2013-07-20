@@ -26,7 +26,7 @@
 using namespace MoFEM;
 
 // Write Displacements DOFS on Vertices
-struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
+struct PostProcVertexMethod: public moabField::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
     Interface& moab;
@@ -35,7 +35,7 @@ struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
     string field_name;
     Vec V;
     string tag_name;
-    PostProcDisplacementsEntMethod(Interface& _moab,
+    PostProcVertexMethod(Interface& _moab,
       string _field_name = "DISPLACEMENT",Vec _V = PETSC_NULL,string _tag_name = "__NotSet__"): 
       EntMethod(),moab(_moab),field_name(_field_name),V(_V),tag_name(_tag_name) {
       double def_VAL[3] = {0,0,0};
