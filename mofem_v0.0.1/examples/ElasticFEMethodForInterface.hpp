@@ -230,6 +230,16 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode Rhs() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Lhs() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode RhsAndLhs() {
     PetscFunctionBegin;
 
@@ -330,7 +340,6 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
 	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
     }
-
 
     PetscFunctionReturn(0);
   }

@@ -147,7 +147,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     }
 
     PetscErrorCode NeumannBC(ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
-
       PetscFunctionBegin;
 
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -352,7 +351,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode Rhs() {
+    PetscErrorCode Lhs() {
       PetscFunctionBegin;
       ublas::matrix<FieldData> K[row_mat][col_mat];
       int g_dim = g_NTET.size()/4;
@@ -381,7 +380,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode Lhs() {
+    PetscErrorCode Rhs() {
       PetscFunctionBegin;
       ublas::vector<FieldData> f[row_mat];
       int g_dim = g_NTET.size()/4;
@@ -399,10 +398,51 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
+    PetscErrorCode Fint() {
+      PetscFunctionBegin;
+
+      //Gradient at Gauss points; 
+      vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+      ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+      unsigned int g_dim = g_NTET.size()/4;
+      assert(GradU_at_GaussPt.size() == g_dim);
+      vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+      int gg = 0;
+      for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
+	  ublas::matrix< FieldData > GradU = *viit;
+	  ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+	  ublas::vector< FieldData > VoightStrain(6);
+	  VoightStrain[0] = Strain(0,0);
+	  VoightStrain[1] = Strain(1,1);
+	  VoightStrain[2] = Strain(2,2);
+	  VoightStrain[3] = 2*Strain(0,1);
+	  VoightStrain[4] = 2*Strain(1,2);
+	  VoightStrain[5] = 2*Strain(2,1);
+	  double w = V*G_TET_W45[gg];
+	  ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
+	  //BT * VoigtStress
+	  for(int rr = 0;rr<row_mat;rr++) {
+	    ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
+	    ublas::vector<FieldData> f_int = prod( trans(B), VoightStress );
+	    if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    if(RowGlob[rr].size()==0) continue;
+	    //cerr << gg << " " << f_int << endl;
+	    ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	  }
+      }
+
+      PetscFunctionReturn(0);
+    }
+
     PetscErrorCode RhsAndLhs() {
       PetscFunctionBegin;
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+      ierr = GetMatrices(); CHKERRQ(ierr);
+
       ierr = Rhs(); CHKERRQ(ierr);
       ierr = Lhs(); CHKERRQ(ierr);
+
+      ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 

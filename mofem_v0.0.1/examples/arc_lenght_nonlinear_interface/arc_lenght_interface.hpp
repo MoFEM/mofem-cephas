@@ -48,39 +48,9 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
       InterfaceElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3) {};
 
-
-  PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-
-      //Dirihlet Boundary Condition
-      ApplyDirihletBC();
-      if(Diagonal!=PETSC_NULL) {
-	if(DirihletBC.size()>0) {
-	  DirihletBCDiagVal.resize(DirihletBC.size());
-	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
-	}
-      }
-
-      //Assembly Aij and F
-      ierr = RhsAndLhs(); CHKERRQ(ierr);
-
-      //Neumann Boundary Conditions
-      ierr = NeumannBC(); CHKERRQ(ierr);
-
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-  }
-
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n",pcomm->rank(),v2-v1,t2-t1);
-
-    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
     g_NTRI.resize(3*13);
@@ -98,27 +68,128 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 	D_mu(rr,rr) = rr<3 ? 2 : 1;
     }
     D = lambda*D_lambda + mu*D_mu;
-    ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
+
+
+    switch(ctx) {
+      case ctx_SNESNone: {
+	ierr = VecZeroEntries(F); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
+	ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetFunction: { 
+	ierr = VecZeroEntries(F); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	Diagonal = PETSC_NULL;
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
+	ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
     PetscFunctionReturn(0);
   }
 
+
+  PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+      ierr = GetMatrices(); CHKERRQ(ierr);
+
+      //Dirihlet Boundary Condition
+      ApplyDirihletBC();
+
+      if(Diagonal!=PETSC_NULL) {
+	if(DirihletBC.size()>0) {
+	  DirihletBCDiagVal.resize(DirihletBC.size());
+	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
+	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+	}
+      }
+
+      switch(ctx) {
+	case ctx_SNESNone: {
+	  //Assembly  F
+	  ierr = Fint(); CHKERRQ(ierr);
+	  //Neumann Boundary Conditions
+	  ierr = NeumannBC(); CHKERRQ(ierr);
+	  //Assembly  F
+	  ierr = Lhs(); CHKERRQ(ierr);
+	}
+	break;
+	case ctx_SNESSetFunction: { 
+	  //Assembly  F
+	  ierr = Fint(); CHKERRQ(ierr);
+	  //Neumann Boundary Conditions
+	  ierr = NeumannBC(); CHKERRQ(ierr);
+	}
+	break;
+	case ctx_SNESSetJacobian: {
+	  //Assembly  F
+	  ierr = Lhs(); CHKERRQ(ierr);
+	}
+	break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+
+      ierr = OpStudentEnd(); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+  }
+
+
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-    ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
-    ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
-    // Note MAT_FLUSH_ASSEMBLY
-    ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = PetscGetTime(&v2); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
 
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+    switch(ctx) {
+      case ctx_SNESNone: {
+	ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
+	ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
+	//Note MAT_FLUSH_ASSEMBLY
+	//ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	//ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetFunction: { 
+	ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
+	ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
+	//Note MAT_FLUSH_ASSEMBLY
+	//ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	//ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
     PetscFunctionReturn(0);
   }
 
