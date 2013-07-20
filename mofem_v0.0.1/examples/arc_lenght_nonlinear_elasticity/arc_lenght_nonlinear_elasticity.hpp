@@ -25,7 +25,7 @@
 #include <petscksp.h>
 
 #include "moabSnes.hpp"
-#include "PostProcDisplacementOnMesh.hpp"
+#include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 #include "moabField.hpp"
