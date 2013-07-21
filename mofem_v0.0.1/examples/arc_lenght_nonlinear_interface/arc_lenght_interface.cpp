@@ -272,16 +272,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
-  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
+
+  PostProcVertexMethod ent_method_res(moab,"DISPLACEMENT",F,"RESIDUAL");
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method_res); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -292,7 +291,7 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
+  /*PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
@@ -304,7 +303,7 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_prisms.moab_post_proc.write_file("out_post_proc_prisms.vtk","VTK",""); CHKERR_PETSC(rval);
-  }
+  }*/
 
 
   //detroy matrices

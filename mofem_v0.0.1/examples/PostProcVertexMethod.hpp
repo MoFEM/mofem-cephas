@@ -63,8 +63,9 @@ struct PostProcVertexMethod: public moabField::EntMethod {
 	ierr = VecScatterCreateToAll(V,&ctx,&V_glob); CHKERRQ(ierr);
 	ierr = VecScatterBegin(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecScatterEnd(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecRestoreArray(V_glob,&V_glob_array); CHKERRQ(ierr);
-
+	ierr = VecGetArray(V_glob,&V_glob_array); CHKERRQ(ierr);
+      } else {
+	V_glob_array = NULL;
       }
       PetscFunctionReturn(0);
     }
@@ -79,7 +80,7 @@ struct PostProcVertexMethod: public moabField::EntMethod {
       EntityHandle ent = dof_ptr->get_ent();
       int dof_rank = dof_ptr->get_dof_rank();
       double fval;
-      if(V == PETSC_NULL) {
+      if(V_glob_array == NULL) {
 	fval = dof_ptr->get_FieldData();
       } else {
 	fval = V_glob_array[dof_ptr->get_petsc_gloabl_dof_idx()];
