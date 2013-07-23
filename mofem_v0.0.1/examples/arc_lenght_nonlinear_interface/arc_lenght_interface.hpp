@@ -48,6 +48,24 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
       InterfaceElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3) {};
 
+  PetscErrorCode NeumannBC() {
+      PetscFunctionBegin;
+      
+      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction2(3);
+      traction2[0] = 0;
+      traction2[1] = -1;
+      traction2[2] = 0;
+      ierr = ElasticFEMethod::NeumannBC(traction2,SideSet2); CHKERRQ(ierr);
+
+      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction3(3);
+      traction3[0] = 0;
+      traction3[1] = +1;
+      traction3[2] = 0;
+      ierr = ElasticFEMethod::NeumannBC(traction3,SideSet3); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+  }
+
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
@@ -71,24 +89,14 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 
 
     switch(ctx) {
-      case ctx_SNESNone: {
-	ierr = VecZeroEntries(F); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
-	ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
-      }
+      case ctx_SNESNone: {}
       break;
       case ctx_SNESSetFunction: { 
-	ierr = VecZeroEntries(F); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	Diagonal = PETSC_NULL;
       }
       break;
       case ctx_SNESSetJacobian: {
 	ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
-	ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
       }
       break;
       default:
@@ -105,24 +113,31 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
       ierr = GetMatrices(); CHKERRQ(ierr);
 
       //Dirihlet Boundary Condition
-      ApplyDirihletBC();
 
-      if(Diagonal!=PETSC_NULL) {
-	if(DirihletBC.size()>0) {
-	  DirihletBCDiagVal.resize(DirihletBC.size());
-	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+      switch(ctx) {
+	case ctx_SNESNone: {
 	}
+	break;
+	case ctx_SNESSetJacobian: 
+	case ctx_SNESSetFunction: { 
+	  ApplyDirihletBC();
+	  if(Diagonal!=PETSC_NULL) {
+	    if(DirihletBC.size()>0) {
+	      DirihletBCDiagVal.resize(DirihletBC.size());
+	      fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
+	      ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+	    }
+	  }
+	}
+	break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
 
       switch(ctx) {
 	case ctx_SNESNone: {
 	  //Assembly  F
 	  ierr = Fint(); CHKERRQ(ierr);
-	  //Neumann Boundary Conditions
-	  ierr = NeumannBC(); CHKERRQ(ierr);
-	  //Assembly  F
-	  ierr = Lhs(); CHKERRQ(ierr);
 	}
 	break;
 	case ctx_SNESSetFunction: { 
@@ -150,28 +165,9 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
     PetscFunctionBegin;
 
     switch(ctx) {
-      case ctx_SNESNone: {
-	ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-	ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
-	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
-	//Note MAT_FLUSH_ASSEMBLY
-	//ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	//ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      }
+      case ctx_SNESNone: {}
       break;
-      case ctx_SNESSetFunction: { 
-	ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      }
+      case ctx_SNESSetFunction: { }
       break;
       case ctx_SNESSetJacobian: {
 	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
@@ -179,11 +175,8 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 	ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
 	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
 	//Note MAT_FLUSH_ASSEMBLY
-	//ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	//ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
+	ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:
@@ -195,7 +188,111 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 
 };
 
+struct ArcInterfaceFEMethod: public InterfaceFEMethod {
+  ArcInterfaceFEMethod(
+      Interface& _moab,double _YoungModulus): 
+      InterfaceFEMethod(_moab,_YoungModulus) {};
 
+  ArcInterfaceFEMethod(
+      Interface& _moab,Mat &_Aij,Vec& _F,double _YoungModulus,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
+      InterfaceFEMethod(_moab,_Aij,_F,_YoungModulus,_SideSet1,_SideSet2,_SideSet3) {};
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+    g_NTET.resize(4*45);
+    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+    g_NTRI.resize(3*13);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+
+    switch(ctx) {
+      case ctx_SNESNone: {}
+      break;
+      case ctx_SNESSetFunction: { }
+      break;
+      case ctx_SNESSetJacobian: { }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+
+    PetscFunctionReturn(0);
+  }
+
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
+
+    //Rotation matrix
+    ierr = CalcR(); CHKERRQ(ierr);
+    //Dglob
+    ierr = CalcDglob(); CHKERRQ(ierr);
+    //Calculate Matrices
+    ierr = Matrices();    CHKERRQ(ierr);
+
+    switch(ctx) {
+      case ctx_SNESNone: {
+      }
+      break;
+      case ctx_SNESSetJacobian: 
+      case ctx_SNESSetFunction: { 
+	//Apply Dirihlet BC
+	ApplyDirihletBC();
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    switch(ctx) {
+      case ctx_SNESNone: {
+	ierr = RhsInt(); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetFunction: { 
+	ierr = RhsInt(); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: { 
+	ierr = LhsInt(); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+
+    ierr = OpStudentEnd(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+
+    switch(ctx) {
+      case ctx_SNESNone: {}
+      break;
+      case ctx_SNESSetFunction: { }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+
+    PetscFunctionReturn(0);
+  }
+
+};
 
 
 

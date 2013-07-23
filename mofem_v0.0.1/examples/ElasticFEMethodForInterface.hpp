@@ -145,13 +145,19 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
   ublas::matrix<double> Dglob;
   double tangent1[3],tangent2[3];
 
+  vector<ublas::vector<FieldData> > DispData;
+
   InterfaceFEMethod(
       Interface& _moab,double _YoungModulus): 
-      InterfaceElasticFEMethod(_moab),YoungModulus(_YoungModulus) {};
+      InterfaceElasticFEMethod(_moab),YoungModulus(_YoungModulus) {
+      DispData.resize(1+6+2);
+    };
 
   InterfaceFEMethod(
       Interface& _moab,Mat &_Aij,Vec& _F,double _YoungModulus,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
-	InterfaceElasticFEMethod(_moab,_Aij,_F,0,0,_SideSet1,_SideSet2,_SideSet3),YoungModulus(_YoungModulus) {};
+	InterfaceElasticFEMethod(_moab,_Aij,_F,0,0,_SideSet1,_SideSet2,_SideSet3),YoungModulus(_YoungModulus) {
+    DispData.resize(1+6+2);
+    };
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -230,25 +236,68 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Rhs() {
+  PetscErrorCode RhsInt() {
     PetscFunctionBegin;
+    int g_dim = g_NTRI.size()/3;
+    for(int rr = 0;rr<row_mat;rr++) {
+      if(RowGlob[rr].size()==0) continue;
+      for(int gg = 0;gg<g_dim;gg++) {
+	ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > gap;
+	for(int cc = 0;cc<col_mat;cc++) {
+	  if(ColGlob[cc].size()==0) continue;
+	  ublas::matrix<FieldData> &N = (colNMatrices[cc])[gg];
+	  if(N.size2()!=DispData[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(cc == 0) {
+	    gap = prod(N,DispData[cc]);
+	  } else {
+	    gap += prod(N,DispData[cc]);
+	  }
+	}
+	if(gap.size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > traction;
+	traction = prod(Dglob,gap);
+	if(traction.size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	double w = area3*G_TRI_W13[gg];
+	ublas::matrix<FieldData> &N = (rowNMatrices[rr])[gg];
+	ublas::vector<FieldData> f_int = prod(trans(N),w*traction);
+	if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      }
+    }
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Lhs() {
+  PetscErrorCode LhsInt() {
     PetscFunctionBegin;
+    int g_dim = g_NTRI.size()/3;
+    ublas::matrix<FieldData> K[row_mat][col_mat];
+    for(int rr = 0;rr<row_mat;rr++) {
+	for(int cc = 0;cc<col_mat;cc++) {
+	  for(int gg = 0;gg<g_dim;gg++) {
+	    ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
+	    ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
+	    ///K matrices
+	    if(gg == 0) {
+	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
+	    }
+	    double w = area3*G_TRI_W13[gg];
+	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
+	    K[rr][cc] += prod(NTD , col_Mat ); 
+	  }
+	}
+	if(RowGlob[rr].size()==0) continue;
+	for(int cc = 0;cc<col_mat;cc++) {
+	  if(ColGlob[cc].size()==0) continue;
+	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	}
+    }
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode RhsAndLhs() {
+  PetscErrorCode Matrices() {
     PetscFunctionBegin;
-
-    //Rotation matrix
-    ierr = CalcR(); CHKERRQ(ierr);
-
-    //Dglob
-    ierr = CalcDglob(); CHKERRQ(ierr);
-
     //rows
     RowGlob.resize(1+6+2);
     rowNMatrices.resize(1+6+2);
@@ -286,11 +335,13 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     col_mat = 0;
     ierr = GetColIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
     ierr = GetGaussColNMatrix("DISPLACEMENT",colNMatrices[col_mat]); CHKERRQ(ierr);
+    ierr = GetDataVector("DISPLACEMENT",DispData[col_mat]); CHKERRQ(ierr);
     col_mat++;
     for(int ee = 0;ee<3;ee++) { //edges matrices
 	ierr = GetColIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
+	  ierr = GetDataVector("DISPLACEMENT",MBEDGE,DispData[col_mat],ee); CHKERRQ(ierr);
 	  col_mat++;
 	}
     }
@@ -298,48 +349,39 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
 	ierr = GetColIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee+6); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee+6); CHKERRQ(ierr);
+	  ierr = GetDataVector("DISPLACEMENT",MBEDGE,DispData[col_mat],ee); CHKERRQ(ierr);
 	  col_mat++;
 	}
     }
     ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],3); CHKERRQ(ierr);
     if(ColGlob[col_mat].size()!=0) {
 	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],3); CHKERRQ(ierr);
+	ierr = GetDataVector("DISPLACEMENT",MBTRI,DispData[col_mat],4); CHKERRQ(ierr);
 	col_mat++;
     }
     ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],4); CHKERRQ(ierr);
     if(ColGlob[col_mat].size()!=0) {
 	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],4); CHKERRQ(ierr);
+	ierr = GetDataVector("DISPLACEMENT",MBTRI,DispData[col_mat],4); CHKERRQ(ierr);
 	col_mat++;
     }
-   
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode RhsAndLhs() {
+    PetscFunctionBegin;
+
+    //Rotation matrix
+    ierr = CalcR(); CHKERRQ(ierr);
+    //Dglob
+    ierr = CalcDglob(); CHKERRQ(ierr);
+    //Calculate Matrices
+    ierr = Matrices();    CHKERRQ(ierr);
     //Apply Dirihlet BC
-    ApplyDirihletBC();
+    ierr = ApplyDirihletBC(); CHKERRQ(ierr);
 
     //Assemble interface
-    int g_dim = g_NTRI.size()/3;
-    ublas::matrix<FieldData> K[row_mat][col_mat];
-    for(int rr = 0;rr<row_mat;rr++) {
-	for(int cc = 0;cc<col_mat;cc++) {
-	  for(int gg = 0;gg<g_dim;gg++) {
-	    ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
-	    ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
-	    ///K matrices
-	    if(gg == 0) {
-	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
-	    }
-	    double w = area3*G_TRI_W13[gg];
-	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
-	    K[rr][cc] += prod(NTD , col_Mat ); 
-	  }
-	}
-	if(RowGlob[rr].size()==0) continue;
-	for(int cc = 0;cc<col_mat;cc++) {
-	  if(ColGlob[cc].size()==0) continue;
-	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
-	}
-    }
+    ierr = LhsInt(); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
