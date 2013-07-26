@@ -146,7 +146,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode NeumannBC(ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
+    PetscErrorCode NeumannBC(Vec F_ext,ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
       PetscFunctionBegin;
 
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -204,7 +204,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  double w = area*G_TRI_W13[gg];
 	  f_ext_nodes += w*prod(trans(FaceNMatrix_nodes[gg]), traction);
 	}
-	ierr = VecSetValues(F,RowGlob_nodes.size(),&(RowGlob_nodes)[0],&(f_ext_nodes.data())[0],ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValues(F_ext,RowGlob_nodes.size(),&(RowGlob_nodes)[0],&(f_ext_nodes.data())[0],ADD_VALUES); CHKERRQ(ierr);
 
 	//edges
 	siiit = side_table.get<1>().lower_bound(boost::make_tuple(MBEDGE,0));
@@ -218,7 +218,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	      f_ext_edges += w*prod(trans(FaceNMatrix_edge[gg]), traction);
 	    }
 	    if(RowGlob_edge.size()!=f_ext_edges.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_edge.size()!=f_ext_edges.size()");
-	    ierr = VecSetValues(F,RowGlob_edge.size(),&(RowGlob_edge[0]),&(f_ext_edges.data())[0],ADD_VALUES); CHKERRQ(ierr);
+	    ierr = VecSetValues(F_ext,RowGlob_edge.size(),&(RowGlob_edge[0]),&(f_ext_edges.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	}
   
@@ -230,7 +230,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    f_ext_faces += w*prod(trans(FaceNMatrix_face[gg]), traction);
 	  }
 	  if(RowGlob_face.size()!=f_ext_faces.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_face.size()!=f_ext_faces.size()");
-	  ierr = VecSetValues(F,RowGlob_face.size(),&(RowGlob_face)[0],&(f_ext_faces.data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  ierr = VecSetValues(F_ext,RowGlob_face.size(),&(RowGlob_face)[0],&(f_ext_faces.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
 
 
@@ -248,7 +248,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       traction[1] = 1;
       traction[2] = 0;
 
-      ierr = NeumannBC(traction,SideSet2); CHKERRQ(ierr);
+      ierr = NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }

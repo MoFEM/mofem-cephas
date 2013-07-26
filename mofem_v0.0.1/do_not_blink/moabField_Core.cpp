@@ -3329,9 +3329,12 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
   }
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = moabfields.get<FieldName_mi_tag>().find(cpy_field_name);
   if(cpy_fit==moabfields.get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"cpy field < %s > not found, (top tip: check spelling)",field_name.c_str());
+    SETERRQ1(PETSC_COMM_SELF,1,"cpy field < %s > not found, (top tip: check spelling)",cpy_field_name.c_str());
   }
   dofs_by_name::iterator miit = dofs->lower_bound(field_name);
+  if(miit==dofs->end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"cpy field < %s > not found, (top tip: check spelling)",field_name.c_str());
+  }
   dofs_by_name::iterator hi_miit = dofs->upper_bound(field_name);
   if(miit->get_space() != cpy_fit->get_space()) {
     SETERRQ(PETSC_COMM_SELF,1,"fiedls has to have same space");

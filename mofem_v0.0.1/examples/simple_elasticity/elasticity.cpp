@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
       traction[1] = 0; //Y 
       traction[2] = 0; //Z
       //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
-      ierr = ElasticFEMethod::NeumannBC(traction,SideSet2); CHKERRQ(ierr);
+      ierr = ElasticFEMethod::NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 

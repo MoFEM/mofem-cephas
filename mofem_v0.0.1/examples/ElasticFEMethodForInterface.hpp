@@ -51,13 +51,13 @@ struct InterfaceElasticFEMethod: public ElasticFEMethod {
       traction2[0] = 0;
       traction2[1] = +1;
       traction2[2] = 0;
-      ierr = ElasticFEMethod::NeumannBC(traction2,SideSet2); CHKERRQ(ierr);
+      ierr = ElasticFEMethod::NeumannBC(F,traction2,SideSet2); CHKERRQ(ierr);
 
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction3(3);
       traction3[0] = 0;
       traction3[1] = -1;
       traction3[2] = 0;
-      ierr = ElasticFEMethod::NeumannBC(traction3,SideSet3); CHKERRQ(ierr);
+      ierr = ElasticFEMethod::NeumannBC(F,traction3,SideSet3); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
   }
