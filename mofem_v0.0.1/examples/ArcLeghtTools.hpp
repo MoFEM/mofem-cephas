@@ -82,6 +82,7 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
   PetscErrorCode set_s(double _s) { 
     PetscFunctionBegin;
     s = _s;
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tSet s = %6.4e\n",s); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -89,6 +90,7 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
     PetscFunctionBegin;
     alpha = _alpha;
     beta = _beta;
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tSet alpha = %6.4e beta = %6.4e\n",alpha,beta); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

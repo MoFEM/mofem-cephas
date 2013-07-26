@@ -17,19 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
-#include "cholesky.hpp"
-#include <petscksp.h>
-
-#include "ElasticFEMethod.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-
 #include "arc_lenght_interface.hpp"
-#include "ElasticFEMethodForInterface.hpp"
-#include "ArcLeghtTools.hpp"
 
 using namespace MoFEM;
 
@@ -263,17 +251,17 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
 
-  ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
 
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
   const double alpha = 0.05;
 
+  ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
+  ArcLenghtIntElemFEMethod MyArcMethod(moab,Aij,F,D,ArcCtx);
   ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
   ArcInterfaceElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3,ArcCtx);
   ArcInterfaceFEMethod IntMyFE(moab,Aij,F,D,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
-  ArcLenghtIntElemFEMethod MyArcMethod(moab,Aij,F,D,ArcCtx);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
@@ -301,15 +289,16 @@ int main(int argc, char *argv[]) {
   ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
   ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
 
+  //Rhs
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  //loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
   loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+  //Mat
   moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  //loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
-
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;
@@ -327,9 +316,16 @@ int main(int argc, char *argv[]) {
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
+      ierr = VecZeroEntries(F); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-      //ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ARC_LENGHT",MyArcMethod);  CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       double dlambda;
       ierr = MyArcMethod.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);
       ierr = MyArcMethod.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);

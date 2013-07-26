@@ -169,8 +169,6 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 
     switch(ctx) {
       case ctx_SNESNone: {
-	ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       }
       case ctx_SNESSetFunction: { 
 	//F_lambda
@@ -291,11 +289,9 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
     switch(ctx) {
       case ctx_SNESNone: {
-	ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetFunction: { }
+      case ctx_SNESSetFunction: {}
       break;
       case ctx_SNESSetJacobian: {
 	ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -461,8 +457,9 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
       PetscFunctionBegin;
 
       *dlambda = sqrt(pow(arc_ptr->s,2)/(pow(arc_ptr->beta,2)*arc_ptr->F_lambda2));
-      PetscPrintf(PETSC_COMM_WORLD,"\tInit dlambda = %6.4e s = %6.4e beta = %6.4e F_lambda2 = %6.4e\n",arc_ptr->s,arc_ptr->beta,arc_ptr->F_lambda2);
-      if(*dlambda != *dlambda) {
+      PetscPrintf(PETSC_COMM_WORLD,"\tInit dlambda = %6.4e s = %6.4e beta = %6.4e F_lambda2 = %6.4e\n",*dlambda,arc_ptr->s,arc_ptr->beta,arc_ptr->F_lambda2);
+      double a = *dlambda;
+      if(a - a != 0) {
 	ostringstream sss;
 	sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
 	SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
