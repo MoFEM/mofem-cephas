@@ -310,21 +310,48 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
 struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
   Interface& moab;
+  ErrorCode rval;
   PetscErrorCode ierr;
 
   Mat Aij;
   Vec F,D;
   ArcLenghtCtx* arc_ptr;
-  Vec GhostDiag;
+  Vec GhostDiag,GhostLambdaInt;
+  Range Faces3,Faces4;
   ArcLenghtIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
     ArcLenghtCtx *_arc_ptr): FEMethod(),moab(_moab),Aij(_Aij),F(_F),D(_D),arc_ptr(_arc_ptr) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
-      VecCreateGhost(PETSC_COMM_WORLD,1,1,1,ghosts,&GhostDiag);
+      VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostDiag);
+      VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostLambdaInt);
     } else {
       VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag);
+      VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostLambdaInt);
     }
+    Range prisms;
+    rval = moab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERR_THROW(rval);
+    for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
+      EntityHandle f3,f4;
+      rval = moab.side_element(*pit,2,3,f3); CHKERR_THROW(rval);
+      rval = moab.side_element(*pit,2,4,f4); CHKERR_THROW(rval);
+      Faces3.insert(f3);
+      Faces4.insert(f4);
+    }
+    Range Edges3,Edges4;
+    rval = moab.get_adjacencies(Faces3,1,false,Edges3); CHKERR_THROW(rval);
+    rval = moab.get_adjacencies(Faces4,1,false,Edges4); CHKERR_THROW(rval);
+    Range Nodes3,Nodes4;
+    rval = moab.get_connectivity(Faces3,Nodes3,true); CHKERR_THROW(rval);
+    rval = moab.get_connectivity(Faces4,Nodes4,true); CHKERR_THROW(rval);
+    Faces3.insert(Edges3.begin(),Edges3.end());
+    Faces3.insert(Nodes3.begin(),Nodes3.end());
+    Faces4.insert(Edges4.begin(),Edges4.end());
+    Faces4.insert(Nodes4.begin(),Nodes4.end());
+  }
+  ~ArcLenghtIntElemFEMethod() {
+    VecDestroy(&GhostDiag);
+    VecDestroy(&GhostLambdaInt);
   }
 
   PetscErrorCode preProcess() {
@@ -344,17 +371,53 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  double calulate_lambda_int() {
+  PetscErrorCode calulate_lambda_int(double &lambda_int) {
     PetscFunctionBegin;
-    return arc_ptr->alpha*arc_ptr->dx2 + pow(arc_ptr->dlambda,2)*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2;
+    NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+    dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problem_ptr->get_nb_local_dofs_row());
+    double *array;
+    double *array_int_lambda;
+    ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
+    ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
+    array_int_lambda[0] = 0;
+    for(;dit!=hi_dit;dit++) {
+      if(Faces3.find(dit->get_ent())!=Faces3.end()) {
+	array_int_lambda[0] += array[dit->petsc_local_dof_idx];
+      }
+      if(Faces4.find(dit->get_ent())!=Faces4.end()) {
+	array_int_lambda[0] -= array[dit->petsc_local_dof_idx];
+      }
+    }
+    //lambda_int = arc_ptr->alpha*lambda_int + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
+    ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
+    ierr = VecRestoreArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(GhostLambdaInt,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(GhostLambdaInt,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(GhostLambdaInt,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(GhostLambdaInt,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
+    lambda_int = arc_ptr->alpha*array_int_lambda[0] + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
+    ierr = VecRestoreArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode calulate_db() {
     PetscFunctionBegin;
-    //db
-    ierr = VecCopy(arc_ptr->dx,arc_ptr->db); CHKERRQ(ierr);
-    ierr = VecScale(arc_ptr->db,2*arc_ptr->alpha); CHKERRQ(ierr);
+    NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+    dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(
+      problem_ptr->get_nb_local_dofs_row()+problem_ptr->get_nb_ghost_dofs_row());
+    double *array;
+    ierr = VecGetArray(arc_ptr->db,&array); CHKERRQ(ierr);
+    for(;dit!=hi_dit;dit++) {
+      if(Faces3.find(dit->get_ent())!=Faces3.end()) {
+	array[dit->petsc_local_dof_idx] = +arc_ptr->alpha;
+      } else if(Faces4.find(dit->get_ent())!=Faces4.end()) {
+	  array[dit->petsc_local_dof_idx] = -arc_ptr->alpha;
+      } else array[dit->petsc_local_dof_idx] = 0;
+    }
+    ierr = VecRestoreArray(arc_ptr->db,&array); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -369,13 +432,15 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
 
     switch(ctx) {
       case ctx_SNESSetFunction: {
-	arc_ptr->res_lambda = calulate_lambda_int() - pow(arc_ptr->s,2);
+	double lambda_int;
+	ierr = calulate_lambda_int(lambda_int); CHKERRQ(ierr);
+	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
       }
       break; 
       case ctx_SNESSetJacobian: {
-	double diag = 2*arc_ptr->dlambda*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2;
+	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
 	ierr = MatSetValue(Aij,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
@@ -456,7 +521,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
 
       PetscFunctionBegin;
 
-      *dlambda = sqrt(pow(arc_ptr->s,2)/(pow(arc_ptr->beta,2)*arc_ptr->F_lambda2));
+      *dlambda = arc_ptr->s/(arc_ptr->beta*sqrt(arc_ptr->F_lambda2));
       PetscPrintf(PETSC_COMM_WORLD,"\tInit dlambda = %6.4e s = %6.4e beta = %6.4e F_lambda2 = %6.4e\n",*dlambda,arc_ptr->s,arc_ptr->beta,arc_ptr->F_lambda2);
       double a = *dlambda;
       if(a - a != 0) {

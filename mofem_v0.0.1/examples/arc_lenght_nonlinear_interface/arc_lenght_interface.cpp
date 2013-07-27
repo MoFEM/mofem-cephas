@@ -258,7 +258,8 @@ int main(int argc, char *argv[]) {
   const double alpha = 0.05;
 
   ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
-  ArcLenghtIntElemFEMethod MyArcMethod(moab,Aij,F,D,ArcCtx);
+  ArcLenghtIntElemFEMethod* MyArcMethod_ptr = new ArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
+  ArcLenghtIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
   ArcInterfaceElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3,ArcCtx);
   ArcInterfaceFEMethod IntMyFE(moab,Aij,F,D,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
@@ -332,7 +333,7 @@ int main(int argc, char *argv[]) {
     } else if(step == 2) {
       ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
       ierr = MyArcMethod.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
-      step_size = sqrt(MyArcMethod.calulate_lambda_int());
+      ierr = MyArcMethod.calulate_lambda_int(step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = ArcCtx->dlambda;
       double dx_nrm;
@@ -444,6 +445,7 @@ int main(int argc, char *argv[]) {
   delete ArcCtx;
   delete MatCtx;
   delete PCCtx;
+  delete MyArcMethod_ptr;
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

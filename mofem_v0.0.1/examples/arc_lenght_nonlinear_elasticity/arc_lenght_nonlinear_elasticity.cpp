@@ -221,7 +221,8 @@ int main(int argc, char *argv[]) {
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
     ArcCtx,SideSet1,SideSet2,SideSet3,SideSet4,NodeSet1);
 
-  ArcLenghtElemFEMethod MyArcMethod(moab,ArcCtx);
+  ArcLenghtElemFEMethod* MyArcMethod_ptr = new ArcLenghtElemFEMethod(moab,ArcCtx);
+  ArcLenghtElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
   
   SNES snes;
@@ -396,6 +397,7 @@ int main(int argc, char *argv[]) {
   delete MatCtx;
   delete PCCtx;
   delete ArcCtx;
+  delete MyArcMethod_ptr;
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

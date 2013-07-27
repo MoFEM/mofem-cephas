@@ -254,11 +254,15 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
-      VecCreateGhost(PETSC_COMM_WORLD,1,1,1,ghosts,&GhostDiag);
+      VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostDiag);
     } else {
       VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag);
     }
   }
+  ~ArcLenghtElemFEMethod() {
+    VecDestroy(&GhostDiag);
+  }
+
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;

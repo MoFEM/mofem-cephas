@@ -114,6 +114,7 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
     VecDestroy(&x_lambda);
     VecDestroy(&y_residual);
     VecDestroy(&x0);
+    VecDestroy(&dx);
   }
 
 
