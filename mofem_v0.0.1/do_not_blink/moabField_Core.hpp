@@ -168,7 +168,7 @@ struct moabField_Core: public moabField {
   //problem buildig
   PetscErrorCode partition_problems(const string &name,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name);
-  PetscErrorCode partition_finite_elements(const string &name,int verb = -1);
+  PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
 
   //clean active
   PetscErrorCode erase_inactive_dofs_moabfield();
@@ -198,6 +198,9 @@ struct moabField_Core: public moabField {
   PetscErrorCode add_prism_to_Adj_prisms(const EntityHandle prism,int verb = -1);
 
   //loops
+  PetscErrorCode loop_finite_elements(
+    const string &problem_name,const string &fe_name,FEMethod &method,
+    int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
 
