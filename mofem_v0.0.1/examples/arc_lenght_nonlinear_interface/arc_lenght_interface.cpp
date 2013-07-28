@@ -260,10 +260,10 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
-  const double h = 1e-1;
+  const double h = 1;
   const double beta = 0;
   const double ft = 1;
-  const double Gf = 4;
+  const double Gf = 1;
 
   ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
   ArcLenghtIntElemFEMethod* MyArcMethod_ptr = new ArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
