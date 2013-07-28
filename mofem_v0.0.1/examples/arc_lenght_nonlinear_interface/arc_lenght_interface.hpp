@@ -275,7 +275,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	  assert(dit->side_number_ptr->side_number<=5);
 	  (gap[gg])[dit->get_dof_rank()] -= nodeNTRI[dit->side_number_ptr->side_number-3]*dit->get_FieldData();
 	}
-	/*//edges
+	//edges
 	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,0));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,2));
 	for(;dit!=hi_dit;dit++) {
@@ -295,9 +295,9 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
 	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
 	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
-	  (gap[gg])[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
+	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
-	//faces
+	/*//faces
 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	for(;dit!=hi_dit;dit++) {
@@ -332,8 +332,10 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   PetscErrorCode Calc_omega(const double _kappa_,double& _omega_) {
     PetscFunctionBegin;
     _omega_ = 0;
-    if(_kappa_>=kappa1) _omega_ = 1;
-    else if(_kappa_>0) {
+    if(_kappa_>=kappa1) {
+      _omega_ = 1;
+      PetscFunctionReturn(0);
+    } else if(_kappa_>0) {
       double a = (2.0*Gf*E0+ft*ft)*_kappa_;
       double b = (ft+E0*_kappa_)*Gf;
       _omega_ = 0.5*a/b;

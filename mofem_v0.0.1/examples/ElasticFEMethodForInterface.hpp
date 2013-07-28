@@ -349,7 +349,7 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
 	ierr = GetColIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee+6); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee+6); CHKERRQ(ierr);
-	  ierr = GetDataVector("DISPLACEMENT",MBEDGE,DispData[col_mat],ee); CHKERRQ(ierr);
+	  ierr = GetDataVector("DISPLACEMENT",MBEDGE,DispData[col_mat],ee+6); CHKERRQ(ierr);
 	  col_mat++;
 	}
     }
@@ -624,7 +624,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
 	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
 	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
-	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
 	} 
 	//faces
 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
@@ -644,7 +644,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
 	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
 	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
-	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
 	} 
 	
 	ublas::vector<double,ublas::bounded_array<double, 3> > Gap(3);
@@ -704,7 +704,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
 	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
 	  double val = _H1edgeN_[nodes_on_face3.size()*nb_dofs_H1edge + gg*nb_dofs_H1edge + approx_dof];
-	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); //*minus*/
+	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); //*minus*/
 	}
 	//faces
 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,4));
@@ -724,7 +724,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
 	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
 	  double val = _H1faceN_[nodes_on_face3.size()*nb_dofs_H1face + gg*nb_dofs_H1face + approx_dof];
-	  gap_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
+	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	}
 
 	ublas::vector<double,ublas::bounded_array<double, 3> > Gap(3);

@@ -681,9 +681,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().find(boost::make_tuple(MBEDGE,ee));
 	  int face_edge_side_number,face_edge_offset;
 	  rval = moab.side_number(siit3->ent,siit->ent,face_edge_side_number,_face_edge_sense3_[ee],face_edge_offset); CHKERR_PETSC(rval);
-	  _face_edge_order3_[ee] = maxOrderEdgeH1[ee];
-	  H1edgeN[ee].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order3_[ee]));
-	  _edgeN3_[ee] = &*H1edgeN[ee].begin();
+	  _face_edge_order3_[ee] = maxOrderEdgeH1[/*ee*/siit->side_number];
+	  H1edgeN[/*ee*/siit->side_number].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order3_[ee]));
+	  _edgeN3_[ee] = &*H1edgeN[/*ee*/siit->side_number].begin();
 	}
 	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense3_,_face_edge_order3_,&gNTRI3[0],NULL,_edgeN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	//face 4, edges
@@ -695,9 +695,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().find(boost::make_tuple(MBEDGE,6+ee));
 	  int face_edge_side_number,face_edge_offset;
 	  rval = moab.side_number(siit4->ent,siit->ent,face_edge_side_number,_face_edge_sense4_[ee],face_edge_offset); CHKERR_PETSC(rval);
-	  _face_edge_order4_[ee] = maxOrderEdgeH1[6+ee];
-	  H1edgeN[6+ee].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order4_[ee]));
-	  _edgeN4_[ee] = &*H1edgeN[6+ee].begin();
+	  _face_edge_order4_[ee] = maxOrderEdgeH1[/*6+ee*/siit->side_number];
+	  H1edgeN[/*6+ee*/siit->side_number].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order4_[ee]));
+	  _edgeN4_[ee] = &*H1edgeN[/*6+ee*/siit->side_number].begin();
 	}
 	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense4_,_face_edge_order4_,&gNTRI4[0],NULL,_edgeN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	ee = 0;
