@@ -297,12 +297,12 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
 	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
-	/*//faces
+	//faces
 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
-	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
+	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderFaceH1[dit->side_number_ptr->side_number]);
 	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
 	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
 	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
@@ -311,11 +311,11 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
-	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
+	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderFaceH1[dit->side_number_ptr->side_number]);
 	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
 	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
-	  (gap[gg])[dit->get_dof_rank()] -= val*dit->get_FieldData(); 
-	}*/
+	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	}
 	gap_loc[gg] = prod(R,gap[gg]);
 	ierr = Calc_g(gap_loc[gg],g[gg]); CHKERRQ(ierr);
     }
@@ -370,29 +370,8 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   PetscErrorCode RhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
-    //gap.resize(g_dim);
-    //gap_loc.resize(g_dim);
-    //g.resize(g_dim);
-    ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > _gap_;
     for(int rr = 0;rr<row_mat;rr++) {
       for(int gg = 0;gg<g_dim;gg++) {
-	for(int cc = 0;cc<col_mat;cc++) {
-	  if(ColGlob[cc].size()==0) continue;
-	  ublas::matrix<FieldData> &N = (colNMatrices[cc])[gg];
-	  if(N.size2()!=DispData[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(cc == 0) {
-	    _gap_ = prod(N,DispData[cc]);
-	  } else {
-	    _gap_ += prod(N,DispData[cc]);
-	  }
-	}
-	if(gap[gg].size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	//gap_loc[gg] = prod(R,gap[gg]);
-	//ierr = Calc_g(gap_loc[gg],g[gg]); CHKERRQ(ierr);
-	ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > _gap_loc = prod(R,_gap_);
-	double _g_;
-	ierr = Calc_g(_gap_loc,_g_); CHKERRQ(ierr);
-
 	double _kappa_ = fmax(g[gg]-g0,kappa[gg]);
 	switch(ctx_int) {
 	  case ctx_KappaUpdate:
@@ -405,7 +384,6 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	      ierr = CalcDglob(_omega_); CHKERRQ(ierr);
 	      //Traction
 	      ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > traction;
-	      //cerr << gg << " AAAAAA " <<  gap[gg] << " " << _gap_  << " " << gap[gg]-_gap_ << " " << g[gg]-_g_ << endl;
 	      traction = prod(Dglob,gap[gg]);
 	      if(traction.size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      double w = area3*G_TRI_W13[gg];
@@ -426,31 +404,8 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
     ublas::matrix<FieldData> K[row_mat][col_mat];
-    /*gap.resize(g_dim);
-    gap_loc.resize(g_dim);
-    g.resize(g_dim);*/
-    ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > _gap_;
     for(int rr = 0;rr<row_mat;rr++) {
 	if(RowGlob[rr].size()==0) continue;
-	for(int gg = 0;gg<g_dim;gg++) {
-	  for(int cc = 0;cc<col_mat;cc++) {
-	    if(ColGlob[cc].size()==0) continue;
-	    ublas::matrix<FieldData> &N = (colNMatrices[cc])[gg];
-	    if(N.size2()!=DispData[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	    if(cc == 0) {
-	      _gap_ = prod(N,DispData[cc]);
-	    } else {
-	      _gap_ += prod(N,DispData[cc]);
-	    }
-	  }
-	  //cerr << "AAAAAA " <<  gap[gg] << " " << _gap_ << endl;
-	  ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > _gap_loc = prod(R,_gap_);
-	  //cerr << "BBBBBB " <<  gap_loc[gg] << " " << _gap_loc << endl;
-	  double _g_;
-	  ierr = Calc_g(_gap_loc,_g_); CHKERRQ(ierr);
-	  //cerr << "CCCCC " <<  g[gg] << " " << _g_ << endl;
-  
-	}
 	for(int cc = 0;cc<col_mat;cc++) {
 	  for(int gg = 0;gg<g_dim;gg++) {
 	    ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
