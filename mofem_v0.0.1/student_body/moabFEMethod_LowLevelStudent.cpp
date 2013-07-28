@@ -660,11 +660,12 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	    assert(side_number3 <= 2);
 	    assert(side_number4 >= 3);
 	    for(int gg = 0;gg<gNTRI_dim;gg++) {
-	      double val = gNTRI[gg*3+nn];
-	      gNTRIonPRISM[gg*6+side_number3] = +val; 
-	      gNTRIonPRISM[gg*6+side_number4] = -val; 
-	      gNTRI3[gg*3+side_number3] = val;
-	      gNTRI4[gg*3+side_number4-3] = val;
+	      double val3 = gNTRI[gg*3+side_number3];
+	      gNTRIonPRISM[gg*6+side_number3] = +val3; 
+	      double val4 = gNTRI[gg*3+side_number4-3];
+	      gNTRIonPRISM[gg*6+side_number4] = -val4; 
+	      gNTRI3[gg*3+side_number3] = val3;
+	      gNTRI4[gg*3+side_number4-3] = val4;
 	    }
 	  }
 	} catch (const char* msg) {
