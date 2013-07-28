@@ -547,7 +547,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
   Vec F,D;
   ArcLenghtCtx* arc_ptr;
   Vec GhostDiag,GhostLambdaInt;
-  Range Faces3,Faces4;
+  Range Faces3,Faces4,PostProcNodes;
   ArcLenghtIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
     ArcLenghtCtx *_arc_ptr): FEMethod(),moab(_moab),Aij(_Aij),F(_F),D(_D),arc_ptr(_arc_ptr) {
     PetscInt ghosts[1] = { 0 };
@@ -578,11 +578,43 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     Faces3.insert(Nodes3.begin(),Nodes3.end());
     Faces4.insert(Edges4.begin(),Edges4.end());
     Faces4.insert(Nodes4.begin(),Nodes4.end());
+    
+    for(Range::iterator nit = Nodes3.begin();nit!=Nodes3.end();nit++) {
+      double coords[3];
+      rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
+      if(fabs(coords[0]-5)<1e-6) {
+	PostProcNodes.insert(*nit);
+      }
+    }
+
   }
   ~ArcLenghtIntElemFEMethod() {
     VecDestroy(&GhostDiag);
     VecDestroy(&GhostLambdaInt);
   }
+
+  PetscErrorCode potsProcessLoadPath() {
+    PetscFunctionBegin;
+    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
+    lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
+    if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
+    Range::iterator nit = PostProcNodes.begin();
+    for(;nit!=PostProcNodes.end();nit++) {
+      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
+      dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
+      hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+      double coords[3];
+      rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
+      for(;dit!=hi_dit;dit++) {
+	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
+	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+      	PetscPrintf(PETSC_COMM_WORLD,"-> %3.2f %3.2f %3.2f\n",coords[0],coords[1],coords[2]);
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
 
   double lambda_int;
   PetscErrorCode preProcess() {

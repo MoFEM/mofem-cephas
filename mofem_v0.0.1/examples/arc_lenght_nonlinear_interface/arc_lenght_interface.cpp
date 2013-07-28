@@ -423,6 +423,8 @@ int main(int argc, char *argv[]) {
     PostProcVertexMethod ent_method(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
     //
+    ierr = MyArcMethod.potsProcessLoadPath(); CHKERRQ(ierr);
+    //
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
 	ostringstream sss;
