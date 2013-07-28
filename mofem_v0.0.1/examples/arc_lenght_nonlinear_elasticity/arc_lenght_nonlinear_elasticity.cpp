@@ -263,7 +263,6 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-
   if(step>1) {
     ierr = mField.set_other_global_VecCreateGhost(
       "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",Row,ArcCtx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -366,10 +365,6 @@ int main(int argc, char *argv[]) {
 
   }
   
-  //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
   PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
 

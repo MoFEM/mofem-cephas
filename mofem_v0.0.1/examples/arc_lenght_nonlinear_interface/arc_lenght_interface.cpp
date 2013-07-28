@@ -93,124 +93,129 @@ int main(int argc, char *argv[]) {
   moabField_Core core(moab);
   moabField& mField = core;
 
-  //ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
-
-  //Interface
-  EntityHandle meshset_interface;
-  ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
-  ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
-  // stl::bitset see for more details
-  BitRefLevel bit_level_interface;
-  bit_level_interface.set(0);
-  ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
-  EntityHandle meshset_level_interface;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
-
-  //update BC for refined (with interface) mesh
-  EntityHandle meshset_SideSet1; //Dirihlet BC is there
-  ierr = mField.get_msId_meshset(1,SideSet,meshset_SideSet1); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet1,bit_level_interface,meshset_SideSet1,MBTRI,true); CHKERRQ(ierr);
-  EntityHandle meshset_SideSet2; //Dirihlet BC is there
-  ierr = mField.get_msId_meshset(2,SideSet,meshset_SideSet2); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet2,bit_level_interface,meshset_SideSet2,MBTRI,true); CHKERRQ(ierr);
-  EntityHandle meshset_SideSet3; //Dirihlet BC is there
-  ierr = mField.get_msId_meshset(3,SideSet,meshset_SideSet3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level_interface,meshset_SideSet3,MBTRI,true); CHKERRQ(ierr);
-
-  // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(1);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
-
-  /*BitRefLevel bit_level1;
+  BitRefLevel bit_level1;
   bit_level1.set(2);
-  ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
-  ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
-  ierr = mField.refine_PRISM(meshset_level0,bit_level1); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet1,bit_level1,meshset_SideSet1,MBTRI,true,3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet2,bit_level1,meshset_SideSet2,MBTRI,true,3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level1,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);*/
 
   BitRefLevel problem_bit_level = bit_level0;
 
-  /***/
-  //Define problem
+  if(step == 1) {
+    //ref meshset ref level 0
+    ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
-  //Fields
-  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
-  //Field for ArcLenght
-  ierr = mField.add_field("X0_DISPLACEMENT",H1,3); CHKERRQ(ierr);
+    //Interface
+    EntityHandle meshset_interface;
+    ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
+    ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
+    // stl::bitset see for more details
+    BitRefLevel bit_level_interface;
+    bit_level_interface.set(0);
+    ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
+    EntityHandle meshset_level_interface;
+    rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
+    ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
 
-  //FE
-  ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
-  //Define rows/cols and element data
-  ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("ELASTIC","LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ELASTIC","LAMBDA"); CHKERRQ(ierr); //this is for paremtis
-  ierr = mField.modify_finite_element_add_field_data("ELASTIC","LAMBDA"); CHKERRQ(ierr);
+    //update BC for refined (with interface) mesh
+    EntityHandle meshset_SideSet1; //Dirihlet BC is there
+    ierr = mField.get_msId_meshset(1,SideSet,meshset_SideSet1); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(meshset_SideSet1,bit_level_interface,meshset_SideSet1,MBTRI,true); CHKERRQ(ierr);
+    EntityHandle meshset_SideSet2; //Dirihlet BC is there
+    ierr = mField.get_msId_meshset(2,SideSet,meshset_SideSet2); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(meshset_SideSet2,bit_level_interface,meshset_SideSet2,MBTRI,true); CHKERRQ(ierr);
+    EntityHandle meshset_SideSet3; //Dirihlet BC is there
+    ierr = mField.get_msId_meshset(3,SideSet,meshset_SideSet3); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(meshset_SideSet3,bit_level_interface,meshset_SideSet3,MBTRI,true); CHKERRQ(ierr);
 
-  //FE Interface
-  ierr = mField.add_finite_element("INTERFACE"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
+    // stl::bitset see for more details
+    EntityHandle meshset_level0;
+    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+    ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
+    ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
-  //FE ArcLenght
-  ierr = mField.add_finite_element("ARC_LENGHT"); CHKERRQ(ierr);
-  //Define rows/cols and element data
-  ierr = mField.modify_finite_element_add_field_row("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
-  //elem data
-  ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+    /*
+    ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
+    ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
+    ierr = mField.refine_PRISM(meshset_level0,bit_level1); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(meshset_SideSet1,bit_level1,meshset_SideSet1,MBTRI,true,3); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(meshset_SideSet2,bit_level1,meshset_SideSet2,MBTRI,true,3); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(meshset_SideSet3,bit_level1,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);*/
 
-  //define problems
-  ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    /***/
+    //Define problem
 
-  //set finite elements for problem
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ARC_LENGHT"); CHKERRQ(ierr);
+    //Fields
+    ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+    ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
+    //Field for ArcLenght
+    ierr = mField.add_field("X0_DISPLACEMENT",H1,3); CHKERRQ(ierr);
 
-  //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
+    //FE
+    ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
+    //Define rows/cols and element data
+    ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("ELASTIC","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ELASTIC","LAMBDA"); CHKERRQ(ierr); //this is for paremtis
+    ierr = mField.modify_finite_element_add_field_data("ELASTIC","LAMBDA"); CHKERRQ(ierr);
 
-  /***/
-  //Declare problem
+    //FE Interface
+    ierr = mField.add_finite_element("INTERFACE"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
 
-  //add entitities (by tets) to the field
-  ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+    //FE ArcLenght
+    ierr = mField.add_finite_element("ARC_LENGHT"); CHKERRQ(ierr);
+    //Define rows/cols and element data
+    ierr = mField.modify_finite_element_add_field_row("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+    //elem data
+    ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
 
-  //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
+    //define problems
+    ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+
+    //set finite elements for problem
+    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ARC_LENGHT"); CHKERRQ(ierr);
+
+    //set refinment level for problem
+    ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
+
+    /***/
+    //Declare problem
+
+    //add entitities (by tets) to the field
+    ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+
+    //add finite elements entities
+    ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
 
-  //this entity will carray data for this finite element
-  EntityHandle meshset_FE_ARC_LENGHT;
-  rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGHT); CHKERR_PETSC(rval);
-  //get LAMBDA field meshset
-  EntityHandle meshset_field_LAMBDA = mField.get_field_meshset("LAMBDA");
-  //add LAMBDA field meshset to finite element ARC_LENGHT
-  rval = moab.add_entities(meshset_FE_ARC_LENGHT,&meshset_field_LAMBDA,1); CHKERR_PETSC(rval);
-  //add finite element ARC_LENGHT meshset to refinment database (all ref bit leveles)
-  ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGHT,BitRefLevel().set()); CHKERRQ(ierr);
-  //finally add created meshset to the ARC_LENGHT finite element
-  ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);
+    //this entity will carray data for this finite element
+    EntityHandle meshset_FE_ARC_LENGHT;
+    rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGHT); CHKERR_PETSC(rval);
+    //get LAMBDA field meshset
+    EntityHandle meshset_field_LAMBDA = mField.get_field_meshset("LAMBDA");
+    //add LAMBDA field meshset to finite element ARC_LENGHT
+    rval = moab.add_entities(meshset_FE_ARC_LENGHT,&meshset_field_LAMBDA,1); CHKERR_PETSC(rval);
+    //add finite element ARC_LENGHT meshset to refinment database (all ref bit leveles)
+    ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGHT,BitRefLevel().set()); CHKERRQ(ierr);
+    //finally add created meshset to the ARC_LENGHT finite element
+    ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);
 
-  //set app. order
-  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+    //set app. order
+    //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",3); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",3); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",3); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+
+  }
 
   /****/
   //build database
@@ -252,14 +257,13 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
 
-
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
   const double h = 1e-1;
   const double beta = 0;
   const double ft = 1;
-  const double Gf = 1;
+  const double Gf = 4;
 
   ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
   ArcLenghtIntElemFEMethod* MyArcMethod_ptr = new ArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
@@ -313,6 +317,28 @@ int main(int argc, char *argv[]) {
   } else {
     reduction = step_size_reduction;
   }
+
+  if(step>1) {
+    ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.set_other_global_VecCreateGhost(
+      "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",Row,ArcCtx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    double x0_nrm;
+    ierr = VecNorm(ArcCtx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,ArcCtx->dlambda);
+    //
+    ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+    ierr = VecZeroEntries(F); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+  }
+
 
   for(;step<max_steps;step++) {
 
@@ -382,11 +408,14 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
 
     if(step > 1) {
-      reduction = pow((double)its_d/(double)(its+1),gamma);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
+      if(its>0) {
+	reduction = pow((double)its_d/(double)(its+1),gamma);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
+      } else reduction = 1;
     }
 
     //Save data on mesh
+    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = mField.set_other_global_VecCreateGhost(
       "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",Row,ArcCtx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     
@@ -406,7 +435,6 @@ int main(int argc, char *argv[]) {
 
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -416,10 +444,6 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-
-  //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);

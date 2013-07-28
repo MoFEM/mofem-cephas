@@ -418,7 +418,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    double _omega_ = 0;
 	    ierr = Calc_omega(_kappa_,_omega_); CHKERRQ(ierr);
 	    //Dglob
-	    if((_kappa_ <= kappa[gg])||(_kappa_>=kappa1)) {
+	    if((_kappa_ <= kappa[gg])||(_kappa_>=kappa1)||(iter <= 0)) {
 	      ierr = CalcDglob(_omega_); CHKERRQ(ierr);
 	    } else {
 	      ierr = CalcTangetDglob(_omega_,g[gg],gap_loc[gg]); CHKERRQ(ierr);
@@ -730,16 +730,18 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     //dlambda
     NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
 	  = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+    if(dofs_moabfield_no_const.size()==0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+    if(dit==dofs_moabfield_no_const.get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
     if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     if(dit->get_petsc_local_dof_idx()!=-1) {
-	  double *array;
-	  ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
-	  arc_ptr->dlambda = array[dit->get_petsc_local_dof_idx()];
-	  array[dit->get_petsc_local_dof_idx()] = 0;
-	  ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
+      double *array;
+      ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
+      arc_ptr->dlambda = array[dit->get_petsc_local_dof_idx()];
+      array[dit->get_petsc_local_dof_idx()] = 0;
+      ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
     }
     int part = dit->part;
     MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);

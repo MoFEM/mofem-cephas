@@ -1,6 +1,15 @@
 #example how to run
 
-mpirun -np 3 ./interface -my_file PeelTest.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -ksp_monitor 
+mpirun -np 5 ./arc_lenght_interface \
+  -my_file PeelTest.cub -ksp_type fgmres \
+  -pc_type asm -sub_pc_type lu \
+  -ksp_monitor ksp_monitor \
+  -ksp_atol 1e-10 -ksp_rtol 1e-10 \
+  -snes_monitor \
+  -snes_type ls -snes_linesearch_type l2 \
+  -snes_linesearch_monitor \
+  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 \
+  -my_sr 1e-3 -my_ms 10 -snes_converged_reason 
 
 #input
 
@@ -14,4 +23,3 @@ faces where interfaces element should be inserted.
 
 out.vtk - computational mesh
 out_post_proc.vtk - refinded mesh of TETs for prostrocesing
-out_post_proc_prisms.vtk - refinded mesh of PRISMs for prostrocesing
