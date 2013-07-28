@@ -162,7 +162,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColIndices(const string &field_name,v
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
   GlobIndices_Type::iterator miit = col_nodesGlobIndices.find(fiit->get_MoFEMField_ptr());
-  if(miit == col_nodesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  if(miit == col_nodesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE!\n(see this element can be not on this part)");
   ColGlobDofs = miit->second;
   PetscFunctionReturn(0);
 }
@@ -318,6 +318,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussColNMatrix(const string &field_n
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_UpLevelStudent::GetGaussColNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &NMatrix,int side_number) {
+  PetscFunctionBegin;
   switch(type) {
     case MBEDGE:
     case MBTRI: {

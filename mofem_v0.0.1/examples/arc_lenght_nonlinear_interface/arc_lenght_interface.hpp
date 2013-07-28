@@ -92,8 +92,7 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 
 
     switch(ctx) {
-      case ctx_SNESNone: {}
-      break;
+      case ctx_SNESNone: 
       case ctx_SNESSetFunction: { 
 	//F_lambda
 	ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
@@ -205,10 +204,24 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
       Interface& _moab,double _YoungModulus): 
       InterfaceFEMethod(_moab,_YoungModulus) {};
 
+  double h,beta,ft,Gf,E0,g0,kappa1;
+  enum interface_context { ctx_KappaUpdate = 1,  ctx_InterfaceNone = 2 };
+  interface_context ctx_int;
+
+
   Vec D;
   ArcInterfaceFEMethod(
-      Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,double _YoungModulus,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
-      InterfaceFEMethod(_moab,_Aij,_F,_YoungModulus,_SideSet1,_SideSet2,_SideSet3),D(_D) {};
+      Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
+      double _YoungModulus,double _h,double _beta,double _ft,double _Gf,
+      Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
+      InterfaceFEMethod(_moab,_Aij,_F,_YoungModulus,_SideSet1,_SideSet2,_SideSet3),
+      h(_h),beta(_beta),ft(_ft),Gf(_Gf),ctx_int(ctx_InterfaceNone),D(_D) {
+    
+    E0 = YoungModulus/h;
+    g0 = ft/E0;
+    kappa1 = 2*Gf/ft;
+    
+  };
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -231,10 +244,171 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
 
-
     PetscFunctionReturn(0);
   }
 
+  vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap;
+  vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap_loc;
+  ublas::vector<FieldData> g;
+
+
+  PetscErrorCode Calc_g(const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& gap_loc_at_GaussPt,double& g_at_GaussPt) {
+    PetscFunctionBegin;
+    double g2 = pow(gap_loc_at_GaussPt[0],2)+beta*(pow(gap_loc_at_GaussPt[1],2)+pow(gap_loc_at_GaussPt[2],2));
+    g_at_GaussPt = sqrt( g2 );
+    PetscFunctionReturn(0);
+  }
+  
+  PetscErrorCode Calc_omega(const double _kappa_,double& _omega_) {
+    PetscFunctionBegin;
+    _omega_ = 0;
+    if(_kappa_>=kappa1) _omega_ = 1;
+    else if(_kappa_>0) {
+      double a = (2.0*Gf*E0+ft*ft)*_kappa_;
+      double b = (ft+E0*_kappa_)*Gf;
+      _omega_ = 0.5*a/b;
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode CalcDglob(const double _omega_) {
+    PetscFunctionBegin;
+    double E = (1-_omega_)*E0;
+    ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
+    Dloc(0,0) = E;
+    Dglob = prod( Dloc, R );
+    Dglob = prod( trans(R), Dglob );
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode CalcTangetDglob(const double _omega_,const double _g_,const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& _gap_loc_) {
+    PetscFunctionBegin;
+    double d_omega_ = 
+      0.5*(2*Gf*E0+ft*ft)/((ft+(_g_-ft/E0)*E0)*Gf) - 0.5*((_g_-ft/E0)*(2*Gf*E0+ft*ft)*E0)/(pow(ft+(_g_-ft/E0)*E0,2)*Gf);
+    double Et = (1-_omega_)*E0 - d_omega_*E0*_g_;
+    ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
+    Dloc(0,0) = Et*_gap_loc_[0]/_g_;
+    Dloc(0,1) = Et*beta*_gap_loc_[1]/_g_;
+    Dloc(0,2) = Et*beta*_gap_loc_[2]/_g_;
+    Dglob = prod( Dloc, R );
+    Dglob = prod( trans(R), Dglob );
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode RhsInt() {
+    PetscFunctionBegin;
+    int g_dim = g_NTRI.size()/3;
+    gap.resize(g_dim);
+    gap_loc.resize(g_dim);
+    g.resize(g_dim);
+    for(int rr = 0;rr<row_mat;rr++) {
+      if(RowGlob[rr].size()==0) continue;
+      for(int gg = 0;gg<g_dim;gg++) {
+	for(int cc = 0;cc<col_mat;cc++) {
+	  if(ColGlob[cc].size()==0) continue;
+	  ublas::matrix<FieldData> &N = (colNMatrices[cc])[gg];
+	  if(N.size2()!=DispData[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(cc == 0) {
+	    gap[gg] = prod(N,DispData[cc]);
+	  } else {
+	    gap[gg] += prod(N,DispData[cc]);
+	  }
+	}
+	if(gap[gg].size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	gap_loc[gg] = prod(R,gap[gg]);
+	ierr = Calc_g(gap_loc[gg],g[gg]); CHKERRQ(ierr);
+	double _kappa_ = fmax(g[gg]-g0,kappa[gg]);
+	switch(ctx_int) {
+	  case ctx_KappaUpdate:
+	    kappa[gg] = _kappa_;
+	    break;
+	  default: {
+	      double _omega_ = 0;
+	      ierr = Calc_omega(_kappa_,_omega_); CHKERRQ(ierr);
+	      //Dglob
+	      ierr = CalcDglob(_omega_); CHKERRQ(ierr);
+	      //Traction
+	      ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > traction;
+	      traction = prod(Dglob,gap[gg]);
+	      if(traction.size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      double w = area3*G_TRI_W13[gg];
+	      ublas::matrix<FieldData> &N = (rowNMatrices[rr])[gg];
+	      ublas::vector<FieldData> f_int = prod(trans(N),w*traction);
+	      if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	    }
+	    break;
+	}
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode LhsInt() {
+    PetscFunctionBegin;
+    int g_dim = g_NTRI.size()/3;
+    ublas::matrix<FieldData> K[row_mat][col_mat];
+    gap.resize(g_dim);
+    gap_loc.resize(g_dim);
+    g.resize(g_dim);
+    for(int rr = 0;rr<row_mat;rr++) {
+	if(RowGlob[rr].size()==0) continue;
+	for(int gg = 0;gg<g_dim;gg++) {
+	  for(int cc = 0;cc<col_mat;cc++) {
+	    if(ColGlob[cc].size()==0) continue;
+	    ublas::matrix<FieldData> &N = (colNMatrices[cc])[gg];
+	    if(N.size2()!=DispData[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    if(cc == 0) {
+	      gap[gg] = prod(N,DispData[cc]);
+	    } else {
+	      gap[gg] += prod(N,DispData[cc]);
+	    }
+	  }
+	  if(gap[gg].size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  gap_loc[gg] = prod(R,gap[gg]);
+	  ierr = Calc_g(gap_loc[gg],g[gg]); CHKERRQ(ierr);
+	}
+	for(int cc = 0;cc<col_mat;cc++) {
+	  for(int gg = 0;gg<g_dim;gg++) {
+	    ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
+	    ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
+	    ///K matrices
+	    if(gg == 0) {
+	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
+	    }
+	    double _kappa_ = fmax(g[gg]-g0,kappa[gg]);
+	    double _omega_ = 0;
+	    ierr = Calc_omega(_kappa_,_omega_); CHKERRQ(ierr);
+	    //Dglob
+	    if((_kappa_ <= kappa[gg])||(_kappa_>=kappa1)) {
+	      ierr = CalcDglob(_omega_); CHKERRQ(ierr);
+	    } else {
+	      ierr = CalcTangetDglob(_omega_,g[gg],gap_loc[gg]); CHKERRQ(ierr);
+	    }
+	    double w = area3*G_TRI_W13[gg];
+	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
+	    K[rr][cc] += prod(NTD , col_Mat ); 
+	  }
+	}
+	for(int cc = 0;cc<col_mat;cc++) {
+	  if(ColGlob[cc].size()==0) continue;
+	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	}
+    }
+    PetscFunctionReturn(0);
+  }
+
+  Tag th_kappa;
+  const void* tag_data_kappa[1];
+  double* kappa;
+
+  PetscErrorCode set_ctx_int(interface_context _ctx) {
+    PetscFunctionBegin;
+    ctx_int = _ctx;
+    PetscFunctionReturn(0);
+  }
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
@@ -242,10 +416,23 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
     //Rotation matrix
     ierr = CalcR(); CHKERRQ(ierr);
-    //Dglob
-    ierr = CalcDglob(); CHKERRQ(ierr);
     //Calculate Matrices
     ierr = Matrices();    CHKERRQ(ierr);
+
+    //History
+    int g_dim = g_NTRI.size()/3;
+    EntityHandle fe_ent = fe_ptr->get_ent();
+    vector<double> def_kappa(g_dim,0);
+    rval = moab.tag_get_handle("_KAPPA",g_dim,MB_TYPE_DOUBLE,th_kappa,MB_TAG_CREAT|MB_TAG_SPARSE,&def_kappa[0]);  
+    if(rval==MB_ALREADY_ALLOCATED) {
+      rval = MB_SUCCESS;
+    } else {
+      rval = moab.tag_set_data(th_kappa,&fe_ent,1,&def_kappa[0]); 
+    }
+    CHKERR_PETSC(rval);
+    rval = moab.tag_get_by_ptr(th_kappa,&fe_ent,1,tag_data_kappa); CHKERR_PETSC(rval);
+    kappa = (double*)tag_data_kappa[0];
+
 
     switch(ctx) {
       case ctx_SNESNone: {
@@ -354,12 +541,14 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     VecDestroy(&GhostLambdaInt);
   }
 
+  double lambda_int;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     switch(ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = calulate_dx_and_dlambda(D); CHKERRQ(ierr);
 	ierr = calulate_db(); CHKERRQ(ierr);
+	ierr = calulate_lambda_int(lambda_int); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
@@ -371,13 +560,16 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calulate_lambda_int(double &lambda_int) {
+  PetscErrorCode calulate_lambda_int(double &_lambda_int_) {
     PetscFunctionBegin;
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
     dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
     hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problem_ptr->get_nb_local_dofs_row());
     double *array;
     double *array_int_lambda;
+    ierr = VecZeroEntries(GhostLambdaInt); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(GhostLambdaInt,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(GhostLambdaInt,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
     ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     array_int_lambda[0] = 0;
@@ -389,7 +581,6 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
 	array_int_lambda[0] -= array[dit->petsc_local_dof_idx];
       }
     }
-    //lambda_int = arc_ptr->alpha*lambda_int + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
     ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
     ierr = VecRestoreArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(GhostLambdaInt,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -397,7 +588,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     ierr = VecGhostUpdateBegin(GhostLambdaInt,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(GhostLambdaInt,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
-    lambda_int = arc_ptr->alpha*array_int_lambda[0] + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
+    _lambda_int_ = arc_ptr->alpha*array_int_lambda[0] + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
     ierr = VecRestoreArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -432,11 +623,9 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
 
     switch(ctx) {
       case ctx_SNESSetFunction: {
-	double lambda_int;
-	ierr = calulate_lambda_int(lambda_int); CHKERRQ(ierr);
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
+	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
       }
       break; 
       case ctx_SNESSetJacobian: {

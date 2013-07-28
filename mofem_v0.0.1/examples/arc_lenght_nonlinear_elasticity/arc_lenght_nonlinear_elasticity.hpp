@@ -308,7 +308,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
       case ctx_SNESSetFunction: {
 	arc_ptr->res_lambda = calulate_lambda_int() - pow(arc_ptr->s,2);
 	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
+	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
       }
       break; 
       case ctx_SNESSetJacobian: {
@@ -328,11 +328,11 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     PetscFunctionBegin;
     switch(ctx) {
       case ctx_SNESSetFunction: { 
-	//assemble
+	/*//assemble
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);*/
 	//add F_lambda
 	NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
 	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);

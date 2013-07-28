@@ -1705,7 +1705,7 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
   *build_MoFEM |= 1<<6;
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::partition_finite_elements(const string &name,int verb) {
+PetscErrorCode moabField_Core::partition_finite_elements(const string &name,bool do_skip,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
@@ -1720,9 +1720,9 @@ PetscErrorCode moabField_Core::partition_finite_elements(const string &name,int 
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
   problems_by_name::iterator p_miit = problems_set.find(name);
   if(p_miit == problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
-  NumeredMoFEMFE_multiIndex &numered_finite_elements = const_cast<NumeredMoFEMFE_multiIndex&>(p_miit->numered_finite_elements);
+  NumeredMoFEMFE_multiIndex& numered_finite_elements = const_cast<NumeredMoFEMFE_multiIndex&>(p_miit->numered_finite_elements);
   //MoFEMFE set
-  MoFEMFE_by_identity &MoFEMFE_set = finite_elements_data.get<Identity_mi_tag>();
+  MoFEMFE_by_identity& MoFEMFE_set = finite_elements_data.get<Identity_mi_tag>();
   MoFEMFE_by_identity::iterator miit2 = MoFEMFE_set.begin();
   MoFEMFE_by_identity::iterator hi_miit2 = MoFEMFE_set.end();
   MoFEMFE_by_identity::iterator miit3 = miit2;
@@ -1758,7 +1758,7 @@ PetscErrorCode moabField_Core::partition_finite_elements(const string &name,int 
       unsigned int max_part = std::distance(parts.begin(),pos);
       bool success = numered_finite_elements.modify(p.first,NumeredMoFEMFE_change_part(max_part));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-      if(skip) continue;
+      if(do_skip) if(skip) continue;
       //cols
       const void* tag_col_uids_data = miit3->tag_col_uids_data;
       const int tag_col_uids_size = miit3->tag_col_uids_size;
@@ -3154,6 +3154,13 @@ PetscErrorCode moabField_Core::loop_finite_elements(const string &problem_name,c
   if(verb==-1) verb = verbose;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   //
+  ierr = loop_finite_elements(problem_name,fe_name,method,pcomm->rank(),pcomm->rank(),verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode moabField_Core::loop_finite_elements(
+  const string &problem_name,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
   // find p_miit
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
@@ -3163,8 +3170,8 @@ PetscErrorCode moabField_Core::loop_finite_elements(const string &problem_name,c
   typedef NumeredMoFEMFE_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
   FEs_by_composite &numered_finite_elements = 
     (const_cast<NumeredMoFEMFE_multiIndex&>(p_miit->numered_finite_elements)).get<Composite_mi_tag>();
-  FEs_by_composite::iterator miit = numered_finite_elements.lower_bound(boost::make_tuple(fe_name,pcomm->rank()));
-  FEs_by_composite::iterator hi_miit = numered_finite_elements.upper_bound(boost::make_tuple(fe_name,pcomm->rank()));
+  FEs_by_composite::iterator miit = numered_finite_elements.lower_bound(boost::make_tuple(fe_name,lower_rank));
+  FEs_by_composite::iterator hi_miit = numered_finite_elements.upper_bound(boost::make_tuple(fe_name,upper_rank));
   ierr = method.set_problem(&*p_miit); CHKERRQ(ierr);
   ierr = method.set_moabfields(&moabfields); CHKERRQ(ierr);
   ierr = method.set_ents_multiIndex(&ents_moabfield); CHKERRQ(ierr);

@@ -254,7 +254,7 @@ struct moabField {
   virtual PetscErrorCode partition_ghost_dofs(const string &name) = 0;
 
   /// partition finite elements
-  virtual PetscErrorCode partition_finite_elements(const string &name,int verb = -1) = 0;
+  virtual PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1) = 0;
 
   /// erase inactive dofs form field
   virtual PetscErrorCode erase_inactive_dofs_moabfield() = 0;
@@ -454,6 +454,25 @@ struct moabField {
    * moabField::FEMethod
   **/ 
   virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
+
+  /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
+   *
+   * Thsis function is like swiss knife, is can be used to post-processing or matrix
+   * and vectors assembly. It makes loop over given finite element for given
+   * problem. The particular methods exectuted on each element are given by
+   * class derived form moabField::FEMethod. At beginig of each loop user definded
+   * function (method)  preProcess() is called, for each element operator() is
+   * executed, at the end loop finalizes with user defined function (method)
+   * postProcess().
+   *
+   * For more details pleas look to examples.
+   *
+   * \param problem_name \param fe_name \param method is class derived form
+   * moabField::FEMethod
+  **/ 
+  virtual PetscErrorCode loop_finite_elements(
+    const string &problem_name,const string &fe_name,FEMethod &method,
+    int lower_rank,int upper_rank,int verb = -1) = 0;
 
   /** \brief Make a loop over entities
     *
