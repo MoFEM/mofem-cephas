@@ -186,7 +186,7 @@ RefMoFEMFiniteElement_PRISM::RefMoFEMFiniteElement_PRISM(Interface &moab,const R
       THROW_AT_LINE("this work only for PRISMs");
   }
   ErrorCode rval;
-  EntityHandle prism = get_ref_ent(),ent;
+  EntityHandle prism = get_ref_ent();
   int num_nodes;
   const EntityHandle* conn;
   rval = moab.get_connectivity(prism,conn,num_nodes,true); CHKERR_THROW(rval);
@@ -194,35 +194,20 @@ RefMoFEMFiniteElement_PRISM::RefMoFEMFiniteElement_PRISM(Interface &moab,const R
   for(int nn = 0;nn<6; nn++) {
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(conn[nn],nn,0,-1));
   }
-  map<EntityHandle,EntityHandle> node_map;
-  //face3
-  rval = moab.side_element(prism,2,3,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,3,0,-1));
-  //face4
-  rval = moab.side_element(prism,2,4,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,0,-1));
-  //edges
-  rval = moab.side_element(prism,1,0,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,-1));
-  rval = moab.side_element(prism,1,1,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,1,0,-1));
-  rval = moab.side_element(prism,1,2,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,2,0,-1));
-  rval = moab.side_element(prism,1,6,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,6,0,-1));
-  rval = moab.side_element(prism,1,7,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,7,0,-1));
-  rval = moab.side_element(prism,1,8,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,8,0,-1));
 }
 SideNumber* RefMoFEMFiniteElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
-  NOT_USED(moab);
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
   if(ref_ptr->ent == ent) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
+  ErrorCode rval;
+  int side_number,sense,offset;
+  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
+  if(side_number==-1) THROW_AT_LINE("this not working");
+  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
+  return const_cast<SideNumber*>(&*miit);
   THROW_AT_LINE("not implemented");
   return NULL;
 }

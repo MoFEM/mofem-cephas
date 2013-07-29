@@ -228,42 +228,11 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
   PetscErrorCode CalcDglob() {
     PetscFunctionBegin;
     ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
-    //int ii = 0;
-    //for(;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
-    Dloc(0,0) = YoungModulus;
+    int ii = 0;
+    for(;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
+    //Dloc(0,0) = YoungModulus;
     Dglob = prod( Dloc, R );
     Dglob = prod( trans(R), Dglob );
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode RhsInt() {
-    PetscFunctionBegin;
-    int g_dim = g_NTRI.size()/3;
-    for(int rr = 0;rr<row_mat;rr++) {
-      if(RowGlob[rr].size()==0) continue;
-      for(int gg = 0;gg<g_dim;gg++) {
-	ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > gap;
-	for(int cc = 0;cc<col_mat;cc++) {
-	  if(ColGlob[cc].size()==0) continue;
-	  ublas::matrix<FieldData> &N = (colNMatrices[cc])[gg];
-	  if(N.size2()!=DispData[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(cc == 0) {
-	    gap = prod(N,DispData[cc]);
-	  } else {
-	    gap += prod(N,DispData[cc]);
-	  }
-	}
-	if(gap.size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > traction;
-	traction = prod(Dglob,gap);
-	if(traction.size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	double w = area3*G_TRI_W13[gg];
-	ublas::matrix<FieldData> &N = (rowNMatrices[rr])[gg];
-	ublas::vector<FieldData> f_int = prod(trans(N),w*traction);
-	if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
-      }
-    }
     PetscFunctionReturn(0);
   }
 
@@ -707,7 +676,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); //*minus*/
 	}
 	//faces
-	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
@@ -717,7 +686,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 	  disp_ptr[dit->get_dof_rank()] -= val*dit->get_FieldData(); //*minus/
 	  gap_ptr[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	}
- 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
+ 	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];

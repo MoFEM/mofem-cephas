@@ -298,7 +298,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
 	//faces
-	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,3));
+	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
@@ -307,7 +307,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
 	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	}
- 	dit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+ 	dit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	hi_dit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
@@ -418,7 +418,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    double _omega_ = 0;
 	    ierr = Calc_omega(_kappa_,_omega_); CHKERRQ(ierr);
 	    //Dglob
-	    if((_kappa_ <= kappa[gg])||(_kappa_>=kappa1)||(iter <= 1)) {
+	    if((_kappa_ <= kappa[gg])||(_kappa_>=kappa1)||(iter <= 0)) {
 	      ierr = CalcDglob(_omega_); CHKERRQ(ierr);
 	    } else {
 	      ierr = CalcTangetDglob(_omega_,g[gg],gap_loc[gg]); CHKERRQ(ierr);
@@ -578,15 +578,19 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     Faces3.insert(Nodes3.begin(),Nodes3.end());
     Faces4.insert(Edges4.begin(),Edges4.end());
     Faces4.insert(Nodes4.begin(),Nodes4.end());
-    
-    for(Range::iterator nit = Nodes3.begin();nit!=Nodes3.end();nit++) {
+ 
+    Range all_nodes;
+    rval = moab.get_entities_by_type(0,MBVERTEX,all_nodes,true); CHKERR_THROW(rval);
+    for(Range::iterator nit = all_nodes.begin();nit!=all_nodes.end();nit++) {
       double coords[3];
       rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
       if(fabs(coords[0]-5)<1e-6) {
 	PostProcNodes.insert(*nit);
       }
     }
+    PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",PostProcNodes.size());
 
+    
   }
   ~ArcLenghtIntElemFEMethod() {
     VecDestroy(&GhostDiag);
@@ -609,7 +613,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
       for(;dit!=hi_dit;dit++) {
 	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
 	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
-      	PetscPrintf(PETSC_COMM_WORLD,"-> %3.2f %3.2f %3.2f\n",coords[0],coords[1],coords[2]);
+      	PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
       }
     }
     PetscFunctionReturn(0);
