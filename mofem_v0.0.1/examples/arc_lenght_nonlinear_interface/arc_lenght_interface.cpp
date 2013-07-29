@@ -316,6 +316,7 @@ int main(int argc, char *argv[]) {
     step_size = step_size_reduction;
   } else {
     reduction = step_size_reduction;
+    step++;
   }
 
   if(step>1) {

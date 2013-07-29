@@ -418,7 +418,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    double _omega_ = 0;
 	    ierr = Calc_omega(_kappa_,_omega_); CHKERRQ(ierr);
 	    //Dglob
-	    if((_kappa_ <= kappa[gg])||(_kappa_>=kappa1)/*||(iter <= 0)*/) {
+	    if((_kappa_ <= kappa[gg])||(_kappa_>=kappa1)||(iter <= 1)) {
 	      ierr = CalcDglob(_omega_); CHKERRQ(ierr);
 	    } else {
 	      ierr = CalcTangetDglob(_omega_,g[gg],gap_loc[gg]); CHKERRQ(ierr);
