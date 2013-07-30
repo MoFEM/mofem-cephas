@@ -39,34 +39,6 @@ FEMethod_LowLevelStudent::~FEMethod_LowLevelStudent() {
     delete ParentMethod;
   }
 }
-PetscErrorCode FEMethod_LowLevelStudent::GetDataView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FEDofMoFEMEntity_multiIndex_view &dof_view) {
-  PetscFunctionBegin;
-  dofs_by_Composite::iterator miit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number_low));
-  dofs_by_Composite::iterator hi_miit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number_hi));
-  for(;miit!=hi_miit;miit++) {
-    dof_view.insert(&*miit);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod_LowLevelStudent::GetRowView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof_view) {
-  PetscFunctionBegin;
-  numered_dofs_by_Composite::iterator miit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number_low));
-  numered_dofs_by_Composite::iterator hi_miit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number_hi));
-  for(;miit!=hi_miit;miit++) {
-    dof_view.insert(&*miit);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod_LowLevelStudent::GetColView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof_view) {
-  PetscFunctionBegin;
-  numered_dofs_by_Composite::iterator miit = col_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number_low));
-  numered_dofs_by_Composite::iterator hi_miit = col_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number_hi));
-  for(;miit!=hi_miit;miit++) {
-    dof_view.insert(&*miit);
-  }
-  PetscFunctionReturn(0);
-}
-
 
 //
 template <typename T>

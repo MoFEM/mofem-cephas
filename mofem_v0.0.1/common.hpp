@@ -662,10 +662,7 @@ struct interface_NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<T> {
  * \brief keeps basic information about indexed dofs for the finite element
  */
 struct BaseFEDofMoFEMEntity {
-  UId fe_dof_id;
   BaseFEDofMoFEMEntity(SideNumber *_side_number_ptr): side_number_ptr(_side_number_ptr) {};
-  PetscErrorCode get_fe_dof_id_calculate(const DofMoFEMEntity *dof_ptr);
-  inline UId get_fe_dof_id() const { return fe_dof_id; }
   SideNumber *side_number_ptr;
 };
 
@@ -821,12 +818,13 @@ typedef multi_index_container<
 	> >
   > > FEDofMoFEMEntity_multiIndex;
 
-typedef multi_index_container<
+/*typedef multi_index_container<
   const FEDofMoFEMEntity *,
   indexed_by<
     ordered_unique<
-      const_mem_fun<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,UId,&FEDofMoFEMEntity::get_fe_dof_id> >
-  > > FEDofMoFEMEntity_multiIndex_view;
+      //const_mem_fun<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,UId,&FEDofMoFEMEntity::get_fe_dof_id> >
+      const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&FEDofMoFEMEntity::get_unique_id> >
+  > > FEDofMoFEMEntity_multiIndex_view;*/
 
 typedef multi_index_container<
   FENumeredDofMoFEMEntity,
@@ -868,13 +866,6 @@ typedef multi_index_container<
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FENumeredDofMoFEMEntity::get_ent>
 	> >
   > > FENumeredDofMoFEMEntity_multiIndex;
-
-typedef multi_index_container<
-  const FENumeredDofMoFEMEntity *,
-  indexed_by<
-    ordered_unique<
-      const_mem_fun<FENumeredDofMoFEMEntity::BaseFEDofMoFEMEntity,UId,&FENumeredDofMoFEMEntity::get_fe_dof_id> >
-  > > FENumeredDofMoFEMEntity_multiIndex_view;
 
 typedef multi_index_container<
   NumeredDofMoFEMEntity,

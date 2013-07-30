@@ -67,9 +67,6 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   template <typename T> static DofIdx UnaryFunction_PetscGlobalIdx(const T *it) { return it->get_petsc_gloabl_dof_idx(); }
   template <typename T> static DofIdx UnaryFunction_PetscLocalIdx(const T *it) { return it->get_petsc_local_dof_idx(); }
   template <typename T> static DofIdx UnaryFunction_EntDofIdx(const T *it) { return it->get_EntDofIdx(); }
-  PetscErrorCode GetDataView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FEDofMoFEMEntity_multiIndex_view &dof);
-  PetscErrorCode GetRowView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof);
-  PetscErrorCode GetColView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof);
 
   typedef map<const MoFEMField*,vector<DofIdx> > GlobIndices_Type;
   typedef map<const MoFEMEntity*,vector<DofIdx> > GlobIndices_EntType;

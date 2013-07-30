@@ -639,24 +639,10 @@ ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   return os;
 }
 
-PetscErrorCode BaseFEDofMoFEMEntity::get_fe_dof_id_calculate(const DofMoFEMEntity *dof_ptr) {
-  PetscFunctionBegin;
-  DofIdx dof = dof_ptr->dof;
-  int side_number = side_number_ptr->side_number;
-  assert(dof < (DofIdx)bitset<7>().set().to_ulong());
-  assert(side_number < (int)bitset<4>().set().to_ulong());
-  bitset<7> b_dof(dof);
-  bitset<4> b_side_number(side_number);
-  fe_dof_id = b_dof.to_ulong() | ( b_side_number.to_ulong()<<b_dof.size() );
-  assert(fe_dof_id < bitset<sizeof(unsigned long)*8>().set().to_ulong());
-  PetscFunctionReturn(0);
-}
 FEDofMoFEMEntity::FEDofMoFEMEntity(
   SideNumber *_side_number_ptr,
   const DofMoFEMEntity *_DofMoFEMEntity_ptr): 
-  BaseFEDofMoFEMEntity(_side_number_ptr), interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {
-  get_fe_dof_id_calculate(field_ptr);
-}
+  BaseFEDofMoFEMEntity(_side_number_ptr), interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {}
 ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
   os << "local dof MoFEMFE idx " 
     << "side_number " << e.side_number_ptr->side_number << " "
@@ -668,9 +654,7 @@ ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
 FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
   SideNumber *_side_number_ptr,
   const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr): 
-  BaseFEDofMoFEMEntity(_side_number_ptr), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(_NumeredDofMoFEMEntity_ptr) {
-  get_fe_dof_id_calculate(field_ptr->field_ptr);
-}
+  BaseFEDofMoFEMEntity(_side_number_ptr), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(_NumeredDofMoFEMEntity_ptr) {}
 ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e) {
   os << "local dof MoFEMFE idx " 
     << "side_number " << e.side_number_ptr->side_number << " "
