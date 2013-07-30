@@ -210,9 +210,9 @@ int main(int argc, char *argv[]) {
 
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",4); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",4); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",4); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",5); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",5); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",5); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   }

@@ -548,6 +548,9 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
   ArcLenghtCtx* arc_ptr;
   Vec GhostDiag,GhostLambdaInt;
   Range Faces3,Faces4,PostProcNodes;
+  Range Edges3,Edges4;
+  Range Nodes3,Nodes4;
+
   ArcLenghtIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
     ArcLenghtCtx *_arc_ptr): FEMethod(),moab(_moab),Aij(_Aij),F(_F),D(_D),arc_ptr(_arc_ptr) {
     PetscInt ghosts[1] = { 0 };
@@ -568,10 +571,9 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
       Faces3.insert(f3);
       Faces4.insert(f4);
     }
-    Range Edges3,Edges4;
+
     rval = moab.get_adjacencies(Faces3,1,false,Edges3); CHKERR_THROW(rval);
     rval = moab.get_adjacencies(Faces4,1,false,Edges4); CHKERR_THROW(rval);
-    Range Nodes3,Nodes4;
     rval = moab.get_connectivity(Faces3,Nodes3,true); CHKERR_THROW(rval);
     rval = moab.get_connectivity(Faces4,Nodes4,true); CHKERR_THROW(rval);
     Faces3.insert(Edges3.begin(),Edges3.end());
@@ -653,10 +655,10 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     array_int_lambda[0] = 0;
     for(;dit!=hi_dit;dit++) {
-      if(Faces3.find(dit->get_ent())!=Faces3.end()) {
+      if(Nodes3.find(dit->get_ent())!=Nodes3.end()) {
 	array_int_lambda[0] += array[dit->petsc_local_dof_idx];
       }
-      if(Faces4.find(dit->get_ent())!=Faces4.end()) {
+      if(Nodes4.find(dit->get_ent())!=Nodes4.end()) {
 	array_int_lambda[0] -= array[dit->petsc_local_dof_idx];
       }
     }
@@ -681,9 +683,9 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     double *array;
     ierr = VecGetArray(arc_ptr->db,&array); CHKERRQ(ierr);
     for(;dit!=hi_dit;dit++) {
-      if(Faces3.find(dit->get_ent())!=Faces3.end()) {
+      if(Nodes3.find(dit->get_ent())!=Nodes3.end()) {
 	array[dit->petsc_local_dof_idx] = +arc_ptr->alpha;
-      } else if(Faces4.find(dit->get_ent())!=Faces4.end()) {
+      } else if(Nodes4.find(dit->get_ent())!=Nodes4.end()) {
 	  array[dit->petsc_local_dof_idx] = -arc_ptr->alpha;
       } else array[dit->petsc_local_dof_idx] = 0;
     }
