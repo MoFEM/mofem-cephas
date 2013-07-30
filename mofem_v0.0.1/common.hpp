@@ -246,13 +246,25 @@ private:
 
 template <typename id_type> 
 struct ltbit 
-{ inline bool operator()(const id_type& valueA,const id_type& valueB) const {
-  return valueA.to_ulong()<valueB.to_ulong(); } };
+  { inline bool operator()(const id_type& valueA,const id_type& valueB) const {
+    return memcmp(&valueA,&valueB,sizeof(id_type)); 
+  } 
+};
+
+template <typename id_type>
+struct eqbit { 
+  inline bool operator()(const id_type& valueA,const id_type& valueB) const {
+    return valueA.to_ulong() == valueB.to_ulong();
+  }
+};
 
 template <typename id_type> 
 struct hashbit 
-{ inline bool operator()(const id_type& value) const {
-  return value.to_ulong(); } };
+  { inline unsigned long int operator()(const id_type& value) const {
+    assert(value.count()==1);
+    return value.to_ulong(); 
+  } 
+};
 
 // tags and unaryFunction functions
 
@@ -698,7 +710,7 @@ typedef multi_index_container<
   MoFEMField,
   indexed_by<
     hashed_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,BitFieldId,&MoFEMField::get_id>, hashbit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,BitFieldId,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
     ordered_unique<
       tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshset> >,
     hashed_unique<
@@ -1084,7 +1096,7 @@ typedef multi_index_container<
     hashed_unique<
       tag<MoFEMFE_Meshset_mi_tag>, member<MoFEMFE,EntityHandle,&MoFEMFE::meshset> >,
     hashed_unique<
-      tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFE,BitFEId,&MoFEMFE::get_id>, hashbit<BitFEId> >,
+      tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFE,BitFEId,&MoFEMFE::get_id>, hashbit<BitFEId>, eqbit<BitFieldId> >,
     hashed_unique<
       tag<MoFEMFE_name_mi_tag>, const_mem_fun<MoFEMFE,string,&MoFEMFE::get_name> >
   > > MoFEMFE_multiIndex;

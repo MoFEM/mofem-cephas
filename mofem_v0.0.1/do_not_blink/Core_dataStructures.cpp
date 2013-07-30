@@ -205,7 +205,67 @@ SideNumber* RefMoFEMFiniteElement_PRISM::get_side_number_ptr(Interface &moab,Ent
   ErrorCode rval;
   int side_number,sense,offset;
   rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
-  if(side_number==-1) THROW_AT_LINE("this not working");
+  if(side_number==-1) {
+    int num_nodes;
+    const EntityHandle* conn;
+    rval = moab.get_connectivity(ref_ptr->ent,conn,num_nodes,true); CHKERR_THROW(rval);
+    assert(num_nodes==6);	
+    const EntityHandle* conn_ent;
+    rval = moab.get_connectivity(ent,conn_ent,num_nodes,true); CHKERR_THROW(rval);
+    /*
+    for(int nn = 0; nn<6;nn++) {
+      cerr << conn[nn] << " ";
+    };
+    cerr << endl;
+    for(int nn = 0; nn<num_nodes;nn++) {
+      cerr << conn_ent[nn] << " ";
+    }
+    cerr << endl;
+    */
+    if(num_nodes == 3) {
+      EntityHandle face3[3] = { conn[0], conn[1], conn[2] };
+      EntityHandle face4[3] = { conn[3], conn[4], conn[5] };
+      int sense_p1_map[3][3] = { {0,1,2}, {1,2,0}, {2,0,1} };
+      int sense_m1_map[3][3] = { {0,2,1}, {2,1,0}, {1,0,2} };
+      EntityHandle* conn0_3_ptr = find( face3, &face3[3], conn_ent[0] );
+      if( conn0_3_ptr != &face3[3] ) {
+	offset = distance( face3, conn0_3_ptr );
+	if( 
+	  face3[ sense_p1_map[offset][0] ] == conn_ent[0] &&
+	  face3[ sense_p1_map[offset][1] ] == conn_ent[1] &&
+	  face3[ sense_p1_map[offset][2] ] == conn_ent[2] ) {
+	  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,3,1,offset)).first;
+	  return const_cast<SideNumber*>(&*miit);
+	} else if (
+	  face3[ sense_m1_map[offset][0] ] == conn_ent[0] &&
+	  face3[ sense_m1_map[offset][1] ] == conn_ent[1] &&
+	  face3[ sense_m1_map[offset][2] ] == conn_ent[2] ) {
+	  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,3,-1,offset)).first;
+	  return const_cast<SideNumber*>(&*miit);
+	} 
+      }	
+      EntityHandle* conn0_4_ptr = find( face4, &face4[3], conn_ent[0] );
+      if( conn0_4_ptr != &face4[3] ) {
+	  offset = distance( face4, conn0_4_ptr );
+	  if( 
+	    face4[ sense_p1_map[offset][0] ] == conn_ent[0] &&
+	    face4[ sense_p1_map[offset][1] ] == conn_ent[1] &&
+	    face4[ sense_p1_map[offset][2] ] == conn_ent[2] ) {
+	    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,1,offset)).first;
+	    return const_cast<SideNumber*>(&*miit);
+	  } else if (
+	    face4[ sense_m1_map[offset][0] ] == conn_ent[0] &&
+	    face4[ sense_m1_map[offset][1] ] == conn_ent[1] &&
+	    face4[ sense_m1_map[offset][2] ] == conn_ent[2] ) {
+	    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,-1,offset)).first;
+	    return const_cast<SideNumber*>(&*miit);
+	  } else THROW_AT_LINE("Huston we have problem");
+      } THROW_AT_LINE("Huston we have problem");
+    }
+    ostringstream sss;
+    sss << "this not working: " << ent << " type: " << moab.type_from_handle(ent) << " " << MBEDGE << " " << MBTRI << endl;
+    THROW_AT_LINE(sss.str().c_str());
+  }
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
   return const_cast<SideNumber*>(&*miit);
   THROW_AT_LINE("not implemented");

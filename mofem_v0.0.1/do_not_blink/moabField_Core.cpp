@@ -507,10 +507,12 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
   typedef MoFEMEntity_multiIndex::index<BitFieldId_mi_tag>::type ent_set_by_id;
   ent_set_by_id& set = ents_moabfield.get<BitFieldId_mi_tag>();
   ent_set_by_id::iterator miit2 = set.lower_bound(id);
-  ent_set_by_id::iterator hi_miit2 = set.upper_bound(id);
   MoFEMEntity_multiIndex_ent_view ents_id_view;
-  for(;miit2!=hi_miit2;miit2++) {
-    ents_id_view.insert(&*miit2);
+  if(miit2 != set.end()) {
+    ent_set_by_id::iterator hi_miit2 = set.upper_bound(id);
+    for(;miit2!=hi_miit2;miit2++) {
+      ents_id_view.insert(&*miit2);
+    }
   }
   //loop over ents
   Range::iterator eit = ents.begin();
@@ -3139,17 +3141,22 @@ PetscErrorCode moabField_Core::add_prism_to_Adj_prisms(const EntityHandle prism,
     pair<RefMoFEMFiniteElement_multiIndex::iterator,bool> p_MoFEMFE;
     if(p_ent.second) {
       p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_PRISM(moab,&*p_ent.first)));
-      EntityHandle face_side3,face_side4;
-      rval = moab.side_element(prism,2,3,face_side3); CHKERR_PETSC(rval);
-      rval = moab.side_element(prism,2,4,face_side4); CHKERR_PETSC(rval);
-      p_MoFEMFE.first->get_side_number_ptr(moab,face_side3);
-      p_MoFEMFE.first->get_side_number_ptr(moab,face_side4);
+      int num_nodes;
+      const EntityHandle* conn;
+      rval = moab.get_connectivity(prism,conn,num_nodes,true); CHKERR_THROW(rval);
+      Range face_side3,face_side4;
+      rval = moab.get_adjacencies(conn,3,2,false,face_side3); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(&conn[3],3,2,false,face_side4); CHKERR_PETSC(rval);
+      if(face_side3.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prism don't have side face 3");
+      if(face_side4.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prims don't have side face 4");
+      p_MoFEMFE.first->get_side_number_ptr(moab,*face_side3.begin());
+      p_MoFEMFE.first->get_side_number_ptr(moab,*face_side4.begin());
       // set bit common for faces with side number 3 and 4
-      RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = ref_entities.get<MoABEnt_mi_tag>().find(face_side3);
+      RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = ref_entities.get<MoABEnt_mi_tag>().find(*face_side3.begin());
       if(miit_ref_ent!=ref_entities.get<MoABEnt_mi_tag>().end()) {
 	BitRefLevel bit = miit_ref_ent->get_BitRefLevel();
-	if(face_side4 == no_handle) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
-	miit_ref_ent = ref_entities.get<MoABEnt_mi_tag>().find(face_side4);
+	if(face_side4.empty()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
+	miit_ref_ent = ref_entities.get<MoABEnt_mi_tag>().find(*face_side4.begin());
 	if(miit_ref_ent!=ref_entities.get<MoABEnt_mi_tag>().end()) {
 	  bit &= miit_ref_ent->get_BitRefLevel();
 	  ref_entities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));

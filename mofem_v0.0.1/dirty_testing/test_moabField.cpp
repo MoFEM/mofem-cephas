@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("DAMAGE",L2,1); CHKERRQ(ierr);
   ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
-  ierr = mField.add_field("DAMAGE_INTERFACE",L2_2D,1); CHKERRQ(ierr);
+  //ierr = mField.add_field("DAMAGE_INTERFACE",L2_2D,1); CHKERRQ(ierr);
 
   //add finite elements
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -133,11 +133,11 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("LINK","SPATIAL_POSITION"); CHKERRQ(ierr);*/
   ierr = mField.add_finite_element("INTERFACE"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
+  //ierr = mField.modify_finite_element_add_field_row("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
+  //ierr = mField.modify_finite_element_add_field_col("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
+  //ierr = mField.modify_finite_element_add_field_data("INTERFACE","DAMAGE_INTERFACE"); CHKERRQ(ierr);
 
   //add problems 
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -165,24 +165,26 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_add_finite_element("LINK_PROBLEM","LINK"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ARC_LENGHT_PROBLEM","ARC_LENGHT"); CHKERRQ(ierr);*/
   
-  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level1); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("COUPLED_DAMAGE_MECHANICS",bit_level1); CHKERRQ(ierr);
+  //ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level1); CHKERRQ(ierr);
+  //ierr = mField.modify_problem_ref_level_add_bit("COUPLED_DAMAGE_MECHANICS",bit_level1); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("COUPLED_DAMAGE_MECHANICS",bit_level0); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS_LEVEL0",bit_level0); CHKERRQ(ierr);
 
   //add entities to the field meshset
   ierr = mField.add_ents_to_field_by_TETs(0,"DAMAGE"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_PRISMs(0,"DAMAGE_INTERFACE"); CHKERRQ(ierr);
+  //ierr = mField.add_ents_to_field_by_PRISMs(0,"DAMAGE_INTERFACE"); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"ELASTIC",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
+  //ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"ELASTIC",MBTET); CHKERRQ(ierr);
+  //ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
+  //ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
+  //ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
 
@@ -196,12 +198,12 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);*/
 
   //set app. order
-  ierr = mField.set_field_order(0,MBTET,"DAMAGE",0); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DAMAGE",0); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBPRISM,"DAMAGE_INTERFACE",1); CHKERRQ(ierr);
+  //ierr = mField.set_field_order(0,MBPRISM,"DAMAGE_INTERFACE",1); CHKERRQ(ierr);
 
   moabField_Core core2(moab);
   moabField& mField2 = core2;
@@ -214,10 +216,9 @@ int main(int argc, char *argv[]) {
   ierr = mField2.build_finite_elements(); CHKERRQ(ierr);
   ierr = mField2.build_finite_elements(); CHKERRQ(ierr);
 
-
   //build adjacencies
-  ierr = mField2.build_adjacencies(bit_level0|bit_level1); CHKERRQ(ierr);
-  ierr = mField2.build_adjacencies(bit_level0|bit_level1); CHKERRQ(ierr);
+  ierr = mField2.build_adjacencies(bit_level0/*|bit_level1*/); CHKERRQ(ierr);
+  ierr = mField2.build_adjacencies(bit_level0/*|bit_level1*/); CHKERRQ(ierr);
 
   //build problem
   ierr = mField2.build_problems(); CHKERRQ(ierr);
@@ -252,15 +253,15 @@ int main(int argc, char *argv[]) {
 
     vector<double> g_NTET;
 
-    virtual PetscErrorCode preProcess() {
+    PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      FEMethod_LowLevelStudent::preProcess();
       g_NTET.resize(4*4);
       ShapeMBTET(&g_NTET[0],G_TET_X4,G_TET_Y4,G_TET_Z4,4);
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode operator()() {
+
+    PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
@@ -322,7 +323,7 @@ int main(int argc, char *argv[]) {
       ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
-    virtual PetscErrorCode postProcess() {
+    PetscErrorCode postProcess() {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
