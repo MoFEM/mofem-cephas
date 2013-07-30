@@ -606,7 +606,6 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   inline ApproximationOrder get_dof_order() const { return ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof]; };
   inline ApproximationRank get_dof_rank() const { return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof]; };
   inline int get_active() const { return active ? 1 : 0; }
-  inline bool operator<(const DofMoFEMEntity& _dof) const { return get_unique_id()<_dof.get_unique_id(); }
   inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const { return this; };
   friend ostream& operator<<(ostream& os,const DofMoFEMEntity& e);
 };
@@ -743,8 +742,6 @@ typedef multi_index_container<
 typedef multi_index_container<
   DofMoFEMEntity,
   indexed_by<
-    ordered_unique<
-      tag<Identity_mi_tag>, identity<DofMoFEMEntity> >, 
     hashed_unique< 
       tag<Unique_mi_tag>, member<DofMoFEMEntity,UId,&DofMoFEMEntity::uid> >,
     ordered_non_unique<
@@ -753,7 +750,7 @@ typedef multi_index_container<
       tag<MoABEnt_mi_tag>, const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent> >,
     ordered_non_unique<
       tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,BitFieldId,&DofMoFEMEntity::get_id>, ltbit<BitFieldId> >,
-    hashed_unique<
+    hashed_non_unique<
       tag<Composite_mi_tag>, 
       composite_key<
 	DofMoFEMEntity,

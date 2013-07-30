@@ -516,13 +516,13 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
       if(old_ApproximationOrder==order) continue;
       MoFEMEntity_multiIndex::iterator miit4 = ents_moabfield.get<Unique_mi_tag>().find((*miit3)->get_unique_id());
       assert(miit4!=ents_moabfield.end());
-      typedef DofMoFEMEntity_multiIndex::index<Identity_mi_tag>::type dof_set_by_identity;
-      dof_set_by_identity& set_identity = dofs_moabfield.get<Identity_mi_tag>();
-      dof_set_by_identity::iterator miit5 = set_identity.lower_bound(miit4->get_unique_id(),comp_DofMoFEMEntity_ent_uid());
-      dof_set_by_identity::iterator hi_miit6 = set_identity.upper_bound(miit4->get_unique_id(),comp_DofMoFEMEntity_ent_uid());
+      typedef DofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type dof_set_type;
+      dof_set_type& set_set = dofs_moabfield.get<Composite_mi_tag2>();
+      dof_set_type::iterator miit5 = set_set.lower_bound(boost::make_tuple(miit4->get_name(),miit4->get_ent()));
+      dof_set_type::iterator hi_miit6 = set_set.upper_bound(boost::make_tuple(miit4->get_name(),miit4->get_ent()));
       for(;miit5!=hi_miit6;miit5++) {
 	if(miit5->get_dof_order()<=order) continue;
-	bool success = dofs_moabfield.modify(miit5,DofMoFEMEntity_active_change(false));
+	bool success = dofs_moabfield.modify(dofs_moabfield.project<0>(miit5),DofMoFEMEntity_active_change(false));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       }
     } else {
@@ -947,7 +947,8 @@ PetscErrorCode moabField_Core::erase_inactive_dofs_moabfield() {
       ss << "del: " << **miit2 << endl;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
-    dofs_moabfield.erase(**miit2);
+    UId uid = (*miit2)->get_unique_id();
+    dofs_moabfield.erase(uid);
   }
   PetscFunctionReturn(0);
 }
@@ -1047,10 +1048,10 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_by_id;
   typedef MoFEMField_multiIndex::index<Meshset_mi_tag>::type field_by_meshset;
   typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ent_by_ent;
-  typedef DofMoFEMEntity_multiIndex::index<Identity_mi_tag>::type dof_set_by_identity;
+  typedef DofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type dof_set_type;
   field_by_id &moabfields_by_id = moabfields.get<BitFieldId_mi_tag>();
   field_by_meshset &moabfields_by_meshset = moabfields.get<Meshset_mi_tag>();
-  dof_set_by_identity& set_identity = dofs_moabfield.get<Identity_mi_tag>();
+  dof_set_type& dof_set = dofs_moabfield.get<Composite_mi_tag2>();
   EntityHandle fe_ent = EntFe.get_ent();
   pair<EntMoFEMFE_multiIndex::iterator,bool> p = finite_elements_data.insert(EntFe);
   //get id of mofem fields for row, col and data
@@ -1207,17 +1208,11 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
 	ss << "inconsitency in database" << " type " << moab.type_from_handle(*eit2) << " bits " << bit_ref_MoFEMFE << " " << bit_ref_ent;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      unsigned long int  uid;
-      try {
-	uid = MoFEMEntity(moab,&*miit,&*ref_ent_miit).get_unique_id();
-      } catch (const char* msg) {
-	SETERRQ(PETSC_COMM_SELF,1,msg);
-      }
-      dof_set_by_identity::iterator ents_miit2 = set_identity.lower_bound(uid,comp_DofMoFEMEntity_ent_uid());
-      dof_set_by_identity::iterator ents_hi_miit2 = set_identity.upper_bound(uid,comp_DofMoFEMEntity_ent_uid());
+      dof_set_type::iterator ents_miit2 = dof_set.lower_bound(boost::make_tuple(miit->get_name(),ref_ent_miit->get_ref_ent()));
+      dof_set_type::iterator ents_hi_miit2 = dof_set.upper_bound(boost::make_tuple(miit->get_name(),ref_ent_miit->get_ref_ent()));
       for(int ss = 0;ss<Last;ss++) {
 	if( !(FEAdj_fields[ss].test(ii)) ) continue;
-	dof_set_by_identity::iterator ents_miit3 = ents_miit2;
+	dof_set_type::iterator ents_miit3 = ents_miit2;
 	for(;ents_miit3!=ents_hi_miit2;ents_miit3++) {
 	  MoFEMFE_dof_uid_view[ss].insert(&*ents_miit3);
 	}

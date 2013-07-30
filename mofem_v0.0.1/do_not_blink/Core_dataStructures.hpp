@@ -213,11 +213,6 @@ struct DofMoFEMEntity_active_change {
   void operator()(DofMoFEMEntity &_dof_);
 };
 
-struct comp_DofMoFEMEntity_ent_uid {
-  bool operator()(UId ent_uid,const DofMoFEMEntity &_dof_) const;
-  bool operator()(const DofMoFEMEntity &_dof_,UId ent_uid) const;
-};
-
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<

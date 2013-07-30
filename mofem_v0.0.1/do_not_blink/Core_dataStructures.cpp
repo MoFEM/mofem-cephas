@@ -620,12 +620,7 @@ void DofMoFEMEntity_active_change::operator()(DofMoFEMEntity &_dof_) {
   _dof_.active = active;
   assert((_dof_.get_dof_order()<=_dof_.get_max_order()));
 }
-bool comp_DofMoFEMEntity_ent_uid::operator()(UId ent_uid,const DofMoFEMEntity &_dof_) const {
-  return ent_uid < _dof_.get_MoFEMEntity_ptr()->get_unique_id();
-}
-bool comp_DofMoFEMEntity_ent_uid::operator()(const DofMoFEMEntity &_dof_,UId ent_uid) const {
-  return _dof_.get_MoFEMEntity_ptr()->get_unique_id() < ent_uid;
-}
+
 
 //numered dof
 NumeredDofMoFEMEntity::NumeredDofMoFEMEntity(const DofIdx idx,const DofMoFEMEntity* _DofMoFEMEntity_ptr): 
