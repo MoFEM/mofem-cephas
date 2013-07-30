@@ -220,13 +220,6 @@ PetscErrorCode moabField_Core::add_field(const string& name,const BitFieldId id,
     bool success = ref_entities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   }
-  /*//add prisms, this is needed for refinment
-  Range prisms;
-  rval = moab.get_entities_by_type(0,MBPRISM,prisms,true);  CHKERR_PETSC(rval);
-  Range::iterator pit = prisms.begin();
-  for(;pit!=prisms.end();pit++) {
-    ierr = add_prism_to_Adj_prisms(*pit); CHKERRQ(ierr);
-  }*/
   //id name
   void const* tag_data[] = { name.c_str() };
   int tag_sizes[] = { name.size() };

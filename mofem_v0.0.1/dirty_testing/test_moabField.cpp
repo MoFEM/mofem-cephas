@@ -165,10 +165,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_add_finite_element("LINK_PROBLEM","LINK"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ARC_LENGHT_PROBLEM","ARC_LENGHT"); CHKERRQ(ierr);*/
   
-  //ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level1); CHKERRQ(ierr);
-  //ierr = mField.modify_problem_ref_level_add_bit("COUPLED_DAMAGE_MECHANICS",bit_level1); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("COUPLED_DAMAGE_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level1); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("COUPLED_DAMAGE_MECHANICS",bit_level1); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS_LEVEL0",bit_level0); CHKERRQ(ierr);
 
   //add entities to the field meshset
@@ -181,10 +179,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
-  //ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"ELASTIC",MBTET); CHKERRQ(ierr);
-  //ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
-  //ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
-  //ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"FE_DAMAGE",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE1",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level1,"COUPLING_WITH_DAMAGE2",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
 
@@ -217,8 +215,8 @@ int main(int argc, char *argv[]) {
   ierr = mField2.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
-  ierr = mField2.build_adjacencies(bit_level0/*|bit_level1*/); CHKERRQ(ierr);
-  ierr = mField2.build_adjacencies(bit_level0/*|bit_level1*/); CHKERRQ(ierr);
+  ierr = mField2.build_adjacencies(bit_level0|bit_level1); CHKERRQ(ierr);
+  ierr = mField2.build_adjacencies(bit_level0|bit_level1); CHKERRQ(ierr);
 
   //build problem
   ierr = mField2.build_problems(); CHKERRQ(ierr);

@@ -246,10 +246,8 @@ private:
 
 template <typename id_type> 
 struct ltbit 
-  { inline bool operator()(const id_type& valueA,const id_type& valueB) const {
-    return memcmp(&valueA,&valueB,sizeof(id_type)); 
-  } 
-};
+{ inline bool operator()(const id_type& valueA,const id_type& valueB) const {
+  return valueA.to_ulong()<valueB.to_ulong(); } };
 
 template <typename id_type>
 struct eqbit { 
@@ -260,11 +258,8 @@ struct eqbit {
 
 template <typename id_type> 
 struct hashbit 
-  { inline unsigned long int operator()(const id_type& value) const {
-    assert(value.count()==1);
-    return value.to_ulong(); 
-  } 
-};
+{ inline bool operator()(const id_type& value) const {
+  return value.to_ulong(); } };
 
 // tags and unaryFunction functions
 
