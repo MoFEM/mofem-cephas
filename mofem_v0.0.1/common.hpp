@@ -272,7 +272,6 @@ struct Composite_unique_mi_tag {};
 struct Composite_mi_tag {};
 struct Composite_mi_tag2 {};
 struct Composite_mi_tag3 {};
-struct Identity_mi_tag {};
 struct MoFEMFE_Meshset_mi_tag {};
 struct BitFEId_mi_tag {};
 struct MoFEMFE_name_mi_tag {};
