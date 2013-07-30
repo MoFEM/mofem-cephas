@@ -325,7 +325,11 @@ typedef multi_index_container<
   _NumeredMoFEMFE_,
   indexed_by<
     hashed_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFE::interface_type_EntMoFEMFE,UId,&NumeredMoFEMFE::get_unique_id> >,
+      tag<Composite_unique_mi_tag>,       
+      composite_key<
+	_NumeredMoFEMFE_,
+	const_mem_fun<NumeredMoFEMFE::interface_type_MoFEMFE,EntityHandle,&NumeredMoFEMFE::get_meshset>,
+	const_mem_fun<NumeredMoFEMFE::interface_type_EntMoFEMFE,EntityHandle,&NumeredMoFEMFE::get_ent> > >,
     ordered_non_unique<
       tag<MoFEMFE_name_mi_tag>, const_mem_fun<NumeredMoFEMFE::interface_type_MoFEMFE,string,&NumeredMoFEMFE::get_name> >,
     ordered_non_unique<

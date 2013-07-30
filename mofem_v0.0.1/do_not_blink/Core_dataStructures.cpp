@@ -761,10 +761,9 @@ EntMoFEMFE::EntMoFEMFE(Interface &moab,const RefMoFEMFiniteElement *_ref_MoFEMFE
   if(rval != MB_SUCCESS) tag_col_uids_size = 0;
   rval = moab.tag_get_by_ptr(fe_ptr->th_DofUidData,&ent,1,(const void **)&tag_row_uids_data,&tag_data_uids_size);
   if(rval != MB_SUCCESS) tag_data_uids_size = 0;
-  uid = get_unique_id_calculate();
 }
 ostream& operator<<(ostream& os,const EntMoFEMFE& e) {
-  os << *e.fe_ptr << " uid "<<e.get_unique_id()<< endl; 
+  os << *e.fe_ptr << " ent " << e.get_ent() << endl; 
   DofMoFEMEntity_multiIndex_uid_view::iterator miit;
   unsigned int ii = 0;
   if(e.tag_row_uids_size/sizeof(UId)>0) os << "row dof_uids ";
@@ -776,19 +775,6 @@ ostream& operator<<(ostream& os,const EntMoFEMFE& e) {
   if(e.tag_data_uids_size/sizeof(UId)>0) os << "data dof_uids ";
   for(ii = 0;ii<e.tag_data_uids_size/sizeof(UId);ii++) os << ((UId*)e.tag_data_uids_data)[ii] << " ";
   return os;
-}
-UId EntMoFEMFE::get_unique_id_calculate() const {
-  EntityID MoFEMEntity_id = get_ent_id();
-  EntityType type = get_ent_type();
-  int bit_number = fe_ptr->get_bit_number();
-  assert(MoFEMEntity_id<=UINT_MAX);
-  assert(bit_number<32);
-  unsigned int ent_id = (unsigned int)MoFEMEntity_id;
-  UId _uid_ = 
-    ((UId)ent_id)|
-    (((UId)type)<<8*sizeof(unsigned int))| 
-    (((UId)bit_number)<<(8*sizeof(unsigned int)+MB_TYPE_WIDTH));
-  return _uid_;
 }
 PetscErrorCode EntMoFEMFE::get_MoFEMFE_row_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
@@ -840,14 +826,6 @@ ostream& operator<<(ostream& os,const MoFEMAdjacencies& e) {
   os << "by what "<< e.by << " by_other " << e.by_other << " "
     << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFE_ptr;
   return os;
-}
-bool MoFEMAdjacencies::operator<(const MoFEMAdjacencies& _ent_adj_MoFEMFE) const {
-  UId eid1 = get_ent_unique_id();
-  UId eid2  = _ent_adj_MoFEMFE.get_ent_unique_id();
-  if(eid1 == eid2) {
-    return get_MoFEMFE_unique_id() < _ent_adj_MoFEMFE.get_MoFEMFE_unique_id();
-  }
-  return eid1 < eid2;
 }
 PetscErrorCode MoFEMAdjacencies::get_ent_adj_dofs_bridge(
     const DofMoFEMEntity_multiIndex &dofs_moabfield,const by_what _by,

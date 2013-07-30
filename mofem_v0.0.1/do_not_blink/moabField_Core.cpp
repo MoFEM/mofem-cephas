@@ -1420,16 +1420,14 @@ PetscErrorCode moabField_Core::build_problems(int verb) {
   if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
   if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,1,"FEs not build");
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,1,"adjacencies not build");
-  typedef EntMoFEMFE_multiIndex::index<Identity_mi_tag>::type MoFEMFE_by_identity;
-  MoFEMFE_by_identity &MoFEMFE_set = finite_elements_data.get<Identity_mi_tag>();
   MoFEMProblem_multiIndex::iterator p_miit = problems.begin();
   for(;p_miit!=problems.end();p_miit++) {
     //miit2 iterator for finite elements
-    MoFEMFE_by_identity::iterator miit2 = MoFEMFE_set.begin();
-    MoFEMFE_by_identity::iterator hi_miit2 = MoFEMFE_set.end();
+    EntMoFEMFE_multiIndex::iterator miit2 = finite_elements_data.begin();
+    EntMoFEMFE_multiIndex::iterator hi_miit2 = finite_elements_data.end();
     DofMoFEMEntity_multiIndex_uid_view dofs_rows;
     DofMoFEMEntity_multiIndex_uid_view dofs_cols;;
-    MoFEMFE_by_identity::iterator miit3 = miit2;
+    EntMoFEMFE_multiIndex::iterator miit3 = miit2;
     for(;miit3!=hi_miit2;miit3++) {
       if((miit3->get_id()&p_miit->get_BitFEId()).any()) {
 	if((miit3->get_BitRefLevel()&p_miit->get_BitRefLevel())==p_miit->get_BitRefLevel()) {
@@ -1463,7 +1461,7 @@ PetscErrorCode moabField_Core::build_problems(int verb) {
 	p_miit->numered_dofs_rows.size(),p_miit->numered_dofs_cols.size());
     }
     if(verb>2) {
-      MoFEMFE_by_identity::iterator miit_ss = miit2;
+      EntMoFEMFE_multiIndex::iterator miit_ss = miit2;
       ostringstream ss;
       ss << "rank " << pcomm->rank() << " ";
       ss << "FEs data for problem " << *p_miit << endl;
@@ -1637,8 +1635,8 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
   nb_col_ghost_dofs = 0;
   if(pcomm->size()>1) {
     NumeredDofMoFEMEntity_multiIndex_uid_view idx_view;
-    NumeredMoFEMFE_multiIndex::index<Unique_mi_tag>::type &numered_finite_elements 
-      = const_cast<NumeredMoFEMFE_multiIndex::index<Unique_mi_tag>::type&>(p_miit->numered_finite_elements.get<Unique_mi_tag>());
+    NumeredMoFEMFE_multiIndex::index<Composite_unique_mi_tag>::type &numered_finite_elements 
+      = const_cast<NumeredMoFEMFE_multiIndex::index<Composite_unique_mi_tag>::type&>(p_miit->numered_finite_elements.get<Composite_unique_mi_tag>());
     MoFEMAdjacencies_multiIndex::index<Unique_MoABEnt_mi_tag>::type &adj_by_Unique_MoABEnt_mi_tag = adjacencies.get<Unique_MoABEnt_mi_tag>();
     NumeredDofMoFEMEntitys_by_part *dof_by_part_no_const[2] = {
       const_cast<NumeredDofMoFEMEntitys_by_part*>(&p_miit->numered_dofs_cols.get<Part_mi_tag>()),
@@ -1672,7 +1670,8 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
 	  for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	    if((adj_miit->EntMoFEMFE_ptr->get_id()&p_miit->get_BitFEId()).none()) continue;
 	    if((adj_miit->EntMoFEMFE_ptr->get_BitRefLevel()&p_miit->get_BitRefLevel()).none()) continue;
-	    if(numered_finite_elements.find(adj_miit->EntMoFEMFE_ptr->get_unique_id())->part != pcomm->rank()) continue;
+	    if(numered_finite_elements.
+	      find(boost::make_tuple(adj_miit->get_MoFEMFE_meshset(),adj_miit->get_MoFEMFE_entity_handle()))->part != pcomm->rank()) continue;
 	    if(adj_miit->by_other&by[ss]) {
 	      ierr = adj_miit->get_ent_adj_dofs_bridge(*(numered_dofs[ss]),by_other[ss],idx_view); CHKERRQ(ierr);
 	    }
@@ -1728,17 +1727,15 @@ PetscErrorCode moabField_Core::partition_finite_elements(const string &name,bool
   if(!(*build_MoFEM&(1<<4))) SETERRQ(PETSC_COMM_SELF,1,"partitions problems not build");
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
-  typedef EntMoFEMFE_multiIndex::index<Identity_mi_tag>::type MoFEMFE_by_identity;
   //find p_miit
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
   problems_by_name::iterator p_miit = problems_set.find(name);
   if(p_miit == problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   NumeredMoFEMFE_multiIndex& numered_finite_elements = const_cast<NumeredMoFEMFE_multiIndex&>(p_miit->numered_finite_elements);
   //MoFEMFE set
-  MoFEMFE_by_identity& MoFEMFE_set = finite_elements_data.get<Identity_mi_tag>();
-  MoFEMFE_by_identity::iterator miit2 = MoFEMFE_set.begin();
-  MoFEMFE_by_identity::iterator hi_miit2 = MoFEMFE_set.end();
-  MoFEMFE_by_identity::iterator miit3 = miit2;
+  EntMoFEMFE_multiIndex::iterator miit2 = finite_elements_data.begin();
+  EntMoFEMFE_multiIndex::iterator hi_miit2 = finite_elements_data.end();
+  EntMoFEMFE_multiIndex::iterator miit3 = miit2;
   for(;miit3!=hi_miit2;miit3++) {
     if((miit3->get_BitRefLevel()&p_miit->get_BitRefLevel()).none()) continue;
     if((miit3->get_id()&p_miit->get_BitFEId()).any()) {
