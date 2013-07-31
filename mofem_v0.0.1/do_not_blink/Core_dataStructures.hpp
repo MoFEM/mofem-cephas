@@ -97,13 +97,13 @@ typedef multi_index_container<
     hashed_unique<
       tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
     ordered_non_unique<
-      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,UId,&CubitMeshSets::get_CubitBCType_ulong> >,
+      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
     hashed_unique<
       tag<Composite_mi_tag>,       
       composite_key<
 	CubitMeshSets,
 	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
-	  const_mem_fun<CubitMeshSets,UId,&CubitMeshSets::get_CubitBCType_ulong> > >
+	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
   > > moabBaseMeshSet_multiIndex;
 
 struct RefMoFEMEntity_change_add_bit {
@@ -416,14 +416,17 @@ PetscErrorCode get_MoFEMFE_dof_uid_view(
   PetscFunctionBegin;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type dofs_by_uid;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type::value_type value_type;
-  const dofs_by_uid &dofs = dofs_moabfield.get<Unique_mi_tag>();
-  const UId *uids = (UId*)tag_data;
-  int size = tag_size/sizeof(UId);
+  const dofs_by_uid& dofs = dofs_moabfield.get<Unique_mi_tag>();
+  const DofMoFEMEntity::UId *uids = (DofMoFEMEntity::UId*)tag_data;
+  int size = tag_size/sizeof(DofMoFEMEntity::UId);
   vector<const value_type*> vec;
   int ii = 0;
   for(;ii<size;ii++) {
-    UId uid = uids[ii];
-    typename dofs_by_uid::iterator miit = dofs.find(uid);
+    DofMoFEMEntity::UId uid = uids[ii];
+    DofIdx dof_idx = uid.dof; 
+    EntityHandle ent = uid.uid.ent;
+    EntityHandle meshset = uid.uid.meshset;
+    typename dofs_by_uid::iterator miit = dofs.find(boost::make_tuple(meshset,ent,dof_idx));
     if(miit==dofs.end()) continue;
     vec.push_back(&*miit);
   }

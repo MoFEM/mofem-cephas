@@ -514,7 +514,7 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
     if(miit3!=ents_id_view.end()) {
       const ApproximationOrder old_ApproximationOrder = (*miit3)->get_max_order();
       if(old_ApproximationOrder==order) continue;
-      MoFEMEntity_multiIndex::iterator miit4 = ents_moabfield.get<Unique_mi_tag>().find((*miit3)->get_unique_id());
+      MoFEMEntity_multiIndex::iterator miit4 = ents_moabfield.get<Unique_mi_tag>().find(boost::make_tuple((*miit3)->get_unique_id().meshset,(*miit3)->get_unique_id().ent));
       assert(miit4!=ents_moabfield.end());
       typedef DofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type dof_set_type;
       dof_set_type& set_set = dofs_moabfield.get<Composite_mi_tag2>();
@@ -584,7 +584,7 @@ PetscErrorCode moabField_Core::dofs_NoField(const BitFieldId id) {
     pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
     //check if dof is in darabase
     d_miit.first = dofs_moabfield.project<0>(
-      dofs_moabfield.get<Unique_mi_tag>().find(DofMoFEMEntity::get_unique_id_calculate(rank,&*(e_miit.first)))
+      dofs_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(e_miit.first->get_meshset(),e_miit.first->get_ent(),rank)) 
     );
     //if dof is not in databse
     if(d_miit.first==dofs_moabfield.end()) {
@@ -631,10 +631,9 @@ PetscErrorCode moabField_Core::dofs_L2H1HcurlHdiv(const BitFieldId id,int verb) 
     // check if ent is in ref meshset
     RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = ref_entities.get<MoABEnt_mi_tag>().find(*eit);
     if(miit_ref_ent==ref_entities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
-    //pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
-    MoFEMEntity_multiIndex::iterator e_miit = ents_moabfield.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
+    MoFEMEntity_multiIndex::iterator e_miit;
+    e_miit = ents_moabfield.find(boost::make_tuple(miit->get_meshset(),miit_ref_ent->get_ref_ent()));
     // create mofem entity linked to ref ent
-    e_miit = ents_moabfield.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
     if(e_miit == ents_moabfield.end()) {
       ApproximationOrder order = -1;
       rval = moab.tag_set_data(miit->th_AppOrder,&*eit,1,&order); CHKERR_PETSC(rval);
@@ -947,8 +946,12 @@ PetscErrorCode moabField_Core::erase_inactive_dofs_moabfield() {
       ss << "del: " << **miit2 << endl;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
-    UId uid = (*miit2)->get_unique_id();
-    dofs_moabfield.erase(uid);
+    DofMoFEMEntity::UId uid = (*miit2)->get_unique_id();
+    EntityHandle meshset = uid.uid.meshset;
+    EntityHandle ent = uid.uid.ent;
+    DofIdx dof = uid.dof;
+    DofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator diit = dofs_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(meshset,ent,dof));
+    dofs_moabfield.erase(dofs_moabfield.project<0>(diit));
   }
   PetscFunctionReturn(0);
 }
@@ -1333,49 +1336,52 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
   EntMoFEMFE_multiIndex::iterator fit = finite_elements_data.begin();
   for(;fit!=finite_elements_data.end();fit++) {
     if(!(fit->get_BitRefLevel()&bit).any()) continue;
-    int size_row = fit->tag_row_uids_size/sizeof(UId);
-    const UId *uids_row = (UId*)fit->tag_row_uids_data;
+    int size_row = fit->tag_row_uids_size/sizeof(DofMoFEMEntity::UId);
+    const DofMoFEMEntity::UId *uids_row = (DofMoFEMEntity::UId*)fit->tag_row_uids_data;
     int ii = 0;
-    UId uid = -1;
+    MoFEMEntity::UId uid;
     for(;ii<size_row;ii++) {
-      if( uid == (uids_row[ii] >> 7 )) continue;
-      uid = uids_row[ii];
-      uid = uid >> 7; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
-      ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
-      assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_row[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
-      assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_row[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
-      if(miit ==ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      EntityHandle meshset = uids_row[ii].uid.meshset;
+      EntityHandle ent = uids_row[ii].uid.ent;
+      if((uid.meshset == meshset)&&(uid.ent == ent)) continue;
+      uid.meshset = meshset;
+      uid.ent = ent;
+      ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(meshset,ent));
+      assert(dofs_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(meshset,ent,uids_row[ii].dof))!=dofs_moabfield.get<Unique_mi_tag>().end());
+      if(miit==ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit,by_row));
       if(!p.second) {
 	bool success = adjacencies.modify(p.first,MoFEMAdjacencies_change_by_what(by_row));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       }
     }
-    int size_col = fit->tag_col_uids_size/sizeof(UId);
-    const UId *uids_col = (UId*)fit->tag_col_uids_data;
-    for(ii = 0,uid = -1;ii<size_col;ii++) {
-      if( uid == (uids_col[ii] >> 7 )) continue;
-      uid = uids_col[ii];
-      uid = uid >> 7; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
-      assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_col[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
-      assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_col[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
-      ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
-      if(miit ==ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+    int size_col = fit->tag_col_uids_size/sizeof(DofMoFEMEntity::UId);
+    const DofMoFEMEntity::UId *uids_col = (DofMoFEMEntity::UId*)fit->tag_col_uids_data;
+    for(ii = 0,uid = MoFEMEntity::UId();ii<size_col;ii++) {
+      EntityHandle meshset = uids_col[ii].uid.meshset;
+      EntityHandle ent = uids_col[ii].uid.ent;
+      if((uid.meshset == meshset)&&(uid.ent == ent)) continue;
+      uid.meshset = meshset;
+      uid.ent = ent;
+      ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(meshset,ent));
+      assert(dofs_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(meshset,ent,uids_col[ii].dof))!=dofs_moabfield.get<Unique_mi_tag>().end());
+      if(miit==ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit,by_col));
       if(!p.second) {
 	bool success = adjacencies.modify(p.first,MoFEMAdjacencies_change_by_what(by_col));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       }
     }
-    int size_data = fit->tag_data_uids_size/sizeof(UId);
-    const UId *uids_data = (UId*)fit->tag_data_uids_data;
-    for(ii = 0,uid = -1;ii<size_data;ii++) {
-      if( uid == (uids_data[ii] >> 7 )) continue;
-      uid = uids_data[ii];
-      uid = uid >> 7; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
-      assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_data[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
-      assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_data[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
-      ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
+    int size_data = fit->tag_data_uids_size/sizeof(DofMoFEMEntity::UId);
+    const DofMoFEMEntity::UId *uids_data = (DofMoFEMEntity::UId*)fit->tag_data_uids_data;
+    for(ii = 0,uid = MoFEMEntity::UId();ii<size_data;ii++) {
+      EntityHandle meshset = uids_data[ii].uid.meshset;
+      EntityHandle ent = uids_data[ii].uid.ent;
+      if((uid.meshset == meshset)&&(uid.ent == ent)) continue;
+      uid.meshset = meshset;
+      uid.ent = ent;
+      ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(meshset,ent));
+      assert(dofs_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(meshset,ent,uids_data[ii].dof))!=dofs_moabfield.get<Unique_mi_tag>().end());
       if(miit == ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit,by_data));
       if(!p.second) {
@@ -1500,7 +1506,7 @@ PetscErrorCode moabField_Core::partition_problems(const string &name,int verb) {
   }
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
   Mat Adj;
-  partition_create_Mat<Idx_mi_tag>(name,&Adj,NULL,true,verb);
+  ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,NULL,true,verb); CHKERRQ(ierr);
   //PetscBarrier(PETSC_NULL);
   if(verb>1) {
     MatView(Adj,PETSC_VIEWER_STDOUT_WORLD);
@@ -1547,7 +1553,9 @@ PetscErrorCode moabField_Core::partition_problems(const string &name,int verb) {
   NumeredDofMoFEMEntitys_by_idx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
   for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++,miit_dofs_col++) {
     if(miit_dofs_col==dofs_col_by_idx_no_const.end()) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, nb. of rows is not equal to number for columns");
-    if(miit_dofs_row->get_unique_id()!=miit_dofs_col->get_unique_id()) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, rows not equal columns");
+    if(miit_dofs_row->get_unique_id().uid.meshset != miit_dofs_col->get_unique_id().uid.meshset) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, rows not equal columns");
+    if(miit_dofs_row->get_unique_id().uid.ent != miit_dofs_col->get_unique_id().uid.ent) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, rows not equal columns");
+    if(miit_dofs_row->get_unique_id().dof != miit_dofs_col->get_unique_id().dof) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, rows not equal columns");
     if(miit_dofs_row->dof_idx!=miit_dofs_col->dof_idx) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, rows not equal columns");
     assert(petsc_idx[miit_dofs_row->dof_idx]>=0);
     assert(petsc_idx[miit_dofs_row->dof_idx]<(int)p_miit->get_nb_dofs_row());
@@ -1677,7 +1685,8 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
       }
       NumeredDofMoFEMEntity_multiIndex_uid_view::iterator ghost_idx_miit = ghost_idx_view[ss]->begin();
       for(;ghost_idx_miit!=ghost_idx_view[ss]->end();ghost_idx_miit++) {
-        NumeredDofMoFEMEntitys_by_unique_id::iterator miit4 = dof_by_uid_no_const[ss]->find((*ghost_idx_miit)->get_unique_id());
+	DofMoFEMEntity::UId uid = (*ghost_idx_miit)->get_unique_id();
+        NumeredDofMoFEMEntitys_by_unique_id::iterator miit4 = dof_by_uid_no_const[ss]->find(boost::make_tuple(uid.uid.meshset,uid.uid.ent,uid.dof));
         if(miit4->petsc_local_dof_idx!=(DofIdx)-1) SETERRQ(PETSC_COMM_SELF,1,"inconsitent data");
         bool success = dof_by_uid_no_const[ss]->modify(miit4,NumeredDofMoFEMEntity_local_idx_change(nb_local_dofs[ss]++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
@@ -3368,9 +3377,9 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
 	    if(miit->get_petsc_gloabl_dof_idx()>=size) {
 	      SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
 	    }
-	    DofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator diiiit;
-	    diiiit = dofs_moabfield.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	    if(diiiit==dofs_moabfield.get<Composite_mi_tag>().end()) {
+	    DofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator diiiit;
+	    diiiit = dofs_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(get_field_meshset(cpy_field_name),miit->get_ent(),miit->get_EntDofIdx()));
+	    if(diiiit==dofs_moabfield.get<Unique_mi_tag>().end()) {
 	      EntityHandle ent = miit->get_ent();
 	      rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERR_PETSC(rval);
 	      //create field moabent
@@ -3394,8 +3403,8 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
 		  if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 		}
 	      }
-	      diiiit = dofs_moabfield.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	      if(diiiit==dofs_moabfield.get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	      diiiit = dofs_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(get_field_meshset(cpy_field_name),miit->get_ent(),miit->get_EntDofIdx()));
+	      if(diiiit==dofs_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	    }
 	    diiiit->get_FieldData() = array[miit->get_petsc_gloabl_dof_idx()];
 	  }
@@ -3412,9 +3421,9 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
       switch (mode) {
 	case INSERT_VALUES:
 	  for(;miit!=hi_miit;miit++) {
-	    DofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator diiiit;
-	    diiiit = dofs_moabfield.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	    if(diiiit==dofs_moabfield.get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no data to fill the vector");
+	    DofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator diiiit;
+	    diiiit = dofs_moabfield.get<Unique_mi_tag>().find(boost::make_tuple(get_field_meshset(cpy_field_name),miit->get_ent(),miit->get_EntDofIdx()));
+	    if(diiiit==dofs_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no data to fill the vector");
 	    ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
 	  }
 	  ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
