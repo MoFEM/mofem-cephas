@@ -846,11 +846,6 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,string,&FENumeredDofMoFEMEntity::get_name> >,
     ordered_non_unique<
-      tag<SideNumber_mi_tag>,
-	key_from_key<
-	    member<SideNumber,int,&SideNumber::side_number>,
-	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr> > >,
-    ordered_non_unique<
       tag<Composite_mi_tag>, 
       composite_key<
 	FENumeredDofMoFEMEntity,
