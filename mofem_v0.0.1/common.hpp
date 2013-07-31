@@ -1147,11 +1147,7 @@ typedef multi_index_container<
        composite_key<
 	MoFEMAdjacencies,
 	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_meshset>,
-	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle> > >,
-    ordered_non_unique<
-      tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle> >,
-    ordered_non_unique<
-      tag<MoABEnt_MoFEMFE_mi_tag>, const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_MoFEMFE_entity_handle> >
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle> > >
   > > MoFEMAdjacencies_multiIndex;
 
 }
