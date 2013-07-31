@@ -1116,9 +1116,9 @@ struct MoFEMAdjacencies {
   const MoFEMEntity *MoFEMEntity_ptr;
   const EntMoFEMFE *EntMoFEMFE_ptr;
   MoFEMAdjacencies(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFE *_EntMoFEMFE_ptr,const by_what _by);
-  inline UId get_ent_unique_id() const { return MoFEMEntity_ptr->get_unique_id(); }
   inline EntityHandle get_MoFEMFE_meshset() const { return EntMoFEMFE_ptr->get_meshset(); }
   inline EntityHandle get_MoFEMFE_entity_handle() const { return EntMoFEMFE_ptr->get_ent(); }
+  inline EntityHandle get_ent_meshset() const { return MoFEMEntity_ptr->get_meshset(); };
   inline EntityHandle get_ent_entity_handle() const { return MoFEMEntity_ptr->get_ent(); };
   BitFieldId get_ent_id() const { return MoFEMEntity_ptr->get_id(); }
   BitFEId get_BitFEId() const { return EntMoFEMFE_ptr->get_id(); }
@@ -1134,15 +1134,20 @@ struct MoFEMAdjacencies {
 typedef multi_index_container<
   MoFEMAdjacencies,
   indexed_by<
-    ordered_unique<
+    hashed_unique<
       tag<Composite_unique_mi_tag>,       
       composite_key<
 	MoFEMAdjacencies,
-	const_mem_fun<MoFEMAdjacencies,UId,&MoFEMAdjacencies::get_ent_unique_id>,
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_meshset>,
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle>,
 	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_MoFEMFE_meshset>,
 	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_MoFEMFE_entity_handle> > >,
     ordered_non_unique<
-      tag<Unique_MoABEnt_mi_tag>, const_mem_fun<MoFEMAdjacencies,UId,&MoFEMAdjacencies::get_ent_unique_id> >,
+      tag<Composite_mi_tag>,
+       composite_key<
+	MoFEMAdjacencies,
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_meshset>,
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle> > >,
     ordered_non_unique<
       tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle> >,
     ordered_non_unique<

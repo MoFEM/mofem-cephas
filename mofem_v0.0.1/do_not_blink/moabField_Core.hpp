@@ -226,7 +226,7 @@ struct moabField_Core: public moabField {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
     typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofMoFEMEntitys_by_unique_id;
-    typedef MoFEMAdjacencies_multiIndex::index<Unique_MoABEnt_mi_tag>::type adj_by_unique_id;
+    typedef MoFEMAdjacencies_multiIndex::index<Composite_mi_tag>::type adj_by_ent;
     //find p_miit
     typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
     problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
@@ -260,8 +260,8 @@ struct moabField_Core: public moabField {
       if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->field_ptr->field_ptr->get_unique_id()) ) {
 	// get field ptr
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->field_ptr->field_ptr);
-	adj_by_unique_id::iterator adj_miit = adjacencies.get<Unique_MoABEnt_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
-	adj_by_unique_id::iterator hi_adj_miit = adjacencies.get<Unique_MoABEnt_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
+	adj_by_ent::iterator adj_miit = adjacencies.get<Composite_mi_tag>().lower_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
+	adj_by_ent::iterator hi_adj_miit = adjacencies.get<Composite_mi_tag>().upper_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
 	dofs_vec.resize(0);
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	  if(!(adj_miit->by_other&by_row)) continue;

@@ -1617,7 +1617,7 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   typedef NumeredDofMoFEMEntity_multiIndex::index<Part_mi_tag>::type NumeredDofMoFEMEntitys_by_part;
   typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofMoFEMEntitys_by_unique_id;
-  typedef MoFEMAdjacencies_multiIndex::index<Unique_MoABEnt_mi_tag>::type adj_by_unique_id;
+  typedef MoFEMAdjacencies_multiIndex::index<Composite_mi_tag>::type adj_by_ent;
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
   //find p_miit
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
@@ -1632,7 +1632,7 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
     NumeredDofMoFEMEntity_multiIndex_uid_view idx_view;
     NumeredMoFEMFE_multiIndex::index<Composite_unique_mi_tag>::type &numered_finite_elements 
       = const_cast<NumeredMoFEMFE_multiIndex::index<Composite_unique_mi_tag>::type&>(p_miit->numered_finite_elements.get<Composite_unique_mi_tag>());
-    MoFEMAdjacencies_multiIndex::index<Unique_MoABEnt_mi_tag>::type &adj_by_Unique_MoABEnt_mi_tag = adjacencies.get<Unique_MoABEnt_mi_tag>();
+    adj_by_ent& adj_by_Composite_mi_tag = adjacencies.get<Composite_mi_tag>();
     NumeredDofMoFEMEntitys_by_part *dof_by_part_no_const[2] = {
       const_cast<NumeredDofMoFEMEntitys_by_part*>(&p_miit->numered_dofs_cols.get<Part_mi_tag>()),
       const_cast<NumeredDofMoFEMEntitys_by_part*>(&p_miit->numered_dofs_rows.get<Part_mi_tag>()) 
@@ -1659,8 +1659,8 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
 	//cerr << *miit_dof_by_part << endl;
         if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_dof_by_part->get_MoFEMEntity_ptr()->get_unique_id()) ) {
 	  MoFEMEntity_ptr = const_cast<MoFEMEntity *>(miit_dof_by_part->get_MoFEMEntity_ptr());
-	  adj_by_unique_id::iterator adj_miit = adj_by_Unique_MoABEnt_mi_tag.lower_bound(MoFEMEntity_ptr->get_unique_id());
-	  adj_by_unique_id::iterator hi_adj_miit = adj_by_Unique_MoABEnt_mi_tag.upper_bound(MoFEMEntity_ptr->get_unique_id());
+	  adj_by_ent::iterator adj_miit = adj_by_Composite_mi_tag.lower_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
+	  adj_by_ent::iterator hi_adj_miit = adj_by_Composite_mi_tag.upper_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
 	  idx_view.clear();
 	  for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	    if((adj_miit->EntMoFEMFE_ptr->get_id()&p_miit->get_BitFEId()).none()) continue;
