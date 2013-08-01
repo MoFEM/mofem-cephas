@@ -271,11 +271,9 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,ArcCtx->dlambda);
     //
     ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
-    ierr = MyFE.set_x(D); CHKERRQ(ierr);
-    ierr = MyFE.set_f(F); CHKERRQ(ierr);
+    MyFE.snes_x = D; MyFE.snes_f = F;
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-    ierr = MyArcMethod.set_x(D); CHKERRQ(ierr);
-    ierr = MyArcMethod.set_f(F); CHKERRQ(ierr);
+    MyArcMethod.snes_x = D; MyArcMethod.snes_f = F;
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
   }
 
@@ -296,11 +294,9 @@ int main(int argc, char *argv[]) {
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
-      ierr = MyFE.set_x(D); CHKERRQ(ierr);
-      ierr = MyFE.set_f(F); CHKERRQ(ierr);
+      MyFE.snes_x = D; MyFE.snes_f = F;
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-      ierr = MyArcMethod.set_x(D); CHKERRQ(ierr);
-      ierr = MyArcMethod.set_f(F); CHKERRQ(ierr);
+      MyArcMethod.snes_x = D; MyArcMethod.snes_f = F;
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
       double dlambda;
       ierr = MyArcMethod.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);

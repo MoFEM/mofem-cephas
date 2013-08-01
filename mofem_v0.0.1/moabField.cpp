@@ -38,7 +38,7 @@ PetscErrorCode moabField::SnesMethod::set_snes(SNES _snes) {
   snes = _snes;
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField::SnesMethod::set_x(Vec _x) {
+/*PetscErrorCode moabField::SnesMethod::set_x(Vec _x) {
   PetscFunctionBegin;
   snes_x = _x;
   PetscFunctionReturn(0);
@@ -62,7 +62,7 @@ PetscErrorCode moabField::SnesMethod::set_flag(MatStructure *_flag) {
   PetscFunctionBegin;
   snes_flag = _flag;
   PetscFunctionReturn(0);
-}
+}*/
 //TS
 PetscErrorCode moabField::TSMethod::set_ts_ctx(const ts_context ctx_) {
   PetscFunctionBegin;

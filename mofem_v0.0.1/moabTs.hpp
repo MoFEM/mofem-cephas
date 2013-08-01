@@ -29,7 +29,7 @@
 
 namespace MoFEM {
 
-struct moabTsCtx u{
+struct moabTsCtx {
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -58,9 +58,9 @@ struct moabTsCtx u{
   loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
   loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
 
-  friend PetscErrorCode f_TSSetRHSFunction(TS ts,PetscReal t,Vec u,Vec F,void *ctx);
   friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,ctx);
   friend PetscErrorCode f_TSSetIJacobian((TS ts,PetscReal t,Vec U,Vec U_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx);
+  friend PetscErrorCode f_TSSetRHSJacobian(TS ts,PetscReal t,Vec u,Mat *A,Mat *B,MatStructure *flag,void *ctx);
 
 };
 

@@ -350,14 +350,13 @@ struct moabField {
     PetscErrorCode set_snes(SNES _snes);
     //
     Vec snes_x,snes_f;
-    PetscErrorCode set_x(Vec _x);
-    PetscErrorCode set_f(Vec _f);
-    //
+    //PetscErrorCode set_snes_x(Vec _x);
+    //PetscErrorCode set_snes_f(Vec _f);
     Mat *snes_A,*snes_B;
     MatStructure *snes_flag;
-    PetscErrorCode set_A(Mat *_A);
-    PetscErrorCode set_B(Mat *_B);
-    PetscErrorCode set_flag(MatStructure *_flag); 
+    //PetscErrorCode set_snes_A(Mat *_A);
+    //PetscErrorCode set_snse_B(Mat *_B);
+    //PetscErrorCode set_snes_flag(MatStructure *_flag); 
   };
   struct TSMethod {
     enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetIFunction, ctx_TSNone };
@@ -369,7 +368,16 @@ struct moabField {
     //
     TS ts;
     PetscErrorCode set_ts(TS _ts);
-
+    //
+    Vec ts_u,ts_u_t,ts_F;
+   // PetscErrorCode set_u(Vec _u) 
+   // PetscErrorCode set_u_t(Vec _u_t);
+   // PetscErrorCode set_F(Vec _F);
+    //
+    Mat ts_A,ts_B;
+    MatStructure *ts_flag;
+    //
+    PetscReal ts_a;
   
   };
 
