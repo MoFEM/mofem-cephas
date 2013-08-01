@@ -17,36 +17,59 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef __POSTPROCVERTEXMETHOD_HPP__
+#define __POSTPROCVERTEXMETHOD_HPP__
+
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
 
 using namespace MoFEM;
 
 // Write Displacements DOFS on Vertices
-struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
+struct PostProcVertexMethod: public moabField::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
-
+    Interface& moab;
 
     Tag th_disp;
     string field_name;
-    PostProcDisplacementsEntMethod(Interface& _moab,string _field_name = "DISPLACEMENT"): EntMethod(_moab),field_name(_field_name) {
+    Vec V;
+    string tag_name;
+    PostProcVertexMethod(Interface& _moab,
+      string _field_name = "DISPLACEMENT",Vec _V = PETSC_NULL,string _tag_name = "__NotSet__"): 
+      EntMethod(),moab(_moab),field_name(_field_name),V(_V),tag_name(_tag_name) {
       double def_VAL[3] = {0,0,0};
       // create TAG
-      string tag_name = field_name+"_VAL";
+      if(tag_name == "__NotSet__") {
+	tag_name = field_name+"_VAL";
+      }
       rval = moab.tag_get_handle(tag_name.c_str(),3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+
     }
 
     vector<double> vals;
     Range nodes;
+
+    VecScatter ctx;
+    Vec V_glob;
+    PetscScalar *V_glob_array;
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscPrintf(PETSC_COMM_WORLD,"Start postporcess\n");
       rval = moab.get_entities_by_type(0,MBVERTEX,nodes); CHKERR_PETSC(rval);
       vals.resize(nodes.size()*3);
+      if(V!=PETSC_NULL) {
+	ierr = VecScatterCreateToAll(V,&ctx,&V_glob); CHKERRQ(ierr);
+	ierr = VecScatterBegin(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecScatterEnd(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGetArray(V_glob,&V_glob_array); CHKERRQ(ierr);
+      } else {
+	V_glob_array = NULL;
+      }
       PetscFunctionReturn(0);
     }
+    
     
     PetscErrorCode operator()() {
       PetscFunctionBegin;
@@ -56,7 +79,12 @@ struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
 
       EntityHandle ent = dof_ptr->get_ent();
       int dof_rank = dof_ptr->get_dof_rank();
-      double fval = dof_ptr->get_FieldData();
+      double fval;
+      if(V_glob_array == NULL) {
+	fval = dof_ptr->get_FieldData();
+      } else {
+	fval = V_glob_array[dof_ptr->get_petsc_gloabl_dof_idx()];
+      }
       Range::iterator nit = find(nodes.begin(),nodes.end(),ent);
       if(nit==nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       unsigned int pos = std::distance(nodes.begin(),nit);
@@ -70,9 +98,15 @@ struct PostProcDisplacementsEntMethod: public moabField::EntMethod {
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
       ierr = moab.tag_set_data(th_disp,nodes,&vals[0]); CHKERRQ(ierr);
+      if(V!=PETSC_NULL) {
+	ierr = VecRestoreArray(V_glob,&V_glob_array); CHKERRQ(ierr);
+	ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
+	ierr = VecDestroy(&V_glob); CHKERRQ(ierr);
+      }
       PetscPrintf(PETSC_COMM_WORLD,"End postporcess\n");
       PetscFunctionReturn(0);
     }
 
 };
 
+#endif // __POSTPROCVERTEXMETHOD_HPP__

@@ -97,13 +97,13 @@ typedef multi_index_container<
     hashed_unique<
       tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
     ordered_non_unique<
-      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,UId,&CubitMeshSets::get_CubitBCType_ulong> >,
+      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
     hashed_unique<
       tag<Composite_mi_tag>,       
       composite_key<
 	CubitMeshSets,
 	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
-	  const_mem_fun<CubitMeshSets,UId,&CubitMeshSets::get_CubitBCType_ulong> > >
+	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
   > > moabBaseMeshSet_multiIndex;
 
 struct RefMoFEMEntity_change_add_bit {
@@ -213,11 +213,6 @@ struct DofMoFEMEntity_active_change {
   void operator()(DofMoFEMEntity &_dof_);
 };
 
-struct comp_DofMoFEMEntity_ent_uid {
-  bool operator()(UId ent_uid,const DofMoFEMEntity &_dof_) const;
-  bool operator()(const DofMoFEMEntity &_dof_,UId ent_uid) const;
-};
-
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
@@ -236,7 +231,7 @@ typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
     ordered_non_unique<
-      const_mem_fun<DofMoFEMEntity::interface_type_ref_ent,EntityType,&DofMoFEMEntity::get_ent_type> >
+      const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type> >
   > > DofMoFEMEntity_multiIndex_ent_type_view;
 
 struct NumeredDofMoFEMEntity_part_change {
@@ -325,7 +320,11 @@ typedef multi_index_container<
   _NumeredMoFEMFE_,
   indexed_by<
     hashed_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFE::interface_type_EntMoFEMFE,UId,&NumeredMoFEMFE::get_unique_id> >,
+      tag<Composite_unique_mi_tag>,       
+      composite_key<
+	_NumeredMoFEMFE_,
+	const_mem_fun<NumeredMoFEMFE::interface_type_MoFEMFE,EntityHandle,&NumeredMoFEMFE::get_meshset>,
+	const_mem_fun<NumeredMoFEMFE::interface_type_EntMoFEMFE,EntityHandle,&NumeredMoFEMFE::get_ent> > >,
     ordered_non_unique<
       tag<MoFEMFE_name_mi_tag>, const_mem_fun<NumeredMoFEMFE::interface_type_MoFEMFE,string,&NumeredMoFEMFE::get_name> >,
     ordered_non_unique<
@@ -366,7 +365,7 @@ typedef multi_index_container<
     ordered_unique<
       tag<Meshset_mi_tag>, member<_MoFEMProblem_::MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
     hashed_unique<
-      tag<BitProblemId_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId> >,
+      tag<BitProblemId_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitFieldId> >,
     hashed_unique<
       tag<MoFEMProblem_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,string,&MoFEMProblem::get_name> >
   > > MoFEMProblem_multiIndex;
@@ -408,7 +407,7 @@ template<typename Tag>
 void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFEMEntity_multiIndex &dofs,Tag* = 0) {
   const typename boost::multi_index::index<DofMoFEMEntity_multiIndex,Tag>::type& i = get<Tag>(dofs);
   vec_dof.insert(vec_dof.end(),i.begin(),i.end());
-};
+}
 
 template <typename T,typename V>
 PetscErrorCode get_MoFEMFE_dof_uid_view(
@@ -417,14 +416,17 @@ PetscErrorCode get_MoFEMFE_dof_uid_view(
   PetscFunctionBegin;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type dofs_by_uid;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type::value_type value_type;
-  const dofs_by_uid &dofs = dofs_moabfield.get<Unique_mi_tag>();
-  const UId *uids = (UId*)tag_data;
-  int size = tag_size/sizeof(UId);
+  const dofs_by_uid& dofs = dofs_moabfield.get<Unique_mi_tag>();
+  const DofMoFEMEntity::UId *uids = (DofMoFEMEntity::UId*)tag_data;
+  int size = tag_size/sizeof(DofMoFEMEntity::UId);
   vector<const value_type*> vec;
   int ii = 0;
   for(;ii<size;ii++) {
-    UId uid = uids[ii];
-    typename dofs_by_uid::iterator miit = dofs.find(uid);
+    DofMoFEMEntity::UId uid = uids[ii];
+    DofIdx dof_idx = uid.dof; 
+    EntityHandle ent = uid.uid.ent;
+    EntityHandle meshset = uid.uid.meshset;
+    typename dofs_by_uid::iterator miit = dofs.find(boost::make_tuple(meshset,ent,dof_idx));
     if(miit==dofs.end()) continue;
     vec.push_back(&*miit);
   }
@@ -435,7 +437,7 @@ PetscErrorCode get_MoFEMFE_dof_uid_view(
     assert(0);
   }
   PetscFunctionReturn(0);
-};
+}
 
 /**
  * \brief test if MoFEM is comapatibele with linked version of moab

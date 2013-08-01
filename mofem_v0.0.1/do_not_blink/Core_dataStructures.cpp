@@ -186,7 +186,7 @@ RefMoFEMFiniteElement_PRISM::RefMoFEMFiniteElement_PRISM(Interface &moab,const R
       THROW_AT_LINE("this work only for PRISMs");
   }
   ErrorCode rval;
-  EntityHandle prism = get_ref_ent(),ent;
+  EntityHandle prism = get_ref_ent();
   int num_nodes;
   const EntityHandle* conn;
   rval = moab.get_connectivity(prism,conn,num_nodes,true); CHKERR_THROW(rval);
@@ -194,35 +194,80 @@ RefMoFEMFiniteElement_PRISM::RefMoFEMFiniteElement_PRISM(Interface &moab,const R
   for(int nn = 0;nn<6; nn++) {
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(conn[nn],nn,0,-1));
   }
-  map<EntityHandle,EntityHandle> node_map;
-  //face3
-  rval = moab.side_element(prism,2,3,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,3,0,-1));
-  //face4
-  rval = moab.side_element(prism,2,4,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,0,-1));
-  //edges
-  rval = moab.side_element(prism,1,0,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,-1));
-  rval = moab.side_element(prism,1,1,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,1,0,-1));
-  rval = moab.side_element(prism,1,2,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,2,0,-1));
-  rval = moab.side_element(prism,1,6,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,6,0,-1));
-  rval = moab.side_element(prism,1,7,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,7,0,-1));
-  rval = moab.side_element(prism,1,8,ent); CHKERR_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,8,0,-1));
 }
 SideNumber* RefMoFEMFiniteElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
-  NOT_USED(moab);
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
   if(ref_ptr->ent == ent) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
+  ErrorCode rval;
+  int side_number,sense,offset;
+  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
+  if(side_number==-1) {
+    int num_nodes;
+    const EntityHandle* conn;
+    rval = moab.get_connectivity(ref_ptr->ent,conn,num_nodes,true); CHKERR_THROW(rval);
+    assert(num_nodes==6);	
+    const EntityHandle* conn_ent;
+    rval = moab.get_connectivity(ent,conn_ent,num_nodes,true); CHKERR_THROW(rval);
+    /*
+    for(int nn = 0; nn<6;nn++) {
+      cerr << conn[nn] << " ";
+    };
+    cerr << endl;
+    for(int nn = 0; nn<num_nodes;nn++) {
+      cerr << conn_ent[nn] << " ";
+    }
+    cerr << endl;
+    */
+    if(num_nodes == 3) {
+      EntityHandle face3[3] = { conn[0], conn[1], conn[2] };
+      EntityHandle face4[3] = { conn[3], conn[4], conn[5] };
+      int sense_p1_map[3][3] = { {0,1,2}, {1,2,0}, {2,0,1} };
+      int sense_m1_map[3][3] = { {0,2,1}, {2,1,0}, {1,0,2} };
+      EntityHandle* conn0_3_ptr = find( face3, &face3[3], conn_ent[0] );
+      if( conn0_3_ptr != &face3[3] ) {
+	offset = distance( face3, conn0_3_ptr );
+	if( 
+	  face3[ sense_p1_map[offset][0] ] == conn_ent[0] &&
+	  face3[ sense_p1_map[offset][1] ] == conn_ent[1] &&
+	  face3[ sense_p1_map[offset][2] ] == conn_ent[2] ) {
+	  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,3,1,offset)).first;
+	  return const_cast<SideNumber*>(&*miit);
+	} else if (
+	  face3[ sense_m1_map[offset][0] ] == conn_ent[0] &&
+	  face3[ sense_m1_map[offset][1] ] == conn_ent[1] &&
+	  face3[ sense_m1_map[offset][2] ] == conn_ent[2] ) {
+	  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,3,-1,offset)).first;
+	  return const_cast<SideNumber*>(&*miit);
+	} 
+      }	
+      EntityHandle* conn0_4_ptr = find( face4, &face4[3], conn_ent[0] );
+      if( conn0_4_ptr != &face4[3] ) {
+	  offset = distance( face4, conn0_4_ptr );
+	  if( 
+	    face4[ sense_p1_map[offset][0] ] == conn_ent[0] &&
+	    face4[ sense_p1_map[offset][1] ] == conn_ent[1] &&
+	    face4[ sense_p1_map[offset][2] ] == conn_ent[2] ) {
+	    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,1,offset)).first;
+	    return const_cast<SideNumber*>(&*miit);
+	  } else if (
+	    face4[ sense_m1_map[offset][0] ] == conn_ent[0] &&
+	    face4[ sense_m1_map[offset][1] ] == conn_ent[1] &&
+	    face4[ sense_m1_map[offset][2] ] == conn_ent[2] ) {
+	    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,-1,offset)).first;
+	    return const_cast<SideNumber*>(&*miit);
+	  } else THROW_AT_LINE("Huston we have problem");
+      } THROW_AT_LINE("Huston we have problem");
+    }
+    ostringstream sss;
+    sss << "this not working: " << ent << " type: " << moab.type_from_handle(ent) << " " << MBEDGE << " " << MBTRI << endl;
+    THROW_AT_LINE(sss.str().c_str());
+  }
+  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
+  return const_cast<SideNumber*>(&*miit);
   THROW_AT_LINE("not implemented");
   return NULL;
 }
@@ -410,7 +455,7 @@ void problem_row_change::operator()(_MoFEMProblem_ &e) {
     (*(DofIdx*)e.tag_nbdof_data_row)++;
   }
 }
-problem_col_change::problem_col_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {};
+problem_col_change::problem_col_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
 void problem_col_change::operator()(_MoFEMProblem_ &e) { 
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
     = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity((*(DofIdx*)e.tag_nbdof_data_col),dof_ptr)); 
@@ -429,7 +474,7 @@ void problem_zero_nb_cols_change::operator()(_MoFEMProblem_ &e) {
 
 //moab ent
 MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_ent_ptr): 
-  interface_MoFEMField<MoFEMField>(_FieldData),interface_RefMoFEMEntity<RefMoFEMEntity>(_ref_ent_ptr),
+  interface_MoFEMField<MoFEMField>(_FieldData),interface_RefMoFEMEntity<RefMoFEMEntity>(_ref_ent_ptr),ref_mab_ent_ptr(_ref_ent_ptr),
   tag_order_data(NULL),tag_FieldData(NULL),tag_FieldData_size(0),tag_dof_order_data(NULL),tag_dof_rank_data(NULL) {
   const EntityType type = get_ent_type(); 
   switch (type) {
@@ -471,22 +516,12 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefM
   }
 }
 ostream& operator<<(ostream& os,const MoFEMEntity& e) {
-  os << "ent_uid " << e.get_unique_id() << " entity "<< e.get_ent() << " type " << e.get_ent_type()
-    <<" order "<<e.get_max_order()<<" "<<*e.field_ptr;
+  os << "entity "<< e.get_ent() << " type " << e.get_ent_type() <<" order "<<e.get_max_order()<<" "<<*e.field_ptr;
   return os;
 }
-UId MoFEMEntity::get_unique_id_calculate() const {
- EntityID MoFEMEntity_id = get_ent_id();
- EntityType type = get_ent_type();
- int bit_number = get_bit_number();
- assert(MoFEMEntity_id<=UINT_MAX);
- assert(bit_number<32);
- unsigned int ent_id = (unsigned int)MoFEMEntity_id;
- UId _uid_ = 
-  ((UId)ent_id)|
-    (((UId)type)<<8*sizeof(unsigned int))| 
-    (((UId)bit_number)<<(8*sizeof(unsigned int)+MB_TYPE_WIDTH));
-  return _uid_;
+ostream& operator<<(ostream& os,const MoFEMEntity::UId& e) {
+  os << "meshset " << e.meshset << " dof " << e.ent; 
+  return os;
 }
 void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
   ErrorCode rval;
@@ -557,35 +592,30 @@ DofMoFEMEntity::DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const Approxi
   ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = _dof_order;
   ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof] = _dof_rank;
   uid = get_unique_id_calculate();
-};
+}
 ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
-  os << "dof_uid " << e.get_unique_id() 
-    << " dof_order " << e.get_dof_order()
+  os << "dof_order " << e.get_dof_order()
     << " dof_rank " << e.get_dof_rank()
     << " dof " << e.dof
     << " active " << e.active 
     << " " << *(e.field_ptr);
   return os;
 }
-UId DofMoFEMEntity::get_unique_id_calculate() const {
-  return get_unique_id_calculate(dof,get_MoFEMEntity_ptr());
+ostream& operator<<(ostream& os,const DofMoFEMEntity::UId& e) {
+  os << "dof " << e.dof << " " << e.uid;
+  return os;
 }
 DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}
 void DofMoFEMEntity_active_change::operator()(DofMoFEMEntity &_dof_) {
   _dof_.active = active;
   assert((_dof_.get_dof_order()<=_dof_.get_max_order()));
 }
-bool comp_DofMoFEMEntity_ent_uid::operator()(UId ent_uid,const DofMoFEMEntity &_dof_) const {
-  return ent_uid < _dof_.get_MoFEMEntity_ptr()->get_unique_id();
-}
-bool comp_DofMoFEMEntity_ent_uid::operator()(const DofMoFEMEntity &_dof_,UId ent_uid) const {
-  return _dof_.get_MoFEMEntity_ptr()->get_unique_id() < ent_uid;
-}
+
 
 //numered dof
 NumeredDofMoFEMEntity::NumeredDofMoFEMEntity(const DofIdx idx,const DofMoFEMEntity* _DofMoFEMEntity_ptr): 
     interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr),
-    dof_idx(idx),petsc_gloabl_dof_idx(-1),petsc_local_dof_idx(-1),part(-1) {};
+    dof_idx(idx),petsc_gloabl_dof_idx(-1),petsc_local_dof_idx(-1),part(-1) {}
 ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   os << "idx " << e.dof_idx << " part " << e.part 
     << " petsc idx " << e.petsc_gloabl_dof_idx 
@@ -594,24 +624,10 @@ ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   return os;
 }
 
-PetscErrorCode BaseFEDofMoFEMEntity::get_fe_dof_id_calculate(const DofMoFEMEntity *dof_ptr) {
-  PetscFunctionBegin;
-  DofIdx dof = dof_ptr->dof;
-  int side_number = side_number_ptr->side_number;
-  assert(dof < (DofIdx)bitset<7>().set().to_ulong());
-  assert(side_number < (int)bitset<4>().set().to_ulong());
-  bitset<7> b_dof(dof);
-  bitset<4> b_side_number(side_number);
-  fe_dof_id = b_dof.to_ulong() | ( b_side_number.to_ulong()<<b_dof.size() );
-  assert(fe_dof_id < bitset<sizeof(unsigned long)*8>().set().to_ulong());
-  PetscFunctionReturn(0);
-}
 FEDofMoFEMEntity::FEDofMoFEMEntity(
   SideNumber *_side_number_ptr,
   const DofMoFEMEntity *_DofMoFEMEntity_ptr): 
-  BaseFEDofMoFEMEntity(_side_number_ptr), interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {
-  get_fe_dof_id_calculate(field_ptr);
-}
+  BaseFEDofMoFEMEntity(_side_number_ptr), interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {}
 ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
   os << "local dof MoFEMFE idx " 
     << "side_number " << e.side_number_ptr->side_number << " "
@@ -623,9 +639,7 @@ ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
 FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
   SideNumber *_side_number_ptr,
   const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr): 
-  BaseFEDofMoFEMEntity(_side_number_ptr), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(_NumeredDofMoFEMEntity_ptr) {
-  get_fe_dof_id_calculate(field_ptr->field_ptr);
-}
+  BaseFEDofMoFEMEntity(_side_number_ptr), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(_NumeredDofMoFEMEntity_ptr) {}
 ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e) {
   os << "local dof MoFEMFE idx " 
     << "side_number " << e.side_number_ptr->side_number << " "
@@ -668,7 +682,7 @@ ostream& operator<<(ostream& os,const MoFEMFE& e) {
 }
 unsigned int MoFEMFE::get_bit_number() const {
   //find first bit set in a bit string
-  return ffsl(*((UId *)tag_id_data));
+  return ffsl(*((unsigned long int*)tag_id_data));
 }
 void MoFEMFE_col_change_bit_add::operator()(MoFEMFE &MoFEMFE) {
   *((BitFieldId*)(MoFEMFE.tag_BitFieldId_col_data)) |= f_id_col;
@@ -684,13 +698,13 @@ static void EntMoFEMFE_dofs_change(
   const void** tag_uids_data,int *tag_uids_size) {
   if(uids_view.empty()) return;
   ErrorCode rval;
-  vector<UId> data;
-  data.resize(uids_view.size(),(UId)-1);
+  vector<DofMoFEMEntity::UId> data;
+  data.resize(uids_view.size());
   DofMoFEMEntity_multiIndex_uid_view::iterator miit = uids_view.begin();
-  vector<UId>::iterator vit = data.begin();
+  vector<DofMoFEMEntity::UId>::iterator vit = data.begin();
   for(;miit!=uids_view.end();miit++,vit++) *vit = (*miit)->get_unique_id();
   assert(vit==data.end());
-  int tag_sizes[] = { data.size()*sizeof(UId) };
+  int tag_sizes[] = { data.size()*sizeof(DofMoFEMEntity::UId) };
   void const* tag_data[] = { &data[0] };
   rval = moab.tag_set_by_ptr(th_DofUid,&ent,1,tag_data,tag_sizes); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_DofUid,&ent,1,tag_uids_data,tag_uids_size); CHKERR_THROW(rval);
@@ -716,35 +730,21 @@ EntMoFEMFE::EntMoFEMFE(Interface &moab,const RefMoFEMFiniteElement *_ref_MoFEMFE
   if(rval != MB_SUCCESS) tag_col_uids_size = 0;
   rval = moab.tag_get_by_ptr(fe_ptr->th_DofUidData,&ent,1,(const void **)&tag_row_uids_data,&tag_data_uids_size);
   if(rval != MB_SUCCESS) tag_data_uids_size = 0;
-  uid = get_unique_id_calculate();
 }
 ostream& operator<<(ostream& os,const EntMoFEMFE& e) {
-  os << *e.fe_ptr << " uid "<<e.get_unique_id()<< endl; 
+  os << *e.fe_ptr << " ent " << e.get_ent() << endl; 
   DofMoFEMEntity_multiIndex_uid_view::iterator miit;
   unsigned int ii = 0;
-  if(e.tag_row_uids_size/sizeof(UId)>0) os << "row dof_uids ";
-  for(;ii<e.tag_row_uids_size/sizeof(UId);ii++) os << ((UId*)e.tag_row_uids_data)[ii] << " ";
+  if(e.tag_row_uids_size/sizeof(DofMoFEMEntity::UId)>0) os << "row dof_uids ";
+  for(;ii<e.tag_row_uids_size/sizeof(DofMoFEMEntity::UId);ii++) os << ((DofMoFEMEntity::UId*)e.tag_row_uids_data)[ii] << " ";
   if(ii!=0) os << endl;
-  if(e.tag_col_uids_size/sizeof(UId)>0) os << "col dof_uids ";
-  for(ii = 0;ii<e.tag_col_uids_size/sizeof(UId);ii++) os << ((UId*)e.tag_col_uids_data)[ii] << " ";
+  if(e.tag_col_uids_size/sizeof(DofMoFEMEntity::UId)>0) os << "col dof_uids ";
+  for(ii = 0;ii<e.tag_col_uids_size/sizeof(DofMoFEMEntity::UId);ii++) os << ((DofMoFEMEntity::UId*)e.tag_col_uids_data)[ii] << " ";
   if(ii!=0) os << endl;
-  if(e.tag_data_uids_size/sizeof(UId)>0) os << "data dof_uids ";
-  for(ii = 0;ii<e.tag_data_uids_size/sizeof(UId);ii++) os << ((UId*)e.tag_data_uids_data)[ii] << " ";
+  if(e.tag_data_uids_size/sizeof(DofMoFEMEntity::UId)>0) os << "data dof_uids ";
+  for(ii = 0;ii<e.tag_data_uids_size/sizeof(DofMoFEMEntity::UId);ii++) os << ((DofMoFEMEntity::UId*)e.tag_data_uids_data)[ii] << " ";
   return os;
 }
-UId EntMoFEMFE::get_unique_id_calculate() const {
-  EntityID MoFEMEntity_id = get_ent_id();
-  EntityType type = get_ent_type();
-  int bit_number = fe_ptr->get_bit_number();
-  assert(MoFEMEntity_id<=UINT_MAX);
-  assert(bit_number<32);
-  unsigned int ent_id = (unsigned int)MoFEMEntity_id;
-  UId _uid_ = 
-    ((UId)ent_id)|
-    (((UId)type)<<8*sizeof(unsigned int))| 
-    (((UId)bit_number)<<(8*sizeof(unsigned int)+MB_TYPE_WIDTH));
-  return _uid_;
-}
 PetscErrorCode EntMoFEMFE::get_MoFEMFE_row_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
@@ -775,16 +775,6 @@ PetscErrorCode EntMoFEMFE::get_MoFEMFE_col_dof_uid_view(
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode EntMoFEMFE::get_uid_side_number(
-  Interface &moab,const unsigned long int _ent_uid_,
-  const DofMoFEMEntity_multiIndex &dofs_moabfield,
-  int &side_number, int &sense, int &offset) const { 
-  PetscFunctionBegin;
-  EntityHandle child = dofs_moabfield.get<Unique_mi_tag>().find(_ent_uid_)->get_ent();
-  PetscErrorCode ierr;
-  ierr = moab.side_number(get_ent(),child,side_number,sense,offset); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -795,14 +785,6 @@ ostream& operator<<(ostream& os,const MoFEMAdjacencies& e) {
   os << "by what "<< e.by << " by_other " << e.by_other << " "
     << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFE_ptr;
   return os;
-}
-bool MoFEMAdjacencies::operator<(const MoFEMAdjacencies& _ent_adj_MoFEMFE) const {
-  UId eid1 = get_ent_unique_id();
-  UId eid2  = _ent_adj_MoFEMFE.get_ent_unique_id();
-  if(eid1 == eid2) {
-    return get_MoFEMFE_unique_id() < _ent_adj_MoFEMFE.get_MoFEMFE_unique_id();
-  }
-  return eid1 < eid2;
 }
 PetscErrorCode MoFEMAdjacencies::get_ent_adj_dofs_bridge(
     const DofMoFEMEntity_multiIndex &dofs_moabfield,const by_what _by,

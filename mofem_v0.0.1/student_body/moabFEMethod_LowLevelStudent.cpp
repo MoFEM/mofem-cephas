@@ -28,7 +28,7 @@ namespace MoFEM {
 
 const int debug = 1;
 
-FEMethod_LowLevelStudent::FEMethod_LowLevelStudent(Interface& _moab,int _verbose): FEMethod(_moab),ParentMethod(NULL),verbose(_verbose),fe_ent_ptr(NULL) {
+FEMethod_LowLevelStudent::FEMethod_LowLevelStudent(Interface& _moab,int _verbose): FEMethod(),moab(_moab),ParentMethod(NULL),verbose(_verbose),fe_ent_ptr(NULL) {
   ShapeMBTET(NTET,G_TET_X1,G_TET_Y1,G_TET_Z1,1);
   ShapeDiffMBTET(diffNTET);
   ShapeMBTRI(NTRI,G_TRI_X1,G_TRI_Y1,1);
@@ -39,34 +39,6 @@ FEMethod_LowLevelStudent::~FEMethod_LowLevelStudent() {
     delete ParentMethod;
   }
 }
-PetscErrorCode FEMethod_LowLevelStudent::GetDataView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FEDofMoFEMEntity_multiIndex_view &dof_view) {
-  PetscFunctionBegin;
-  dofs_by_Composite::iterator miit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number_low));
-  dofs_by_Composite::iterator hi_miit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number_hi));
-  for(;miit!=hi_miit;miit++) {
-    dof_view.insert(&*miit);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod_LowLevelStudent::GetRowView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof_view) {
-  PetscFunctionBegin;
-  numered_dofs_by_Composite::iterator miit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number_low));
-  numered_dofs_by_Composite::iterator hi_miit = row_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number_hi));
-  for(;miit!=hi_miit;miit++) {
-    dof_view.insert(&*miit);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod_LowLevelStudent::GetColView(const string &field_name,EntityType type,int side_number_low,int side_number_hi,FENumeredDofMoFEMEntity_multiIndex_view &dof_view) {
-  PetscFunctionBegin;
-  numered_dofs_by_Composite::iterator miit = col_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number_low));
-  numered_dofs_by_Composite::iterator hi_miit = col_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number_hi));
-  for(;miit!=hi_miit;miit++) {
-    dof_view.insert(&*miit);
-  }
-  PetscFunctionReturn(0);
-}
-
 
 //
 template <typename T>
@@ -652,7 +624,8 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
       if(isH1) {
 	//PRISM shape functions at Gauss pts.
 	gNTRIonPRISM.resize(6*gNTRI_dim);
-	vector<double> gNTRI3(3*gNTRI_dim),gNTRI4(3*gNTRI_dim);
+	int _face_nodes3_[] = { 0,1,2 };
+	int _face_nodes4_[] = { 0,1,2 };
 	try {
 	  for(int nn = 0;nn<3;nn++) {
 	    int side_number3 = fe_ent_ptr->get_side_number_ptr(moab,conn_face3[nn])->side_number;
@@ -660,11 +633,12 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	    assert(side_number3 <= 2);
 	    assert(side_number4 >= 3);
 	    for(int gg = 0;gg<gNTRI_dim;gg++) {
-	      double val = gNTRI[gg*3+nn];
-	      gNTRIonPRISM[gg*6+side_number3] = +val; 
-	      gNTRIonPRISM[gg*6+side_number4] = -val; 
-	      gNTRI3[gg*3+side_number3] = val;
-	      gNTRI4[gg*3+side_number4-3] = val;
+	      double val3 = gNTRI[gg*3+side_number3];
+	      gNTRIonPRISM[gg*6+side_number3] = +val3; 
+	      double val4 = gNTRI[gg*3+side_number4-3];
+	      gNTRIonPRISM[gg*6+side_number4] = -val4; 
+	      _face_nodes3_[nn] = side_number3;
+	      _face_nodes4_[nn] = side_number4-3;
 	    }
 	  }
 	} catch (const char* msg) {
@@ -678,13 +652,14 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	int ee = 0;
 	for(;ee<3;ee++) {
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().find(boost::make_tuple(MBEDGE,ee));
-	  int face_edge_side_number,face_edge_offset;
-	  rval = moab.side_number(siit3->ent,siit->ent,face_edge_side_number,_face_edge_sense3_[ee],face_edge_offset); CHKERR_PETSC(rval);
-	  _face_edge_order3_[ee] = maxOrderEdgeH1[ee];
-	  H1edgeN[ee].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order3_[ee]));
-	  _edgeN3_[ee] = &*H1edgeN[ee].begin();
+	  if(siit==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  assert(siit->side_number == ee);
+	  H1edgeN[siit->side_number].resize(gNTRI_dim*NBEDGE_H1(maxOrderEdgeH1[siit->side_number]));
+	  _face_edge_sense3_[ee] = siit->sense;
+	  _face_edge_order3_[ee] = maxOrderEdgeH1[siit->side_number];
+	  _edgeN3_[ee] = &*H1edgeN[siit->side_number].begin();
 	}
-	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense3_,_face_edge_order3_,&gNTRI3[0],NULL,_edgeN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
+	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense3_,_face_edge_order3_,&gNTRI[0],NULL,_edgeN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	//face 4, edges
 	int _face_edge_sense4_[3];
 	int _face_edge_order4_[3];
@@ -692,30 +667,29 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	ee = 0;
 	for(;ee<3;ee++) {
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().find(boost::make_tuple(MBEDGE,6+ee));
-	  int face_edge_side_number,face_edge_offset;
-	  rval = moab.side_number(siit4->ent,siit->ent,face_edge_side_number,_face_edge_sense4_[ee],face_edge_offset); CHKERR_PETSC(rval);
-	  _face_edge_order4_[ee] = maxOrderEdgeH1[6+ee];
-	  H1edgeN[6+ee].resize(gNTRI_dim*NBEDGE_H1(_face_edge_order4_[ee]));
-	  _edgeN4_[ee] = &*H1edgeN[6+ee].begin();
+	  if(siit==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  assert(siit->side_number == 6+ee);
+	  H1edgeN[siit->side_number].resize(gNTRI_dim*NBEDGE_H1(maxOrderEdgeH1[siit->side_number]));
+	  _face_edge_sense4_[ee] = siit->sense;
+	  _face_edge_order4_[ee] = maxOrderEdgeH1[siit->side_number];
+	  _edgeN4_[ee] = &*H1edgeN[siit->side_number].begin();
 	}
-	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense4_,_face_edge_order4_,&gNTRI4[0],NULL,_edgeN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
+	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense4_,_face_edge_order4_,&gNTRI[0],NULL,_edgeN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	ee = 0;
 	for(;ee<3;ee++) {
 	  cblas_dscal(gNTRI_dim*NBEDGE_H1(_face_edge_order4_[ee]),-1,_edgeN4_[ee],1);
 	}
-	//facse
+	//faces
 	H1faceN.resize(5);
 	//face 3
 	int _face_order3_ = maxOrderFaceH1[3];
 	H1faceN[3].resize(NBFACE_H1(max_ApproximationOrder)*gNTRI_dim);
 	double *_faceN3_ = &*H1faceN[3].begin();
-	int _face_nodes3_[] = { 0,1,2 };
 	ierr = H1_FaceShapeFunctions_MBTRI(_face_nodes3_,_face_order3_,&gNTRI[0],NULL,_faceN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
-	//face3
+	//face4
 	int _face_order4_ = maxOrderFaceH1[4];
 	H1faceN[4].resize(NBFACE_H1(max_ApproximationOrder)*gNTRI_dim);
 	double *_faceN4_ = &*H1faceN[4].begin();
-	int _face_nodes4_[] = { 0,1,2 };
 	ierr = H1_FaceShapeFunctions_MBTRI(_face_nodes4_,_face_order4_,&gNTRI[0],NULL,_faceN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	cblas_dscal(gNTRI_dim*NBFACE_H1(_face_order4_),-1,_faceN4_,1);
       }

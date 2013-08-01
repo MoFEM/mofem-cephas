@@ -67,7 +67,7 @@ moabField::BasicMethod::BasicMethod():
   moabfields(NULL),ents_moabfield(NULL),dofs_moabfield(NULL),
   finite_elements(NULL),finite_elements_data(NULL),fem_adjacencies(NULL) {};
 
-moabField::FEMethod::FEMethod(Interface& _moab): BasicMethod(), moab(_moab),
+moabField::FEMethod::FEMethod(): BasicMethod(),
   problem_ptr(NULL),fe_ptr(NULL),data_multiIndex(NULL),
   row_multiIndex(NULL),col_multiIndex(NULL) {}
 
@@ -152,7 +152,7 @@ PetscErrorCode moabField::BasicMethod::set_fes_data_multiIndex(const EntMoFEMFE_
   finite_elements_data = _finite_elements_data;
   PetscFunctionReturn(0);
 }
-moabField::EntMethod::EntMethod(Interface& _moab): BasicMethod(), moab(_moab),problem_ptr(NULL),dof_ptr(NULL) {}
+moabField::EntMethod::EntMethod(): BasicMethod(),problem_ptr(NULL),dof_ptr(NULL) {}
 PetscErrorCode moabField::EntMethod::preProcess() {
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");

@@ -22,7 +22,7 @@
 #include <petscksp.h>
 
 #include "moabSnes.hpp"
-#include "PostProcDisplacementOnMesh.hpp"
+#include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 #include "nonlinear_elasticity.hpp"
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
  
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  PostProcDisplacementsEntMethod ent_method(moab,"SPATIAL_POSITION");
+  PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {

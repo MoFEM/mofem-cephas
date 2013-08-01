@@ -162,7 +162,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColIndices(const string &field_name,v
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
   GlobIndices_Type::iterator miit = col_nodesGlobIndices.find(fiit->get_MoFEMField_ptr());
-  if(miit == col_nodesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  if(miit == col_nodesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE!\n(see this element can be not on this part)");
   ColGlobDofs = miit->second;
   PetscFunctionReturn(0);
 }
@@ -318,6 +318,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussColNMatrix(const string &field_n
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_UpLevelStudent::GetGaussColNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &NMatrix,int side_number) {
+  PetscFunctionBegin;
   switch(type) {
     case MBEDGE:
     case MBTRI: {
@@ -460,6 +461,7 @@ PetscErrorCode FEMethod_UpLevelStudent::MakeBMatrix3D(
     if(m != 9)  SETERRQ(PETSC_COMM_SELF,1,"wrong matrix size");
     BMat.resize(6,n);
     // page 30 CHAPTER 6. DISPLACEMENT METHODS, FEAP Version 7.3 Theory Manual Robert L. Taylor
+    // dX/dx (0) dX/dy (1) dX/dz (2); dY/dx (3) dY/dy (4) dY/dz (5); dZ/dx (6) dZ/dy (7) dZ/dz (8)
     ublas::matrix_row<ublas::matrix<FieldData> >(BMat,0) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,0); //dX/dx
     ublas::matrix_row<ublas::matrix<FieldData> >(BMat,1) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,4); //dY/dy
     ublas::matrix_row<ublas::matrix<FieldData> >(BMat,2) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,8); //dZ/dz

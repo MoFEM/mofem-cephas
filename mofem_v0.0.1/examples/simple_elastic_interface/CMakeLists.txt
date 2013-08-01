@@ -19,7 +19,7 @@
 add_executable(interface interface.cpp)
 target_link_libraries(interface mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/PeelTest.cub" "/" export_files_PeelTest)
+cm_export_file("../../meshes/PeelTest.cub" "/" export_files_interface)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

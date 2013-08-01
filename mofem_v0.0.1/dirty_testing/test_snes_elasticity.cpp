@@ -22,7 +22,7 @@
 #include <petscksp.h>
 
 #include "moabSnes.hpp"
-#include "PostProcDisplacementOnMesh.hpp"
+#include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 #include "nonlinear_elasticity.hpp"
@@ -181,6 +181,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 };
 
 struct ArcLenghtElemFEMethod: public moabField::FEMethod {
+  Interface& moab;
 
   double s;
   PetscErrorCode set_s(double _s) { 
@@ -191,7 +192,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
   Vec GhostLambda;
   Vec F_lambda,b;
-  ArcLenghtElemFEMethod(Interface& _moab,Vec _F_lambda,Vec _b): FEMethod(_moab),F_lambda(_F_lambda),b(_b) {
+  ArcLenghtElemFEMethod(Interface& _moab,Vec _F_lambda,Vec _b): FEMethod(),moab(_moab),F_lambda(_F_lambda),b(_b) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
@@ -641,7 +642,7 @@ int main(int argc, char *argv[]) {
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //
-    PostProcDisplacementsEntMethod ent_method(moab,"SPATIAL_POSITION");
+    PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
     //
     if(step % 1 == 0) {
@@ -666,7 +667,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  PostProcDisplacementsEntMethod ent_method(moab,"SPATIAL_POSITION");
+  PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {

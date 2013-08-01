@@ -539,9 +539,10 @@ int main(int argc, char *argv[]) {
   struct MyEntMethod: public moabField::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
+    Interface& moab;
 
     Tag th_disp;
-    MyEntMethod(Interface& _moab): EntMethod(_moab) {
+    MyEntMethod(Interface& _moab): EntMethod(),moab(_moab) {
       double def_VAL[3] = {0,0,0};
       // create TAG
       rval = moab.tag_get_handle("DISPLACEMENTS_VAL",3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);

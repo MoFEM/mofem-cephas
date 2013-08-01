@@ -35,7 +35,6 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type
     FEMethod_UpLevelStudent(_moab,_verbose), type_of_analysis(_type), 
     lambda(_lambda),mu(_mu), eps(1e-6),
     field_name("SPATIAL_POSITION") {
-  pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   order_edges.resize(6);
   order_faces.resize(4);
   edgeNinvJac.resize(6);

@@ -24,6 +24,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_interface")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_elasticity")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface")
 
 
 

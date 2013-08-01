@@ -52,17 +52,25 @@ struct moabField_Core: public moabField {
   int verbose;
 
   //database
-  moabBaseMeshSet_multiIndex cubit_meshsets;
+
+  //ref
   RefMoFEMEntity_multiIndex ref_entities;
   RefMoFEMFiniteElement_multiIndex ref_finite_elements;
+  //field
   MoFEMField_multiIndex moabfields;
   MoFEMEntity_multiIndex ents_moabfield;
   DofMoFEMEntity_multiIndex dofs_moabfield;
+  //finite element
   MoFEMFE_multiIndex finite_elements;
   EntMoFEMFE_multiIndex finite_elements_data;
+  //finite elemts and dofs
   MoFEMAdjacencies_multiIndex adjacencies;
+  //problems
   MoFEMProblem_multiIndex problems;
+  //prism 
   AdjBasicMoFEMEntity_multiIndex Adj_prisms;
+  //cubit
+  moabBaseMeshSet_multiIndex cubit_meshsets;
 
   //safty nets
   Tag th_MoFEMBuild;
@@ -160,7 +168,7 @@ struct moabField_Core: public moabField {
   //problem buildig
   PetscErrorCode partition_problems(const string &name,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name);
-  PetscErrorCode partition_finite_elements(const string &name,int verb = -1);
+  PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
 
   //clean active
   PetscErrorCode erase_inactive_dofs_moabfield();
@@ -190,11 +198,21 @@ struct moabField_Core: public moabField {
   PetscErrorCode add_prism_to_Adj_prisms(const EntityHandle prism,int verb = -1);
 
   //loops
+  PetscErrorCode loop_finite_elements(
+    const string &problem_name,const string &fe_name,FEMethod &method,
+    int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
 
   //get multi_index form database
   PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr);
+
+  //Copy Field to Another
+  //NOT TESTED DONT USE PetscErrorCode set_other_filed_values(const string& fiel_name,const string& cpy_field_name,InsertMode mode,ScatterMode scatter_mode);
+  
+  //Copy Vector of Field to Another
+  PetscErrorCode set_other_global_VecCreateGhost(const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
+
 
   //constructor
   moabField_Core(Interface& _moab,int _verbose = 1);
@@ -208,7 +226,7 @@ struct moabField_Core: public moabField {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
     typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofMoFEMEntitys_by_unique_id;
-    typedef MoFEMAdjacencies_multiIndex::index<Unique_MoABEnt_mi_tag>::type adj_by_unique_id;
+    typedef MoFEMAdjacencies_multiIndex::index<Composite_mi_tag>::type adj_by_ent;
     //find p_miit
     typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
     problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
@@ -238,22 +256,24 @@ struct moabField_Core: public moabField {
     vector<PetscInt> i,j;
     // loop local rows
     for(;miit_row!=hi_miit_row;miit_row++) {
+      //cerr << "ROW: " << *miit_row << endl;
       i.push_back(j.size());
-      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->field_ptr->field_ptr->get_unique_id()) ) {
+      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_unique_id()) ) {
 	// get field ptr
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->field_ptr->field_ptr);
-	adj_by_unique_id::iterator adj_miit = adjacencies.get<Unique_MoABEnt_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
-	adj_by_unique_id::iterator hi_adj_miit = adjacencies.get<Unique_MoABEnt_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
+	adj_by_ent::iterator adj_miit = adjacencies.get<Composite_mi_tag>().lower_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
+	adj_by_ent::iterator hi_adj_miit = adjacencies.get<Composite_mi_tag>().upper_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
 	dofs_vec.resize(0);
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	  if(!(adj_miit->by_other&by_row)) continue;
 	  if((adj_miit->EntMoFEMFE_ptr->get_id()&p_miit->get_BitFEId()).none()) continue;
 	  if((adj_miit->EntMoFEMFE_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue;
-	  int size  = adj_miit->EntMoFEMFE_ptr->tag_col_uids_size/sizeof(UId);
+	  int size  = adj_miit->EntMoFEMFE_ptr->tag_col_uids_size/sizeof(DofMoFEMEntity::UId);
 	  for(int ii = 0;ii<size;ii++) {
-	    UId uid = adj_miit->EntMoFEMFE_ptr->tag_col_uids_data[ii];
-	    NumeredDofMoFEMEntitys_by_unique_id::iterator miiit = dofs_col_by_id.find(uid);
+	    DofMoFEMEntity::UId uid = adj_miit->EntMoFEMFE_ptr->tag_col_uids_data[ii];
+	    NumeredDofMoFEMEntitys_by_unique_id::iterator miiit = dofs_col_by_id.find(boost::make_tuple(uid.uid.meshset,uid.uid.ent,uid.dof));
 	    if(miiit == p_miit->numered_dofs_cols.get<Unique_mi_tag>().end()) continue;
+	    //cerr << "\tCOL: " << *miiit << endl;
 	    dofs_vec.insert(dofs_vec.end(),Tag::get_index(miiit));
 	  }
 	}
@@ -297,6 +317,11 @@ struct moabField_Core: public moabField {
   
   //low level finite element data
   double diffN_TET[12]; 
+
+  //Petsc Logs
+  PetscLogEvent USER_EVENT_preProcess;
+  PetscLogEvent USER_EVENT_operator;
+  PetscLogEvent USER_EVENT_postProcess;
 };
 
 }

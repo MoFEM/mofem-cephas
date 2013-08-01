@@ -17,7 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-using namespace MoFEM;
+#ifndef __ELASTICFEMETHOD_HPP__
+#define __ELASTICFEMETHOD_HPP__
+
+namespace MoFEM {
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
@@ -143,8 +146,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode NeumannBC(ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
-
+    PetscErrorCode NeumannBC(Vec F_ext,ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
       PetscFunctionBegin;
 
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -202,7 +204,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  double w = area*G_TRI_W13[gg];
 	  f_ext_nodes += w*prod(trans(FaceNMatrix_nodes[gg]), traction);
 	}
-	ierr = VecSetValues(F,RowGlob_nodes.size(),&(RowGlob_nodes)[0],&(f_ext_nodes.data())[0],ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValues(F_ext,RowGlob_nodes.size(),&(RowGlob_nodes)[0],&(f_ext_nodes.data())[0],ADD_VALUES); CHKERRQ(ierr);
 
 	//edges
 	siiit = side_table.get<1>().lower_bound(boost::make_tuple(MBEDGE,0));
@@ -216,7 +218,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	      f_ext_edges += w*prod(trans(FaceNMatrix_edge[gg]), traction);
 	    }
 	    if(RowGlob_edge.size()!=f_ext_edges.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_edge.size()!=f_ext_edges.size()");
-	    ierr = VecSetValues(F,RowGlob_edge.size(),&(RowGlob_edge[0]),&(f_ext_edges.data())[0],ADD_VALUES); CHKERRQ(ierr);
+	    ierr = VecSetValues(F_ext,RowGlob_edge.size(),&(RowGlob_edge[0]),&(f_ext_edges.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	}
   
@@ -228,7 +230,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    f_ext_faces += w*prod(trans(FaceNMatrix_face[gg]), traction);
 	  }
 	  if(RowGlob_face.size()!=f_ext_faces.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_face.size()!=f_ext_faces.size()");
-	  ierr = VecSetValues(F,RowGlob_face.size(),&(RowGlob_face)[0],&(f_ext_faces.data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  ierr = VecSetValues(F_ext,RowGlob_face.size(),&(RowGlob_face)[0],&(f_ext_faces.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
 
 
@@ -246,7 +248,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       traction[1] = 1;
       traction[2] = 0;
 
-      ierr = NeumannBC(traction,SideSet2); CHKERRQ(ierr);
+      ierr = NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -349,10 +351,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode RhsAndLhs() {
+    PetscErrorCode Lhs() {
       PetscFunctionBegin;
       ublas::matrix<FieldData> K[row_mat][col_mat];
-      ublas::vector<FieldData> f[row_mat];
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = 0;cc<col_mat;cc++) {
@@ -360,14 +361,30 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
 	    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
 	    ///K matrices
-	    if(gg == 0) {
-	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
-	    }
 	    double w = V*G_TET_W45[gg];
 	    ublas::matrix<FieldData> BTD = prod( trans(row_Mat), w*D );
-	    K[rr][cc] += prod(BTD , col_Mat ); // int BT*D*B
+	    if(gg == 0) {
+	      K[rr][cc] = prod(BTD , col_Mat ); // int BT*D*B
+	    } else {
+	      K[rr][cc] += prod(BTD , col_Mat ); // int BT*D*B
+	    }
 	  }
 	}
+	for(int cc = 0;cc<col_mat;cc++) {
+	  if(ColGlob[cc].size()==0) continue;
+	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode Rhs() {
+      PetscFunctionBegin;
+      ublas::vector<FieldData> f[row_mat];
+      int g_dim = g_NTET.size()/4;
+      for(int rr = 0;rr<row_mat;rr++) {
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
 	  if(gg == 0) f[rr] = ublas::zero_vector<FieldData>(row_Mat.size2());
@@ -377,13 +394,63 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	if(RowGlob[rr].size()!=f[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	if(RowGlob[rr].size()==0) continue;
 	ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
-	for(int cc = 0;cc<col_mat;cc++) {
-	  if(ColGlob[cc].size()==0) continue;
-	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
-	}
       }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode Fint() {
+      PetscFunctionBegin;
+
+      //Gradient at Gauss points; 
+      vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+      ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+
+      //ublas::vector<FieldData> DispData[row_mat];
+      //ierr = GetDataVector("DISPLACEMENT",DispData[0]); CHKERRQ(ierr);
+
+      unsigned int g_dim = g_NTET.size()/4;
+      assert(GradU_at_GaussPt.size() == g_dim);
+      NOT_USED(g_dim);
+      vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+      int gg = 0;
+      for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
+	  ublas::matrix< FieldData > GradU = *viit;
+	  ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+	  ublas::vector< FieldData > VoightStrain(6);
+	  VoightStrain[0] = Strain(0,0);
+	  VoightStrain[1] = Strain(1,1);
+	  VoightStrain[2] = Strain(2,2);
+	  VoightStrain[3] = 2*Strain(0,1);
+	  VoightStrain[4] = 2*Strain(1,2);
+	  VoightStrain[5] = 2*Strain(2,0);
+	  double w = V*G_TET_W45[gg];
+	  ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
+	  //BT * VoigtStress
+	  for(int rr = 0;rr<row_mat;rr++) {
+	    ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
+	    ublas::vector<FieldData> f_int = prod( trans(B), VoightStress );
+	    if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    if(RowGlob[rr].size()==0) continue;
+	    //ublas::vector< FieldData > VoightStrain2;
+	    //VoightStrain2 = prod( B, DispData[rr] );
+	    //cerr << VoightStrain << " " << VoightStrain2 << " " << VoightStrain - VoightStrain2 << endl;
+	    //cerr << gg << " " << f_int << endl;
+	    ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	  }
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode RhsAndLhs() {
+      PetscFunctionBegin;
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+      ierr = GetMatrices(); CHKERRQ(ierr);
+
+      ierr = Rhs(); CHKERRQ(ierr);
+      ierr = Lhs(); CHKERRQ(ierr);
+
+      ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -413,3 +480,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     }
 
   };
+
+}
+
+#endif //__ELASTICFEMETHOD_HPP__

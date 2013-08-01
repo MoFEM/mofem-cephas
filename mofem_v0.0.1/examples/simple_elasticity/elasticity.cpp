@@ -24,7 +24,7 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
-#include "PostProcDisplacementOnMesh.hpp"
+#include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
       traction[1] = 0; //Y 
       traction[2] = 0; //Z
       //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
-      ierr = ElasticFEMethod::NeumannBC(traction,SideSet2); CHKERRQ(ierr);
+      ierr = ElasticFEMethod::NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  PostProcDisplacementsEntMethod ent_method(moab);
+  PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {

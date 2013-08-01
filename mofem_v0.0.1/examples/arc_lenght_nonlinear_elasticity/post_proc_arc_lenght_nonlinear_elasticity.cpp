@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
-  PostProcDisplacementsEntMethod ent_method(moab,"SPATIAL_POSITION");
+  PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {

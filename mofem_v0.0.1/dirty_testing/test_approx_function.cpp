@@ -359,12 +359,13 @@ int main(int argc, char *argv[]) {
   struct MyEntMethod: public moabField::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
-
+    Interface& moab;
+    
     vector<double> g_NTET;
 
 
     Tag th_val;
-    MyEntMethod(Interface& _moab): EntMethod(_moab) {
+    MyEntMethod(Interface& _moab): EntMethod(),moab(_moab) {
       double def_VAL = 0;
       rval = moab.tag_get_handle("H1FIELD_VAL",1,MB_TYPE_DOUBLE,th_val,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
     }
