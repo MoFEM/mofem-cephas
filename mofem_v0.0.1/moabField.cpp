@@ -27,10 +27,10 @@
 
 namespace MoFEM {
 
-
-PetscErrorCode moabField::SnesMethod::set_ctx(const snes_context ctx_) {
+//SNES
+PetscErrorCode moabField::SnesMethod::set_snes_ctx(const snes_context ctx_) {
   PetscFunctionBegin;
-  ctx = ctx_;
+  snes_ctx = ctx_;
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::SnesMethod::set_snes(SNES _snes) { 
@@ -63,6 +63,18 @@ PetscErrorCode moabField::SnesMethod::set_flag(MatStructure *_flag) {
   snes_flag = _flag;
   PetscFunctionReturn(0);
 }
+//TS
+PetscErrorCode moabField::TSMethod::set_ts_ctx(const ts_context ctx_) {
+  PetscFunctionBegin;
+  ts_ctx = ctx_;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode moabField::TSMethod::set_ts(TS _ts) {
+  PetscFunctionBegin;
+  ts = _ts;
+  PetscFunctionReturn(0);
+}
+//BasicMethod
 moabField::BasicMethod::BasicMethod():
   moabfields(NULL),ents_moabfield(NULL),dofs_moabfield(NULL),
   finite_elements(NULL),finite_elements_data(NULL),fem_adjacencies(NULL) {};

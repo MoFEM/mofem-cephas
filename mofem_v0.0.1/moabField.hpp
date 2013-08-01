@@ -341,10 +341,10 @@ struct moabField {
   struct SnesMethod {
     enum snes_context { ctx_SNESSetFunction, ctx_SNESSetJacobian, ctx_SNESNone };
     //
-    snes_context ctx;
-    SnesMethod(): ctx(ctx_SNESNone) {};
+    snes_context snes_ctx;
+    SnesMethod(): snes_ctx(ctx_SNESNone) {};
     //
-    PetscErrorCode set_ctx(const snes_context ctx_);
+    PetscErrorCode set_snes_ctx(const snes_context ctx_);
     //
     SNES snes;
     PetscErrorCode set_snes(SNES _snes);
@@ -359,10 +359,23 @@ struct moabField {
     PetscErrorCode set_B(Mat *_B);
     PetscErrorCode set_flag(MatStructure *_flag); 
   };
+  struct TSMethod {
+    enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetIFunction, ctx_TSNone };
+    //
+    ts_context ts_ctx;
+    TSMethod(): ts_ctx(ctx_TSNone) {};
+    //
+    PetscErrorCode set_ts_ctx(const ts_context ctx_);
+    //
+    TS ts;
+    PetscErrorCode set_ts(TS _ts);
 
-  struct BasicMethod: public SnesMethod {
+  
+  };
+
+  struct BasicMethod: public SnesMethod,TSMethod {
     BasicMethod();    
-
+    //
     PetscErrorCode set_moabfields(const MoFEMField_multiIndex *_moabfields);
     PetscErrorCode set_ents_multiIndex(const MoFEMEntity_multiIndex *_ents_moabfield);
     PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
@@ -410,7 +423,7 @@ struct moabField {
      * f.e. total internal energy, ect.
      */
     PetscErrorCode postProcess();
-
+    //
     PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_fe(const NumeredMoFEMFE *_fe_ptr); 
     PetscErrorCode set_data_multIndex(const FEDofMoFEMEntity_multiIndex *_data_multiIndex);

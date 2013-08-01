@@ -17,17 +17,19 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __MOABSNES_HPP__
-#define __MOABSNES_HPP__
+#ifndef __MOABTS_HPP__
+#define __MOABTS_HPP__
 
 #include "moabField.hpp"
 #include <petsc.h>
 #include <petscmat.h>
 #include <petscsnes.h>
 
+#include<petscts.h>
+
 namespace MoFEM {
 
-struct moabSnesCtx {
+struct moabTsCtx u{
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -42,13 +44,13 @@ struct moabSnesCtx {
   loops_to_do_type loops_to_do_Mat;
   loops_to_do_type loops_to_do_Rhs;
 
-  PetscLogEvent USER_EVENT_SnesRhs;
-  PetscLogEvent USER_EVENT_SnesMat;
+  PetscLogEvent USER_EVENT_TsRhs;
+  PetscLogEvent USER_EVENT_TsMat;
 
-  moabSnesCtx(moabField &_mField,const string &_problem_name): 
+  moabTsCtx(moabField &_mField,const string &_problem_name): 
     mField(_mField),moab(_mField.get_moab()),problem_name(_problem_name) {
-    PetscLogEventRegister("LoopSnesRhs",0,&USER_EVENT_SnesRhs);
-    PetscLogEventRegister("LoopSnesMat",0,&USER_EVENT_SnesMat);
+    PetscLogEventRegister("LoopTsRhs",0,&USER_EVENT_TsRhs);
+    PetscLogEventRegister("LoopTsMat",0,&USER_EVENT_TsMat);
   }
 
   const moabField& get_mField() const { return mField; }
@@ -56,16 +58,17 @@ struct moabSnesCtx {
   loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
   loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
 
-  friend PetscErrorCode SnesFunc(SNES snes,Vec x,Vec f,moabSnesCtx *);
-  friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ctx);
+  friend PetscErrorCode f_TSSetRHSFunction(TS ts,PetscReal t,Vec u,Vec F,void *ctx);
+  friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,ctx);
+  friend PetscErrorCode f_TSSetIJacobian((TS ts,PetscReal t,Vec U,Vec U_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx);
 
 };
 
-PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
+/*PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   moabSnesCtx* snes_ctx = (moabSnesCtx*)ctx;
-  PetscLogEventBegin(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
+  PetscLogEventBegin(snes_ctx->USER_EVENT_TsRhs,0,0,0,0);
   ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = snes_ctx->mField.set_local_VecCreateGhost(snes_ctx->problem_name,Row,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -88,14 +91,14 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
-  PetscLogEventEnd(snes_ctx->USER_EVENT_SnesRhs,0,0,0,0);
+  PetscLogEventEnd(snes_ctx->USER_EVENT_TsRhs,0,0,0,0);
   PetscFunctionReturn(0);
 }
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ctx) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   moabSnesCtx* snes_ctx = (moabSnesCtx*)ctx;
-  PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
+  PetscLogEventBegin(snes_ctx->USER_EVENT_TsMat,0,0,0,0);
   ierr = MatZeroEntries(*B); CHKERRQ(ierr);
   moabSnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Mat.begin();
   for(;lit!=snes_ctx->loops_to_do_Mat.end();lit++) {
@@ -112,10 +115,10 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ct
   }
   ierr = MatAssemblyBegin(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  PetscLogEventEnd(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
+  PetscLogEventEnd(snes_ctx->USER_EVENT_TsMat,0,0,0,0);
   PetscFunctionReturn(0);
-}
+}*/
 
 }
 
-#endif // __MOABSNES_HPP__
+#endif // __MOABTS_HPP__
