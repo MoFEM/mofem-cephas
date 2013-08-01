@@ -246,10 +246,31 @@ struct PostProcFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh
 
 struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinOnRefMesh {
 
+  double lambda,mu;
+
+  ublas::matrix<double> D,D_lambda,D_mu;
+
   Tag th_stress;
-  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(Interface& _moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab) {
-    double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0};
-    rval = moab_post_proc.tag_get_handle("STRESS_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(
+    Interface& _moab,double _lambda,double _mu): PostProcDisplacemenysAndStarinOnRefMesh(_moab),lambda(_lambda),mu(_mu) {
+    double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0 };
+    rval = moab_post_proc.tag_get_handle("STRESS_VAL",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+
+    // See FEAP - - A Finite Element Analysis Program
+    D_lambda = ublas::zero_matrix<FieldData>(6,6);
+    for(int rr = 0;rr<3;rr++) {
+      ublas::matrix_row<ublas::matrix<FieldData> > row_D_lambda(D_lambda,rr);
+      for(int cc = 0;cc<3;cc++) {
+	row_D_lambda[cc] = 1;
+      }
+    }
+    D_mu = ublas::zero_matrix<FieldData>(6,6);
+    for(int rr = 0;rr<6;rr++) {
+      D_mu(rr,rr) = rr<3 ? 2 : 1;
+    }
+    D = lambda*D_lambda + mu*D_mu;
+
+
   }
 
   PetscErrorCode operator()() {
@@ -267,8 +288,18 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 	ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
 	rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
 	//caluate stress and save it into tag
-	// .... 
-
+	ublas::vector<FieldData> Strain_VectorNotation(6);
+	Strain_VectorNotation[0] = Strain(0,0);
+	Strain_VectorNotation[1] = Strain(1,1);
+	Strain_VectorNotation[2] = Strain(2,2);
+	Strain_VectorNotation[3] = 2*Strain(0,1);
+	Strain_VectorNotation[4] = 2*Strain(1,2);
+	Strain_VectorNotation[5] = 2*Strain(2,0);
+	ublas::vector< FieldData > Stress_VectorNotation = prod( D, Strain_VectorNotation );
+	ublas::matrix< FieldData > Stress = ublas::zero_matrix<FieldData>(3,3);
+	Stress(0,0) = Stress_VectorNotation[1];
+	//....
+	rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);
       }
 
       PetscFunctionReturn(0);
