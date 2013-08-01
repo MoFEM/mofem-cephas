@@ -1,0 +1,10 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what verion of openmoi (or other MPI library) are you using
+
+Example run
+===========
+mpirun -np 4 ./linear_dynamics_elasticity -my_file LShape.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor
+

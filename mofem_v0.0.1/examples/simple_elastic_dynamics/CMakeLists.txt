@@ -16,16 +16,13 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-#include subdirectory
-include_directories("${PROJECT_SOURCE_DIR}/examples")
+add_executable(linear_dynamics_elasticity linear_dynamics_elasticity.cpp)
+target_link_libraries(linear_dynamics_elasticity mofem_Field ${PROJECT_LIBS})
 
-#add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_dynamics")
+cm_export_file("../../meshes/LShape.cub" "/" export_files_linear_dynamics_elasticity)
+cm_export_file("../../meshes/LShapeCoarse.cub" "/" export_linear_dynamics_elasticity)
+cm_export_file("../../meshes/LShapeDense.cub" "/" export_linear_dynamics_elasticity)
 
-
-
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
