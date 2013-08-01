@@ -394,10 +394,6 @@ ostream& operator<<(ostream& os,const MoFEMField& e) {
     << " space " << e.get_space() << " rank " << e.get_max_rank() << " meshset " << e.meshset;
   return os;
 }
-unsigned int MoFEMField::get_bit_number() const {
-  //find first bit set in a bit string
-  return ffsl(*((unsigned long int *)tag_id_data));
-}	
 
 //moab problem
 MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset): meshset(_meshset) {
@@ -520,19 +516,6 @@ ostream& operator<<(ostream& os,const MoFEMEntity& e) {
     <<" order "<<e.get_max_order()<<" "<<*e.field_ptr;
   return os;
 }
-UId MoFEMEntity::get_unique_id_calculate() const {
- EntityID MoFEMEntity_id = get_ent_id();
- EntityType type = get_ent_type();
- int bit_number = get_bit_number();
- assert(MoFEMEntity_id<=UINT_MAX);
- assert(bit_number<32);
- unsigned int ent_id = (unsigned int)MoFEMEntity_id;
- UId _uid_ = 
-  ((UId)ent_id)|
-    (((UId)type)<<8*sizeof(unsigned int))| 
-    (((UId)bit_number)<<(8*sizeof(unsigned int)+MB_TYPE_WIDTH));
-  return _uid_;
-}
 void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
   ErrorCode rval;
   int nb_dofs = e.forder(order)*e.get_max_rank();
@@ -612,9 +595,6 @@ ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
     << " " << *(e.field_ptr);
   return os;
 }
-UId DofMoFEMEntity::get_unique_id_calculate() const {
-  return get_unique_id_calculate(dof,get_MoFEMEntity_ptr());
-}
 DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}
 void DofMoFEMEntity_active_change::operator()(DofMoFEMEntity &_dof_) {
   _dof_.active = active;
@@ -689,10 +669,6 @@ ostream& operator<<(ostream& os,const MoFEMFE& e) {
     os << "id " << e.get_id() << " name " << e.get_name() << " f_id_row " << e.get_BitFieldId_row() 
     << " f_id_col " << e.get_BitFieldId_col() << " BitFEId_data " << e.get_BitFieldId_data();
     return os;
-}
-unsigned int MoFEMFE::get_bit_number() const {
-  //find first bit set in a bit string
-  return ffsl(*((UId *)tag_id_data));
 }
 void MoFEMFE_col_change_bit_add::operator()(MoFEMFE &MoFEMFE) {
   *((BitFieldId*)(MoFEMFE.tag_BitFieldId_col_data)) |= f_id_col;
@@ -788,7 +764,7 @@ PetscErrorCode EntMoFEMFE::get_MoFEMFE_col_dof_uid_view(
   PetscFunctionReturn(0);
 }
 PetscErrorCode EntMoFEMFE::get_uid_side_number(
-  Interface &moab,const unsigned long int _ent_uid_,
+  Interface &moab,const UId _ent_uid_,
   const DofMoFEMEntity_multiIndex &dofs_moabfield,
   int &side_number, int &sense, int &offset) const { 
   PetscFunctionBegin;

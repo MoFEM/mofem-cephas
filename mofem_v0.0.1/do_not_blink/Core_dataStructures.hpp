@@ -97,13 +97,13 @@ typedef multi_index_container<
     hashed_unique<
       tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
     ordered_non_unique<
-      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,UId,&CubitMeshSets::get_CubitBCType_ulong> >,
+      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
     hashed_unique<
       tag<Composite_mi_tag>,       
       composite_key<
 	CubitMeshSets,
 	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
-	  const_mem_fun<CubitMeshSets,UId,&CubitMeshSets::get_CubitBCType_ulong> > >
+	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
   > > moabBaseMeshSet_multiIndex;
 
 struct RefMoFEMEntity_change_add_bit {

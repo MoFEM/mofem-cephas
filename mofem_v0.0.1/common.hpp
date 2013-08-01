@@ -44,6 +44,7 @@
 #include <boost/multi_index/global_fun.hpp>
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/iterator/transform_iterator.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 #include<moab_mpi.h>
 #include<moab/ParallelComm.hpp>
@@ -150,6 +151,7 @@ using namespace moab;
 using namespace std;
 using boost::multi_index_container;
 using namespace boost::multi_index;
+using namespace boost::multiprecision;
 
 namespace MoFEM {
 
@@ -159,7 +161,7 @@ typedef PetscInt DofIdx;
 typedef int FEIdx;
 typedef int EntIdx;
 typedef int EntPart;
-typedef unsigned long int UId;
+typedef uint128_t UId;
 
 typedef bitset<6> BitRefEdges;
 typedef bitset<8/*max number of refinments*/> BitRefLevel;
@@ -497,7 +499,7 @@ struct MoFEMField {
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };	
   inline FieldSpace get_space() const { return *tag_space_data; };
   inline ApproximationRank get_max_rank() const { return *tag_rank_data; };
-  inline unsigned int get_bit_number() const;
+  inline unsigned int get_bit_number() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
   const MoFEMField* get_MoFEMField_ptr() const { return this; };
   friend ostream& operator<<(ostream& os,const MoFEMField& e);
 };
@@ -544,7 +546,19 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return ref_mab_ent_ptr; }
   UId get_unique_id() const { return uid; }
-  UId get_unique_id_calculate() const;
+  UId get_unique_id_calculate() const {
+    EntityID MoFEMEntity_id = get_ent_id();
+    EntityType type = get_ent_type();
+    int bit_number = get_bit_number();
+    assert(MoFEMEntity_id<=UINT_MAX);
+    assert(bit_number<32);
+    unsigned int ent_id = (unsigned int)MoFEMEntity_id;
+    UId _uid_ = 
+      ((UId)ent_id)|
+      (((UId)type)<<8*sizeof(unsigned int))| 
+      (((UId)bit_number)<<(8*sizeof(unsigned int)+MB_TYPE_WIDTH));
+    return _uid_;
+  }
   const MoFEMEntity* get_MoFEMEntity_ptr() const { return this; };
   friend ostream& operator<<(ostream& os,const MoFEMEntity& e);
 };
@@ -600,7 +614,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   inline DofIdx get_EntDofIdx() const { return dof; }
   inline FieldData& get_FieldData() const { return const_cast<FieldData&>(field_ptr->tag_FieldData[dof]); }
   UId get_unique_id() const { return uid; };
-  UId get_unique_id_calculate() const;
+  UId get_unique_id_calculate() const { return get_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
   inline EntityHandle get_ent() const { return field_ptr->get_ent(); };
   inline ApproximationOrder get_dof_order() const { return ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof]; };
   inline ApproximationRank get_dof_rank() const { return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof]; };
@@ -728,7 +742,7 @@ typedef multi_index_container<
 typedef multi_index_container<
   MoFEMEntity,
   indexed_by<
-    hashed_unique<
+    ordered_unique<
       tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
     ordered_non_unique<
       tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,BitFieldId,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
@@ -741,7 +755,7 @@ typedef multi_index_container<
 typedef multi_index_container<
   DofMoFEMEntity,
   indexed_by<
-    hashed_unique< 
+    ordered_unique< 
       tag<Unique_mi_tag>, member<DofMoFEMEntity,UId,&DofMoFEMEntity::uid> >,
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,string,&DofMoFEMEntity::get_name> >,
@@ -809,14 +823,6 @@ typedef multi_index_container<
 	> >
   > > FEDofMoFEMEntity_multiIndex;
 
-/*typedef multi_index_container<
-  const FEDofMoFEMEntity *,
-  indexed_by<
-    ordered_unique<
-      //const_mem_fun<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,UId,&FEDofMoFEMEntity::get_fe_dof_id> >
-      const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&FEDofMoFEMEntity::get_unique_id> >
-  > > FEDofMoFEMEntity_multiIndex_view;*/
-
 typedef multi_index_container<
   FENumeredDofMoFEMEntity,
   indexed_by<
@@ -856,7 +862,7 @@ typedef multi_index_container<
 typedef multi_index_container<
   NumeredDofMoFEMEntity,
   indexed_by<
-    hashed_unique< 
+    ordered_unique< 
       tag<Unique_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&NumeredDofMoFEMEntity::get_unique_id> >,
     ordered_unique< 
       tag<Idx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::dof_idx> >,
@@ -894,8 +900,6 @@ struct MoFEMFE {
   Tag th_DofUidRow,th_DofUidCol,th_DofUidData;
   MoFEMFE(Interface &moab,const EntityHandle _meshset);
   inline BitFEId get_id() const { return *tag_id_data; };
-  /// get number of lighting bit in BitFEId
-  unsigned int get_bit_number() const;
   /// get meshset
   inline EntityHandle get_meshset() const { return meshset; }
   /// get FE name
@@ -917,7 +921,6 @@ struct interface_MoFEMFE {
   const T *fe_ptr;
   interface_MoFEMFE(const T *_ptr): fe_ptr(_ptr) {};
   inline BitFEId get_id() const { return fe_ptr->get_id(); }
-  unsigned int get_bit_number() const { return fe_ptr->get_bit_number(); }
   inline EntityHandle get_meshset() const { return fe_ptr->get_meshset(); }
   inline string get_name() const { return fe_ptr->get_name(); }
   inline BitFieldId get_BitFieldId_col() const { return fe_ptr->get_BitFieldId_col(); }
