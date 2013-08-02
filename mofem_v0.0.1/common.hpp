@@ -548,16 +548,9 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return ref_mab_ent_ptr; }
   UId get_unique_id() const { return uid; }
   UId get_unique_id_calculate() const {
-    EntityID MoFEMEntity_id = get_ent_id();
-    EntityType type = get_ent_type();
     int bit_number = get_bit_number();
-    assert(MoFEMEntity_id<=UINT_MAX);
     assert(bit_number<=32);
-    unsigned int ent_id = (unsigned int)MoFEMEntity_id;
-    UId _uid_ = 
-      ((UId)ent_id)|
-      (((UId)type)<<8*sizeof(unsigned int))| 
-      (((UId)bit_number)<<(8*sizeof(unsigned int)+MB_TYPE_WIDTH));
+    UId _uid_ = ((UId)ref_ptr->ent)|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
   const MoFEMEntity* get_MoFEMEntity_ptr() const { return this; };
