@@ -403,7 +403,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   PetscErrorCode LhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
-    ublas::matrix<FieldData> K[row_mat][col_mat];
+    K.resize(row_mat,col_mat);
     for(int rr = 0;rr<row_mat;rr++) {
 	if(RowGlob[rr].size()==0) continue;
 	for(int cc = 0;cc<col_mat;cc++) {
@@ -412,7 +412,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
 	    ///K matrices
 	    if(gg == 0) {
-	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
+	      K(rr,cc) = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
 	    }
 	    double _kappa_ = fmax(g[gg]-g0,kappa[gg]);
 	    double _omega_ = 0;
@@ -425,14 +425,14 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    }
 	    double w = area3*G_TRI_W13[gg];
 	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
-	    K[rr][cc] += prod(NTD , col_Mat ); 
+	    K(rr,cc) += prod(NTD , col_Mat ); 
 	  }
 	}
 	for(int cc = 0;cc<col_mat;cc++) {
 	  if(ColGlob[cc].size()==0) continue;
-	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
     }
     PetscFunctionReturn(0);

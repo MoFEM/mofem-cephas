@@ -363,9 +363,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode Lhs() {
+    ublas::matrix<ublas::matrix<FieldData> > K;
+    PetscErrorCode Stiffness() {
       PetscFunctionBegin;
-      ublas::matrix<FieldData> K[row_mat][col_mat];
+      K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = 0;cc<col_mat;cc++) {
@@ -376,17 +377,25 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    double w = V*G_TET_W45[gg];
 	    ublas::matrix<FieldData> BTD = prod( trans(row_Mat), w*D );
 	    if(gg == 0) {
-	      K[rr][cc] = prod(BTD , col_Mat ); // int BT*D*B
+	      K(rr,cc) = prod(BTD , col_Mat ); // int BT*D*B
 	    } else {
-	      K[rr][cc] += prod(BTD , col_Mat ); // int BT*D*B
+	      K(rr,cc) += prod(BTD , col_Mat ); // int BT*D*B
 	    }
 	  }
 	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode Lhs() {
+      PetscFunctionBegin;
+      ierr = Stiffness(); CHKERRQ(ierr);
+      for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = 0;cc<col_mat;cc++) {
 	  if(ColGlob[cc].size()==0) continue;
-	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
       }
       PetscFunctionReturn(0);
