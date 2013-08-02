@@ -552,7 +552,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
     EntityType type = get_ent_type();
     int bit_number = get_bit_number();
     assert(MoFEMEntity_id<=UINT_MAX);
-    assert(bit_number<32);
+    assert(bit_number<=32);
     unsigned int ent_id = (unsigned int)MoFEMEntity_id;
     UId _uid_ = 
       ((UId)ent_id)|
@@ -603,8 +603,8 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
   static UId get_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
-    if(_dof_>128) THROW_AT_LINE("_dof>128");
-    UId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_unique_id())<<7);
+    if(_dof_>=256) THROW_AT_LINE("_dof>=256");
+    UId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_unique_id())<<8);
     return _uid_;
   }
   //

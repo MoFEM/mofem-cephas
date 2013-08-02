@@ -651,20 +651,30 @@ PetscErrorCode moabField_Core::dofs_L2H1HcurlHdiv(const BitFieldId id,int verb) 
     for(;oo<=e_miit->get_max_order();oo++) {
       for(int dd = 0;dd<e_miit->get_order_nb_dofs_diff(oo);dd++) {
 	for(int rr = 0;rr<e_miit->get_max_rank();rr++,DD++) {
-	  DofMoFEMEntity mdof(&*(e_miit),oo,rr,DD);
 	  pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
-	  d_miit = dofs_moabfield.insert(mdof);
-	  if(d_miit.second) {
-	    bool success = dofs_moabfield.modify(d_miit.first,DofMoFEMEntity_active_change(true));
-	    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-	  } 
-	  //check ent
-	  assert(d_miit.first->get_ent()==e_miit->get_ent());
-	  assert(d_miit.first->get_ent_type()==e_miit->get_ent_type());
-	  assert(d_miit.first->get_id()==e_miit->get_id());
-	  //check dof
-	  assert(d_miit.first->get_dof_order()==oo);
-	  assert(d_miit.first->get_max_order()==e_miit->get_max_order());
+	  try {
+	    DofMoFEMEntity mdof(&*(e_miit),oo,rr,DD);
+	    d_miit = dofs_moabfield.insert(mdof);
+	    if(d_miit.second) {
+	      bool success = dofs_moabfield.modify(d_miit.first,DofMoFEMEntity_active_change(true));
+	      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+	    } 
+	    //check ent
+	    assert(d_miit.first->get_ent()==e_miit->get_ent());
+	    assert(d_miit.first->get_ent_type()==e_miit->get_ent_type());
+	    assert(d_miit.first->get_id()==e_miit->get_id());
+	    //check dof
+	    if(d_miit.first->get_dof_order()!=oo) {
+	      ostringstream ss;
+	      ss << "data inconsistency!" << endl;
+	      ss << "shuld be " << mdof << endl;
+	      ss << "but is " << *d_miit.first << endl;
+	      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	    }
+	    assert(d_miit.first->get_max_order()==e_miit->get_max_order());
+	  } catch (const char* msg) {
+	    SETERRQ(PETSC_COMM_SELF,1,msg);
+	  }
 	}
       }
     }
@@ -1331,9 +1341,9 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
     int ii = 0;
     UId uid = -1;
     for(;ii<size_row;ii++) {
-      if( uid == (uids_row[ii] >> 7 )) continue;
+      if( uid == (uids_row[ii] >> 8 )) continue;
       uid = uids_row[ii];
-      uid = uid >> 7; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
+      uid = uid >> 8; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
       ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_row[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_row[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
@@ -1347,9 +1357,9 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
     int size_col = fit->tag_col_uids_size/sizeof(UId);
     const UId *uids_col = (UId*)fit->tag_col_uids_data;
     for(ii = 0,uid = -1;ii<size_col;ii++) {
-      if( uid == (uids_col[ii] >> 7 )) continue;
+      if( uid == (uids_col[ii] >> 8 )) continue;
       uid = uids_col[ii];
-      uid = uid >> 7; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
+      uid = uid >> 8; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_col[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_col[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
@@ -1363,9 +1373,9 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
     int size_data = fit->tag_data_uids_size/sizeof(UId);
     const UId *uids_data = (UId*)fit->tag_data_uids_data;
     for(ii = 0,uid = -1;ii<size_data;ii++) {
-      if( uid == (uids_data[ii] >> 7 )) continue;
+      if( uid == (uids_data[ii] >> 8 )) continue;
       uid = uids_data[ii];
-      uid = uid >> 7; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
+      uid = uid >> 8; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_data[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_data[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
@@ -1488,13 +1498,17 @@ PetscErrorCode moabField_Core::partition_problems(const string &name,int verb) {
   //find p_miit
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
   problems_by_name::iterator p_miit = problems_set.find(name);
-  if(verb>1) {
+  if(verb>0) {
     PetscPrintf(PETSC_COMM_WORLD,"Partition problem %s\n",p_miit->get_name().c_str());
   }
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
   Mat Adj;
-  partition_create_Mat<Idx_mi_tag>(name,&Adj,NULL,true,verb);
+  ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,NULL,true,verb); CHKERRQ(ierr);
   //PetscBarrier(PETSC_NULL);
+  PetscInt m,n;
+  ierr = MatGetSize(Adj,&m,&n); CHKERRQ(ierr);
+  if(m!=p_miit->get_nb_dofs_row()) SETERRQ(PETSC_COMM_SELF,1,"row number inconsistency");
+  if(n!=p_miit->get_nb_dofs_col()) SETERRQ(PETSC_COMM_SELF,1,"col number inconsistency");
   if(verb>1) {
     MatView(Adj,PETSC_VIEWER_STDOUT_WORLD);
   }
@@ -1560,9 +1574,9 @@ PetscErrorCode moabField_Core::partition_problems(const string &name,int verb) {
   if(verbose>0) {
     ostringstream ss;
     ss << "partition_problems: rank = " << pcomm->rank() << " FEs row ghost dofs "<< *p_miit 
-      << " Nb. local dof " << p_miit->get_nb_local_dofs_row() << endl;
-    ss << "partition_problems: rank = " << pcomm->rank() << " FEs col ghost dofs "<< *p_miit 
-      << " Nb. local dof " << p_miit->get_nb_local_dofs_col() << endl;
+      << " Nb. local dof " << p_miit->get_nb_local_dofs_row() << " nb global row dofs " << p_miit->get_nb_dofs_row() << endl;
+    ss << "partition_problems: rank = " << pcomm->rank() << " FEs col ghost dofs " << *p_miit 
+      << " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     PetscSynchronizedFlush(PETSC_COMM_WORLD); 
   }

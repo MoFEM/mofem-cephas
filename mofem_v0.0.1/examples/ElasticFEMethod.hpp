@@ -421,14 +421,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     PetscErrorCode Fint() {
       PetscFunctionBegin;
-
       //Gradient at Gauss points; 
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
       ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
-
-      //ublas::vector<FieldData> DispData[row_mat];
-      //ierr = GetDataVector("DISPLACEMENT",DispData[0]); CHKERRQ(ierr);
-
       unsigned int g_dim = g_NTET.size()/4;
       assert(GradU_at_GaussPt.size() == g_dim);
       NOT_USED(g_dim);
@@ -452,10 +447,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    ublas::vector<FieldData> f_int = prod( trans(B), VoightStress );
 	    if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    if(RowGlob[rr].size()==0) continue;
-	    //ublas::vector< FieldData > VoightStrain2;
-	    //VoightStrain2 = prod( B, DispData[rr] );
-	    //cerr << VoightStrain << " " << VoightStrain2 << " " << VoightStrain - VoightStrain2 << endl;
-	    //cerr << gg << " " << f_int << endl;
 	    ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	  }
       }
