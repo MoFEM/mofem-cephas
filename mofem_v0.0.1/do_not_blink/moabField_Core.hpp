@@ -146,7 +146,6 @@ struct moabField_Core: public moabField {
   PetscErrorCode add_problem(const string& name);
   PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFE_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
-  PetscErrorCode problem_partition(const BitProblemId id);
   BitProblemId get_BitProblemId(const string& name) const;
   PetscErrorCode list_problem() const;
 

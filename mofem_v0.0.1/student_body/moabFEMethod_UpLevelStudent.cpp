@@ -36,6 +36,7 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
     fe_ent_ptr = fe_ptr->fe_ptr;
     ierr = InitDataStructures(); CHKERRQ(ierr);
     ierr = GlobIndices(); CHKERRQ(ierr);
+    ierr = LocalIndices(); CHKERRQ(ierr);
     ierr = DataOp(); CHKERRQ(ierr);
     ierr = ShapeFunctions_TET(_gNTET_); CHKERRQ(ierr);
     ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
@@ -111,16 +112,16 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentEnd() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_UpLevelStudent::GetRowIndices(const string &field_name,vector<DofIdx> &RowGlobDofs) {
+PetscErrorCode FEMethod_UpLevelStudent::GetRowGlobalIndices(const string &field_name,vector<DofIdx> &RowGlobDofs) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
-  GlobIndices_Type::iterator miit = row_nodesGlobIndices.find(fiit->get_MoFEMField_ptr());
+  Indices_Type::iterator miit = row_nodesGlobIndices.find(fiit->get_MoFEMField_ptr());
   if(miit == row_nodesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   RowGlobDofs = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_UpLevelStudent::GetRowIndices(const string &field_name,EntityType type,vector<DofIdx> &RowGlobDofs,int side_number) {
+PetscErrorCode FEMethod_UpLevelStudent::GetRowGlobalIndices(const string &field_name,EntityType type,vector<DofIdx> &RowGlobDofs,int side_number) {
   PetscFunctionBegin;
   switch(type) {
     case MBEDGE:
@@ -130,12 +131,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowIndices(const string &field_name,E
       if(eiit == row_multiIndex->get<Composite_mi_tag>().end()) PetscFunctionReturn(0); //SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       switch(type) {
 	case MBEDGE: {
-	  GlobIndices_EntType::iterator miit = row_edgesGlobIndices.find(eiit->get_MoFEMEntity_ptr());
+	  Indices_EntType::iterator miit = row_edgesGlobIndices.find(eiit->get_MoFEMEntity_ptr());
 	  if(miit == row_edgesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
 	  RowGlobDofs = miit->second;
 	} break;
 	case MBTRI: {
-	  GlobIndices_EntType::iterator miit = row_facesGlobIndices.find(eiit->get_MoFEMEntity_ptr());
+	  Indices_EntType::iterator miit = row_facesGlobIndices.find(eiit->get_MoFEMEntity_ptr());
 	  if(miit == row_facesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
 	  RowGlobDofs = miit->second;
 	} break;
@@ -148,7 +149,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowIndices(const string &field_name,E
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
       eiit = row_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
       if(eiit == row_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
-      GlobIndices_EntType::iterator miit = row_elemGlobIndices.find(eiit->get_MoFEMEntity_ptr());
+      Indices_EntType::iterator miit = row_elemGlobIndices.find(eiit->get_MoFEMEntity_ptr());
       if(miit == row_elemGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       RowGlobDofs = miit->second;
     } break;
@@ -157,16 +158,16 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowIndices(const string &field_name,E
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_UpLevelStudent::GetColIndices(const string &field_name,vector<DofIdx> &ColGlobDofs) {
+PetscErrorCode FEMethod_UpLevelStudent::GetColGlobalIndices(const string &field_name,vector<DofIdx> &ColGlobDofs) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
-  GlobIndices_Type::iterator miit = col_nodesGlobIndices.find(fiit->get_MoFEMField_ptr());
+  Indices_Type::iterator miit = col_nodesGlobIndices.find(fiit->get_MoFEMField_ptr());
   if(miit == col_nodesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE!\n(see this element can be not on this part)");
   ColGlobDofs = miit->second;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_UpLevelStudent::GetColIndices(const string &field_name,EntityType type,vector<DofIdx> &ColGlobDofs,int side_number) {
+PetscErrorCode FEMethod_UpLevelStudent::GetColGlobalIndices(const string &field_name,EntityType type,vector<DofIdx> &ColGlobDofs,int side_number) {
   PetscFunctionBegin;
   switch(type) {
     case MBEDGE:
@@ -176,12 +177,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColIndices(const string &field_name,E
       if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       switch(type) {
 	case MBEDGE: {
-	  GlobIndices_EntType::iterator miit = col_edgesGlobIndices.find(eiit->get_MoFEMEntity_ptr());
+	  Indices_EntType::iterator miit = col_edgesGlobIndices.find(eiit->get_MoFEMEntity_ptr());
 	  if(miit == col_edgesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
 	  ColGlobDofs = miit->second;
 	} break;
 	case MBTRI: {
-	  GlobIndices_EntType::iterator miit = col_facesGlobIndices.find(eiit->get_MoFEMEntity_ptr());
+	  Indices_EntType::iterator miit = col_facesGlobIndices.find(eiit->get_MoFEMEntity_ptr());
 	  if(miit == col_facesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
 	  ColGlobDofs = miit->second;
 	} break;
@@ -194,9 +195,55 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColIndices(const string &field_name,E
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
       eiit = col_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
       if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
-      GlobIndices_EntType::iterator miit = col_elemGlobIndices.find(eiit->get_MoFEMEntity_ptr());
+      Indices_EntType::iterator miit = col_elemGlobIndices.find(eiit->get_MoFEMEntity_ptr());
       if(miit == col_elemGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       ColGlobDofs = miit->second;
+    } break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_UpLevelStudent::GetColLocalIndices(const string &field_name,vector<DofIdx> &ColLocalDofs) {
+  PetscFunctionBegin;
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
+  if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
+  Indices_Type::iterator miit = col_nodesLocalIndices.find(fiit->get_MoFEMField_ptr());
+  if(miit == col_nodesLocalIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE!\n(see this element can be not on this part)");
+  ColLocalDofs = miit->second;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_UpLevelStudent::GetColLocalIndices(const string &field_name,EntityType type,vector<DofIdx> &ColLocalDofs,int side_number) {
+  PetscFunctionBegin;
+  switch(type) {
+    case MBEDGE:
+    case MBTRI: {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      switch(type) {
+	case MBEDGE: {
+	  Indices_EntType::iterator miit = col_edgesLocalIndices.find(eiit->get_MoFEMEntity_ptr());
+	  if(miit == col_edgesLocalIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
+	  ColLocalDofs = miit->second;
+	} break;
+	case MBTRI: {
+	  Indices_EntType::iterator miit = col_facesLocalIndices.find(eiit->get_MoFEMEntity_ptr());
+	  if(miit == col_facesLocalIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
+	  ColLocalDofs = miit->second;
+	} break;
+	default:
+	SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+      }
+    } break;
+    case MBTET:
+    case MBPRISM: {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
+      if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      Indices_EntType::iterator miit = col_elemLocalIndices.find(eiit->get_MoFEMEntity_ptr());
+      if(miit == col_elemLocalIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
+      ColLocalDofs = miit->second;
     } break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"no implemented");

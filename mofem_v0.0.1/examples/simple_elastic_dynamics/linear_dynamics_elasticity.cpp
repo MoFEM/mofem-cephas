@@ -27,6 +27,8 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
+#include "moabTs.hpp"
+
 using namespace MoFEM;
 
 ErrorCode rval;
@@ -84,6 +86,8 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("VELOCITIES",H1,3); CHKERRQ(ierr);
+
 
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -92,6 +96,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","VELOCITIES"); CHKERRQ(ierr);
+
 
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -113,10 +119,15 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",5); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",5); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",5); CHKERRQ(ierr);
+  const int order = 5;
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"VELOCITIES",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"VELOCITIES",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"VELOCITIES",1); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -156,10 +167,11 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
 
   struct MyElasticFEMethod: public ElasticFEMethod {
+    double rho;
     MyElasticFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,
-      double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
+      double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2): 
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
-      _SideSet1,_SideSet2) {};
+      _SideSet1,_SideSet2),rho(_rho) {};
 
     /// Set Neumann Boundary Conditions on SideSet2
     PetscErrorCode NeumannBC() {
@@ -171,6 +183,55 @@ int main(int argc, char *argv[]) {
       traction[2] = 0; //Z
       //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
       ierr = ElasticFEMethod::NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode MassLhs() {
+      PetscFunctionBegin;
+      ublas::matrix<FieldData> K[row_mat][col_mat];
+      int g_dim = g_NTET.size()/4;
+      for(int rr = 0;rr<row_mat;rr++) {
+	for(int cc = 0;cc<col_mat;cc++) {
+	  for(int gg = 0;gg<g_dim;gg++) {
+	    ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
+	    ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
+	    ///K matrices
+	    double w = rho*V*G_TET_W45[gg];
+	    if(gg == 0) {
+	      K[rr][cc] = w*prod( trans(row_Mat), col_Mat );
+	    } else {
+	      K[rr][cc] += w*prod( trans(row_Mat), col_Mat );
+	    }
+	  }
+	}
+	for(int cc = 0;cc<col_mat;cc++) {
+	  if(ColGlob[cc].size()==0) continue;
+	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode MassRhs() {
+      PetscFunctionBegin;
+      //ublas::vector<FieldData> f[row_mat];
+      int g_dim = g_NTET.size()/4;
+      for(int rr = 0;rr<row_mat;rr++) {
+	for(int gg = 0;gg<g_dim;gg++) {
+	  //ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
+	  //ublas::matrix<FieldData> &col_Mat = (colNMatrices[rr])[gg];
+	  //if(gg == 0) f[rr] = ublas::zero_vector<FieldData>(row_Mat.size2());
+	  //double w = rho*V*G_TET_W45[gg];
+	  //ublas::vector<FieldData> velocities(col_Mat.size2());
+
+
+	}
+	//if(RowGlob[rr].size()!=f[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	//if(RowGlob[rr].size()==0) continue;
+	//ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
+      }
       PetscFunctionReturn(0);
     }
 
@@ -201,10 +262,22 @@ int main(int argc, char *argv[]) {
 
   };
 
+  //TE
+  moabTsCtx TsCtx(mField,"ELASTIC_MECHANICS");
+
+  TS ts;
+  ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
+  ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
+
+  double ftime = 1;
+  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
+  ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
+
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
-  MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  const double rho = 1;
+  MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
@@ -213,18 +286,8 @@ int main(int argc, char *argv[]) {
   //std::string wait;
   //std::cin >> wait;
 
-  //Solver
-  KSP solver;
-  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-  ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-  ierr = KSPSetUp(solver); CHKERRQ(ierr);
-
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
-  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -252,8 +315,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-
+  ierr = TSDestroy(&ts);CHKERRQ(ierr);
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

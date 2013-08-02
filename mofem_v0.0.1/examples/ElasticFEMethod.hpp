@@ -45,6 +45,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       rowDiffNMatrices.resize(1+6+4+1);
       rowBMatrices.resize(1+6+4+1);
       ColGlob.resize(1+6+4+1);
+      ColLocal.resize(1+6+4+1);
       colNMatrices.resize(1+6+4+1);
       colDiffNMatrices.resize(1+6+4+1);
       colBMatrices.resize(1+6+4+1);
@@ -84,6 +85,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     vector<vector<ublas::matrix<FieldData> > > rowDiffNMatrices;
     vector<vector<ublas::matrix<FieldData> > > rowBMatrices;
     vector<vector<DofIdx> > ColGlob;
+    vector<vector<DofIdx> > ColLocal;
     vector<vector<ublas::matrix<FieldData> > > colNMatrices;
     vector<vector<ublas::matrix<FieldData> > > colDiffNMatrices;
     vector<vector<ublas::matrix<FieldData> > > colBMatrices;
@@ -283,13 +285,13 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionBegin;
       //indicies ROWS
       row_mat = 0;
-      ierr = GetRowIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
       ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
       ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
       ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
       row_mat++;
       for(int ee = 0;ee<6;ee++) { //edges matrices
-	ierr = GetRowIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
 	  ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBEDGE,rowDiffNMatrices[row_mat],ee); CHKERRQ(ierr);
@@ -299,7 +301,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	}
       }
       for(int ff = 0;ff<4;ff++) { //faces matrices
-	ierr = GetRowIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],ff); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],ff); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],ff); CHKERRQ(ierr);
 	  ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBTRI,rowDiffNMatrices[row_mat],ff); CHKERRQ(ierr);
@@ -307,7 +309,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  row_mat++;
 	}
       }
-      ierr = GetRowIndices("DISPLACEMENT",MBTET,RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices("DISPLACEMENT",MBTET,RowGlob[row_mat]); CHKERRQ(ierr);
       if(RowGlob[row_mat].size() != 0) { //volume matrices
 	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTET,rowNMatrices[row_mat]); CHKERRQ(ierr);
 	ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBTET,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
@@ -317,13 +319,15 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       //indicies COLS
       col_mat = 0;
-      ierr = GetColIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColLocalIndices("DISPLACEMENT",ColLocal[col_mat]); CHKERRQ(ierr);
       ierr = GetGaussColNMatrix("DISPLACEMENT",colNMatrices[col_mat]); CHKERRQ(ierr);
       ierr = GetGaussColDiffNMatrix("DISPLACEMENT",colDiffNMatrices[col_mat]); CHKERRQ(ierr);
       ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
       col_mat++;
       for(int ee = 0;ee<6;ee++) { //edges matrices
-	ierr = GetColIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
+	ierr = GetColLocalIndices("DISPLACEMENT",MBEDGE,ColLocal[col_mat],ee); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
 	  ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBEDGE,colDiffNMatrices[col_mat],ee); CHKERRQ(ierr);
@@ -332,7 +336,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	}
       }
       for(int ff = 0;ff<4;ff++) { //faces matrices
-	ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],ff); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],ff); CHKERRQ(ierr);
+	ierr = GetColLocalIndices("DISPLACEMENT",MBTRI,ColLocal[col_mat],ff); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],ff); CHKERRQ(ierr);
 	  ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBTRI,colDiffNMatrices[col_mat],ff); CHKERRQ(ierr);
@@ -340,7 +345,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  col_mat++;
 	}
       }
-      ierr = GetColIndices("DISPLACEMENT",MBTET,ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices("DISPLACEMENT",MBTET,ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColLocalIndices("DISPLACEMENT",MBTET,ColLocal[col_mat]); CHKERRQ(ierr);
       if(ColGlob[col_mat].size() != 0) { //volume matrices
 	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTET,colNMatrices[col_mat]); CHKERRQ(ierr);
 	ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBTET,colDiffNMatrices[col_mat]); CHKERRQ(ierr);

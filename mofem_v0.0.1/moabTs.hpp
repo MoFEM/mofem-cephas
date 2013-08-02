@@ -41,83 +41,79 @@ struct moabTsCtx {
 
   typedef pair<string,moabField::FEMethod*> loop_pair_type;
   typedef vector<loop_pair_type > loops_to_do_type;
-  loops_to_do_type loops_to_do_Mat;
-  loops_to_do_type loops_to_do_Rhs;
+  loops_to_do_type loops_to_do_IJacobian;
+  loops_to_do_type loops_to_do_IFunction;
 
-  PetscLogEvent USER_EVENT_TsRhs;
-  PetscLogEvent USER_EVENT_TsMat;
+  PetscLogEvent USER_EVENT_moabTsIFunction;
+  PetscLogEvent USER_EVENT_moabTsIJacobian;
 
   moabTsCtx(moabField &_mField,const string &_problem_name): 
     mField(_mField),moab(_mField.get_moab()),problem_name(_problem_name) {
-    PetscLogEventRegister("LoopTsRhs",0,&USER_EVENT_TsRhs);
-    PetscLogEventRegister("LoopTsMat",0,&USER_EVENT_TsMat);
+    PetscLogEventRegister("LoopTsISet",0,&USER_EVENT_moabTsIFunction);
+    PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_moabTsIJacobian);
   }
 
   const moabField& get_mField() const { return mField; }
   const Interface& get_moab() const { return moab; }
-  loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
-  loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
+  loops_to_do_type& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
+  loops_to_do_type& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }
 
-  friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,ctx);
-  friend PetscErrorCode f_TSSetIJacobian((TS ts,PetscReal t,Vec U,Vec U_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx);
-  friend PetscErrorCode f_TSSetRHSJacobian(TS ts,PetscReal t,Vec u,Mat *A,Mat *B,MatStructure *flag,void *ctx);
+  friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
+  friend PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec U_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx);
 
 };
 
-/*PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
+PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  moabSnesCtx* snes_ctx = (moabSnesCtx*)ctx;
-  PetscLogEventBegin(snes_ctx->USER_EVENT_TsRhs,0,0,0,0);
-  ierr = VecGhostUpdateBegin(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = snes_ctx->mField.set_local_VecCreateGhost(snes_ctx->problem_name,Row,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  //ierr = snes_ctx->mField.set_global_VecCreateGhost(snes_ctx->problem_name,Row,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecZeroEntries(f); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  moabSnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Rhs.begin();
-  for(;lit!=snes_ctx->loops_to_do_Rhs.end();lit++) {
-    ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESSetFunction);
-    ierr = lit->second->set_snes(snes); CHKERRQ(ierr);
-    ierr = lit->second->set_x(x); CHKERRQ(ierr);
-    ierr = lit->second->set_f(f); CHKERRQ(ierr);
-    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Rhs: %s\n",lit->first.c_str());
-    //PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
-    ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESNone);
+  moabTsCtx* ts_ctx = (moabTsCtx*)ctx;
+  PetscLogEventBegin(ts_ctx->USER_EVENT_moabTsIFunction,0,0,0,0);
+  ierr = VecZeroEntries(F); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  moabTsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_IFunction.begin();
+  for(;lit!=ts_ctx->loops_to_do_IFunction.end();lit++) {
+    lit->second->ts_u = u;
+    lit->second->ts_u_t = u_t;
+    lit->second->ts_F = F;
+    lit->second->ts_t = t;
+    ierr = lit->second->set_ts_ctx(moabField::TSMethod::ctx_TSSetIFunction);
+    ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = lit->second->set_ts_ctx(moabField::TSMethod::ctx_TSNone);
   }
-  ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
-  PetscLogEventEnd(snes_ctx->USER_EVENT_TsRhs,0,0,0,0);
+  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+  PetscLogEventEnd(ts_ctx->USER_EVENT_moabTsIFunction,0,0,0,0);
   PetscFunctionReturn(0);
 }
-PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ctx) {
+PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  moabSnesCtx* snes_ctx = (moabSnesCtx*)ctx;
-  PetscLogEventBegin(snes_ctx->USER_EVENT_TsMat,0,0,0,0);
+  moabTsCtx* ts_ctx = (moabTsCtx*)ctx;
+  PetscLogEventBegin(ts_ctx->USER_EVENT_moabTsIFunction,0,0,0,0);
+  moabTsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_IJacobian.begin();
   ierr = MatZeroEntries(*B); CHKERRQ(ierr);
-  moabSnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Mat.begin();
-  for(;lit!=snes_ctx->loops_to_do_Mat.end();lit++) {
-    ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESSetJacobian);
-    ierr = lit->second->set_snes(snes); CHKERRQ(ierr);
-    ierr = lit->second->set_x(x); CHKERRQ(ierr);
-    ierr = lit->second->set_A(A); CHKERRQ(ierr);
-    ierr = lit->second->set_B(B); CHKERRQ(ierr);
-    ierr = lit->second->set_flag(flag); CHKERRQ(ierr);
-    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Mat: %s\n",lit->first.c_str());
-    //PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
-    ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESNone);
+  for(;lit!=ts_ctx->loops_to_do_IJacobian.end();lit++) {
+    lit->second->ts_u = u;
+    lit->second->ts_u_t = u_t;
+    lit->second->ts_A = A;
+    lit->second->ts_B = B;
+    lit->second->ts_flag = flag;
+    lit->second->ts_t = t;
+    lit->second->ts_a = a;
+    ierr = lit->second->set_ts_ctx(moabField::TSMethod::ctx_TSSetIJacobian);
+    ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = lit->second->set_ts_ctx(moabField::TSMethod::ctx_TSNone);
   }
   ierr = MatAssemblyBegin(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  PetscLogEventEnd(snes_ctx->USER_EVENT_TsMat,0,0,0,0);
+  PetscLogEventEnd(ts_ctx->USER_EVENT_moabTsIFunction,0,0,0,0);
   PetscFunctionReturn(0);
-}*/
+}
 
 }
 
