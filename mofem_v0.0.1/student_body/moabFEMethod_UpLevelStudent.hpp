@@ -96,6 +96,7 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * \param vector on return stores global indices
    */
   PetscErrorCode GetRowGlobalIndices(const string &field_name,vector<DofIdx> &RowGlobDofs);
+  PetscErrorCode GetRowLocalIndices(const string &field_name,vector<DofIdx> &RowLocalDofs);
 
   /**
    * \brief Copy gloabl indices for dofs adjacent to entities
@@ -106,6 +107,7 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * \param side_number  do need to be specified for MBTET or MBPRISM
    */
   PetscErrorCode GetRowGlobalIndices(const string &field_name,EntityType type,vector<DofIdx> &RowGlobDofs,int side_number = -1);
+  PetscErrorCode GetRowLocalIndices(const string &field_name,EntityType type,vector<DofIdx> &RowLocalDofs,int side_number = -1);
 
   /**
    * \brief Copy gloabl indices for dofs adjacent to nodes

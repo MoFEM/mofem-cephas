@@ -186,9 +186,35 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
+    vector<ublas::vector<FieldData> > velocities;
+    PetscErrorCode GetVelocities_Form_TS_u_t() {
+      PetscFunctionBegin;
+      Vec u_t_local;
+      ierr = VecGhostGetLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
+      int local_size;
+      ierr = VecGetLocalSize(u_t_local,&local_size); CHKERRQ(ierr);
+      double *array;
+      ierr = VecGetArray(u_t_local,&array); CHKERRQ(ierr);
+      velocities.resize(row_mat);
+      for(int rr = 0;rr<row_mat;rr++) {
+	velocities[rr].resize(RowLocal[rr].size());
+	vector<DofIdx>::iterator it = RowLocal[rr].begin();
+	int ii = 0;
+	for(;it!=RowLocal[rr].end();it++,ii++) {
+	  if(*it < 0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(*it >= local_size) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  (velocities[rr])[ii] = array[*it];
+	}
+      }
+      ierr = VecRestoreArray(u_t_local,&array); CHKERRQ(ierr);
+      ierr = VecGhostRestoreLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+    ublas::matrix<ublas::matrix<FieldData> > Mass;
     PetscErrorCode MassLhs() {
       PetscFunctionBegin;
-      ublas::matrix<FieldData> K[row_mat][col_mat];
+      Mass.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = 0;cc<col_mat;cc++) {
@@ -198,39 +224,12 @@ int main(int argc, char *argv[]) {
 	    ///K matrices
 	    double w = rho*V*G_TET_W45[gg];
 	    if(gg == 0) {
-	      K[rr][cc] = w*prod( trans(row_Mat), col_Mat );
+	      Mass(rr,cc) = w*prod( trans(row_Mat), col_Mat );
 	    } else {
-	      K[rr][cc] += w*prod( trans(row_Mat), col_Mat );
+	      Mass(rr,cc) += w*prod( trans(row_Mat), col_Mat );
 	    }
 	  }
 	}
-	for(int cc = 0;cc<col_mat;cc++) {
-	  if(ColGlob[cc].size()==0) continue;
-	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
-	}
-      }
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode MassRhs() {
-      PetscFunctionBegin;
-      //ublas::vector<FieldData> f[row_mat];
-      int g_dim = g_NTET.size()/4;
-      for(int rr = 0;rr<row_mat;rr++) {
-	for(int gg = 0;gg<g_dim;gg++) {
-	  //ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
-	  //ublas::matrix<FieldData> &col_Mat = (colNMatrices[rr])[gg];
-	  //if(gg == 0) f[rr] = ublas::zero_vector<FieldData>(row_Mat.size2());
-	  //double w = rho*V*G_TET_W45[gg];
-	  //ublas::vector<FieldData> velocities(col_Mat.size2());
-
-
-	}
-	//if(RowGlob[rr].size()!=f[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	//if(RowGlob[rr].size()==0) continue;
-	//ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
       }
       PetscFunctionReturn(0);
     }
