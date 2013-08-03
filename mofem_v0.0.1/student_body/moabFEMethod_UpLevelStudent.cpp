@@ -117,7 +117,13 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowGlobalIndices(const string &field_
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
   Indices_Type::iterator miit = row_nodesGlobIndices.find(fiit->get_MoFEMField_ptr());
-  if(miit == row_nodesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  if(miit == row_nodesGlobIndices.end()) {
+    ostringstream sss;
+    sss << "no such field in FE!" << endl;
+    sss << "(top tip) check  of fe_name " << fe_name << " if is have field_name " << field_name << endl;
+    sss << "see if this element can be not on this part" << endl;
+    SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+  }
   RowGlobDofs = miit->second;
   PetscFunctionReturn(0);
 }
@@ -209,7 +215,13 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColGlobalIndices(const string &field_
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
   Indices_Type::iterator miit = col_nodesGlobIndices.find(fiit->get_MoFEMField_ptr());
-  if(miit == col_nodesGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE!\n(see this element can be not on this part)");
+  if(miit == col_nodesGlobIndices.end()) {
+    ostringstream sss;
+    sss << "no such field in FE!" << endl;
+    sss << "(top tip) check column of fe_name " << fe_name << " if is have field_name " << field_name << endl;
+    sss << "see if this element can be not on this part" << endl;
+    SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+  }
   ColGlobDofs = miit->second;
   PetscFunctionReturn(0);
 }

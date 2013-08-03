@@ -115,8 +115,10 @@ int main(int argc, char *argv[]) {
   //COPUPLING
   ierr = mField.modify_finite_element_add_field_row("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("COPUPLING_VV","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("COPUPLING_VU","VELOCITIES"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("COPUPLING_VU","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("COPUPLING_VU","DISPLACEMENT"); CHKERRQ(ierr);
 
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -126,6 +128,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","MASS"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","COPUPLING_VV"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","COPUPLING_VU"); CHKERRQ(ierr);
+
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
 
@@ -145,7 +148,7 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  const int order = 5;
+  const int order = 1;
   ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
@@ -328,7 +331,7 @@ int main(int argc, char *argv[]) {
     ublas::vector<ublas::matrix<FieldData> > VU;
     PetscErrorCode VULhs() {
       PetscFunctionBegin;
-      Mass.resize(row_mat);
+      VU.resize(row_mat);
       int g_dim = g_NTET.size()/4;
       for(int cc = 0;cc<col_mat;cc++) {
 	for(int gg = 0;gg<g_dim;gg++) {
@@ -355,7 +358,7 @@ int main(int argc, char *argv[]) {
       g_NTRI.resize(3*13);
       ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
 
-      if(fe_ent_ptr->get_name()=="STIFFNESS") {
+      if(fe_name=="STIFFNESS") {
 	// See FEAP - - A Finite Element Analysis Program
 	D_lambda = ublas::zero_matrix<FieldData>(6,6);
 	for(int rr = 0;rr<3;rr++) {
@@ -386,13 +389,13 @@ int main(int argc, char *argv[]) {
 	
 	PetscFunctionReturn(0);
       }
-      if(fe_ent_ptr->get_name()=="MASS") {
+      if(fe_name=="MASS") {
 	PetscFunctionReturn(0);
       }
-      if(fe_ent_ptr->get_name()=="COPUPLING_VV") {
+      if(fe_name=="COPUPLING_VV") {
 	PetscFunctionReturn(0);
       }
-      if(fe_ent_ptr->get_name()=="COPUPLING_VU") {
+      if(fe_name=="COPUPLING_VU") {
 	PetscFunctionReturn(0);
       }
 
@@ -403,16 +406,16 @@ int main(int argc, char *argv[]) {
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
 
-      if(fe_ent_ptr->get_name()=="STIFFNESS") {
+      if(fe_name=="STIFFNESS") {
 	PetscFunctionReturn(0);
       }
-      if(fe_ent_ptr->get_name()=="MASS") {
+      if(fe_name=="MASS") {
 	PetscFunctionReturn(0);
       }
-      if(fe_ent_ptr->get_name()=="COPUPLING_VV") {
+      if(fe_name=="COPUPLING_VV") {
 	PetscFunctionReturn(0);
       }
-      if(fe_ent_ptr->get_name()=="COPUPLING_VU") {
+      if(fe_name=="COPUPLING_VU") {
 
 	switch (ts_ctx) {
 	  case ctx_TSSetIFunction:
@@ -444,7 +447,10 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      if(fe_ent_ptr->get_name()=="STIFFNESS") {
+      //If index is set to -1 ingonre its assembly
+      VecSetOption(ts_F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+
+      if(fe_name=="STIFFNESS") {
 	ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 	ierr = GetMatrices(); CHKERRQ(ierr);
 	//ierr = GetMatricesVelocities(); CHKERRQ(ierr);
@@ -479,9 +485,9 @@ int main(int argc, char *argv[]) {
 	ierr = OpStudentEnd(); CHKERRQ(ierr);
 	PetscFunctionReturn(0);
       }
-      if(fe_ent_ptr->get_name()=="MASS") {
+      if(fe_name=="MASS") {
 	ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-	ierr = GetMatrices(); CHKERRQ(ierr);
+	ierr = GetMatricesRows(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
 	ierr = MassLhs(); CHKERRQ(ierr);
@@ -492,7 +498,7 @@ int main(int argc, char *argv[]) {
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    for(int rr = 0;rr<row_mat;rr++) {
 	      ublas::vector<FieldData> Mu_t = prod(Mass[rr],dot_velocities);
-	      if(RowGlob.size()!=Mu_t.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      if(RowGlob[rr].size()!=Mu_t.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      if(RowGlob[rr].size()==0) continue;
 	      ierr = VecSetValues(ts_F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(Mu_t.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	    }
@@ -512,7 +518,7 @@ int main(int argc, char *argv[]) {
 	ierr = OpStudentEnd(); CHKERRQ(ierr);
 	PetscFunctionReturn(0);
       }
-      if(fe_ent_ptr->get_name()=="COPUPLING_VV") {
+      if(fe_name=="COPUPLING_VV") {
 	ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = VVLhs(); CHKERRQ(ierr);
@@ -534,9 +540,9 @@ int main(int argc, char *argv[]) {
 	ierr = OpStudentEnd(); CHKERRQ(ierr);
 	PetscFunctionReturn(0);
       }
-      if(fe_ent_ptr->get_name()=="COPUPLING_VU") {
+      if(fe_name=="COPUPLING_VU") {
 	ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-	ierr = GetMatrices(); CHKERRQ(ierr);
+	ierr = GetMatricesCols(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
 	ierr = VULhs(); CHKERRQ(ierr);
@@ -545,6 +551,7 @@ int main(int argc, char *argv[]) {
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    int cc = 0;
 	    for(;cc<col_mat;cc++) {
+	      if(VU[cc].size2()!=velocities[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      ublas::vector<FieldData> VUu_t = prod(VU[cc],velocities[cc]);
 	      if(VelRowGlob.size()!=VUu_t.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      ierr = VecSetValues(ts_F,VelRowGlob.size(),&VelRowGlob[0],&(VUu_t.data()[0]),ADD_VALUES); CHKERRQ(ierr);
@@ -575,6 +582,22 @@ int main(int argc, char *argv[]) {
   //TS
   moabTsCtx TsCtx(mField,"ELASTIC_MECHANICS");
 
+  const double YoungModulus = 1;
+  const double PoissonRatio = 0.25;
+  const double rho = 1;
+  DynamicElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2);
+
+  moabTsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
+  loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
+  loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("MASS",&MyFE));
+  loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
+  loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
+  moabTsCtx::loops_to_do_type& loops_to_do_Mat = TsCtx.get_loops_to_do_IFunction();
+  loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
+  loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("MASS",&MyFE));
+  loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
+  loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
+
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
@@ -586,8 +609,19 @@ int main(int argc, char *argv[]) {
   ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
   ierr = TSSetInitialTimeStep(ts,0.0,.001); CHKERRQ(ierr);
   ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
-
   ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
+
+  ierr = TSSolve(ts,D,&ftime); CHKERRQ(ierr);
+
+  PetscInt steps,snesfails,rejects,nonlinits,linits;
+  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
+  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
+  ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
+  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
+  ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,
+    "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
+
 
   //detroy matrices
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);

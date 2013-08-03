@@ -3347,6 +3347,7 @@ PetscErrorCode moabField_Core::loop_finite_elements(
     (const_cast<NumeredMoFEMFE_multiIndex&>(p_miit->numered_finite_elements)).get<Composite_mi_tag>();
   FEs_by_composite::iterator miit = numered_finite_elements.lower_bound(boost::make_tuple(fe_name,lower_rank));
   FEs_by_composite::iterator hi_miit = numered_finite_elements.upper_bound(boost::make_tuple(fe_name,upper_rank));
+  method.fe_name = fe_name;
   ierr = method.set_problem(&*p_miit); CHKERRQ(ierr);
   ierr = method.set_moabfields(&moabfields); CHKERRQ(ierr);
   ierr = method.set_ents_multiIndex(&ents_moabfield); CHKERRQ(ierr);

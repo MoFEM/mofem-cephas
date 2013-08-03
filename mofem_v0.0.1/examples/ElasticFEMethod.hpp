@@ -282,8 +282,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       }
       PetscFunctionReturn(0);
     }
-    
-    PetscErrorCode GetMatrices() {
+
+    PetscErrorCode GetMatricesRows() {
       PetscFunctionBegin;
       //indicies ROWS
       row_mat = 0;
@@ -322,7 +322,11 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
 	row_mat++;
       }
+      PetscFunctionReturn(0);
+    }
 
+    PetscErrorCode GetMatricesCols() {
+      PetscFunctionBegin;
       //indicies COLS
       col_mat = 0;
       ierr = GetColGlobalIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
@@ -359,7 +363,14 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
 	col_mat++;
       }
+      PetscFunctionReturn(0);
+    }
+   
 
+    PetscErrorCode GetMatrices() {
+      PetscFunctionBegin;
+      ierr = GetMatricesRows(); CHKERRQ(ierr);
+      ierr = GetMatricesCols(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 

@@ -425,6 +425,7 @@ struct moabField {
     PetscErrorCode set_data_multIndex(const FEDofMoFEMEntity_multiIndex *_data_multiIndex);
     PetscErrorCode set_row_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_row_multiIndex);
     PetscErrorCode set_col_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_col_multiIndex);
+    string fe_name;
     const MoFEMProblem *problem_ptr;
     const NumeredMoFEMFE *fe_ptr;
     const FEDofMoFEMEntity_multiIndex *data_multiIndex;
