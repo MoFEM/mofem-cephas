@@ -1,6 +1,12 @@
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
- * FIXME: DESCRIPTION
+ *
+ * Test for linar elastic dynamics.
+ *
+ * This is not exactly procedure for linear elatic dynamics, since jacobian is
+ * evaluated at every time step and snes procedure is involved. However it is
+ * implemented like that, to test methodology for general nonlinear problem.
+ *
  */
 
 /* This file is part of MoFEM.
@@ -205,14 +211,39 @@ int main(int argc, char *argv[]) {
    *
    */
 
-  struct MyElasticFEMethod: public ElasticFEMethod {
+  struct DynamicElasticFEMethod: public ElasticFEMethod {
+
+
     double rho;
-    MyElasticFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,
+    DynamicElasticFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2): 
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
       _SideSet1,_SideSet2),rho(_rho) {};
 
-    vector<ublas::vector<FieldData> > velocities;
+
+    //This is for L2 space 
+    vector<DofIdx> VelRowGlob;
+    vector<DofIdx> VelRowLocal;
+    vector<DofIdx> VelColGlob;
+    vector<DofIdx> VelColLocal;
+    vector<ublas::matrix<FieldData> > VelRowNMatrix;
+    vector<ublas::matrix<FieldData> > VelColNMatrix;
+ 
+    PetscErrorCode GetMatricesVelocities() {
+      PetscFunctionBegin;
+      //ROWs
+      ierr = GetRowGlobalIndices("VELOCITIES",MBTET,VelRowGlob); CHKERRQ(ierr);
+      ierr = GetRowLocalIndices("VELOCITIES",MBTET,VelRowLocal); CHKERRQ(ierr);
+      ierr = GetGaussRowNMatrix("VELOCITIES",MBTET,VelRowNMatrix); CHKERRQ(ierr);
+      //COLs
+      ierr = GetColGlobalIndices("VELOCITIES",MBTET,VelColGlob); CHKERRQ(ierr);
+      ierr = GetColLocalIndices("VELOCITIES",MBTET,VelColLocal); CHKERRQ(ierr);
+      ierr = GetGaussColNMatrix("VELOCITIES",MBTET,VelColNMatrix); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+
+    ublas::vector<FieldData> velocities;
     PetscErrorCode GetVelocities_Form_TS_u_t() {
       PetscFunctionBegin;
       Vec u_t_local;
@@ -221,42 +252,151 @@ int main(int argc, char *argv[]) {
       ierr = VecGetLocalSize(u_t_local,&local_size); CHKERRQ(ierr);
       double *array;
       ierr = VecGetArray(u_t_local,&array); CHKERRQ(ierr);
-      velocities.resize(row_mat);
-      for(int rr = 0;rr<row_mat;rr++) {
-	velocities[rr].resize(RowLocal[rr].size());
-	vector<DofIdx>::iterator it = RowLocal[rr].begin();
-	int ii = 0;
-	for(;it!=RowLocal[rr].end();it++,ii++) {
+      velocities.resize(VelRowLocal.size());
+      vector<DofIdx>::iterator it = VelRowLocal.begin();
+      int ii = 0;
+      for(;it!=VelRowLocal.end();it++,ii++) {
 	  if(*it < 0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(*it >= local_size) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  (velocities[rr])[ii] = array[*it];
-	}
+	  velocities[ii] = array[*it];
       }
       ierr = VecRestoreArray(u_t_local,&array); CHKERRQ(ierr);
       ierr = VecGhostRestoreLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
-    ublas::matrix<ublas::matrix<FieldData> > Mass;
+    ublas::vector<ublas::matrix<FieldData> > Mass;
     PetscErrorCode MassLhs() {
       PetscFunctionBegin;
-      Mass.resize(row_mat,col_mat);
+      Mass.resize(col_mat);
       int g_dim = g_NTET.size()/4;
-      for(int rr = 0;rr<row_mat;rr++) {
-	for(int cc = 0;cc<col_mat;cc++) {
-	  for(int gg = 0;gg<g_dim;gg++) {
-	    ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
-	    ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
-	    ///K matrices
-	    double w = rho*V*G_TET_W45[gg];
-	    if(gg == 0) {
-	      Mass(rr,cc) = w*prod( trans(row_Mat), col_Mat );
-	    } else {
-	      Mass(rr,cc) += w*prod( trans(row_Mat), col_Mat );
-	    }
+      for(int cc = 0;cc<col_mat;cc++) {
+	for(int gg = 0;gg<g_dim;gg++) {
+	  ublas::matrix<FieldData> &row_Mat = VelRowNMatrix[gg];
+	  ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
+	  double w = rho*V*G_TET_W45[gg];
+	  if(gg == 0) {
+	    Mass[cc] = w*prod( trans(row_Mat), col_Mat );
+	  } else {
+	    Mass[cc] += w*prod( trans(row_Mat), col_Mat );
 	  }
 	}
       }
+      PetscFunctionReturn(0);
+    }
+
+
+    // STIFFNESS - run first
+    // COPUPLING_VU - last
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+
+      g_NTET.resize(4*45);
+      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+      g_NTRI.resize(3*13);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+
+      if(fe_ent_ptr->get_name()=="STIFFNESS") {
+	// See FEAP - - A Finite Element Analysis Program
+	D_lambda = ublas::zero_matrix<FieldData>(6,6);
+	for(int rr = 0;rr<3;rr++) {
+	  ublas::matrix_row<ublas::matrix<FieldData> > row_D_lambda(D_lambda,rr);
+	  for(int cc = 0;cc<3;cc++) {
+	    row_D_lambda[cc] = 1;
+	  }
+	}
+	D_mu = ublas::zero_matrix<FieldData>(6,6);
+	for(int rr = 0;rr<6;rr++) {
+	  D_mu(rr,rr) = rr<3 ? 2 : 1;
+	}
+	D = lambda*D_lambda + mu*D_mu;
+	
+	switch (ts_ctx) {
+	  case ctx_TSSetIFunction:
+	    ierr = VecZeroEntries(ts_F); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateBegin(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateEnd(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    break;
+	  case ctx_TSSetIJacobian:
+	    ierr = MatZeroEntries(*ts_B); CHKERRQ(ierr);
+	    ierr = VecDuplicate(ts_F,&Diagonal); CHKERRQ(ierr);
+	    break;
+	  default:
+	    SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
+	}
+	
+	PetscFunctionReturn(0);
+      }
+      if(fe_ent_ptr->get_name()=="MASS") {
+	PetscFunctionReturn(0);
+      }
+      if(fe_ent_ptr->get_name()=="COPUPLING_VV") {
+	PetscFunctionReturn(0);
+      }
+      if(fe_ent_ptr->get_name()=="COPUPLING_VU") {
+	PetscFunctionReturn(0);
+      }
+
+      SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+
+      if(fe_ent_ptr->get_name()=="STIFFNESS") {
+	PetscFunctionReturn(0);
+      }
+      if(fe_ent_ptr->get_name()=="MASS") {
+	PetscFunctionReturn(0);
+      }
+      if(fe_ent_ptr->get_name()=="COPUPLING_VV") {
+	PetscFunctionReturn(0);
+      }
+      if(fe_ent_ptr->get_name()=="COPUPLING_VU") {
+
+	switch (ts_ctx) {
+	  case ctx_TSSetIFunction:
+	    ierr = VecGhostUpdateBegin(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateEnd(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
+	    ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
+	    break;
+	  case ctx_TSSetIJacobian:
+	    ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
+	    ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
+	    ierr = MatDiagonalSet(*ts_B,Diagonal,ADD_VALUES); CHKERRQ(ierr);
+	    ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
+	    ierr = MatAssemblyBegin(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	    ierr = MatAssemblyEnd(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	    break;
+	  default:
+	    SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
+	}
+
+	PetscFunctionReturn(0);
+      }
+
+      SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
+     PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+
+      if(fe_ent_ptr->get_name()=="STIFFNESS") {
+      }
+      if(fe_ent_ptr->get_name()=="MASS") {
+	PetscFunctionReturn(0);
+      }
+      if(fe_ent_ptr->get_name()=="COPUPLING_VV") {
+	PetscFunctionReturn(0);
+      }
+      if(fe_ent_ptr->get_name()=="COPUPLING_VU") {
+	PetscFunctionReturn(0);
+      }
+
+      SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
       PetscFunctionReturn(0);
     }
 
