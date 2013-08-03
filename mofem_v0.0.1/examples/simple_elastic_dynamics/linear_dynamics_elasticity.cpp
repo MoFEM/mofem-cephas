@@ -91,7 +91,9 @@ int main(int argc, char *argv[]) {
   //FE
   ierr = mField.add_finite_element("STIFFNESS"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("MASS"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("LINK"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("COPUPLING_VV"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("COPUPLING_VU"); CHKERRQ(ierr);
+
 
   //Define rows/cols and element data
   //STIFFNESS
@@ -104,23 +106,20 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_col("MASS","VELOCITIES"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("MASS","DISPLACEMENT"); CHKERRQ(ierr);
 
-  //LINK
-  ierr = mField.modify_finite_element_add_field_row("LINK","VELOCITIES"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("LINK","VELOCITIES"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("LINK","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("LINK","VELOCITIES"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("LINK","DISPLACEMENT"); CHKERRQ(ierr);
+  //COPUPLING
+  ierr = mField.modify_finite_element_add_field_row("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("COPUPLING_VU","VELOCITIES"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("COPUPLING_VU","DISPLACEMENT"); CHKERRQ(ierr);
 
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.add_problem("SUB_PROBLEM"); CHKERRQ(ierr);
 
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","STIFFNESS"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","MASS"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","LINK"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("SUB_PROBLEM","STIFFNESS"); CHKERRQ(ierr);
-
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","COPUPLING_VV"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","COPUPLING_VU"); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
 
@@ -135,7 +134,8 @@ int main(int argc, char *argv[]) {
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"STIFFNESS",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MASS",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"LINK",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COPUPLING_VV",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COPUPLING_VU",MBTET); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
