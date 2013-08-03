@@ -419,7 +419,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode Fint() {
+    PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
       //Gradient at Gauss points; 
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -447,7 +447,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    ublas::vector<FieldData> f_int = prod( trans(B), VoightStress );
 	    if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    if(RowGlob[rr].size()==0) continue;
-	    ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	  }
       }
 

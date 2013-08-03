@@ -144,7 +144,7 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 	case ctx_SNESNone: 
 	case ctx_SNESSetFunction: {
 	  //Assembly  F
-	  ierr = Fint(); CHKERRQ(ierr);
+	  ierr = Fint(F); CHKERRQ(ierr);
 	  //Neumann Boundary Conditions
 	  ierr = NeumannBC(); CHKERRQ(ierr);
 	}
