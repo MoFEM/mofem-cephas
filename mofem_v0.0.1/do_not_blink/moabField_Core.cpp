@@ -320,10 +320,16 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
 	Range::iterator eit = ents.begin();
 	for(;eit!=ents.end();eit++) {
 	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = ref_entities.insert(RefMoFEMEntity(moab,*eit));
-	  MoFEMEntity moabent(moab,&*p.first,&*p_ref_ent.first);
-	  if(moabent.get_order_nb_dofs(moabent.get_max_order())==0) continue; 
-	  pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = ents_moabfield.insert(moabent);
-	  NOT_USED(p_ent);
+	  try {
+	    MoFEMEntity moabent(moab,&*p.first,&*p_ref_ent.first);
+	    if(moabent.get_order_nb_dofs(moabent.get_max_order())==0) continue; 
+	    pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = ents_moabfield.insert(moabent);
+	    NOT_USED(p_ent);
+	  } catch (const std::exception& ex) {
+	    ostringstream ss;
+	    ss << ex.what() << endl;
+	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  }
 	}
       }
     }
@@ -537,6 +543,10 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
     }
   }
@@ -576,6 +586,10 @@ PetscErrorCode moabField_Core::dofs_NoField(const BitFieldId id) {
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
   assert(e_miit.first->get_ent()==miit->meshset);
   ApproximationRank rank = 0;
@@ -632,14 +646,40 @@ PetscErrorCode moabField_Core::dofs_L2H1HcurlHdiv(const BitFieldId id,int verb) 
     RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = ref_entities.get<MoABEnt_mi_tag>().find(*eit);
     if(miit_ref_ent==ref_entities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"database insonistency");
     //pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
-    MoFEMEntity_multiIndex::iterator e_miit = ents_moabfield.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
+    MoFEMEntity_multiIndex::iterator e_miit;
+    try {
+      e_miit = ents_moabfield.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
+    } catch (const char* msg) {
+      SETERRQ(PETSC_COMM_SELF,1,msg);
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss <<  ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
     // create mofem entity linked to ref ent
-    e_miit = ents_moabfield.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
+    try {
+      e_miit = ents_moabfield.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
+    } catch (const char* msg) {
+	SETERRQ(PETSC_COMM_SELF,1,msg);
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
     if(e_miit == ents_moabfield.end()) {
       ApproximationOrder order = -1;
       rval = moab.tag_set_data(miit->th_AppOrder,&*eit,1,&order); CHKERR_PETSC(rval);
-      MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
-      pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit = ents_moabfield.insert(moabent);
+      pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
+      try {
+	MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
+	p_e_miit = ents_moabfield.insert(moabent);
+      } catch (const char* msg) {
+	SETERRQ(PETSC_COMM_SELF,1,msg);
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
       if(!p_e_miit.second) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       bool success = ents_moabfield.modify(p_e_miit.first,MoFEMEntity_change_order(moab,-1));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
@@ -1234,6 +1274,10 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   } } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
   // build data_dofs
   const void* tag_data_uids_data = p.first->tag_data_uids_data;
@@ -1339,7 +1383,7 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
     int size_row = fit->tag_row_uids_size/sizeof(UId);
     const UId *uids_row = (UId*)fit->tag_row_uids_data;
     int ii = 0;
-    UId uid = -1;
+    UId uid = 0;
     for(;ii<size_row;ii++) {
       if( uid == (uids_row[ii] >> 8 )) continue;
       uid = uids_row[ii];
@@ -1356,7 +1400,7 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
     }
     int size_col = fit->tag_col_uids_size/sizeof(UId);
     const UId *uids_col = (UId*)fit->tag_col_uids_data;
-    for(ii = 0,uid = -1;ii<size_col;ii++) {
+    for(ii = 0,uid = 0;ii<size_col;ii++) {
       if( uid == (uids_col[ii] >> 8 )) continue;
       uid = uids_col[ii];
       uid = uid >> 8; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
@@ -1372,7 +1416,7 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
     }
     int size_data = fit->tag_data_uids_size/sizeof(UId);
     const UId *uids_data = (UId*)fit->tag_data_uids_data;
-    for(ii = 0,uid = -1;ii<size_data;ii++) {
+    for(ii = 0,uid = 0;ii<size_data;ii++) {
       if( uid == (uids_data[ii] >> 8 )) continue;
       uid = uids_data[ii];
       uid = uid >> 8; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 7 bits
@@ -2867,8 +2911,15 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
 	      rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERR_PETSC(rval);
 	      //create field moabent
 	      ApproximationOrder order = miit->get_max_order();
-	      MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());
-	      pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit = ents_moabfield.insert(moabent);
+	      pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
+	      try {
+		MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());
+		p_e_miit = ents_moabfield.insert(moabent);
+	      } catch (const std::exception& ex) {
+		ostringstream ss;
+		ss << ex.what() << endl;
+		SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	      }
 	      if(p_e_miit.first->get_max_order()<order) {
 		bool success = ents_moabfield.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
 		if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");

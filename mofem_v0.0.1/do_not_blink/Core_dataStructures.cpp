@@ -685,7 +685,7 @@ static void EntMoFEMFE_dofs_change(
   if(uids_view.empty()) return;
   ErrorCode rval;
   vector<UId> data;
-  data.resize(uids_view.size(),(UId)-1);
+  data.resize(uids_view.size());
   DofMoFEMEntity_multiIndex_uid_view::iterator miit = uids_view.begin();
   vector<UId>::iterator vit = data.begin();
   for(;miit!=uids_view.end();miit++,vit++) *vit = (*miit)->get_unique_id();

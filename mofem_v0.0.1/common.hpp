@@ -162,7 +162,8 @@ typedef PetscInt DofIdx;
 typedef int FEIdx;
 typedef int EntIdx;
 typedef int EntPart;
-typedef uint128_t UId;
+//typedef uint128_t UId;
+typedef checked_uint128_t UId;
 
 typedef bitset<6> BitRefEdges;
 typedef bitset<8/*max number of refinments*/> BitRefLevel;
@@ -548,9 +549,9 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return ref_mab_ent_ptr; }
   UId get_unique_id() const { return uid; }
   UId get_unique_id_calculate() const {
-    int bit_number = get_bit_number();
+    char bit_number = get_bit_number();
     assert(bit_number<=32);
-    UId _uid_ = ((UId)ref_ptr->ent)|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
+    UId _uid_ = (ref_ptr->ent)|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
   const MoFEMEntity* get_MoFEMEntity_ptr() const { return this; };
