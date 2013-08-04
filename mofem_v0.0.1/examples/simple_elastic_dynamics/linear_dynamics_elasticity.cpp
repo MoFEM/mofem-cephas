@@ -152,12 +152,12 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 1;
+  int order = 4;
   ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-  order = 2;
+  order = 4;
   ierr = mField.set_field_order(0,MBTET,"VELOCITIES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"VELOCITIES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",order); CHKERRQ(ierr);
@@ -215,11 +215,12 @@ int main(int argc, char *argv[]) {
 
   struct DynamicElasticFEMethod: public ElasticFEMethod {
 
+    moabField& mField;
     double rho;
-    DynamicElasticFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,
+    DynamicElasticFEMethod(Interface& _moab,moabField& _mField,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2): 
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
-      _SideSet1,_SideSet2),rho(_rho),debug(1) {
+      _SideSet1,_SideSet2),mField(_mField),rho(_rho),debug(1) {
       rval = moab.get_connectivity(SideSet2,SideSet2Nodes,true); CHKERR_THROW(rval);
     };
     const int debug;
@@ -409,13 +410,14 @@ int main(int argc, char *argv[]) {
 	    ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
 	    PetscPrintf(PETSC_COMM_WORLD,
 	      "\tsteps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
-	    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+	    ierr = mField.set_global_VecCreateGhost(problem_ptr->get_name(),Col,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    NumeredDofMoFEMEntity_multiIndex &numered_dofs_cols = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_cols);
 	    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
 	    Range::iterator nit = SideSet2Nodes.begin();
 	    for(;nit!=SideSet2Nodes.end();nit++) {
 	      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
-	      dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
-	      hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+	      dit = numered_dofs_cols.get<MoABEnt_mi_tag>().lower_bound(*nit);
+	      hi_dit = numered_dofs_cols.get<MoABEnt_mi_tag>().upper_bound(*nit);
 	      double _coords_[3];
 	      rval = moab.get_coords(&*nit,1,_coords_);  CHKERR_THROW(rval);
 	      for(;dit!=hi_dit;dit++) {
@@ -544,7 +546,7 @@ int main(int argc, char *argv[]) {
 		if(ColGlob[cc].size()==0) continue;
 		if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		if(debug) {
+		/*if(debug) {
 		  //check is matrix is structurally symmetric
 		  if(rr==cc) {
 		    assert(RowGlob.size()==ColGlob.size()); 
@@ -553,7 +555,7 @@ int main(int argc, char *argv[]) {
 		      assert(RowLocal[dd] == ColLocal[dd]);
 		    }
 		  }
-		}
+		}*/
 		ierr = MatSetValues(*ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	      }
 	    }
@@ -680,7 +682,7 @@ int main(int argc, char *argv[]) {
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;
   const double rho = 1;
-  DynamicElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2);
+  DynamicElasticFEMethod MyFE(moab,mField,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2);
 
   moabTsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
@@ -722,7 +724,7 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(moab);
