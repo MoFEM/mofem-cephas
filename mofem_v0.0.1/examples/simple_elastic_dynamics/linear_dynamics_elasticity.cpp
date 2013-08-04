@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-  order = 0;
+  order = 2;
   ierr = mField.set_field_order(0,MBTET,"VELOCITIES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"VELOCITIES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",order); CHKERRQ(ierr);
@@ -275,15 +275,17 @@ int main(int argc, char *argv[]) {
       dot_velocities.clear();
       displacements.clear();
       velocities.clear();
-      Vec u_local;
-      ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
-      Vec u_t_local;
-      ierr = VecGhostGetLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
+      //Vec u_local;
+      //ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+      //Vec u_t_local;
+      //ierr = VecGhostGetLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
       int local_size;
-      ierr = VecGetLocalSize(u_t_local,&local_size); CHKERRQ(ierr);
+      ierr = VecGetLocalSize(ts_u,&local_size); CHKERRQ(ierr);
+      if(local_size!=problem_ptr->get_nb_local_dofs_col()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      local_size += problem_ptr->get_nb_ghost_dofs_col();
       double *array,*array2;
-      ierr = VecGetArray(u_t_local,&array); CHKERRQ(ierr);
-      ierr = VecGetArray(u_local,&array2); CHKERRQ(ierr);
+      ierr = VecGetArray(ts_u_t,&array); CHKERRQ(ierr);
+      ierr = VecGetArray(ts_u,&array2); CHKERRQ(ierr);
       accelerations.resize(VelColLocal.size());
       dot_velocities.resize(VelColLocal.size());
       int ii = 0;
@@ -308,10 +310,10 @@ int main(int argc, char *argv[]) {
 	  (displacements[cc])[iii] = array2[*iit];
 	}
       }
-      ierr = VecRestoreArray(u_local,&array2); CHKERRQ(ierr);
-      ierr = VecRestoreArray(u_t_local,&array); CHKERRQ(ierr);
-      ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
-      ierr = VecGhostRestoreLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
+      ierr = VecRestoreArray(ts_u,&array2); CHKERRQ(ierr);
+      ierr = VecRestoreArray(ts_u_t,&array); CHKERRQ(ierr);
+      //ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+      //ierr = VecGhostRestoreLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -669,8 +671,8 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec D,F;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&D); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
