@@ -117,10 +117,12 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_row("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("COPUPLING_VV","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
   //VU
   ierr = mField.modify_finite_element_add_field_row("COPUPLING_VU","VELOCITIES"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("COPUPLING_VU","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("COPUPLING_VU","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("COPUPLING_VU","VELOCITIES"); CHKERRQ(ierr);
 
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -456,7 +458,7 @@ int main(int argc, char *argv[]) {
 	    ierr = MatAssemblyEnd(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	    *ts_flag = SAME_NONZERO_PATTERN; 
 	    //Matrix View
-	    MatView(*ts_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+	    //MatView(*ts_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
 	    //std::string wait;
 	    //std::cin >> wait;
 	    } break;
@@ -645,18 +647,6 @@ int main(int argc, char *argv[]) {
   const double rho = 1;
   DynamicElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2);
 
-
-  /*moabTsCtx::loops_to_do_type& loops_to_do_Rhs0 = TsCtx.get_loops_to_do_RHSFunction();
-  loops_to_do_Rhs0.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Rhs0.push_back(moabTsCtx::loop_pair_type("MASS",&MyFE));
-  loops_to_do_Rhs0.push_back(moabTsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
-  loops_to_do_Rhs0.push_back(moabTsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
-  moabTsCtx::loops_to_do_type& loops_to_do_Mat0 = TsCtx.get_loops_to_do_RHSJacobian();
-  loops_to_do_Mat0.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Mat0.push_back(moabTsCtx::loop_pair_type("MASS",&MyFE));
-  loops_to_do_Mat0.push_back(moabTsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
-  loops_to_do_Mat0.push_back(moabTsCtx::loop_pair_type("COPUPLING_VU",&MyFE));*/
-
   moabTsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
   loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("MASS",&MyFE));
@@ -672,8 +662,6 @@ int main(int argc, char *argv[]) {
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  //ierr = TSSetRHSFunction(ts,F0,f_TSSetRHSFunction,&TsCtx); CHKERRQ(ierr);
-  //ierr = TSSetRHSJacobian(ts,Aij0,Aij0,f_TSSetRHSJacobian,&TsCtx); CHKERRQ(ierr);
   ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&TsCtx); CHKERRQ(ierr);
   ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&TsCtx); CHKERRQ(ierr);
 
@@ -706,6 +694,20 @@ int main(int argc, char *argv[]) {
     ierr = mField.problem_get_FE("ELASTIC_MECHANICS","STIFFNESS",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+
+  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  if(pcomm->rank()==0) {
+    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
+  }
+
+  PostProcL2VelocitiesFieldsAndGradientOnRefMesh fe_post_proc_velocities(moab);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","COPUPLING_VV",fe_post_proc_velocities);  CHKERRQ(ierr);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  if(pcomm->rank()==0) {
+    rval = fe_post_proc_velocities.moab_post_proc.write_file("out_post_proc_velocities.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
   //detroy matrices

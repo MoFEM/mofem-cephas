@@ -215,7 +215,6 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public PostProcDisplacementsOnRe
 
 struct PostProcFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh {
 
-
     Tag th_strain;
     PostProcFieldsAndGradientOnRefMesh(Interface& _moab): PostProcDisplacementsOnRefMesh(_moab,"SPATIAL_POSITION") {
       double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0};
@@ -240,7 +239,6 @@ struct PostProcFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh
 
       PetscFunctionReturn(0);
     }
-
 
 };
 
@@ -306,6 +304,57 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
   }
 
 };
+
+struct PostProcL2VelocitiesFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh {
+
+    PostProcL2VelocitiesFieldsAndGradientOnRefMesh(Interface& _moab): PostProcDisplacementsOnRefMesh(_moab,"VELOCITIES") {}
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+
+      Range ref_nodes;
+      rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBVERTEX,ref_nodes); CHKERR_PETSC(rval);
+      if(4*ref_nodes.size()!=g_NTET.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      if(ref_nodes.size()!=coords_at_Gauss_nodes.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      Range::iterator nit = ref_nodes.begin();
+      node_map.clear();
+      for(int nn = 0;nit!=ref_nodes.end();nit++,nn++) {
+	EntityHandle &node = node_map[*nit];
+	rval = moab_post_proc.create_vertex(&(coords_at_Gauss_nodes[nn]).data()[0],node); CHKERR_PETSC(rval);
+      }
+      Range ref_tets;
+      rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBTET,ref_tets); CHKERR_PETSC(rval);
+      Range::iterator tit = ref_tets.begin();
+      for(;tit!=ref_tets.end();tit++) {
+	const EntityHandle *conn_ref;
+        int num_nodes;
+	rval = moab_ref.get_connectivity(*tit,conn_ref,num_nodes,true); CHKERR_PETSC(rval);
+	EntityHandle conn_post_proc[num_nodes];
+	for(int nn = 0;nn<num_nodes;nn++) {
+	  conn_post_proc[nn] = node_map[conn_ref[nn]];
+	}
+	EntityHandle ref_tet;
+	rval = moab_post_proc.create_element(MBTET,conn_post_proc,4,ref_tet); CHKERR_PETSC(rval);
+      }
+
+      //Get displacements at Gauss points
+      Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find(field_name);
+      if(diit==data_at_gauss_pt.end()) SETERRQ1(PETSC_COMM_SELF,1,"no field_name %s !!!",field_name.c_str());
+      vector< ublas::vector<FieldData> > &data = diit->second;
+      vector< ublas::vector<FieldData> >::iterator vit = data.begin();
+      map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+      for(;vit!=data.end();vit++,mit++) {
+	rval = moab_post_proc.tag_set_data(th_disp,&mit->second,1,&vit->data()[0]); CHKERR_PETSC(rval);
+      }
+
+
+      PetscFunctionReturn(0);
+    }
+
+};
+
 
 #endif //__POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 
