@@ -87,7 +87,7 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problem_name,Row,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problem_name,Col,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -141,7 +141,7 @@ PetscErrorCode f_TSSetRHSFunction(TS ts,PetscReal t,Vec u,Vec F,void *ctx) {
   PetscLogEventBegin(ts_ctx->USER_EVENT_moabTsRHSFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problem_name,Row,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problem_name,Col,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -192,7 +192,7 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
   PetscLogEventBegin(ts_ctx->USER_EVENT_moabTsRHSFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problem_name,Row,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problem_name,Col,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   moabTsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_Monitor.begin();
   for(;lit!=ts_ctx->loops_to_do_Monitor.end();lit++) {
     lit->second->ts_u = u;
