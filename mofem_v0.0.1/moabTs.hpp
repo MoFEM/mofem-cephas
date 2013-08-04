@@ -45,11 +45,13 @@ struct moabTsCtx {
   loops_to_do_type loops_to_do_IFunction;
   loops_to_do_type loops_to_do_RHSFunction;
   loops_to_do_type loops_to_do_RHSJacobian;
+  loops_to_do_type loops_to_do_Monitor;
 
   PetscLogEvent USER_EVENT_moabTsRHSFunction;
   PetscLogEvent USER_EVENT_moabTsRHSJacobian;
   PetscLogEvent USER_EVENT_moabTsIFunction;
   PetscLogEvent USER_EVENT_moabTsIJacobian;
+  PetscLogEvent USER_EVENT_moabTsMonitor;
 
   moabTsCtx(moabField &_mField,const string &_problem_name): 
     mField(_mField),moab(_mField.get_moab()),problem_name(_problem_name) {
@@ -57,6 +59,7 @@ struct moabTsCtx {
     PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_moabTsIJacobian);
     PetscLogEventRegister("LoopTsRHSFunction",0,&USER_EVENT_moabTsRHSFunction);
     PetscLogEventRegister("LoopTsRHSJacobian",0,&USER_EVENT_moabTsRHSJacobian);
+    PetscLogEventRegister("LoopTsMonitor",0,&USER_EVENT_moabTsMonitor);
   }
 
   const moabField& get_mField() const { return mField; }
@@ -65,11 +68,13 @@ struct moabTsCtx {
   loops_to_do_type& get_loops_to_do_RHSJacobian() { return loops_to_do_RHSJacobian; }
   loops_to_do_type& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
   loops_to_do_type& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }
+  loops_to_do_type& get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
 
   friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
   friend PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec U_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx);
   friend PetscErrorCode f_TSSetRHSFunction(TS ts,PetscReal t,Vec u,Vec F,void *ctx);
   friend PetscErrorCode f_TSSetRHSJacobian(TS ts,PetscReal t,Vec u,Mat *A,Mat *B,MatStructure *flag,void *ctx);
+  friend PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx);
 
 };
 
@@ -180,7 +185,28 @@ PetscErrorCode f_TSSetRHSJacobian(TS ts,PetscReal t,Vec u,Mat *A,Mat *B,MatStruc
   PetscLogEventEnd(ts_ctx->USER_EVENT_moabTsRHSJacobian,0,0,0,0);
   PetscFunctionReturn(0);
 }
-
+PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  moabTsCtx* ts_ctx = (moabTsCtx*)ctx;
+  PetscLogEventBegin(ts_ctx->USER_EVENT_moabTsRHSFunction,0,0,0,0);
+  ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problem_name,Row,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  moabTsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_Monitor.begin();
+  for(;lit!=ts_ctx->loops_to_do_Monitor.end();lit++) {
+    lit->second->ts_u = u;
+    lit->second->ts_t = t;
+    lit->second->ts_step = step;
+    lit->second->ts_F = PETSC_NULL;
+    ierr = lit->second->set_ts_ctx(moabField::TSMethod::ctx_TSTSMonitorSet);
+    ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = lit->second->set_ts_ctx(moabField::TSMethod::ctx_TSNone);
+  }
+  PetscLogEventEnd(ts_ctx->USER_EVENT_moabTsRHSFunction,0,0,0,0);
+  PetscFunctionReturn(0);
+}
 
 
 }

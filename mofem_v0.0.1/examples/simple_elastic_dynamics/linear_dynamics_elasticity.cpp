@@ -219,8 +219,11 @@ int main(int argc, char *argv[]) {
     DynamicElasticFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2): 
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
-      _SideSet1,_SideSet2),rho(_rho),debug(1) {};
+      _SideSet1,_SideSet2),rho(_rho),debug(1) {
+      rval = moab.get_connectivity(SideSet2,SideSet2Nodes,true); CHKERR_THROW(rval);
+    };
     const int debug;
+    Range SideSet2Nodes;
 
     /// Set Neumann Boundary Conditions on SideSet2
     PetscErrorCode NeumannBC(Vec F_ext) {
@@ -395,6 +398,33 @@ int main(int argc, char *argv[]) {
 	D = lambda*D_lambda + mu*D_mu;
 	
 	switch (ts_ctx) {
+	  case ctx_TSTSMonitorSet: {
+	    PetscReal ftime;
+	    ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+	    PetscInt steps,snesfails,rejects,nonlinits,linits;
+	    ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
+	    ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
+	    ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
+	    ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
+	    ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+	    PetscPrintf(PETSC_COMM_WORLD,
+	      "\tsteps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
+	    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+	    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
+	    Range::iterator nit = SideSet2Nodes.begin();
+	    for(;nit!=SideSet2Nodes.end();nit++) {
+	      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
+	      dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
+	      hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+	      double _coords_[3];
+	      rval = moab.get_coords(&*nit,1,_coords_);  CHKERR_THROW(rval);
+	      for(;dit!=hi_dit;dit++) {
+		PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+		PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f ",_coords_[0],_coords_[1],_coords_[2]);
+		PetscPrintf(PETSC_COMM_WORLD,"-> time %6.4e\n",ftime);
+	      }
+	    }
+	    } break;
 	  case ctx_TSSetRHSFunction:
 	  case ctx_TSSetIFunction:
 	    ierr = VecZeroEntries(ts_F); CHKERRQ(ierr);
@@ -440,6 +470,8 @@ int main(int argc, char *argv[]) {
       }
       if(fe_name=="COPUPLING_VU") {
 	switch (ts_ctx) {
+	  case ctx_TSTSMonitorSet: {
+	    } break;
 	  case ctx_TSSetRHSFunction:
 	  case ctx_TSSetIFunction:
 	    ierr = VecGhostUpdateBegin(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -477,8 +509,10 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
-      //If index is set to -1 ingonre its assembly
-      VecSetOption(ts_F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+      if(ts_F!=PETSC_NULL) {
+	//If index is set to -1 ingonre its assembly
+	VecSetOption(ts_F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+      }
 
       if(fe_name=="STIFFNESS") {
 	ierr = GetMatrices(); CHKERRQ(ierr);
@@ -486,6 +520,8 @@ int main(int argc, char *argv[]) {
 	//Dirihlet Boundary Condition
 	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
 	switch (ts_ctx) {
+	  case ctx_TSTSMonitorSet: {
+	    } break;
 	  case ctx_TSSetRHSFunction: {
 	    } break;
 	  case ctx_TSSetRHSJacobian: {
@@ -629,7 +665,6 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
-
   };
 
   //create matrices
@@ -658,12 +693,17 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
   loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
 
+  //Monitor
+  moabTsCtx::loops_to_do_type& loops_to_do_Monitor = TsCtx.get_loops_to_do_Monitor();
+  loops_to_do_Monitor.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
+
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
   ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&TsCtx); CHKERRQ(ierr);
   ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&TsCtx); CHKERRQ(ierr);
+  ierr = TSMonitorSet(ts,f_TSMonitorSet,&TsCtx,PETSC_NULL); CHKERRQ(ierr);
 
   double ftime = 1;
   ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
@@ -725,4 +765,6 @@ int main(int argc, char *argv[]) {
   PetscFinalize();
 
 }
+
+
 

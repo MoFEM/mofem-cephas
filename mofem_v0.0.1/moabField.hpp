@@ -353,7 +353,7 @@ struct moabField {
     MatStructure *snes_flag;
   };
   struct TSMethod {
-    enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetRHSJacobian, ctx_TSSetIFunction, ctx_TSSetIJacobian, ctx_TSNone };
+    enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetRHSJacobian, ctx_TSSetIFunction, ctx_TSSetIJacobian, ctx_TSTSMonitorSet, ctx_TSNone };
     //
     ts_context ts_ctx;
     TSMethod(): ts_ctx(ctx_TSNone) {};
@@ -366,6 +366,7 @@ struct moabField {
     Mat *ts_A,*ts_B;
     MatStructure *ts_flag;
     //
+    PetscInt ts_step;
     PetscReal ts_a,ts_t;
   };
 

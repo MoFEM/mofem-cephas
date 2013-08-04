@@ -24,6 +24,8 @@ namespace MoFEM {
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
+    Range SideSet1Edges,SideSet1Nodes;
+
     Mat Aij;
     Vec F,Diagonal;
     Range dummy;
@@ -53,7 +55,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       if(F!=PETSC_NULL) {
 	//
-	Range SideSet1Edges,SideSet1Nodes;
 	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
 	rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
 	SideSet1_.insert(SideSet1.begin(),SideSet1.end());
