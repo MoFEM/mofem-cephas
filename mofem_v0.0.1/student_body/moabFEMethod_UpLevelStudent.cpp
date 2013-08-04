@@ -232,7 +232,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColGlobalIndices(const string &field_
     case MBTRI: {
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
       eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) PetscFunctionReturn(0);
       switch(type) {
 	case MBEDGE: {
 	  Indices_EntType::iterator miit = col_edgesGlobIndices.find(eiit->get_MoFEMEntity_ptr());
@@ -252,7 +252,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColGlobalIndices(const string &field_
     case MBPRISM: {
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
       eiit = col_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);
       Indices_EntType::iterator miit = col_elemGlobIndices.find(eiit->get_MoFEMEntity_ptr());
       if(miit == col_elemGlobIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       ColGlobDofs = miit->second;
@@ -278,7 +278,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColLocalIndices(const string &field_n
     case MBTRI: {
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
       eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) PetscFunctionReturn(0);
       switch(type) {
 	case MBEDGE: {
 	  Indices_EntType::iterator miit = col_edgesLocalIndices.find(eiit->get_MoFEMEntity_ptr());
@@ -298,7 +298,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColLocalIndices(const string &field_n
     case MBPRISM: {
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
       eiit = col_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);
       Indices_EntType::iterator miit = col_elemLocalIndices.find(eiit->get_MoFEMEntity_ptr());
       if(miit == col_elemLocalIndices.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       ColLocalDofs = miit->second;

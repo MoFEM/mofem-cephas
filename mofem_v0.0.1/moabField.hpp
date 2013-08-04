@@ -353,7 +353,7 @@ struct moabField {
     MatStructure *snes_flag;
   };
   struct TSMethod {
-    enum ts_context { ctx_TSSetIFunction, ctx_TSSetIJacobian, ctx_TSNone };
+    enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetRHSJacobian, ctx_TSSetIFunction, ctx_TSSetIJacobian, ctx_TSNone };
     //
     ts_context ts_ctx;
     TSMethod(): ts_ctx(ctx_TSNone) {};

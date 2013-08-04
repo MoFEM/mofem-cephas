@@ -270,13 +270,18 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  // all fixed
 	  // if some ranks are selected then we could apply BC in particular direction
 	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	  for(int cc = 0;cc<col_mat;cc++) {
-	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),riit->get_petsc_gloabl_dof_idx());
-	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	  }
 	  for(int rr = 0;rr<row_mat;rr++) {
 	    vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
 	    if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+	  }
+	}
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	for(;ciit!=hi_ciit;ciit++) {
+	  if(ciit->get_name()!="DISPLACEMENT") continue;
+	  for(int cc = 0;cc<col_mat;cc++) {
+	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
+	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
 	  }
 	}
       }
