@@ -295,9 +295,15 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 	Strain_VectorNotation[5] = 2*Strain(2,0);
 	ublas::vector< FieldData > Stress_VectorNotation = prod( D, Strain_VectorNotation );
 	ublas::matrix< FieldData > Stress = ublas::zero_matrix<FieldData>(3,3);
-	Stress(0,0) = Stress_VectorNotation[1];
-	//....
+	Stress(0,0) = Stress_VectorNotation[0];
+	Stress(1,1) = Stress_VectorNotation[1];
+	Stress(2,2) = Stress_VectorNotation[2];
+	Stress(0,1) = Stress_VectorNotation[3];
+	Stress(1,2) = Stress_VectorNotation[4];
+	Stress(2,0) = Stress_VectorNotation[5];
+	
 	rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);
+
       }
 
       PetscFunctionReturn(0);
