@@ -210,9 +210,9 @@ int main(int argc, char *argv[]) {
 
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",5); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",5); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",5); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",1); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   }
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
   ArcLenghtIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
   ArcInterfaceElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3,ArcCtx);
-  ArcInterfaceFEMethod IntMyFE(moab,Aij,F,D,YoungModulus,h,beta,ft,Gf,SideSet1,SideSet2,SideSet3);
+  ArcInterfaceFEMethod IntMyFE(moab,Aij,F,D,YoungModulus,h,beta,ft,Gf,SideSet1,SideSet2,SideSet3,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);

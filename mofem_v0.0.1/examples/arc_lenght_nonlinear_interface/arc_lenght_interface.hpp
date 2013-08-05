@@ -200,9 +200,13 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 };
 
 struct ArcInterfaceFEMethod: public InterfaceFEMethod {
+
+  enum interface_materials_context { ctx_IntLinearSoftening, ctx_InTBILinearSoftening, ctx_IntNone };
+  interface_materials_context int_mat_ctx;
+
   ArcInterfaceFEMethod(
       Interface& _moab,double _YoungModulus): 
-      InterfaceFEMethod(_moab,_YoungModulus) {};
+      InterfaceFEMethod(_moab,_YoungModulus),int_mat_ctx(ctx_IntLinearSoftening) {};
 
   double h,beta,ft,Gf,E0,g0,kappa1;
   enum interface_context { ctx_KappaUpdate = 1,  ctx_InterfaceNone = 2 };
@@ -213,9 +217,9 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   ArcInterfaceFEMethod(
       Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
       double _YoungModulus,double _h,double _beta,double _ft,double _Gf,
-      Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
-      InterfaceFEMethod(_moab,_Aij,_F,_YoungModulus,_SideSet1,_SideSet2,_SideSet3),
-      h(_h),beta(_beta),ft(_ft),Gf(_Gf),ctx_int(ctx_InterfaceNone),D(_D) {
+      Range &_SideSet1,Range &_SideSet2,Range &_SideSet3,interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
+      InterfaceFEMethod(_moab,_Aij,_F,_YoungModulus,_SideSet1,_SideSet2,_SideSet3),int_mat_ctx(_int_mat_ctx),
+      h(_h),beta(_beta),ft(_ft),Gf(_Gf),D(_D) {
     
     E0 = YoungModulus/h;
     g0 = ft/E0;
@@ -322,27 +326,6 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Calc_g(const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& gap_loc_at_GaussPt,double& g_at_GaussPt) {
-    PetscFunctionBegin;
-    double g2 = pow(gap_loc_at_GaussPt[0],2)+beta*(pow(gap_loc_at_GaussPt[1],2)+pow(gap_loc_at_GaussPt[2],2));
-    g_at_GaussPt = sqrt( g2 );
-    PetscFunctionReturn(0);
-  }
-  
-  PetscErrorCode Calc_omega(const double _kappa_,double& _omega_) {
-    PetscFunctionBegin;
-    _omega_ = 0;
-    if(_kappa_>=kappa1) {
-      _omega_ = 1;
-      PetscFunctionReturn(0);
-    } else if(_kappa_>0) {
-      double a = (2.0*Gf*E0+ft*ft)*_kappa_;
-      double b = (ft+E0*_kappa_)*Gf;
-      _omega_ = 0.5*a/b;
-    }
-    PetscFunctionReturn(0);
-  }
-
   PetscErrorCode CalcDglob(const double _omega_) {
     PetscFunctionBegin;
     double E = (1-_omega_)*E0;
@@ -353,17 +336,64 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode Calc_g(const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& gap_loc_at_GaussPt,double& g_at_GaussPt) {
+    PetscFunctionBegin;
+    switch (int_mat_ctx) {
+      case ctx_InTBILinearSoftening:
+      case ctx_IntLinearSoftening: {
+	double g2 = pow(gap_loc_at_GaussPt[0],2)+beta*(pow(gap_loc_at_GaussPt[1],2)+pow(gap_loc_at_GaussPt[2],2));
+	g_at_GaussPt = sqrt( g2 );
+      } break;
+      
+      default:
+	 SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+  
+  PetscErrorCode Calc_omega(const double _kappa_,double& _omega_) {
+    PetscFunctionBegin;
+    switch (int_mat_ctx) {
+      case ctx_IntLinearSoftening: {
+      _omega_ = 0;
+      if(_kappa_>=kappa1) {
+	_omega_ = 1;
+	PetscFunctionReturn(0);
+      } else if(_kappa_>0) {
+	double a = (2.0*Gf*E0+ft*ft)*_kappa_;
+	double b = (ft+E0*_kappa_)*Gf;
+	_omega_ = 0.5*a/b;
+      }
+      } break;
+      case ctx_InTBILinearSoftening: {
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
+      } break;
+      default:
+	 SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode CalcTangetDglob(const double _omega_,const double _g_,const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& _gap_loc_) {
     PetscFunctionBegin;
-    double d_omega_ = 
-      0.5*(2*Gf*E0+ft*ft)/((ft+(_g_-ft/E0)*E0)*Gf) - 0.5*((_g_-ft/E0)*(2*Gf*E0+ft*ft)*E0)/(pow(ft+(_g_-ft/E0)*E0,2)*Gf);
-    double Et = (1-_omega_)*E0 - d_omega_*E0*_g_;
-    ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
-    Dloc(0,0) = Et*_gap_loc_[0]/_g_;
-    Dloc(0,1) = Et*beta*_gap_loc_[1]/_g_;
-    Dloc(0,2) = Et*beta*_gap_loc_[2]/_g_;
-    Dglob = prod( Dloc, R );
-    Dglob = prod( trans(R), Dglob );
+    switch (int_mat_ctx) {
+      case ctx_IntLinearSoftening: {
+      double d_omega_ = 
+	0.5*(2*Gf*E0+ft*ft)/((ft+(_g_-ft/E0)*E0)*Gf) - 0.5*((_g_-ft/E0)*(2*Gf*E0+ft*ft)*E0)/(pow(ft+(_g_-ft/E0)*E0,2)*Gf);
+      double Et = (1-_omega_)*E0 - d_omega_*E0*_g_;
+      ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
+      Dloc(0,0) = Et*_gap_loc_[0]/_g_;
+      Dloc(0,1) = Et*beta*_gap_loc_[1]/_g_;
+      Dloc(0,2) = Et*beta*_gap_loc_[2]/_g_;
+      Dglob = prod( Dloc, R );
+      Dglob = prod( trans(R), Dglob );
+      } break;
+      case ctx_InTBILinearSoftening: {
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
+      } break;
+      default:
+	 SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
     PetscFunctionReturn(0);
   }
 

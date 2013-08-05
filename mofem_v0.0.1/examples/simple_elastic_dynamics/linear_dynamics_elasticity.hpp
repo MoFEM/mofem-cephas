@@ -43,7 +43,7 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-/*
+  /*
    * M*u'' + K*u' - F = 0
    *
    * F( t, [ dot_u, u], [ dot_u', u'] ) = [ 0 -1 ][ dot_u' ] + [ 1 0 ][ dot_u ] + [ 0    ] = [ 0 ]
@@ -81,7 +81,6 @@ PetscErrorCode ierr;
 	VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostU);
 	VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostK);
       }
-
     };
   
     ~DynamicElasticFEMethod() {
@@ -310,6 +309,24 @@ PetscErrorCode ierr;
 		rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
 	      }
 	    }
+	    ierr = Fint(); CHKERRQ(ierr);
+	    Vec u_local;
+	    ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+	    double *array2;
+	    ierr = VecGetArray(u_local,&array2); CHKERRQ(ierr);
+	    double Ep = 0;
+	    for(int rr = 0;rr<row_mat;rr++) {	
+	      ublas::vector<FieldData> displacements;
+	      displacements.resize(RowLocal[rr].size());
+	      vector<DofIdx>::iterator iit = RowLocal[rr].begin();
+	      for(int iii = 0;iit!=RowLocal[rr].end();iit++,iii++) {
+		displacements[iii] = array2[*iit];
+	      }
+	      Ep += 0.5*inner_prod(f_int[rr],displacements);
+	    }
+	    ierr = VecRestoreArray(u_local,&array2); CHKERRQ(ierr);
+	    ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+	    ierr = VecSetValue(GhostU,0,Ep,ADD_VALUES); CHKERRQ(ierr);
 	    } break;
 	  case ctx_TSSetRHSFunction:
 	  case ctx_TSSetIFunction:
