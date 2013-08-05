@@ -210,6 +210,7 @@ int main(int argc, char *argv[]) {
   //Monitor
   moabTsCtx::loops_to_do_type& loops_to_do_Monitor = TsCtx.get_loops_to_do_Monitor();
   loops_to_do_Monitor.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
+  loops_to_do_Monitor.push_back(moabTsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
 
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);

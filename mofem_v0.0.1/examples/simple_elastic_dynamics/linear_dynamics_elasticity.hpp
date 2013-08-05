@@ -334,6 +334,15 @@ PetscErrorCode ierr;
 	PetscFunctionReturn(0);
       }
       if(fe_name=="COPUPLING_VV") {
+	switch (ts_ctx) {
+	  case ctx_TSTSMonitorSet: {
+	    ierr = VecZeroEntries(GhostK); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateBegin(GhostK,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateEnd(GhostK,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	  } break;
+	  default: {
+	  } break;
+	}
 	PetscFunctionReturn(0);
       }
       if(fe_name=="COPUPLING_VU") {
@@ -356,10 +365,6 @@ PetscErrorCode ierr;
 	    ierr = VecAssemblyEnd(GhostU); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateBegin(GhostU,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateEnd(GhostU,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	    double *array;
-	    ierr = VecGetArray(GhostU,&array); CHKERRQ(ierr);
-	    PetscPrintf(PETSC_COMM_WORLD,"Potential Energy time %6.4e Energy =  %6.4e\n",ftime,array[0]);
-	    ierr = VecRestoreArray(GhostU,&array); CHKERRQ(ierr);
 	    } break;
 	  default: {
 	    } break;
@@ -370,6 +375,28 @@ PetscErrorCode ierr;
 	PetscFunctionReturn(0);
       }
       if(fe_name=="COPUPLING_VV") {
+	switch (ts_ctx) {
+	  case ctx_TSTSMonitorSet: {
+	    ierr = VecGhostUpdateBegin(GhostK,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateEnd(GhostK,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = VecAssemblyBegin(GhostK); CHKERRQ(ierr);
+	    ierr = VecAssemblyEnd(GhostK); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateBegin(GhostK,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateEnd(GhostK,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    double *array,*array2;
+	    ierr = VecGetArray(GhostU,&array); CHKERRQ(ierr);
+	    ierr = VecGetArray(GhostK,&array2); CHKERRQ(ierr);
+	    PetscReal ftime;
+	    ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+	    PetscPrintf(PETSC_COMM_WORLD,
+	      "Time  = %6.4e Potential Energy = %6.4e Kinematic Energy = %6.4e Total = %6.4e\n",
+	      ftime,array[0],array2[0],array[0]+array2[0]);
+	    ierr = VecRestoreArray(GhostU,&array); CHKERRQ(ierr);
+	    ierr = VecRestoreArray(GhostK,&array2); CHKERRQ(ierr);
+	    } break;
+	  default: {
+	    } break;
+	}
 	PetscFunctionReturn(0);
       }
       if(fe_name=="COPUPLING_VU") {
@@ -512,6 +539,28 @@ PetscErrorCode ierr;
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = VVLhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
+	  case ctx_TSTSMonitorSet: {
+	    Vec u_local;
+	    ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+	    double *array;
+	    ierr = VecGetArray(u_local,&array); CHKERRQ(ierr);
+	    ublas::vector<FieldData> velocities_row,velocities_col;
+	    velocities_col.resize(VelColLocal.size());
+	    vector<DofIdx>::iterator it = VelColLocal.begin();
+	    for(int ii = 0;it!=VelColLocal.end();it++,ii++) {
+	      velocities_col[ii] = array[*it];
+	    }
+	    velocities_row.resize(VelRowLocal.size());
+	    it = VelRowLocal.begin();
+	    for(int ii = 0;it!=VelRowLocal.end();it++,ii++) {
+	      velocities_row[ii] = array[*it];
+	    }
+	    ierr = VecRestoreArray(u_local,&array); CHKERRQ(ierr);
+	    ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+	    ublas::vector<FieldData> VVvelocities_col = prod(VV,velocities_col);  
+	    double K = 0.5*inner_prod(velocities_row,VVvelocities_col);
+	    ierr = VecSetValue(GhostK,0,K,ADD_VALUES); CHKERRQ(ierr);
+	    } break;
 	  case ctx_TSSetRHSFunction: {
 	    } break;
 	  case ctx_TSSetRHSJacobian: {
