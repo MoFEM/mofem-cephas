@@ -217,7 +217,7 @@ PetscErrorCode ierr;
       for(int gg = 0;gg<g_dim;gg++) {
 	ublas::matrix<FieldData> &row_Mat = VelRowNMatrix[gg];
 	ublas::matrix<FieldData> &col_Mat = VelColNMatrix[gg];
-	double w = V*G_TET_W45[gg];
+	double w = rho*V*G_TET_W45[gg];
 	if(gg == 0) {
 	  VV = w*prod( trans(row_Mat), col_Mat );
 	} else {
@@ -236,7 +236,7 @@ PetscErrorCode ierr;
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = VelRowNMatrix[gg];
 	  ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
-	  double w = V*G_TET_W45[gg];
+	  double w = rho*V*G_TET_W45[gg];
 	  if(gg == 0) {
 	    VU[cc] = -w*prod( trans(row_Mat), col_Mat );
 	  } else {
@@ -309,24 +309,9 @@ PetscErrorCode ierr;
 		rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
 	      }
 	    }
-	    ierr = Fint(); CHKERRQ(ierr);
-	    Vec u_local;
-	    ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
-	    double *array2;
-	    ierr = VecGetArray(u_local,&array2); CHKERRQ(ierr);
-	    double Ep = 0;
-	    for(int rr = 0;rr<row_mat;rr++) {	
-	      ublas::vector<FieldData> displacements;
-	      displacements.resize(RowLocal[rr].size());
-	      vector<DofIdx>::iterator iit = RowLocal[rr].begin();
-	      for(int iii = 0;iit!=RowLocal[rr].end();iit++,iii++) {
-		displacements[iii] = array2[*iit];
-	      }
-	      Ep += 0.5*inner_prod(f_int[rr],displacements);
-	    }
-	    ierr = VecRestoreArray(u_local,&array2); CHKERRQ(ierr);
-	    ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
-	    ierr = VecSetValue(GhostU,0,Ep,ADD_VALUES); CHKERRQ(ierr);
+	    ierr = VecZeroEntries(GhostU); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateBegin(GhostU,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateEnd(GhostU,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    } break;
 	  case ctx_TSSetRHSFunction:
 	  case ctx_TSSetIFunction:
@@ -363,6 +348,22 @@ PetscErrorCode ierr;
       PetscFunctionBegin;
 
       if(fe_name=="STIFFNESS") {
+	switch (ts_ctx) {
+	  case ctx_TSTSMonitorSet: {
+	    ierr = VecGhostUpdateBegin(GhostU,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateEnd(GhostU,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = VecAssemblyBegin(GhostU); CHKERRQ(ierr);
+	    ierr = VecAssemblyEnd(GhostU); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateBegin(GhostU,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    ierr = VecGhostUpdateEnd(GhostU,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    double *array;
+	    ierr = VecGetArray(GhostU,&array); CHKERRQ(ierr);
+	    PetscPrintf(PETSC_COMM_WORLD,"Potential Energy time %6.4e Energy =  %6.4e\n",ftime,array[0]);
+	    ierr = VecRestoreArray(GhostU,&array); CHKERRQ(ierr);
+	    } break;
+	  default: {
+	    } break;
+	}
 	PetscFunctionReturn(0);
       }
       if(fe_name=="MASS") {
@@ -373,8 +374,6 @@ PetscErrorCode ierr;
       }
       if(fe_name=="COPUPLING_VU") {
 	switch (ts_ctx) {
-	  case ctx_TSTSMonitorSet: {
-	    } break;
 	  case ctx_TSSetRHSFunction:
 	  case ctx_TSSetIFunction:
 	    ierr = VecGhostUpdateBegin(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -424,6 +423,24 @@ PetscErrorCode ierr;
 	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSTSMonitorSet: {
+	    ierr = Fint(); CHKERRQ(ierr);
+	    Vec u_local;
+	    ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+	    double *array2;
+	    ierr = VecGetArray(u_local,&array2); CHKERRQ(ierr);
+	    double U = 0;
+	    for(int rr = 0;rr<row_mat;rr++) {	
+	      ublas::vector<FieldData> displacements;
+	      displacements.resize(RowLocal[rr].size());
+	      vector<DofIdx>::iterator iit = RowLocal[rr].begin();
+	      for(int iii = 0;iit!=RowLocal[rr].end();iit++,iii++) {
+		displacements[iii] = array2[*iit];
+	      }
+	      U += 0.5*inner_prod(f_int[rr],displacements);
+	    }
+	    ierr = VecRestoreArray(u_local,&array2); CHKERRQ(ierr);
+	    ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+	    ierr = VecSetValue(GhostU,0,U,ADD_VALUES); CHKERRQ(ierr);
 	    } break;
 	  case ctx_TSSetRHSFunction: {
 	    } break;
@@ -447,16 +464,6 @@ PetscErrorCode ierr;
 		if(ColGlob[cc].size()==0) continue;
 		if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		/*if(debug) {
-		  //check is matrix is structurally symmetric
-		  if(rr==cc) {
-		    assert(RowGlob.size()==ColGlob.size()); 
-		    for(unsigned int dd = 0;dd<RowGlob.size();dd++) {
-		      assert(RowGlob[dd] == ColGlob[dd]);
-		      assert(RowLocal[dd] == ColLocal[dd]);
-		    }
-		  }
-		}*/
 		ierr = MatSetValues(*ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	      }
 	    }
