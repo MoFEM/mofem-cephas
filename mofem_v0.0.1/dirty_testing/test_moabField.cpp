@@ -266,14 +266,14 @@ int main(int argc, char *argv[]) {
       ostringstream ss;
 
       vector<DofIdx> RowGlobDofs;
-      ierr = GetRowIndices("SPATIAL_POSITION",RowGlobDofs); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices("SPATIAL_POSITION",RowGlobDofs); CHKERRQ(ierr);
       vector<DofIdx> ColGlobDofs;
-      ierr = GetColIndices("SPATIAL_POSITION",ColGlobDofs); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices("SPATIAL_POSITION",ColGlobDofs); CHKERRQ(ierr);
 
       vector<vector<DofIdx> > RowGlobEdges;
       RowGlobEdges.resize(6);
       for(int ee = 0;ee<6;ee++) {
-	ierr = GetRowIndices("SPATIAL_POSITION",MBEDGE,RowGlobEdges[ee],ee); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices("SPATIAL_POSITION",MBEDGE,RowGlobEdges[ee],ee); CHKERRQ(ierr);
       }
       
       vector<ublas::matrix<double> > nodeRowNMatrix;

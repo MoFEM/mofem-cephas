@@ -55,6 +55,7 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   ~FEMethod_LowLevelStudent();
 
   PetscErrorCode GlobIndices();
+  PetscErrorCode LocalIndices();
   PetscErrorCode DataOp();
   PetscErrorCode ParentData(const string &fe_name);
 
@@ -68,16 +69,26 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   template <typename T> static DofIdx UnaryFunction_PetscLocalIdx(const T *it) { return it->get_petsc_local_dof_idx(); }
   template <typename T> static DofIdx UnaryFunction_EntDofIdx(const T *it) { return it->get_EntDofIdx(); }
 
-  typedef map<const MoFEMField*,vector<DofIdx> > GlobIndices_Type;
-  typedef map<const MoFEMEntity*,vector<DofIdx> > GlobIndices_EntType;
-  GlobIndices_Type row_nodesGlobIndices;
-  GlobIndices_EntType row_edgesGlobIndices;
-  GlobIndices_EntType row_facesGlobIndices;
-  GlobIndices_EntType row_elemGlobIndices;
-  GlobIndices_Type col_nodesGlobIndices;
-  GlobIndices_EntType col_edgesGlobIndices;
-  GlobIndices_EntType col_facesGlobIndices;
-  GlobIndices_EntType col_elemGlobIndices;
+  typedef map<const MoFEMField*,vector<DofIdx> > Indices_Type;
+  typedef map<const MoFEMEntity*,vector<DofIdx> > Indices_EntType;
+  //Glocabl Indices
+  Indices_Type row_nodesGlobIndices;
+  Indices_EntType row_edgesGlobIndices;
+  Indices_EntType row_facesGlobIndices;
+  Indices_EntType row_elemGlobIndices;
+  Indices_Type col_nodesGlobIndices;
+  Indices_EntType col_edgesGlobIndices;
+  Indices_EntType col_facesGlobIndices;
+  Indices_EntType col_elemGlobIndices;
+  //Local Indices
+  Indices_Type row_nodesLocalIndices;
+  Indices_EntType row_edgesLocalIndices;
+  Indices_EntType row_facesLocalIndices;
+  Indices_EntType row_elemLocalIndices;
+  Indices_Type col_nodesLocalIndices;
+  Indices_EntType col_edgesLocalIndices;
+  Indices_EntType col_facesLocalIndices;
+  Indices_EntType col_elemLocalIndices;
 
   typedef map<const MoFEMField*,ublas::vector<FieldData> > Data_Type;
   typedef map<const MoFEMEntity*,ublas::vector<FieldData> > Data_EntType;
@@ -104,8 +115,8 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   N_Matrix_EntType col_N_Matrix_faces;
   N_Matrix_EntType col_N_Matrix_elem;
   PetscErrorCode GetNMatrix_at_GaussPoint(
-    GlobIndices_Type& nodesGlobIndices, GlobIndices_EntType& edgesGlobIndices,
-    GlobIndices_EntType& facesGlobIndices, GlobIndices_EntType& volumeGlobIndices,
+    Indices_Type& nodesGlobIndices, Indices_EntType& edgesGlobIndices,
+    Indices_EntType& facesGlobIndices, Indices_EntType& volumeGlobIndices,
     N_Matrix_Type& N_Matrix_nodes,
     N_Matrix_EntType& N_Matrix_edges,
     N_Matrix_EntType& N_Matrix_faces,
@@ -132,8 +143,8 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
    * [ ....	....	....	]
    */
   PetscErrorCode GetDiffNMatrix_at_GaussPoint(
-    GlobIndices_Type& nodesGlobIndices, GlobIndices_EntType& edgesGlobIndices,
-    GlobIndices_EntType& facesGlobIndices, GlobIndices_EntType& volumeGlobIndices,
+    Indices_Type& nodesGlobIndices, Indices_EntType& edgesGlobIndices,
+    Indices_EntType& facesGlobIndices, Indices_EntType& volumeGlobIndices,
     N_Matrix_Type& diffNMatrix_nodes,
     N_Matrix_EntType& diffNMatrix_edges,
     N_Matrix_EntType& diffNMatrix_faces,
@@ -190,9 +201,9 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   PetscErrorCode GetNMatrix_at_FaceGaussPoint(
     EntityHandle ent,
     const string& field_name,
-    GlobIndices_Type& nodesGlobIndices, 
-    GlobIndices_EntType& edgesGlobIndices,
-    GlobIndices_EntType& facesGlobIndices,
+    Indices_Type& nodesGlobIndices, 
+    Indices_EntType& edgesGlobIndices,
+    Indices_EntType& facesGlobIndices,
     N_Matrix_Type& N_Matrix_nodes,
     N_Matrix_EntType& N_Matrix_edges,
     N_Matrix_EntType& N_Matrix_faces,

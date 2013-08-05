@@ -112,7 +112,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
     ierr = PetscGetTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
@@ -137,7 +137,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
   PetscErrorCode CalculateFint(Vec f) {
     PetscFunctionBegin;
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
         ierr = GetFint(); CHKERRQ(ierr);
@@ -169,7 +169,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
   PetscErrorCode CalculateTangent(Mat B) {
     PetscFunctionBegin;
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetJacobian:
 	ierr = GetTangent(); CHKERRQ(ierr);
@@ -267,7 +267,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	for(;siit!=hi_siit;siit++) {
@@ -305,7 +305,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetJacobian:
 	for(;siit!=hi_siit;siit++) {
 	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
@@ -377,7 +377,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 
     double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = CalculateFint(snes_f); CHKERRQ(ierr);
 	ierr = CaluclateFext(snes_f,t,NeumannSideSet); CHKERRQ(ierr);
@@ -395,7 +395,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
   }
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

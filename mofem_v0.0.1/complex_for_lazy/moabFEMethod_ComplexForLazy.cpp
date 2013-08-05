@@ -97,8 +97,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       colBMatrices.resize(1+6+4+1);
       try {
       //nodes
-      ierr = GetRowIndices(field_name,RowGlob[0]); CHKERRQ(ierr);
-      ierr = GetColIndices(field_name,ColGlob[0]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices(field_name,RowGlob[0]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices(field_name,ColGlob[0]); CHKERRQ(ierr);
       //row
       ierr = GetGaussRowNMatrix(field_name,rowNMatrices[0]); CHKERRQ(ierr);
       ierr = GetGaussRowDiffNMatrix(field_name,rowDiffNMatrices[0]); CHKERRQ(ierr);
@@ -110,13 +110,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       //edges
       int ee = 0;
       for(;ee<6;ee++) { //edges matrices
-	ierr = GetRowIndices(field_name,MBEDGE,RowGlob[1+ee],ee); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices(field_name,MBEDGE,RowGlob[1+ee],ee); CHKERRQ(ierr);
 	if(RowGlob[1+ee].size()!=0) {
 	  ierr = GetGaussRowNMatrix(field_name,MBEDGE,rowNMatrices[1+ee],ee); CHKERRQ(ierr);
 	  ierr = GetGaussRowDiffNMatrix(field_name,MBEDGE,rowDiffNMatrices[1+ee],ee); CHKERRQ(ierr);
 	  ierr = MakeBMatrix3D(field_name,rowDiffNMatrices[1+ee],rowBMatrices[1+ee]);  CHKERRQ(ierr);
 	}
-	ierr = GetColIndices(field_name,MBEDGE,ColGlob[1+ee],ee); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices(field_name,MBEDGE,ColGlob[1+ee],ee); CHKERRQ(ierr);
 	if(ColGlob[1+ee].size()>0) {
 	  ierr = GetGaussColNMatrix(field_name,MBEDGE,colNMatrices[1+ee],ee); CHKERRQ(ierr);
 	  ierr = GetGaussColDiffNMatrix(field_name,MBEDGE,colDiffNMatrices[1+ee],ee); CHKERRQ(ierr);
@@ -127,13 +127,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       //faces
       int ff = 0;
       for(;ff<4;ff++) { //faces matrices
-	ierr = GetRowIndices(field_name,MBTRI,RowGlob[1+ee+ff],ff); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices(field_name,MBTRI,RowGlob[1+ee+ff],ff); CHKERRQ(ierr);
 	if(RowGlob[1+ee+ff].size()!=0) {
 	  ierr = GetGaussRowNMatrix(field_name,MBTRI,rowNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
 	  ierr = GetGaussRowDiffNMatrix(field_name,MBTRI,rowDiffNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
 	  ierr = MakeBMatrix3D(field_name,rowDiffNMatrices[1+ee+ff],rowBMatrices[1+ee+ff]);  CHKERRQ(ierr);
 	}
-	ierr = GetColIndices(field_name,MBTRI,ColGlob[1+ee+ff],ff); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices(field_name,MBTRI,ColGlob[1+ee+ff],ff); CHKERRQ(ierr);
 	if(ColGlob[1+ee+ff].size()!=0) {
 	  ierr = GetGaussColNMatrix(field_name,MBTRI,colNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
 	  ierr = GetGaussColDiffNMatrix(field_name,MBTRI,colDiffNMatrices[1+ee+ff],ff); CHKERRQ(ierr);
@@ -142,13 +142,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices() {
       }
       assert(ff == 4);
       //volumes
-      ierr = GetRowIndices(field_name,MBTET,RowGlob[1+ee+ff]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices(field_name,MBTET,RowGlob[1+ee+ff]); CHKERRQ(ierr);
       if(RowGlob[1+ee+ff].size()!=0) {
 	ierr = GetGaussRowNMatrix(field_name,MBTET,rowNMatrices[1+ee+ff]); CHKERRQ(ierr);
 	ierr = GetGaussRowDiffNMatrix(field_name,MBTET,rowDiffNMatrices[1+ee+ff]); CHKERRQ(ierr);
 	ierr = MakeBMatrix3D(field_name,rowDiffNMatrices[1+ee+ff],rowBMatrices[1+ee+ff]);  CHKERRQ(ierr);
       }
-      ierr = GetColIndices(field_name,MBTET,ColGlob[1+ee+ff]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices(field_name,MBTET,ColGlob[1+ee+ff]); CHKERRQ(ierr);
       if(ColGlob[1+ee+ff].size()!=0) {
 	ierr = GetGaussColNMatrix(field_name,MBTET,colNMatrices[1+ee+ff]); CHKERRQ(ierr);
 	ierr = GetGaussColDiffNMatrix(field_name,MBTET,colDiffNMatrices[1+ee+ff]); CHKERRQ(ierr);

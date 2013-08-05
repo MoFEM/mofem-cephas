@@ -24,6 +24,8 @@ namespace MoFEM {
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
+    Range SideSet1Edges,SideSet1Nodes;
+
     Mat Aij;
     Vec F,Diagonal;
     Range dummy;
@@ -41,17 +43,18 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
       RowGlob.resize(1+6+4+1);
+      RowLocal.resize(1+6+4+1);
       rowNMatrices.resize(1+6+4+1);
       rowDiffNMatrices.resize(1+6+4+1);
       rowBMatrices.resize(1+6+4+1);
       ColGlob.resize(1+6+4+1);
+      ColLocal.resize(1+6+4+1);
       colNMatrices.resize(1+6+4+1);
       colDiffNMatrices.resize(1+6+4+1);
       colBMatrices.resize(1+6+4+1);
 
       if(F!=PETSC_NULL) {
 	//
-	Range SideSet1Edges,SideSet1Nodes;
 	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
 	rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
 	SideSet1_.insert(SideSet1.begin(),SideSet1.end());
@@ -80,10 +83,12 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     int row_mat,col_mat;
     vector<vector<DofIdx> > RowGlob;
+    vector<vector<DofIdx> > RowLocal;
     vector<vector<ublas::matrix<FieldData> > > rowNMatrices;
     vector<vector<ublas::matrix<FieldData> > > rowDiffNMatrices;
     vector<vector<ublas::matrix<FieldData> > > rowBMatrices;
     vector<vector<DofIdx> > ColGlob;
+    vector<vector<DofIdx> > ColLocal;
     vector<vector<ublas::matrix<FieldData> > > colNMatrices;
     vector<vector<ublas::matrix<FieldData> > > colDiffNMatrices;
     vector<vector<ublas::matrix<FieldData> > > colBMatrices;
@@ -266,30 +271,37 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  // all fixed
 	  // if some ranks are selected then we could apply BC in particular direction
 	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	  for(int cc = 0;cc<col_mat;cc++) {
-	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),riit->get_petsc_gloabl_dof_idx());
-	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	  }
 	  for(int rr = 0;rr<row_mat;rr++) {
 	    vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
 	    if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
 	  }
 	}
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	for(;ciit!=hi_ciit;ciit++) {
+	  if(ciit->get_name()!="DISPLACEMENT") continue;
+	  for(int cc = 0;cc<col_mat;cc++) {
+	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
+	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	  }
+	}
       }
       PetscFunctionReturn(0);
     }
-    
-    PetscErrorCode GetMatrices() {
+
+    PetscErrorCode GetMatricesRows() {
       PetscFunctionBegin;
       //indicies ROWS
       row_mat = 0;
-      ierr = GetRowIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowLocalIndices("DISPLACEMENT",RowLocal[row_mat]); CHKERRQ(ierr);
       ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
       ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
       ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
       row_mat++;
       for(int ee = 0;ee<6;ee++) { //edges matrices
-	ierr = GetRowIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
+	ierr = GetRowLocalIndices("DISPLACEMENT",MBEDGE,RowLocal[row_mat],ee); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
 	  ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBEDGE,rowDiffNMatrices[row_mat],ee); CHKERRQ(ierr);
@@ -299,7 +311,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	}
       }
       for(int ff = 0;ff<4;ff++) { //faces matrices
-	ierr = GetRowIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],ff); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],ff); CHKERRQ(ierr);
+	ierr = GetRowLocalIndices("DISPLACEMENT",MBTRI,RowLocal[row_mat],ff); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],ff); CHKERRQ(ierr);
 	  ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBTRI,rowDiffNMatrices[row_mat],ff); CHKERRQ(ierr);
@@ -307,23 +320,30 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  row_mat++;
 	}
       }
-      ierr = GetRowIndices("DISPLACEMENT",MBTET,RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices("DISPLACEMENT",MBTET,RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowLocalIndices("DISPLACEMENT",MBTET,RowLocal[row_mat]); CHKERRQ(ierr);
       if(RowGlob[row_mat].size() != 0) { //volume matrices
 	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTET,rowNMatrices[row_mat]); CHKERRQ(ierr);
 	ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBTET,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
 	ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
 	row_mat++;
       }
+      PetscFunctionReturn(0);
+    }
 
+    PetscErrorCode GetMatricesCols() {
+      PetscFunctionBegin;
       //indicies COLS
       col_mat = 0;
-      ierr = GetColIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColLocalIndices("DISPLACEMENT",ColLocal[col_mat]); CHKERRQ(ierr);
       ierr = GetGaussColNMatrix("DISPLACEMENT",colNMatrices[col_mat]); CHKERRQ(ierr);
       ierr = GetGaussColDiffNMatrix("DISPLACEMENT",colDiffNMatrices[col_mat]); CHKERRQ(ierr);
       ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
       col_mat++;
       for(int ee = 0;ee<6;ee++) { //edges matrices
-	ierr = GetColIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
+	ierr = GetColLocalIndices("DISPLACEMENT",MBEDGE,ColLocal[col_mat],ee); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
 	  ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBEDGE,colDiffNMatrices[col_mat],ee); CHKERRQ(ierr);
@@ -332,7 +352,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	}
       }
       for(int ff = 0;ff<4;ff++) { //faces matrices
-	ierr = GetColIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],ff); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],ff); CHKERRQ(ierr);
+	ierr = GetColLocalIndices("DISPLACEMENT",MBTRI,ColLocal[col_mat],ff); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],ff); CHKERRQ(ierr);
 	  ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBTRI,colDiffNMatrices[col_mat],ff); CHKERRQ(ierr);
@@ -340,20 +361,29 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  col_mat++;
 	}
       }
-      ierr = GetColIndices("DISPLACEMENT",MBTET,ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices("DISPLACEMENT",MBTET,ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColLocalIndices("DISPLACEMENT",MBTET,ColLocal[col_mat]); CHKERRQ(ierr);
       if(ColGlob[col_mat].size() != 0) { //volume matrices
 	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTET,colNMatrices[col_mat]); CHKERRQ(ierr);
 	ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBTET,colDiffNMatrices[col_mat]); CHKERRQ(ierr);
 	ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
 	col_mat++;
       }
+      PetscFunctionReturn(0);
+    }
+   
 
+    PetscErrorCode GetMatrices() {
+      PetscFunctionBegin;
+      ierr = GetMatricesRows(); CHKERRQ(ierr);
+      ierr = GetMatricesCols(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode Lhs() {
+    ublas::matrix<ublas::matrix<FieldData> > K;
+    PetscErrorCode Stiffness() {
       PetscFunctionBegin;
-      ublas::matrix<FieldData> K[row_mat][col_mat];
+      K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = 0;cc<col_mat;cc++) {
@@ -364,17 +394,25 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    double w = V*G_TET_W45[gg];
 	    ublas::matrix<FieldData> BTD = prod( trans(row_Mat), w*D );
 	    if(gg == 0) {
-	      K[rr][cc] = prod(BTD , col_Mat ); // int BT*D*B
+	      K(rr,cc) = prod(BTD , col_Mat ); // int BT*D*B
 	    } else {
-	      K[rr][cc] += prod(BTD , col_Mat ); // int BT*D*B
+	      K(rr,cc) += prod(BTD , col_Mat ); // int BT*D*B
 	    }
 	  }
 	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode Lhs() {
+      PetscFunctionBegin;
+      ierr = Stiffness(); CHKERRQ(ierr);
+      for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = 0;cc<col_mat;cc++) {
 	  if(ColGlob[cc].size()==0) continue;
-	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
       }
       PetscFunctionReturn(0);
@@ -398,16 +436,11 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode Fint() {
+    PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
-
       //Gradient at Gauss points; 
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
       ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
-
-      //ublas::vector<FieldData> DispData[row_mat];
-      //ierr = GetDataVector("DISPLACEMENT",DispData[0]); CHKERRQ(ierr);
-
       unsigned int g_dim = g_NTET.size()/4;
       assert(GradU_at_GaussPt.size() == g_dim);
       NOT_USED(g_dim);
@@ -431,11 +464,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    ublas::vector<FieldData> f_int = prod( trans(B), VoightStress );
 	    if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    if(RowGlob[rr].size()==0) continue;
-	    //ublas::vector< FieldData > VoightStrain2;
-	    //VoightStrain2 = prod( B, DispData[rr] );
-	    //cerr << VoightStrain << " " << VoightStrain2 << " " << VoightStrain - VoightStrain2 << endl;
-	    //cerr << gg << " " << f_int << endl;
-	    ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	  }
       }
 

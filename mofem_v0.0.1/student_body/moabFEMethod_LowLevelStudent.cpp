@@ -46,6 +46,10 @@ struct UnaryOP_PetscGlobalIdx {
   DofIdx operator()(const T *it) { return FEMethod_LowLevelStudent::UnaryFunction_PetscGlobalIdx(it); }
 };
 template <typename T>
+struct UnaryOP_PetscLocallIdx {
+  DofIdx operator()(const T *it) { return FEMethod_LowLevelStudent::UnaryFunction_PetscLocalIdx(it); }
+};
+template <typename T>
 struct UnaryOP_FieldData {
   FieldData operator()(const T *it) { return FEMethod_LowLevelStudent::UnaryFunction_FieldData(it); }
 };
@@ -186,15 +190,23 @@ PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
   // node
   row_nodesGlobIndices.clear();
   col_nodesGlobIndices.clear();
+  row_nodesLocalIndices.clear();
+  col_nodesLocalIndices.clear();
   // edge
   row_edgesGlobIndices.clear();
   col_edgesGlobIndices.clear();
+  row_edgesLocalIndices.clear();
+  col_edgesLocalIndices.clear();
   // face
   row_facesGlobIndices.clear();
   col_facesGlobIndices.clear();
+  row_facesLocalIndices.clear();
+  col_facesLocalIndices.clear();
   // vol
   row_elemGlobIndices.clear();
   col_elemGlobIndices.clear();
+  row_elemLocalIndices.clear();
+  col_elemLocalIndices.clear();
   // row
   row_N_Matrix_nodes.clear();
   row_N_Matrix_edges.clear();
@@ -291,7 +303,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	  //PetscGlobIndices
 	  ierr = MapDataTET<
 	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
-	    GlobIndices_Type,GlobIndices_EntType,
+	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, row_nodesGlobIndices, row_edgesGlobIndices,
 	      row_facesGlobIndices, row_elemGlobIndices); CHKERRQ(ierr);
@@ -327,7 +339,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	  //PetscGlobIndices
 	  ierr = MapDataTET<
 	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
-	    GlobIndices_Type,GlobIndices_EntType,
+	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, col_nodesGlobIndices, col_edgesGlobIndices,
 	      col_facesGlobIndices, col_elemGlobIndices); CHKERRQ(ierr);
@@ -348,7 +360,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	  }
 	  MapDataPRISM<
 	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
-	    GlobIndices_Type,GlobIndices_EntType,
+	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, row_nodesGlobIndices, row_edgesGlobIndices,
 	      row_facesGlobIndices, row_elemGlobIndices); CHKERRQ(ierr);
@@ -366,7 +378,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	  }
 	  MapDataPRISM<
 	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
-	    GlobIndices_Type,GlobIndices_EntType,
+	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, col_nodesGlobIndices, col_edgesGlobIndices,
 	      col_facesGlobIndices, col_elemGlobIndices); CHKERRQ(ierr);
@@ -378,7 +390,43 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &fe_name) {
+PetscErrorCode FEMethod_LowLevelStudent::LocalIndices() {
+  PetscFunctionBegin;
+  if(fe_ptr==NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  FENumeredDofMoFEMEntity_multiIndex &rows_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*row_multiIndex);
+  FENumeredDofMoFEMEntity_multiIndex &cols_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*col_multiIndex);
+  //EntityHandle ent = fe_ptr->get_ent();
+  switch (fe_ptr->get_ent_type()) {
+    case MBTET: {
+	FENumeredDofMoFEMEntity_multiIndex::iterator miit = rows_dofs.begin();
+	for(;miit!=rows_dofs.end();miit++) {
+	  //PetscGlobIndices
+	  ierr = MapDataTET<
+	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    Indices_Type,Indices_EntType,
+	    UnaryOP_PetscLocallIdx<FENumeredDofMoFEMEntity> >(
+	      miit, row_nodesLocalIndices, row_edgesLocalIndices,
+	      row_facesLocalIndices, row_elemLocalIndices); CHKERRQ(ierr);
+
+	}
+	miit = cols_dofs.begin();
+	for(;miit!=cols_dofs.end();miit++) {
+	  //PetscGlobIndices
+	  ierr = MapDataTET<
+	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    Indices_Type,Indices_EntType,
+	    UnaryOP_PetscLocallIdx<FENumeredDofMoFEMEntity> >(
+	      miit, col_nodesLocalIndices, col_edgesLocalIndices,
+	      col_facesLocalIndices, col_elemLocalIndices); CHKERRQ(ierr);
+	}
+      }
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
   PetscFunctionBegin;
   if(ParentMethod == NULL) {
     ParentMethod = new FEMethod_LowLevelStudent(moab,verbose);
@@ -394,9 +442,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &fe_name) {
     PetscPrintf(PETSC_COMM_WORLD,"Parent ent %u\n",parent);
   }
   EntMoFEMFE_multiIndex::index<Composite_mi_tag>::type::iterator 
-    miit =  finite_elements_data->get<Composite_mi_tag>().lower_bound(boost::make_tuple(parent,fe_name));
+    miit =  finite_elements_data->get<Composite_mi_tag>().lower_bound(boost::make_tuple(parent,_fe_name));
   EntMoFEMFE_multiIndex::index<Composite_mi_tag>::type::iterator 
-    hi_miit = finite_elements_data->get<Composite_mi_tag>().upper_bound(boost::make_tuple(parent,fe_name));
+    hi_miit = finite_elements_data->get<Composite_mi_tag>().upper_bound(boost::make_tuple(parent,_fe_name));
   if(distance(miit,hi_miit) > 1) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
   for(;miit!=hi_miit;miit++) {
     if(verbose>2) {
@@ -1036,8 +1084,8 @@ PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
-    GlobIndices_Type& nodesGlobIndices, GlobIndices_EntType& edgesGlobIndices,
-    GlobIndices_EntType& facesGlobIndices, GlobIndices_EntType& volumeGlobIndices,
+    Indices_Type& nodesGlobIndices, Indices_EntType& edgesGlobIndices,
+    Indices_EntType& facesGlobIndices, Indices_EntType& volumeGlobIndices,
     N_Matrix_Type& N_Matrix_nodes,
     N_Matrix_EntType& N_Matrix_edges,
     N_Matrix_EntType& N_Matrix_faces,
@@ -1057,7 +1105,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
   }
   // nodes
-  GlobIndices_Type::iterator nit = nodesGlobIndices.begin();
+  Indices_Type::iterator nit = nodesGlobIndices.begin();
   for(;nit!=nodesGlobIndices.end();nit++) {
     const MoFEMField* field_ptr = nit->first;
     vector<const double*> shape_by_gauss_pt;
@@ -1081,10 +1129,10 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
     }
   }
   // edges // faces // volumes
-  GlobIndices_EntType* F[] = { &edgesGlobIndices, &facesGlobIndices, &volumeGlobIndices };
+  Indices_EntType* F[] = { &edgesGlobIndices, &facesGlobIndices, &volumeGlobIndices };
   N_Matrix_EntType* FF[] = {  &N_Matrix_edges, &N_Matrix_faces, &N_Matrix_elem };
   for(int ss = 0;ss<3;ss++) {
-    for(GlobIndices_EntType::iterator dit = F[ss]->begin();dit!=F[ss]->end();dit++) {
+    for(Indices_EntType::iterator dit = F[ss]->begin();dit!=F[ss]->end();dit++) {
       const MoFEMEntity* ent_ptr = dit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       vector<const double*> shape_by_gauss_pt;
@@ -1140,8 +1188,8 @@ PetscErrorCode FEMethod_LowLevelStudent::GetColNMatrix_at_GaussPoint() {
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
-    GlobIndices_Type& nodesGlobIndices, GlobIndices_EntType& edgesGlobIndices,
-    GlobIndices_EntType& facesGlobIndices, GlobIndices_EntType& volumeGlobIndices,
+    Indices_Type& nodesGlobIndices, Indices_EntType& edgesGlobIndices,
+    Indices_EntType& facesGlobIndices, Indices_EntType& volumeGlobIndices,
     N_Matrix_Type& diffN_Matrix_nodes,
     N_Matrix_EntType& diffN_Matrix_edges,
     N_Matrix_EntType& diffN_Matrix_faces,
@@ -1157,7 +1205,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
   }
   // nodes
-  GlobIndices_Type::iterator nit = nodesGlobIndices.begin();
+  Indices_Type::iterator nit = nodesGlobIndices.begin();
   for(;nit!=nodesGlobIndices.end();nit++) {
     const MoFEMField* field_ptr = nit->first;
     int rank = field_ptr->get_max_rank();
@@ -1196,10 +1244,10 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
     }
   }
   // edges // faces // volumes
-  GlobIndices_EntType* F[] = { &edgesGlobIndices, &facesGlobIndices, &volumeGlobIndices };
+  Indices_EntType* F[] = { &edgesGlobIndices, &facesGlobIndices, &volumeGlobIndices };
   N_Matrix_EntType* FF[] = {  &diffN_Matrix_edges, &diffN_Matrix_faces, &diffN_Matrix_elem };
   for(int ss = 0;ss<3;ss++) {
-    for(GlobIndices_EntType::iterator dit = F[ss]->begin();dit!=F[ss]->end();dit++) {
+    for(Indices_EntType::iterator dit = F[ss]->begin();dit!=F[ss]->end();dit++) {
       const MoFEMEntity* ent_ptr = dit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       int rank = field_ptr->get_max_rank();
@@ -1369,9 +1417,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
 }
 PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
     EntityHandle ent,const string& field_name,
-    GlobIndices_Type& nodesGlobIndices, 
-    GlobIndices_EntType& edgesGlobIndices,
-    GlobIndices_EntType& facesGlobIndices,
+    Indices_Type& nodesGlobIndices, 
+    Indices_EntType& edgesGlobIndices,
+    Indices_EntType& facesGlobIndices,
     N_Matrix_Type& N_Matrix_nodes,
     N_Matrix_EntType& N_Matrix_edges,
     N_Matrix_EntType& N_Matrix_faces,
@@ -1391,7 +1439,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
   int side_number = side->side_number;
   // nodes
   if((type == MBVERTEX)||(type == MBMAXTYPE)) {
-    GlobIndices_Type::iterator nit = nodesGlobIndices.begin();
+    Indices_Type::iterator nit = nodesGlobIndices.begin();
     for(;nit!=nodesGlobIndices.end();nit++) {
       const MoFEMField* field_ptr = nit->first;
       if(field_ptr->get_name()!=field_name) continue;
@@ -1417,7 +1465,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
   //edges
   if((type == MBEDGE)||(type == MBMAXTYPE)) {
     map<EntityHandle,vector<double> > &H1edgeN_TRI_face = H1edgeN_TRI[ent];
-    for(GlobIndices_EntType::iterator eiit = edgesGlobIndices.begin();eiit!=edgesGlobIndices.end();eiit++) {
+    for(Indices_EntType::iterator eiit = edgesGlobIndices.begin();eiit!=edgesGlobIndices.end();eiit++) {
       const MoFEMEntity* ent_ptr = eiit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       if(field_ptr->get_name()!=field_name) continue;
@@ -1454,7 +1502,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
   //faces
   if((type == MBTRI)||(type == MBMAXTYPE)) {
     vector<double> &H1faceN_TRI_face = H1faceN_TRI[ent];
-    for(GlobIndices_EntType::iterator fiit = facesGlobIndices.begin();fiit!=facesGlobIndices.end();fiit++) {
+    for(Indices_EntType::iterator fiit = facesGlobIndices.begin();fiit!=facesGlobIndices.end();fiit++) {
       const MoFEMEntity* ent_ptr = fiit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       if(field_ptr->get_name()!=field_name) continue;

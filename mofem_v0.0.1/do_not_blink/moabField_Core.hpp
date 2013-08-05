@@ -146,7 +146,6 @@ struct moabField_Core: public moabField {
   PetscErrorCode add_problem(const string& name);
   PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFE_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
-  PetscErrorCode problem_partition(const BitProblemId id);
   BitProblemId get_BitProblemId(const string& name) const;
   PetscErrorCode list_problem() const;
 
@@ -256,9 +255,8 @@ struct moabField_Core: public moabField {
     vector<PetscInt> i,j;
     // loop local rows
     for(;miit_row!=hi_miit_row;miit_row++) {
-      //cerr << "ROW: " << *miit_row << endl;
       i.push_back(j.size());
-      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_unique_id()) ) {
+      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->field_ptr->field_ptr->get_unique_id()) ) {
 	// get field ptr
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->field_ptr->field_ptr);
 	adj_by_ent::iterator adj_miit = adjacencies.get<Composite_mi_tag>().lower_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
@@ -268,12 +266,11 @@ struct moabField_Core: public moabField {
 	  if(!(adj_miit->by_other&by_row)) continue;
 	  if((adj_miit->EntMoFEMFE_ptr->get_id()&p_miit->get_BitFEId()).none()) continue;
 	  if((adj_miit->EntMoFEMFE_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue;
-	  int size  = adj_miit->EntMoFEMFE_ptr->tag_col_uids_size/sizeof(DofMoFEMEntity::UId);
+	  int size  = adj_miit->EntMoFEMFE_ptr->tag_col_uids_size/sizeof(UId);
 	  for(int ii = 0;ii<size;ii++) {
-	    DofMoFEMEntity::UId uid = adj_miit->EntMoFEMFE_ptr->tag_col_uids_data[ii];
-	    NumeredDofMoFEMEntitys_by_unique_id::iterator miiit = dofs_col_by_id.find(boost::make_tuple(uid.uid.meshset,uid.uid.ent,uid.dof));
+	    UId uid = adj_miit->EntMoFEMFE_ptr->tag_col_uids_data[ii];
+	    NumeredDofMoFEMEntitys_by_unique_id::iterator miiit = dofs_col_by_id.find(uid);
 	    if(miiit == p_miit->numered_dofs_cols.get<Unique_mi_tag>().end()) continue;
-	    //cerr << "\tCOL: " << *miiit << endl;
 	    dofs_vec.insert(dofs_vec.end(),Tag::get_index(miiit));
 	  }
 	}

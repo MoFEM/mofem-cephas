@@ -64,7 +64,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     ierr = FEMethod_DriverComplexForLazy::preProcess(); CHKERRQ(ierr);
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
       	ierr = VecZeroEntries(F_lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -102,7 +102,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	}
     }
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	  ierr = CalculateFint(snes_f); CHKERRQ(ierr);
 	  double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
@@ -127,7 +127,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
   
 	FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
@@ -152,7 +152,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = VecGhostUpdateBegin(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -206,7 +206,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
   double b_dot_x;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = VecDot(snes_x,b,&b_dot_x); CHKERRQ(ierr);
 	PetscInt iter;
@@ -234,7 +234,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     //only one LAMBDA
     if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: {
 	double res_lambda,lambda;
 	PetscScalar *array;
@@ -261,7 +261,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = VecAssemblyBegin(GhostLambda); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(GhostLambda); CHKERRQ(ierr);

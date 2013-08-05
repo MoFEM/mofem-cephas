@@ -341,28 +341,38 @@ struct moabField {
   struct SnesMethod {
     enum snes_context { ctx_SNESSetFunction, ctx_SNESSetJacobian, ctx_SNESNone };
     //
-    snes_context ctx;
-    SnesMethod(): ctx(ctx_SNESNone) {};
+    snes_context snes_ctx;
+    SnesMethod(): snes_ctx(ctx_SNESNone) {};
     //
-    PetscErrorCode set_ctx(const snes_context ctx_);
+    PetscErrorCode set_snes_ctx(const snes_context ctx_);
     //
     SNES snes;
     PetscErrorCode set_snes(SNES _snes);
-    //
     Vec snes_x,snes_f;
-    PetscErrorCode set_x(Vec _x);
-    PetscErrorCode set_f(Vec _f);
-    //
     Mat *snes_A,*snes_B;
     MatStructure *snes_flag;
-    PetscErrorCode set_A(Mat *_A);
-    PetscErrorCode set_B(Mat *_B);
-    PetscErrorCode set_flag(MatStructure *_flag); 
+  };
+  struct TSMethod {
+    enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetRHSJacobian, ctx_TSSetIFunction, ctx_TSSetIJacobian, ctx_TSTSMonitorSet, ctx_TSNone };
+    //
+    ts_context ts_ctx;
+    TSMethod(): ts_ctx(ctx_TSNone) {};
+    //
+    PetscErrorCode set_ts_ctx(const ts_context ctx_);
+    //
+    TS ts;
+    PetscErrorCode set_ts(TS _ts);
+    Vec ts_u,ts_u_t,ts_F;
+    Mat *ts_A,*ts_B;
+    MatStructure *ts_flag;
+    //
+    PetscInt ts_step;
+    PetscReal ts_a,ts_t;
   };
 
-  struct BasicMethod: public SnesMethod {
+  struct BasicMethod: public SnesMethod,TSMethod {
     BasicMethod();    
-
+    //
     PetscErrorCode set_moabfields(const MoFEMField_multiIndex *_moabfields);
     PetscErrorCode set_ents_multiIndex(const MoFEMEntity_multiIndex *_ents_moabfield);
     PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
@@ -410,12 +420,13 @@ struct moabField {
      * f.e. total internal energy, ect.
      */
     PetscErrorCode postProcess();
-
+    //
     PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_fe(const NumeredMoFEMFE *_fe_ptr); 
     PetscErrorCode set_data_multIndex(const FEDofMoFEMEntity_multiIndex *_data_multiIndex);
     PetscErrorCode set_row_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_row_multiIndex);
     PetscErrorCode set_col_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_col_multiIndex);
+    string fe_name;
     const MoFEMProblem *problem_ptr;
     const NumeredMoFEMFE *fe_ptr;
     const FEDofMoFEMEntity_multiIndex *data_multiIndex;

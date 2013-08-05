@@ -416,17 +416,14 @@ PetscErrorCode get_MoFEMFE_dof_uid_view(
   PetscFunctionBegin;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type dofs_by_uid;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type::value_type value_type;
-  const dofs_by_uid& dofs = dofs_moabfield.get<Unique_mi_tag>();
-  const DofMoFEMEntity::UId *uids = (DofMoFEMEntity::UId*)tag_data;
-  int size = tag_size/sizeof(DofMoFEMEntity::UId);
+  const dofs_by_uid &dofs = dofs_moabfield.get<Unique_mi_tag>();
+  const UId *uids = (UId*)tag_data;
+  int size = tag_size/sizeof(UId);
   vector<const value_type*> vec;
   int ii = 0;
   for(;ii<size;ii++) {
-    DofMoFEMEntity::UId uid = uids[ii];
-    DofIdx dof_idx = uid.dof; 
-    EntityHandle ent = uid.uid.ent;
-    EntityHandle meshset = uid.uid.meshset;
-    typename dofs_by_uid::iterator miit = dofs.find(boost::make_tuple(meshset,ent,dof_idx));
+    UId uid = uids[ii];
+    typename dofs_by_uid::iterator miit = dofs.find(uid);
     if(miit==dofs.end()) continue;
     vec.push_back(&*miit);
   }
