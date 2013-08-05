@@ -65,12 +65,12 @@ PetscErrorCode ierr;
   struct DynamicElasticFEMethod: public ElasticFEMethod {
 
     moabField& mField;
-    PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method;
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method;
     double rho;
     DynamicElasticFEMethod(Interface& _moab,moabField& _mField,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2): 
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
-      _SideSet1,_SideSet2),mField(_mField),fe_post_proc_method(moab),rho(_rho),debug(1) {
+      _SideSet1,_SideSet2),mField(_mField),fe_post_proc_method(moab,_lambda,_mu),rho(_rho),debug(1) {
       rval = moab.get_connectivity(SideSet2,SideSet2Nodes,true); CHKERR_THROW(rval);
 
       PetscInt ghosts[1] = { 0 };
