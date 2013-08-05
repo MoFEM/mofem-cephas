@@ -72,9 +72,26 @@ PetscErrorCode ierr;
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
       _SideSet1,_SideSet2),mField(_mField),fe_post_proc_method(moab),rho(_rho),debug(1) {
       rval = moab.get_connectivity(SideSet2,SideSet2Nodes,true); CHKERR_THROW(rval);
+
+      PetscInt ghosts[1] = { 0 };
+      if(pcomm->rank() == 0) {
+	VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostU);
+	VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostK);
+      } else {
+	VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostU);
+	VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostK);
+      }
+
     };
+  
+    ~DynamicElasticFEMethod() {
+      //VecDestroy(&GhostU);
+      //VecDestroy(&GhostK);
+    }
+
     const int debug;
     Range SideSet2Nodes;
+    Vec GhostU,GhostK;
 
     /// Set Neumann Boundary Conditions on SideSet2
     PetscErrorCode NeumannBC(Vec F_ext) {
