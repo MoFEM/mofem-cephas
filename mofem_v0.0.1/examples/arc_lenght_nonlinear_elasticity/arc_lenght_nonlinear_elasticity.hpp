@@ -109,7 +109,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     ierr = FEMethod_DriverComplexForLazy::preProcess(); CHKERRQ(ierr);
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	//F_lambda
@@ -155,7 +155,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
     double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	  ierr = CalculateFint(snes_f); CHKERRQ(ierr);
@@ -177,7 +177,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: {  
       }
       break;
@@ -193,7 +193,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone:
 	//snes_f //assemble only if ctx_SNESNone
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -266,7 +266,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
 	ierr = calulate_db(); CHKERRQ(ierr);
@@ -304,7 +304,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
     //only one LAMBDA
     if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: {
 	arc_ptr->res_lambda = calulate_lambda_int() - pow(arc_ptr->s,2);
 	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
@@ -326,7 +326,7 @@ struct ArcLenghtElemFEMethod: public moabField::FEMethod {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	/*//assemble
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

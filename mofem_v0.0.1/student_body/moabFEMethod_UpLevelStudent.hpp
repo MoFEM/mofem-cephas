@@ -95,7 +95,8 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * \param field_name name of the approx. field
    * \param vector on return stores global indices
    */
-  PetscErrorCode GetRowIndices(const string &field_name,vector<DofIdx> &RowGlobDofs);
+  PetscErrorCode GetRowGlobalIndices(const string &field_name,vector<DofIdx> &RowGlobDofs);
+  PetscErrorCode GetRowLocalIndices(const string &field_name,vector<DofIdx> &RowLocalDofs);
 
   /**
    * \brief Copy gloabl indices for dofs adjacent to entities
@@ -105,7 +106,8 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * \param vector on return stores global indices
    * \param side_number  do need to be specified for MBTET or MBPRISM
    */
-  PetscErrorCode GetRowIndices(const string &field_name,EntityType type,vector<DofIdx> &RowGlobDofs,int side_number = -1);
+  PetscErrorCode GetRowGlobalIndices(const string &field_name,EntityType type,vector<DofIdx> &RowGlobDofs,int side_number = -1);
+  PetscErrorCode GetRowLocalIndices(const string &field_name,EntityType type,vector<DofIdx> &RowLocalDofs,int side_number = -1);
 
   /**
    * \brief Copy gloabl indices for dofs adjacent to nodes
@@ -113,7 +115,9 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * \param field_name name of the approx. field
    * \param vector on return stores global indices
    */
-  PetscErrorCode GetColIndices(const string &field_name,vector<DofIdx> &ColGlobDofs);
+  PetscErrorCode GetColGlobalIndices(const string &field_name,vector<DofIdx> &ColGlobDofs);
+  PetscErrorCode GetColLocalIndices(const string &field_name,vector<DofIdx> &ColLocalDofs);
+
 
   /**
    * \brief Copy gloabl indices for dofs adjacent to entities
@@ -122,8 +126,8 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * \param type type of the entity (MBEDGE, MBTRI, MBTET or MBPRISM)
    * \param vector on return stores global indices
    * \param side_number  do need to be specified for MBTET or MBPRISM   */
-
-  PetscErrorCode GetColIndices(const string &field_name,EntityType type,vector<DofIdx> &ColGlobDofs,int side_number = -1);
+  PetscErrorCode GetColGlobalIndices(const string &field_name,EntityType type,vector<DofIdx> &ColGlobDofs,int side_number = -1);
+  PetscErrorCode GetColLocalIndices(const string &field_name,EntityType type,vector<DofIdx> &ColGlobDofs,int side_number = -1);
 
   /**
    * \brief Copy dofs values for dofs adjacent to nodes

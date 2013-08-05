@@ -394,10 +394,6 @@ ostream& operator<<(ostream& os,const MoFEMField& e) {
     << " space " << e.get_space() << " rank " << e.get_max_rank() << " meshset " << e.meshset;
   return os;
 }
-unsigned int MoFEMField::get_bit_number() const {
-  //find first bit set in a bit string
-  return ffsl(*((unsigned long int *)tag_id_data));
-}	
 
 //moab problem
 MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset): meshset(_meshset) {
@@ -516,11 +512,8 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefM
   }
 }
 ostream& operator<<(ostream& os,const MoFEMEntity& e) {
-  os << "entity "<< e.get_ent() << " type " << e.get_ent_type() <<" order "<<e.get_max_order()<<" "<<*e.field_ptr;
-  return os;
-}
-ostream& operator<<(ostream& os,const MoFEMEntity::UId& e) {
-  os << "meshset " << e.meshset << " dof " << e.ent; 
+  os << "ent_uid " << e.get_unique_id() << " entity "<< e.get_ent() << " type " << e.get_ent_type()
+    <<" order "<<e.get_max_order()<<" "<<*e.field_ptr;
   return os;
 }
 void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
@@ -594,15 +587,12 @@ DofMoFEMEntity::DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const Approxi
   uid = get_unique_id_calculate();
 }
 ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
-  os << "dof_order " << e.get_dof_order()
+  os << "dof_uid " << e.get_unique_id() 
+    << " dof_order " << e.get_dof_order()
     << " dof_rank " << e.get_dof_rank()
     << " dof " << e.dof
     << " active " << e.active 
     << " " << *(e.field_ptr);
-  return os;
-}
-ostream& operator<<(ostream& os,const DofMoFEMEntity::UId& e) {
-  os << "dof " << e.dof << " " << e.uid;
   return os;
 }
 DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}
@@ -680,10 +670,6 @@ ostream& operator<<(ostream& os,const MoFEMFE& e) {
     << " f_id_col " << e.get_BitFieldId_col() << " BitFEId_data " << e.get_BitFieldId_data();
     return os;
 }
-unsigned int MoFEMFE::get_bit_number() const {
-  //find first bit set in a bit string
-  return ffsl(*((unsigned long int*)tag_id_data));
-}
 void MoFEMFE_col_change_bit_add::operator()(MoFEMFE &MoFEMFE) {
   *((BitFieldId*)(MoFEMFE.tag_BitFieldId_col_data)) |= f_id_col;
 }
@@ -698,13 +684,13 @@ static void EntMoFEMFE_dofs_change(
   const void** tag_uids_data,int *tag_uids_size) {
   if(uids_view.empty()) return;
   ErrorCode rval;
-  vector<DofMoFEMEntity::UId> data;
+  vector<UId> data;
   data.resize(uids_view.size());
   DofMoFEMEntity_multiIndex_uid_view::iterator miit = uids_view.begin();
-  vector<DofMoFEMEntity::UId>::iterator vit = data.begin();
+  vector<UId>::iterator vit = data.begin();
   for(;miit!=uids_view.end();miit++,vit++) *vit = (*miit)->get_unique_id();
   assert(vit==data.end());
-  int tag_sizes[] = { data.size()*sizeof(DofMoFEMEntity::UId) };
+  int tag_sizes[] = { data.size()*sizeof(UId) };
   void const* tag_data[] = { &data[0] };
   rval = moab.tag_set_by_ptr(th_DofUid,&ent,1,tag_data,tag_sizes); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_DofUid,&ent,1,tag_uids_data,tag_uids_size); CHKERR_THROW(rval);
@@ -735,14 +721,14 @@ ostream& operator<<(ostream& os,const EntMoFEMFE& e) {
   os << *e.fe_ptr << " ent " << e.get_ent() << endl; 
   DofMoFEMEntity_multiIndex_uid_view::iterator miit;
   unsigned int ii = 0;
-  if(e.tag_row_uids_size/sizeof(DofMoFEMEntity::UId)>0) os << "row dof_uids ";
-  for(;ii<e.tag_row_uids_size/sizeof(DofMoFEMEntity::UId);ii++) os << ((DofMoFEMEntity::UId*)e.tag_row_uids_data)[ii] << " ";
+  if(e.tag_row_uids_size/sizeof(UId)>0) os << "row dof_uids ";
+  for(;ii<e.tag_row_uids_size/sizeof(UId);ii++) os << ((UId*)e.tag_row_uids_data)[ii] << " ";
   if(ii!=0) os << endl;
-  if(e.tag_col_uids_size/sizeof(DofMoFEMEntity::UId)>0) os << "col dof_uids ";
-  for(ii = 0;ii<e.tag_col_uids_size/sizeof(DofMoFEMEntity::UId);ii++) os << ((DofMoFEMEntity::UId*)e.tag_col_uids_data)[ii] << " ";
+  if(e.tag_col_uids_size/sizeof(UId)>0) os << "col dof_uids ";
+  for(ii = 0;ii<e.tag_col_uids_size/sizeof(UId);ii++) os << ((UId*)e.tag_col_uids_data)[ii] << " ";
   if(ii!=0) os << endl;
-  if(e.tag_data_uids_size/sizeof(DofMoFEMEntity::UId)>0) os << "data dof_uids ";
-  for(ii = 0;ii<e.tag_data_uids_size/sizeof(DofMoFEMEntity::UId);ii++) os << ((DofMoFEMEntity::UId*)e.tag_data_uids_data)[ii] << " ";
+  if(e.tag_data_uids_size/sizeof(UId)>0) os << "data dof_uids ";
+  for(ii = 0;ii<e.tag_data_uids_size/sizeof(UId);ii++) os << ((UId*)e.tag_data_uids_data)[ii] << " ";
   return os;
 }
 PetscErrorCode EntMoFEMFE::get_MoFEMFE_row_dof_uid_view(
@@ -775,6 +761,16 @@ PetscErrorCode EntMoFEMFE::get_MoFEMFE_col_dof_uid_view(
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode EntMoFEMFE::get_uid_side_number(
+  Interface &moab,const UId _ent_uid_,
+  const DofMoFEMEntity_multiIndex &dofs_moabfield,
+  int &side_number, int &sense, int &offset) const { 
+  PetscFunctionBegin;
+  EntityHandle child = dofs_moabfield.get<Unique_mi_tag>().find(_ent_uid_)->get_ent();
+  PetscErrorCode ierr;
+  ierr = moab.side_number(get_ent(),child,side_number,sense,offset); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

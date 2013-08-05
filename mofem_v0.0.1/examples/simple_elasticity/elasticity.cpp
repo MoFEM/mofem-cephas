@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
       ierr = GetMatrices(); CHKERRQ(ierr);
 
       //Dirihlet Boundary Condition
-      ApplyDirihletBC();
+      ierr = ApplyDirihletBC(); CHKERRQ(ierr);
       if(Diagonal!=PETSC_NULL) {
 	if(DirihletBC.size()>0) {
 	  DirihletBCDiagVal.resize(DirihletBC.size());

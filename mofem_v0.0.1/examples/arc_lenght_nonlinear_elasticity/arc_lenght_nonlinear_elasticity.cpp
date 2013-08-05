@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec F;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
   
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
 
   if(step==1) {
     SetPositionsEntMethod set_positions(moab);
-    ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,set_positions); CHKERRQ(ierr);
+    ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,set_positions); CHKERRQ(ierr);
   }
 
   Range SideSet1,SideSet2,SideSet3,SideSet4;
@@ -259,23 +259,21 @@ int main(int argc, char *argv[]) {
 
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
-  ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   if(step>1) {
     ierr = mField.set_other_global_VecCreateGhost(
-      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",Row,ArcCtx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",Col,ArcCtx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     double x0_nrm;
     ierr = VecNorm(ArcCtx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,ArcCtx->dlambda);
     //
     ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
-    ierr = MyFE.set_x(D); CHKERRQ(ierr);
-    ierr = MyFE.set_f(F); CHKERRQ(ierr);
+    MyFE.snes_x = D; MyFE.snes_f = F;
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-    ierr = MyArcMethod.set_x(D); CHKERRQ(ierr);
-    ierr = MyArcMethod.set_f(F); CHKERRQ(ierr);
+    MyArcMethod.snes_x = D; MyArcMethod.snes_f = F;
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
   }
 
@@ -296,11 +294,9 @@ int main(int argc, char *argv[]) {
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
-      ierr = MyFE.set_x(D); CHKERRQ(ierr);
-      ierr = MyFE.set_f(F); CHKERRQ(ierr);
+      MyFE.snes_x = D; MyFE.snes_f = F;
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-      ierr = MyArcMethod.set_x(D); CHKERRQ(ierr);
-      ierr = MyArcMethod.set_f(F); CHKERRQ(ierr);
+      MyArcMethod.snes_x = D; MyArcMethod.snes_f = F;
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
       double dlambda;
       ierr = MyArcMethod.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);
@@ -346,13 +342,13 @@ int main(int argc, char *argv[]) {
     }
 
     //Save data on mesh
-    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = mField.set_other_global_VecCreateGhost(
-      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",Row,ArcCtx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",Col,ArcCtx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     
     //
     PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-    ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
+    ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
     //
     ierr = MyFE.potsProcessLoadPath(); CHKERRQ(ierr);
     //
@@ -367,7 +363,7 @@ int main(int argc, char *argv[]) {
   }
   
   PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Row,ent_method); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;

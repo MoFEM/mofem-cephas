@@ -91,7 +91,7 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
     D = lambda*D_lambda + mu*D_mu;
 
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone: 
       case ctx_SNESSetFunction: { 
 	//F_lambda
@@ -120,7 +120,7 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 
       //Dirihlet Boundary Condition
 
-      switch(ctx) {
+      switch(snes_ctx) {
 	case ctx_SNESNone: {
 	}
 	break;
@@ -140,11 +140,11 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
 
-      switch(ctx) {
+      switch(snes_ctx) {
 	case ctx_SNESNone: 
 	case ctx_SNESSetFunction: {
 	  //Assembly  F
-	  ierr = Fint(); CHKERRQ(ierr);
+	  ierr = Fint(F); CHKERRQ(ierr);
 	  //Neumann Boundary Conditions
 	  ierr = NeumannBC(); CHKERRQ(ierr);
 	}
@@ -166,7 +166,7 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone: {
       }
       case ctx_SNESSetFunction: { 
@@ -233,7 +233,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     g_NTRI.resize(3*13);
     ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone: {}
       break;
       case ctx_SNESSetFunction: { }
@@ -403,7 +403,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   PetscErrorCode LhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
-    ublas::matrix<FieldData> K[row_mat][col_mat];
+    K.resize(row_mat,col_mat);
     for(int rr = 0;rr<row_mat;rr++) {
 	if(RowGlob[rr].size()==0) continue;
 	for(int cc = 0;cc<col_mat;cc++) {
@@ -412,7 +412,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
 	    ///K matrices
 	    if(gg == 0) {
-	      K[rr][cc] = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
+	      K(rr,cc) = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
 	    }
 	    double _kappa_ = fmax(g[gg]-g0,kappa[gg]);
 	    double _omega_ = 0;
@@ -425,14 +425,14 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    }
 	    double w = area3*G_TRI_W13[gg];
 	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
-	    K[rr][cc] += prod(NTD , col_Mat ); 
+	    K(rr,cc) += prod(NTD , col_Mat ); 
 	  }
 	}
 	for(int cc = 0;cc<col_mat;cc++) {
 	  if(ColGlob[cc].size()==0) continue;
-	  if(RowGlob[rr].size()!=K[rr][cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  if(ColGlob[cc].size()!=K[rr][cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K[rr][cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
     }
     PetscFunctionReturn(0);
@@ -476,7 +476,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     kappa = (double*)tag_data_kappa[0];
 
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone: {
       }
       break;
@@ -490,7 +490,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone: {
 	ierr = RhsInt(); CHKERRQ(ierr);
       }
@@ -517,7 +517,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESNone: {
       }
       break;
@@ -625,7 +625,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
   double lambda_int;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = calulate_dx_and_dlambda(D); CHKERRQ(ierr);
 	ierr = calulate_db(); CHKERRQ(ierr);
@@ -702,7 +702,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     //only one LAMBDA
     if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: {
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
@@ -724,7 +724,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    switch(ctx) {
+    switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	//add F_lambda
 	NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 

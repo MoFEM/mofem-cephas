@@ -235,42 +235,42 @@ int main(int argc, char *argv[]) {
       int row_mat = 0;
       vector<vector<DofIdx> > RowGlob(1+6+4+1);
       vector<vector<ublas::matrix<FieldData> > > rowNMatrices(1+6+4+1);
-      ierr = GetRowIndices("H1FIELD",RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices("H1FIELD",RowGlob[row_mat]); CHKERRQ(ierr);
       ierr = GetGaussRowNMatrix("H1FIELD",rowNMatrices[row_mat++]); CHKERRQ(ierr);
       for(int ee = 0;ee<6;ee++) {
-	ierr = GetRowIndices("H1FIELD",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices("H1FIELD",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("H1FIELD",MBEDGE,rowNMatrices[row_mat++],ee); CHKERRQ(ierr);
 	}
       }
       for(int ff = 0;ff<4;ff++) {
-	ierr = GetRowIndices("H1FIELD",MBTRI,RowGlob[row_mat],ff); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices("H1FIELD",MBTRI,RowGlob[row_mat],ff); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("H1FIELD",MBTRI,rowNMatrices[row_mat++],ff); CHKERRQ(ierr);
 	}
       }
-      ierr = GetRowIndices("H1FIELD",MBTET,RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices("H1FIELD",MBTET,RowGlob[row_mat]); CHKERRQ(ierr);
       if(RowGlob[row_mat].size() != 0) {
 	ierr = GetGaussRowNMatrix("H1FIELD",MBTET,rowNMatrices[row_mat++]); CHKERRQ(ierr);
       }
       int col_mat = 0;
       vector<vector<DofIdx> > ColGlob(1+6+4+1);
       vector<vector<ublas::matrix<FieldData> > > colNMatrices(1+6+4+1);
-      ierr = GetColIndices("H1FIELD",ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices("H1FIELD",ColGlob[col_mat]); CHKERRQ(ierr);
       ierr = GetGaussColNMatrix("H1FIELD",colNMatrices[col_mat++]); CHKERRQ(ierr);
       for(int ee = 0;ee<6;ee++) {
-	ierr = GetColIndices("H1FIELD",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices("H1FIELD",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("H1FIELD",MBEDGE,colNMatrices[col_mat++],ee); CHKERRQ(ierr);
 	}
       }
       for(int ff = 0;ff<4;ff++) {
-	ierr = GetColIndices("H1FIELD",MBTRI,ColGlob[col_mat],ff); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices("H1FIELD",MBTRI,ColGlob[col_mat],ff); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
 	  ierr = GetGaussColNMatrix("H1FIELD",MBTRI,colNMatrices[col_mat++],ff); CHKERRQ(ierr);
 	}
       }
-      ierr = GetColIndices("H1FIELD",MBTET,ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices("H1FIELD",MBTET,ColGlob[col_mat]); CHKERRQ(ierr);
       if(ColGlob[col_mat].size() != 0) {
 	ierr = GetGaussColNMatrix("H1FIELD",MBTET,colNMatrices[col_mat++]); CHKERRQ(ierr);
       }
