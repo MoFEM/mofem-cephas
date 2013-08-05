@@ -67,6 +67,7 @@ PetscErrorCode ierr;
     moabField& mField;
     PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method;
     double rho;
+    Vec u_by_row;
     DynamicElasticFEMethod(Interface& _moab,moabField& _mField,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2): 
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
@@ -81,11 +82,15 @@ PetscErrorCode ierr;
 	VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostU);
 	VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostK);
       }
+
+      mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&u_by_row);
+
     };
   
     ~DynamicElasticFEMethod() {
       //VecDestroy(&GhostU);
       //VecDestroy(&GhostK);
+      //VecDestroy(&u_by_row);
     }
 
     const int debug;
@@ -285,6 +290,7 @@ PetscErrorCode ierr;
 	    PetscPrintf(PETSC_COMM_WORLD,
 	      "\tsteps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
 	    ierr = mField.set_global_VecCreateGhost(problem_ptr->get_name(),Col,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = mField.set_local_VecCreateGhost(problem_ptr->get_name(),Row,u_by_row,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    NumeredDofMoFEMEntity_multiIndex &numered_dofs_cols = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_cols);
 	    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
 	    Range::iterator nit = SideSet2Nodes.begin();
@@ -300,7 +306,7 @@ PetscErrorCode ierr;
 		PetscPrintf(PETSC_COMM_WORLD,"-> time %6.4e\n",ftime);
 	      }
 	    }
-	    if(steps%10==0) { 
+	    if(steps%100==0) { 
 	      rval = fe_post_proc_method.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
 	      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
 	      if(pcomm->rank()==0) {
@@ -452,10 +458,11 @@ PetscErrorCode ierr;
 	  case ctx_TSTSMonitorSet: {
 	    ierr = Fint(); CHKERRQ(ierr);
 	    Vec u_local;
-	    ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+	    ierr = VecGhostGetLocalForm(u_by_row,&u_local); CHKERRQ(ierr);
 	    double *array2;
 	    ierr = VecGetArray(u_local,&array2); CHKERRQ(ierr);
-	    double U = 0;
+	    double *array_U;
+	    ierr = VecGetArray(GhostU,&array_U); CHKERRQ(ierr);
 	    for(int rr = 0;rr<row_mat;rr++) {	
 	      ublas::vector<FieldData> displacements;
 	      displacements.resize(RowLocal[rr].size());
@@ -463,11 +470,11 @@ PetscErrorCode ierr;
 	      for(int iii = 0;iit!=RowLocal[rr].end();iit++,iii++) {
 		displacements[iii] = array2[*iit];
 	      }
-	      U += 0.5*inner_prod(f_int[rr],displacements);
+	      array_U[0] += 0.5*inner_prod(f_int[rr],displacements);
 	    }
 	    ierr = VecRestoreArray(u_local,&array2); CHKERRQ(ierr);
+	    ierr = VecRestoreArray(GhostU,&array_U); CHKERRQ(ierr);
 	    ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
-	    ierr = VecSetValue(GhostU,0,U,ADD_VALUES); CHKERRQ(ierr);
 	    } break;
 	  case ctx_TSSetRHSFunction: {
 	    } break;
@@ -558,8 +565,10 @@ PetscErrorCode ierr;
 	    ierr = VecRestoreArray(u_local,&array); CHKERRQ(ierr);
 	    ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
 	    ublas::vector<FieldData> VVvelocities_col = prod(VV,velocities_col);  
-	    double K = 0.5*inner_prod(velocities_row,VVvelocities_col);
-	    ierr = VecSetValue(GhostK,0,K,ADD_VALUES); CHKERRQ(ierr);
+	    double *array_K;
+	    ierr = VecGetArray(GhostK,&array_K); CHKERRQ(ierr);
+	    array_K[0] += 0.5*inner_prod(velocities_row,VVvelocities_col);
+	    ierr = VecRestoreArray(GhostK,&array_K); CHKERRQ(ierr);
 	    } break;
 	  case ctx_TSSetRHSFunction: {
 	    } break;
