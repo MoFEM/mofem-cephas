@@ -66,17 +66,6 @@ struct InterfaceElasticFEMethod: public ElasticFEMethod {
   PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-
-      //Dirihlet Boundary Condition
-      ApplyDirihletBC();
-      if(Diagonal!=PETSC_NULL) {
-	if(DirihletBC.size()>0) {
-	  DirihletBCDiagVal.resize(DirihletBC.size());
-	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
-	}
-      }
 
       //Assembly Aij and F
       ierr = RhsAndLhs(); CHKERRQ(ierr);
