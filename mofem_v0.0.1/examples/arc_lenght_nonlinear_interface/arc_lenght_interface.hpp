@@ -117,8 +117,7 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
-
-      //Dirihlet Boundary Condition
+      DirihletBC.resize(0);
 
       switch(snes_ctx) {
 	case ctx_SNESNone: {
@@ -126,7 +125,8 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 	break;
 	case ctx_SNESSetJacobian: 
 	case ctx_SNESSetFunction: { 
-	  ApplyDirihletBC();
+	  //Dirihlet Boundary Condition
+	  ierr = ApplyDirihletBC(); CHKERRQ(ierr);
 	  if(Diagonal!=PETSC_NULL) {
 	    if(DirihletBC.size()>0) {
 	      DirihletBCDiagVal.resize(DirihletBC.size());
@@ -483,7 +483,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
       case ctx_SNESSetJacobian: 
       case ctx_SNESSetFunction: { 
 	//Apply Dirihlet BC
-	ApplyDirihletBC();
+	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
       }
       break;
       default:

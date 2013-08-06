@@ -490,6 +490,15 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     PetscErrorCode RhsAndLhs() {
       PetscFunctionBegin;
+
+      ierr = Rhs(); CHKERRQ(ierr);
+      ierr = Lhs(); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
       //Dirihlet Boundary Condition
@@ -501,16 +510,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
 	}
       }
-
-      ierr = Rhs(); CHKERRQ(ierr);
-      ierr = Lhs(); CHKERRQ(ierr);
-
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
       //Assembly Aij and F
       ierr = RhsAndLhs(); CHKERRQ(ierr);
