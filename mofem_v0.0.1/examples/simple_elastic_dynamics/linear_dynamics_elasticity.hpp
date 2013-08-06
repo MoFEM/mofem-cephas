@@ -64,14 +64,17 @@ PetscErrorCode ierr;
 
   struct DynamicElasticFEMethod: public ElasticFEMethod {
 
+
     moabField& mField;
     PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method;
     double rho;
-    Vec u_by_row;
+    const int debug;
+    bool Dirihlet_BC_on_SideSet2;
+
     DynamicElasticFEMethod(Interface& _moab,moabField& _mField,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2): 
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
-      _SideSet1,_SideSet2),mField(_mField),fe_post_proc_method(moab,_lambda,_mu),rho(_rho),debug(1) {
+      _SideSet1,_SideSet2),mField(_mField),fe_post_proc_method(moab,_lambda,_mu),rho(_rho),debug(1),Dirihlet_BC_on_SideSet2(true) {
       rval = moab.get_connectivity(SideSet2,SideSet2Nodes,true); CHKERR_THROW(rval);
 
       PetscInt ghosts[1] = { 0 };
@@ -85,6 +88,12 @@ PetscErrorCode ierr;
 
       mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&u_by_row);
 
+      rval = moab.get_adjacencies(SideSet2,1,false,SideSet2Edges,Interface::UNION); CHKERR_THROW(rval);
+      SideSet2_.insert(SideSet2.begin(),SideSet2.end());
+      SideSet2_.insert(SideSet2Edges.begin(),SideSet2Edges.end());
+      SideSet2_.insert(SideSet2Nodes.begin(),SideSet2Nodes.end());
+
+
     };
   
     ~DynamicElasticFEMethod() {
@@ -93,19 +102,74 @@ PetscErrorCode ierr;
       //VecDestroy(&u_by_row);
     }
 
-    const int debug;
-    Range SideSet2Nodes;
-    Vec GhostU,GhostK;
+    Range SideSet2Nodes,SideSet2Edges,SideSet2_;
+    Vec GhostU,GhostK,BCVector;
+    Vec u_by_row;
+    vector<DofIdx> DirihletBC_SideSet2;
+
+    PetscErrorCode ApplyDirihletBC() {
+      PetscFunctionBegin;
+      ierr = ElasticFEMethod::ApplyDirihletBC(); CHKERRQ(ierr);
+      if(Dirihlet_BC_on_SideSet2) {
+
+	DirihletBC_SideSet2.resize(0);
+
+	Range::iterator siit2 = SideSet2_.begin();
+	for(;siit2!=SideSet2_.end();siit2++) {
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit2);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit2);
+	  for(;riit!=hi_riit;riit++) {
+	    if(riit->get_name()!="DISPLACEMENT") continue;
+	    // all fixed
+	    // if some ranks are selected then we could apply BC in particular direction
+	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+	    DirihletBC_SideSet2.push_back(riit->get_petsc_gloabl_dof_idx());
+	    for(int rr = 0;rr<row_mat;rr++) {
+	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+	    }
+	  }
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit2);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit2);
+	  for(;ciit!=hi_ciit;ciit++) {
+	    if(ciit->get_name()!="DISPLACEMENT") continue;
+	    for(int cc = 0;cc<col_mat;cc++) {
+	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	    }
+	  }
+	}
+
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode DirihletBCSet() {
+      PetscFunctionBegin;
+      if(Dirihlet_BC_on_SideSet2) {
+
+	      //DirihletBCDiagVal.resize(DirihletBC.size());
+	      //fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
+	      //ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+
+      }
+      PetscFunctionReturn(0);
+
+    }
+
 
     /// Set Neumann Boundary Conditions on SideSet2
     PetscErrorCode NeumannBC(Vec F_ext) {
       PetscFunctionBegin;
+      if(Dirihlet_BC_on_SideSet2) PetscFunctionReturn(0);
+
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
  
       //Triangular loading over 10s (maximum at 5)
       double scale;
       if(ts_t < 5.) scale = ts_t/5.;
-      if(ts_t > 5.) scale = 5.+(5.-ts_t)/5.;
+      if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
       if(ts_t > 10.) PetscFunctionReturn(0);
 
       //Set Direction of Traction On SideSet2
@@ -113,7 +177,7 @@ PetscErrorCode ierr;
       traction[1] = 0; //Y 
       traction[2] = scale; //Z
       //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
-      ierr = ElasticFEMethod::NeumannBC(F_ext,traction,SideSet2); CHKERRQ(ierr);
+      //ierr = ElasticFEMethod::NeumannBC(F_ext,traction,SideSet2); CHKERRQ(ierr);
     
       PetscFunctionReturn(0);
     }
@@ -306,7 +370,7 @@ PetscErrorCode ierr;
 		PetscPrintf(PETSC_COMM_WORLD,"-> time %6.4e\n",ftime);
 	      }
 	    }
-	    if(steps%100==0) { 
+	    if(steps%20==0) { 
 	      rval = fe_post_proc_method.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
 	      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
 	      if(pcomm->rank()==0) {
@@ -329,6 +393,7 @@ PetscErrorCode ierr;
 	  case ctx_TSSetIJacobian:
 	    ierr = MatZeroEntries(*ts_B); CHKERRQ(ierr);
 	    ierr = VecDuplicate(ts_F,&Diagonal); CHKERRQ(ierr);
+	    ierr = VecDuplicate(ts_F,&BCVector); CHKERRQ(ierr);
 	    break;
 	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
@@ -413,6 +478,10 @@ PetscErrorCode ierr;
 	    ierr = VecGhostUpdateEnd(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	    ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
 	    ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
+	    ierr = VecAssemblyBegin(BCVector); CHKERRQ(ierr);
+	    ierr = VecAssemblyEnd(BCVector); CHKERRQ(ierr);
+	    ierr = VecAXPY(ts_F,1.,BCVector); CHKERRQ(ierr);
+	    ierr = VecDestroy(&BCVector); CHKERRQ(ierr);
 	    break;
 	  case ctx_TSSetRHSJacobian:
 	  case ctx_TSSetIJacobian: {
