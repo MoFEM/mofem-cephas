@@ -318,10 +318,12 @@ PetscErrorCode ierr;
 	  if(*iit < 0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(*iit >= local_size) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  (velocities[cc])[iii] = array[*iit];
-	  FENumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator ciit = col_multiIndex->get<PetscLocalIdx_mi_tag>().find(*iit);
-	  if(ciit==col_multiIndex->get<PetscLocalIdx_mi_tag>().end()) {
-	    for(ciit = col_multiIndex->get<PetscLocalIdx_mi_tag>().begin();
-	      ciit!=col_multiIndex->get<PetscLocalIdx_mi_tag>().end();ciit++) {
+	  NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator ciit,hi_ciit;
+	  ciit = problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().find(*iit);
+	  hi_ciit = problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().end();
+	  if(ciit==hi_ciit) {
+	    for(ciit =  problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().begin();
+	      ciit!=hi_ciit;ciit++) {
 	      cerr << *it << " " << ColLocal.size() << endl;
 	      cerr << *ciit << endl;
 	    }
