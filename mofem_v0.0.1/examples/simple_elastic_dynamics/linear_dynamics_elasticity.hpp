@@ -126,6 +126,7 @@ PetscErrorCode ierr;
 	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
 	      if( it!=RowGlob[rr].end() ) {
 		if( it == RowGlob[rr].end() ) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		DirihletBC_SideSet2.insert(riit->get_unique_id());
 		*it = -1; // of idx is set -1 row is not assembled
 	      }
 	    }
@@ -175,23 +176,39 @@ PetscErrorCode ierr;
 	//
 	set<UId>::iterator vit = DirihletBC_SideSet2.begin();
 	for(;vit!=DirihletBC_SideSet2.end();vit++) {
-	  FENumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator ciit = col_multiIndex->get<Unique_mi_tag>().find(*vit);
-	  for(int cc = 0;cc<col_mat;cc++) {
-	    vector<DofIdx>::iterator it = find(ColLocal[cc].begin(),ColLocal[cc].end(),ciit->get_petsc_local_dof_idx());
-	 
-	    if(it!=ColLocal[cc].end()) {
-	      if(ciit->get_dof_rank()==2) {
-		array[*it] = disp_val;
-		array2[*it] = vel_val;
-		ciit->get_FieldData() = disp_val;
-	      } else {
-		array[*it] = 0;
-		array2[*it] = 0;
-		ciit->get_FieldData() = 0;
-	      }
-	    }
 
+	  /*if(fe_name=="STIFFNESS") {
+	    switch (ts_ctx) {
+	      case ctx_TSSetIFunction: {
+		FENumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator riit = row_multiIndex->get<Unique_mi_tag>().find(*vit);
+		Vec F_local;
+		ierr = VecGhostGetLocalForm(ts_F,&F_local); CHKERRQ(ierr);
+		double *array3;
+		ierr = VecGetArray(F_local,&array3); CHKERRQ(ierr);
+		if(riit!=row_multiIndex->get<Unique_mi_tag>().end()) {
+		  //array3[riit->get_petsc_local_dof_idx()] = 0;//disp_val + riit->get_FieldData();
+		}
+		ierr = VecRestoreArray(F_local,&array3); CHKERRQ(ierr);
+		ierr = VecGhostRestoreLocalForm(ts_F,&F_local); CHKERRQ(ierr);
+	      } default:
+		break;
+	    }
+	  }*/
+
+	  FENumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator ciit = col_multiIndex->get<Unique_mi_tag>().find(*vit);
+	  if(ciit == col_multiIndex->get<Unique_mi_tag>().end()) continue;
+
+
+	  if(ciit->get_dof_rank()==2) {
+	    array[ciit->get_petsc_local_dof_idx()] = disp_val;
+	    array2[ciit->get_petsc_local_dof_idx()] = vel_val;
+	    ciit->get_FieldData() = disp_val;
+	  } else {
+	    array[ciit->get_petsc_local_dof_idx()] = 0;
+	    array2[ciit->get_petsc_local_dof_idx()] = 0;
+	    ciit->get_FieldData() = 0;
 	  }
+
 	}
 	//
 	ierr = VecRestoreArray(u_local,&array); CHKERRQ(ierr);
