@@ -64,17 +64,30 @@ PetscErrorCode ierr;
 
   struct DynamicElasticFEMethod: public ElasticFEMethod {
 
+    struct BC {
+      const bool Dirihlet_BC_on_SideSet2;
+      BC(): Dirihlet_BC_on_SideSet2(false),final_time(0) {}
+      const double final_time;
+      BC(const double _final_time): Dirihlet_BC_on_SideSet2(true), final_time(_final_time) {}
+
+      virtual PetscErrorCode f_CalcTraction(double ts_t,ublas::vector<double,ublas::bounded_array<double,3> >& traction) const = 0;
+      virtual PetscErrorCode f_CalcDisp(double ts_t,
+	 ublas::vector<double,ublas::bounded_array<double,3> >& disp,
+	 ublas::vector<double,ublas::bounded_array<double,3> >& vel) const = 0;
+
+    };
+
 
     moabField& mField;
     PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method;
     double rho;
     const int debug;
-    bool Dirihlet_BC_on_SideSet2;
+    BC *bc;
 
     DynamicElasticFEMethod(Interface& _moab,moabField& _mField,Mat &_Aij,Vec& _F,
-      double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2): 
+      double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2,BC *_bc): 
       ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
-      _SideSet1,_SideSet2),mField(_mField),fe_post_proc_method(moab,_lambda,_mu),rho(_rho),debug(1),Dirihlet_BC_on_SideSet2(true) {
+      _SideSet1,_SideSet2),mField(_mField),fe_post_proc_method(moab,_lambda,_mu),rho(_rho),debug(1),bc(_bc) {
       rval = moab.get_connectivity(SideSet2,SideSet2Nodes,true); CHKERR_THROW(rval);
 
       PetscInt ghosts[1] = { 0 };
@@ -111,9 +124,9 @@ PetscErrorCode ierr;
       ierr = ElasticFEMethod::ApplyDirihletBC(); CHKERRQ(ierr);
       
       DirihletBC_SideSet2.clear();
-      if(Dirihlet_BC_on_SideSet2) {
+      if(bc->Dirihlet_BC_on_SideSet2) {
 
-	if(ts_t > 5.) PetscFunctionReturn(0);
+	if(ts_t > bc->final_time) PetscFunctionReturn(0);
 
 	Range::iterator siit2 = SideSet2_.begin();
 	for(;siit2!=SideSet2_.end();siit2++) {
@@ -151,11 +164,13 @@ PetscErrorCode ierr;
 
     PetscErrorCode DirihletBCDiagonalSet() {
       PetscFunctionBegin;
-    
       Range DirihletSet;
       DirihletSet.insert(SideSet1_.begin(),SideSet1_.end());
-      if(ts_t < 5.) {
-	DirihletSet.insert(SideSet2_.begin(),SideSet2_.end());
+
+      if(bc->Dirihlet_BC_on_SideSet2) {
+	if(ts_t < bc->final_time) {
+	  DirihletSet.insert(SideSet2_.begin(),SideSet2_.end());
+	}
       }
 
       NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
@@ -172,21 +187,13 @@ PetscErrorCode ierr;
     PetscErrorCode DirihletBCSet() {
       PetscFunctionBegin;
 
-      if(Dirihlet_BC_on_SideSet2) {
+      if(bc->Dirihlet_BC_on_SideSet2) {
 
-	if(ts_t > 5.) PetscFunctionReturn(0);
+	if(ts_t > bc->final_time) PetscFunctionReturn(0);
 
-	double disp_val = 0;
-	double vel_val = 0;
-	const double v1 = 0.2;
-	const double init_t = 1.;
-	if(ts_t < init_t) {
-	  disp_val = v1 * ( (ts_t*ts_t/2.)/init_t );
-	  vel_val = v1* ( ts_t/init_t );
-	} else if(ts_t < 5.) {
-	  disp_val = v1*( ((init_t*init_t/2.)/init_t) + (ts_t-init_t) );
-	  vel_val = v1;
-	} 
+	ublas::vector<double,ublas::bounded_array<double,3> > disp(3);
+	ublas::vector<double,ublas::bounded_array<double,3> > vel(3);
+	ierr = bc->f_CalcDisp(ts_t,disp,vel); CHKERRQ(ierr);
 
 	NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
 	dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
@@ -198,8 +205,10 @@ PetscErrorCode ierr;
 
 	for(;dit!=hi_dit;dit++) {
 	  if(find(SideSet2_.begin(),SideSet2_.end(),dit->get_ent()) == SideSet2_.end()) continue;
-	  if(dit->get_dof_rank()==2) {	
-	    array[dit->get_petsc_local_dof_idx()] = -vel_val + array2[dit->get_petsc_local_dof_idx()];
+	  for(int dd = 0;dd<3;dd++) {
+	    if(dit->get_dof_rank()==dd) {	
+	      array[dit->get_petsc_local_dof_idx()] = -(vel[dd]) + array2[dit->get_petsc_local_dof_idx()];
+	    }
 	  } 
 	}
 
@@ -208,9 +217,11 @@ PetscErrorCode ierr;
 	  problem_ptr->get_nb_local_dofs_col()+problem_ptr->get_nb_ghost_dofs_col());
 	for(;dit!=hi_dit;dit++) {
 	  if(find(SideSet2_.begin(),SideSet2_.end(),dit->get_ent()) == SideSet2_.end()) continue;
-	  if(dit->get_dof_rank()==2) {
-	    dit->get_FieldData() = disp_val;
-	    array2[dit->get_petsc_local_dof_idx()] = vel_val;
+	  for(int dd = 0;dd<3;dd++) {
+	    if(dit->get_dof_rank()==dd) {
+	      dit->get_FieldData() = disp[dd];
+	      array2[dit->get_petsc_local_dof_idx()] = vel[dd];
+	    }
 	  }
 	}
 
@@ -228,20 +239,11 @@ PetscErrorCode ierr;
     /// Set Neumann Boundary Conditions on SideSet2
     PetscErrorCode NeumannBC(Vec F_ext) {
       PetscFunctionBegin;
-      if(Dirihlet_BC_on_SideSet2) PetscFunctionReturn(0);
+      if(bc->Dirihlet_BC_on_SideSet2) PetscFunctionReturn(0);
 
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
- 
-      //Triangular loading over 10s (maximum at 5)
-      double scale;
-      if(ts_t < 5.) scale = ts_t/5.;
-      if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
-      if(ts_t > 10.) PetscFunctionReturn(0);
+      ierr = bc->f_CalcTraction(ts_t,traction); CHKERRQ(ierr);
 
-      //Set Direction of Traction On SideSet2
-      traction[0] = 0; //X
-      traction[1] = 0; //Y 
-      traction[2] = scale; //Z
       //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
       ierr = ElasticFEMethod::NeumannBC(F_ext,traction,SideSet2); CHKERRQ(ierr);
     

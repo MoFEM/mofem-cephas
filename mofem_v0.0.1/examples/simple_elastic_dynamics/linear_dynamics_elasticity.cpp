@@ -29,6 +29,58 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+struct MyBC: public DynamicElasticFEMethod::BC {
+
+    MyBC(): DynamicElasticFEMethod::BC()  {}
+    PetscErrorCode f_CalcTraction(double ts_t,ublas::vector<double,ublas::bounded_array<double,3> >& traction) const {
+      PetscFunctionBegin;
+      
+      //Triangular loading over 10s (maximum at 5)
+      double scale = 0;
+      if(ts_t < 5.) scale = ts_t/5.;
+      if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
+      if(ts_t > 10.) scale = 0;
+
+      //Set Direction of Traction On SideSet2
+      traction[0] = 0; //X
+      traction[1] = 0; //Y 
+      traction[2] = scale; //Z*/
+
+      PetscFunctionReturn(0);
+    }
+
+    MyBC(double _final_time): DynamicElasticFEMethod::BC(_final_time) {};
+    PetscErrorCode f_CalcDisp(double ts_t,
+      ublas::vector<double,ublas::bounded_array<double,3> >& disp,
+      ublas::vector<double,ublas::bounded_array<double,3> >& vel) const {
+
+      PetscFunctionBegin;
+
+      double disp_val = 0;
+      double vel_val = 0;
+      const double v1 = 0.2;
+      const double init_t = 1.;
+      if(ts_t < init_t) {
+	  disp_val = v1 * ( (ts_t*ts_t/2.)/init_t );
+	  vel_val = v1* ( ts_t/init_t );
+      } else if(ts_t < final_time) {
+	  disp_val = v1*( ((init_t*init_t/2.)/init_t) + (ts_t-init_t) );
+	  vel_val = v1;
+      } 
+
+      disp[0] = 0;
+      vel[0] = 0;
+      disp[1] = 0;
+      vel[1] = 0;
+      disp[2] = disp_val;
+      vel[2] = vel_val;
+
+      PetscFunctionReturn(0);
+    }
+
+};
+
+
 int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -144,7 +196,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-  order = 0;
+  order = 1;
   ierr = mField.set_field_order(0,MBTET,"VELOCITIES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"VELOCITIES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",order); CHKERRQ(ierr);
@@ -194,7 +246,10 @@ int main(int argc, char *argv[]) {
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;
   const double rho = 1;
-  DynamicElasticFEMethod MyFE(moab,mField,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2);
+
+  MyBC mybc;
+  DynamicElasticFEMethod MyFE(moab,mField,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2,&mybc);
+
 
   moabTsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
