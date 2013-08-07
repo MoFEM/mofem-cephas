@@ -93,9 +93,6 @@ PetscErrorCode ierr;
       SideSet2_.insert(SideSet2Edges.begin(),SideSet2Edges.end());
       SideSet2_.insert(SideSet2Nodes.begin(),SideSet2Nodes.end());
 
-      BCVector = PETSC_NULL;
-
-
     };
   
     ~DynamicElasticFEMethod() {
@@ -105,7 +102,7 @@ PetscErrorCode ierr;
     }
 
     Range SideSet2Nodes,SideSet2Edges,SideSet2_;
-    Vec GhostU,GhostK,BCVector;
+    Vec GhostU,GhostK;
     Vec u_by_row;
     set<UId> DirihletBC_SideSet2;
 
@@ -124,14 +121,11 @@ PetscErrorCode ierr;
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit2);
 	  for(;riit!=hi_riit;riit++) {
 	    if(riit->get_name()!="DISPLACEMENT") continue;
-	    // all fixed // if some ranks are selected then we could apply BC in particular direction
 	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
 	    for(int rr = 0;rr<row_mat;rr++) {
 	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
 	      if( it!=RowGlob[rr].end() ) {
-		if(riit->get_dof_rank()==2) {
-		  DirihletBC_SideSet2.insert(riit->get_unique_id());
-		}
+		if( it == RowGlob[rr].end() ) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		*it = -1; // of idx is set -1 row is not assembled
 	      }
 	    }
@@ -142,7 +136,10 @@ PetscErrorCode ierr;
 	    if(ciit->get_name()!="DISPLACEMENT") continue;
 	    for(int cc = 0;cc<col_mat;cc++) {
 	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	      if( it != ColGlob[cc].end() ) {
+		DirihletBC_SideSet2.insert(ciit->get_unique_id());
+		*it = -1; // of idx is set -1 column is not assembled
+	      }
 	    }
 	  }
 	}
@@ -152,47 +149,58 @@ PetscErrorCode ierr;
       PetscFunctionReturn(0);
     }
 
-    vector<ublas::vector<FieldData>  > set_velocities;
     PetscErrorCode DirihletBCSet() {
       PetscFunctionBegin;
 
-      set_velocities.resize(col_mat);
-      for(int cc = 0;cc<col_mat;cc++) {
-	set_velocities[cc] = ublas::zero_vector<FieldData>(ColLocal[cc].size());
-      }
-
       if(Dirihlet_BC_on_SideSet2) {
-	if(BCVector == PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"can not set vals on Dirihlet BC");
 
-	double val = 0;
-	if(ts_t < 0.1) {
-	  val = 0.2*ts_t/0.1;
+	double disp_val = 0;
+	double vel_val = 0;
+	const double v1 = 0.2;
+	const double init_t = 1.;
+	if(ts_t < init_t) {
+	  disp_val = v1 * ((ts_t*ts_t/2.)/init_t);
+	  vel_val = v1* (ts_t/init_t);
 	} else if(ts_t < 5.) {
-	  val = 0.2;
+	  disp_val = v1*(((init_t*init_t/2.)/init_t) + ts_t);
+	  vel_val = v1;
 	} 
 
-
-	Vec u_t_local;
+	Vec u_local,u_t_local;
+	ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
 	ierr = VecGhostGetLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
-	double *array2;
+	double *array,*array2;
+	ierr = VecGetArray(u_local,&array); CHKERRQ(ierr);
 	ierr = VecGetArray(u_t_local,&array2); CHKERRQ(ierr);
+	//
 	set<UId>::iterator vit = DirihletBC_SideSet2.begin();
 	for(;vit!=DirihletBC_SideSet2.end();vit++) {
-	  FENumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator riit = row_multiIndex->get<Unique_mi_tag>().find(*vit);
 	  FENumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator ciit = col_multiIndex->get<Unique_mi_tag>().find(*vit);
-	  double res_val = val + array2[ciit->get_petsc_local_dof_idx()];
-	  ierr = VecSetValue(BCVector,riit->get_petsc_gloabl_dof_idx(),res_val,INSERT_VALUES); CHKERRQ(ierr);
 	  for(int cc = 0;cc<col_mat;cc++) {
-	    vector<DofIdx>::iterator it = find(ColLocal[cc].begin(),ColLocal[cc].end(),riit->get_petsc_local_dof_idx());
+	    vector<DofIdx>::iterator it = find(ColLocal[cc].begin(),ColLocal[cc].end(),ciit->get_petsc_local_dof_idx());
+	 
 	    if(it!=ColLocal[cc].end()) {
-	      (set_velocities[cc])[distance(ColLocal[cc].begin(),it)] = val;
+	      if(ciit->get_dof_rank()==2) {
+		array[*it] = disp_val;
+		array2[*it] = vel_val;
+		ciit->get_FieldData() = disp_val;
+	      } else {
+		array[*it] = 0;
+		array2[*it] = 0;
+		ciit->get_FieldData() = 0;
+	      }
 	    }
+
 	  }
 	}
+	//
+	ierr = VecRestoreArray(u_local,&array); CHKERRQ(ierr);
 	ierr = VecRestoreArray(u_t_local,&array2); CHKERRQ(ierr);
 	ierr = VecGhostRestoreLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
+	ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
 
       }
+
       PetscFunctionReturn(0);
     }
 
@@ -288,7 +296,6 @@ PetscErrorCode ierr;
 	  (velocities[cc])[iii] = array[*iit];
 	  (displacements[cc])[iii] = array2[*iit];
 	}
-	velocities[cc] += set_velocities[cc];
       }
       ierr = VecRestoreArray(u_local,&array2); CHKERRQ(ierr);
       ierr = VecRestoreArray(u_t_local,&array); CHKERRQ(ierr);
@@ -426,9 +433,6 @@ PetscErrorCode ierr;
 	    ierr = VecZeroEntries(ts_F); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateBegin(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateEnd(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	    if(BCVector!=PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"BCVector should be PETSC_NULL");
-	    ierr = VecDuplicate(ts_F,&BCVector); CHKERRQ(ierr);
-	    ierr = VecZeroEntries(BCVector); CHKERRQ(ierr);
 	    break;
 	  case ctx_TSSetRHSJacobian:
 	  case ctx_TSSetIJacobian:
@@ -519,13 +523,6 @@ PetscErrorCode ierr;
 	    ierr = VecGhostUpdateEnd(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	    ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
 	    ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
-	    ierr = VecAssemblyBegin(BCVector); CHKERRQ(ierr);
-	    ierr = VecAssemblyEnd(BCVector); CHKERRQ(ierr);
-	    ierr = VecGhostUpdateBegin(BCVector,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	    ierr = VecGhostUpdateEnd(BCVector,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	    ierr = VecAXPY(ts_F,1.,BCVector); CHKERRQ(ierr);
-	    ierr = VecDestroy(&BCVector); CHKERRQ(ierr);
-	    BCVector = PETSC_NULL;
 	    break;
 	  case ctx_TSSetRHSJacobian:
 	  case ctx_TSSetIJacobian: {
@@ -602,7 +599,7 @@ PetscErrorCode ierr;
 	    if(Diagonal==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"DrihletBC on diagonal imposible to set"); 
 	    if(DirihletBC.size()>0) {
 	      DirihletBCDiagVal.resize(DirihletBC.size());
-	      fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),ts_a);
+	      fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
 	      ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
 	    }
 	    ierr = Stiffness(); CHKERRQ(ierr);
@@ -689,6 +686,7 @@ PetscErrorCode ierr;
 	  case ctx_TSSetRHSJacobian: {
 	    } break;
 	  case ctx_TSSetIFunction: {
+	    ierr = DirihletBCSet(); CHKERRQ(ierr);
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    if(VV.size2()!=dot_velocities.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    ublas::vector<FieldData> VVu = prod(VV,dot_velocities);
@@ -718,6 +716,7 @@ PetscErrorCode ierr;
 	  case ctx_TSSetRHSJacobian: {
 	    } break;
 	  case ctx_TSSetIFunction: {
+	    ierr = DirihletBCSet(); CHKERRQ(ierr);
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    for(int cc = 0;cc<col_mat;cc++) {
 	      if(VU[cc].size2()!=velocities[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
