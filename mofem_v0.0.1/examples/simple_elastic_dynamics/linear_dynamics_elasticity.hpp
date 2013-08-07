@@ -138,7 +138,6 @@ PetscErrorCode ierr;
 	    for(int cc = 0;cc<col_mat;cc++) {
 	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
 	      if( it != ColGlob[cc].end() ) {
-		DirihletBC_SideSet2.insert(ciit->get_unique_id());
 		*it = -1; // of idx is set -1 column is not assembled
 	      }
 	    }
@@ -150,75 +149,80 @@ PetscErrorCode ierr;
       PetscFunctionReturn(0);
     }
 
+    PetscErrorCode DirihletBCDiagonalSet() {
+      PetscFunctionBegin;
+    
+      Range DirihletSet;
+      DirihletSet.insert(SideSet1_.begin(),SideSet1_.end());
+      if(ts_t < 5.) {
+	DirihletSet.insert(SideSet2_.begin(),SideSet2_.end());
+      }
+
+      NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+      dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problem_ptr->get_nb_local_dofs_row());
+      for(;dit!=hi_dit;dit++) {
+	if(find(DirihletSet.begin(),DirihletSet.end(),dit->get_ent()) == DirihletSet.end()) continue;
+	ierr = MatSetValue(*ts_B,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),ts_a,INSERT_VALUES); CHKERRQ(ierr);
+      }
+
+      PetscFunctionReturn(0);
+    }
+
     PetscErrorCode DirihletBCSet() {
       PetscFunctionBegin;
 
       if(Dirihlet_BC_on_SideSet2) {
+
+	if(ts_t > 5.) PetscFunctionReturn(0);
 
 	double disp_val = 0;
 	double vel_val = 0;
 	const double v1 = 0.2;
 	const double init_t = 1.;
 	if(ts_t < init_t) {
-	  disp_val = v1 * ((ts_t*ts_t/2.)/init_t);
-	  vel_val = v1* (ts_t/init_t);
+	  disp_val = v1 * ( (ts_t*ts_t/2.)/init_t );
+	  vel_val = v1* ( ts_t/init_t );
 	} else if(ts_t < 5.) {
-	  disp_val = v1*(((init_t*init_t/2.)/init_t) + ts_t);
+	  disp_val = v1*( ((init_t*init_t/2.)/init_t) + (ts_t-init_t) );
 	  vel_val = v1;
 	} 
 
-	Vec u_local,u_t_local;
-	ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
-	ierr = VecGhostGetLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
-	double *array,*array2;
-	ierr = VecGetArray(u_local,&array); CHKERRQ(ierr);
-	ierr = VecGetArray(u_t_local,&array2); CHKERRQ(ierr);
-	//
-	set<UId>::iterator vit = DirihletBC_SideSet2.begin();
-	for(;vit!=DirihletBC_SideSet2.end();vit++) {
+	NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+	dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+	hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problem_ptr->get_nb_local_dofs_row());
+	double *array,*array2,*array3;
+	ierr = VecGetArray(ts_F,&array); CHKERRQ(ierr);
+	ierr = VecGetArray(ts_u_t,&array2); CHKERRQ(ierr);
+	ierr = VecGetArray(ts_u,&array3); CHKERRQ(ierr);
 
-	  /*if(fe_name=="STIFFNESS") {
-	    switch (ts_ctx) {
-	      case ctx_TSSetIFunction: {
-		FENumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator riit = row_multiIndex->get<Unique_mi_tag>().find(*vit);
-		Vec F_local;
-		ierr = VecGhostGetLocalForm(ts_F,&F_local); CHKERRQ(ierr);
-		double *array3;
-		ierr = VecGetArray(F_local,&array3); CHKERRQ(ierr);
-		if(riit!=row_multiIndex->get<Unique_mi_tag>().end()) {
-		  //array3[riit->get_petsc_local_dof_idx()] = 0;//disp_val + riit->get_FieldData();
-		}
-		ierr = VecRestoreArray(F_local,&array3); CHKERRQ(ierr);
-		ierr = VecGhostRestoreLocalForm(ts_F,&F_local); CHKERRQ(ierr);
-	      } default:
-		break;
-	    }
-	  }*/
-
-	  FENumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator ciit = col_multiIndex->get<Unique_mi_tag>().find(*vit);
-	  if(ciit == col_multiIndex->get<Unique_mi_tag>().end()) continue;
-
-
-	  if(ciit->get_dof_rank()==2) {
-	    array[ciit->get_petsc_local_dof_idx()] = disp_val;
-	    array2[ciit->get_petsc_local_dof_idx()] = vel_val;
-	    ciit->get_FieldData() = disp_val;
-	  } else {
-	    array[ciit->get_petsc_local_dof_idx()] = 0;
-	    array2[ciit->get_petsc_local_dof_idx()] = 0;
-	    ciit->get_FieldData() = 0;
-	  }
-
+	for(;dit!=hi_dit;dit++) {
+	  if(find(SideSet2_.begin(),SideSet2_.end(),dit->get_ent()) == SideSet2_.end()) continue;
+	  if(dit->get_dof_rank()==2) {	
+	    array[dit->get_petsc_local_dof_idx()] = -vel_val + array2[dit->get_petsc_local_dof_idx()];
+	  } 
 	}
-	//
-	ierr = VecRestoreArray(u_local,&array); CHKERRQ(ierr);
-	ierr = VecRestoreArray(u_t_local,&array2); CHKERRQ(ierr);
-	ierr = VecGhostRestoreLocalForm(ts_u_t,&u_t_local); CHKERRQ(ierr);
-	ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
+
+	dit = problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+	hi_dit = problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().upper_bound(
+	  problem_ptr->get_nb_local_dofs_col()+problem_ptr->get_nb_ghost_dofs_col());
+	for(;dit!=hi_dit;dit++) {
+	  if(find(SideSet2_.begin(),SideSet2_.end(),dit->get_ent()) == SideSet2_.end()) continue;
+	  if(dit->get_dof_rank()==2) {
+	    dit->get_FieldData() = disp_val;
+	    array2[dit->get_petsc_local_dof_idx()] = vel_val;
+	  }
+	}
+
+	ierr = VecRestoreArray(ts_F,&array); CHKERRQ(ierr);
+	ierr = VecRestoreArray(ts_u_t,&array2); CHKERRQ(ierr);
+
 
       }
 
+
       PetscFunctionReturn(0);
+
     }
 
     /// Set Neumann Boundary Conditions on SideSet2
@@ -304,6 +308,7 @@ PetscErrorCode ierr;
       velocities.resize(col_mat);
       displacements.resize(col_mat);
       for(;cc<col_mat;cc++) {
+	if(ColLocal[cc].size()==0) continue;
 	velocities[cc].resize(ColLocal[cc].size());
 	displacements[cc].resize(ColLocal[cc].size());
 	vector<DofIdx>::iterator iit = ColLocal[cc].begin();
@@ -311,7 +316,16 @@ PetscErrorCode ierr;
 	  if(*iit < 0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(*iit >= local_size) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  (velocities[cc])[iii] = array[*iit];
-	  (displacements[cc])[iii] = array2[*iit];
+	  FENumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator ciit = col_multiIndex->get<PetscLocalIdx_mi_tag>().find(*iit);
+	  if(ciit==col_multiIndex->get<PetscLocalIdx_mi_tag>().end()) {
+	    for(ciit = col_multiIndex->get<PetscLocalIdx_mi_tag>().begin();
+	      ciit!=col_multiIndex->get<PetscLocalIdx_mi_tag>().end();ciit++) {
+	      cerr << *it << " " << ColLocal.size() << endl;
+	      cerr << *ciit << endl;
+	    }
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
+	  (displacements[cc])[iii] = ciit->get_FieldData();
 	}
       }
       ierr = VecRestoreArray(u_local,&array2); CHKERRQ(ierr);
@@ -450,12 +464,13 @@ PetscErrorCode ierr;
 	    ierr = VecZeroEntries(ts_F); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateBegin(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateEnd(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    //
+	    ierr = DirihletBCSet(); CHKERRQ(ierr);
+	    //
 	    break;
 	  case ctx_TSSetRHSJacobian:
 	  case ctx_TSSetIJacobian:
 	    ierr = MatZeroEntries(*ts_B); CHKERRQ(ierr);
-	    ierr = VecDuplicate(ts_F,&Diagonal); CHKERRQ(ierr);
-	    ierr = VecZeroEntries(Diagonal); CHKERRQ(ierr);
 	    break;
 	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
@@ -543,11 +558,11 @@ PetscErrorCode ierr;
 	    break;
 	  case ctx_TSSetRHSJacobian:
 	  case ctx_TSSetIJacobian: {
-	    ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-	    ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-	    ierr = MatDiagonalSet(*ts_B,Diagonal,ADD_VALUES); CHKERRQ(ierr);
-	    ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
-	    Diagonal = PETSC_NULL;
+	    ierr = MatAssemblyBegin(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	    ierr = MatAssemblyEnd(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	    //
+	    ierr = DirihletBCDiagonalSet(); CHKERRQ(ierr);
+	    //
 	    ierr = MatAssemblyBegin(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	    ierr = MatAssemblyEnd(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	    *ts_flag = SAME_NONZERO_PATTERN; 
@@ -581,8 +596,6 @@ PetscErrorCode ierr;
 	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSTSMonitorSet: {
-	    ierr = GetMatrices(); CHKERRQ(ierr);
-	    ierr = ApplyDirihletBC(); CHKERRQ(ierr);
 	    ierr = Fint(); CHKERRQ(ierr);
 	    Vec u_local;
 	    ierr = VecGhostGetLocalForm(u_by_row,&u_local); CHKERRQ(ierr);
@@ -608,17 +621,10 @@ PetscErrorCode ierr;
 	  case ctx_TSSetRHSJacobian: {
 	    } break;
 	  case ctx_TSSetIFunction: {
-	    ierr = DirihletBCSet(); CHKERRQ(ierr);
 	    ierr = NeumannBC(ts_F); CHKERRQ(ierr);
 	    ierr = Fint(ts_F); CHKERRQ(ierr);
 	  } break;
 	  case ctx_TSSetIJacobian: {
-	    if(Diagonal==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"DrihletBC on diagonal imposible to set"); 
-	    if(DirihletBC.size()>0) {
-	      DirihletBCDiagVal.resize(DirihletBC.size());
-	      fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	      ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
-	    }
 	    ierr = Stiffness(); CHKERRQ(ierr);
 	    for(int rr = 0;rr<row_mat;rr++) {
 	      if(RowGlob[rr].size()==0) continue;
@@ -637,6 +643,10 @@ PetscErrorCode ierr;
 	PetscFunctionReturn(0);
       }
       if(fe_name=="MASS") {
+	for(int cc = 0;cc<col_mat;cc++) {
+	  ColGlob[cc].resize(0);
+	  ColLocal[cc].resize(0);
+	}
 	ierr = GetMatricesRows(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
@@ -703,7 +713,6 @@ PetscErrorCode ierr;
 	  case ctx_TSSetRHSJacobian: {
 	    } break;
 	  case ctx_TSSetIFunction: {
-	    ierr = DirihletBCSet(); CHKERRQ(ierr);
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    if(VV.size2()!=dot_velocities.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    ublas::vector<FieldData> VVu = prod(VV,dot_velocities);
@@ -733,7 +742,6 @@ PetscErrorCode ierr;
 	  case ctx_TSSetRHSJacobian: {
 	    } break;
 	  case ctx_TSSetIFunction: {
-	    ierr = DirihletBCSet(); CHKERRQ(ierr);
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    for(int cc = 0;cc<col_mat;cc++) {
 	      if(VU[cc].size2()!=velocities[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");

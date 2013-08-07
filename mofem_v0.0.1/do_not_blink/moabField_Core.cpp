@@ -1606,7 +1606,7 @@ PetscErrorCode moabField_Core::partition_problems(const string &name,int verb) {
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_part_change(part_number[miit_dofs_col->dof_idx],petsc_idx[miit_dofs_col->dof_idx]));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-    if(miit_dofs_row->part == (unsigned int)pcomm->rank()) {
+    if(miit_dofs_row->part == pcomm->rank()) {
       assert(miit_dofs_row->part==miit_dofs_col->part);
       assert(miit_dofs_row->petsc_gloabl_dof_idx==miit_dofs_col->petsc_gloabl_dof_idx);
       success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));

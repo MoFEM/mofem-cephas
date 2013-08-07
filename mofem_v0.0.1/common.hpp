@@ -647,7 +647,7 @@ struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
   unsigned int part;
   inline DofIdx get_petsc_gloabl_dof_idx() const { return petsc_gloabl_dof_idx;  }
   inline DofIdx get_petsc_local_dof_idx() const { return petsc_local_dof_idx; }
-  inline DofIdx get_part() const { return part;  }
+  inline unsigned int get_part() const { return part;  }
   NumeredDofMoFEMEntity(const DofIdx idx,const DofMoFEMEntity* _DofMoFEMEntity_ptr);
   inline bool operator<(const NumeredDofMoFEMEntity& _dof) const { return get_unique_id()<_dof.get_unique_id(); }
   friend ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e);
@@ -662,7 +662,7 @@ struct interface_NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<T> {
   inline DofIdx get_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->dof_idx; }
   inline DofIdx get_petsc_gloabl_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_petsc_gloabl_dof_idx();  }
   inline DofIdx get_petsc_local_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_petsc_local_dof_idx(); }
-  inline DofIdx get_part() const { return interface_DofMoFEMEntity<T>::field_ptr->get_part();;  }
+  inline unsigned int get_part() const { return interface_DofMoFEMEntity<T>::field_ptr->get_part();  }
 };
 
 /**
@@ -991,7 +991,7 @@ struct NumeredMoFEMFE: public interface_EntMoFEMFE<EntMoFEMFE> {
   typedef interface_EntMoFEMFE<EntMoFEMFE> interface_type_EntMoFEMFE;
   unsigned int part;
   NumeredMoFEMFE(const EntMoFEMFE *EntMoFEMFE_ptr): interface_EntMoFEMFE<EntMoFEMFE>(EntMoFEMFE_ptr),part(-1) {};
-  unsigned int get_part() const { return part; };
+  inline unsigned int get_part() const { return part; };
   friend ostream& operator<<(ostream& os,const NumeredMoFEMFE& e) {
     os << "part " << e.part << " " << *(e.fe_ptr);
     return os;
@@ -1003,7 +1003,7 @@ template <typename T>
 struct interface_NumeredMoFEMFE: public interface_EntMoFEMFE<T> {
   const T *ptr;
   interface_NumeredMoFEMFE(const T *_ptr): interface_EntMoFEMFE<T>(_ptr) {};
-  inline int get_part() const { return ptr->get_part(); }
+  inline unsigned int get_part() const { return ptr->get_part(); }
 };
 
 /**
