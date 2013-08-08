@@ -31,3 +31,17 @@ cm_export_file("../../meshes/dome_thin_symm.cub" "/" export_files_arc_lenght_non
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
+#testing
+add_test(ArcLenghtNonLinearElasticityTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_lenght_nonlinear_elasticity
+  -my_file dome_thin_symm.cub -ksp_type fgmres 
+  -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor 
+  -ksp_atol 1e-10 -ksp_rtol 1e-10 
+  -snes_monitor 
+  -snes_type ls -snes_linesearch_type l2 -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 
+  -my_sr 1e-6 -my_ms 5 -snes_converged_reason
+  -log_summary)
+
+
+
+

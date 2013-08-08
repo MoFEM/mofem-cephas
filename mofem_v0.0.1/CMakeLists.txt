@@ -26,9 +26,25 @@ include(cmake/ExportFile.cmake)
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} ) 
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
 
+
 include(cmake/ResolveCompilerPaths.cmake)
 
-project(123_configurational_forces C CXX)
+
+project(MoFEM C CXX)
+
+set (MoFEM_VERSION_MAJOR 0)
+set (MoFEM_VERSION_MINOR 1)
+
+# configure a header file to pass some of the CMake settings
+# to the source code
+configure_file (
+  "${PROJECT_SOURCE_DIR}/config.h.in"
+  "${PROJECT_BINARY_DIR}/config.h"
+  )
+include_directories("${PROJECT_BINARY_DIR}")
+
+#add check for verbose testing
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 #find_package(CGAL QUIET COMPONENTS  Core)
 #if(NOT CGAL_FOUND)
@@ -45,9 +61,13 @@ set(CMAKE_C_FLAGS_RELEASE "${PETSC_FLAGS} ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEA
 #message(STATUS ${CMAKE_C_FLAGS_MINSIZEREL})
 #message(STATUS ${CMAKE_C_FLAGS_RELEASE})
 
+#get mpipath bin directory
+string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
+message(STATUS ${MPI_BIN_PATH})
+
 set(MOAB_FLAGS "${MOAB_CXXFLAGS} -Wno-deprecated-declarations")
-string (REGEX REPLACE "-pedantic" "" "MOAB_FLAGS"  ${MOAB_FLAGS})
-string (REGEX REPLACE "-Wshadow" "" "MOAB_FLAGS"  ${MOAB_FLAGS})
+string(REGEX REPLACE "-pedantic" "" "MOAB_FLAGS"  ${MOAB_FLAGS})
+string(REGEX REPLACE "-Wshadow" "" "MOAB_FLAGS"  ${MOAB_FLAGS})
 set(CMAKE_CXX_FLAGS_DEBUG "${MOAB_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS_MINSIZEREL "${MOAB_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_MINSIZEREL}")
 set(CMAKE_CXX_FLAGS_RELEASE "${MOAB_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -111,16 +131,20 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #add executable library form subdirectory
+enable_testing()
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
-
 
 #example how to add new executable
 #substitute "Program_Name" by name of new program
 #add_executable(Program_Name Program_Name.cpp)
 #target_link_libraries(Program_Name
 #  mofem_Field ${PROJECT_LIBS} ${PROJECT_LIBS})
+
+
+
+
 
 
 

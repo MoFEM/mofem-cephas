@@ -25,3 +25,7 @@ file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
+#testing
+add_test(SimpleInterfaceTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/interface
+  -my_file PeelTest.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary)
+

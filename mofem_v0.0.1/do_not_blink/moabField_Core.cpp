@@ -32,8 +32,10 @@ moabField_Core::moabField_Core(Interface& _moab,int _verbose):
   moab(_moab),verbose(_verbose) {
   const EntityHandle root_meshset = moab.get_root_set();
   // Version
+  stringstream strs_version;
+  strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR;
   Tag th_version;
-  string version = "v0.0.1";
+  string version = strs_version.str();
   rval = moab.tag_get_handle("_MoFEM_VERSION",version.size()*sizeof(char),MB_TYPE_OPAQUE,
     th_version,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,NULL); CHKERR(rval);
   const char *ptr_version = version.c_str();

@@ -228,7 +228,6 @@ PetscErrorCode ierr;
 	ierr = VecRestoreArray(ts_F,&array); CHKERRQ(ierr);
 	ierr = VecRestoreArray(ts_u_t,&array2); CHKERRQ(ierr);
 
-
       }
 
 

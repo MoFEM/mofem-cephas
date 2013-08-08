@@ -22,10 +22,9 @@ include_directories("${PROJECT_SOURCE_DIR}/examples")
 #add executable library form subdirectory
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_interface")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_dynamics")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_elasticity")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_dynamics")
-
 
 
