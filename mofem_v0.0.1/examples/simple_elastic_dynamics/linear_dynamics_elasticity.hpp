@@ -348,7 +348,7 @@ PetscErrorCode ierr;
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
 	  ublas::matrix<FieldData> &col_Mat = VelColNMatrix[gg];
-	  double w = rho*V*G_TET_W45[gg];
+	  double w = rho*V*G_W_TET[gg];
 	  if(gg == 0) {
 	    Mass[rr] = w*prod( trans(row_Mat), col_Mat );
 	  } else {
@@ -366,7 +366,7 @@ PetscErrorCode ierr;
       for(int gg = 0;gg<g_dim;gg++) {
 	ublas::matrix<FieldData> &row_Mat = VelRowNMatrix[gg];
 	ublas::matrix<FieldData> &col_Mat = VelColNMatrix[gg];
-	double w = rho*V*G_TET_W45[gg];
+	double w = rho*V*G_W_TET[gg];
 	if(gg == 0) {
 	  VV = w*prod( trans(row_Mat), col_Mat );
 	} else {
@@ -385,7 +385,7 @@ PetscErrorCode ierr;
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = VelRowNMatrix[gg];
 	  ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
-	  double w = rho*V*G_TET_W45[gg];
+	  double w = rho*V*G_W_TET[gg];
 	  if(gg == 0) {
 	    VU[cc] = -w*prod( trans(row_Mat), col_Mat );
 	  } else {
@@ -401,10 +401,12 @@ PetscErrorCode ierr;
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
 
-      g_NTET.resize(4*45);
-      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      g_NTRI.resize(3*13);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+      g_NTET.resize(4*4);
+      ShapeMBTET(&g_NTET[0],G_TET_X4,G_TET_Y4,G_TET_Z4,4);
+      G_W_TET = G_TET_W4;
+      g_NTRI.resize(3*3);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X3,G_TRI_Y3,3); 
+      G_W_TRI = G_TRI_W3;
 
       if(fe_name=="STIFFNESS") {
 	// See FEAP - - A Finite Element Analysis Program

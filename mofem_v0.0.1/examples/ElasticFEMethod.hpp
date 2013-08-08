@@ -66,6 +66,13 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	VecSetOption(F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
       }
 
+      g_NTET.resize(4*45);
+      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+      G_W_TET = G_TET_W45;
+      g_NTRI.resize(3*13);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+      G_W_TRI = G_TRI_W13;
+
     }; 
 
     ErrorCode rval;
@@ -97,6 +104,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     vector<FieldData> DirihletBCDiagVal;
 
     vector<double> g_NTET,g_NTRI;
+    const double* G_W_TET;
+    const double* G_W_TRI;
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -105,8 +114,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+      G_W_TET = G_TET_W45;
       g_NTRI.resize(3*13);
       ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+      G_W_TRI = G_TRI_W13;
       ierr = VecZeroEntries(F); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -206,7 +217,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	ublas::vector<FieldData> f_ext_nodes = ublas::zero_vector<FieldData>(FaceNMatrix_nodes[0].size2());
 	int g_dim = get_dim_gNTRI();
 	for(int gg = 0;gg<g_dim;gg++) {
-	  double w = area*G_TRI_W13[gg];
+	  double w = area*G_W_TRI[gg];
 	  f_ext_nodes += w*prod(trans(FaceNMatrix_nodes[gg]), traction);
 	}
 	ierr = VecSetValues(F_ext,RowGlob_nodes.size(),&(RowGlob_nodes)[0],&(f_ext_nodes.data())[0],ADD_VALUES); CHKERRQ(ierr);
@@ -219,7 +230,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    vector<ublas::matrix<FieldData> >& FaceNMatrix_edge = FaceNMatrix_edges[siiit->side_number];
 	    ublas::vector<FieldData> f_ext_edges = ublas::zero_vector<FieldData>(FaceNMatrix_edge[0].size2());
 	    for(int gg = 0;gg<g_dim;gg++) {
-	      double w = area*G_TRI_W13[gg];
+	      double w = area*G_W_TRI[gg];
 	      f_ext_edges += w*prod(trans(FaceNMatrix_edge[gg]), traction);
 	    }
 	    if(RowGlob_edge.size()!=f_ext_edges.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_edge.size()!=f_ext_edges.size()");
@@ -231,7 +242,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	if(RowGlob_face.size()>0) {
 	  ublas::vector<FieldData> f_ext_faces = ublas::zero_vector<FieldData>(FaceNMatrix_face[0].size2());
 	  for(int gg = 0;gg<g_dim;gg++) {
-	    double w = area*G_TRI_W13[gg];
+	    double w = area*G_W_TRI[gg];
 	    f_ext_faces += w*prod(trans(FaceNMatrix_face[gg]), traction);
 	  }
 	  if(RowGlob_face.size()!=f_ext_faces.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_face.size()!=f_ext_faces.size()");
@@ -391,7 +402,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
 	    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
 	    ///K matrices
-	    double w = V*G_TET_W45[gg];
+	    double w = V*G_W_TET[gg];
 	    ublas::matrix<FieldData> BTD = prod( trans(row_Mat), w*D );
 	    if(gg == 0) {
 	      K(rr,cc) = prod(BTD , col_Mat ); // int BT*D*B
@@ -457,7 +468,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  VoightStrain[3] = 2*Strain(0,1);
 	  VoightStrain[4] = 2*Strain(1,2);
 	  VoightStrain[5] = 2*Strain(2,0);
-	  double w = V*G_TET_W45[gg];
+	  double w = V*G_W_TET[gg];
 	  ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
 	  //BT * VoigtStress
 	  for(int rr = 0;rr<row_mat;rr++) {
