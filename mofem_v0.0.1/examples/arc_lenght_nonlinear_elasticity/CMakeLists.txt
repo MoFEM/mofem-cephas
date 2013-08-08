@@ -39,7 +39,7 @@ add_test(ArcLenghtNonLinearElasticityTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_C
   -ksp_atol 1e-10 -ksp_rtol 1e-10 
   -snes_monitor 
   -snes_type ls -snes_linesearch_type l2 -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 
-  -my_sr 1e-6 -my_ms 5 -snes_converged_reason
+  -my_sr 1e-6 -my_ms 4 -snes_converged_reason
   -log_summary)
 
 

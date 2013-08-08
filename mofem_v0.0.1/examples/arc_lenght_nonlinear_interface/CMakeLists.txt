@@ -31,7 +31,7 @@ add_test(ArcLenghtInterfaceTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BIN
   -ksp_type fgmres -pc_type asm -sub_pc_type lu
   -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10
   -snes_monitor -snes_type ls -snes_linesearch_type cp -snes_linesearch_monitor
-  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1e-2 -my_ms 4 -snes_converged_reason
+  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1e-2 -my_ms 20 -snes_converged_reason
   -log_summary)
 
  
