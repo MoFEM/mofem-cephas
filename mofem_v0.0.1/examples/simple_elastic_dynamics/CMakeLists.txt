@@ -35,7 +35,7 @@ add_test(LinearDynamicsElasticity ${MPI_BIN_PATH}/mpirun -np 2 ${CMAKE_CURRENT_B
   -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 
   -snes_monitor -snes_type ls -snes_linesearch_type basic 
   -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 
-  -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 10
+  -ts_monitor -ts_type alpha -ts_dt 0.1 -ts_final_time 10
   -log_summary)
 
  
