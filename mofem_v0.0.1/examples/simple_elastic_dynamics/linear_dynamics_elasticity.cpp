@@ -280,6 +280,11 @@ int main(int argc, char *argv[]) {
   ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
+  //PetscReal alpha_m,alpha_f,gamma;
+  //ierr = TSAlphaGetParams(ts,&alpha_m,&alpha_f,&gamma); CHKERRQ(ierr);
+  //PetscPrintf(PETSC_COMM_WORLD,
+    //"alpha_m = %6.4e alpha_f = %6.4e gamma = %6.4e\n",alpha_m,alpha_f,gamma);
+
   ierr = TSSolve(ts,D,&ftime); CHKERRQ(ierr);
 
   PetscInt steps,snesfails,rejects,nonlinits,linits;
