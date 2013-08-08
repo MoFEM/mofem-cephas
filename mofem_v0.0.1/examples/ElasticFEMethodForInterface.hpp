@@ -522,6 +522,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 	for(int nn = 0;nn<num_nodes;nn++) {
 	  map<EntityHandle,EntityHandle>::iterator mit = node_map.find(conn_ref[nn]);
 	  assert(mit!=node_map.end());
+	  NOT_USED(mit);
 	  conn_post_proc[nn] = node_map[conn_ref[nn]];
 	}
 	EntityHandle ref_prism;
