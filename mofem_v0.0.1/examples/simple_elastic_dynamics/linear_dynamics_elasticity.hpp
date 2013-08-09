@@ -84,7 +84,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
     }
 
     PetscErrorCode SetDirihletBC_to_ElementIndiciesSideSet1(
-      moabField::FEMethod *fe_method_ptr,
+      moabField::FEMethod *fe_method_ptr,string field_name,
       vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
       PetscFunctionBegin;
       //Dirihlet form SideSet1
@@ -94,7 +94,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
 	  for(;riit!=hi_riit;riit++) {
-	    if(riit->get_name()!="DISPLACEMENT") continue;
+	    if(riit->get_name()!=field_name) continue;
 	    // all fixed
 	    // if some ranks are selected then we could apply BC in particular direction
 	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
@@ -106,7 +106,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
 	  for(;ciit!=hi_ciit;ciit++) {
-	    if(ciit->get_name()!="DISPLACEMENT") continue;
+	    if(ciit->get_name()!=field_name) continue;
 	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
 	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
 	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
@@ -117,7 +117,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
     }
 
     PetscErrorCode SetDirihletBC_to_ElementIndiciesSideSet2(
-      moabField::FEMethod *fe_method_ptr,
+      moabField::FEMethod *fe_method_ptr,string field_name,
       vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
       PetscFunctionBegin;
 
@@ -126,7 +126,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit2);
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit2);
 	  for(;riit!=hi_riit;riit++) {
-	    if(riit->get_name()!="DISPLACEMENT") continue;
+	    if(riit->get_name()!=field_name) continue;
 	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
 	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
 	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
@@ -140,7 +140,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit2);
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit2);
 	  for(;ciit!=hi_ciit;ciit++) {
-	    if(ciit->get_name()!="DISPLACEMENT") continue;
+	    if(ciit->get_name()!=field_name) continue;
 	    for(unsigned int cc = 0;cc<RowGlob.size();cc++) {
 	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
 	      if( it != ColGlob[cc].end() ) {
@@ -154,17 +154,18 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
     }
 
     PetscErrorCode SetDirihletBC_to_ElementIndicies(
-      moabField::FEMethod *fe_method_ptr,
+      moabField::FEMethod *fe_method_ptr,string field_name,
       vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
       PetscFunctionBegin;
-
-      ierr = SetDirihletBC_to_ElementIndiciesSideSet1(fe_method_ptr,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+      
+      if(field_name!="DISPLACEMENT") SETERRQ(PETSC_COMM_SELF,1,"field name should be DISPLACEMENT!");
+      ierr = SetDirihletBC_to_ElementIndiciesSideSet1(fe_method_ptr,field_name,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
       bc->DirihletBC_SideSet2.clear();
       if(bc->Dirihlet_BC_on_SideSet2) {
 
 	if(fe_method_ptr->ts_t > bc->final_time) PetscFunctionReturn(0);
-	ierr = SetDirihletBC_to_ElementIndiciesSideSet2(fe_method_ptr,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+	ierr = SetDirihletBC_to_ElementIndiciesSideSet2(fe_method_ptr,field_name,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
       }
 
