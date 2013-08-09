@@ -43,6 +43,212 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
+struct DynamicExampleDiriheltBC: public BaseDirihletBC {
+
+    struct BC {
+      set<UId> DirihletBC_SideSet2;
+      Range SideSet2Nodes;
+
+      const bool Dirihlet_BC_on_SideSet2;
+      BC(): Dirihlet_BC_on_SideSet2(false),final_time(0) {}
+      const double final_time;
+      BC(const double _final_time): Dirihlet_BC_on_SideSet2(true), final_time(_final_time) {}
+
+      virtual PetscErrorCode f_CalcTraction(double ts_t,ublas::vector<double,ublas::bounded_array<double,3> >& traction) const = 0;
+      virtual PetscErrorCode f_CalcDisp(double ts_t,
+	 ublas::vector<double,ublas::bounded_array<double,3> >& disp,
+	 ublas::vector<double,ublas::bounded_array<double,3> >& vel) const = 0;
+
+    };
+
+
+    BC *bc;
+    Range SideSet1_,SideSet2_;
+
+    DynamicExampleDiriheltBC(Interface &moab,BC *_bc,Range& SideSet1,Range& SideSet2):bc(_bc) {
+	ErrorCode rval;
+      Range SideSet1Edges,SideSet1Nodes;
+      rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
+      rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
+      SideSet1_.insert(SideSet1.begin(),SideSet1.end());
+      SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
+      SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
+      
+      Range SideSet2Edges;
+      rval = moab.get_connectivity(SideSet2,bc->SideSet2Nodes,true); CHKERR_THROW(rval);
+      rval = moab.get_adjacencies(SideSet2,1,false,SideSet2Edges,Interface::UNION); CHKERR_THROW(rval);
+      SideSet2_.insert(SideSet2.begin(),SideSet2.end());
+      SideSet2_.insert(SideSet2Edges.begin(),SideSet2Edges.end());
+      SideSet2_.insert(bc->SideSet2Nodes.begin(),bc->SideSet2Nodes.end());
+
+    }
+
+    PetscErrorCode ApplyDirihletBCSideSet1(
+      moabField::FEMethod *fe_method_ptr,
+      vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
+      PetscFunctionBegin;
+      //Dirihlet form SideSet1
+      DirihletBC.resize(0);
+      Range::iterator siit1 = SideSet1_.begin();
+      for(;siit1!=SideSet1_.end();siit1++) {
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	  for(;riit!=hi_riit;riit++) {
+	    if(riit->get_name()!="DISPLACEMENT") continue;
+	    // all fixed
+	    // if some ranks are selected then we could apply BC in particular direction
+	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
+	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+	    }
+	  }
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	  for(;ciit!=hi_ciit;ciit++) {
+	    if(ciit->get_name()!="DISPLACEMENT") continue;
+	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
+	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	    }
+	  }
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode ApplyDirihletBCSideSet2(
+      moabField::FEMethod *fe_method_ptr,
+      vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
+      PetscFunctionBegin;
+
+	Range::iterator siit2 = SideSet2_.begin();
+	for(;siit2!=SideSet2_.end();siit2++) {
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit2);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit2);
+	  for(;riit!=hi_riit;riit++) {
+	    if(riit->get_name()!="DISPLACEMENT") continue;
+	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
+	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlob[rr].end() ) {
+		if( it == RowGlob[rr].end() ) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		bc->DirihletBC_SideSet2.insert(riit->get_unique_id());
+		*it = -1; // of idx is set -1 row is not assembled
+	      }
+	    }
+	  }
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit2);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit2);
+	  for(;ciit!=hi_ciit;ciit++) {
+	    if(ciit->get_name()!="DISPLACEMENT") continue;
+	    for(unsigned int cc = 0;cc<RowGlob.size();cc++) {
+	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
+	      if( it != ColGlob[cc].end() ) {
+		*it = -1; // of idx is set -1 column is not assembled
+	      }
+	    }
+	  }
+	}
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode ApplyDirihletBC(
+      moabField::FEMethod *fe_method_ptr,
+      vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
+      PetscFunctionBegin;
+
+      ierr = ApplyDirihletBCSideSet1(fe_method_ptr,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+
+      bc->DirihletBC_SideSet2.clear();
+      if(bc->Dirihlet_BC_on_SideSet2) {
+
+	if(fe_method_ptr->ts_t > bc->final_time) PetscFunctionReturn(0);
+	ierr = ApplyDirihletBCSideSet2(fe_method_ptr,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+
+      }
+
+      PetscFunctionReturn(0);
+
+    }
+
+    PetscErrorCode DirihletBCDiagonalSet(moabField::FEMethod *fe_method_ptr,Mat Aij) {
+      PetscFunctionBegin;
+      Range DirihletSet;
+      DirihletSet.insert(SideSet1_.begin(),SideSet1_.end());
+
+      if(bc->Dirihlet_BC_on_SideSet2) {
+	if(fe_method_ptr->ts_t < bc->final_time) {
+	  DirihletSet.insert(SideSet2_.begin(),SideSet2_.end());
+	}
+      }
+
+      NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+      dit = fe_method_ptr->problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_dit = fe_method_ptr->problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(
+	fe_method_ptr->problem_ptr->get_nb_local_dofs_row());
+      for(;dit!=hi_dit;dit++) {
+	if(find(DirihletSet.begin(),DirihletSet.end(),dit->get_ent()) == DirihletSet.end()) continue;
+	ierr = MatSetValue(Aij,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),fe_method_ptr->ts_a,INSERT_VALUES); CHKERRQ(ierr);
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode DirihletBCSet(moabField::FEMethod *fe_method_ptr) {
+      PetscFunctionBegin;
+
+      if(bc->Dirihlet_BC_on_SideSet2) {
+
+	if(fe_method_ptr->ts_t > bc->final_time) PetscFunctionReturn(0);
+
+	ublas::vector<double,ublas::bounded_array<double,3> > disp(3);
+	ublas::vector<double,ublas::bounded_array<double,3> > vel(3);
+	ierr = bc->f_CalcDisp(fe_method_ptr->ts_t,disp,vel); CHKERRQ(ierr);
+
+	NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+	dit = fe_method_ptr->problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+	hi_dit = fe_method_ptr->problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(
+	  fe_method_ptr->problem_ptr->get_nb_local_dofs_row());
+	double *array,*array2,*array3;
+	ierr = VecGetArray(fe_method_ptr->ts_F,&array); CHKERRQ(ierr);
+	ierr = VecGetArray(fe_method_ptr->ts_u_t,&array2); CHKERRQ(ierr);
+	ierr = VecGetArray(fe_method_ptr->ts_u,&array3); CHKERRQ(ierr);
+
+	for(;dit!=hi_dit;dit++) {
+	  if(find(SideSet2_.begin(),SideSet2_.end(),dit->get_ent()) == SideSet2_.end()) continue;
+	  for(int dd = 0;dd<3;dd++) {
+	    if(dit->get_dof_rank()==dd) {	
+	      array[dit->get_petsc_local_dof_idx()] = -(vel[dd]) + array2[dit->get_petsc_local_dof_idx()];
+	    }
+	  } 
+	}
+
+	dit = fe_method_ptr->problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+	hi_dit = fe_method_ptr->problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().upper_bound(
+	  fe_method_ptr->problem_ptr->get_nb_local_dofs_col()+fe_method_ptr->problem_ptr->get_nb_ghost_dofs_col());
+	for(;dit!=hi_dit;dit++) {
+	  if(find(SideSet2_.begin(),SideSet2_.end(),dit->get_ent()) == SideSet2_.end()) continue;
+	  for(int dd = 0;dd<3;dd++) {
+	    if(dit->get_dof_rank()==dd) {
+	      dit->get_FieldData() = disp[dd];
+	      array2[dit->get_petsc_local_dof_idx()] = vel[dd];
+	    }
+	  }
+	}
+
+	ierr = VecRestoreArray(fe_method_ptr->ts_F,&array); CHKERRQ(ierr);
+	ierr = VecRestoreArray(fe_method_ptr->ts_u_t,&array2); CHKERRQ(ierr);
+
+      }
+
+      PetscFunctionReturn(0);
+
+    }
+
+};
+
+
   /*
    * M*u'' + K*u' - F = 0
    *
@@ -64,31 +270,20 @@ PetscErrorCode ierr;
 
   struct DynamicElasticFEMethod: public ElasticFEMethod {
 
-    struct BC {
-      const bool Dirihlet_BC_on_SideSet2;
-      BC(): Dirihlet_BC_on_SideSet2(false),final_time(0) {}
-      const double final_time;
-      BC(const double _final_time): Dirihlet_BC_on_SideSet2(true), final_time(_final_time) {}
-
-      virtual PetscErrorCode f_CalcTraction(double ts_t,ublas::vector<double,ublas::bounded_array<double,3> >& traction) const = 0;
-      virtual PetscErrorCode f_CalcDisp(double ts_t,
-	 ublas::vector<double,ublas::bounded_array<double,3> >& disp,
-	 ublas::vector<double,ublas::bounded_array<double,3> >& vel) const = 0;
-
-    };
-
-
     moabField& mField;
     PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method;
     double rho;
     const int debug;
-    BC *bc;
+    DynamicExampleDiriheltBC::BC *bc;
+    Range& SideSet2Nodes;
+    Vec GhostU,GhostK;
+    Vec u_by_row;
 
-    DynamicElasticFEMethod(Interface& _moab,moabField& _mField,Mat &_Aij,Vec& _F,
-      double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2,BC *_bc): 
-      ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
-      _SideSet1,_SideSet2),mField(_mField),fe_post_proc_method(moab,_lambda,_mu),rho(_rho),debug(1),bc(_bc) {
-      rval = moab.get_connectivity(SideSet2,SideSet2Nodes,true); CHKERR_THROW(rval);
+    DynamicElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,moabField& _mField,
+      Mat &_Aij,Vec& _F,double _lambda,double _mu,double _rho,Range &_SideSet1,Range &_SideSet2,DynamicExampleDiriheltBC::BC *_bc): 
+      ElasticFEMethod(_moab,_dirihlet_bc_method_ptr,_Aij,_F,_lambda,_mu,
+      _SideSet1,_SideSet2),mField(_mField),fe_post_proc_method(moab,_lambda,_mu),rho(_rho),debug(1),
+      bc(_bc),SideSet2Nodes(bc->SideSet2Nodes) {
 
       PetscInt ghosts[1] = { 0 };
       if(pcomm->rank() == 0) {
@@ -101,11 +296,6 @@ PetscErrorCode ierr;
 
       mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&u_by_row);
 
-      rval = moab.get_adjacencies(SideSet2,1,false,SideSet2Edges,Interface::UNION); CHKERR_THROW(rval);
-      SideSet2_.insert(SideSet2.begin(),SideSet2.end());
-      SideSet2_.insert(SideSet2Edges.begin(),SideSet2Edges.end());
-      SideSet2_.insert(SideSet2Nodes.begin(),SideSet2Nodes.end());
-
     };
   
     ~DynamicElasticFEMethod() {
@@ -114,123 +304,16 @@ PetscErrorCode ierr;
       //VecDestroy(&u_by_row);
     }
 
-    Range SideSet2Nodes,SideSet2Edges,SideSet2_;
-    Vec GhostU,GhostK;
-    Vec u_by_row;
-    set<UId> DirihletBC_SideSet2;
-
-    PetscErrorCode ApplyDirihletBC() {
-      PetscFunctionBegin;
-      ierr = ElasticFEMethod::ApplyDirihletBC(); CHKERRQ(ierr);
-      
-      DirihletBC_SideSet2.clear();
-      if(bc->Dirihlet_BC_on_SideSet2) {
-
-	if(ts_t > bc->final_time) PetscFunctionReturn(0);
-
-	Range::iterator siit2 = SideSet2_.begin();
-	for(;siit2!=SideSet2_.end();siit2++) {
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit2);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit2);
-	  for(;riit!=hi_riit;riit++) {
-	    if(riit->get_name()!="DISPLACEMENT") continue;
-	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	    for(int rr = 0;rr<row_mat;rr++) {
-	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlob[rr].end() ) {
-		if( it == RowGlob[rr].end() ) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		DirihletBC_SideSet2.insert(riit->get_unique_id());
-		*it = -1; // of idx is set -1 row is not assembled
-	      }
-	    }
-	  }
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit2);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit2);
-	  for(;ciit!=hi_ciit;ciit++) {
-	    if(ciit->get_name()!="DISPLACEMENT") continue;
-	    for(int cc = 0;cc<col_mat;cc++) {
-	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
-	      if( it != ColGlob[cc].end() ) {
-		*it = -1; // of idx is set -1 column is not assembled
-	      }
-	    }
-	  }
-	}
-
-      }
-
-      PetscFunctionReturn(0);
-    }
 
     PetscErrorCode DirihletBCDiagonalSet() {
       PetscFunctionBegin;
-      Range DirihletSet;
-      DirihletSet.insert(SideSet1_.begin(),SideSet1_.end());
-
-      if(bc->Dirihlet_BC_on_SideSet2) {
-	if(ts_t < bc->final_time) {
-	  DirihletSet.insert(SideSet2_.begin(),SideSet2_.end());
-	}
-      }
-
-      NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
-      dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problem_ptr->get_nb_local_dofs_row());
-      for(;dit!=hi_dit;dit++) {
-	if(find(DirihletSet.begin(),DirihletSet.end(),dit->get_ent()) == DirihletSet.end()) continue;
-	ierr = MatSetValue(*ts_B,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),ts_a,INSERT_VALUES); CHKERRQ(ierr);
-      }
-
+      ierr = dirihlet_bc_method_ptr->DirihletBCDiagonalSet(this,*ts_B); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
     PetscErrorCode DirihletBCSet() {
       PetscFunctionBegin;
-
-      if(bc->Dirihlet_BC_on_SideSet2) {
-
-	if(ts_t > bc->final_time) PetscFunctionReturn(0);
-
-	ublas::vector<double,ublas::bounded_array<double,3> > disp(3);
-	ublas::vector<double,ublas::bounded_array<double,3> > vel(3);
-	ierr = bc->f_CalcDisp(ts_t,disp,vel); CHKERRQ(ierr);
-
-	NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
-	dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
-	hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problem_ptr->get_nb_local_dofs_row());
-	double *array,*array2,*array3;
-	ierr = VecGetArray(ts_F,&array); CHKERRQ(ierr);
-	ierr = VecGetArray(ts_u_t,&array2); CHKERRQ(ierr);
-	ierr = VecGetArray(ts_u,&array3); CHKERRQ(ierr);
-
-	for(;dit!=hi_dit;dit++) {
-	  if(find(SideSet2_.begin(),SideSet2_.end(),dit->get_ent()) == SideSet2_.end()) continue;
-	  for(int dd = 0;dd<3;dd++) {
-	    if(dit->get_dof_rank()==dd) {	
-	      array[dit->get_petsc_local_dof_idx()] = -(vel[dd]) + array2[dit->get_petsc_local_dof_idx()];
-	    }
-	  } 
-	}
-
-	dit = problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(0);
-	hi_dit = problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().upper_bound(
-	  problem_ptr->get_nb_local_dofs_col()+problem_ptr->get_nb_ghost_dofs_col());
-	for(;dit!=hi_dit;dit++) {
-	  if(find(SideSet2_.begin(),SideSet2_.end(),dit->get_ent()) == SideSet2_.end()) continue;
-	  for(int dd = 0;dd<3;dd++) {
-	    if(dit->get_dof_rank()==dd) {
-	      dit->get_FieldData() = disp[dd];
-	      array2[dit->get_petsc_local_dof_idx()] = vel[dd];
-	    }
-	  }
-	}
-
-	ierr = VecRestoreArray(ts_F,&array); CHKERRQ(ierr);
-	ierr = VecRestoreArray(ts_u_t,&array2); CHKERRQ(ierr);
-
-      }
-
-
+      ierr = dirihlet_bc_method_ptr->DirihletBCSet(this); CHKERRQ(ierr);
       PetscFunctionReturn(0);
 
     }

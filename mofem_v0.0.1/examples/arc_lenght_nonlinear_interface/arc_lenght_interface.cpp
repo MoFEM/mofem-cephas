@@ -269,8 +269,9 @@ int main(int argc, char *argv[]) {
   ArcLenghtIntElemFEMethod* MyArcMethod_ptr = new ArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
   ArcLenghtIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
-  ArcInterfaceElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3,ArcCtx);
-  ArcInterfaceFEMethod IntMyFE(moab,Aij,F,D,YoungModulus,h,beta,ft,Gf,SideSet1,SideSet2,SideSet3,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
+  ExampleDiriheltBC myDirihletBC(moab,SideSet1);
+  ArcInterfaceElasticFEMethod MyFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3,ArcCtx);
+  ArcInterfaceFEMethod IntMyFE(moab,&myDirihletBC,Aij,F,D,YoungModulus,h,beta,ft,Gf,SideSet1,SideSet2,SideSet3,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);

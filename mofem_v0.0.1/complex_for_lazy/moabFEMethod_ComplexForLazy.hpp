@@ -55,7 +55,7 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   double eps;
 
   string field_name;
-  FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
+  FEMethod_ComplexForLazy(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,analysis _type,
     double _lambda,double _mu,int _verbose = 0);
 
   int g_TRI_dim;

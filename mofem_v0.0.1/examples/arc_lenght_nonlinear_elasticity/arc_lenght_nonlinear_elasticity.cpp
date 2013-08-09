@@ -217,7 +217,8 @@ int main(int argc, char *argv[]) {
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  MyElasticFEMethod MyFE(moab,
+  ExampleDiriheltBC myDirihletBC(moab,SideSet1);
+  MyElasticFEMethod MyFE(moab,&myDirihletBC,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
     ArcCtx,SideSet1,SideSet2,SideSet3,SideSet4,NodeSet1);
 

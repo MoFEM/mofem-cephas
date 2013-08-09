@@ -22,6 +22,53 @@
 
 namespace MoFEM {
 
+struct ExampleDiriheltBC: public BaseDirihletBC {
+    Range SideSet1_;
+
+    ExampleDiriheltBC(Interface &moab,Range& SideSet1) {
+	ErrorCode rval;
+	Range SideSet1Edges,SideSet1Nodes;
+	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
+	rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
+	SideSet1_.insert(SideSet1.begin(),SideSet1.end());
+	SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
+	SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
+    }
+
+    PetscErrorCode ApplyDirihletBC(
+      moabField::FEMethod *fe_method_ptr,
+      vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
+      PetscFunctionBegin;
+      //Dirihlet form SideSet1
+      DirihletBC.resize(0);
+      Range::iterator siit1 = SideSet1_.begin();
+      for(;siit1!=SideSet1_.end();siit1++) {
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	  for(;riit!=hi_riit;riit++) {
+	    if(riit->get_name()!="DISPLACEMENT") continue;
+	    // all fixed
+	    // if some ranks are selected then we could apply BC in particular direction
+	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
+	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+	    }
+	  }
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	  for(;ciit!=hi_ciit;ciit++) {
+	    if(ciit->get_name()!="DISPLACEMENT") continue;
+	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
+	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	    }
+	  }
+      }
+      PetscFunctionReturn(0);
+    }
+};
+
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     Range SideSet1Edges,SideSet1Nodes;
@@ -35,9 +82,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       Aij(PETSC_NULL),F(PETSC_NULL),SideSet1(dummy),SideSet2(dummy) {};
 
     ElasticFEMethod(
-      Interface& _moab,Mat &_Aij,Vec& _F,
+      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      FEMethod_UpLevelStudent(_moab,1),Aij(_Aij),F(_F),Diagonal(PETSC_NULL),
+      FEMethod_UpLevelStudent(_moab,_dirihlet_ptr,1),Aij(_Aij),F(_F),Diagonal(PETSC_NULL),
       lambda(_lambda),mu(_mu),
       SideSet1(_SideSet1),SideSet2(_SideSet2) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -57,9 +104,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	//
 	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
 	rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
-	SideSet1_.insert(SideSet1.begin(),SideSet1.end());
-	SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
-	SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
 
 	//VEC & MAT Options
 	//If index is set to -1 ingonre its assembly
@@ -86,7 +130,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     Range& SideSet1;
     Range& SideSet2;
-    Range SideSet1_;
 
     int row_mat,col_mat;
     vector<vector<DofIdx> > RowGlob;
@@ -271,32 +314,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     PetscErrorCode ApplyDirihletBC() {
       PetscFunctionBegin;
-      //Dirihlet form SideSet1
-      DirihletBC.resize(0);
-      Range::iterator siit1 = SideSet1_.begin();
-      for(;siit1!=SideSet1_.end();siit1++) {
-	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	for(;riit!=hi_riit;riit++) {
-	  if(riit->get_name()!="DISPLACEMENT") continue;
-	  // all fixed
-	  // if some ranks are selected then we could apply BC in particular direction
-	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	  for(int rr = 0;rr<row_mat;rr++) {
-	    vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
-	    if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-	  }
-	}
-	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	for(;ciit!=hi_ciit;ciit++) {
-	  if(ciit->get_name()!="DISPLACEMENT") continue;
-	  for(int cc = 0;cc<col_mat;cc++) {
-	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
-	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	  }
-	}
-      }
+      ierr = dirihlet_bc_method_ptr->ApplyDirihletBC(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 

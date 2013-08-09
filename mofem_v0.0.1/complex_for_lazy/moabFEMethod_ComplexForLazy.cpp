@@ -30,10 +30,11 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
 
 namespace MoFEM {
 
-FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
+FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,
+    analysis _type,
     double _lambda,double _mu, int _verbose): 
-    FEMethod_UpLevelStudent(_moab,_verbose), type_of_analysis(_type), 
-    lambda(_lambda),mu(_mu), eps(1e-6),
+    FEMethod_UpLevelStudent(_moab,_dirihlet_bc_method_ptr,_verbose), 
+    type_of_analysis(_type),lambda(_lambda),mu(_mu), eps(1e-6),
     field_name("SPATIAL_POSITION") {
   order_edges.resize(6);
   order_faces.resize(4);

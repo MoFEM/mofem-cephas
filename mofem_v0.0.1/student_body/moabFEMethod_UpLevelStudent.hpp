@@ -34,12 +34,53 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 /** 
+ * \brief The student user interface for Dirihlet boundary conditions
+ * 
+*/
+struct BaseDirihletBC {
+
+  BaseDirihletBC() {};
+
+  virtual PetscErrorCode ApplyDirihletBC(
+    moabField::FEMethod *fe_method_ptr,
+      vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(fe_method_ptr);
+    NOT_USED(RowGlobDofs);
+    NOT_USED(ColGlobDofs);
+    NOT_USED(DirihletBC);
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode DirihletBCDiagonalSet(
+    moabField::FEMethod *fe_method_ptr,Mat Aij) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(fe_method_ptr);
+    NOT_USED(Aij);
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode DirihletBCSet(moabField::FEMethod *fe_method_ptr) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(fe_method_ptr);
+    PetscFunctionReturn(0);
+  }
+
+};
+
+/** 
  * \brief The student user interface for FE method
  * 
  * This class give user some data structures and methods on those that
  * structures which could be useful.
 */
 struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
+
+  BaseDirihletBC base_dirihlet_bc_method;
+  BaseDirihletBC *dirihlet_bc_method_ptr;
 
   //TET
   double V;
@@ -55,6 +96,7 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
   EntityHandle conn_face3[3];
   EntityHandle conn_face4[3];
 
+  FEMethod_UpLevelStudent(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,int verbose = 0);
   FEMethod_UpLevelStudent(Interface& _moab,int verbose = 0);
   ~FEMethod_UpLevelStudent();
 

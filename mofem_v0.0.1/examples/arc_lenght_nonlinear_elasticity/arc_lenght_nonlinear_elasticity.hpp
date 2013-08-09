@@ -69,13 +69,13 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
   Range SideSet3_;
   Range SideSet4_;
 
-  MyElasticFEMethod(Interface& _moab,double _lambda,double _mu,
+  MyElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
       ArcLenghtCtx *_arc_ptr,
       Range &_SideSet1,Range &_SideSet2,
       Range &_SideSet3,Range &_SideSet4,
       Range &_NodeSet1,
       int _verbose = 0): 
-      FEMethod_DriverComplexForLazy(_moab,_lambda,_mu,_verbose), 
+      FEMethod_DriverComplexForLazy(_moab,_dirihlet_ptr,_lambda,_mu,_verbose), 
       arc_ptr(_arc_ptr),
       SideSet1(_SideSet1),SideSet2(_SideSet2),
       SideSet3(_SideSet3),SideSet4(_SideSet4),

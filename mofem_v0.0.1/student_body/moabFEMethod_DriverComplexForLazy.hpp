@@ -47,9 +47,8 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
       PetscFunctionReturn(0);
     }
 
-    FEMethod_DriverComplexForLazy(Interface& _moab,
-      double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy(_moab,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
+    FEMethod_DriverComplexForLazy(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_ComplexForLazy(_moab,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
 
     vector<DofIdx> DirihletBC;
     PetscErrorCode ApplyDirihletBC(Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z,bool zero_bc = true) {

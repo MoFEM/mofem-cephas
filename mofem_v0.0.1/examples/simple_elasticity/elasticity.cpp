@@ -156,9 +156,10 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
 
   struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,
+    MyElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_ptr,
+      Mat &_Aij,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,
+      ElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,
       _SideSet1,_SideSet2) {};
 
     /// Set Neumann Boundary Conditions on SideSet2
@@ -204,7 +205,8 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
-  MyElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  ExampleDiriheltBC myDirihletBC(moab,SideSet1);
+  MyElasticFEMethod MyFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
