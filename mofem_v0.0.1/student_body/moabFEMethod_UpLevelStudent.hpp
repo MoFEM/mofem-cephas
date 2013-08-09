@@ -42,13 +42,25 @@ struct BaseDirihletBC {
   BaseDirihletBC() {};
 
   virtual PetscErrorCode ApplyDirihletBC(
-    moabField::FEMethod *fe_method_ptr,
-      vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    moabField::FEMethod *fe_method_ptr,string field_name,
+    vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
     NOT_USED(fe_method_ptr);
+    NOT_USED(field_name);
     NOT_USED(RowGlobDofs);
     NOT_USED(ColGlobDofs);
+    NOT_USED(DirihletBC);
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode ApplyDirihletBCFace(
+    vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(FaceNodeGlobalDofs);
+    NOT_USED(FaceEdgeGlobalDofs);
+    NOT_USED(FaceGlobalDofs);
     NOT_USED(DirihletBC);
     PetscFunctionReturn(0);
   }

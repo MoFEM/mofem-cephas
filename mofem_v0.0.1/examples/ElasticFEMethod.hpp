@@ -23,9 +23,9 @@
 namespace MoFEM {
 
 struct ExampleDiriheltBC: public BaseDirihletBC {
-    Range SideSet1_;
+  Range SideSet1_;
 
-    ExampleDiriheltBC(Interface &moab,Range& SideSet1) {
+  ExampleDiriheltBC(Interface &moab,Range& SideSet1) {
 	ErrorCode rval;
 	Range SideSet1Edges,SideSet1Nodes;
 	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
@@ -33,10 +33,10 @@ struct ExampleDiriheltBC: public BaseDirihletBC {
 	SideSet1_.insert(SideSet1.begin(),SideSet1.end());
 	SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
 	SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
-    }
+  }
 
-    PetscErrorCode ApplyDirihletBC(
-      moabField::FEMethod *fe_method_ptr,
+  PetscErrorCode ApplyDirihletBC(
+      moabField::FEMethod *fe_method_ptr,string field_name,
       vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
       PetscFunctionBegin;
       //Dirihlet form SideSet1
@@ -46,7 +46,7 @@ struct ExampleDiriheltBC: public BaseDirihletBC {
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
 	  for(;riit!=hi_riit;riit++) {
-	    if(riit->get_name()!="DISPLACEMENT") continue;
+	    if(riit->get_name()!=field_name) continue;
 	    // all fixed
 	    // if some ranks are selected then we could apply BC in particular direction
 	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
@@ -58,7 +58,7 @@ struct ExampleDiriheltBC: public BaseDirihletBC {
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
 	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
 	  for(;ciit!=hi_ciit;ciit++) {
-	    if(ciit->get_name()!="DISPLACEMENT") continue;
+	    if(ciit->get_name()!=field_name) continue;
 	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
 	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
 	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
@@ -66,7 +66,27 @@ struct ExampleDiriheltBC: public BaseDirihletBC {
 	  }
       }
       PetscFunctionReturn(0);
-    }
+  }
+
+  PetscErrorCode ApplyDirihletBCFace(vector<DofIdx>& DirihletBC,
+      vector<DofIdx> &FaceNodeIndices,
+      vector<vector<DofIdx> > &FaceEdgeIndices,
+      vector<DofIdx> &FaceIndices) {
+      PetscFunctionBegin;
+      vector<DofIdx>::iterator dit = DirihletBC.begin();
+      for(;dit!=DirihletBC.end();dit++) {
+	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
+	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
+	for(int ee = 0;ee<3;ee++) {
+	  it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
+	  if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
+	}
+	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
+	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
+      }
+      PetscFunctionReturn(0);
+  }
+
 };
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
@@ -314,7 +334,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     PetscErrorCode ApplyDirihletBC() {
       PetscFunctionBegin;
-      ierr = dirihlet_bc_method_ptr->ApplyDirihletBC(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->ApplyDirihletBC(this,"DISPLACEMENT",RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -513,8 +533,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       }
       PetscFunctionReturn(0);
     }
-
-
 
 
     PetscErrorCode RhsAndLhs() {

@@ -36,29 +36,22 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
+struct DirihletBCMethod_DriverComplexForLazy: public BaseDirihletBC {
 
-    enum bc_type { fixed_x = 1,fixed_y = 1<<1, fixed_z = 1<<2 };
+  enum bc_type { fixed_x = 1,fixed_y = 1<<1, fixed_z = 1<<2 };
 
-    double t_val;
-    PetscErrorCode set_t_val(double t_val_) {
-      PetscFunctionBegin;
-      t_val = t_val_;
-      PetscFunctionReturn(0);
-    }
+  DirihletBCMethod_DriverComplexForLazy() {}
 
-    FEMethod_DriverComplexForLazy(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy(_moab,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
-
-    vector<DofIdx> DirihletBC;
-    PetscErrorCode ApplyDirihletBC(Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z,bool zero_bc = true) {
-      PetscFunctionBegin;
-      //Dirihlet form SideSet1
-      if(zero_bc) DirihletBC.resize(0);
-      Range::iterator siit1 = SideSet.begin();
-      for(;siit1!=SideSet.end();siit1++) {
-	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+  PetscErrorCode ApplyDirihletBC(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC,
+    string field_name,Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z,bool zero_bc = true) {
+    PetscFunctionBegin;
+    //Dirihlet form SideSet1
+    if(zero_bc) DirihletBC.resize(0);
+    Range::iterator siit1 = SideSet.begin();
+    for(;siit1!=SideSet.end();siit1++) {
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
 	for(;riit!=hi_riit;riit++) {
 	  if(riit->get_name()!=field_name) continue;
     	  unsigned int my_bc = 0;
@@ -73,34 +66,63 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 	  // all fixed
 	  // if some ranks are selected then we could apply BC in particular direction
 	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	  for(int cc = 0;cc<(i_last);cc++) {
+	  for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
 	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),riit->get_petsc_gloabl_dof_idx());
 	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
 	  }
-	  for(int rr = 0;rr<(i_last);rr++) {
+	  for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
 	    vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
 	    if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
 	  }
 	}
-      }
-      PetscFunctionReturn(0);
     }
+    PetscFunctionReturn(0);
+  }
 
-    PetscErrorCode ApplyDirihletBCFace() {
+  PetscErrorCode ApplyDirihletBCFace(vector<DofIdx>& DirihletBC,
+      vector<DofIdx> &FaceNodeIndices,
+      vector<vector<DofIdx> > &FaceEdgeIndices,
+      vector<DofIdx> &FaceIndices) {
       PetscFunctionBegin;
       vector<DofIdx>::iterator dit = DirihletBC.begin();
       for(;dit!=DirihletBC.end();dit++) {
 	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
 	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
 	for(int ee = 0;ee<3;ee++) {
-	  it = find(FaceEdgeIndices_data[ee].begin(),FaceEdgeIndices_data[ee].end(),*dit);
-	  if(it!=FaceEdgeIndices_data[ee].end()) *it = -1; // of idx is set -1 row is not assembled
+	  it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
+	  if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
 	}
 	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
 	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
       }
       PetscFunctionReturn(0);
-    }
+  }
+
+};
+
+struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
+
+  double t_val;
+  PetscErrorCode set_t_val(double t_val_) {
+      PetscFunctionBegin;
+      t_val = t_val_;
+      PetscFunctionReturn(0);
+  }
+
+  FEMethod_DriverComplexForLazy(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+  FEMethod_ComplexForLazy(_moab,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
+
+  vector<DofIdx> DirihletBC;
+  PetscErrorCode ApplyDirihletBC() {
+    PetscFunctionBegin;
+    ierr = dirihlet_bc_method_ptr->ApplyDirihletBC(this,"SPATIAL_POSITION",RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode ApplyDirihletBCFace() {
+    PetscFunctionBegin;
+    ierr = dirihlet_bc_method_ptr->ApplyDirihletBCFace(DirihletBC,FaceNodeIndices,FaceEdgeIndices_data,FaceIndices); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -359,13 +381,13 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode operator()(Range& DirihletSideSet,Range& NeumannSideSet) {
+  PetscErrorCode operator()(Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndices(); CHKERRQ(ierr);
 
-    ierr = ApplyDirihletBC(DirihletSideSet); CHKERRQ(ierr);
+    ierr = ApplyDirihletBC(); CHKERRQ(ierr);
     if(Diagonal!=PETSC_NULL) {
 	if(DirihletBC.size()>0) {
 	  DirihletBCDiagVal.resize(DirihletBC.size());

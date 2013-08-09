@@ -56,33 +56,18 @@ namespace MoFEM {
 ErrorCode rval;
 PetscErrorCode ierr;
 
-struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
-
-  ArcLenghtCtx* arc_ptr;
+struct MyDirihletBC: public DirihletBCMethod_DriverComplexForLazy {
   Range& SideSet1;
-  Range& SideSet2;
   Range& SideSet3;
   Range& SideSet4;
-  Range& NodeSet1;
 
   Range SideSet1_;
   Range SideSet3_;
   Range SideSet4_;
 
-  MyElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
-      ArcLenghtCtx *_arc_ptr,
-      Range &_SideSet1,Range &_SideSet2,
-      Range &_SideSet3,Range &_SideSet4,
-      Range &_NodeSet1,
-      int _verbose = 0): 
-      FEMethod_DriverComplexForLazy(_moab,_dirihlet_ptr,_lambda,_mu,_verbose), 
-      arc_ptr(_arc_ptr),
-      SideSet1(_SideSet1),SideSet2(_SideSet2),
-      SideSet3(_SideSet3),SideSet4(_SideSet4),
-      NodeSet1(_NodeSet1) {
-
-    set_PhysicalEquationNumber(neohookean);
-
+  MyDirihletBC(Interface &moab,
+      Range &_SideSet1,Range &_SideSet3,Range &_SideSet4):
+      SideSet1(_SideSet1),SideSet3(_SideSet3),SideSet4(_SideSet4) {
     Range SideSetEdges,SideSetNodes;
     rval = moab.get_connectivity(SideSet1,SideSetNodes,true); CHKERR_THROW(rval);
     SideSet1_.insert(SideSet1.begin(),SideSet1.end());
@@ -103,6 +88,40 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
     SideSet4_.insert(SideSet4.begin(),SideSet4.end());
     SideSet4_.insert(SideSetEdges.begin(),SideSetEdges.end());
     SideSet4_.insert(SideSetNodes.begin(),SideSetNodes.end());
+  }
+
+  PetscErrorCode ApplyDirihletBC(
+    moabField::FEMethod *fe_method_ptr,string field_name,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+
+    Range& DirihletSideSet = SideSet1_;
+    Range& SymmBC_Y = SideSet3_;
+    Range& SymmBC_X = SideSet4_;
+
+    ierr = DirihletBCMethod_DriverComplexForLazy::ApplyDirihletBC(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,DirihletSideSet,fixed_z,true); CHKERRQ(ierr);
+    ierr = DirihletBCMethod_DriverComplexForLazy::ApplyDirihletBC(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SymmBC_Y,fixed_y,false); CHKERRQ(ierr);
+    ierr = DirihletBCMethod_DriverComplexForLazy::ApplyDirihletBC(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SymmBC_X,fixed_x,false); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
+
+  ArcLenghtCtx* arc_ptr;
+
+  Range& SideSet2;
+  Range& NodeSet1;
+
+
+  MyElasticFEMethod(
+      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
+      ArcLenghtCtx *_arc_ptr,Range &_SideSet2,Range &_NodeSet1,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy(_moab,_dirihlet_ptr,_lambda,_mu,_verbose), 
+      arc_ptr(_arc_ptr),SideSet2(_SideSet2),NodeSet1(_NodeSet1) {
+
+    set_PhysicalEquationNumber(neohookean);
 
   }
 
@@ -128,23 +147,15 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
   }
 
 
+
+
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndices(); CHKERRQ(ierr);
 
-    Range& DirihletSideSet = SideSet1_;
-    Range& NeumannSideSet = SideSet2;
-    Range& SymmBC_Y = SideSet3_;
-    Range& SymmBC_X = SideSet4_;
-
-    ierr = ApplyDirihletBC(DirihletSideSet,fixed_z,true); CHKERRQ(ierr);
-    //cerr << DirihletBC.size() << endl;
-    ierr = ApplyDirihletBC(SymmBC_Y,fixed_y,false); CHKERRQ(ierr);
-    //cerr << DirihletBC.size() << endl;
-    ierr = ApplyDirihletBC(SymmBC_X,fixed_x,false); CHKERRQ(ierr);
-    //cerr << DirihletBC.size() << endl;
+    ierr = ApplyDirihletBC(); CHKERRQ(ierr);
     if(Diagonal!=PETSC_NULL) {
 	if(DirihletBC.size()>0) {
 	  DirihletBCDiagVal.resize(DirihletBC.size());
@@ -155,6 +166,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
     double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
 
+    Range& NeumannSideSet = SideSet2;
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
