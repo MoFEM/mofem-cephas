@@ -1,4 +1,4 @@
-/** \file moabField_Core.hpp
+/** \file moabFEMethod_LowLevelStudent.hpp
  * \brief Core moabField::FEMethod class for user interface
  * 
  * Low level data structures not used directly by user
