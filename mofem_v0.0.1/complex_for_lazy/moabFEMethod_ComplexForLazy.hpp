@@ -56,8 +56,8 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
   string spatial_field_name;
   string material_field_name;
-  FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
-    double _lambda,double _mu,int _verbose = 0);
+  FEMethod_ComplexForLazy(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,
+    analysis _type,double _lambda,double _mu,int _verbose = 0);
 
   int g_TRI_dim;
   vector<double> g_NTET,g_NTRI;
@@ -111,7 +111,8 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
     vector<vector<DofIdx> >& RowGlob,
     vector<vector<DofIdx> >& ColGlob,
     string &field_name);
-  PetscErrorCode FEMethod_ComplexForLazy::GetData(
+
+  PetscErrorCode GetData(
     vector<ublas::vector<double> >& dofs_edge_data,vector<double*>& dofs_edge,
     vector<ublas::vector<double> >& dofs_face_data,vector<double*>& dofs_face,
     ublas::vector<double>& dofs_volume,ublas::vector<double>& dofs_nodes,

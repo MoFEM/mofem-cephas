@@ -29,9 +29,9 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-struct MyBC: public DynamicElasticFEMethod::BC {
+struct MyBC: public DynamicExampleDiriheltBC::BC {
 
-    MyBC(): DynamicElasticFEMethod::BC()  {}
+    MyBC(): DynamicExampleDiriheltBC::BC()  {}
     PetscErrorCode f_CalcTraction(double ts_t,ublas::vector<double,ublas::bounded_array<double,3> >& traction) const {
       PetscFunctionBegin;
       
@@ -49,7 +49,7 @@ struct MyBC: public DynamicElasticFEMethod::BC {
       PetscFunctionReturn(0);
     }
 
-    MyBC(double _final_time): DynamicElasticFEMethod::BC(_final_time) {};
+    MyBC(double _final_time): DynamicExampleDiriheltBC::BC(_final_time) {};
     PetscErrorCode f_CalcDisp(double ts_t,
       ublas::vector<double,ublas::bounded_array<double,3> >& disp,
       ublas::vector<double,ublas::bounded_array<double,3> >& vel) const {
@@ -248,8 +248,8 @@ int main(int argc, char *argv[]) {
   const double rho = 1;
 
   MyBC mybc;
-  DynamicElasticFEMethod MyFE(moab,mField,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2,&mybc);
-
+  DynamicExampleDiriheltBC dirihlet_bc(moab,&mybc,SideSet1,SideSet2);
+  DynamicElasticFEMethod MyFE(moab,&dirihlet_bc,mField,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2,&mybc);
 
   moabTsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));

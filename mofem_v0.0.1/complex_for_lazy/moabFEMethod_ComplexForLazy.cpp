@@ -30,10 +30,11 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
 
 namespace MoFEM {
 
-FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
+FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,
+    analysis _type,
     double _lambda,double _mu, int _verbose): 
-    FEMethod_UpLevelStudent(_moab,_verbose), type_of_analysis(_type), 
-    lambda(_lambda),mu(_mu), eps(1e-6),
+    FEMethod_UpLevelStudent(_moab,_dirihlet_bc_method_ptr,_verbose), 
+    type_of_analysis(_type),lambda(_lambda),mu(_mu), eps(1e-6),
     spatial_field_name("SPATIAL_POSITION"),
     material_field_name("MESH_NODE_POSITIONS") {
   order_edges.resize(6);
@@ -113,7 +114,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices(
     }
     break;
     default:
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. I don't know what to do");
+      SETERRQ(PETSC_COMM_SELF,1,"sorry.. I don't know what to do");
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
@@ -138,7 +139,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       dofs_face.resize(4);
       try {
       //data edge
-      ee = 0;
+      int ee = 0;
       for(;ee<6;ee++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit,hi_eiit;
 	eiit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,MBEDGE,ee));
@@ -155,7 +156,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	}
       }
       //data face
-      ff = 0;
+      int ff = 0;
       for(;ff<4;ff++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator fiit,hi_fiit;
 	fiit = row_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,MBTRI,ff));
@@ -192,6 +193,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
       } 
+    }  break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry.. I don't know what to do");
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
@@ -203,20 +207,21 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 
 PetscErrorCode FEMethod_ComplexForLazy::GetIndicesSpatial() {
   PetscFunctionBegin;
-  ierr = GetIndices(RowGlobSpatial,ColGlobSpatial,
-    dofs_x_edge_data,dofs_x_edge,
+  ierr = GetIndices(RowGlobSpatial,ColGlobSpatial,spatial_field_name); CHKERRQ(ierr);
+  ierr = GetData(dofs_x_edge_data,dofs_x_edge,
     dofs_x_face_data,dofs_x_face,
     dofs_x_volume,dofs_x,
     spatial_field_name); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetIndicesMaterial() {
   PetscFunctionBegin;
-  ierr = GetIndices(RowGlobMaterial,ColGlobMaterial,
-    dofs_X_edge_data,dofs_X_edge,
+  ierr = GetIndices(RowGlobMaterial,ColGlobMaterial,material_field_name); CHKERRQ(ierr);
+  ierr = GetData(dofs_X_edge_data,dofs_X_edge,
     dofs_X_face_data,dofs_X_face,
     dofs_X_volume,dofs_X,
-    spatial_field_name); CHKERRQ(ierr);
+    material_field_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {

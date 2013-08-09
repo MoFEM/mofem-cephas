@@ -55,6 +55,12 @@ int main(int argc, char *argv[]) {
     max_steps = 5;
   }
 
+  PetscInt order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    order = 3;
+  }
+
 
   //Read mesh to MOAB
   const char *option;
@@ -210,9 +216,9 @@ int main(int argc, char *argv[]) {
 
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",5); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",5); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",5); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   }
@@ -269,8 +275,99 @@ int main(int argc, char *argv[]) {
   ArcLenghtIntElemFEMethod* MyArcMethod_ptr = new ArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
   ArcLenghtIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
-  ArcInterfaceElasticFEMethod MyFE(moab,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3,ArcCtx);
-  ArcInterfaceFEMethod IntMyFE(moab,Aij,F,D,YoungModulus,h,beta,ft,Gf,SideSet1,SideSet2,SideSet3,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
+
+  /**
+    * Example method how to set Dirihlet boundary conditions
+    *
+    */
+  struct MyDirihletBC: public BaseDirihletBC {
+    Range SideSet1_;
+  
+    // Constructor
+    MyDirihletBC(Interface &moab,Range& SideSet1) {
+      //Add to SideSet1_ nodes,edges, and faces, where dirihilet boundary conditions are applied.
+      //Note that SideSet1 consist only faces in this particular example.
+      ErrorCode rval;
+      Range SideSet1Edges,SideSet1Nodes;
+      rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
+      rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
+      SideSet1_.insert(SideSet1.begin(),SideSet1.end());
+      SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
+      SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
+    }
+
+
+    //This method is called insiaid finite element loop to apply boundary conditions
+    PetscErrorCode ApplyDirihletBC(
+      moabField::FEMethod *fe_method_ptr,string field_name,
+      vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
+      PetscFunctionBegin;
+
+      ierr = __ApplyDirihletBC__(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SideSet1_,fixed_x|fixed_y|fixed_z,true); CHKERRQ(ierr);
+
+      // You can call this functitions more times for other Rnages (SideSets)
+      //
+      // For example ... fixing only x-direction
+      //
+      // ierr = __ApplyDirihletBC__("DISPLACEMENT",RowGlob,ColGlob,DirihletBC,field_name,SideSet2_,fixed_x,false); CHKERRQ(ierr);
+      //
+      // or fixing x- and y- direction
+      //
+      // ierr = __ApplyDirihletBC__("DISPLACEMENT",RowGlob,ColGlob,DirihletBC,field_name,SideSet3_,fixed_x|fixed_y,false); CHKERRQ(ierr);
+      //
+      // Note that for supsequent calss of __ApplyDirihletBC__ last paramater have to be set to false,
+      // indicating that you adding boundary conditions.
+
+      PetscFunctionReturn(0);
+
+
+    }
+
+    private:
+    //Only to use in this auxiliary function
+    enum bc_type { fixed_x = 1,fixed_y = 1<<1, fixed_z = 1<<2 };
+    PetscErrorCode __ApplyDirihletBC__(
+      moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC,
+      string field_name,Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z,bool zero_bc = true) {
+      PetscFunctionBegin;
+      //Dirihlet form SideSet1
+      if(zero_bc) DirihletBC.resize(0);
+      Range::iterator siit1 = SideSet.begin();
+      for(;siit1!=SideSet.end();siit1++) {
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	for(;riit!=hi_riit;riit++) {
+	  if(riit->get_name()!=field_name) continue;
+    	  unsigned int my_bc = 0;
+	  switch(riit->get_dof_rank()) {
+	    case 0: my_bc = fixed_x; break;
+	    case 1: my_bc = fixed_y; break;
+	    case 2: my_bc = fixed_z; break;
+	    default:
+	      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	  }
+	  if((bc&my_bc) == 0) continue;
+	  // all fixed
+	  // if some ranks are selected then we could apply BC in particular direction
+	  DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+	  for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
+	    vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),riit->get_petsc_gloabl_dof_idx());
+	    if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	  }
+	  for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
+	    vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	    if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+	  }
+	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  MyDirihletBC myDirihletBC(moab,SideSet1);
+  ArcInterfaceElasticFEMethod MyFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3,ArcCtx);
+  ArcInterfaceFEMethod IntMyFE(moab,&myDirihletBC,Aij,F,D,YoungModulus,h,beta,ft,Gf,SideSet1,SideSet2,SideSet3,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);

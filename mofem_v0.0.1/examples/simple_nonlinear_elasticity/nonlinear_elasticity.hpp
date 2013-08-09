@@ -29,6 +29,7 @@
 #include "moabSnes.hpp"
 #include "moabFEMethod_ComplexForLazy.hpp"
 #include "moabFEMethod_DriverComplexForLazy.hpp"
+#include "ElasticFEMethod.hpp"
 
 #include "complex_for_lazy.h"
 
@@ -72,14 +73,14 @@ struct SetPositionsEntMethod: public moabField::EntMethod {
 
 };
 
-struct ElasticFEMethod: public FEMethod_DriverComplexForLazy {
+struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
   Range& SideSet1;
   Range& SideSet2;
   Range SideSet1_;
 
-  ElasticFEMethod(Interface& _moab,double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy(_moab,_lambda,_mu,_verbose), SideSet1(_SideSet1),SideSet2(_SideSet2)  {
+  NL_ElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), SideSet1(_SideSet1),SideSet2(_SideSet2)  {
 
     set_PhysicalEquationNumber(neohookean);
 
@@ -92,10 +93,9 @@ struct ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
   }
 
-
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-    ierr = FEMethod_DriverComplexForLazy::operator()(SideSet1_,SideSet2); CHKERRQ(ierr);
+    ierr = FEMethod_DriverComplexForLazy::operator()(SideSet2); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

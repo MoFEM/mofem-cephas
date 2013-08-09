@@ -217,9 +217,10 @@ int main(int argc, char *argv[]) {
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  MyElasticFEMethod MyFE(moab,
+  MyDirihletBC  myDirihletBC(moab,SideSet1,SideSet3,SideSet4);
+  MyElasticFEMethod MyFE(moab,&myDirihletBC,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
-    ArcCtx,SideSet1,SideSet2,SideSet3,SideSet4,NodeSet1);
+    ArcCtx,SideSet2,NodeSet1);
 
   ArcLenghtElemFEMethod* MyArcMethod_ptr = new ArcLenghtElemFEMethod(moab,ArcCtx);
   ArcLenghtElemFEMethod& MyArcMethod = *MyArcMethod_ptr;

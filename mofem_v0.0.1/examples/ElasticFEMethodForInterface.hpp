@@ -40,9 +40,9 @@ struct InterfaceElasticFEMethod: public ElasticFEMethod {
   InterfaceElasticFEMethod(Interface& _moab): ElasticFEMethod(_moab),SideSet3(dummy) {};
 
   InterfaceElasticFEMethod(
-      Interface& _moab,Mat &_Aij,Vec& _F,
+      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
-      ElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2), SideSet3(_SideSet3) {};
+      ElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2), SideSet3(_SideSet3) {};
 
   PetscErrorCode NeumannBC() {
       PetscFunctionBegin;
@@ -153,8 +153,8 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     };
 
   InterfaceFEMethod(
-      Interface& _moab,Mat &_Aij,Vec& _F,double _YoungModulus,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
-	InterfaceElasticFEMethod(_moab,_Aij,_F,0,0,_SideSet1,_SideSet2,_SideSet3),YoungModulus(_YoungModulus) {
+      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,double _YoungModulus,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
+	InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,0,0,_SideSet1,_SideSet2,_SideSet3),YoungModulus(_YoungModulus) {
     DispData.resize(1+6+2);
     };
 

@@ -45,10 +45,10 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 
   ArcLenghtCtx *arc_ptr;
   ArcInterfaceElasticFEMethod(
-      Interface& _moab,Mat &_Aij,Vec& _F,
+      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3,
       ArcLenghtCtx *_arc_ptr): 
-      InterfaceElasticFEMethod(_moab,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3)
+      InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3)
       ,arc_ptr(_arc_ptr) {};
 
   PetscErrorCode NeumannBC() {
@@ -215,10 +215,10 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
   Vec D;
   ArcInterfaceFEMethod(
-      Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
+      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,Vec& _D,
       double _YoungModulus,double _h,double _beta,double _ft,double _Gf,
       Range &_SideSet1,Range &_SideSet2,Range &_SideSet3,interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
-      InterfaceFEMethod(_moab,_Aij,_F,_YoungModulus,_SideSet1,_SideSet2,_SideSet3),int_mat_ctx(_int_mat_ctx),
+      InterfaceFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_YoungModulus,_SideSet1,_SideSet2,_SideSet3),int_mat_ctx(_int_mat_ctx),
       h(_h),beta(_beta),ft(_ft),Gf(_Gf),D(_D) {
     
     E0 = YoungModulus/h;

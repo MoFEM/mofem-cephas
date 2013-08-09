@@ -26,9 +26,15 @@
 
 namespace MoFEM {
 
-FEMethod_UpLevelStudent::FEMethod_UpLevelStudent(Interface& _moab,int _verbose): FEMethod_LowLevelStudent(_moab,_verbose) {
+FEMethod_UpLevelStudent::FEMethod_UpLevelStudent(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose): 
+  FEMethod_LowLevelStudent(_moab,_verbose),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr) {
   double def_V = 0;
-  rval = moab.tag_get_handle("Volume",1,MB_TYPE_DOUBLE,th_volume,MB_TAG_CREAT|MB_TAG_SPARSE,&def_V); CHKERR(rval);
+  rval = moab.tag_get_handle("Volume",1,MB_TYPE_DOUBLE,th_volume,MB_TAG_CREAT|MB_TAG_SPARSE,&def_V); CHKERR_THROW(rval);
+}
+FEMethod_UpLevelStudent::FEMethod_UpLevelStudent(Interface& _moab,int _verbose): FEMethod_LowLevelStudent(_moab,_verbose) {
+  dirihlet_bc_method_ptr = &base_dirihlet_bc_method;
+  double def_V = 0;
+  rval = moab.tag_get_handle("Volume",1,MB_TYPE_DOUBLE,th_volume,MB_TAG_CREAT|MB_TAG_SPARSE,&def_V); CHKERR_THROW(rval);
 }
 FEMethod_UpLevelStudent::~FEMethod_UpLevelStudent() {}
 PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTET_) {
