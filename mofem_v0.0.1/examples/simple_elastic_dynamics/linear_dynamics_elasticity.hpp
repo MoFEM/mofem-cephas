@@ -43,6 +43,7 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
+/// Bounadry conditions for elastic dynamics
 struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 
     struct BC {
@@ -250,7 +251,8 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 };
 
 
-  /*
+  /** \brief FE method for elastic dynamics
+   *
    * M*u'' + K*u' - F = 0
    *
    * F( t, [ dot_u, u], [ dot_u', u'] ) = [ 0 -1 ][ dot_u' ] + [ 1 0 ][ dot_u ] + [ 0    ] = [ 0 ]
@@ -267,8 +269,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
    * dG/(du,ddot_u) = [ -1 0 ] + a*[ 0 1 ]
    *                  [  0 K ] +   [ M 0 ]
    *
-   */
-
+  **/
   struct DynamicElasticFEMethod: public ElasticFEMethod {
 
     moabField& mField;
