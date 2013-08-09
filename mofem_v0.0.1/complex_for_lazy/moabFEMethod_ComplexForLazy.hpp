@@ -54,7 +54,8 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
   double eps;
 
-  string field_name;
+  string spatial_field_name;
+  string material_field_name;
   FEMethod_ComplexForLazy(Interface& _moab,analysis _type,
     double _lambda,double _mu,int _verbose = 0);
 
@@ -64,15 +65,6 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
     
   ErrorCode rval;  
   PetscErrorCode ierr;
-
-  vector<vector<DofIdx> > RowGlob;
-  vector<vector<DofIdx> > ColGlob;
-  vector<vector<ublas::matrix<FieldData> > > rowNMatrices;
-  vector<vector<ublas::matrix<FieldData> > > rowDiffNMatrices;
-  vector<vector<ublas::matrix<FieldData> > > rowBMatrices;
-  vector<vector<ublas::matrix<FieldData> > > colNMatrices;
-  vector<vector<ublas::matrix<FieldData> > > colDiffNMatrices;
-  vector<vector<ublas::matrix<FieldData> > > colBMatrices;
 
   vector<double*> edgeNinvJac;
   vector<double*> faceNinvJac;
@@ -115,12 +107,32 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   double* Fint_h_edge[6];
   double* Fint_h_face[4];
 
+  PetscErrorCode GetIndices(
+    vector<vector<DofIdx> >& RowGlob,
+    vector<vector<DofIdx> >& ColGlob,
+    string &field_name);
+  PetscErrorCode FEMethod_ComplexForLazy::GetData(
+    vector<ublas::vector<double> >& dofs_edge_data,vector<double*>& dofs_edge,
+    vector<ublas::vector<double> >& dofs_face_data,vector<double*>& dofs_face,
+    ublas::vector<double>& dofs_volume,ublas::vector<double>& dofs_nodes,
+    string &field_name);
 
+  //space data
+  vector<vector<DofIdx> > RowGlobSpatial;
+  vector<vector<DofIdx> > ColGlobSpatial;
   ublas::vector<double> dofs_x,dofs_x_volume;
   vector<ublas::vector<double> > dofs_x_edge_data,dofs_x_face_data;
   vector<double*> dofs_x_edge,dofs_x_face;
-  
-  PetscErrorCode GetIndices();
+  PetscErrorCode GetIndicesSpatial();
+
+  //material data
+  vector<vector<DofIdx> > RowGlobMaterial;
+  vector<vector<DofIdx> > ColGlobMaterial;
+  ublas::vector<double> dofs_X,dofs_X_volume;
+  vector<ublas::vector<double> > dofs_X_edge_data,dofs_X_face_data;
+  vector<double*> dofs_X_edge,dofs_X_face;
+  PetscErrorCode GetIndicesMaterial();
+
   PetscErrorCode GetTangent();
   PetscErrorCode GetFint();
 

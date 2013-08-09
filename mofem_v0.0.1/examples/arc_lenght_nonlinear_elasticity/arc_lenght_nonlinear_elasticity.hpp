@@ -132,7 +132,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
-    ierr = GetIndices(); CHKERRQ(ierr);
+    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
 
     Range& DirihletSideSet = SideSet1_;
     Range& NeumannSideSet = SideSet2;
