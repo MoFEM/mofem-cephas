@@ -35,7 +35,7 @@ struct ExampleDiriheltBC: public BaseDirihletBC {
 	SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
   }
 
-  PetscErrorCode ApplyDirihletBC(
+  PetscErrorCode SetDirihletBC_to_ElementIndicies(
       moabField::FEMethod *fe_method_ptr,string field_name,
       vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
       PetscFunctionBegin;
@@ -68,7 +68,7 @@ struct ExampleDiriheltBC: public BaseDirihletBC {
       PetscFunctionReturn(0);
   }
 
-  PetscErrorCode ApplyDirihletBCFace(vector<DofIdx>& DirihletBC,
+  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(vector<DofIdx>& DirihletBC,
       vector<DofIdx> &FaceNodeIndices,
       vector<vector<DofIdx> > &FaceEdgeIndices,
       vector<DofIdx> &FaceIndices) {
@@ -332,9 +332,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode ApplyDirihletBC() {
+    PetscErrorCode SetDirihletBC_to_ElementIndicies() {
       PetscFunctionBegin;
-      ierr = dirihlet_bc_method_ptr->ApplyDirihletBC(this,"DISPLACEMENT",RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,"DISPLACEMENT",RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -549,7 +549,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
       //Dirihlet Boundary Condition
-      ApplyDirihletBC();
+      SetDirihletBC_to_ElementIndicies();
       if(Diagonal!=PETSC_NULL) {
 	if(DirihletBC.size()>0) {
 	  DirihletBCDiagVal.resize(DirihletBC.size());

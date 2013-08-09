@@ -41,7 +41,7 @@ struct BaseDirihletBC {
 
   BaseDirihletBC() {};
 
-  virtual PetscErrorCode ApplyDirihletBC(
+  virtual PetscErrorCode SetDirihletBC_to_ElementIndicies(
     moabField::FEMethod *fe_method_ptr,string field_name,
     vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
@@ -54,7 +54,7 @@ struct BaseDirihletBC {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode ApplyDirihletBCFace(
+  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
     vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
@@ -65,7 +65,7 @@ struct BaseDirihletBC {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode DirihletBCDiagonalSet(
+  virtual PetscErrorCode SetDirihletBC_to_MatrixDiagonal(
     moabField::FEMethod *fe_method_ptr,Mat Aij) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
@@ -74,7 +74,7 @@ struct BaseDirihletBC {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode DirihletBCSet(moabField::FEMethod *fe_method_ptr) {
+  virtual PetscErrorCode SetDirihletBC_to_RHS(moabField::FEMethod *fe_method_ptr) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
     NOT_USED(fe_method_ptr);

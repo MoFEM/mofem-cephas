@@ -298,24 +298,24 @@ int main(int argc, char *argv[]) {
 
 
     //This method is called insiaid finite element loop to apply boundary conditions
-    PetscErrorCode ApplyDirihletBC(
+    PetscErrorCode SetDirihletBC_to_ElementIndicies(
       moabField::FEMethod *fe_method_ptr,string field_name,
       vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
       PetscFunctionBegin;
 
-      ierr = __ApplyDirihletBC__(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SideSet1_,fixed_x|fixed_y|fixed_z,true); CHKERRQ(ierr);
+      ierr = __SetDirihletBC_to_ElementIndicies__(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SideSet1_,fixed_x|fixed_y|fixed_z,true); CHKERRQ(ierr);
 
       // You can call this functitions more times for other Rnages (SideSets)
       //
       // For example ... fixing only x-direction
       //
-      // ierr = __ApplyDirihletBC__("DISPLACEMENT",RowGlob,ColGlob,DirihletBC,field_name,SideSet2_,fixed_x,false); CHKERRQ(ierr);
+      // ierr = __SetDirihletBC_to_ElementIndicies__("DISPLACEMENT",RowGlob,ColGlob,DirihletBC,field_name,SideSet2_,fixed_x,false); CHKERRQ(ierr);
       //
       // or fixing x- and y- direction
       //
-      // ierr = __ApplyDirihletBC__("DISPLACEMENT",RowGlob,ColGlob,DirihletBC,field_name,SideSet3_,fixed_x|fixed_y,false); CHKERRQ(ierr);
+      // ierr = __SetDirihletBC_to_ElementIndicies__("DISPLACEMENT",RowGlob,ColGlob,DirihletBC,field_name,SideSet3_,fixed_x|fixed_y,false); CHKERRQ(ierr);
       //
-      // Note that for supsequent calss of __ApplyDirihletBC__ last paramater have to be set to false,
+      // Note that for supsequent calss of __SetDirihletBC_to_ElementIndicies__ last paramater have to be set to false,
       // indicating that you adding boundary conditions.
 
       PetscFunctionReturn(0);
@@ -326,7 +326,7 @@ int main(int argc, char *argv[]) {
     private:
     //Only to use in this auxiliary function
     enum bc_type { fixed_x = 1,fixed_y = 1<<1, fixed_z = 1<<2 };
-    PetscErrorCode __ApplyDirihletBC__(
+    PetscErrorCode __SetDirihletBC_to_ElementIndicies__(
       moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC,
       string field_name,Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z,bool zero_bc = true) {
       PetscFunctionBegin;

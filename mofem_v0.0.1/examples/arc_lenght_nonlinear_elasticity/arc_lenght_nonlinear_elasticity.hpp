@@ -90,7 +90,7 @@ struct MyDirihletBC: public DirihletBCMethod_DriverComplexForLazy {
     SideSet4_.insert(SideSetNodes.begin(),SideSetNodes.end());
   }
 
-  PetscErrorCode ApplyDirihletBC(
+  PetscErrorCode SetDirihletBC_to_ElementIndicies(
     moabField::FEMethod *fe_method_ptr,string field_name,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
 
@@ -98,9 +98,9 @@ struct MyDirihletBC: public DirihletBCMethod_DriverComplexForLazy {
     Range& SymmBC_Y = SideSet3_;
     Range& SymmBC_X = SideSet4_;
 
-    ierr = DirihletBCMethod_DriverComplexForLazy::ApplyDirihletBC(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,DirihletSideSet,fixed_z,true); CHKERRQ(ierr);
-    ierr = DirihletBCMethod_DriverComplexForLazy::ApplyDirihletBC(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SymmBC_Y,fixed_y,false); CHKERRQ(ierr);
-    ierr = DirihletBCMethod_DriverComplexForLazy::ApplyDirihletBC(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SymmBC_X,fixed_x,false); CHKERRQ(ierr);
+    ierr = DirihletBCMethod_DriverComplexForLazy::SetDirihletBC_to_ElementIndicies(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,DirihletSideSet,fixed_z,true); CHKERRQ(ierr);
+    ierr = DirihletBCMethod_DriverComplexForLazy::SetDirihletBC_to_ElementIndicies(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SymmBC_Y,fixed_y,false); CHKERRQ(ierr);
+    ierr = DirihletBCMethod_DriverComplexForLazy::SetDirihletBC_to_ElementIndicies(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SymmBC_X,fixed_x,false); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -155,7 +155,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
 
-    ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+    ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
     if(Diagonal!=PETSC_NULL) {
 	if(DirihletBC.size()>0) {
 	  DirihletBCDiagVal.resize(DirihletBC.size());

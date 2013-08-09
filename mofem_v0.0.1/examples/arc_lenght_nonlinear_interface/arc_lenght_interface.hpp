@@ -126,7 +126,7 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 	case ctx_SNESSetJacobian: 
 	case ctx_SNESSetFunction: { 
 	  //Dirihlet Boundary Condition
-	  ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+	  ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
 	  if(Diagonal!=PETSC_NULL) {
 	    if(DirihletBC.size()>0) {
 	      DirihletBCDiagVal.resize(DirihletBC.size());
@@ -513,7 +513,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
       case ctx_SNESSetJacobian: 
       case ctx_SNESSetFunction: { 
 	//Apply Dirihlet BC
-	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+	ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
       }
       break;
       default:

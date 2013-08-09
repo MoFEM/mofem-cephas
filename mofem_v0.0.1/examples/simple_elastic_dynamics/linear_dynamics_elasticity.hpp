@@ -83,7 +83,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 
     }
 
-    PetscErrorCode ApplyDirihletBCSideSet1(
+    PetscErrorCode SetDirihletBC_to_ElementIndiciesSideSet1(
       moabField::FEMethod *fe_method_ptr,
       vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
       PetscFunctionBegin;
@@ -116,7 +116,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode ApplyDirihletBCSideSet2(
+    PetscErrorCode SetDirihletBC_to_ElementIndiciesSideSet2(
       moabField::FEMethod *fe_method_ptr,
       vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
       PetscFunctionBegin;
@@ -153,18 +153,18 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode ApplyDirihletBC(
+    PetscErrorCode SetDirihletBC_to_ElementIndicies(
       moabField::FEMethod *fe_method_ptr,
       vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
       PetscFunctionBegin;
 
-      ierr = ApplyDirihletBCSideSet1(fe_method_ptr,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+      ierr = SetDirihletBC_to_ElementIndiciesSideSet1(fe_method_ptr,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
       bc->DirihletBC_SideSet2.clear();
       if(bc->Dirihlet_BC_on_SideSet2) {
 
 	if(fe_method_ptr->ts_t > bc->final_time) PetscFunctionReturn(0);
-	ierr = ApplyDirihletBCSideSet2(fe_method_ptr,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+	ierr = SetDirihletBC_to_ElementIndiciesSideSet2(fe_method_ptr,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
       }
 
@@ -172,7 +172,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 
     }
 
-    PetscErrorCode DirihletBCDiagonalSet(moabField::FEMethod *fe_method_ptr,Mat Aij) {
+    PetscErrorCode SetDirihletBC_to_MatrixDiagonal(moabField::FEMethod *fe_method_ptr,Mat Aij) {
       PetscFunctionBegin;
       Range DirihletSet;
       DirihletSet.insert(SideSet1_.begin(),SideSet1_.end());
@@ -195,7 +195,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode DirihletBCSet(moabField::FEMethod *fe_method_ptr) {
+    PetscErrorCode SetDirihletBC_to_RHS(moabField::FEMethod *fe_method_ptr) {
       PetscFunctionBegin;
 
       if(bc->Dirihlet_BC_on_SideSet2) {
@@ -305,15 +305,15 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
     }
 
 
-    PetscErrorCode DirihletBCDiagonalSet() {
+    PetscErrorCode SetDirihletBC_to_MatrixDiagonal() {
       PetscFunctionBegin;
-      ierr = dirihlet_bc_method_ptr->DirihletBCDiagonalSet(this,*ts_B); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*ts_B); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode DirihletBCSet() {
+    PetscErrorCode SetDirihletBC_to_RHS() {
       PetscFunctionBegin;
-      ierr = dirihlet_bc_method_ptr->DirihletBCSet(this); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this); CHKERRQ(ierr);
       PetscFunctionReturn(0);
 
     }
@@ -553,7 +553,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 	    ierr = VecGhostUpdateBegin(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateEnd(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    //
-	    ierr = DirihletBCSet(); CHKERRQ(ierr);
+	    ierr = SetDirihletBC_to_RHS(); CHKERRQ(ierr);
 	    //
 	    break;
 	  case ctx_TSSetRHSJacobian:
@@ -649,7 +649,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 	    ierr = MatAssemblyBegin(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	    ierr = MatAssemblyEnd(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	    //
-	    ierr = DirihletBCDiagonalSet(); CHKERRQ(ierr);
+	    ierr = SetDirihletBC_to_MatrixDiagonal(); CHKERRQ(ierr);
 	    //
 	    ierr = MatAssemblyBegin(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	    ierr = MatAssemblyEnd(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -681,7 +681,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 
       if(fe_name=="STIFFNESS") {
 	ierr = GetMatrices(); CHKERRQ(ierr);
-	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+	ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSTSMonitorSet: {
 	    ierr = Fint(); CHKERRQ(ierr);
@@ -737,7 +737,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 	}
 	ierr = GetMatricesRows(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
-	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+	ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
 	ierr = MassLhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSSetRHSFunction: {
@@ -822,7 +822,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
       if(fe_name=="COPUPLING_VU") {
 	ierr = GetMatricesCols(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
-	ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+	ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
 	ierr = VULhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSSetRHSFunction: {

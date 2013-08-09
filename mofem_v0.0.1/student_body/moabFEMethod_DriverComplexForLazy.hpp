@@ -42,7 +42,7 @@ struct DirihletBCMethod_DriverComplexForLazy: public BaseDirihletBC {
 
   DirihletBCMethod_DriverComplexForLazy() {}
 
-  PetscErrorCode ApplyDirihletBC(
+  PetscErrorCode SetDirihletBC_to_ElementIndicies(
     moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC,
     string field_name,Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z,bool zero_bc = true) {
     PetscFunctionBegin;
@@ -79,7 +79,7 @@ struct DirihletBCMethod_DriverComplexForLazy: public BaseDirihletBC {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode ApplyDirihletBCFace(vector<DofIdx>& DirihletBC,
+  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(vector<DofIdx>& DirihletBC,
       vector<DofIdx> &FaceNodeIndices,
       vector<vector<DofIdx> > &FaceEdgeIndices,
       vector<DofIdx> &FaceIndices) {
@@ -113,14 +113,14 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
   FEMethod_ComplexForLazy(_moab,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
 
   vector<DofIdx> DirihletBC;
-  PetscErrorCode ApplyDirihletBC() {
+  PetscErrorCode SetDirihletBC_to_ElementIndicies() {
     PetscFunctionBegin;
-    ierr = dirihlet_bc_method_ptr->ApplyDirihletBC(this,spatial_field_name,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,spatial_field_name,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-  PetscErrorCode ApplyDirihletBCFace() {
+  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace() {
     PetscFunctionBegin;
-    ierr = dirihlet_bc_method_ptr->ApplyDirihletBCFace(DirihletBC,FaceNodeIndices,FaceEdgeIndices_data,FaceIndices); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices,FaceEdgeIndices_data,FaceIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -299,7 +299,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 	  ierr = GetFExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
 	  //cerr << "FExt " << FExt << endl;
 	  //cerr << "FaceNodeIndices.size() " << FaceNodeIndices.size() << endl;
-	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
+	  ierr = SetDirihletBC_to_ElementIndiciesFace(); CHKERRQ(ierr);
 	  ierr = VecSetValues(f,FaceNodeIndices.size(),&(FaceNodeIndices[0]),&*FExt.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 	  for(int ee = 0;ee<3;ee++) {
 	    if(FaceEdgeIndices_data[ee].size()>0) {
@@ -333,7 +333,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData(siit->ent); CHKERRQ(ierr);
 	  ierr = GetTangentExt(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
-	  ierr = ApplyDirihletBCFace(); CHKERRQ(ierr);
+	  ierr = SetDirihletBC_to_ElementIndiciesFace(); CHKERRQ(ierr);
 	  ierr = MatSetValues(B,
 	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
 	    &*(KExt_hh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
@@ -387,7 +387,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
 
-    ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+    ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
     if(Diagonal!=PETSC_NULL) {
 	if(DirihletBC.size()>0) {
 	  DirihletBCDiagVal.resize(DirihletBC.size());

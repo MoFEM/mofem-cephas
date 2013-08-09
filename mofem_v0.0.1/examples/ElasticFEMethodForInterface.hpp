@@ -69,7 +69,7 @@ struct InterfaceElasticFEMethod: public ElasticFEMethod {
 
       ierr = GetMatrices(); CHKERRQ(ierr);
       //Dirihlet Boundary Condition
-      ApplyDirihletBC();
+      SetDirihletBC_to_ElementIndicies();
       if(Diagonal!=PETSC_NULL) {
 	if(DirihletBC.size()>0) {
 	  DirihletBCDiagVal.resize(DirihletBC.size());
@@ -346,7 +346,7 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     //Calculate Matrices
     ierr = Matrices();    CHKERRQ(ierr);
     //Apply Dirihlet BC
-    ierr = ApplyDirihletBC(); CHKERRQ(ierr);
+    ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
 
     //Assemble interface
     ierr = LhsInt(); CHKERRQ(ierr);
