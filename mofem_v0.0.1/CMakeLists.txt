@@ -17,7 +17,7 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8)
 
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
@@ -42,6 +42,9 @@ configure_file (
   "${PROJECT_BINARY_DIR}/config.h"
   )
 include_directories("${PROJECT_BINARY_DIR}")
+
+#add source dir
+include_directories("${PROJECT_SOURCE_DIR}")
 
 #add check for verbose testing
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
@@ -131,7 +134,7 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #add executable library form subdirectory
-enable_testing()
+include(CTest)
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")

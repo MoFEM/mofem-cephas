@@ -49,7 +49,7 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   double NTRI[3],diffNTRI[6];
 
   const EntityHandle* conn;
-  ublas::vector<double> coords;
+  ublas::vector<double,ublas::bounded_array<double,18> > coords;
 
   FEMethod_LowLevelStudent(Interface& _moab,int verbose = 0);
   ~FEMethod_LowLevelStudent();

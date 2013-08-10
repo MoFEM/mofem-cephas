@@ -134,6 +134,8 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   vector<double*> dofs_X_edge,dofs_X_face;
   PetscErrorCode GetIndicesMaterial();
 
+  PetscErrorCode GetDofs_X_FromElementData();
+
   PetscErrorCode GetTangent();
   PetscErrorCode GetFint();
 

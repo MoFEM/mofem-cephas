@@ -224,6 +224,20 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesMaterial() {
     material_field_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+PetscErrorCode FEMethod_ComplexForLazy::GetDofs_X_FromElementData() {
+  PetscFunctionBegin;
+  dofs_X.resize(12);
+  copy(coords.begin(),coords.end(),dofs_X.begin());
+  FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator niit,hi_niit;
+  niit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(material_field_name,MBVERTEX,0));
+  hi_niit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(material_field_name,MBVERTEX,4));
+  for(;niit!=hi_niit;niit++) {
+    dofs_X[3*niit->side_number_ptr->side_number+niit->get_dof_rank()] = niit->get_FieldData();
+  }
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   PetscFunctionBegin;
   try {
@@ -291,26 +305,27 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	Khvolume.resize(12,RowGlobSpatial[i_volume].size());
 	Khh_volumevolume.resize(RowGlobSpatial[i_volume].size(),RowGlobSpatial[i_volume].size());
     }
+    ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
     unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
     switch(sub_analysis_type) {
       case spatail_analysis: {
 	ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	  &*Khh.data().begin(),NULL,Kedgeh,Kfaceh,&*Kvolumeh.data().begin(),g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_edge(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	  &Khedge[0],NULL,Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_face(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	  &Khface[0],NULL,Khh_edgeface,Khh_faceface,Khh_volumeface, 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_volume(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],diff_volumeNinvJac, 
-	  &coords[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	  &*Khvolume.data().begin(),NULL,Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(), 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
       }
@@ -369,14 +384,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	  Fint_h_volume.resize(RowGlobSpatial[i_volume].size());
 	}
       }
+      ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
       unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
       switch(sub_analysis_type) {
         case spatail_analysis: {
-  	//cerr << "coords " << coords << endl;
-  	//cerr << "dofs_x " << dofs_x << endl;
   	ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,lambda,mu,ptr_matctx, 
   	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-  	  &coords[0],&*dofs_x.data().begin(),NULL,NULL,
+  	  &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
   	  &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
   	  NULL,&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
   	  NULL,NULL,NULL,NULL,NULL,
