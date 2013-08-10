@@ -15,6 +15,7 @@ if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone https://likask@bitbucket.org/likask/mofem-joseph.git ${GID_SOURCE_REPO}")
 endif()
 set(CTEST_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
+set(CTEST_CHECKOUT_COMMAND "${CTEST_UPDATE_COMMAND} pull https://likask@bitbucket.org/likask/mofem-joseph.git likask_CMakeTesting")
 
 #set(CTEST_CONFIGURE_COMMAND "${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CTEST_BUILD_OPTIONS}")
 #set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\"")
