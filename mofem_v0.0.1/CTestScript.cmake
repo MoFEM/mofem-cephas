@@ -10,12 +10,12 @@ set(CTEST_BUILD_OPTIONS "-DCMAKE_CXX_FLAGS=-lstdc++ -DPETSC_DIR=/opt/build_for_g
 ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
 find_program(CTEST_GIT_COMMAND NAMES git)
-
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone https://likask@bitbucket.org/likask/mofem-joseph.git ${GID_SOURCE_REPO}")
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}")
+  set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} pull")
 endif()
 set(CTEST_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
-set(CTEST_CHECKOUT_COMMAND "${CTEST_UPDATE_COMMAND} pull https://likask@bitbucket.org/likask/mofem-joseph.git likask_CMakeTesting")
 
 #set(CTEST_CONFIGURE_COMMAND "${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CTEST_BUILD_OPTIONS}")
 #set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\"")
@@ -25,7 +25,7 @@ set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"-G${CTEST_CMAKE_GENERA
 set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\"")
 
 ctest_start("Experimental")
-ctest_update()
+ctest_update(SOURCE "${GID_SOURCE_REPO}")
 #ctest_configure()
 #ctest_build()
 #ctest_test()
