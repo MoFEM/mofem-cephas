@@ -5,7 +5,9 @@ set(CTEST_BINARY_DIRECTORY "$ENV{HOME}/tmp/mofem/build")
 set(CTEST_PROJECT_NAME "MoFEM")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
 set(CTEST_BUILD_CONFIGURATION "Release")
-set(CTEST_BUILD_OPTIONS "-DCMAKE_CXX_FLAGS=-lstdc++ -DPETSC_DIR=/opt/build_for_gcc-mp-4.4/petsc-3.3-p3 -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=/opt/build_for_gcc-mp-4.4/local-moab-4.6.0/ -DBUILD_SHARED_LIBS=FALSE -DCMAKE_CXX_COMPILER=/opt/build_for_gcc-mp-4.4/local/bin/mpicxx")
+
+#set(CTEST_BUILD_OPTIONS "-DCMAKE_CXX_FLAGS=-lstdc++ -DPETSC_DIR=/opt/build_for_gcc-mp-4.4/petsc-3.3-p3 -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=/opt/build_for_gcc-mp-4.4/local-moab-4.6.0/ -DBUILD_SHARED_LIBS=FALSE -DCMAKE_CXX_COMPILER=/opt/build_for_gcc-mp-4.4/local/bin/mpicxx")
+#set(CTEST_BUILD_OPTIONS "-DPETSC_DIR=/opt/petsc-3.3-p5_openmpi-1.6.3 -DPETSC_ARCH=arch-linux2-c-opt -DMOAB_DIR=/opt/local-moab-4.6.0/ -DCMAKE_CXX_FLAGS=""-I/opt/local_boost_1_54_0/include -L/opt/local_boost_1_54_0/include""")
 
 ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
