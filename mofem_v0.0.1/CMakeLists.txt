@@ -147,7 +147,6 @@ add_custom_target(doc
   ${DOXYGEN_LINE_COMMAND}
   COMMENT "Generating API documentation with Doxygen" VERBATIM
 )
-add_test(DoxygenDocumentationTest ${DOXYGEN_LINE_COMMAND})
 endif(DOXYGEN_FOUND)
 
 
