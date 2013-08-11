@@ -1,6 +1,3 @@
-set(CTEST_SITE "${HOSTNAME}")
-set(CTEST_BUILD_NAME "${osname}-${cpu}-prod")
-
 set(GID_SOURCE_REPO "$ENV{HOME}/tmp/mofem/source")
 set(CTEST_SOURCE_DIRECTORY "${GID_SOURCE_REPO}/mofem_v0.0.1")
 set(CTEST_BINARY_DIRECTORY "$ENV{HOME}/tmp/mofem/build")
