@@ -1005,7 +1005,7 @@ struct interface_NumeredMoFEMFE: public interface_EntMoFEMFE<T> {
 };
 
 /**
- * \typedef Multindex container for finite element datas
+ * \typedef Multindex container for finite element data
  */
 typedef multi_index_container<
   EntMoFEMFE,
