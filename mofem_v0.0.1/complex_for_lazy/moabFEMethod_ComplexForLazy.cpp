@@ -43,16 +43,21 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,BaseDirihletBC
   faceNinvJac.resize(4);
   diff_edgeNinvJac.resize(6);
   diff_faceNinvJac.resize(4);
+  //Tangent_HH_hierachical
+  KedgeH_data.resize(6);
+  KfaceH_data.resize(4);
   //Tangent_hh_hierachical
   Kedgeh_data.resize(6);
   Kfaceh_data.resize(4);
   //Tangent_hh_hierachical_edge
   Khedge_data.resize(6);
+  KHedge_data.resize(6);
   Khh_volumeedge_data.resize(6);
   Khh_edgeedge_data.resize(6,6);
   Khh_faceedge_data.resize(4,6);
   //Tangent_hh_hierachical_face
   Khface_data.resize(6);
+  KHface_data.resize(6);
   Khh_volumeface_data.resize(4);
   Khh_faceface_data.resize(4,4);
   Khh_edgeface_data.resize(6,4);
@@ -63,6 +68,8 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,BaseDirihletBC
   Fint_h.resize(12);
   Fint_h_edge_data.resize(6);
   Fint_h_face_data.resize(4);
+  //
+  Fint_H.resize(12);
   //
   g_NTET.resize(4*45);
   ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
@@ -236,8 +243,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetDofs_X_FromElementData() {
   }
   PetscFunctionReturn(0);
 }
-
-
 PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   PetscFunctionBegin;
   try {
@@ -258,10 +263,15 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     int g_dim = get_dim_gNTET();
     if(type_of_analysis&spatail_analysis) {
 	assert(12 == RowGlobSpatial[0].size());
+	KHH = ublas::zero_matrix<double>(12,12);
+	KHh = ublas::zero_matrix<double>(12,12);
 	Khh = ublas::zero_matrix<double>(12,12);
+	KhH = ublas::zero_matrix<double>(12,12);
 	ee = 0;
 	for(;ee<6;ee++) {
 	  assert(3*(unsigned int)NBEDGE_H1(order_edges[ee]) == RowGlobSpatial[1+ee].size());
+	  KedgeH_data[ee].resize(RowGlobSpatial[1+ee].size(),12);
+	  KedgeH[ee] = &*KedgeH_data[ee].data().begin();
 	  Kedgeh_data[ee].resize(RowGlobSpatial[1+ee].size(),12);
 	  Kedgeh[ee] = &*Kedgeh_data[ee].data().begin();
 	  for(int eee = 0;eee<6;eee++) {
@@ -274,6 +284,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  }
 	  Khedge_data[ee].resize(12,RowGlobSpatial[1+ee].size());
 	  Khedge[ee] = &*Khedge_data[ee].data().begin();
+	  KHedge[ee] = &*KHedge_data[ee].data().begin();
 	  Khh_volumeedge_data[ee].resize(RowGlobSpatial[i_volume].size(),RowGlobSpatial[1+ee].size());
 	  Khh_volumeedge[ee] = &*Khh_volumeedge_data[ee].data().begin();
 	  Khh_edgevolume_data[ee].resize(RowGlobSpatial[1+ee].size(),RowGlobSpatial[i_volume].size());
@@ -282,10 +293,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	ff = 0;
 	for(;ff<4;ff++) {
 	  assert(3*(unsigned int)NBFACE_H1(order_faces[ff]) == RowGlobSpatial[1+6+ff].size());
+	  KfaceH_data[ff] = ublas::zero_matrix<double>(RowGlobSpatial[1+6+ff].size(),12);
+	  KfaceH[ff] = &*KfaceH_data[ff].data().begin();
 	  Kfaceh_data[ff] = ublas::zero_matrix<double>(RowGlobSpatial[1+6+ff].size(),12);
 	  Kfaceh[ff] = &*Kfaceh_data[ff].data().begin();
 	  Khface_data[ff].resize(12,RowGlobSpatial[1+6+ff].size());
 	  Khface[ff] = &*Khface_data[ff].data().begin();
+	  KHface[ff] = &*KHface_data[ff].data().begin();
 	  for(int fff = 0;fff<4;fff++) {
 	    Khh_faceface_data(fff,ff).resize(RowGlobSpatial[1+6+fff].size(),RowGlobSpatial[1+6+ff].size());
 	    Khh_faceface[fff][ff] = &*Khh_faceface_data(fff,ff).data().begin();
@@ -301,6 +315,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  Khh_facevolume[ff] = &*Khh_facevolume_data[ff].data().begin();
 	}
 	assert(3*(unsigned int)NBVOLUME_H1(order_volume) == RowGlobSpatial[i_volume].size());
+	KvolumeH.resize(RowGlobSpatial[i_volume].size(),12);
+	KHvolume.resize(12,RowGlobSpatial[i_volume].size());
 	Kvolumeh.resize(RowGlobSpatial[i_volume].size(),12);
 	Khvolume.resize(12,RowGlobSpatial[i_volume].size());
 	Khh_volumevolume.resize(RowGlobSpatial[i_volume].size(),RowGlobSpatial[i_volume].size());
@@ -308,25 +324,31 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
     unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
     switch(sub_analysis_type) {
+      case material_analysis: {
+	ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
+	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	  &*KHH.data().begin(),&*KHh.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),g_dim,g_TET_W); CHKERRQ(ierr);
+      }
       case spatail_analysis: {
 	ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &*Khh.data().begin(),NULL,Kedgeh,Kfaceh,&*Kvolumeh.data().begin(),g_dim,g_TET_W); CHKERRQ(ierr);
+	  &*Khh.data().begin(),&*KhH.data().begin(),Kedgeh,Kfaceh,&*Kvolumeh.data().begin(),g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_edge(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &Khedge[0],NULL,Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
+	  &Khedge[0],&KHedge[0],Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_face(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &Khface[0],NULL,Khh_edgeface,Khh_faceface,Khh_volumeface, 
+	  &Khface[0],&KHface[0],Khh_edgeface,Khh_faceface,Khh_volumeface, 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_volume(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],diff_volumeNinvJac, 
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &*Khvolume.data().begin(),NULL,Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(), 
+	  &*Khvolume.data().begin(),&*KHvolume.data().begin(),Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(), 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
       }
       break;
@@ -398,7 +420,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
         }
         break;
 	case material_analysis: {
-	 SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	 ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,lambda,mu,ptr_matctx, 
+  	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+  	  &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
+  	  &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+  	  &*Fint_H.data().begin(),&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
+  	  NULL,NULL,NULL,NULL,NULL,
+  	  g_dim,g_TET_W); CHKERRQ(ierr);
 	}
 	break;
         default:

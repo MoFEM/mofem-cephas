@@ -73,35 +73,40 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   vector<double*> diff_faceNinvJac;
   double *diff_volumeNinvJac;
 
+  //Tangent_HH_hierachical
+  ublas::matrix<double> KHH,KHh,KvolumeH;
+  vector<ublas::matrix<double> > KedgeH_data,KfaceH_data;
+  double* KedgeH[6];
+  double* KfaceH[4];
   //Tangent_hh_hierachical
-  ublas::matrix<double> Khh,Kvolumeh;
+  ublas::matrix<double> Khh,KhH,Kvolumeh;
   vector<ublas::matrix<double> > Kedgeh_data,Kfaceh_data;
   double* Kedgeh[6];
   double* Kfaceh[4];
   //Tangent_hh_hierachical_edge
-  vector<ublas::matrix<double> > Khedge_data,Khh_volumeedge_data;
-  double* Khedge[6];
-  double* Khh_volumeedge[6];
+  vector<ublas::matrix<double> > Khedge_data,KHedge_data,Khh_volumeedge_data;
+  double *Khedge[6],*KHedge[6];
+  double *Khh_volumeedge[6];
   ublas::matrix<ublas::matrix<double> > Khh_edgeedge_data;
   ublas::matrix<ublas::matrix<double> > Khh_faceedge_data;
   double* Khh_edgeedge[6][6];
   double* Khh_faceedge[4][6];
   //Tangent_hh_hierachical_face
-  vector<ublas::matrix<double> > Khface_data,Khh_volumeface_data;
-  double* Khface[4];
-  double* Khh_volumeface[4];
+  vector<ublas::matrix<double> > Khface_data,KHface_data,Khh_volumeface_data;
+  double *Khface[4],*KHface[4];
+  double *Khh_volumeface[4];
   ublas::matrix<ublas::matrix<double> > Khh_faceface_data;
   ublas::matrix<ublas::matrix<double> > Khh_edgeface_data;
   double* Khh_faceface[4][4];
   double* Khh_edgeface[6][4];
   //Tangent_hh_hierachical_volume
-  ublas::matrix<double> Khvolume;
+  ublas::matrix<double> Khvolume,KHvolume;
   vector<ublas::matrix<double> > Khh_edgevolume_data,Khh_facevolume_data;
   double *Khh_edgevolume[6];
   double *Khh_facevolume[4];
   ublas::matrix<double> Khh_volumevolume;
   //Fint
-  ublas::vector<double> Fint_h,Fint_h_volume;
+  ublas::vector<double,ublas::bounded_array<double,12> > Fint_h,Fint_h_volume,Fint_H;
   vector<ublas::vector<double> > Fint_h_edge_data;
   vector<ublas::vector<double> > Fint_h_face_data;
   double* Fint_h_edge[6];
