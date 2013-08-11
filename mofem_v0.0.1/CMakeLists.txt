@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-
 cmake_minimum_required (VERSION 2.8)
 
 include(cmake/FindPETSC.cmake)
@@ -30,12 +29,12 @@ include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C CXX)
 
-set (MoFEM_VERSION_MAJOR 0)
-set (MoFEM_VERSION_MINOR 1)
+set(MoFEM_VERSION_MAJOR 0)
+set(MoFEM_VERSION_MINOR 1)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
-configure_file (
+configure_file(
   "${PROJECT_SOURCE_DIR}/config.h.in"
   "${PROJECT_BINARY_DIR}/config.h"
   )
@@ -135,15 +134,20 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
 
-#example how to add new executable
-#substitute "Program_Name" by name of new program
-#add_executable(Program_Name Program_Name.cpp)
-#target_link_libraries(Program_Name
-#  mofem_Field ${PROJECT_LIBS} ${PROJECT_LIBS})
-
-
-
-
-
+# add a target to generate API documentation with Doxygen
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+set(DOXYGEN_LINE_COMMAND 
+  ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+add_custom_target(doc
+  ${DOXYGEN_LINE_COMMAND}
+  COMMENT "Generating API documentation with Doxygen" VERBATIM
+)
+add_test(DoxygenDocumentationTest ${DOXYGEN_LINE_COMMAND})
+endif(DOXYGEN_FOUND)
 
 
