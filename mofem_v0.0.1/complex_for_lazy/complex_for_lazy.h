@@ -32,6 +32,7 @@ extern "C" {
 
 enum phisical_equation_volume { hooke = 0, stvenant_kirchhoff = 1,neohookean = 2,eberleinholzapfel1 = 3};
 void set_PhysicalEquationNumber(enum phisical_equation_volume eq);
+enum phisical_equation_volume get_PhysicalEquationNumber();
 
 void TakeIm(__CLPK_doublecomplex *xA,double *imA);
 void TakeRe(__CLPK_doublecomplex *xA,double *reA);

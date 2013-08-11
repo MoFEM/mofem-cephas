@@ -22,6 +22,9 @@ static enum phisical_equation_volume ph_eq_vol = hooke;
 void set_PhysicalEquationNumber(enum phisical_equation_volume eq) {
   ph_eq_vol = eq;
 }
+enum phisical_equation_volume get_PhysicalEquationNumber() {
+  return ph_eq_vol;
+}
 
 //Phusical Equations
 static void StrainEnergy_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
