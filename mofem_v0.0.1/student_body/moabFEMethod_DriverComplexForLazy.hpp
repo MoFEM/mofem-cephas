@@ -321,7 +321,8 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
 
   PetscErrorCode CalculateTangentExt(Mat B,double *t,Range& NeumannSideSet) {
     PetscFunctionBegin;
-
+    if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
+  
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));

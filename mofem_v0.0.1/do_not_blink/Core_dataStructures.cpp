@@ -72,6 +72,10 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       (*tit == nsTag_data) ||
       (*tit == ssTag_data)) {
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size); CHKERR(rval);CHKERR_THROW(rval);
+      //char *aaa = (char*)tag_bc_data;
+      //for(int ii = 0;ii<tag_bc_size/sizeof(char);ii++) {
+	//cerr << aaa[ii] << endl;
+      //}
     }
     if(*tit == bhTag_header) {
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR(rval);CHKERR_THROW(rval);

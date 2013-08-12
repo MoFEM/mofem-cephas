@@ -83,6 +83,8 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
       FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), SideSet1(_SideSet1),SideSet2(_SideSet2)  {
 
     set_PhysicalEquationNumber(hooke);
+    //set_PhysicalEquationNumber(neohookean);
+
 
     Range SideSet1Edges,SideSet1Nodes;
     rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);

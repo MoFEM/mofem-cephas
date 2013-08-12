@@ -163,6 +163,7 @@ int main(int argc, char *argv[]) {
       }
 
       dit->get_FieldData() = coords[dof_rank];
+
     }
   }*/
 
