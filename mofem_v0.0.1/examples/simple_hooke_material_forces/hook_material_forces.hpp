@@ -104,6 +104,39 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
 };
 
+
+struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
+
+  MaterialForcesFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
+
+    set_PhysicalEquationNumber(hooke);
+
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+
+};
+
 }
 
 #endif //__NONLINEAR_ELASTICITY_HPP__
