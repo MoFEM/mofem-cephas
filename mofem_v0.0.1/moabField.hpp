@@ -495,10 +495,10 @@ struct moabField {
     */
   virtual PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
-  /** \brief Copy Field to Another
+  /** \brief Get dofs multi index
     *
     */
-  //NOT TESTED DONT USE virtual PetscErrorCode set_other_filed_values(const string& fiel_name,const string& cpy_field_name,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
     *

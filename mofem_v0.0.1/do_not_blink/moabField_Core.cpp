@@ -3432,6 +3432,10 @@ PetscErrorCode moabField_Core::get_problems_database(const string &problem_name,
   *problem_ptr = &*p_miit;
   PetscFunctionReturn(0);
 }
-
+PetscErrorCode moabField_Core::get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr) {
+  PetscFunctionBegin;
+  *dofs_moabfield_ptr = &dofs_moabfield;
+  PetscFunctionReturn(0);
+}
 
 }

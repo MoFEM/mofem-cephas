@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+  //ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  //ierr = mField.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
 
   //define problems
@@ -102,23 +102,23 @@ int main(int argc, char *argv[]) {
 
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  //ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
-  int order = 4;
+  int order = 1;
   ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
   
   //NOTE: always order should be 1
-  ierr = mField.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  /*ierr = mField.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);*/
 
 
   //build field
@@ -146,6 +146,26 @@ int main(int argc, char *argv[]) {
 
   SetPositionsEntMethod set_positions(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,set_positions); CHKERRQ(ierr);
+  /*{
+    EntityHandle node = no_handle;
+    double coords[3];
+    const DofMoFEMEntity_multiIndex *dofs_moabfield_ptr;
+    ierr = mField.get_dofs_moabfield(&dofs_moabfield_ptr); CHKERRQ(ierr);
+    DofMoFEMEntity_multiIndex::iterator dit = dofs_moabfield_ptr->begin();
+    for(;dit!=dofs_moabfield_ptr->end();dit++) {
+      if(dit->get_ent_type()!=MBVERTEX) continue;
+      if(dit->get_name()!="MESH_NODE_POSITIONS") continue;
+      EntityHandle ent = dit->get_ent();
+      int dof_rank = dit->get_dof_rank();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+
+      dit->get_FieldData() = coords[dof_rank];
+    }
+  }*/
+
 
   Range SideSet1,SideSet2;
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
