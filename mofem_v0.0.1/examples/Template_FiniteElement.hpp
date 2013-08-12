@@ -42,6 +42,7 @@ struct TemplateFEMethodSNES: public FEMethod_UpLevelStudent {
 
   TemplateFEMethodSNES(Interface& _moab): FEMethod_UpLevelStudent(_moab) {};
   TemplateFEMethodSNES(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,int verbose = 0): FEMethod_UpLevelStudent(_moab,_dirihlet_bc_method_ptr,verbose) {}
+
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
@@ -73,9 +74,6 @@ struct TemplateFEMethodSNES: public FEMethod_UpLevelStudent {
   PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-
-      ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
 
       switch(snes_ctx) {
 	case ctx_SNESNone: {
@@ -85,7 +83,7 @@ struct TemplateFEMethodSNES: public FEMethod_UpLevelStudent {
 
 	  for(int rr = 0;rr<row_mat;rr++) {
 	    if(RowGlob[rr].size()==0) continue;
-	    ierr = VecSetValues(/*LOCAL_VECTOR_TO_ASSEMBLE*/,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	    ierr = VecSetValues(snes_f,/*LOCAL_VECTOR_TO_ASSEMBLE*/,ADD_VALUES); CHKERRQ(ierr);
 	  }
 
 	break;
@@ -96,7 +94,7 @@ struct TemplateFEMethodSNES: public FEMethod_UpLevelStudent {
 	    for(int cc = 0;cc<col_mat;cc++) {
 	      if(ColGlob[cc].size()==0) continue;
 		// ****
-		ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],/*LOCAL_MATRIX_TO_ASSEMBLE*/,ADD_VALUES); CHKERRQ(ierr);
+		ierr = MatSetValues(*snes_B,/*LOCAL_MATRIX_TO_ASSEMBLE*/,ADD_VALUES); CHKERRQ(ierr);
 		// ****
 	    }
 	  }
@@ -138,119 +136,6 @@ struct TemplateFEMethodSNES: public FEMethod_UpLevelStudent {
     vector<double> g_NTET,g_NTRI;
     const double* G_W_TET;
     const double* G_W_TRI;
-
-    int row_mat,col_mat;
-    vector<vector<DofIdx> > RowGlob;
-    vector<vector<DofIdx> > RowLocal;
-    vector<vector<ublas::matrix<FieldData> > > rowNMatrices;
-    vector<vector<ublas::matrix<FieldData> > > rowDiffNMatrices;
-    vector<vector<ublas::matrix<FieldData> > > rowBMatrices;
-    vector<vector<DofIdx> > ColGlob;
-    vector<vector<DofIdx> > ColLocal;
-    vector<vector<ublas::matrix<FieldData> > > colNMatrices;
-    vector<vector<ublas::matrix<FieldData> > > colDiffNMatrices;
-    vector<vector<ublas::matrix<FieldData> > > colBMatrices;
-
-    PetscErrorCode GetMatricesRows() {
-      PetscFunctionBegin;
-      RowGlob.resize(1+6+4+1);
-      RowLocal.resize(1+6+4+1);
-      rowNMatrices.resize(1+6+4+1);
-      rowDiffNMatrices.resize(1+6+4+1);
-      rowBMatrices.resize(1+6+4+1);
-      //indicies ROWS
-      row_mat = 0;
-      ierr = GetRowGlobalIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
-      ierr = GetRowLocalIndices("DISPLACEMENT",RowLocal[row_mat]); CHKERRQ(ierr);
-      ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
-      ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
-      ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
-      row_mat++;
-      for(int ee = 0;ee<6;ee++) { //edges matrices
-	ierr = GetRowGlobalIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
-	ierr = GetRowLocalIndices("DISPLACEMENT",MBEDGE,RowLocal[row_mat],ee); CHKERRQ(ierr);
-	if(RowGlob[row_mat].size()!=0) {
-	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
-	  ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBEDGE,rowDiffNMatrices[row_mat],ee); CHKERRQ(ierr);
-	  ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
-	  //cerr << rowDiffNMatrices[row_mat][0] << endl;
-	  row_mat++;
-	}
-      }
-      for(int ff = 0;ff<4;ff++) { //faces matrices
-	ierr = GetRowGlobalIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],ff); CHKERRQ(ierr);
-	ierr = GetRowLocalIndices("DISPLACEMENT",MBTRI,RowLocal[row_mat],ff); CHKERRQ(ierr);
-	if(RowGlob[row_mat].size()!=0) {
-	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],ff); CHKERRQ(ierr);
-	  ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBTRI,rowDiffNMatrices[row_mat],ff); CHKERRQ(ierr);
-	  ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
-	  row_mat++;
-	}
-      }
-      ierr = GetRowGlobalIndices("DISPLACEMENT",MBTET,RowGlob[row_mat]); CHKERRQ(ierr);
-      ierr = GetRowLocalIndices("DISPLACEMENT",MBTET,RowLocal[row_mat]); CHKERRQ(ierr);
-      if(RowGlob[row_mat].size() != 0) { //volume matrices
-	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTET,rowNMatrices[row_mat]); CHKERRQ(ierr);
-	ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBTET,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
-	ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
-	row_mat++;
-      }
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode GetMatricesCols() {
-      PetscFunctionBegin;
-      ColGlob.resize(1+6+4+1);
-      ColLocal.resize(1+6+4+1);
-      colNMatrices.resize(1+6+4+1);
-      colDiffNMatrices.resize(1+6+4+1);
-      colBMatrices.resize(1+6+4+1);
-      //indicies COLS
-      col_mat = 0;
-      ierr = GetColGlobalIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
-      ierr = GetColLocalIndices("DISPLACEMENT",ColLocal[col_mat]); CHKERRQ(ierr);
-      ierr = GetGaussColNMatrix("DISPLACEMENT",colNMatrices[col_mat]); CHKERRQ(ierr);
-      ierr = GetGaussColDiffNMatrix("DISPLACEMENT",colDiffNMatrices[col_mat]); CHKERRQ(ierr);
-      ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
-      col_mat++;
-      for(int ee = 0;ee<6;ee++) { //edges matrices
-	ierr = GetColGlobalIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
-	ierr = GetColLocalIndices("DISPLACEMENT",MBEDGE,ColLocal[col_mat],ee); CHKERRQ(ierr);
-	if(ColGlob[col_mat].size()!=0) {
-	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
-	  ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBEDGE,colDiffNMatrices[col_mat],ee); CHKERRQ(ierr);
-	  ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
-	  col_mat++;
-	}
-      }
-      for(int ff = 0;ff<4;ff++) { //faces matrices
-	ierr = GetColGlobalIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],ff); CHKERRQ(ierr);
-	ierr = GetColLocalIndices("DISPLACEMENT",MBTRI,ColLocal[col_mat],ff); CHKERRQ(ierr);
-	if(ColGlob[col_mat].size()!=0) {
-	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],ff); CHKERRQ(ierr);
-	  ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBTRI,colDiffNMatrices[col_mat],ff); CHKERRQ(ierr);
-	  ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
-	  col_mat++;
-	}
-      }
-      ierr = GetColGlobalIndices("DISPLACEMENT",MBTET,ColGlob[col_mat]); CHKERRQ(ierr);
-      ierr = GetColLocalIndices("DISPLACEMENT",MBTET,ColLocal[col_mat]); CHKERRQ(ierr);
-      if(ColGlob[col_mat].size() != 0) { //volume matrices
-	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTET,colNMatrices[col_mat]); CHKERRQ(ierr);
-	ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBTET,colDiffNMatrices[col_mat]); CHKERRQ(ierr);
-	ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
-	col_mat++;
-      }
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode GetMatrices() {
-      PetscFunctionBegin;
-      ierr = GetMatricesRows(); CHKERRQ(ierr);
-      ierr = GetMatricesCols(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
-
 
 };
 
