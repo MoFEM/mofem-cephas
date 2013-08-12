@@ -161,7 +161,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	  for(;eiit!=hi_eiit;eiit++) dofs_edge_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData(); 
 	} else {
 	  order_edges[ee] = 0;
-	  dofs_x_edge[ee] = NULL;
+	  dofs_edge[ee] = NULL;
 	}
       }
       //data face
@@ -381,29 +381,27 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
       }
       diff_volumeNinvJac = &diffH1elemNinvJac[0];
       int g_dim = get_dim_gNTET();
-      if(type_of_analysis&spatail_analysis) {
-        ee = 0;
-        for(;ee<6;ee++) {
-	  if(RowGlobSpatial[1+ee].size()!=0) {
-	    Fint_h_edge_data[ee].resize(RowGlobSpatial[1+ee].size());
+      ee = 0;
+      for(;ee<6;ee++) {
+	  if(dofs_x_edge_data[ee].size()!=0) {
+	    Fint_h_edge_data[ee].resize(dofs_x_edge_data[ee].size());
 	    Fint_h_edge[ee] = &Fint_h_edge_data[ee].data()[0];
 	  } else {
 	    Fint_h_edge[ee] = NULL;
 	  }
-        }
-        ff = 0;
-        for(;ff<4;ff++) {
-	  if(RowGlobSpatial[1+6+ff].size()!=0) {
-	    Fint_h_face_data[ff].resize(RowGlobSpatial[1+6+ff].size());
+      }
+      ff = 0;
+      for(;ff<4;ff++) {
+	  if(dofs_x_face_data[ff].size()!=0) {
+	    Fint_h_face_data[ff].resize(dofs_x_face_data[ff].size());
 	    Fint_h_face[ff] = &Fint_h_face_data[ff].data()[0];
 	  } else {
 	    Fint_h_face[ff] = NULL;
 	  }
-        }
-	if(RowGlobSpatial[i_volume].size()!=0) {
+      }
+      if(dofs_x_volume.size()!=0) {
 	  assert(RowGlobSpatial[i_volume].size() == (unsigned int)3*NBVOLUME_H1(order_volume));
-	  Fint_h_volume.resize(RowGlobSpatial[i_volume].size());
-	}
+	  Fint_h_volume.resize(dofs_x_volume.size());
       }
       ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
       unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;

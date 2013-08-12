@@ -111,6 +111,7 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
       FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
 
     set_PhysicalEquationNumber(hooke);
+    type_of_analysis = material_analysis;
 
   }
 
@@ -124,7 +125,13 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
-    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+    ierr = GetData(dofs_x_edge_data,dofs_x_edge,
+      dofs_x_face_data,dofs_x_face,
+      dofs_x_volume,dofs_x,
+      spatial_field_name); CHKERRQ(ierr);
+
+    ierr = GetFint(); CHKERRQ(ierr);
+    cout << Fint_H << endl;
 
     PetscFunctionReturn(0);
   }
