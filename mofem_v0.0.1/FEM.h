@@ -52,16 +52,20 @@ void print_mat(double *M,int m,int n);
 void print_mat_sym_upper(double *M,int m,int n);
 /// priint complex matrix
 void print_mat_complex(__CLPK_doublecomplex *M,int m,int n);
+
 /// \brief calulate shape functions of trianangle
 /// \param N shape function array
 /// \param X array of Guass X coordinates 
-/// \param X array of Guass Y coordinates 
+/// \param Y array of Guass Y coordinates 
 /// \param G_DIM number of Gauss points 
 void ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM);
 /// calulate direvatives of shape functions
 PetscErrorCode ShapeDiffMBTRI(double *diffN);
+
 /// calulate face nornam
+/// \param direvatives of shape functions
 /// \param coords is position of the nodes
+/// \param normal vector
 PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal);
 /// calulate jacobioan 
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
@@ -96,7 +100,8 @@ void GradientOfDeformation(double *diffN,double *dofs,double *F);
  *
  * \param p is approximation order
  * \param s is is position [-1,1]
- * \parem L appeoximation functions
+ * \param diff_s direvatives of shape functions
+ * \param L appeoximation functions
  * \param diffL direvatives
  * \param dim dimension
  */
