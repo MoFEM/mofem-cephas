@@ -63,7 +63,7 @@ void ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM);
 PetscErrorCode ShapeDiffMBTRI(double *diffN);
 
 /// calulate face nornam
-/// \param direvatives of shape functions
+/// \param diffN direvatives of shape functions
 /// \param coords is position of the nodes
 /// \param normal vector
 PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal);
