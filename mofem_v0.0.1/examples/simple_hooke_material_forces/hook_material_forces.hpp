@@ -107,8 +107,9 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
 struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
 
-  MaterialForcesFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
+  Vec F_MATERIAL;
+  MaterialForcesFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,Vec _F_MATERIAL,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),F_MATERIAL(_F_MATERIAL) {
 
     set_PhysicalEquationNumber(hooke);
     type_of_analysis = material_analysis;
@@ -117,6 +118,7 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+    VecZeroEntries(F_MATERIAL);
     PetscFunctionReturn(0);
   }
 
@@ -125,19 +127,23 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndices(RowGlobMaterial,ColGlobMaterial,material_field_name); CHKERRQ(ierr);
     ierr = GetData(dofs_x_edge_data,dofs_x_edge,
       dofs_x_face_data,dofs_x_face,
       dofs_x_volume,dofs_x,
       spatial_field_name); CHKERRQ(ierr);
-
     ierr = GetFint(); CHKERRQ(ierr);
-    cout << Fint_H << endl;
+    ierr = VecSetValues(F_MATERIAL,RowGlobMaterial[0].size(),&(RowGlobMaterial[0])[0],&(Fint_H.data())[0],ADD_VALUES); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
+    ierr = VecGhostUpdateBegin(F_MATERIAL,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F_MATERIAL,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F_MATERIAL); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F_MATERIAL); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

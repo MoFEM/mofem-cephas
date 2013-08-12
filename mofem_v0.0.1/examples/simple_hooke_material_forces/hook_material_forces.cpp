@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
   //Fields
   ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("MATERIAL_FORCE",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -153,7 +154,7 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec F;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
@@ -205,7 +206,7 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
 
   Vec D;
-  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -227,9 +228,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  MaterialForcesFEMethod MyMaterialFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  Vec F_MATERIAL;
+  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F_MATERIAL); CHKERRQ(ierr);
+  MaterialForcesFEMethod MyMaterialFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),F_MATERIAL);
   ierr = mField.loop_finite_elements("MATERIAL_MECHANICS","MATERIAL",MyMaterialFE);  CHKERRQ(ierr);
-
+  ierr = mField.set_other_global_VecCreateGhost("MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_MATERIAL,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  //ierr = VecView(F_MATERIAL,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method_material_forces(moab,"MESH_NODE_POSITIONS",F_MATERIAL,"MATERIAL_FORCE");
+  ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Row,ent_method_material_forces); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);

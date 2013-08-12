@@ -2752,7 +2752,7 @@ PetscErrorCode moabField_Core::set_local_VecCreateGhost(const string &name,RowCo
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
   Vec Vlocal;
-  VecGhostGetLocalForm(V,&Vlocal);
+  ierr = VecGhostGetLocalForm(V,&Vlocal); CHKERRQ(ierr);
   PetscInt size;
   ierr = VecGetLocalSize(V,&size); CHKERRQ(ierr);
   if(size!=nb_local_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: check ghost vector, problem with nb. of local nodes"); 
@@ -2852,8 +2852,10 @@ PetscErrorCode moabField_Core::set_global_VecCreateGhost(const string &name,RowC
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
-  const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
+  const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,
+  int verb) {
   PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type dofs_by_name;
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
@@ -2943,6 +2945,11 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
 	      if(diiiit==dofs_moabfield.get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	    }
 	    diiiit->get_FieldData() = array[miit->get_petsc_gloabl_dof_idx()];
+	    if(verb > 1) {
+	      ostringstream ss;
+	      ss << *diiiit << "set " << array[miit->get_petsc_gloabl_dof_idx()] << endl;
+	      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	    }
 	  }
 	  break;
 	default:
