@@ -27,17 +27,9 @@ set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
 
 include(cmake/ResolveCompilerPaths.cmake)
 
-SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
-#add coverage
-string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
-if(CMAKE_BUILD_TYPE MATCHES "DEBUG") 
-  add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
-  set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
-endif(CMAKE_BUILD_TYPE MATCHES "DEBUG") 
-
 #get mpipath bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
-message(STATUS ${MPI_BIN_PATH})
+#message(STATUS ${MPI_BIN_PATH})
 
 project(MoFEM C CXX)
 
@@ -51,6 +43,14 @@ configure_file(
   "${PROJECT_BINARY_DIR}/config.h"
   )
 include_directories("${PROJECT_BINARY_DIR}")
+
+#add coverage
+if(WITHCOVERAGE) 
+  SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
+  add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+endif(CMAKE_BUILD_TYPE MATCHES "DEBUG") 
+
+
 
 #add check for verbose testing
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
