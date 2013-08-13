@@ -75,23 +75,13 @@ struct SetPositionsEntMethod: public moabField::EntMethod {
 
 struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
-  Range& SideSet1;
   Range& SideSet2;
-  Range SideSet1_;
 
-  NL_ElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), SideSet1(_SideSet1),SideSet2(_SideSet2)  {
+  NL_ElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,Range &_SideSet2,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), SideSet2(_SideSet2)  {
 
     set_PhysicalEquationNumber(hooke);
     //set_PhysicalEquationNumber(neohookean);
-
-
-    Range SideSet1Edges,SideSet1Nodes;
-    rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
-    rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
-    SideSet1_.insert(SideSet1.begin(),SideSet1.end());
-    SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
-    SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
 
   }
 
@@ -113,6 +103,21 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
 
     set_PhysicalEquationNumber(hooke);
     type_of_analysis = material_analysis;
+
+    MoFEMFE_multiIndex::index<MoFEMFE_name_mi_tag>::type::iterator femit;
+    femit = finite_elements->get<MoFEMFE_name_mi_tag>().find("MATERIAL");
+    EntityHandle fe_meshset = femit->get_meshset();
+    Range material_tets;
+    rval = moab.get_entities_by_type(fe_meshset,MBTET,material_tets,true); CHKERR_THROW(rval);
+    Skinner skin(&moab);
+    Range skin_faces; // skin faces from 3d ents
+    rval = skin.find_skin(material_tets,false,skin_faces); CHKERR_THROW(rval);
+
+    EntityHandle tmp_meshset;
+    //rval = moab.create_meshset(MESHSET_SET,tmp_meshset); CHKERR_THROW(rval);	
+    //rval = moab.add_entities(tmp_meshset,skin_faces); CHKERR_THROW(rval);
+    //rval = moab.write_file("skin_faces.vtk","VTK","",&tmp_meshset,1); CHKERR_THROW(rval);
+    //rval = moab.delete_entities(&tmp_meshset,1); CHKERR_THROW(rval);
 
   }
 

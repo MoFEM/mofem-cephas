@@ -128,10 +128,10 @@ moabField_Core::moabField_Core(Interface& _moab,int _verbose):
   rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,1, MB_TYPE_INTEGER, 
     ssTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERR(rval);
   const int def_bc_data_len = 0;
-  std::string tag_name = std::string(DIRICHLET_SET_TAG_NAME)+"_BC_DATA";
+  std::string tag_name = std::string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA";
   rval = moab.tag_get_handle(tag_name.c_str(),def_bc_data_len,MB_TYPE_OPAQUE,
     nsTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR(rval);
-  tag_name = std::string(NEUMANN_SET_TAG_NAME)+"_BC_DATA";
+  tag_name = std::string(NEUMANN_SET_TAG_NAME)+"__BC_DATA";
   rval = moab.tag_get_handle(tag_name.c_str(),def_bc_data_len,MB_TYPE_OPAQUE,
     ssTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR(rval);
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME, 1, MB_TYPE_INTEGER,
