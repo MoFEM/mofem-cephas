@@ -46,10 +46,10 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 #add coverage
 if(WITHCOVERAGE) 
-  SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
+  SET(GCC_COVERAGE_COMPILE_FLAGS "-ftest-coverage")
   add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+  set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
 endif(WITHCOVERAGE) 
-
 
 #add check for verbose testing
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
