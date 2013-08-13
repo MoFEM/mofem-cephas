@@ -48,8 +48,7 @@ include_directories("${PROJECT_BINARY_DIR}")
 if(WITHCOVERAGE) 
   SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
   add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
-endif(CMAKE_BUILD_TYPE MATCHES "DEBUG") 
-
+endif(WITHCOVERAGE) 
 
 
 #add check for verbose testing
