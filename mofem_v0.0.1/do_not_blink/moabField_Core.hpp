@@ -206,6 +206,7 @@ struct moabField_Core: public moabField {
   //get multi_index form database
   PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr);
+  PetscErrorCode get_finite_elements(const MoFEMFE_multiIndex **finite_elements_ptr);
 
   //Copy Field to Another
   //NOT TESTED DONT USE PetscErrorCode set_other_filed_values(const string& fiel_name,const string& cpy_field_name,InsertMode mode,ScatterMode scatter_mode);

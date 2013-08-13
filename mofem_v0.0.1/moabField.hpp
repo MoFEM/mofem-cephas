@@ -205,7 +205,7 @@ struct moabField {
   /// add TET elements form meshset to finite element database given by name 
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name) = 0;
 
-  /// add TET elements to the refinment level to finite element database given by name 
+  /// add TET elements from given refinment level to finite element database given by name 
   virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) = 0;
 
   /// add MESHSET element to finite element database given by name 
@@ -499,6 +499,12 @@ struct moabField {
     *
     */
   virtual PetscErrorCode get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr) = 0;
+
+  /** \brief Get finite elements multi index
+    *
+    */
+  virtual PetscErrorCode get_finite_elements(const MoFEMFE_multiIndex **finite_elements_ptr) = 0;
+
 
   /** \brief Copy vector to field which is not part of the problem
     *

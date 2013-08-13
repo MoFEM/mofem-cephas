@@ -3444,5 +3444,11 @@ PetscErrorCode moabField_Core::get_dofs_moabfield(const DofMoFEMEntity_multiInde
   *dofs_moabfield_ptr = &dofs_moabfield;
   PetscFunctionReturn(0);
 }
+PetscErrorCode moabField_Core::get_finite_elements(const MoFEMFE_multiIndex **finite_elements_ptr) {
+  PetscFunctionBegin;
+  *finite_elements_ptr = &finite_elements;
+  PetscFunctionReturn(0);
+}
+
 
 }
