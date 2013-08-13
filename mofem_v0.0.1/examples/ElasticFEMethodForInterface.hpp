@@ -112,15 +112,12 @@ struct InterfaceElasticFEMethod: public ElasticFEMethod {
     }
     D = lambda*D_lambda + mu*D_mu;
     ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
+
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
     ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
@@ -175,16 +172,11 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
     // Note MAT_FLUSH_ASSEMBLY
     ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = PetscGetTime(&v2); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscFunctionReturn(0);
   }

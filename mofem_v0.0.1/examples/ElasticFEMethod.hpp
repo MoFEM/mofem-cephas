@@ -181,10 +181,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       g_NTRI.resize(3*13);
       ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
       G_W_TRI = G_TRI_W13;
-      ierr = VecZeroEntries(F); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
       // See FEAP - - A Finite Element Analysis Program
       D_lambda = ublas::zero_matrix<FieldData>(6,6);
       for(int rr = 0;rr<3;rr++) {
@@ -207,18 +203,12 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       if(Diagonal!=PETSC_NULL) {
 	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
 	ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
 	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
       }
-      ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = PetscGetTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
