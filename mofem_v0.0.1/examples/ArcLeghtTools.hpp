@@ -100,6 +100,7 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
   ArcLenghtCtx(moabField &mField,const string &problem_name): ArcLenghtCtx_DataOnMesh(mField), dlambda(*(double *)tag_data_dlambda[0]) {
 
     mField.VecCreateGhost(problem_name,Row,&F_lambda);
+    VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
     mField.VecCreateGhost(problem_name,Row,&db);
     mField.VecCreateGhost(problem_name,Row,&x_lambda);
     mField.VecCreateGhost(problem_name,Row,&y_residual);
