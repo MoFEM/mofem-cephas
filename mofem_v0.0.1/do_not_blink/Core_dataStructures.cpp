@@ -153,19 +153,19 @@ ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
 }
 
 //ref moab MoFEMFE
-RefMoFEMFiniteElement::RefMoFEMFiniteElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
+RefMoFEMElement::RefMoFEMElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
   interface_RefMoFEMEntity<RefMoFEMEntity>(_RefMoFEMEntity_ptr) {
   ErrorCode rval;
   Tag th_RefBitEdge;
   rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); CHKERR_THROW(rval);
 }
-ostream& operator<<(ostream& os,const RefMoFEMFiniteElement& e) {
+ostream& operator<<(ostream& os,const RefMoFEMElement& e) {
   os << " ref egdes " << e.get_BitRefEdges();
   os << " " << *e.ref_ptr;
   return os;
 }
-RefMoFEMFiniteElement_MESHSET::RefMoFEMFiniteElement_MESHSET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMFiniteElement(moab,_RefMoFEMEntity_ptr) {
+RefMoFEMElement_MESHSET::RefMoFEMElement_MESHSET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMElement(moab,_RefMoFEMEntity_ptr) {
   switch (ref_ptr->get_ent_type()) {
     case MBENTITYSET:
     break;
@@ -173,7 +173,7 @@ RefMoFEMFiniteElement_MESHSET::RefMoFEMFiniteElement_MESHSET(Interface &moab,con
       THROW_AT_LINE("this work only for MESHSETs");
   }
 }
-SideNumber* RefMoFEMFiniteElement_MESHSET::get_side_number_ptr(Interface &moab,EntityHandle ent) const { 
+SideNumber* RefMoFEMElement_MESHSET::get_side_number_ptr(Interface &moab,EntityHandle ent) const { 
   NOT_USED(moab);
   NOT_USED(ent);
   SideNumber_multiIndex::iterator miit;
@@ -182,7 +182,7 @@ SideNumber* RefMoFEMFiniteElement_MESHSET::get_side_number_ptr(Interface &moab,E
   THROW_AT_LINE("not implemented");
   return NULL;
 }
-RefMoFEMFiniteElement_PRISM::RefMoFEMFiniteElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMFiniteElement(moab,_RefMoFEMEntity_ptr) {
+RefMoFEMElement_PRISM::RefMoFEMElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMElement(moab,_RefMoFEMEntity_ptr) {
   switch (ref_ptr->get_ent_type()) {
     case MBPRISM:
     break;
@@ -199,7 +199,7 @@ RefMoFEMFiniteElement_PRISM::RefMoFEMFiniteElement_PRISM(Interface &moab,const R
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(conn[nn],nn,0,-1));
   }
 }
-SideNumber* RefMoFEMFiniteElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
   if(ref_ptr->ent == ent) {
@@ -275,7 +275,7 @@ SideNumber* RefMoFEMFiniteElement_PRISM::get_side_number_ptr(Interface &moab,Ent
   THROW_AT_LINE("not implemented");
   return NULL;
 }
-RefMoFEMFiniteElement_TET::RefMoFEMFiniteElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMFiniteElement(moab,_RefMoFEMEntity_ptr) {
+RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMElement(moab,_RefMoFEMEntity_ptr) {
   ErrorCode rval;
   Tag th_RefType;
   switch (ref_ptr->get_ent_type()) {
@@ -287,7 +287,7 @@ RefMoFEMFiniteElement_TET::RefMoFEMFiniteElement_TET(Interface &moab,const RefMo
   rval = moab.tag_get_handle("_RefType",th_RefType); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefType,&ref_ptr->ent,1,(const void **)&tag_type_data); CHKERR_THROW(rval);
 }
-SideNumber* RefMoFEMFiniteElement_TET::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+SideNumber* RefMoFEMElement_TET::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
   if(ref_ptr->ent == ent) {
@@ -306,7 +306,7 @@ SideNumber* RefMoFEMFiniteElement_TET::get_side_number_ptr(Interface &moab,Entit
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
 }
-ostream& operator<<(ostream& os,const RefMoFEMFiniteElement_TET& e) {
+ostream& operator<<(ostream& os,const RefMoFEMElement_TET& e) {
   os << "ref type " << e.tag_type_data[0] << " ref sub type " << e.tag_type_data[1];
   os << " ref egdes " << e.get_BitRefEdges();
   os << " " << *e.ref_ptr;
@@ -710,8 +710,8 @@ void EntMoFEMFE_data_dofs_change::operator()(EntMoFEMFE &MoFEMFE) {
 }
 
 //MoFEMFE data
-EntMoFEMFE::EntMoFEMFE(Interface &moab,const RefMoFEMFiniteElement *_ref_MoFEMFE,const MoFEMFE *_MoFEMFE_ptr): 
-  interface_MoFEMFE<MoFEMFE>(_MoFEMFE_ptr),interface_RefMoFEMFiniteElement<RefMoFEMFiniteElement>(_ref_MoFEMFE) {
+EntMoFEMFE::EntMoFEMFE(Interface &moab,const RefMoFEMElement *_ref_MoFEMFE,const MoFEMFE *_MoFEMFE_ptr): 
+  interface_MoFEMFE<MoFEMFE>(_MoFEMFE_ptr),interface_RefMoFEMElement<RefMoFEMElement>(_ref_MoFEMFE) {
   ErrorCode rval;
   EntityHandle ent = get_ent();
   rval = moab.tag_get_by_ptr(fe_ptr->th_DofUidRow,&ent,1,(const void **)&tag_row_uids_data,&tag_row_uids_size); 

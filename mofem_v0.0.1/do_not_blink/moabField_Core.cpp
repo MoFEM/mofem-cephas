@@ -196,7 +196,7 @@ PetscErrorCode moabField_Core::clear_map() {
   PetscFunctionBegin;
   cubit_meshsets.clear();
   refined_mofem_entities.clear();
-  ref_finite_elements.clear();
+  refined_mofem_elements.clear();
   moabfields.clear();
   ents_moabfield.clear();
   dofs_moabfield.clear();
@@ -352,17 +352,17 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
 	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refined_mofem_entities.insert(RefMoFEMEntity(moab,*eit));
-	pair<RefMoFEMFiniteElement_multiIndex::iterator,bool> p_MoFEMFE;
+	pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFE;
 	switch (moab.type_from_handle(*eit)) {
 	  case MBTET:
-	    p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_TET(moab,&*p_ref_ent.first)));
+	    p_MoFEMFE = refined_mofem_elements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ref_ent.first)));
 	    assert(p_MoFEMFE.first->get_BitRefEdges_ulong()!=-1);
 	    break;
 	  case MBPRISM:
-  	    p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_PRISM(moab,&*p_ref_ent.first)));
+  	    p_MoFEMFE = refined_mofem_elements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ref_ent.first)));
 	    break;
 	  case MBENTITYSET:
-  	    p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_MESHSET(moab,&*p_ref_ent.first)));
+  	    p_MoFEMFE = refined_mofem_elements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ref_ent.first)));
 	    break;
 	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");
@@ -1026,8 +1026,8 @@ PetscErrorCode moabField_Core::add_ents_to_finite_element_EntType_by_bit_ref(con
   *build_MoFEM &= 1<<0;
   const BitFEId id = get_BitFEId(name);
   const EntityHandle idm = get_meshset_by_BitFEId(id);
-  typedef RefMoFEMFiniteElement_multiIndex::index<EntType_mi_tag>::type refMoabFE_by_type;
-  refMoabFE_by_type &ref_MoFEMFE = ref_finite_elements.get<EntType_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<EntType_mi_tag>::type refMoabFE_by_type;
+  refMoabFE_by_type &ref_MoFEMFE = refined_mofem_elements.get<EntType_mi_tag>();
   refMoabFE_by_type::iterator miit = ref_MoFEMFE.lower_bound(type);
   refMoabFE_by_type::iterator hi_miit = ref_MoFEMFE.upper_bound(type);
   int nb_add_FEs = 0;
@@ -1151,20 +1151,20 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
 	    EntityHandle face_side3,face_side4;
 	    rval = moab.side_element(prism,2,3,face_side3); CHKERR_PETSC(rval);
 	    rval = moab.side_element(prism,2,4,face_side4); CHKERR_PETSC(rval);
-	    EntFe.get_RefMoFEMFiniteElement()->get_side_number_ptr(moab,face_side3);
-	    EntFe.get_RefMoFEMFiniteElement()->get_side_number_ptr(moab,face_side4);
+	    EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,face_side3);
+	    EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,face_side4);
 	    int ee = 0;
 	    for(;ee<3;ee++) {
 	      EntityHandle edge;
 	      rval = moab.side_element(prism,1,ee,edge); CHKERR_PETSC(rval);
-	      EntFe.get_RefMoFEMFiniteElement()->get_side_number_ptr(moab,edge);
+	      EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
 	      rval = moab.side_element(prism,1,6+ee,edge); CHKERR_PETSC(rval);
-	      EntFe.get_RefMoFEMFiniteElement()->get_side_number_ptr(moab,edge);
+	      EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
 	    }
 	  } catch (const char* msg) {
 	      SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
-	  SideNumber_multiIndex &side_table = EntFe.get_RefMoFEMFiniteElement()->get_side_number_table();
+	  SideNumber_multiIndex &side_table = EntFe.get_RefMoFEMElement()->get_side_number_table();
 	  switch (space) {
 	    case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
 	      adj_ents.insert(nodes.begin(),nodes.end());
@@ -1332,7 +1332,7 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
 PetscErrorCode moabField_Core::build_finite_elements(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef RefMoFEMFiniteElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFE_by_ent;
+  typedef RefMoFEMElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFE_by_ent;
   MoFEMFE_multiIndex::iterator MoFEMFE_miit = finite_elements.begin();
   // loop Finite Elements
   for(;MoFEMFE_miit!=finite_elements.end();MoFEMFE_miit++) {
@@ -1345,16 +1345,16 @@ PetscErrorCode moabField_Core::build_finite_elements(int verb) {
     //loop meshset Ents and add finite elements
     Range::iterator eit = MoFEMFE_ents.begin();
     for(;eit!=MoFEMFE_ents.end();eit++) {
-      // check if is in ref_finite_elements database
-      ref_MoFEMFE_by_ent::iterator ref_MoFEMFE_miit = ref_finite_elements.get<MoABEnt_mi_tag>().find(*eit); /* iterator is a wrapper*/
-      if(ref_MoFEMFE_miit == ref_finite_elements.get<MoABEnt_mi_tag>().end()) {
+      // check if is in refined_mofem_elements database
+      ref_MoFEMFE_by_ent::iterator ref_MoFEMFE_miit = refined_mofem_elements.get<MoABEnt_mi_tag>().find(*eit); /* iterator is a wrapper*/
+      if(ref_MoFEMFE_miit == refined_mofem_elements.get<MoABEnt_mi_tag>().end()) {
 	ostringstream ss;
 	ss << "ref MoFEMFE not in database ent = " << *eit;
 	ss << " type " << moab.type_from_handle(*eit);
 	ss << " " << *MoFEMFE_miit;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      ierr = build_finite_element(EntMoFEMFE(moab,ref_MoFEMFE_miit->get_RefMoFEMFiniteElement(),&*MoFEMFE_miit),verb); CHKERRQ(ierr);
+      ierr = build_finite_element(EntMoFEMFE(moab,ref_MoFEMFE_miit->get_RefMoFEMElement(),&*MoFEMFE_miit),verb); CHKERRQ(ierr);
     }
   }
   if(verb>0) {
@@ -1872,25 +1872,25 @@ PetscErrorCode moabField_Core::seed_ref_level_3D(const EntityHandle meshset,cons
         bool success = refined_mofem_entities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       }
-      pair<RefMoFEMFiniteElement_multiIndex::iterator,bool> p_MoFEMFE;
+      pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFE;
       switch (p_ent.first->get_ent_type()) {
         case MBTET: 
-	 p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_TET(moab,&*p_ent.first)));	
+	 p_MoFEMFE = refined_mofem_elements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));	
 	  assert(p_MoFEMFE.first->get_BitRefEdges_ulong()!=-1);
 	 break;
 	case MBPRISM:
-	  p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_PRISM(moab,&*p_ent.first)));
+	  p_MoFEMFE = refined_mofem_elements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
 	  assert(p_MoFEMFE.first->get_BitRefEdges_ulong()!=-1);
 	  break;
         case MBENTITYSET:
-	  p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_MESHSET(moab,&*p_ent.first)));
+	  p_MoFEMFE = refined_mofem_elements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ent.first)));
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
       if(verbose>2) {
         ostringstream ss;
-        ss << *(p_MoFEMFE.first->get_RefMoFEMFiniteElement()) << endl;
+        ss << *(p_MoFEMFE.first->get_RefMoFEMElement()) << endl;
         PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
     }
@@ -1921,11 +1921,11 @@ PetscErrorCode moabField_Core::seed_ref_level_MESHSET(const EntityHandle meshset
   if(!((p_ent.first->get_BitRefLevel()&bit)==bit)) {
     refined_mofem_entities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
   }
-  ptrWrapperRefMoFEMFiniteElement pack_fe(new RefMoFEMFiniteElement_MESHSET(moab,&*p_ent.first));
-  pair<RefMoFEMFiniteElement_multiIndex::iterator,bool> p_MoFEMFE = ref_finite_elements.insert(pack_fe);
+  ptrWrapperRefMoFEMElement pack_fe(new RefMoFEMElement_MESHSET(moab,&*p_ent.first));
+  pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFE = refined_mofem_elements.insert(pack_fe);
   if(verbose > 0) {
     ostringstream ss;
-    ss << "add meshset as ref_ent " << *(p_MoFEMFE.first->get_RefMoFEMFiniteElement()) << endl;
+    ss << "add meshset as ref_ent " << *(p_MoFEMFE.first->get_RefMoFEMElement()) << endl;
     PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
   }
   PetscFunctionReturn(0);
@@ -1992,7 +1992,7 @@ PetscErrorCode moabField_Core::add_verices_in_the_middel_of_edges(const EntityHa
     AdjBasicMoFEMEntity_by_adj::iterator adj_miit = Adj_prisms_by_adj.find(*eit);
     if(adj_miit==Adj_prisms_by_adj.end()) continue;
     EntityHandle prism = adj_miit->ent;
-    RefMoFEMFiniteElement_multiIndex::iterator miit2 = ref_finite_elements.get<MoABEnt_mi_tag>().find(prism);
+    RefMoFEMElement_multiIndex::iterator miit2 = refined_mofem_elements.get<MoABEnt_mi_tag>().find(prism);
     SideNumber_multiIndex &side_table = miit2->get_side_number_table();
     SideNumber_multiIndex::iterator siit = side_table.find(*eit);
     int side_number = siit->side_number;
@@ -2051,10 +2051,10 @@ PetscErrorCode moabField_Core::refine_TET(const EntityHandle meshset,const BitRe
   ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
   for(;miit!=hi_miit;miit++) ref_parent_ents_view.insert(&*miit);
-  typedef RefMoFEMFiniteElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFE_by_ent;
-  ref_MoFEMFE_by_ent &ref_MoFEMFE = ref_finite_elements.get<MoABEnt_mi_tag>();
-  typedef RefMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type ref_ent_by_composite;
-  ref_ent_by_composite &by_composite = ref_finite_elements.get<Composite_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFE_by_ent;
+  ref_MoFEMFE_by_ent &ref_MoFEMFE = refined_mofem_elements.get<MoABEnt_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<Composite_mi_tag>::type ref_ent_by_composite;
+  ref_ent_by_composite &by_composite = refined_mofem_elements.get<Composite_mi_tag>();
   // find oposite intrface nodes
   typedef AdjBasicMoFEMEntity_multiIndex::index<EntType_mi_tag>::type AdjPrism_by_type;
   AdjPrism_by_type::iterator face_prism_miit = Adj_prisms.get<EntType_mi_tag>().lower_bound(MBTRI);
@@ -2207,7 +2207,7 @@ PetscErrorCode moabField_Core::refine_TET(const EntityHandle meshset,const BitRe
       ref_tets_bit.set(tt,1);
       if(verbose>2) {
 	ostringstream ss;
-	ss << miit_composite2->get_RefMoFEMFiniteElement() << endl;
+	ss << miit_composite2->get_RefMoFEMElement() << endl;
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
     }
@@ -2234,11 +2234,11 @@ PetscErrorCode moabField_Core::refine_TET(const EntityHandle meshset,const BitRe
 	  rval = moab.tag_set_data(th_RefBitLevel,&ref_tets[tt],1,&bit); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_RefBitEdge,&ref_tets[tt],1,&parent_edges_bit); CHKERR_PETSC(rval);
 	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refined_mofem_entities.insert(RefMoFEMEntity(moab,ref_tets[tt]));
-	  pair<RefMoFEMFiniteElement_multiIndex::iterator,bool> p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_TET(moab,&*p_ent.first)));
+	  pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFE = refined_mofem_elements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));
 	  ref_tets_bit.set(tt);
 	  if(verbose>2) {
 	    ostringstream ss;
-	    ss << "add tet: " << *(p_MoFEMFE.first->get_RefMoFEMFiniteElement()) << endl;
+	    ss << "add tet: " << *(p_MoFEMFE.first->get_RefMoFEMElement()) << endl;
 	    PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
 	  }
 	}
@@ -2389,8 +2389,8 @@ PetscErrorCode moabField_Core::refine_PRISM(const EntityHandle meshset,const Bit
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ENTs_by_ent;
-  typedef RefMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type ref_fe_by_composite;
-  ref_fe_by_composite &ref_fe_by_comp = ref_finite_elements.get<Composite_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<Composite_mi_tag>::type ref_fe_by_composite;
+  ref_fe_by_composite &ref_fe_by_comp = refined_mofem_elements.get<Composite_mi_tag>();
   // find all verices which parent is edge
   typedef RefMoFEMEntity_multiIndex::index<Composite_mi_tag>::type ref_ents_by_composite;
   ref_ents_by_composite &ref_ents_by_comp = refined_mofem_entities.get<Composite_mi_tag>();
@@ -2488,7 +2488,7 @@ PetscErrorCode moabField_Core::refine_PRISM(const EntityHandle meshset,const Bit
       ref_prism_bit.set(pp,1);
       if(verb>2) {
 	ostringstream ss;
-	ss << "is refined " << *(miit_composite2->get_RefMoFEMFiniteElement()) << endl;
+	ss << "is refined " << *(miit_composite2->get_RefMoFEMElement()) << endl;
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
     }
@@ -2509,9 +2509,9 @@ PetscErrorCode moabField_Core::refine_PRISM(const EntityHandle meshset,const Bit
 	  rval = moab.tag_set_data(th_RefBitLevel,&ref_prisms[pp],1,&bit); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_RefBitEdge,&ref_prisms[pp],1,&split_edges); CHKERR_PETSC(rval);
 	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refined_mofem_entities.insert(RefMoFEMEntity(moab,ref_prisms[pp]));
-	  pair<RefMoFEMFiniteElement_multiIndex::iterator,bool> p_MoFEMFE;
+	  pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFE;
 	  try {
-	    p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_PRISM(moab,&*p_ent.first)));
+	    p_MoFEMFE = refined_mofem_elements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
 	  } catch (const char* msg) {
 	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
@@ -2519,7 +2519,7 @@ PetscErrorCode moabField_Core::refine_PRISM(const EntityHandle meshset,const Bit
 	  ierr = add_prism_to_Adj_prisms(ref_prisms[pp]); CHKERRQ(ierr);
 	  if(verb>2) {
 	    ostringstream ss;
-	    ss << "add prism: " << *(p_MoFEMFE.first->get_RefMoFEMFiniteElement()) << endl;
+	    ss << "add prism: " << *(p_MoFEMFE.first->get_RefMoFEMElement()) << endl;
 	    if(verb>7) {
 	      for(int nn = 0;nn<6;nn++) {
 		ss << new_prism_conn[nn] << " ";
@@ -2548,8 +2548,8 @@ PetscErrorCode moabField_Core::refine_MESHSET(const EntityHandle meshset,const B
 }
 PetscErrorCode moabField_Core::refine_get_finite_elements(const BitRefLevel &bit,const EntityHandle meshset) {
   PetscFunctionBegin;
-  RefMoFEMFiniteElement_multiIndex::iterator miit = ref_finite_elements.begin();
-  for(;miit!=ref_finite_elements.end();miit++) {
+  RefMoFEMElement_multiIndex::iterator miit = refined_mofem_elements.begin();
+  for(;miit!=refined_mofem_elements.end();miit++) {
     BitRefLevel bit2 = miit->get_BitRefLevel(); 
     if((bit2&bit).any()) {
       switch (miit->get_ent_type()) {
@@ -3303,9 +3303,9 @@ PetscErrorCode moabField_Core::add_prism_to_Adj_prisms(const EntityHandle prism,
   vector<EntityHandle> Ents(8,no_handle);
   try {
     pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refined_mofem_entities.insert(RefMoFEMEntity(moab,prism));
-    pair<RefMoFEMFiniteElement_multiIndex::iterator,bool> p_MoFEMFE;
+    pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFE;
     if(p_ent.second) {
-      p_MoFEMFE = ref_finite_elements.insert(ptrWrapperRefMoFEMFiniteElement(new RefMoFEMFiniteElement_PRISM(moab,&*p_ent.first)));
+      p_MoFEMFE = refined_mofem_elements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
       int num_nodes;
       const EntityHandle* conn;
       rval = moab.get_connectivity(prism,conn,num_nodes,true); CHKERR_THROW(rval);

@@ -55,7 +55,7 @@ struct moabField_Core: public moabField {
 
   //ref
   RefMoFEMEntity_multiIndex refined_mofem_entities;
-  RefMoFEMFiniteElement_multiIndex ref_finite_elements;
+  RefMoFEMElement_multiIndex refined_mofem_elements;
   //field
   MoFEMField_multiIndex moabfields;
   MoFEMEntity_multiIndex ents_moabfield;
