@@ -27,12 +27,12 @@ set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
 
 include(cmake/ResolveCompilerPaths.cmake)
 
+SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
 #add coverage
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 if(CMAKE_BUILD_TYPE MATCHES "DEBUG") 
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftest-coverage")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftest-coverage")
-  set(CMAKE_EXE_LINKER_FLAGS "-ftest-coverage")
+  add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+  set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
 endif(CMAKE_BUILD_TYPE MATCHES "DEBUG") 
 
 #get mpipath bin directory
