@@ -52,7 +52,7 @@ PetscErrorCode moabField::TSMethod::set_ts(TS _ts) {
 //BasicMethod
 moabField::BasicMethod::BasicMethod():
   moabfields(NULL),ents_moabfield(NULL),dofs_moabfield(NULL),
-  finite_elements(NULL),finite_elements_data(NULL),fem_adjacencies(NULL) {};
+  finite_elements(NULL),finite_elements_moabents(NULL),fem_adjacencies(NULL) {};
 
 moabField::FEMethod::FEMethod(): BasicMethod(),
   problem_ptr(NULL),fe_ptr(NULL),data_multiIndex(NULL),
@@ -133,10 +133,10 @@ PetscErrorCode moabField::BasicMethod::set_adjacencies(const MoFEMAdjacencies_mu
   fem_adjacencies = _fem_adjacencies;
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField::BasicMethod::set_fes_data_multiIndex(const EntMoFEMFE_multiIndex *_finite_elements_data) {
+PetscErrorCode moabField::BasicMethod::set_fes_data_multiIndex(const EntMoFEMFE_multiIndex *_finite_elements_moabents) {
   PetscFunctionBegin;
-  if(_finite_elements_data == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  finite_elements_data = _finite_elements_data;
+  if(_finite_elements_moabents == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  finite_elements_moabents = _finite_elements_moabents;
   PetscFunctionReturn(0);
 }
 moabField::EntMethod::EntMethod(): BasicMethod(),problem_ptr(NULL),dof_ptr(NULL) {}

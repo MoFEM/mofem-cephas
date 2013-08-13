@@ -201,7 +201,7 @@ PetscErrorCode moabField_Core::clear_map() {
   ents_moabfield.clear();
   dofs_moabfield.clear();
   finite_elements.clear();
-  finite_elements_data.clear();
+  finite_elements_moabents.clear();
   adjacencies.clear();
   problems.clear();
   PetscFunctionReturn(0);
@@ -1098,7 +1098,7 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
   field_by_meshset &moabfields_by_meshset = moabfields.get<Meshset_mi_tag>();
   dof_set_type& dof_set = dofs_moabfield.get<Composite_mi_tag2>();
   EntityHandle fe_ent = EntFe.get_ent();
-  pair<EntMoFEMFE_multiIndex::iterator,bool> p = finite_elements_data.insert(EntFe);
+  pair<EntMoFEMFE_multiIndex::iterator,bool> p = finite_elements_moabents.insert(EntFe);
   //get id of mofem fields for row, col and data
   enum IntLoop { Row = 0,Col,Data,Last };
   BitFieldId FEAdj_fields[Last] = { 
@@ -1268,9 +1268,9 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
       for(int ss = 0;ss<Last;ss++) {
 	bool success;
 	switch (ss) {
-    	  case Row: success = finite_elements_data.modify(p.first,EntMoFEMFE_row_dofs_change(moab,MoFEMFE_dof_uid_view[ss])); break;
-      	  case Col: success = finite_elements_data.modify(p.first,EntMoFEMFE_col_dofs_change(moab,MoFEMFE_dof_uid_view[ss])); break;
-    	  case Data: success = finite_elements_data.modify(p.first,EntMoFEMFE_data_dofs_change(moab,MoFEMFE_dof_uid_view[ss])); break;
+    	  case Row: success = finite_elements_moabents.modify(p.first,EntMoFEMFE_row_dofs_change(moab,MoFEMFE_dof_uid_view[ss])); break;
+      	  case Col: success = finite_elements_moabents.modify(p.first,EntMoFEMFE_col_dofs_change(moab,MoFEMFE_dof_uid_view[ss])); break;
+    	  case Data: success = finite_elements_moabents.modify(p.first,EntMoFEMFE_data_dofs_change(moab,MoFEMFE_dof_uid_view[ss])); break;
     	  default: assert(0);
     	}
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
@@ -1358,9 +1358,9 @@ PetscErrorCode moabField_Core::build_finite_elements(int verb) {
     }
   }
   if(verb>0) {
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. FEs %u\n",finite_elements_data.size());
+    PetscPrintf(PETSC_COMM_WORLD,"Nb. FEs %u\n",finite_elements_moabents.size());
     typedef EntMoFEMFE_multiIndex::index<BitFEId_mi_tag>::type MoFEMFE_by_id;
-    MoFEMFE_by_id &MoFEMFEs = finite_elements_data.get<BitFEId_mi_tag>();  
+    MoFEMFE_by_id &MoFEMFEs = finite_elements_moabents.get<BitFEId_mi_tag>();  
     MoFEMFE_multiIndex::iterator id_MoFEMFE = finite_elements.begin();
     for(;id_MoFEMFE!=finite_elements.end();id_MoFEMFE++) {
       MoFEMFE_by_id::iterator miit = MoFEMFEs.lower_bound(id_MoFEMFE->get_id());
@@ -1379,8 +1379,8 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,1,"field not build");
   if(!(*build_MoFEM)&(1<<1)) SETERRQ(PETSC_COMM_SELF,1,"fe not build");
   typedef MoFEMEntity_multiIndex::index<Unique_mi_tag>::type ents_by_uid;
-  EntMoFEMFE_multiIndex::iterator fit = finite_elements_data.begin();
-  for(;fit!=finite_elements_data.end();fit++) {
+  EntMoFEMFE_multiIndex::iterator fit = finite_elements_moabents.begin();
+  for(;fit!=finite_elements_moabents.end();fit++) {
     if(!(fit->get_BitRefLevel()&bit).any()) continue;
     int size_row = fit->tag_row_uids_size/sizeof(UId);
     const UId *uids_row = (UId*)fit->tag_row_uids_data;
@@ -1464,8 +1464,8 @@ PetscErrorCode moabField_Core::build_problems(int verb) {
   MoFEMProblem_multiIndex::iterator p_miit = problems.begin();
   for(;p_miit!=problems.end();p_miit++) {
     //miit2 iterator for finite elements
-    EntMoFEMFE_multiIndex::iterator miit2 = finite_elements_data.begin();
-    EntMoFEMFE_multiIndex::iterator hi_miit2 = finite_elements_data.end();
+    EntMoFEMFE_multiIndex::iterator miit2 = finite_elements_moabents.begin();
+    EntMoFEMFE_multiIndex::iterator hi_miit2 = finite_elements_moabents.end();
     DofMoFEMEntity_multiIndex_uid_view dofs_rows;
     DofMoFEMEntity_multiIndex_uid_view dofs_cols;;
     EntMoFEMFE_multiIndex::iterator miit3 = miit2;
@@ -1778,8 +1778,8 @@ PetscErrorCode moabField_Core::partition_finite_elements(const string &name,bool
   if(p_miit == problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   NumeredMoFEMFE_multiIndex& numered_finite_elements = const_cast<NumeredMoFEMFE_multiIndex&>(p_miit->numered_finite_elements);
   //MoFEMFE set
-  EntMoFEMFE_multiIndex::iterator miit2 = finite_elements_data.begin();
-  EntMoFEMFE_multiIndex::iterator hi_miit2 = finite_elements_data.end();
+  EntMoFEMFE_multiIndex::iterator miit2 = finite_elements_moabents.begin();
+  EntMoFEMFE_multiIndex::iterator hi_miit2 = finite_elements_moabents.end();
   EntMoFEMFE_multiIndex::iterator miit3 = miit2;
   for(;miit3!=hi_miit2;miit3++) {
     if((miit3->get_BitRefLevel()&p_miit->get_BitRefLevel()).none()) continue;
@@ -3362,7 +3362,7 @@ PetscErrorCode moabField_Core::loop_finite_elements(
   ierr = method.set_ents_multiIndex(&ents_moabfield); CHKERRQ(ierr);
   ierr = method.set_dofs_multiIndex(&dofs_moabfield); CHKERRQ(ierr);
   ierr = method.set_fes_multiIndex(&finite_elements); CHKERRQ(ierr);
-  ierr = method.set_fes_data_multiIndex(&finite_elements_data); CHKERRQ(ierr);
+  ierr = method.set_fes_data_multiIndex(&finite_elements_moabents); CHKERRQ(ierr);
   ierr = method.set_adjacencies(&adjacencies); CHKERRQ(ierr);
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
   ierr = method.preProcess(); CHKERRQ(ierr);
@@ -3401,7 +3401,7 @@ PetscErrorCode moabField_Core::loop_dofs(const string &problem_name,const string
   ierr = method.set_ents_multiIndex(&ents_moabfield); CHKERRQ(ierr);
   ierr = method.set_dofs_multiIndex(&dofs_moabfield); CHKERRQ(ierr);
   ierr = method.set_fes_multiIndex(&finite_elements); CHKERRQ(ierr);
-  ierr = method.set_fes_data_multiIndex(&finite_elements_data); CHKERRQ(ierr);
+  ierr = method.set_fes_data_multiIndex(&finite_elements_moabents); CHKERRQ(ierr);
   ierr = method.set_adjacencies(&adjacencies); CHKERRQ(ierr);
   dofs_by_name *dofs;
   switch (rc) {

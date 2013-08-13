@@ -377,7 +377,7 @@ struct moabField {
     PetscErrorCode set_ents_multiIndex(const MoFEMEntity_multiIndex *_ents_moabfield);
     PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
     PetscErrorCode set_fes_multiIndex(const MoFEMFE_multiIndex *_finite_elements);
-    PetscErrorCode set_fes_data_multiIndex(const EntMoFEMFE_multiIndex *_finite_elements_data);
+    PetscErrorCode set_fes_data_multiIndex(const EntMoFEMFE_multiIndex *_finite_elements_moabents);
     PetscErrorCode set_adjacencies(const MoFEMAdjacencies_multiIndex *_fem_adjacencies);
     //
     virtual PetscErrorCode preProcess() = 0;
@@ -388,7 +388,7 @@ struct moabField {
     const MoFEMEntity_multiIndex *ents_moabfield;
     const DofMoFEMEntity_multiIndex *dofs_moabfield;
     const MoFEMFE_multiIndex *finite_elements;
-    const EntMoFEMFE_multiIndex *finite_elements_data;
+    const EntMoFEMFE_multiIndex *finite_elements_moabents;
     const MoFEMAdjacencies_multiIndex *fem_adjacencies;
   };
 

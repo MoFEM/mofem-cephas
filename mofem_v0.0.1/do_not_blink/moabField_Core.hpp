@@ -62,7 +62,7 @@ struct moabField_Core: public moabField {
   DofMoFEMEntity_multiIndex dofs_moabfield;
   //finite element
   MoFEMFE_multiIndex finite_elements;
-  EntMoFEMFE_multiIndex finite_elements_data;
+  EntMoFEMFE_multiIndex finite_elements_moabents;
   //finite elemts and dofs
   MoFEMAdjacencies_multiIndex adjacencies;
   //problems
