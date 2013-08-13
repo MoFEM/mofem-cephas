@@ -79,9 +79,8 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
     // See FEAP - - A Finite Element Analysis Program
     D_lambda = ublas::zero_matrix<FieldData>(6,6);
     for(int rr = 0;rr<3;rr++) {
-	ublas::matrix_row<ublas::matrix<FieldData> > row_D_lambda(D_lambda,rr);
 	for(int cc = 0;cc<3;cc++) {
-	  row_D_lambda[cc] = 1;
+	  D_lambda(rr,cc) = 1;
 	}
     }
     D_mu = ublas::zero_matrix<FieldData>(6,6);

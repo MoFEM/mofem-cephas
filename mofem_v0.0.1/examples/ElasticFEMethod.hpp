@@ -20,6 +20,8 @@
 #ifndef __ELASTICFEMETHOD_HPP__
 #define __ELASTICFEMETHOD_HPP__
 
+#include <boost/numeric/ublas/symmetric.hpp>
+
 namespace MoFEM {
 
 struct ExampleDiriheltBC: public BaseDirihletBC {
@@ -146,7 +148,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     PetscLogDouble v1,v2;
 
     double lambda,mu;
-    ublas::matrix<FieldData> D_lambda,D_mu,D;
+    ublas::symmetric_matrix<FieldData,ublas::upper> D_lambda,D_mu,D;
 
     Range& SideSet1;
     Range& SideSet2;
@@ -182,14 +184,15 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
       G_W_TRI = G_TRI_W13;
       // See FEAP - - A Finite Element Analysis Program
-      D_lambda = ublas::zero_matrix<FieldData>(6,6);
+      D_lambda.resize(6);
+      D_lambda.clear();
       for(int rr = 0;rr<3;rr++) {
-	ublas::matrix_row<ublas::matrix<FieldData> > row_D_lambda(D_lambda,rr);
 	for(int cc = 0;cc<3;cc++) {
-	  row_D_lambda[cc] = 1;
+	  D_lambda(rr,cc) = 1;
 	}
       }
-      D_mu = ublas::zero_matrix<FieldData>(6,6);
+      D_mu.resize(6);
+      D_mu.clear();
       for(int rr = 0;rr<6;rr++) {
 	D_mu(rr,rr) = rr<3 ? 2 : 1;
       }
@@ -209,6 +212,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
 	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
       }
+      // Note MAT_FLUSH_ASSEMBLY
+      ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       ierr = PetscGetTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
@@ -424,18 +430,20 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionBegin;
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
+      ublas::matrix<FieldData> BTD;
       for(int rr = 0;rr<row_mat;rr++) {
-	for(int cc = 0;cc<col_mat;cc++) {
-	  for(int gg = 0;gg<g_dim;gg++) {
-	    ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
+	for(int gg = 0;gg<g_dim;gg++) {
+	  ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
+	  double w = V*G_W_TET[gg];
+	  BTD.resize(row_Mat.size2(),6);
+	  ublas::noalias(BTD) = prod( trans(row_Mat), w*D );
+	  for(int cc = rr;cc<col_mat;cc++) {
 	    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
-	    ///K matrices
-	    double w = V*G_W_TET[gg];
-	    ublas::matrix<FieldData> BTD = prod( trans(row_Mat), w*D );
 	    if(gg == 0) {
-	      K(rr,cc) = prod(BTD , col_Mat ); // int BT*D*B
+	      K(rr,cc).resize(BTD.size1(),col_Mat.size2());
+	      ublas::noalias(K(rr,cc)) = prod(BTD , col_Mat ); // int BT*D*B
 	    } else {
-	      K(rr,cc) += prod(BTD , col_Mat ); // int BT*D*B
+	      ublas::noalias(K(rr,cc)) += prod(BTD , col_Mat ); // int BT*D*B
 	    }
 	  }
 	}
@@ -447,11 +455,15 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionBegin;
       ierr = Stiffness(); CHKERRQ(ierr);
       for(int rr = 0;rr<row_mat;rr++) {
-	for(int cc = 0;cc<col_mat;cc++) {
+	for(int cc = rr;cc<col_mat;cc++) {
 	  if(ColGlob[cc].size()==0) continue;
 	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  if(rr!=cc) {
+	    K(cc,rr) = trans(K(rr,cc));
+	    ierr = MatSetValues(Aij,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  }
 	}
       }
       PetscFunctionReturn(0);
