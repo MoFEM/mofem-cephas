@@ -109,7 +109,6 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    VecZeroEntries(F_MATERIAL);
 
     assert(finite_elements!=NULL);
     MoFEMFE_multiIndex::index<MoFEMFE_name_mi_tag>::type::iterator femit;
@@ -149,10 +148,6 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    ierr = VecGhostUpdateBegin(F_MATERIAL,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F_MATERIAL,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F_MATERIAL); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F_MATERIAL); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

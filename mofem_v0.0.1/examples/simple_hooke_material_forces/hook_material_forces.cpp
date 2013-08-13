@@ -230,7 +230,12 @@ int main(int argc, char *argv[]) {
   Vec F_MATERIAL;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F_MATERIAL); CHKERRQ(ierr);
   MaterialForcesFEMethod MyMaterialFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),F_MATERIAL);
+  ierr = VecZeroEntries(F_MATERIAL); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("MATERIAL_MECHANICS","MATERIAL",MyMaterialFE);  CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F_MATERIAL,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_MATERIAL,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F_MATERIAL); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F_MATERIAL); CHKERRQ(ierr);
   ierr = mField.set_other_global_VecCreateGhost("MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_MATERIAL,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F_MATERIAL,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_material_forces(moab,"MESH_NODE_POSITIONS",F_MATERIAL,"MATERIAL_FORCE");
