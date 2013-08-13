@@ -371,9 +371,9 @@ struct BasicMoFEMEntity {
 /** 
  * \brief struct keeps data about selected prism ajacencies, and potenialy othere entities
  */
-struct AdjBasicMoFEMEntity: public BasicMoFEMEntity {
+struct AdjacencyMapForBasicMoFEMEntity: public BasicMoFEMEntity {
   BasicMoFEMEntity Adj;
-  AdjBasicMoFEMEntity(const EntityHandle _ent,const EntityHandle adj):
+  AdjacencyMapForBasicMoFEMEntity(const EntityHandle _ent,const EntityHandle adj):
     BasicMoFEMEntity(_ent), Adj(adj) {};
   inline EntityHandle get_adj() const { return Adj.ent; };
   inline EntityType get_adj_type() const { return Adj.get_ent_type(); };
@@ -1076,24 +1076,24 @@ typedef multi_index_container<
   > > MoFEMFE_multiIndex;
 
 typedef multi_index_container<
-  AdjBasicMoFEMEntity,
+  AdjacencyMapForBasicMoFEMEntity,
   indexed_by<
     hashed_non_unique<
       tag<MoABEnt_mi_tag>, 
-      member<AdjBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjBasicMoFEMEntity::ent> >,
+      member<AdjacencyMapForBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::ent> >,
     hashed_non_unique<
       tag<MoABEnt_mi_tag2>, 
-      const_mem_fun<AdjBasicMoFEMEntity,EntityHandle,&AdjBasicMoFEMEntity::get_adj> >,
+      const_mem_fun<AdjacencyMapForBasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::get_adj> >,
     ordered_non_unique<
       tag<EntType_mi_tag>, 
-      const_mem_fun<AdjBasicMoFEMEntity,EntityType,&AdjBasicMoFEMEntity::get_adj_type> >,
+      const_mem_fun<AdjacencyMapForBasicMoFEMEntity,EntityType,&AdjacencyMapForBasicMoFEMEntity::get_adj_type> >,
     hashed_unique<
       tag<Composite_mi_tag>, 
       composite_key<
-	AdjBasicMoFEMEntity,
-      	member<AdjBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjBasicMoFEMEntity::ent>,
-	const_mem_fun<AdjBasicMoFEMEntity,EntityHandle,&AdjBasicMoFEMEntity::get_adj> > >
-  > > AdjBasicMoFEMEntity_multiIndex;
+	AdjacencyMapForBasicMoFEMEntity,
+      	member<AdjacencyMapForBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::ent>,
+	const_mem_fun<AdjacencyMapForBasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::get_adj> > >
+  > > AdjacencyMapForBasicMoFEMEntity_multiIndex;
 
 // 
 

@@ -68,7 +68,7 @@ struct moabField_Core: public moabField {
   //problems
   MoFEMProblem_multiIndex problems;
   //prism 
-  AdjBasicMoFEMEntity_multiIndex Adj_prisms;
+  AdjacencyMapForBasicMoFEMEntity_multiIndex adjacencies_maps_for_prisms;
   //cubit
   moabBaseMeshSet_multiIndex cubit_meshsets;
 
@@ -194,7 +194,7 @@ struct moabField_Core: public moabField {
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
-  PetscErrorCode add_prism_to_Adj_prisms(const EntityHandle prism,int verb = -1);
+  PetscErrorCode add_prism_to_adjacencies_maps_for_prisms(const EntityHandle prism,int verb = -1);
 
   //loops
   PetscErrorCode loop_finite_elements(

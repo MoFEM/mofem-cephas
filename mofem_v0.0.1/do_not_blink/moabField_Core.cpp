@@ -385,7 +385,7 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
   rval = moab.get_entities_by_type(0,MBPRISM,prisms,true);  CHKERR_PETSC(rval);
   Range::iterator pit = prisms.begin();
   for(;pit!=prisms.end();pit++) {
-    ierr = add_prism_to_Adj_prisms(*pit); CHKERRQ(ierr);
+    ierr = add_prism_to_adjacencies_maps_for_prisms(*pit); CHKERRQ(ierr);
   }
   if(verb > 2) {
     list_field();
@@ -1985,12 +1985,12 @@ PetscErrorCode moabField_Core::add_verices_in_the_middel_of_edges(const EntityHa
     }
   }
   // refine edges on the other side of the prism
-  typedef AdjBasicMoFEMEntity_multiIndex::index<MoABEnt_mi_tag2>::type AdjBasicMoFEMEntity_by_adj;
-  AdjBasicMoFEMEntity_by_adj &Adj_prisms_by_adj = Adj_prisms.get<MoABEnt_mi_tag2>();
+  typedef AdjacencyMapForBasicMoFEMEntity_multiIndex::index<MoABEnt_mi_tag2>::type AdjacencyMapForBasicMoFEMEntity_by_adj;
+  AdjacencyMapForBasicMoFEMEntity_by_adj &adjacencies_maps_for_prisms_by_adj = adjacencies_maps_for_prisms.get<MoABEnt_mi_tag2>();
   Range::iterator eit = edges.begin();
   for(;eit!=edges.end();eit++) {
-    AdjBasicMoFEMEntity_by_adj::iterator adj_miit = Adj_prisms_by_adj.find(*eit);
-    if(adj_miit==Adj_prisms_by_adj.end()) continue;
+    AdjacencyMapForBasicMoFEMEntity_by_adj::iterator adj_miit = adjacencies_maps_for_prisms_by_adj.find(*eit);
+    if(adj_miit==adjacencies_maps_for_prisms_by_adj.end()) continue;
     EntityHandle prism = adj_miit->ent;
     RefMoFEMElement_multiIndex::iterator miit2 = refined_mofem_elements.get<MoABEnt_mi_tag>().find(prism);
     SideNumber_multiIndex &side_table = miit2->get_side_number_table();
@@ -2056,9 +2056,9 @@ PetscErrorCode moabField_Core::refine_TET(const EntityHandle meshset,const BitRe
   typedef RefMoFEMElement_multiIndex::index<Composite_mi_tag>::type ref_ent_by_composite;
   ref_ent_by_composite &by_composite = refined_mofem_elements.get<Composite_mi_tag>();
   // find oposite intrface nodes
-  typedef AdjBasicMoFEMEntity_multiIndex::index<EntType_mi_tag>::type AdjPrism_by_type;
-  AdjPrism_by_type::iterator face_prism_miit = Adj_prisms.get<EntType_mi_tag>().lower_bound(MBTRI);
-  AdjPrism_by_type::iterator hi_face_prism_miit = Adj_prisms.get<EntType_mi_tag>().upper_bound(MBTRI);
+  typedef AdjacencyMapForBasicMoFEMEntity_multiIndex::index<EntType_mi_tag>::type AdjPrism_by_type;
+  AdjPrism_by_type::iterator face_prism_miit = adjacencies_maps_for_prisms.get<EntType_mi_tag>().lower_bound(MBTRI);
+  AdjPrism_by_type::iterator hi_face_prism_miit = adjacencies_maps_for_prisms.get<EntType_mi_tag>().upper_bound(MBTRI);
   map<EntityHandle,EntityHandle> nodes_face_map_for_faces_adj_to_prism_forward;
   map<EntityHandle,EntityHandle> nodes_face_map_for_faces_adj_to_prism_backward;
   for(;face_prism_miit!=hi_face_prism_miit;face_prism_miit++) {
@@ -2516,7 +2516,7 @@ PetscErrorCode moabField_Core::refine_PRISM(const EntityHandle meshset,const Bit
 	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
 	  ref_prism_bit.set(pp);
-	  ierr = add_prism_to_Adj_prisms(ref_prisms[pp]); CHKERRQ(ierr);
+	  ierr = add_prism_to_adjacencies_maps_for_prisms(ref_prisms[pp]); CHKERRQ(ierr);
 	  if(verb>2) {
 	    ostringstream ss;
 	    ss << "add prism: " << *(p_MoFEMFE.first->get_RefMoFEMElement()) << endl;
@@ -3219,7 +3219,7 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
 	    //cerr << conn[0] << " " << conn[1] << " " << conn[2] << " ::: " << new_conn[0] << " " << new_conn[1] << " " << new_conn[2] << endl;
 	    EntityHandle prism = no_handle;
 	    rval = moab.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
-	    ierr = add_prism_to_Adj_prisms(prism,verb/*nb_new_conn < 3 ? 1 : 0*/); CHKERRQ(ierr);
+	    ierr = add_prism_to_adjacencies_maps_for_prisms(prism,verb/*nb_new_conn < 3 ? 1 : 0*/); CHKERRQ(ierr);
 	    rval = moab.add_entities(meshset_for_bit_level,&prism,1); CHKERR_PETSC(rval);
 	  }
 	} break;
@@ -3297,7 +3297,7 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
   rval = moab.delete_entities(&meshset_for_bit_level,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::add_prism_to_Adj_prisms(const EntityHandle prism,int verb) {
+PetscErrorCode moabField_Core::add_prism_to_adjacencies_maps_for_prisms(const EntityHandle prism,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   vector<EntityHandle> Ents(8,no_handle);
