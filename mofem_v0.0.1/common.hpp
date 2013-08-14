@@ -325,6 +325,16 @@ struct SideNumber {
 /** 
  * @relates multi_index_container
  * \brief SideNumber_multiIndex for SideNumber
+ *
+ *  \param hashed_unique<
+ *     member<SideNumber,EntityHandle,&SideNumber::ent> >,
+ *  \param ordered_non_unique<
+ *     composite_key<
+ *	SideNumber,
+ *	const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type>,
+ *	member<SideNumber,int,&SideNumber::side_number> > >,
+ *  \param ordered_non_unique<
+ *     const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type> >
  */
 typedef multi_index_container<
   SideNumber,
@@ -713,6 +723,14 @@ struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDof
  * @relates multi_index_container
  * \brief MoFEMField_multiIndex for MoFEMField
  *
+ * \param hashed_unique<
+ *     tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,BitFieldId,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
+ * \param   ordered_unique<
+ *     tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshset> >,
+ * \param hashed_unique<
+ *     tag<FieldName_mi_tag>, const_mem_fun<MoFEMField,string,&MoFEMField::get_name> >,
+ * \param ordered_non_unique<
+ *     tag<BitFieldId_space_mi_tag>, const_mem_fun<MoFEMField,FieldSpace,&MoFEMField::get_space> >
  */
 typedef multi_index_container<
   MoFEMField,
@@ -737,10 +755,15 @@ typedef multi_index_container<
 /** 
  * @relates multi_index_container
  * \brief MultiIndex container keeps MoFEMEntity
- * 
- * \param Unique_mi_tag MoFEMEntity::get_unique_id
- * \param BitFieldId_mi_tag MoFEMEntity::interface_type_MoFEMField::get_id
- field_* \param MoABEnt_mi_tag MoFEMEntity::BasicMoFEMEntity::ent
+ *
+ * \param ordered_unique<
+ *    tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
+ * \param ordered_non_unique<
+ *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,BitFieldId,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
+ * \param ordered_non_unique<
+ *    tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,string,&MoFEMEntity::get_name> >,
+ * \param hashed_non_unique<
+ *    tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
  */
 typedef multi_index_container<
   MoFEMEntity,
@@ -790,6 +813,42 @@ typedef multi_index_container<
       member<DofMoFEMEntity,const UId,&DofMoFEMEntity::uid> >
   > > DofMoFEMEntity_multiIndex_uid_view;
 
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex container keeps FEDofMoFEMEntity
+ *
+ * \param ordered_unique< 
+ *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&FEDofMoFEMEntity::get_unique_id> >,
+ * \param ordered_non_unique<
+ *    tag<MoABEnt_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
+ * \param ordered_non_unique<
+ *    tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name> >,
+ * \param ordered_non_unique<
+ *    tag<Composite_mi_tag>, <br>
+ *     composite_key<  
+ *	FEDofMoFEMEntity,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,  <br>
+ *	  key_from_key< <br>
+ *	    member<SideNumber,int,&SideNumber::side_number>,  <br>
+ *	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
+ *	  >
+ *     > >,
+ * \param ordered_non_unique<
+ *     tag<Composite_mi_tag2>,  <br>
+ *     composite_key<
+ *	FEDofMoFEMEntity, <br> 
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>  <br>
+ *	> >,
+ * \param ordered_non_unique<
+ *     tag<Composite_mi_tag3>,  <br>
+ *     composite_key<
+ *	FEDofMoFEMEntity,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
+ *	> >
+ */
 typedef multi_index_container<
   FEDofMoFEMEntity,
   indexed_by<
@@ -826,6 +885,42 @@ typedef multi_index_container<
 	> >
   > > FEDofMoFEMEntity_multiIndex;
 
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex container keeps FENumeredDofMoFEMEntity
+ *
+ * \param ordered_unique< 
+ *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&FEDofMoFEMEntity::get_unique_id> >,
+ * \param ordered_non_unique<
+ *    tag<MoABEnt_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
+ * \param ordered_non_unique<
+ *    tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name> >,
+ * \param ordered_non_unique<
+ *    tag<Composite_mi_tag>, <br>
+ *     composite_key<  
+ *	FEDofMoFEMEntity,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,  <br>
+ *	  key_from_key< <br>
+ *	    member<SideNumber,int,&SideNumber::side_number>,  <br>
+ *	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
+ *	  >
+ *     > >,
+ * \param ordered_non_unique<
+ *     tag<Composite_mi_tag2>,  <br>
+ *     composite_key<
+ *	FEDofMoFEMEntity, <br> 
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>  <br>
+ *	> >,
+ * \param ordered_non_unique<
+ *     tag<Composite_mi_tag3>,  <br>
+ *     composite_key<
+ *	FEDofMoFEMEntity,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
+ *	> >
+ */
 typedef multi_index_container<
   FENumeredDofMoFEMEntity,
   indexed_by<
