@@ -95,6 +95,64 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 };
 
 
+struct SurfaceFEMethod_Normal:public moabField::FEMethod {
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  Interface& moab;
+
+  vector<double> diffNTRI;
+  SurfaceFEMethod_Normal(Interface& _moab,int _verbose = 0): FEMethod(),moab(_moab) {
+    diffNTRI.resize(6);
+    ShapeDiffMBTRI(&diffNTRI[0]);
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  map<EntityHandle,ublas::vector<DofIdx,ublas::bounded_array<DofIdx,9> > > ent_global_col_indices;
+  map<EntityHandle,ublas::vector<double,ublas::bounded_array<double,9> > > ent_dofs_data;
+  map<EntityHandle,ublas::vector<double,ublas::bounded_array<double,3> > > ent_normal_map;
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
+    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+    ent_normal_map.clear();
+    ent_global_col_indices.clear();
+    ent_dofs_data.clear();
+    for(;siit!=hi_siit;siit++) {
+      EntityHandle face = siit->ent;
+      Range adj_tets;
+      rval = moab.get_adjacencies(&face,1,3,false,adj_tets); CHKERR_PETSC(rval);
+      if(adj_tets.size()>0) continue;
+      ent_dofs_data[face].resize(9);
+      ent_global_col_indices[face].resize(9);
+      const EntityHandle* conn_face; 
+      int num_nodes; 
+      rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+      for(int nn = 0;nn<num_nodes;nn++) {
+	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
+	dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	for(;dit!=hi_dit;dit++) {
+	  ent_dofs_data[face][nn*3+dit->get_dof_rank()] = dit->get_FieldData();
+	  ent_global_col_indices[face][nn*3+dit->get_dof_rank()] = dit->get_petsc_gloabl_dof_idx();
+	}
+      }
+      ent_normal_map[face].resize(3);
+      ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data[face].data()[0],&ent_normal_map[face].data()[0]); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
 struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
 
   Vec F_MATERIAL;
@@ -109,8 +167,6 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-
-
     PetscFunctionReturn(0);
   }
 
