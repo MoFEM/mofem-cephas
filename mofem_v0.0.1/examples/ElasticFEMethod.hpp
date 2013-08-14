@@ -560,6 +560,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
   };
 
+    
 }
 
 #endif //__ELASTICFEMETHOD_HPP__
