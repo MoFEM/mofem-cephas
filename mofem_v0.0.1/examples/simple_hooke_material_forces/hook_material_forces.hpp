@@ -110,22 +110,6 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    assert(finite_elements!=NULL);
-    MoFEMFE_multiIndex::index<MoFEMFE_name_mi_tag>::type::iterator femit;
-    femit = finite_elements->get<MoFEMFE_name_mi_tag>().find("MATERIAL");
-    assert(femit!=finite_elements->get<MoFEMFE_name_mi_tag>().end());
-    EntityHandle fe_meshset = femit->get_meshset();
-    Range material_tets;
-    rval = moab.get_entities_by_type(fe_meshset,MBTET,material_tets,true); CHKERR_THROW(rval);
-    Skinner skin(&moab);
-    Range skin_faces; // skin faces from 3d ents
-    rval = skin.find_skin(material_tets,false,skin_faces); CHKERR_THROW(rval);
-
-    /*EntityHandle tmp_meshset;
-    rval = moab.create_meshset(MESHSET_SET,tmp_meshset); CHKERR_THROW(rval);	
-    rval = moab.add_entities(tmp_meshset,skin_faces); CHKERR_THROW(rval);
-    rval = moab.write_file("skin_faces.vtk","VTK","",&tmp_meshset,1); CHKERR_THROW(rval);
-    rval = moab.delete_entities(&tmp_meshset,1); CHKERR_THROW(rval);*/
 
     PetscFunctionReturn(0);
   }
