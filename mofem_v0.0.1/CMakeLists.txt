@@ -81,6 +81,7 @@ include_directories(
 
 if(TAO_LIBRARY) 
   include_directories(${TAO_DIR}/include)
+  add_definitions(-DTAO)
 endif(TAO_LIBRARY)
 
 include_directories("${PROJECT_SOURCE_DIR}")
