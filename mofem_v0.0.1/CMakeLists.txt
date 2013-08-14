@@ -21,6 +21,7 @@ cmake_minimum_required (VERSION 2.8)
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
 include(cmake/ExportFile.cmake)
+include(cmake/FindTAO.cmake)
 
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} ) 
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
@@ -75,6 +76,10 @@ include_directories(
   ${PETSC_DIR}/${PETSC_ARCH}/include
   ${PETSCVAR_DIR}/include
 )
+
+if(TAO_LIBRARY) 
+  include_directories(${TAO_DIR}/include)
+endif(TAO_LIBRARY)
 
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
