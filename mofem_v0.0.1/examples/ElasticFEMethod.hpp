@@ -184,14 +184,14 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
       G_W_TRI = G_TRI_W13;
       // See FEAP - - A Finite Element Analysis Program
-      D_lambda.resize(6);
+      D_lambda.resize(6,6);
       D_lambda.clear();
       for(int rr = 0;rr<3;rr++) {
 	for(int cc = 0;cc<3;cc++) {
 	  D_lambda(rr,cc) = 1;
 	}
       }
-      D_mu.resize(6);
+      D_mu.resize(6,6);
       D_mu.clear();
       for(int rr = 0;rr<6;rr++) {
 	D_mu(rr,rr) = rr<3 ? 2 : 1;
