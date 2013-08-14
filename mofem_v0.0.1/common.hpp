@@ -321,6 +321,11 @@ struct SideNumber {
     ent(_ent),side_number(_side_number),sense(_sense),offset(_offset) {};
 };
 
+
+/** 
+ * @relates multi_index_container
+ * \brief SideNumber_multiIndex for SideNumber
+ */
 typedef multi_index_container<
   SideNumber,
   indexed_by<
@@ -333,7 +338,7 @@ typedef multi_index_container<
 	member<SideNumber,int,&SideNumber::side_number> > >,
     ordered_non_unique<
       const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type> >
-  > > SideNumber_multiIndex;
+  > > SideNumber_multiIndex; 
 
 /** 
  * \brief this struct keeps basic methods for moab meshset about material and boundary conditions
@@ -705,8 +710,8 @@ struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDof
 // multi_index_containers
 
 /**
- * \typedef MoFEMField_multiIndex
- * \brief keeps information about fields
+ * @relates multi_index_container
+ * \brief MoFEMField_multiIndex for MoFEMField
  *
  */
 typedef multi_index_container<
@@ -730,8 +735,8 @@ typedef multi_index_container<
    > > MoFEMField_multiIndex_view;
 
 /** 
- * \typedef MoFEMEntity_multiIndex
- * MultiIndex container keeps MoFEMEntity
+ * @relates multi_index_container
+ * \brief MultiIndex container keeps MoFEMEntity
  * 
  * \param Unique_mi_tag MoFEMEntity::get_unique_id
  * \param BitFieldId_mi_tag MoFEMEntity::interface_type_MoFEMField::get_id
