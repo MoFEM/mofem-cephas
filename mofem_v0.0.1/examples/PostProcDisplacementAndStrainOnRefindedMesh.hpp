@@ -300,6 +300,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 	Stress(0,1) = Stress_VectorNotation[3];
 	Stress(1,2) = Stress_VectorNotation[4];
 	Stress(2,0) = Stress_VectorNotation[5];
+    
 	
 	rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);
 
