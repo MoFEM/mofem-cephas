@@ -21,7 +21,7 @@ cmake_minimum_required (VERSION 2.8)
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
 include(cmake/ExportFile.cmake)
-include(cmake/FindTAO.cmake)
+
 
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} ) 
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
@@ -33,6 +33,8 @@ string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 #message(STATUS ${MPI_BIN_PATH})
 
 project(MoFEM C CXX)
+
+include(cmake/FindTAO.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
@@ -111,6 +113,7 @@ resolve_libraries(PROJECT_LIBS "
   ${PETSC_DIR}/${PETSC_ARCH}/lib/libpetsc.a
   ${PETSCVAR_PACKAGES_LIBS}
   ${PETSCVAR_PETSC_EXTERNAL_LIB_BASIC}
+  ${TAO_LIBRARY}
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}
   ")
