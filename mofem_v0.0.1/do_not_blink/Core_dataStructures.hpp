@@ -158,47 +158,47 @@ typedef multi_index_container<
       const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >
   > > RefMoFEMEntity_multiIndex_view_by_parent_entity;
 
-struct ptrWrapperRefMoFEMFiniteElement: public interface_RefMoFEMFiniteElement<RefMoFEMFiniteElement> {
-  typedef interface_RefMoFEMEntity<RefMoFEMFiniteElement> interface_type_RefMoFEMEntity;
-  typedef interface_RefMoFEMFiniteElement<RefMoFEMFiniteElement> interface_type_RefMoFEMFiniteElement;
+struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMElement> {
+  typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
+  typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
   int wrapp;
-  ptrWrapperRefMoFEMFiniteElement(const RefMoFEMFiniteElement *__ptr): interface_RefMoFEMFiniteElement<RefMoFEMFiniteElement>(__ptr),wrapp(1) {}
-  ptrWrapperRefMoFEMFiniteElement(const ptrWrapperRefMoFEMFiniteElement &ref): interface_RefMoFEMFiniteElement<RefMoFEMFiniteElement>(ref) { 
+  ptrWrapperRefMoFEMElement(const RefMoFEMElement *__ptr): interface_RefMoFEMElement<RefMoFEMElement>(__ptr),wrapp(1) {}
+  ptrWrapperRefMoFEMElement(const ptrWrapperRefMoFEMElement &ref): interface_RefMoFEMElement<RefMoFEMElement>(ref) { 
     wrapp = 1;
     assert(ref.wrapp == 1);
-    (const_cast<ptrWrapperRefMoFEMFiniteElement&>(ref)).wrapp++;
+    (const_cast<ptrWrapperRefMoFEMElement&>(ref)).wrapp++;
   }
-  ~ptrWrapperRefMoFEMFiniteElement() { 
+  ~ptrWrapperRefMoFEMElement() { 
     if(wrapp == 1) {
-      delete interface_RefMoFEMEntity<RefMoFEMFiniteElement>::ref_ptr; 
+      delete interface_RefMoFEMEntity<RefMoFEMElement>::ref_ptr; 
     }
   }
 };
 
 /**
- * \typedef RefMoFEMFiniteElement
- * type multiIndex container for RefMoFEMFiniteElement
+ * \typedef RefMoFEMElement
+ * type multiIndex container for RefMoFEMElement
  *
  * \param hashed_unique MoABEnt_mi_tag 
  * \param ordered_non_unique Meshset_mi_tag 
  * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
  */
 typedef multi_index_container<
-  ptrWrapperRefMoFEMFiniteElement,
+  ptrWrapperRefMoFEMElement,
   indexed_by<
     hashed_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMFiniteElement::get_ref_ent> >,
+      tag<MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_ref_ent> >,
     ordered_non_unique<
-      tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMFiniteElement::get_parent_ent> >,
+      tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent> >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefMoFEMFiniteElement::get_ent_type> >,
+      tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefMoFEMElement::get_ent_type> >,
     ordered_non_unique<
       tag<Composite_mi_tag>,
       composite_key<
-	ptrWrapperRefMoFEMFiniteElement,
-	const_mem_fun<ptrWrapperRefMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMFiniteElement::get_parent_ent>,
-	const_mem_fun<ptrWrapperRefMoFEMFiniteElement::interface_type_RefMoFEMFiniteElement,int,&ptrWrapperRefMoFEMFiniteElement::get_BitRefEdges_ulong> > >
-  > > RefMoFEMFiniteElement_multiIndex;
+	ptrWrapperRefMoFEMElement,
+	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent>,
+	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMElement,int,&ptrWrapperRefMoFEMElement::get_BitRefEdges_ulong> > >
+  > > RefMoFEMElement_multiIndex;
 
 typedef multi_index_container<
   const MoFEMEntity*,

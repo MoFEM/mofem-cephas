@@ -54,21 +54,21 @@ struct moabField_Core: public moabField {
   //database
 
   //ref
-  RefMoFEMEntity_multiIndex ref_entities;
-  RefMoFEMFiniteElement_multiIndex ref_finite_elements;
+  RefMoFEMEntity_multiIndex refined_mofem_entities;
+  RefMoFEMElement_multiIndex refined_mofem_elements;
   //field
   MoFEMField_multiIndex moabfields;
   MoFEMEntity_multiIndex ents_moabfield;
   DofMoFEMEntity_multiIndex dofs_moabfield;
   //finite element
   MoFEMFE_multiIndex finite_elements;
-  EntMoFEMFE_multiIndex finite_elements_data;
+  EntMoFEMFE_multiIndex finite_elements_moabents;
   //finite elemts and dofs
   MoFEMAdjacencies_multiIndex adjacencies;
   //problems
   MoFEMProblem_multiIndex problems;
   //prism 
-  AdjBasicMoFEMEntity_multiIndex Adj_prisms;
+  AdjacencyMapForBasicMoFEMEntity_multiIndex adjacencies_maps_for_prisms;
   //cubit
   moabBaseMeshSet_multiIndex cubit_meshsets;
 
@@ -194,7 +194,7 @@ struct moabField_Core: public moabField {
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
-  PetscErrorCode add_prism_to_Adj_prisms(const EntityHandle prism,int verb = -1);
+  PetscErrorCode add_prism_to_adjacencies_maps_for_prisms(const EntityHandle prism,int verb = -1);
 
   //loops
   PetscErrorCode loop_finite_elements(
@@ -206,6 +206,7 @@ struct moabField_Core: public moabField {
   //get multi_index form database
   PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr);
+  PetscErrorCode get_finite_elements(const MoFEMFE_multiIndex **finite_elements_ptr);
 
   //Copy Field to Another
   //NOT TESTED DONT USE PetscErrorCode set_other_filed_values(const string& fiel_name,const string& cpy_field_name,InsertMode mode,ScatterMode scatter_mode);

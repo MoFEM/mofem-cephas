@@ -87,51 +87,6 @@ struct InterfaceElasticFEMethod: public ElasticFEMethod {
       PetscFunctionReturn(0);
   }
 
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n",pcomm->rank(),v2-v1,t2-t1);
-
-    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-    g_NTET.resize(4*45);
-    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    g_NTRI.resize(3*13);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
-    // See FEAP - - A Finite Element Analysis Program
-    D_lambda = ublas::zero_matrix<FieldData>(6,6);
-    for(int rr = 0;rr<3;rr++) {
-	ublas::matrix_row<ublas::matrix<FieldData> > row_D_lambda(D_lambda,rr);
-	for(int cc = 0;cc<3;cc++) {
-	  row_D_lambda[cc] = 1;
-	}
-    }
-    D_mu = ublas::zero_matrix<FieldData>(6,6);
-    for(int rr = 0;rr<6;rr++) {
-	D_mu(rr,rr) = rr<3 ? 2 : 1;
-    }
-    D = lambda*D_lambda + mu*D_mu;
-    ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-    ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
-    ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
-    // Note MAT_FLUSH_ASSEMBLY
-    ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = PetscGetTime(&v2); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-    PetscFunctionReturn(0);
-  }
-
 };
 
 struct InterfaceFEMethod: public InterfaceElasticFEMethod {

@@ -496,9 +496,8 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 	// See FEAP - - A Finite Element Analysis Program
 	D_lambda = ublas::zero_matrix<FieldData>(6,6);
 	for(int rr = 0;rr<3;rr++) {
-	  ublas::matrix_row<ublas::matrix<FieldData> > row_D_lambda(D_lambda,rr);
 	  for(int cc = 0;cc<3;cc++) {
-	    row_D_lambda[cc] = 1;
+	    D_lambda(rr,cc) = 1;
 	  }
 	}
 	D_mu = ublas::zero_matrix<FieldData>(6,6);
@@ -718,11 +717,15 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 	    ierr = Stiffness(); CHKERRQ(ierr);
 	    for(int rr = 0;rr<row_mat;rr++) {
 	      if(RowGlob[rr].size()==0) continue;
-	      for(int cc = 0;cc<col_mat;cc++) {
+	      for(int cc = rr;cc<col_mat;cc++) {
 		if(ColGlob[cc].size()==0) continue;
 		if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		ierr = MatSetValues(*ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+		if(cc!=rr) {
+		  K(cc,rr) = trans(K(rr,cc));
+		  ierr = MatSetValues(Aij,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
+		}
 	      }
 	    }
 	    } break;

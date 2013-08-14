@@ -27,6 +27,10 @@ set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
 
 include(cmake/ResolveCompilerPaths.cmake)
 
+#get mpipath bin directory
+string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
+#message(STATUS ${MPI_BIN_PATH})
+
 project(MoFEM C CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
@@ -40,6 +44,13 @@ configure_file(
   )
 include_directories("${PROJECT_BINARY_DIR}")
 
+#add coverage
+if(WITHCOVERAGE) 
+  SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
+  add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+  set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
+endif(WITHCOVERAGE) 
+
 #add check for verbose testing
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
@@ -49,28 +60,6 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 #endif()
 #message( STATUS "CGAL_USE_FILE " ${CGAL_USE_FILE} )
 #include( ${CGAL_USE_FILE} )
-
-set(PETSC_FLAGS "${PETSCVAR_CC_FLAGS}")
-set(CMAKE_C_FLAGS_DEBUG "${PETSC_FLAGS} ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
-set(CMAKE_C_FLAGS_MINSIZEREL "${PETSC_FLAGS} ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_MINSIZEREL}")
-set(CMAKE_C_FLAGS_RELEASE "${PETSC_FLAGS} ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE}")
-#message(STATUS ${CMAKE_C_FLAGS_DEBUG})
-#message(STATUS ${CMAKE_C_FLAGS_MINSIZEREL})
-#message(STATUS ${CMAKE_C_FLAGS_RELEASE})
-
-#get mpipath bin directory
-string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
-message(STATUS ${MPI_BIN_PATH})
-
-set(MOAB_FLAGS "${MOAB_CXXFLAGS} -Wno-deprecated-declarations")
-string(REGEX REPLACE "-pedantic" "" "MOAB_FLAGS"  ${MOAB_FLAGS})
-string(REGEX REPLACE "-Wshadow" "" "MOAB_FLAGS"  ${MOAB_FLAGS})
-set(CMAKE_CXX_FLAGS_DEBUG "${MOAB_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
-set(CMAKE_CXX_FLAGS_MINSIZEREL "${MOAB_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_MINSIZEREL}")
-set(CMAKE_CXX_FLAGS_RELEASE "${MOAB_FLAGS} ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
-#message(STATUS ${CMAKE_CXX_FLAGS_DEBUG})
-#message(STATUS ${CMAKE_CXX_FLAGS_MINSIZEREL})
-#message(STATUS ${CMAKE_CXX_FLAGS_RELEASE})
 
 find_library(MPI_F90_LIB mpi_f90 PATHS /usr/lib /usr/lib/openmpi/lib)
 message(STATUS ${MPI_F90_LIB})

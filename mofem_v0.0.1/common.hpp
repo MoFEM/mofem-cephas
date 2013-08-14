@@ -371,9 +371,9 @@ struct BasicMoFEMEntity {
 /** 
  * \brief struct keeps data about selected prism ajacencies, and potenialy othere entities
  */
-struct AdjBasicMoFEMEntity: public BasicMoFEMEntity {
+struct AdjacencyMapForBasicMoFEMEntity: public BasicMoFEMEntity {
   BasicMoFEMEntity Adj;
-  AdjBasicMoFEMEntity(const EntityHandle _ent,const EntityHandle adj):
+  AdjacencyMapForBasicMoFEMEntity(const EntityHandle _ent,const EntityHandle adj):
     BasicMoFEMEntity(_ent), Adj(adj) {};
   inline EntityHandle get_adj() const { return Adj.ent; };
   inline EntityType get_adj_type() const { return Adj.get_ent_type(); };
@@ -417,11 +417,11 @@ struct interface_RefMoFEMEntity {
 /**
  * \brief keeps data about abstract refined finite element
  */
-struct RefMoFEMFiniteElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
+struct RefMoFEMElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
   BitRefEdges *tag_BitRefEdges;
   SideNumber_multiIndex side_number_table;
-  RefMoFEMFiniteElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  RefMoFEMElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
   inline const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
@@ -430,51 +430,51 @@ struct RefMoFEMFiniteElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
     NOT_USED(ent);
     return NULL; 
   };
-  const RefMoFEMFiniteElement* get_RefMoFEMFiniteElement() const { return this; }
-  friend ostream& operator<<(ostream& os,const RefMoFEMFiniteElement& e);
+  const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
+  friend ostream& operator<<(ostream& os,const RefMoFEMElement& e);
 };
 
 /**
  * \brief keeps data about abstract MESHSET finite element
  */
-struct RefMoFEMFiniteElement_MESHSET: public RefMoFEMFiniteElement {
-  RefMoFEMFiniteElement_MESHSET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  const RefMoFEMFiniteElement* get_RefMoFEMFiniteElement() const { return this; }
+struct RefMoFEMElement_MESHSET: public RefMoFEMElement {
+  RefMoFEMElement_MESHSET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
 };
 
 /**
  * \brief keeps data about abstract PRISM finite element
  */
-struct RefMoFEMFiniteElement_PRISM: public RefMoFEMFiniteElement {
-  RefMoFEMFiniteElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  const RefMoFEMFiniteElement* get_RefMoFEMFiniteElement() const { return this; }
+struct RefMoFEMElement_PRISM: public RefMoFEMElement {
+  RefMoFEMElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
 };
 
 /**
  * \brief keeps data about abstract TET finite element
  */
-struct RefMoFEMFiniteElement_TET: public RefMoFEMFiniteElement {
+struct RefMoFEMElement_TET: public RefMoFEMElement {
   const int* tag_type_data;
-  RefMoFEMFiniteElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  const RefMoFEMFiniteElement* get_RefMoFEMFiniteElement() const { return this; }
+  RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   inline int get_ref_type() const { return tag_type_data[0]; }
   inline int get_ref_sub_type() const { return tag_type_data[1]; }
-  friend ostream& operator<<(ostream& os,const RefMoFEMFiniteElement_TET& e);
+  friend ostream& operator<<(ostream& os,const RefMoFEMElement_TET& e);
 };
 
 /**
- * \brief intrface to RefMoFEMFiniteElement
+ * \brief intrface to RefMoFEMElement
  */
 template<typename T>
-struct interface_RefMoFEMFiniteElement: interface_RefMoFEMEntity<T> {
-  interface_RefMoFEMFiniteElement(const T *_ref_ptr): interface_RefMoFEMEntity<T>(_ref_ptr) {}
+struct interface_RefMoFEMElement: interface_RefMoFEMEntity<T> {
+  interface_RefMoFEMElement(const T *_ref_ptr): interface_RefMoFEMEntity<T>(_ref_ptr) {}
   int get_BitRefEdges_ulong() const { return interface_RefMoFEMEntity<T>::ref_ptr->get_BitRefEdges_ulong(); }
   SideNumber_multiIndex &get_side_number_table() const { return interface_RefMoFEMEntity<T>::ref_ptr->get_side_number_table(); }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return interface_RefMoFEMEntity<T>::ref_ptr->get_side_number_ptr(moab,ent); }
-  inline const RefMoFEMFiniteElement* get_RefMoFEMFiniteElement() const { return interface_RefMoFEMEntity<T>::ref_ptr->get_RefMoFEMFiniteElement(); }
+  inline const RefMoFEMElement* get_RefMoFEMElement() const { return interface_RefMoFEMEntity<T>::ref_ptr->get_RefMoFEMElement(); }
 };
 
 /// \brief keeps data about field
@@ -929,9 +929,9 @@ struct interface_MoFEMFE {
 /**
  * \brief Finite element data for entitiy
  */
-struct EntMoFEMFE: public interface_MoFEMFE<MoFEMFE>,interface_RefMoFEMFiniteElement<RefMoFEMFiniteElement> {
-  typedef interface_RefMoFEMEntity<RefMoFEMFiniteElement> interface_type_RefMoFEMEntity;
-  typedef interface_RefMoFEMFiniteElement<RefMoFEMFiniteElement> interface_type_RefMoFEMFiniteElement;
+struct EntMoFEMFE: public interface_MoFEMFE<MoFEMFE>,interface_RefMoFEMElement<RefMoFEMElement> {
+  typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
+  typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
   typedef interface_MoFEMFE<MoFEMFE> interface_type_MoFEMFE;
   const void* tag_row_uids_data;
   int tag_row_uids_size;
@@ -940,7 +940,7 @@ struct EntMoFEMFE: public interface_MoFEMFE<MoFEMFE>,interface_RefMoFEMFiniteEle
   const UId* tag_data_uids_data;
   int tag_data_uids_size;
   FEDofMoFEMEntity_multiIndex data_dofs;
-  EntMoFEMFE(Interface &moab,const RefMoFEMFiniteElement *_ref_MoFEMFE,const MoFEMFE *_MoFEMFE_ptr);
+  EntMoFEMFE(Interface &moab,const RefMoFEMElement *_ref_MoFEMFE,const MoFEMFE *_MoFEMFE_ptr);
   inline EntityHandle get_ent() const { return get_ref_ent(); }
   inline DofIdx get_nb_dofs_row() const { return tag_row_uids_size/sizeof(UId); }
   inline DofIdx get_nb_dofs_col() const { return tag_col_uids_size/sizeof(UId); }
@@ -969,8 +969,8 @@ struct EntMoFEMFE: public interface_MoFEMFE<MoFEMFE>,interface_RefMoFEMFiniteEle
  * \brief interface to EntMoFEMFE
  */
 template <typename T>
-struct interface_EntMoFEMFE:public interface_MoFEMFE<T>,interface_RefMoFEMFiniteElement<T> {
-  interface_EntMoFEMFE(const T *_ptr): interface_MoFEMFE<T>(_ptr),interface_RefMoFEMFiniteElement<T>(_ptr) {};
+struct interface_EntMoFEMFE:public interface_MoFEMFE<T>,interface_RefMoFEMElement<T> {
+  interface_EntMoFEMFE(const T *_ptr): interface_MoFEMFE<T>(_ptr),interface_RefMoFEMElement<T>(_ptr) {};
   inline EntityID get_ent_id() const { return interface_MoFEMFE<T>::fe_ptr->get_ent_id(); }
   inline EntityType get_ent_type() const { return interface_MoFEMFE<T>::fe_ptr->get_ent_type(); }
   //
@@ -1076,24 +1076,24 @@ typedef multi_index_container<
   > > MoFEMFE_multiIndex;
 
 typedef multi_index_container<
-  AdjBasicMoFEMEntity,
+  AdjacencyMapForBasicMoFEMEntity,
   indexed_by<
     hashed_non_unique<
       tag<MoABEnt_mi_tag>, 
-      member<AdjBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjBasicMoFEMEntity::ent> >,
+      member<AdjacencyMapForBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::ent> >,
     hashed_non_unique<
       tag<MoABEnt_mi_tag2>, 
-      const_mem_fun<AdjBasicMoFEMEntity,EntityHandle,&AdjBasicMoFEMEntity::get_adj> >,
+      const_mem_fun<AdjacencyMapForBasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::get_adj> >,
     ordered_non_unique<
       tag<EntType_mi_tag>, 
-      const_mem_fun<AdjBasicMoFEMEntity,EntityType,&AdjBasicMoFEMEntity::get_adj_type> >,
+      const_mem_fun<AdjacencyMapForBasicMoFEMEntity,EntityType,&AdjacencyMapForBasicMoFEMEntity::get_adj_type> >,
     hashed_unique<
       tag<Composite_mi_tag>, 
       composite_key<
-	AdjBasicMoFEMEntity,
-      	member<AdjBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjBasicMoFEMEntity::ent>,
-	const_mem_fun<AdjBasicMoFEMEntity,EntityHandle,&AdjBasicMoFEMEntity::get_adj> > >
-  > > AdjBasicMoFEMEntity_multiIndex;
+	AdjacencyMapForBasicMoFEMEntity,
+      	member<AdjacencyMapForBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::ent>,
+	const_mem_fun<AdjacencyMapForBasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::get_adj> > >
+  > > AdjacencyMapForBasicMoFEMEntity_multiIndex;
 
 // 
 
