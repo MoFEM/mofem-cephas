@@ -271,7 +271,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
   }
 
-  PetscErrorCode operator()() {
+  /*PetscErrorCode operator()() {
       PetscFunctionBegin;
 
       ierr = do_operator(); CHKERRQ(ierr);
@@ -307,7 +307,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       }
 
       PetscFunctionReturn(0);
-  }
+  }*/
 
 };
 
