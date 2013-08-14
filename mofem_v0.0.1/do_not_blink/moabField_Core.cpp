@@ -26,7 +26,7 @@
 
 namespace MoFEM {
 
-const int debug = 5;
+const static int debug = 1;
 
 moabField_Core::moabField_Core(Interface& _moab,int _verbose): 
   moab(_moab),verbose(_verbose) {
@@ -1868,6 +1868,9 @@ PetscErrorCode moabField_Core::seed_ref_level_3D(const EntityHandle meshset,cons
     Range::iterator tit = ents3d.begin();
     for(;tit!=ents3d.end();tit++) {
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refined_mofem_entities.insert(RefMoFEMEntity(moab,*tit));
+      if(debug > 0) {
+	ierr = test_moab(moab,*tit); CHKERRQ(ierr);
+      }
       if(!((p_ent.first->get_BitRefLevel()&bit)==bit)) {
         bool success = refined_mofem_entities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
