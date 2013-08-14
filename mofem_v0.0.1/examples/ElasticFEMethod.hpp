@@ -148,7 +148,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     PetscLogDouble v1,v2;
 
     double lambda,mu;
-    ublas::symmetric_matrix<FieldData,ublas::upper> D_lambda,D_mu,D;
+    ublas::matrix<FieldData> D_lambda,D_mu,D;
 
     Range& SideSet1;
     Range& SideSet2;
