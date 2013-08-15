@@ -166,6 +166,7 @@ struct moabField_Core: public moabField {
 
   //problem buildig
   PetscErrorCode partition_problem(const string &name,int verb = -1);
+  PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
 
