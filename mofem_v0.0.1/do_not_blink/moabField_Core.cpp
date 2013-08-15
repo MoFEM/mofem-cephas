@@ -1613,18 +1613,25 @@ PetscErrorCode moabField_Core::partition_problem(const string &name,int verb) {
   //find p_miit
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
   problems_by_name::iterator p_miit = problems_set.find(name);
+  if(p_miit==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",name.c_str());
   if(verb>0) {
     PetscPrintf(PETSC_COMM_WORLD,"Partition problem %s\n",p_miit->get_name().c_str());
   }
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
   Mat Adj;
+  if(verb>1) {
+    PetscPrintf(PETSC_COMM_WORLD,"\tcreate Adj matrix\n");
+  }
   ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,NULL,true,verb); CHKERRQ(ierr);
+  if(verb>1) {
+    PetscPrintf(PETSC_COMM_WORLD,"\t<- done\n");
+  }
   //PetscBarrier(PETSC_NULL);
   PetscInt m,n;
   ierr = MatGetSize(Adj,&m,&n); CHKERRQ(ierr);
   if(m!=p_miit->get_nb_dofs_row()) SETERRQ(PETSC_COMM_SELF,1,"row number inconsistency");
   if(n!=p_miit->get_nb_dofs_col()) SETERRQ(PETSC_COMM_SELF,1,"col number inconsistency");
-  if(verb>1) {
+  if(verb>2) {
     MatView(Adj,PETSC_VIEWER_STDOUT_WORLD);
   }
   PetscInt *_values;
@@ -1667,6 +1674,9 @@ PetscErrorCode moabField_Core::partition_problem(const string &name,int verb) {
   nb_col_ghost_dofs = 0;
   NumeredDofMoFEMEntitys_by_idx::iterator miit_dofs_row = dofs_row_by_idx_no_const.begin();
   NumeredDofMoFEMEntitys_by_idx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
+  if(verb>1) {
+    PetscPrintf(PETSC_COMM_WORLD,"\tloop problem dofs");
+  }
   for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++,miit_dofs_col++) {
     if(miit_dofs_col==dofs_col_by_idx_no_const.end()) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, nb. of rows is not equal to number for columns");
     if(miit_dofs_row->get_unique_id()!=miit_dofs_col->get_unique_id()) SETERRQ(PETSC_COMM_SELF,1,"check finite element definition, rows not equal columns");
@@ -1685,6 +1695,9 @@ PetscErrorCode moabField_Core::partition_problem(const string &name,int verb) {
       success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
+  }
+  if(verb>1) {
+    PetscPrintf(PETSC_COMM_WORLD," <- done\n");
   }
   if(verbose>0) {
     ostringstream ss;
@@ -1725,8 +1738,9 @@ PetscErrorCode moabField_Core::partition_problem(const string &name,int verb) {
   *build_MoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
+PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name,int verb) {
   PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
   if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
   if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,1,"FEs not build");
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,1,"adjacencies not build");
@@ -1807,7 +1821,7 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
       }
     }
   }
-  if(verbose>0) {
+  if(verb>0) {
     ostringstream ss;
     ss << "partition_ghost_dofs: rank = " << pcomm->rank() 
       << " FEs col ghost dofs "<< *p_miit 
@@ -1817,7 +1831,7 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name) {
       << " FEs row ghost dofs "<< *p_miit 
       << " Nb. row ghost dof " << p_miit->get_nb_ghost_dofs_row() 
       << " Nb. local dof " << p_miit->get_nb_local_dofs_row() << endl;
-    if(verbose>1) {
+    if(verb>1) {
       NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols.begin();
       for(;miit_dd_col!=p_miit->numered_dofs_cols.end();miit_dd_col++) {
 	if(miit_dd_col->part==pcomm->rank()) continue;

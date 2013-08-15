@@ -206,9 +206,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("MATERIAL_MECHANICS"); CHKERRQ(ierr);
   //partition
-  ierr = mField.partition_problem("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
-  //ierr = mField.partition_finite_elements("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
-  //ierr = mField.partition_ghost_dofs("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("MATERIAL_CONSTRAIN"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("MATERIAL_CONSTRAIN"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("MATERIAL_CONSTRAIN"); CHKERRQ(ierr);
 
   //create matrices
   Vec F;

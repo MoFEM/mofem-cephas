@@ -166,7 +166,7 @@ struct moabField_Core: public moabField {
 
   //problem buildig
   PetscErrorCode partition_problem(const string &name,int verb = -1);
-  PetscErrorCode partition_ghost_dofs(const string &name);
+  PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
 
   //clean active
@@ -246,7 +246,7 @@ struct moabField_Core: public moabField {
       DofIdx upper_dof_row = pcomm->rank()==pcomm->size()-1 ? nb_dofs_row-1 : nb_dofs_row_on_proc*(pcomm->rank()+1)-1;
       hi_miit_row = dofs_row_by_idx.upper_bound(upper_dof_row);
       if(verb > 1) {
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"partition_create_Mat: row lower %d row upper %d\n",lower_dof_row,upper_dof_row);
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tpartition_create_Mat: row lower %d row upper %d\n",lower_dof_row,upper_dof_row);
 	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       }
     } else {
