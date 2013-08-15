@@ -250,6 +250,16 @@ struct moabField {
   /// partition problem dofs
   virtual PetscErrorCode partition_problem(const string &name,int verb = -1) = 0;
 
+  /**
+    * \brief build indexing and partition problem inhereting indexing and partitioning from other problem
+    *
+    * \param name problem name
+    * \param problem_for_rows problem used to index rows
+    * \param problem_for_cols problem used to index cols
+    */
+  virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1) = 0;
+
+
   /// determine ghost nodes
   virtual PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1) = 0;
 
