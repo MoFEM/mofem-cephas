@@ -1049,7 +1049,7 @@ struct EntMoFEMFE: public interface_MoFEMFE<MoFEMFE>,interface_RefMoFEMElement<R
   typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
   typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
   typedef interface_MoFEMFE<MoFEMFE> interface_type_MoFEMFE;
-  const void* tag_row_uids_data;
+  const UId* tag_row_uids_data;
   int tag_row_uids_size;
   const UId* tag_col_uids_data;
   int tag_col_uids_size;
