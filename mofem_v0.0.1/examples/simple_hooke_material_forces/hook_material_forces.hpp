@@ -181,14 +181,12 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
     set_PhysicalEquationNumber(hooke);
     type_of_analysis = material_analysis;
 
-
   }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
   }
-
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
