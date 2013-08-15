@@ -383,7 +383,7 @@ struct BasicMoFEMEntity {
  * \brief struct keeps data about selected prism ajacencies, and potenialy othere entities
  */
 struct AdjacencyMapForBasicMoFEMEntity: public BasicMoFEMEntity {
-  BasicMoFEMEntity Adj;
+  BasicMoFEMEntity Adj; ///< adjacent entity to this AdjacencyMapForBasicMoFEMEntity
   AdjacencyMapForBasicMoFEMEntity(const EntityHandle _ent,const EntityHandle adj):
     BasicMoFEMEntity(_ent), Adj(adj) {};
   inline EntityHandle get_adj() const { return Adj.ent; };
@@ -953,6 +953,26 @@ typedef multi_index_container<
 	> >
   > > FENumeredDofMoFEMEntity_multiIndex;
 
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex container keeps NumeredDofMoFEMEntity
+ *
+ * \param    ordered_unique< 
+      tag<Unique_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&NumeredDofMoFEMEntity::get_unique_id> >,
+ * \param    ordered_unique< 
+      tag<Idx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::dof_idx> >,
+ * \param    ordered_non_unique<
+      tag<FieldName_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,string,&NumeredDofMoFEMEntity::get_name> >,
+ * \param    ordered_non_unique< 
+      tag<PetscGlobalIdx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> >,
+ * \param    ordered_non_unique< 
+      tag<PetscLocalIdx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::petsc_local_dof_idx> >,
+ * \param    ordered_non_unique< 
+      tag<Part_mi_tag>, member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> >,
+ * \param    ordered_non_unique<
+      tag<MoABEnt_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent> >
+ *
+ */
 typedef multi_index_container<
   NumeredDofMoFEMEntity,
   indexed_by<
@@ -1171,6 +1191,27 @@ typedef multi_index_container<
       tag<MoFEMFE_name_mi_tag>, const_mem_fun<MoFEMFE,string,&MoFEMFE::get_name> >
   > > MoFEMFE_multiIndex;
 
+
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex container keeps AdjacencyMapForBasicMoFEMEntity
+ *
+ * \param   hashed_non_unique<
+      tag<MoABEnt_mi_tag>, 
+      member<AdjacencyMapForBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::ent> >,
+ * \param    hashed_non_unique<
+      tag<MoABEnt_mi_tag2>, 
+      const_mem_fun<AdjacencyMapForBasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::get_adj> >,
+ * \param    ordered_non_unique<
+      tag<EntType_mi_tag>, 
+      const_mem_fun<AdjacencyMapForBasicMoFEMEntity,EntityType,&AdjacencyMapForBasicMoFEMEntity::get_adj_type> >,
+ * \param    hashed_unique< tag<Composite_mi_tag>, <br>
+      composite_key< <br>
+	AdjacencyMapForBasicMoFEMEntity,
+      	member<AdjacencyMapForBasicMoFEMEntity::BasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::ent>,
+	const_mem_fun<AdjacencyMapForBasicMoFEMEntity,EntityHandle,&AdjacencyMapForBasicMoFEMEntity::get_adj> > >
+ *
+ */
 typedef multi_index_container<
   AdjacencyMapForBasicMoFEMEntity,
   indexed_by<
@@ -1200,8 +1241,8 @@ typedef multi_index_container<
 struct MoFEMAdjacencies {
   unsigned int by;
   unsigned int by_other;
-  const MoFEMEntity *MoFEMEntity_ptr;
-  const EntMoFEMFE *EntMoFEMFE_ptr;
+  const MoFEMEntity *MoFEMEntity_ptr; ///< field entity
+  const EntMoFEMFE *EntMoFEMFE_ptr; ///< finite element entity
   MoFEMAdjacencies(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFE *_EntMoFEMFE_ptr,const by_what _by);
   inline EntityHandle get_MoFEMFE_meshset() const { return EntMoFEMFE_ptr->get_meshset(); }
   inline EntityHandle get_MoFEMFE_entity_handle() const { return EntMoFEMFE_ptr->get_ent(); }
@@ -1218,6 +1259,25 @@ struct MoFEMAdjacencies {
   friend ostream& operator<<(ostream& os,const MoFEMAdjacencies &e);
 };
 
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex container keeps Adjacencies Element and dof entities adjacencies and vice veras.
+ *
+ * \param    hashed_unique< tag<Composite_unique_mi_tag>, <br>
+      composite_key<
+	MoFEMAdjacencies, <br>
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_meshset>, <br>
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle>, <br>
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_MoFEMFE_meshset>, <br>
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_MoFEMFE_entity_handle> > >, <br>
+ * \param    ordered_non_unique<
+      tag<Composite_mi_tag>, <br>
+       composite_key<
+	MoFEMAdjacencies, <br>
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_meshset>, <br>
+	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle> > > <br>
+ *
+ */
 typedef multi_index_container<
   MoFEMAdjacencies,
   indexed_by<
