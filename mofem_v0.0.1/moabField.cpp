@@ -79,7 +79,7 @@ PetscErrorCode moabField::FEMethod::set_problem(const MoFEMProblem *_problem_ptr
   problem_ptr = _problem_ptr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField::FEMethod::set_fe(const NumeredMoFEMFE *_fe_ptr) {
+PetscErrorCode moabField::FEMethod::set_fe(const NumeredMoFEMFiniteElement *_fe_ptr) {
   PetscFunctionBegin;
   if(_fe_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
   fe_ptr = _fe_ptr;
@@ -121,7 +121,7 @@ PetscErrorCode moabField::BasicMethod::set_dofs_multiIndex(const DofMoFEMEntity_
   dofs_moabfield = _dofs_moabfield;
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField::BasicMethod::set_fes_multiIndex(const MoFEMFE_multiIndex *_finite_elements) {
+PetscErrorCode moabField::BasicMethod::set_fes_multiIndex(const MoFEMFiniteElement_multiIndex *_finite_elements) {
   PetscFunctionBegin;
   if(_finite_elements == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
   finite_elements = _finite_elements;
@@ -133,7 +133,7 @@ PetscErrorCode moabField::BasicMethod::set_adjacencies(const MoFEMAdjacencies_mu
   fem_adjacencies = _fem_adjacencies;
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField::BasicMethod::set_fes_data_multiIndex(const EntMoFEMFE_multiIndex *_finite_elements_moabents) {
+PetscErrorCode moabField::BasicMethod::set_fes_data_multiIndex(const EntMoFEMFiniteElement_multiIndex *_finite_elements_moabents) {
   PetscFunctionBegin;
   if(_finite_elements_moabents == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
   finite_elements_moabents = _finite_elements_moabents;

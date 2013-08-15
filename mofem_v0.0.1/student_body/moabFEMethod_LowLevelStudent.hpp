@@ -152,7 +152,7 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   PetscErrorCode GetRowDiffNMatrix_at_GaussPoint();
   PetscErrorCode GetColDiffNMatrix_at_GaussPoint();
 
-  const EntMoFEMFE *fe_ent_ptr;
+  const EntMoFEMFiniteElement *fe_ent_ptr;
 
   /**
    * calulate element shape functions

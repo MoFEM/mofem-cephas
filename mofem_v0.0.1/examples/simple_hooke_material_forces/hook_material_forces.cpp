@@ -116,11 +116,11 @@ int main(int argc, char *argv[]) {
   //add tets on surface
   EntityHandle skin_faces_meshset;
   {
-    const MoFEMFE_multiIndex *finite_elements_ptr;
+    const MoFEMFiniteElement_multiIndex *finite_elements_ptr;
     ierr = mField.get_finite_elements(&finite_elements_ptr); CHKERRQ(ierr);
-    MoFEMFE_multiIndex::index<MoFEMFE_name_mi_tag>::type::iterator femit;
-    femit = finite_elements_ptr->get<MoFEMFE_name_mi_tag>().find("MATERIAL");
-    assert(femit!=finite_elements_ptr->get<MoFEMFE_name_mi_tag>().end());
+    MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator femit;
+    femit = finite_elements_ptr->get<MoFEMFiniteElement_name_mi_tag>().find("MATERIAL");
+    assert(femit!=finite_elements_ptr->get<MoFEMFiniteElement_name_mi_tag>().end());
 
     //get material tetst
     EntityHandle fe_meshset = femit->get_meshset();

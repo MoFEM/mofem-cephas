@@ -441,9 +441,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
   if(verbose>2) {
     PetscPrintf(PETSC_COMM_WORLD,"Parent ent %u\n",parent);
   }
-  EntMoFEMFE_multiIndex::index<Composite_mi_tag>::type::iterator 
+  EntMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator 
     miit =  finite_elements_moabents->get<Composite_mi_tag>().lower_bound(boost::make_tuple(parent,_fe_name));
-  EntMoFEMFE_multiIndex::index<Composite_mi_tag>::type::iterator 
+  EntMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator 
     hi_miit = finite_elements_moabents->get<Composite_mi_tag>().upper_bound(boost::make_tuple(parent,_fe_name));
   if(distance(miit,hi_miit) > 1) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
   for(;miit!=hi_miit;miit++) {
