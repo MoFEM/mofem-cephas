@@ -198,15 +198,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition
-  ierr = mField.partition_problems("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   //partition
-  ierr = mField.partition_problems("MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("MATERIAL_MECHANICS"); CHKERRQ(ierr);
   //partition
-  ierr = mField.partition_problems("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
   //ierr = mField.partition_finite_elements("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
   //ierr = mField.partition_ghost_dofs("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
 

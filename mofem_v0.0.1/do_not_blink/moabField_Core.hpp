@@ -165,7 +165,7 @@ struct moabField_Core: public moabField {
   PetscErrorCode list_adjacencies() const;
 
   //problem buildig
-  PetscErrorCode partition_problems(const string &name,int verb = -1);
+  PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name);
   PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
 

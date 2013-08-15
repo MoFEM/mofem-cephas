@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition
-  ierr = mField.partition_problems("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 

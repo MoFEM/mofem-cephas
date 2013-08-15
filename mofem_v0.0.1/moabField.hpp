@@ -248,7 +248,7 @@ struct moabField {
   virtual PetscErrorCode build_problems(int verb = -1) = 0;
 
   /// partition problem dofs
-  virtual PetscErrorCode partition_problems(const string &name,int verb = -1) = 0;
+  virtual PetscErrorCode partition_problem(const string &name,int verb = -1) = 0;
 
   /// determine ghost nodes
   virtual PetscErrorCode partition_ghost_dofs(const string &name) = 0;

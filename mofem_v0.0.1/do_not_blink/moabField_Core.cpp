@@ -1600,7 +1600,7 @@ PetscErrorCode moabField_Core::build_problems(int verb) {
   *build_MoFEM |= 1<<3;
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::partition_problems(const string &name,int verb) {
+PetscErrorCode moabField_Core::partition_problem(const string &name,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
@@ -1688,9 +1688,9 @@ PetscErrorCode moabField_Core::partition_problems(const string &name,int verb) {
   }
   if(verbose>0) {
     ostringstream ss;
-    ss << "partition_problems: rank = " << pcomm->rank() << " FEs row ghost dofs "<< *p_miit 
+    ss << "partition_problem: rank = " << pcomm->rank() << " FEs row ghost dofs "<< *p_miit 
       << " Nb. local dof " << p_miit->get_nb_local_dofs_row() << " nb global row dofs " << p_miit->get_nb_dofs_row() << endl;
-    ss << "partition_problems: rank = " << pcomm->rank() << " FEs col ghost dofs " << *p_miit 
+    ss << "partition_problem: rank = " << pcomm->rank() << " FEs col ghost dofs " << *p_miit 
       << " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     PetscSynchronizedFlush(PETSC_COMM_WORLD); 

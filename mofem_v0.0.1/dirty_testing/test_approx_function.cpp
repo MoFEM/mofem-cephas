@@ -155,10 +155,10 @@ int main(int argc, char *argv[]) {
   ierr = mField2.build_problems(); CHKERRQ(ierr);
 
   //partition
-  ierr = mField2.partition_problems("PROBLEM_APPROXIMATION"); CHKERRQ(ierr);
+  ierr = mField2.partition_problem("PROBLEM_APPROXIMATION"); CHKERRQ(ierr);
   ierr = mField2.partition_finite_elements("PROBLEM_APPROXIMATION"); CHKERRQ(ierr);
   ierr = mField2.partition_ghost_dofs("PROBLEM_APPROXIMATION"); CHKERRQ(ierr);
-  ierr = mField2.partition_problems("PROBLEM_APPROXIMATION_REF"); CHKERRQ(ierr);
+  ierr = mField2.partition_problem("PROBLEM_APPROXIMATION_REF"); CHKERRQ(ierr);
   ierr = mField2.partition_finite_elements("PROBLEM_APPROXIMATION_REF"); CHKERRQ(ierr);
   ierr = mField2.partition_ghost_dofs("PROBLEM_APPROXIMATION_REF"); CHKERRQ(ierr);
 

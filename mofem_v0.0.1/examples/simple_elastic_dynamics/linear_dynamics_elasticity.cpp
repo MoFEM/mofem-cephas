@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
 
   //partition
-  ierr = mField.partition_problems("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
