@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("MATERIAL"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("SURFACE"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("CONSTRAIN"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("C_ELEM"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("CTC_ELEM"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -100,14 +100,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("MATERIAL","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("MATERIAL","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-  ierr = mField.modify_finite_element_add_field_row("SURFACE","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("SURFACE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("SURFACE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("SURFACE","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("C_ELEM","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("C_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("C_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("C_ELEM","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
 
-  ierr = mField.modify_finite_element_add_field_row("CONSTRAIN","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("CONSTRAIN","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("CONSTRAIN","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("CTC_ELEM","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("CTC_ELEM","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CTC_ELEM","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
@@ -138,8 +138,8 @@ int main(int argc, char *argv[]) {
     EntityHandle skin_tets_meshset;
     rval = moab.create_meshset(MESHSET_SET,skin_tets_meshset); CHKERR_PETSC(rval);	
     rval = moab.add_entities(skin_tets_meshset,skin_tets); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_finite_element_by_TETs(skin_tets_meshset,"SURFACE"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TETs(skin_tets_meshset,"CONSTRAIN"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TETs(skin_tets_meshset,"C_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TETs(skin_tets_meshset,"CTC_ELEM"); CHKERRQ(ierr);
     if(pcomm->rank()==0) {
       rval = moab.write_file("skin_faces.vtk","VTK","",&skin_tets_meshset,1); CHKERR_PETSC(rval);
     }
@@ -149,17 +149,21 @@ int main(int argc, char *argv[]) {
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.add_problem("MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.add_problem("MATERIAL_CONSTRAIN"); CHKERRQ(ierr);
+  ierr = mField.add_problem("CCT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.add_problem("C_MATRIX"); CHKERRQ(ierr);
 
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("MATERIAL_MECHANICS","MATERIAL"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("MATERIAL_CONSTRAIN","CONSTRAIN"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("C_MATRIX","C_ELEM"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("CCT_MATRIX","CTC_ELEM"); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_CONSTRAIN",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("CCT_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("C_MATRIX",bit_level0); CHKERRQ(ierr);
+
 
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -178,7 +182,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-
   ierr = mField.set_field_order(0,MBTRI,"CONST_SHAPE_LAMBDA",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"CONST_SHAPE_LAMBDA",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"CONST_SHAPE_LAMBDA",1); CHKERRQ(ierr);
@@ -204,9 +207,13 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("MATERIAL_MECHANICS"); CHKERRQ(ierr);
   //partition
-  ierr = mField.partition_problem("MATERIAL_CONSTRAIN"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("MATERIAL_CONSTRAIN"); CHKERRQ(ierr);
-  ierr = mField.partition_ghost_dofs("MATERIAL_CONSTRAIN"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("CCT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("CCT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("CCT_MATRIX"); CHKERRQ(ierr);
+  //parttion
+  ierr = mField.compose_problem("C_MATRIX","CCT_MATRIX","MATERIAL_MECHANICS",1); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("C_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("C_MATRIX"); CHKERRQ(ierr);
 
   //create matrices
   Vec F;
