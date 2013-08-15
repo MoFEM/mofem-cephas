@@ -81,12 +81,13 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("MATERIAL_FORCE",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("CONST_SHAPE_LAMBDA",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("CONST_SHAPE_LAMBDA",H1,1); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("MATERIAL"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("SURFACE"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("CONSTRAIN"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -104,11 +105,17 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("SURFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("SURFACE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
+  ierr = mField.modify_finite_element_add_field_row("CONSTRAIN","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("CONSTRAIN","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CONSTRAIN","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CONSTRAIN","CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
+
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
 
   //add tets on surface
+  EntityHandle skin_faces_meshset;
   {
     const MoFEMFE_multiIndex *finite_elements_ptr;
     ierr = mField.get_finite_elements(&finite_elements_ptr); CHKERRQ(ierr);
@@ -123,36 +130,43 @@ int main(int argc, char *argv[]) {
     Skinner skin(&moab);
     Range skin_faces; // skin faces from 3d ents
     rval = skin.find_skin(material_tets,false,skin_faces); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,skin_faces_meshset); CHKERR_PETSC(rval);	
+    rval = moab.add_entities(skin_faces_meshset,skin_faces); CHKERR_PETSC(rval);
 
     //add surface elements
     Range skin_tets;
     rval = moab.get_adjacencies(skin_faces,3,false,skin_tets,Interface::UNION); CHKERR_PETSC(rval);
-    EntityHandle tmp_meshset;
-    rval = moab.create_meshset(MESHSET_SET,tmp_meshset); CHKERR_PETSC(rval);	
-    rval = moab.add_entities(tmp_meshset,skin_tets); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_finite_element_by_TETs(tmp_meshset,"SURFACE"); CHKERRQ(ierr);
+    EntityHandle skin_tets_meshset;
+    rval = moab.create_meshset(MESHSET_SET,skin_tets_meshset); CHKERR_PETSC(rval);	
+    rval = moab.add_entities(skin_tets_meshset,skin_tets); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TETs(skin_tets_meshset,"SURFACE"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TETs(skin_tets_meshset,"CONSTRAIN"); CHKERRQ(ierr);
     if(pcomm->rank()==0) {
-      rval = moab.write_file("skin_faces.vtk","VTK","",&tmp_meshset,1); CHKERR_PETSC(rval);
+      rval = moab.write_file("skin_faces.vtk","VTK","",&skin_tets_meshset,1); CHKERR_PETSC(rval);
     }
-    rval = moab.delete_entities(&tmp_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&skin_tets_meshset,1); CHKERR_PETSC(rval);
   }
 
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.add_problem("MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.add_problem("MATERIAL_CONSTRAIN"); CHKERRQ(ierr);
 
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("MATERIAL_MECHANICS","MATERIAL"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("MATERIAL_MECHANICS","SURFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MATERIAL_CONSTRAIN","CONSTRAIN"); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_CONSTRAIN",bit_level0); CHKERRQ(ierr);
 
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TRIs(skin_faces_meshset,"CONST_SHAPE_LAMBDA"); CHKERRQ(ierr);
 
   //set app. order
   int order = 1;
@@ -166,6 +180,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
+  ierr = mField.set_field_order(0,MBTRI,"CONST_SHAPE_LAMBDA",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"CONST_SHAPE_LAMBDA",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"CONST_SHAPE_LAMBDA",1); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -187,6 +205,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_problems("MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  //partition
+  ierr = mField.partition_problems("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
+  //ierr = mField.partition_finite_elements("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
+  //ierr = mField.partition_ghost_dofs("MATERIAL_CONSTRAINS"); CHKERRQ(ierr);
 
   //create matrices
   Vec F;

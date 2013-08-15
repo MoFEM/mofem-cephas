@@ -393,8 +393,73 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id) {
+PetscErrorCode moabField_Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb) {
   PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  EntityHandle idm = no_handle;
+  try {
+    idm = get_field_meshset(id);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  FieldSpace space;
+  rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERR_PETSC(rval);
+  Range nodes,tris,edges;
+  rval = moab.get_entities_by_type(meshset,MBTRI,tris,false); CHKERR_PETSC(rval);
+  switch (space) {
+    case L2:
+      rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
+      if(verb>1) {
+	ostringstream ss;
+	ss << "add entities to field " << get_BitFieldId_name(id);
+	ss << " nb. add tris " << tris.size();
+	ss << endl;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
+      break;
+    case H1:
+      rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
+      rval = moab.get_connectivity(tris,nodes,true); CHKERR_PETSC(rval);
+      rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
+      rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
+      if(verb>1) {
+	ostringstream ss;
+	ss << "add entities to field " << get_BitFieldId_name(id);
+	ss << " nb. add tris " << tris.size();
+	ss << " nb. add edges " << edges.size();
+	ss << " nb. add nodes " << nodes.size();
+	ss << endl;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
+      break;
+    case Hcurl:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, Hcurl not implented for TRI");
+      break;
+    case Hdiv:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, Hdiv not implemented for TRI");
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"add_ents_to_field_by_TRIs this field not work for TRIs");
+  }
+  ierr = seed_ref_level_3D(idm,0); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode moabField_Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  try {
+    ierr = add_ents_to_field_by_TRIs(meshset,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+  } catch  (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
   EntityHandle idm = no_handle;
   try {
@@ -409,6 +474,13 @@ PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle mesh
   switch (space) {
     case L2:
       rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
+      if(verb>1) {
+	ostringstream ss;
+	ss << "add entities to field " << get_BitFieldId_name(id);
+	ss << " nb. add tets " << tets.size();
+	ss << endl;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
       break;
     case H1:
       rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
@@ -418,6 +490,16 @@ PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle mesh
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
       rval = moab.get_adjacencies(tets,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
+      if(verb>1) {
+	ostringstream ss;
+	ss << "add entities to field " << get_BitFieldId_name(id);
+	ss << " nb. add tets " << tets.size();
+	ss << " nb. add tris " << tris.size();
+	ss << " nb. add edges " << edges.size();
+	ss << " nb. add nodes " << nodes.size();
+	ss << endl;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
       break;
     case Hcurl:
       rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
@@ -425,11 +507,28 @@ PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle mesh
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
       rval = moab.get_adjacencies(tets,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
+      if(verb>1) {
+	ostringstream ss;
+	ss << "add entities to field " << get_BitFieldId_name(id);
+	ss << " nb. add tets " << tets.size();
+	ss << " nb. add tris " << tris.size();
+	ss << " nb. add edges " << edges.size();
+	ss << endl;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
       break;
     case Hdiv:
       rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
       rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
+      if(verb>1) {
+	ostringstream ss;
+	ss << "add entities to field " << get_BitFieldId_name(id);
+	ss << " nb. add tets " << tets.size();
+	ss << " nb. add tris " << tris.size();
+	ss << endl;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"add_ents_to_field_by_TETs this field not work for TETs");
@@ -437,44 +536,12 @@ PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle mesh
   ierr = seed_ref_level_3D(idm,0); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name) {
+PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb) {
   PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_TETs(meshset,get_BitFieldId(name));  CHKERRQ(ierr);
-  } catch  (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,1,msg);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode moabField_Core::add_ents_to_field_by_PRISMs(const EntityHandle meshset,const BitFieldId id) {
-  PetscFunctionBegin;
-  *build_MoFEM = 0;
-  EntityHandle idm = no_handle;
-  try {
-    idm = get_field_meshset(id);
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,1,msg);
-  }
-  FieldSpace space;
-  rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERR_PETSC(rval);
-  Range prisms;
-  rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,false); CHKERR_PETSC(rval);
-  switch (space) {
-    case L2:
-      rval = moab.add_entities(idm,prisms); CHKERR_PETSC(rval);
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF,1,"add_ents_to_field_by_PRISMs this field not work for PRISMs");
-  }
-  ierr = seed_ref_level_3D(idm,0); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode moabField_Core::add_ents_to_field_by_PRISMs(const EntityHandle meshset,const string& name) {
-  PetscFunctionBegin;
-  *build_MoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_PRISMs(meshset,get_BitFieldId(name));  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_TETs(meshset,get_BitFieldId(name),verb);  CHKERRQ(ierr);
   } catch  (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -565,7 +632,7 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
   } 
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::dofs_NoField(const BitFieldId id) {
+PetscErrorCode moabField_Core::dofs_NoField(const BitFieldId id,int &dof_counter) {
   PetscFunctionBegin;
   //field it
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
@@ -604,6 +671,7 @@ PetscErrorCode moabField_Core::dofs_NoField(const BitFieldId id) {
     if(d_miit.first==dofs_moabfield.end()) {
       //insert dof
       d_miit = dofs_moabfield.insert(DofMoFEMEntity(&*(e_miit.first),0,rank,rank));
+      if(d_miit.second) dof_counter++;
       bool success = dofs_moabfield.modify(d_miit.first,DofMoFEMEntity_active_change(true));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
@@ -626,7 +694,7 @@ PetscErrorCode moabField_Core::dofs_NoField(const BitFieldId id) {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::dofs_L2H1HcurlHdiv(const BitFieldId id,int verb) {
+PetscErrorCode moabField_Core::dofs_L2H1HcurlHdiv(const BitFieldId id,int &dof_counter,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //field it
@@ -696,6 +764,7 @@ PetscErrorCode moabField_Core::dofs_L2H1HcurlHdiv(const BitFieldId id,int verb) 
 	    DofMoFEMEntity mdof(&*(e_miit),oo,rr,DD);
 	    d_miit = dofs_moabfield.insert(mdof);
 	    if(d_miit.second) {
+	      dof_counter++;
 	      bool success = dofs_moabfield.modify(d_miit.first,DofMoFEMEntity_active_change(true));
 	      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 	    } 
@@ -729,21 +798,25 @@ PetscErrorCode moabField_Core::build_fields(int verb) {
   field_set_by_id &set_id = moabfields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.begin();
   for(;miit!=set_id.end();miit++) {
+    int dof_counter = 0;
     if(verbose>0) {
-      PetscPrintf(PETSC_COMM_WORLD,"Build Field %s\n",miit->get_name().c_str());
+      PetscPrintf(PETSC_COMM_WORLD,"Build Field %s ",miit->get_name().c_str());
     }
     switch (miit->get_space()) {
       case NoField:
-	ierr = dofs_NoField(miit->get_id()); CHKERRQ(ierr);
+	ierr = dofs_NoField(miit->get_id(),dof_counter); CHKERRQ(ierr);
 	break;
       case L2:
       case H1:
       case Hcurl:
       case Hdiv:
-	ierr = dofs_L2H1HcurlHdiv(miit->get_id(),verb); CHKERRQ(ierr);
+	ierr = dofs_L2H1HcurlHdiv(miit->get_id(),dof_counter,verb); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    if(verbose>0) {
+      PetscPrintf(PETSC_COMM_WORLD,"nb added dofs %d\n",dof_counter);
     }
     if(verb>1) {
       list_ent_by_id(miit->get_id());

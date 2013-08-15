@@ -155,22 +155,22 @@ struct moabField {
   virtual PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1) = 0;
 
   /** 
-    * \brief set tetrahedrals part of the given field 
+    * \brief set field entities form adjacencies of triangles
     *
     * The lower dimension entities are added depending on the space type
     * \param meshet contains set tetrahedrals
     * \param name of the field
     */
-  virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name) = 0;
+  virtual PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /** 
-    * \brief set prisms part of the given field (works only for L2 space)
+    * \brief set field entities from adjacencies of tetrahedrals
     *
-    * The lower dimension entities are added depending on the space type (works only for L2 space)
+    * The lower dimension entities are added depending on the space type
     * \param meshet contains set tetrahedrals
     * \param name of the field
     */
-  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const EntityHandle meshset,const string& name) = 0;
+  virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /**
     * \brief Set order of the entities in the field

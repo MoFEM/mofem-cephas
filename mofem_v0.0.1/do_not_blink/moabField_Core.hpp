@@ -108,14 +108,14 @@ struct moabField_Core: public moabField {
 
   //field
   PetscErrorCode add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id);
-  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name);
-  PetscErrorCode add_ents_to_field_by_PRISMs(const EntityHandle meshset,const BitFieldId id);
-  PetscErrorCode add_ents_to_field_by_PRISMs(const EntityHandle meshset,const string& name);
+  PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order);
   PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order);
-  PetscErrorCode dofs_NoField(const BitFieldId id);
-  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,int verb = -1);
+  PetscErrorCode dofs_NoField(const BitFieldId id,int &dof_counter);
+  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,int &dof_counter,int verb = -1);
   PetscErrorCode list_dof_by_id(const BitFieldId id) const;
   PetscErrorCode list_ent_by_id(const BitFieldId id) const;
   PetscErrorCode list_field() const;
