@@ -266,9 +266,9 @@ struct moabField_Core: public moabField {
 	adj_by_ent::iterator hi_adj_miit = adjacencies.get<Composite_mi_tag>().upper_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
 	dofs_vec.resize(0);
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_row)) continue;
-	  if((adj_miit->EntMoFEMFE_ptr->get_id()&p_miit->get_BitFEId()).none()) continue;
-	  if((adj_miit->EntMoFEMFE_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue;
+	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row if element
+	  if((adj_miit->EntMoFEMFE_ptr->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
+	  if((adj_miit->EntMoFEMFE_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue; // if entity is not problem refinment level
 	  int size  = adj_miit->EntMoFEMFE_ptr->tag_col_uids_size/sizeof(UId);
 	  for(int ii = 0;ii<size;ii++) {
 	    UId uid = adj_miit->EntMoFEMFE_ptr->tag_col_uids_data[ii];
