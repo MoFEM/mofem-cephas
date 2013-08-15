@@ -95,15 +95,23 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 };
 
 
-struct SurfaceFEMethod_Normal:public moabField::FEMethod {
+struct SurfaceFEMethod:public moabField::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
   Interface& moab;
 
+  Tag th_material_normal;
+  Tag th_const_shape;
   vector<double> diffNTRI;
-  SurfaceFEMethod_Normal(Interface& _moab,int _verbose = 0): FEMethod(),moab(_moab) {
+  vector<double> g_NTRI3;
+  SurfaceFEMethod(Interface& _moab,int _verbose = 0): FEMethod(),moab(_moab) {
     diffNTRI.resize(6);
     ShapeDiffMBTRI(&diffNTRI[0]);
+    g_NTRI3.resize(3*3);
+    ShapeMBTRI(&g_NTRI3[0],G_TRI_X3,G_TRI_Y3,3);
+    double def_VAL[3] = { 0,0,0 };
+    rval = moab.tag_get_handle("MATERIAL_NORMAL",3,MB_TYPE_DOUBLE,th_material_normal,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+    rval = moab.tag_get_handle("CONST_SHAPE",3,MB_TYPE_DOUBLE,th_const_shape,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
   }
 
   PetscErrorCode preProcess() {
@@ -111,6 +119,8 @@ struct SurfaceFEMethod_Normal:public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
+  ublas::vector<double> C_CONST_SHAPE;
+  Range skin_faces;
   map<EntityHandle,ublas::vector<DofIdx,ublas::bounded_array<DofIdx,9> > > ent_global_col_indices;
   map<EntityHandle,ublas::vector<double,ublas::bounded_array<double,9> > > ent_dofs_data;
   map<EntityHandle,ublas::vector<double,ublas::bounded_array<double,3> > > ent_normal_map;
@@ -118,7 +128,7 @@ struct SurfaceFEMethod_Normal:public moabField::FEMethod {
     PetscFunctionBegin;
     SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
-    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
     ent_normal_map.clear();
     ent_global_col_indices.clear();
     ent_dofs_data.clear();
@@ -126,7 +136,7 @@ struct SurfaceFEMethod_Normal:public moabField::FEMethod {
       EntityHandle face = siit->ent;
       Range adj_tets;
       rval = moab.get_adjacencies(&face,1,3,false,adj_tets); CHKERR_PETSC(rval);
-      if(adj_tets.size()>0) continue;
+      if(adj_tets.size()>1) continue;
       ent_dofs_data[face].resize(9);
       ent_global_col_indices[face].resize(9);
       const EntityHandle* conn_face; 
@@ -135,7 +145,7 @@ struct SurfaceFEMethod_Normal:public moabField::FEMethod {
       for(int nn = 0;nn<num_nodes;nn++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
 	dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	for(;dit!=hi_dit;dit++) {
 	  ent_dofs_data[face][nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	  ent_global_col_indices[face][nn*3+dit->get_dof_rank()] = dit->get_petsc_gloabl_dof_idx();
@@ -143,6 +153,15 @@ struct SurfaceFEMethod_Normal:public moabField::FEMethod {
       }
       ent_normal_map[face].resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data[face].data()[0],&ent_normal_map[face].data()[0]); CHKERRQ(ierr);
+      rval = moab.tag_set_data(th_material_normal,&face,1,&ent_normal_map[face].data()[0]); CHKERR_PETSC(rval);
+      skin_faces.insert(face);
+      C_CONST_SHAPE.resize(3*3);
+      for(int nn = 0;nn<num_nodes;nn++) {
+	for(int dd = 0;dd<3;dd++) {
+	  C_CONST_SHAPE[nn*3+dd] = ent_normal_map[face][dd];
+	}
+      }
+      C_CONST_SHAPE /= norm_2(ent_normal_map[face]);
     }
     PetscFunctionReturn(0);
   }

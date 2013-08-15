@@ -997,9 +997,6 @@ PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
       case L2:
 	dim = 3;
 	break;
-      case L2_2D:
-	dim = 2;
-	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
     }
@@ -1039,9 +1036,6 @@ PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
 	case Hcurl:
 	case L2:
 	  dim = 3;
-	  break;
-	case L2_2D:
-	  dim = 2;
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");

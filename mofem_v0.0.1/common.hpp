@@ -195,10 +195,6 @@ enum FieldSpace {
   Hdiv,		///< field with continous normal traction
   Hcurl,	///< field with continous tangents
   L2,		///< field with C-1 continuity
-  H1_2D, 	///< continous filed
-  Hdiv_2D,	///< field with continous normal traction
-  Hcurl_2D,	///< field with continous tangents
-  L2_2D,	///< field with C-1 continuity
   LastSpace 	///< FieldSpace in [ 0, LastSpace )
 }; 
 typedef PetscScalar FieldData;

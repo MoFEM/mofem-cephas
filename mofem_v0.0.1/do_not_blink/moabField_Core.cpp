@@ -462,7 +462,6 @@ PetscErrorCode moabField_Core::add_ents_to_field_by_PRISMs(const EntityHandle me
   rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,false); CHKERR_PETSC(rval);
   switch (space) {
     case L2:
-    case L2_2D:
       rval = moab.add_entities(idm,prisms); CHKERR_PETSC(rval);
       break;
     default:
@@ -741,7 +740,6 @@ PetscErrorCode moabField_Core::build_fields(int verb) {
       case H1:
       case Hcurl:
       case Hdiv:
-      case L2_2D:
 	ierr = dofs_L2H1HcurlHdiv(miit->get_id(),verb); CHKERRQ(ierr);
 	break;
       default:
@@ -1178,7 +1176,6 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFE &EntFe,int 
 	      for(;siit!=hi_siit;siit++) adj_ents.insert(siit->ent);
 	    }
 	    case L2:
-	    case L2_2D:  
 	      adj_ents.insert(fe_ent); 
 	      break;
 	    default:

@@ -375,13 +375,6 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
       forder_face = fNBFACE_L2;
       forder_elem = fNBVOLUME_L2;
       break;
-    case L2_2D: 
-      forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_L2;
-      forder_edge = fNBEDGE_L2;
-      forder_face = fNBFACE_L2;
-      forder_elem = fNBSURFACE_L2;
-      break;
     case NoField:
       forder_entityset = fNBENTITYSET_nofield;
       forder_vertex = NULL;

@@ -103,7 +103,8 @@ PetscErrorCode Shape_invJac(double *Jac) {
 #define diffN_MBTRI1y ( 0 )
 #define diffN_MBTRI2x ( 0 )
 #define diffN_MBTRI2y ( 1 )
-void ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM) {
+PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM) {
+  PetscFunctionBegin;
   int ii = 0;
   for(; ii<G_DIM; ii++) {
     double x = X[ii],y = Y[ii];
@@ -111,6 +112,7 @@ void ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM) {
     N[3*ii+1] = N_MBTRI1(x,y);
     N[3*ii+2] = N_MBTRI2(x,y);
   }
+  PetscFunctionReturn(0);
 }
 PetscErrorCode ShapeDiffMBTRI(double *diffN) {
   PetscFunctionBegin;

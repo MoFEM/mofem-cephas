@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("MATERIAL_FORCE",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("CONST_SHAPE_LAMBDA",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -266,8 +267,10 @@ int main(int argc, char *argv[]) {
   Vec F_MATERIAL;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F_MATERIAL); CHKERRQ(ierr);
   MaterialForcesFEMethod MyMaterialFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),F_MATERIAL);
+  SurfaceFEMethod MySurface(moab);
   ierr = VecZeroEntries(F_MATERIAL); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("MATERIAL_MECHANICS","MATERIAL",MyMaterialFE);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("MATERIAL_MECHANICS","SURFACE",MySurface);  CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F_MATERIAL,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F_MATERIAL,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F_MATERIAL); CHKERRQ(ierr);
@@ -284,6 +287,7 @@ int main(int argc, char *argv[]) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+    ierr = moab.add_entities(out_meshset,MySurface.skin_faces); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
