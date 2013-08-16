@@ -311,35 +311,35 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("C_MATRIX","C_ELEM",CFE);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  {
+  /*{
     MatView(C,PETSC_VIEWER_DRAW_WORLD);
     int m,n;
     MatGetSize(C,&m,&n);
     PetscPrintf(PETSC_COMM_WORLD,"C size (%d,%d)\n",m,n);
     std::string wait;
     std::cin >> wait;
-  }
+  }*/
  
-  {
+  /*{
     MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
     int m,n;
     MatGetSize(CCT,&m,&n);
     PetscPrintf(PETSC_COMM_WORLD,"CCT size (%d,%d)\n",m,n);
     std::string wait;
     std::cin >> wait;
-  }
+  }*/
 
   Mat CT;
   ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
   ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
-  {
+  /*{
     MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
     int m,n;
     MatGetSize(CCT,&m,&n);
     PetscPrintf(PETSC_COMM_WORLD,"CCT size (%d,%d)\n",m,n);
     std::string wait;
     std::cin >> wait;
-  }
+  }*/
 
   Vec F_MATERIAL;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F_MATERIAL); CHKERRQ(ierr);
