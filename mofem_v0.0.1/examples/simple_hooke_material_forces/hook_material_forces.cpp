@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("CCT_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("CCT_MATRIX"); CHKERRQ(ierr);
   //parttion
-  ierr = mField.compose_problem("C_MATRIX","CCT_MATRIX","MATERIAL_MECHANICS",1); CHKERRQ(ierr);
+  ierr = mField.compose_problem("C_MATRIX","CCT_MATRIX","MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("C_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("C_MATRIX"); CHKERRQ(ierr);
 
@@ -220,6 +220,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
+  Mat CCT;
+  ierr = mField.MatCreateMPIAIJWithArrays("CCT_MATRIX",&CCT); CHKERRQ(ierr);
+  Mat C;
+  ierr = mField.MatCreateMPIAIJWithArrays("C_MATRIX",&C); CHKERRQ(ierr);
+
+  //MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
+  //std::string wait;
+  //std::cin >> wait;
+  //MatView(C,PETSC_VIEWER_STDOUT_WORLD);
+  //std::cin >> wait;
 
   SetPositionsEntMethod set_positions(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,set_positions); CHKERRQ(ierr);
@@ -263,6 +273,9 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
+  ierr = MatSetOption(Aij,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = MatSetOption(Aij,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
   moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
@@ -291,6 +304,43 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+  C_MATRIX_FEMethod CFE(moab,C);
+  ierr = MatZeroEntries(C); CHKERRQ(ierr);
+  ierr = MatSetOption(C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = MatSetOption(C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_MATRIX","C_ELEM",CFE);  CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  {
+    MatView(C,PETSC_VIEWER_DRAW_WORLD);
+    int m,n;
+    MatGetSize(C,&m,&n);
+    PetscPrintf(PETSC_COMM_WORLD,"C size (%d,%d)\n",m,n);
+    std::string wait;
+    std::cin >> wait;
+  }
+ 
+  {
+    MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
+    int m,n;
+    MatGetSize(CCT,&m,&n);
+    PetscPrintf(PETSC_COMM_WORLD,"CCT size (%d,%d)\n",m,n);
+    std::string wait;
+    std::cin >> wait;
+  }
+
+  Mat CT;
+  ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
+  ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
+  {
+    MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
+    int m,n;
+    MatGetSize(CCT,&m,&n);
+    PetscPrintf(PETSC_COMM_WORLD,"CCT size (%d,%d)\n",m,n);
+    std::string wait;
+    std::cin >> wait;
+  }
+
   Vec F_MATERIAL;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F_MATERIAL); CHKERRQ(ierr);
   MaterialForcesFEMethod MyMaterialFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),F_MATERIAL);
@@ -308,8 +358,6 @@ int main(int argc, char *argv[]) {
   PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
 
-  //SurfaceFEMethod MySurface(moab);
-  //ierr = mField.loop_finite_elements("MATERIAL_MECHANICS","SURFACE",MySurface);  CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -330,6 +378,9 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = MatDestroy(&CCT); CHKERRQ(ierr);
+  ierr = MatDestroy(&C); CHKERRQ(ierr);
+  ierr = MatDestroy(&CT); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
