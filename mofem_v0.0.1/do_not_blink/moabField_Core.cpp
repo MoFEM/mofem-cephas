@@ -1938,7 +1938,7 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name,int verb)
 	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&p_miit->get_BitRefLevel()).none()) continue;
 	    if(numered_finite_elements.
 	      find(boost::make_tuple(adj_miit->get_MoFEMFiniteElement_meshset(),adj_miit->get_MoFEMFiniteElement_entity_handle()))->part != pcomm->rank()) continue;
-	    if(adj_miit->by_other&by[ss]) {
+	    if(adj_miit->by_other&by_other[ss]) {
 	      ierr = adj_miit->get_ent_adj_dofs_bridge(*(numered_dofs[ss]),by_other[ss],idx_view); CHKERRQ(ierr);
 	    }
 	  }

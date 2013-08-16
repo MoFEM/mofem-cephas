@@ -1235,7 +1235,7 @@ typedef multi_index_container<
 // 
 
 /**
-  * \brief MoFEMAdjacencies hidden from user
+  * \brief MoFEMAdjacencies of mofem finite element and entities
   *
   */
 struct MoFEMAdjacencies {
