@@ -772,10 +772,10 @@ PetscErrorCode EntMoFEMFiniteElement::get_uid_side_number(
 }
 
 //MoFEMAdjacencies
-MoFEMAdjacencies::MoFEMAdjacencies(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr,const by_what _by):
-  by(_by),by_other(_by),MoFEMEntity_ptr(_MoFEMEntity_ptr),EntMoFEMFiniteElement_ptr(_EntMoFEMFiniteElement_ptr) {}
+MoFEMAdjacencies::MoFEMAdjacencies(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr):
+  by_other(0),MoFEMEntity_ptr(_MoFEMEntity_ptr),EntMoFEMFiniteElement_ptr(_EntMoFEMFiniteElement_ptr) {}
 ostream& operator<<(ostream& os,const MoFEMAdjacencies& e) {
-  os << "by what "<< bitset<3>(e.by) << " by_other " << bitset<3>(e.by_other) << " "
+  os << "by_other " << bitset<3>(e.by_other) << " "
     << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFiniteElement_ptr->fe_ptr;
   return os;
 }

@@ -1239,11 +1239,10 @@ typedef multi_index_container<
   *
   */
 struct MoFEMAdjacencies {
-  unsigned int by;
   unsigned int by_other;
   const MoFEMEntity *MoFEMEntity_ptr; ///< field entity
   const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr; ///< finite element entity
-  MoFEMAdjacencies(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr,const by_what _by);
+  MoFEMAdjacencies(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr);
   inline EntityHandle get_MoFEMFiniteElement_meshset() const { return EntMoFEMFiniteElement_ptr->get_meshset(); }
   inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return EntMoFEMFiniteElement_ptr->get_ent(); }
   inline EntityHandle get_ent_meshset() const { return MoFEMEntity_ptr->get_meshset(); };

@@ -1463,7 +1463,7 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_row[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_row[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       if(miit ==ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-      pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit,by_row));
+      pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit));
       bool success = adjacencies.modify(p.first,MoFEMAdjacencies_change_by_what(by_row));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
@@ -1477,7 +1477,7 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_col[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
       if(miit ==ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-      pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit,by_col));
+      pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit));
       bool success = adjacencies.modify(p.first,MoFEMAdjacencies_change_by_what(by_col));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
@@ -1491,7 +1491,7 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_data[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
       if(miit == ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-      pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit,by_data));
+      pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit));
       bool success = adjacencies.modify(p.first,MoFEMAdjacencies_change_by_what(by_data));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
@@ -1932,7 +1932,7 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name,int verb)
 	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&p_miit->get_BitRefLevel()).none()) continue;
 	    if(numered_finite_elements.
 	      find(boost::make_tuple(adj_miit->get_MoFEMFiniteElement_meshset(),adj_miit->get_MoFEMFiniteElement_entity_handle()))->part != pcomm->rank()) continue;
-	    if(adj_miit->by_other&by[ss]) {
+	    if(adj_miit->by_other&by_row_col) {
 	      ierr = adj_miit->get_ent_adj_dofs_bridge(*(numered_dofs[ss]),by_other[ss],idx_view); CHKERRQ(ierr);
 	    }
 	  }
