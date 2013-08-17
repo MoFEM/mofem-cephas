@@ -203,11 +203,16 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
 };
 
 struct matPROJ_ctx {
+  moabField& mField;
   Mat C,CT,CCT;
   KSP ksp;
-  Vec Cf,CCTm1_Cf,CT_CCTm1_Cf;
+  Vec _x_;
+  VecScatter scatter;
+  Vec Cx,CCTm1_Cx,CT_CCTm1_Cx;
+  string x_problem,y_problem;
   bool init;
-  matPROJ_ctx(Mat _C,Mat _CT,Mat _CCT): C(_C),CT(_CT),CCT(_CCT),init(true) {}
+  matPROJ_ctx(moabField& _mField,Mat _C,Mat _CT,Mat _CCT): mField(_mField),C(_C),CT(_CT),CCT(_CCT),
+    x_problem("MATERIAL_MECHANICS"),y_problem("C_MATRIX"),init(true) {}
   friend PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f);
 };
 
@@ -223,15 +228,21 @@ PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f) {
     ierr = KSPSetOperators(ctx->ksp,ctx->CCT,ctx->CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(ctx->ksp); CHKERRQ(ierr);
     ierr = KSPSetUp(ctx->ksp); CHKERRQ(ierr);
-    ierr = MatGetVecs(ctx->C,PETSC_NULL,&ctx->Cf); CHKERRQ(ierr);
-    ierr = MatGetVecs(ctx->CCT,PETSC_NULL,&ctx->CCTm1_Cf); CHKERRQ(ierr);
-    ierr = VecDuplicate(f,&ctx->CT_CCTm1_Cf); CHKERRQ(ierr);
+    ierr = MatGetVecs(ctx->C,&ctx->_x_,PETSC_NULL); CHKERRQ(ierr);
+    ierr = MatGetVecs(ctx->C,PETSC_NULL,&ctx->Cx); CHKERRQ(ierr);
+    ierr = MatGetVecs(ctx->CCT,PETSC_NULL,&ctx->CCTm1_Cx); CHKERRQ(ierr);
+    ierr = VecDuplicate(ctx->_x_,&ctx->CT_CCTm1_Cx); CHKERRQ(ierr);
+    ierr = ctx->mField.VecScatterCreate(x,ctx->x_problem,Col,ctx->_x_,ctx->y_problem,Col,&ctx->scatter,2); CHKERRQ(ierr);
   }
-  ierr = MatMult(ctx->C,f,ctx->Cf);  CHKERRQ(ierr);
-  ierr = KSPSolve(ctx->ksp,ctx->Cf,ctx->CCTm1_Cf); CHKERRQ(ierr);
-  ierr = MatMult(ctx->CT,ctx->CCTm1_Cf,ctx->CT_CCTm1_Cf);  CHKERRQ(ierr);
-  ierr = VecCopy(x,f); CHKERRQ(ierr);
-  ierr = VecAYPX(f,-1,ctx->CT_CCTm1_Cf); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
+  ierr = KSPSolve(ctx->ksp,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
+  ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->scatter,f,ctx->CT_CCTm1_Cx,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,f,ctx->CT_CCTm1_Cx,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAYPX(f,-1,x); CHKERRQ(ierr);
+  ierr = VecScale(f,-1); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

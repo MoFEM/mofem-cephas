@@ -2948,7 +2948,7 @@ PetscErrorCode moabField_Core::VecCreateGhost(const string &name,RowColData rc,V
   ierr = ::VecCreateGhost(PETSC_COMM_WORLD,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,Vec yin,RowColData x_rc,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb) {
+PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
@@ -2962,10 +2962,12 @@ PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,Vec yi
   switch (y_rc) {
     case Row:
       y_dit = p_y->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().upper_bound(p_x->get_nb_dofs_row());
+      hi_y_dit = p_y->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().upper_bound(p_y->get_nb_dofs_row());
+      break;
     case Col:
       y_dit = p_y->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().upper_bound(p_x->get_nb_dofs_col());
+      hi_y_dit = p_y->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().upper_bound(p_y->get_nb_dofs_col());
+      break;
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
@@ -2974,21 +2976,27 @@ PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,Vec yi
   switch (x_rc) {
     case Row:
       x_numered_dofs_by_uid = &(p_x->numered_dofs_rows.get<Unique_mi_tag>());
+      break;
     case Col:
       x_numered_dofs_by_uid = &(p_y->numered_dofs_cols.get<Unique_mi_tag>());
+      break;
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
-  vector<int> idx;
+  vector<int> idx,idy;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   for(;y_dit!=hi_y_dit;y_dit++) {
+    if(y_dit->get_dof_rank()!=pcomm->rank()) continue;
     dofs_by_uid::iterator x_dit;
     x_dit = x_numered_dofs_by_uid->find(y_dit->get_unique_id());
     if(x_dit==x_numered_dofs_by_uid->end()) continue;
     idx.push_back(x_dit->get_petsc_gloabl_dof_idx());
+    idy.push_back(y_dit->get_petsc_gloabl_dof_idx());
   }
-  IS ix;
+  IS ix,iy;
   ierr = ISCreateGeneral(PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
-  ierr = ::VecScatterCreate(xin,ix,yin,PETSC_NULL,newctx); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(PETSC_COMM_WORLD,idy.size(),&idx[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
+  ierr = ::VecScatterCreate(xin,ix,yin,iy,newctx); CHKERRQ(ierr);
   ierr = ISDestroy(&ix); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

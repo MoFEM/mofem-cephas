@@ -298,7 +298,7 @@ struct moabField {
     * \param y_problem problem name
     * \param newctx scatter
     */
-  virtual PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,Vec yin,RowColData x_rc,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
+  virtual PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
 
 
   /** 
