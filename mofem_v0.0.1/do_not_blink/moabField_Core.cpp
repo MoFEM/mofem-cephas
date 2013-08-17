@@ -2919,6 +2919,7 @@ PetscErrorCode moabField_Core::VecCreateGhost(const string &name,RowColData rc,V
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
   problems_by_name::iterator p_miit = problems_set.find(name);
+  if(p_miit==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spellig)",name.c_str());
   DofIdx nb_dofs,nb_local_dofs,nb_ghost_dofs;
   dofs_by_local_idx *dofs;
   switch (rc) {
@@ -2945,6 +2946,50 @@ PetscErrorCode moabField_Core::VecCreateGhost(const string &name,RowColData rc,V
   vector<DofIdx>::iterator vit = ghost_idx.begin();
   for(;miit!=hi_miit;miit++,vit++) *vit = miit->petsc_gloabl_dof_idx;
   ierr = ::VecCreateGhost(PETSC_COMM_WORLD,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,Vec yin,RowColData x_rc,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
+  problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
+  problems_by_name::iterator p_x = problems_set.find(x_problem);
+  if(p_x==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spellig)",x_problem.c_str());
+  problems_by_name::iterator p_y = problems_set.find(x_problem);
+  if(p_y==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spellig)",y_problem.c_str());
+  typedef NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type dofs_by_glob_idx;
+  dofs_by_glob_idx::iterator y_dit,hi_y_dit;
+  switch (y_rc) {
+    case Row:
+      y_dit = p_y->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().upper_bound(p_x->get_nb_dofs_row());
+    case Col:
+      y_dit = p_y->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().upper_bound(p_x->get_nb_dofs_col());
+    default:
+     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  }
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type dofs_by_uid;
+  const dofs_by_uid* x_numered_dofs_by_uid;
+  switch (x_rc) {
+    case Row:
+      x_numered_dofs_by_uid = &(p_x->numered_dofs_rows.get<Unique_mi_tag>());
+    case Col:
+      x_numered_dofs_by_uid = &(p_y->numered_dofs_cols.get<Unique_mi_tag>());
+    default:
+     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  }
+  vector<int> idx;
+  for(;y_dit!=hi_y_dit;y_dit++) {
+    dofs_by_uid::iterator x_dit;
+    x_dit = x_numered_dofs_by_uid->find(y_dit->get_unique_id());
+    if(x_dit==x_numered_dofs_by_uid->end()) continue;
+    idx.push_back(x_dit->get_petsc_gloabl_dof_idx());
+  }
+  IS ix;
+  ierr = ISCreateGeneral(PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
+  ierr = ::VecScatterCreate(xin,ix,yin,PETSC_NULL,newctx); CHKERRQ(ierr);
+  ierr = ISDestroy(&ix); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb) {

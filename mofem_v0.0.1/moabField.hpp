@@ -289,6 +289,18 @@ struct moabField {
     */
   virtual PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1) = 0;
 
+  /**
+    * \brief create scatter for vectors form one to another problem
+    *
+    * \param xin vector
+    * \param x_proble problem name
+    * \param yin vector
+    * \param y_problem problem name
+    * \param newctx scatter
+    */
+  virtual PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,Vec yin,RowColData x_rc,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
+
+
   /** 
     * \brief set values of vector form/to meshdatabase
     *

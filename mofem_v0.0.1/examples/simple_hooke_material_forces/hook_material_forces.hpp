@@ -94,7 +94,6 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
 };
 
-
 struct C_MATRIX_FEMethod:public moabField::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -203,21 +202,21 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
 
 };
 
-struct matP_ctx {
+struct matPROJ_ctx {
   Mat C,CT,CCT;
   KSP ksp;
   Vec Cf,CCTm1_Cf,CT_CCTm1_Cf;
   bool init;
-  matP_ctx(Mat _C,Mat _CT,Mat _CCT): C(_C),CT(_CT),CCT(_CCT),init(true) {}
-  friend PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f);
+  matPROJ_ctx(Mat _C,Mat _CT,Mat _CCT): C(_C),CT(_CT),CCT(_CCT),init(true) {}
+  friend PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f);
 };
 
-PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
+PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   void *void_ctx;
-  ierr = MatShellGetContext(P,&void_ctx); CHKERRQ(ierr);
-  matP_ctx *ctx = (matP_ctx*)void_ctx;
+  ierr = MatShellGetContext(QTAQ,&void_ctx); CHKERRQ(ierr);
+  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
   if(ctx->init) {
     ctx->init = false;
     ierr = KSPCreate(PETSC_COMM_WORLD,&(ctx->ksp)); CHKERRQ(ierr);
@@ -226,6 +225,7 @@ PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
     ierr = KSPSetUp(ctx->ksp); CHKERRQ(ierr);
     ierr = MatGetVecs(ctx->C,PETSC_NULL,&ctx->Cf); CHKERRQ(ierr);
     ierr = MatGetVecs(ctx->CCT,PETSC_NULL,&ctx->CCTm1_Cf); CHKERRQ(ierr);
+    ierr = VecDuplicate(f,&ctx->CT_CCTm1_Cf); CHKERRQ(ierr);
   }
   ierr = MatMult(ctx->C,f,ctx->Cf);  CHKERRQ(ierr);
   ierr = KSPSolve(ctx->ksp,ctx->Cf,ctx->CCTm1_Cf); CHKERRQ(ierr);
