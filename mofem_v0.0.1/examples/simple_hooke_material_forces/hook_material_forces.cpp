@@ -343,6 +343,8 @@ int main(int argc, char *argv[]) {
   Vec QTF_MATERIAL;
   ierr = VecDuplicate(F_MATERIAL,&QTF_MATERIAL); CHKERRQ(ierr);
   ierr = MatMult(QTAQ,F_MATERIAL,QTF_MATERIAL); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = mField.set_other_global_VecCreateGhost(
     "MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,QTF_MATERIAL,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

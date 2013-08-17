@@ -152,11 +152,11 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
 	hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	for(;dit!=hi_dit;dit++) {
-	  ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	  int global_idx = dit->get_petsc_gloabl_dof_idx();
 	  ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
 	  int local_idx = dit->get_petsc_local_dof_idx();
-	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	  ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	}
 	dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("CONST_SHAPE_LAMBDA",conn_face[nn]));
 	hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("CONST_SHAPE_LAMBDA",conn_face[nn]));
@@ -164,7 +164,7 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
 	int global_idx = dit->get_petsc_gloabl_dof_idx();
 	ent_global_row_indices[nn] = global_idx;
 	int local_idx = dit->get_petsc_local_dof_idx();
-	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
       }
       ent_normal_map.resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
@@ -239,10 +239,11 @@ PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f) {
   ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
   ierr = KSPSolve(ctx->ksp,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
   ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->scatter,f,ctx->CT_CCTm1_Cx,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,f,ctx->CT_CCTm1_Cx,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAYPX(f,-1,x); CHKERRQ(ierr);
-  ierr = VecScale(f,-1); CHKERRQ(ierr);
+  ierr = VecAYPX(ctx->CT_CCTm1_Cx,-1,ctx->_x_); CHKERRQ(ierr);
+  ierr = VecScale(ctx->CT_CCTm1_Cx,-1); CHKERRQ(ierr);
+  //ierr = VecView(ctx->CT_CCTm1_Cx,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
