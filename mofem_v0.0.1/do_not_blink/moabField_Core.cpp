@@ -1821,6 +1821,9 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
     if(pr_dof == dofs_row_by_uid.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     int part_number = miit_map_row->second->get_part();
     int petsc_global_dof = distance(rows_problem_map.begin(),miit_map_row);
+    if(verb>1) {
+      PetscPrintf(PETSC_COMM_WORLD,"Row Problem Glob Idx %d Problem Glob Idx %d\n",miit_map_row->second->get_petsc_gloabl_dof_idx(),petsc_global_dof);
+    }
     bool success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     if(pr_dof->part == pcomm->rank()) {
@@ -1835,6 +1838,9 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
     if(pr_dof == dofs_col_by_uid.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     int part_number = miit_map_col->second->get_part();
     int petsc_global_dof = distance(cols_problem_map.begin(),miit_map_col);
+    if(verb>1) {
+      PetscPrintf(PETSC_COMM_WORLD,"Col Problem Glob Idx %d Problem Glob Idx %d\n",miit_map_col->second->get_petsc_gloabl_dof_idx(),petsc_global_dof);
+    }
     bool success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     if(pr_dof->part == pcomm->rank()) {

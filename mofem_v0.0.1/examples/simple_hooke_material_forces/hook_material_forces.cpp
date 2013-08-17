@@ -220,16 +220,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-  Mat CCT;
-  ierr = mField.MatCreateMPIAIJWithArrays("CCT_MATRIX",&CCT); CHKERRQ(ierr);
   Mat C;
   ierr = mField.MatCreateMPIAIJWithArrays("C_MATRIX",&C); CHKERRQ(ierr);
-
-  //MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
-  //std::string wait;
-  //std::cin >> wait;
-  //MatView(C,PETSC_VIEWER_STDOUT_WORLD);
-  //std::cin >> wait;
 
   SetPositionsEntMethod set_positions(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,set_positions); CHKERRQ(ierr);
@@ -251,7 +243,6 @@ int main(int argc, char *argv[]) {
       dit->get_FieldData() = coords[dof_rank];
     }
   }
-
 
   Range SideSet1,SideSet2;
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
@@ -304,42 +295,34 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  C_MATRIX_FEMethod CFE(moab,C);
+  C_MATRIX_FEMethod CFE(moab,skin_faces_meshset,C);
   ierr = MatZeroEntries(C); CHKERRQ(ierr);
   ierr = MatSetOption(C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatSetOption(C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_MATRIX","C_ELEM",CFE);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  /*{
+  {
     MatView(C,PETSC_VIEWER_DRAW_WORLD);
     int m,n;
     MatGetSize(C,&m,&n);
     PetscPrintf(PETSC_COMM_WORLD,"C size (%d,%d)\n",m,n);
     std::string wait;
     std::cin >> wait;
-  }*/
+  }
  
-  /*{
-    MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
-    int m,n;
-    MatGetSize(CCT,&m,&n);
-    PetscPrintf(PETSC_COMM_WORLD,"CCT size (%d,%d)\n",m,n);
-    std::string wait;
-    std::cin >> wait;
-  }*/
-
-  Mat CT;
+  
+  Mat CT,CCT;
   ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
   ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
-  /*{
+  {
     MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
     int m,n;
     MatGetSize(CCT,&m,&n);
     PetscPrintf(PETSC_COMM_WORLD,"CCT size (%d,%d)\n",m,n);
     std::string wait;
     std::cin >> wait;
-  }*/
+  }
 
   Vec F_MATERIAL;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F_MATERIAL); CHKERRQ(ierr);
@@ -350,7 +333,8 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F_MATERIAL,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F_MATERIAL); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F_MATERIAL); CHKERRQ(ierr);
-  ierr = mField.set_other_global_VecCreateGhost("MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_MATERIAL,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost(
+    "MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_MATERIAL,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F_MATERIAL,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_material_forces(moab,"MESH_NODE_POSITIONS",F_MATERIAL,"MATERIAL_FORCE");
   ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Row,ent_method_material_forces); CHKERRQ(ierr);
