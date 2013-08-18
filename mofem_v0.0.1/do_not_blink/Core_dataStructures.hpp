@@ -316,6 +316,27 @@ struct _NumeredMoFEMFiniteElement_: public NumeredMoFEMFiniteElement {
   _NumeredMoFEMFiniteElement_(const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr): NumeredMoFEMFiniteElement(_EntMoFEMFiniteElement_ptr) {};
 };
 
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex for entities uin the problem.
+ *
+ * \param   hashed_unique<
+      tag<Composite_unique_mi_tag>,       
+      composite_key< <br>
+	_NumeredMoFEMFiniteElement_,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
+ * \param    ordered_non_unique<
+      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
+ * \param    ordered_non_unique<
+      tag<MoFEMFiniteElement_Part_mi_tag>, <br> member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+ * \param    ordered_non_unique<
+      tag<Composite_mi_tag>,       
+      composite_key< <br>
+	_NumeredMoFEMFiniteElement_,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name>,
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
+ */
 typedef multi_index_container<
   _NumeredMoFEMFiniteElement_,
   indexed_by<
@@ -420,8 +441,7 @@ PetscErrorCode get_MoFEMFiniteElement_dof_uid_view(
   const UId *uids = (UId*)tag_data;
   int size = tag_size/sizeof(UId);
   vector<const value_type*> vec;
-  int ii = 0;
-  for(;ii<size;ii++) {
+  for(int ii = 0;ii<size;ii++) {
     UId uid = uids[ii];
     typename dofs_by_uid::iterator miit = dofs.find(uid);
     if(miit==dofs.end()) continue;
