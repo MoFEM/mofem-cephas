@@ -411,9 +411,10 @@ int main(int argc, char *argv[]) {
   matPROJ_ctx proj_corner_ctx(mField,C_CORNER,CT_CORNER,CCT_CORNER,"MATERIAL_MECHANICS","C_CORNER_MATRIX");
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_corner_ctx,&Q_CORNER); CHKERRQ(ierr);
   ierr = MatShellSetOperation(Q_CORNER,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
-  //
+  
   Vec QTF_MATERIAL;
   ierr = VecDuplicate(F_MATERIAL,&QTF_MATERIAL); CHKERRQ(ierr);
+  //
   ierr = MatMult(Q_CORNER,F_MATERIAL,QTF_MATERIAL); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
