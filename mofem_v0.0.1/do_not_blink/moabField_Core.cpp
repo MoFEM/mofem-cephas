@@ -3111,6 +3111,7 @@ PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,RowCol
   }
   ierr = ::VecScatterCreate(xin,ix,yin,iy,newctx); CHKERRQ(ierr);
   ierr = ISDestroy(&ix); CHKERRQ(ierr);
+  ierr = ISDestroy(&iy); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb) {

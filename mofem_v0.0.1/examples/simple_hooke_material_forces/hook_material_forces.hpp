@@ -168,6 +168,7 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
       }
       ent_normal_map.resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
+      ent_normal_map *= siit->sense;
       rval = moab.tag_set_data(th_material_normal,&face,1,&ent_normal_map.data()[0]); CHKERR_PETSC(rval);
       C_CONST_SHAPE.resize(3*3);
       for(int nn = 0;nn<num_nodes;nn++) {
@@ -233,26 +234,29 @@ PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f) {
     ierr = MatGetVecs(ctx->C,PETSC_NULL,&ctx->Cx); CHKERRQ(ierr);
     ierr = MatGetVecs(ctx->CCT,PETSC_NULL,&ctx->CCTm1_Cx); CHKERRQ(ierr);
     ierr = VecDuplicate(ctx->_x_,&ctx->CT_CCTm1_Cx); CHKERRQ(ierr);
-    ierr = ctx->mField.VecScatterCreate(x,ctx->x_problem,Col,ctx->_x_,ctx->y_problem,Col,&ctx->scatter,2); CHKERRQ(ierr);
+    ierr = ctx->mField.VecScatterCreate(x,ctx->x_problem,Row,ctx->_x_,ctx->y_problem,Col,&ctx->scatter); CHKERRQ(ierr);
   }
-  ierr = VecCopy(x,f); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  //ierr = VecView(ctx->_x_,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   if(ctx->debug) {
+    ierr = VecCopy(x,f); CHKERRQ(ierr);
     ierr = VecScatterBegin(ctx->scatter,ctx->_x_,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatter,ctx->_x_,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     PetscBool  flg;
     ierr = VecEqual(x,f,&flg); CHKERRQ(ierr);
     if(flg ==  PETSC_FALSE) SETERRQ(PETSC_COMM_SELF,1,"scatter is not working");
   }
-  /*ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
+  ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
   ierr = KSPSolve(ctx->ksp,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
   ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
-  ierr = VecAYPX(ctx->CT_CCTm1_Cx,-1,ctx->_x_); CHKERRQ(ierr);
   ierr = VecScale(ctx->CT_CCTm1_Cx,-1); CHKERRQ(ierr);
-  ierr = VecView(ctx->CT_CCTm1_Cx,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);*/
+  ierr = VecZeroEntries(f); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAXPY(f,1.,x); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
