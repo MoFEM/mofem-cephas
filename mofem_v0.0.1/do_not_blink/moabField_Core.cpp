@@ -3066,16 +3066,16 @@ PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,RowCol
   if(p_x==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spellig)",x_problem.c_str());
   problems_by_name::iterator p_y = problems_set.find(y_problem);
   if(p_y==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spellig)",y_problem.c_str());
-  typedef NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type dofs_by_glob_idx;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_glob_idx;
   dofs_by_glob_idx::iterator y_dit,hi_y_dit;
   switch (y_rc) {
     case Row:
-      y_dit = p_y->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().upper_bound(p_y->get_nb_dofs_row());
+      y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_row()); // should be lower
       break;
     case Col:
-      y_dit = p_y->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().upper_bound(p_y->get_nb_dofs_col());
+      y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_col()); // should be lower
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -3095,7 +3095,7 @@ PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,RowCol
   vector<int> idx(0),idy(0);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   for(;y_dit!=hi_y_dit;y_dit++) {
-    if(y_dit->get_part()!=pcomm->rank()) continue;
+    if(y_dit->get_part()!=pcomm->rank()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     dofs_by_uid::iterator x_dit;
     x_dit = x_numered_dofs_by_uid->find(y_dit->get_unique_id());
     if(x_dit==x_numered_dofs_by_uid->end()) continue;
@@ -3103,8 +3103,8 @@ PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,RowCol
     idy.push_back(y_dit->get_petsc_gloabl_dof_idx());
   }
   IS ix,iy;
-  ierr = ISCreateGeneral(PETSC_COMM_SELF,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
-  ierr = ISCreateGeneral(PETSC_COMM_SELF,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(PETSC_COMM_WORLD,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(PETSC_COMM_WORLD,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
   if(verb>3) {
     ISView(ix,PETSC_VIEWER_STDOUT_WORLD);
     ISView(iy,PETSC_VIEWER_STDOUT_WORLD);

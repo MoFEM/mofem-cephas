@@ -211,8 +211,9 @@ struct matPROJ_ctx {
   Vec Cx,CCTm1_Cx,CT_CCTm1_Cx;
   string x_problem,y_problem;
   bool init;
+  bool debug;
   matPROJ_ctx(moabField& _mField,Mat _C,Mat _CT,Mat _CCT): mField(_mField),C(_C),CT(_CT),CCT(_CCT),
-    x_problem("MATERIAL_MECHANICS"),y_problem("C_MATRIX"),init(true) {}
+    x_problem("MATERIAL_MECHANICS"),y_problem("C_MATRIX"),init(true),debug(true) {}
   friend PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f);
 };
 
@@ -234,16 +235,24 @@ PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f) {
     ierr = VecDuplicate(ctx->_x_,&ctx->CT_CCTm1_Cx); CHKERRQ(ierr);
     ierr = ctx->mField.VecScatterCreate(x,ctx->x_problem,Col,ctx->_x_,ctx->y_problem,Col,&ctx->scatter,2); CHKERRQ(ierr);
   }
+  ierr = VecCopy(x,f); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
+  if(ctx->debug) {
+    ierr = VecScatterBegin(ctx->scatter,ctx->_x_,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx->scatter,ctx->_x_,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    PetscBool  flg;
+    ierr = VecEqual(x,f,&flg); CHKERRQ(ierr);
+    if(flg ==  PETSC_FALSE) SETERRQ(PETSC_COMM_SELF,1,"scatter is not working");
+  }
+  /*ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
   ierr = KSPSolve(ctx->ksp,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
   ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
   ierr = VecAYPX(ctx->CT_CCTm1_Cx,-1,ctx->_x_); CHKERRQ(ierr);
   ierr = VecScale(ctx->CT_CCTm1_Cx,-1); CHKERRQ(ierr);
-  //ierr = VecView(ctx->CT_CCTm1_Cx,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecView(ctx->CT_CCTm1_Cx,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);*/
   PetscFunctionReturn(0);
 }
 
