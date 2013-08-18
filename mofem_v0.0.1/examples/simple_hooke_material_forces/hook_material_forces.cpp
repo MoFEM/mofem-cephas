@@ -319,8 +319,8 @@ int main(int argc, char *argv[]) {
     int m,n;
     MatGetSize(CCT,&m,&n);
     PetscPrintf(PETSC_COMM_WORLD,"CCT size (%d,%d)\n",m,n);
-    //std::string wait;
-    //std::cin >> wait;
+    std::string wait;
+    std::cin >> wait;
   }
 
   Vec F_MATERIAL;
