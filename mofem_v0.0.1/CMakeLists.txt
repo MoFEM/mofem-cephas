@@ -91,6 +91,7 @@ include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 
 add_library(mofem_Field 
+  third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
   do_not_blink/Core_dataStructures.cpp
   do_not_blink/Core_moabMeshMBTETRefine.cpp

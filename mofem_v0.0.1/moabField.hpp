@@ -155,6 +155,15 @@ struct moabField {
   virtual PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1) = 0;
 
   /** 
+    * \brief set field entities on veryices
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshet contains set tetrahedrals
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
+
+  /** 
     * \brief set field entities form adjacencies of triangles
     *
     * The lower dimension entities are added depending on the space type

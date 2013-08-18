@@ -94,7 +94,7 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
 };
 
-struct C_MATRIX_FEMethod:public moabField::FEMethod {
+struct C_SURFACE_FEMethod:public moabField::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
   Interface& moab;
@@ -102,11 +102,11 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
   Mat C;
   Range skin_faces;
   Tag th_material_normal;
-  Tag th_c_mat_elem[4];
   vector<double> diffNTRI;
   vector<double> g_NTRI3;
   const double *G_TRI_W;
-  C_MATRIX_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,int _verbose = 0): FEMethod(),moab(_moab),C(_C) {
+  C_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,int _verbose = 0): 
+    FEMethod(),moab(_moab),C(_C) {
     diffNTRI.resize(6);
     ShapeDiffMBTRI(&diffNTRI[0]);
     g_NTRI3.resize(3*3);
@@ -115,10 +115,6 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
     double def_VAL[3*9];
     fill(&def_VAL[0],&def_VAL[3*9],0);
     rval = moab.tag_get_handle("MATERIAL_NORMAL",3,MB_TYPE_DOUBLE,th_material_normal,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    rval = moab.tag_get_handle("C_MAT_ELEM_SIDE0",3*9,MB_TYPE_DOUBLE,th_c_mat_elem[0],MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    rval = moab.tag_get_handle("C_MAT_ELEM_SIDE1",3*9,MB_TYPE_DOUBLE,th_c_mat_elem[1],MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    rval = moab.tag_get_handle("C_MAT_ELEM_SIDE2",3*9,MB_TYPE_DOUBLE,th_c_mat_elem[2],MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    rval = moab.tag_get_handle("C_MAT_ELEM_SIDE3",3*9,MB_TYPE_DOUBLE,th_c_mat_elem[3],MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
     rval = moab.get_entities_by_type(skin_faces_meshset,MBTRI,skin_faces,true);  CHKERR_THROW(rval);
   }
 
@@ -153,14 +149,15 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
 	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	for(;dit!=hi_dit;dit++) {
 	  int global_idx = dit->get_petsc_gloabl_dof_idx();
+	  assert(nn*3+dit->get_dof_rank()<9);
 	  ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
 	  int local_idx = dit->get_petsc_local_dof_idx();
 	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	  ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	}
-	dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("CONST_SHAPE_LAMBDA",conn_face[nn]));
-	hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("CONST_SHAPE_LAMBDA",conn_face[nn]));
-	if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for CONST_SHAPE_LAMBDA should be 1");
+	dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_SURFACE",conn_face[nn]));
+	hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_SURFACE",conn_face[nn]));
+	if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_SURFACE should be 1");
 	int global_idx = dit->get_petsc_gloabl_dof_idx();
 	ent_global_row_indices[nn] = global_idx;
 	int local_idx = dit->get_petsc_local_dof_idx();
@@ -169,6 +166,7 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
       ent_normal_map.resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
       ent_normal_map *= siit->sense;
+      //double area = norm_2(ent_normal_map);
       rval = moab.tag_set_data(th_material_normal,&face,1,&ent_normal_map.data()[0]); CHKERR_PETSC(rval);
       C_CONST_SHAPE.resize(3*3);
       for(int nn = 0;nn<num_nodes;nn++) {
@@ -176,7 +174,6 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
 	  C_CONST_SHAPE[nn*3+dd] = ent_normal_map[dd];
 	}
       }
-      //C_CONST_SHAPE /= norm_2(ent_normal_map);
       C_MAT_ELEM.resize(3,9);
       for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
 	for(int nn = 0;nn<3;nn++) {
@@ -186,9 +183,7 @@ struct C_MATRIX_FEMethod:public moabField::FEMethod {
 	  }
 	}
       }
-      EntityHandle fe_ent = fe_ptr->get_ent();
-      int side_number = siit->side_number;
-      rval = moab.tag_set_data(th_c_mat_elem[side_number],&fe_ent,1,&(C_MAT_ELEM.data()[0])); CHKERR_PETSC(rval);
+      //cerr << C_MAT_ELEM << endl;
       ierr = MatSetValues(C,
 	ent_global_row_indices.size(),&(ent_global_row_indices[0]),
 	ent_global_col_indices.size(),&(ent_global_col_indices[0]),
@@ -213,16 +208,16 @@ struct matPROJ_ctx {
   string x_problem,y_problem;
   bool init;
   bool debug;
-  matPROJ_ctx(moabField& _mField,Mat _C,Mat _CT,Mat _CCT): mField(_mField),C(_C),CT(_CT),CCT(_CCT),
-    x_problem("MATERIAL_MECHANICS"),y_problem("C_MATRIX"),init(true),debug(true) {}
-  friend PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f);
+  matPROJ_ctx(moabField& _mField,Mat _C,Mat _CT,Mat _CCT,string _x_problem,string _y_problem): mField(_mField),C(_C),CT(_CT),CCT(_CCT),
+    x_problem(_x_problem),y_problem(_y_problem),init(true),debug(true) {}
+  friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
 };
 
-PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f) {
+PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   void *void_ctx;
-  ierr = MatShellGetContext(QTAQ,&void_ctx); CHKERRQ(ierr);
+  ierr = MatShellGetContext(Q,&void_ctx); CHKERRQ(ierr);
   matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
   if(ctx->init) {
     ctx->init = false;
@@ -236,11 +231,11 @@ PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f) {
     ierr = VecDuplicate(ctx->_x_,&ctx->CT_CCTm1_Cx); CHKERRQ(ierr);
     ierr = ctx->mField.VecScatterCreate(x,ctx->x_problem,Row,ctx->_x_,ctx->y_problem,Col,&ctx->scatter); CHKERRQ(ierr);
   }
+  ierr = VecCopy(x,f); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   //ierr = VecView(ctx->_x_,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   if(ctx->debug) {
-    ierr = VecCopy(x,f); CHKERRQ(ierr);
     ierr = VecScatterBegin(ctx->scatter,ctx->_x_,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatter,ctx->_x_,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     PetscBool  flg;
@@ -251,12 +246,8 @@ PetscErrorCode matQTAQ_mult_shell(Mat QTAQ,Vec x,Vec f) {
   ierr = KSPSolve(ctx->ksp,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
   ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
   ierr = VecScale(ctx->CT_CCTm1_Cx,-1); CHKERRQ(ierr);
-  ierr = VecZeroEntries(f); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAXPY(f,1.,x); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -278,7 +269,6 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndices(RowGlobMaterial,ColGlobMaterial,material_field_name); CHKERRQ(ierr);
     ierr = GetData(dofs_x_edge_data,dofs_x_edge,
@@ -287,7 +277,6 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
       spatial_field_name); CHKERRQ(ierr);
     ierr = GetFint(); CHKERRQ(ierr);
     ierr = VecSetValues(F_MATERIAL,RowGlobMaterial[0].size(),&(RowGlobMaterial[0])[0],&(Fint_H.data())[0],ADD_VALUES); CHKERRQ(ierr);
-
     PetscFunctionReturn(0);
   }
 

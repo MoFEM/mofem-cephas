@@ -457,6 +457,48 @@ PetscErrorCode moabField_Core::add_ents_to_field_by_TRIs(const EntityHandle mesh
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode moabField_Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  EntityHandle idm = no_handle;
+  try {
+    idm = get_field_meshset(id);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  FieldSpace space;
+  rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERR_PETSC(rval);
+  Range nodes;
+  rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+  switch (space) {
+    case H1:
+      rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
+      if(verb>1) {
+	ostringstream ss;
+	ss << "add entities to field " << get_BitFieldId_name(id);
+	ss << " nb. add nodes " << nodes.size();
+	ss << endl;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"add_ents_to_field_by_TRIs this field not work for TRIs");
+  }
+  ierr = seed_ref_level_3D(idm,0); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode moabField_Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  try {
+    ierr = add_ents_to_field_by_VERTICEs(meshset,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+  } catch  (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode moabField_Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;

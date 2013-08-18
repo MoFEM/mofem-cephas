@@ -386,7 +386,7 @@ typedef multi_index_container<
     ordered_unique<
       tag<Meshset_mi_tag>, member<_MoFEMProblem_::MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
     hashed_unique<
-      tag<BitProblemId_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitFieldId> >,
+      tag<BitProblemId_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitProblemId> >,
     hashed_unique<
       tag<MoFEMProblem_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,string,&MoFEMProblem::get_name> >
   > > MoFEMProblem_multiIndex;

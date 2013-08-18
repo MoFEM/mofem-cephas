@@ -169,7 +169,7 @@ typedef checked_uint128_t UId;
 
 typedef bitset<6> BitRefEdges;
 typedef bitset<8/*max number of refinments*/> BitRefLevel;
-typedef bitset<8/*max number of fields*/> BitFieldId;
+typedef bitset<16/*max number of fields*/> BitFieldId;
 
 /** 
  * \typedef Cubit_BC_bitset
@@ -200,8 +200,8 @@ enum FieldSpace {
 typedef PetscScalar FieldData;
 
 //
-typedef bitset<8/*max number of finite elements*/> BitFEId;
-typedef bitset<8/*max number of problems*/> BitProblemId;
+typedef bitset<16/*max number of finite elements*/> BitFEId;
+typedef bitset<16/*max number of problems*/> BitProblemId;
 //
 typedef short ApproximationOrder;
 typedef short ApproximationRank;
@@ -1210,7 +1210,7 @@ typedef multi_index_container<
     hashed_unique<
       tag<MoFEMFiniteElement_Meshset_mi_tag>, member<MoFEMFiniteElement,EntityHandle,&MoFEMFiniteElement::meshset> >,
     hashed_unique<
-      tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFiniteElement,BitFEId,&MoFEMFiniteElement::get_id>, hashbit<BitFEId>, eqbit<BitFieldId> >,
+      tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFiniteElement,BitFEId,&MoFEMFiniteElement::get_id>, hashbit<BitFEId>, eqbit<BitFEId> >,
     hashed_unique<
       tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,string,&MoFEMFiniteElement::get_name> >
   > > MoFEMFiniteElement_multiIndex;
