@@ -123,9 +123,8 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  ublas::vector<double> C_CONST_SHAPE;
   ublas::matrix<double> C_MAT_ELEM;
-  vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
+  ublas::vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
   ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
   PetscErrorCode operator()() {
@@ -135,7 +134,7 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
     for(;siit!=hi_siit;siit++) {
       EntityHandle face = siit->ent;
-      if(skin_faces.end()==find(skin_faces.begin(),skin_faces.end(),face)) continue;
+      if(find(skin_faces.begin(),skin_faces.end(),face)==skin_faces.end()) continue;
       ent_dofs_data.resize(9);
       ent_global_col_indices.resize(9);
       ent_global_row_indices.resize(3);
@@ -168,25 +167,22 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
       ent_normal_map *= siit->sense;
       //double area = norm_2(ent_normal_map);
       rval = moab.tag_set_data(th_material_normal,&face,1,&ent_normal_map.data()[0]); CHKERR_PETSC(rval);
-      C_CONST_SHAPE.resize(3*3);
-      for(int nn = 0;nn<num_nodes;nn++) {
-	for(int dd = 0;dd<3;dd++) {
-	  C_CONST_SHAPE[nn*3+dd] = ent_normal_map[dd];
-	}
-      }
       C_MAT_ELEM.resize(3,9);
+      ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
       for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
 	for(int nn = 0;nn<3;nn++) {
-	  for(int dd = 0;dd<9;dd++) {
-	    if(gg == 0) C_MAT_ELEM(nn,dd) = G_TRI_W[gg]*C_CONST_SHAPE[dd]*g_NTRI3[3*gg+nn];
-	    else C_MAT_ELEM(nn,dd) += G_TRI_W[gg]*C_CONST_SHAPE[dd]*g_NTRI3[3*gg+nn];
+	  for(int dd = 0;dd<3;dd++) {
+	    for(int nnn = 0;nnn<3;nnn++) {
+	      C_MAT_ELEM(nn,3*nnn+dd) += G_TRI_W[gg]*ent_normal_map[dd]*g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+nnn];
+	    }
 	  }
 	}
       }
-      //cerr << C_MAT_ELEM << endl;
+      cerr << "NORMAL " << ent_normal_map << endl;
+      cerr << "MAT " << C_MAT_ELEM << endl;
       ierr = MatSetValues(C,
-	ent_global_row_indices.size(),&(ent_global_row_indices[0]),
-	ent_global_col_indices.size(),&(ent_global_col_indices[0]),
+	ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
+	ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
 	&(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
@@ -197,6 +193,78 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
   }
 
 };
+
+struct C_CORNER_FEMethod:public moabField::FEMethod {
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  Interface& moab;
+
+  Mat C;
+  Range corners;
+  C_CORNER_FEMethod(Interface& _moab,Range _corners,Mat _C,int _verbose = 0): 
+    FEMethod(),moab(_moab),C(_C),corners(_corners) {}
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  ublas::matrix<double> C_MAT_ELEM;
+  vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
+  ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
+  ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
+    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBVERTEX,0));
+    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBVERTEX,4));
+    for(;siit!=hi_siit;siit++) {
+      EntityHandle node = siit->ent;
+      if(corners.end()==find(corners.begin(),corners.end(),node)) continue;
+      ent_dofs_data.resize(3);
+      ent_global_col_indices.resize(3);
+      ent_global_row_indices.resize(3);
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
+      dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",node));
+      hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",node));
+      if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
+      for(;dit!=hi_dit;dit++) {
+	  int global_idx = dit->get_petsc_gloabl_dof_idx();
+	  ent_global_col_indices[dit->get_dof_rank()] = global_idx;
+	  int local_idx = dit->get_petsc_local_dof_idx();
+	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	  ent_dofs_data[dit->get_dof_rank()] = dit->get_FieldData();
+      }
+      dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_CORNER",node));
+      hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_CORNER",node));
+      if(distance(dit,hi_dit)!=3) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_CORNER should be 3, but is %d",distance(dit,hi_dit));
+      for(;dit!=hi_dit;dit++) {
+	  int global_idx = dit->get_petsc_gloabl_dof_idx();
+	  ent_global_row_indices[dit->get_dof_rank()] = global_idx;
+	  int local_idx = dit->get_petsc_local_dof_idx();
+	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+      }
+      C_MAT_ELEM.resize(3,3);
+      for(int nn = 0;nn<3;nn++) {
+	for(int dd = 0;dd<3;dd++) {
+	  if(nn!=dd) C_MAT_ELEM(nn,dd) = 0;
+	  else C_MAT_ELEM(nn,dd) = 1;
+	}
+      }
+      //cerr << C_MAT_ELEM << endl;
+      ierr = MatSetValues(C,
+	ent_global_row_indices.size(),&(ent_global_row_indices[0]),
+	ent_global_col_indices.size(),&(ent_global_col_indices[0]),
+	&(C_MAT_ELEM.data())[0],INSERT_VALUES); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
 
 struct matPROJ_ctx {
   moabField& mField;

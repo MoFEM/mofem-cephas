@@ -148,6 +148,7 @@ int main(int argc, char *argv[]) {
   //add tets on corners
   EntityHandle CornersNodesMeshset;
   {
+    rval = moab.get_adjacencies(SideEdges,0,false,CornersNodes,Interface::UNION); CHKERR_PETSC(rval);
     rval = moab.create_meshset(MESHSET_SET,CornersNodesMeshset); CHKERR_PETSC(rval);	
     rval = moab.add_entities(CornersNodesMeshset,CornersNodes); CHKERR_PETSC(rval);
     //add surface elements
@@ -159,7 +160,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"C_CORNER_ELEM"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
     rval = moab.delete_entities(&CornersTetsMeshset,1); CHKERR_PETSC(rval);
-
   }
 
   //define problems
@@ -246,8 +246,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-  Mat C_SURFACE;
-  ierr = mField.MatCreateMPIAIJWithArrays("C_SURFACE_MATRIX",&C_SURFACE); CHKERRQ(ierr);
 
   SetPositionsEntMethod set_positions(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,set_positions); CHKERRQ(ierr);
@@ -321,6 +319,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+  Mat C_SURFACE;
+  ierr = mField.MatCreateMPIAIJWithArrays("C_SURFACE_MATRIX",&C_SURFACE); CHKERRQ(ierr);
   C_SURFACE_FEMethod CFE_SURFACE(moab,SurfacesFacesMeshset,C_SURFACE);
   ierr = MatZeroEntries(C_SURFACE); CHKERRQ(ierr);
   ierr = MatSetOption(C_SURFACE,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
   ierr = MatAssemblyBegin(C_SURFACE,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(C_SURFACE,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   {
-    //MatView(C,PETSC_VIEWER_DRAW_WORLD);
+    //MatView(C_SURFACE,PETSC_VIEWER_DRAW_WORLD);
     int m,n;
     MatGetSize(C_SURFACE,&m,&n);
     PetscPrintf(PETSC_COMM_WORLD,"C_SURFACE size (%d,%d)\n",m,n);
@@ -340,14 +340,45 @@ int main(int argc, char *argv[]) {
     }
   }
   
+  Mat C_CORNER;
+  ierr = mField.MatCreateMPIAIJWithArrays("C_CORNER_MATRIX",&C_CORNER); CHKERRQ(ierr);
+  C_CORNER_FEMethod CFE_CORNER(moab,CornersNodes,C_CORNER);
+  ierr = MatZeroEntries(C_CORNER); CHKERRQ(ierr);
+  ierr = MatSetOption(C_CORNER,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = MatSetOption(C_CORNER,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_CORNER_MATRIX","C_CORNER_ELEM",CFE_CORNER);  CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(C_CORNER,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(C_CORNER,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  {
+    //MatView(C_CORNER,PETSC_VIEWER_DRAW_WORLD);
+    int m,n;
+    MatGetSize(C_CORNER,&m,&n);
+    PetscPrintf(PETSC_COMM_WORLD,"C_CORNER size (%d,%d)\n",m,n);
+    //std::string wait;
+    //std::cin >> wait;
+  }
+
+
   Mat CT_SURFACE,CCT_SURFACE;
   ierr = MatTranspose(C_SURFACE,MAT_INITIAL_MATRIX,&CT_SURFACE); CHKERRQ(ierr);
   ierr = MatTransposeMatMult(CT_SURFACE,CT_SURFACE,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT_SURFACE); CHKERRQ(ierr);
   {
-    //MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
+    MatView(CCT_SURFACE,PETSC_VIEWER_DRAW_WORLD);
     int m,n;
     MatGetSize(CCT_SURFACE,&m,&n);
     PetscPrintf(PETSC_COMM_WORLD,"CCT_SURFACE size (%d,%d)\n",m,n);
+    //std::string wait;
+    //std::cin >> wait;
+  }
+
+  Mat CT_CORNER,CCT_CORNER;
+  ierr = MatTranspose(C_CORNER,MAT_INITIAL_MATRIX,&CT_CORNER); CHKERRQ(ierr);
+  ierr = MatTransposeMatMult(CT_CORNER,CT_CORNER,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT_CORNER); CHKERRQ(ierr);
+  {
+    //MatView(CCT_CORNER,PETSC_VIEWER_STDOUT_WORLD);//PETSC_VIEWER_DRAW_WORLD);
+    int m,n;
+    MatGetSize(CCT_CORNER,&m,&n);
+    PetscPrintf(PETSC_COMM_WORLD,"CCT_CORNER size (%d,%d)\n",m,n);
     //std::string wait;
     //std::cin >> wait;
   }
@@ -370,13 +401,30 @@ int main(int argc, char *argv[]) {
   int M,N,m,n;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
   ierr = MatGetLocalSize(Aij,&m,&n); CHKERRQ(ierr);
+  //
   Mat Q_SURFACE;
-  matPROJ_ctx proj_ctx(mField,C_SURFACE,CT_SURFACE,CCT_SURFACE,"MATERIAL_MECHANICS","C_SURFACE_MATRIX");
-  ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_ctx,&Q_SURFACE); CHKERRQ(ierr);
+  matPROJ_ctx proj_surface_ctx(mField,C_SURFACE,CT_SURFACE,CCT_SURFACE,"MATERIAL_MECHANICS","C_SURFACE_MATRIX");
+  ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_surface_ctx,&Q_SURFACE); CHKERRQ(ierr);
   ierr = MatShellSetOperation(Q_SURFACE,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+  //
+  Mat Q_CORNER;
+  matPROJ_ctx proj_corner_ctx(mField,C_CORNER,CT_CORNER,CCT_CORNER,"MATERIAL_MECHANICS","C_CORNER_MATRIX");
+  ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_corner_ctx,&Q_CORNER); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(Q_CORNER,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+  //
   Vec QTF_MATERIAL;
   ierr = VecDuplicate(F_MATERIAL,&QTF_MATERIAL); CHKERRQ(ierr);
+  ierr = MatMult(Q_CORNER,F_MATERIAL,QTF_MATERIAL); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  //
+  ierr = VecSwap(QTF_MATERIAL,F_MATERIAL); CHKERRQ(ierr);
   ierr = MatMult(Q_SURFACE,F_MATERIAL,QTF_MATERIAL); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  //
+  ierr = VecSwap(QTF_MATERIAL,F_MATERIAL); CHKERRQ(ierr);
+  ierr = MatMult(Q_CORNER,F_MATERIAL,QTF_MATERIAL); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -412,6 +460,11 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&CCT_SURFACE); CHKERRQ(ierr);
   ierr = MatDestroy(&C_SURFACE); CHKERRQ(ierr);
   ierr = MatDestroy(&CT_SURFACE); CHKERRQ(ierr);
+  ierr = MatDestroy(&CCT_CORNER); CHKERRQ(ierr);
+  ierr = MatDestroy(&C_CORNER); CHKERRQ(ierr);
+  ierr = MatDestroy(&CT_CORNER); CHKERRQ(ierr);
+  ierr = MatDestroy(&Q_SURFACE); CHKERRQ(ierr);
+  ierr = MatDestroy(&Q_CORNER); CHKERRQ(ierr);
 
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
