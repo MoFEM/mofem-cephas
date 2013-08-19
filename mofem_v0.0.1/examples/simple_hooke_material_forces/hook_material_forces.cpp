@@ -145,7 +145,6 @@ int main(int argc, char *argv[]) {
   //add tets on corners
   EntityHandle CornersNodesMeshset;
   {
-    //rval = moab.get_adjacencies(CornersEdges,0,false,CornersNodes,Interface::UNION); CHKERR_PETSC(rval);
     rval = moab.create_meshset(MESHSET_SET,CornersNodesMeshset); CHKERR_PETSC(rval);	
     rval = moab.add_entities(CornersNodesMeshset,CornersNodes); CHKERR_PETSC(rval);
     //add surface elements
