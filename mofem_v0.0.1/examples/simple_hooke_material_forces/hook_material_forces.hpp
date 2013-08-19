@@ -156,7 +156,7 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	}
 	dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	if(distance(dit,hi_dit)==0/*||ent_global_row_indices[nn]==-1*/) {
+	/*if(distance(dit,hi_dit)==0||ent_global_row_indices[nn]==-1) {
 	    ent_global_col_indices[nn*3+0] = -1;
 	    ent_global_col_indices[nn*3+1] = -1;
 	    ent_global_col_indices[nn*3+2] = -1;
@@ -167,7 +167,7 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	    for(;ddit!=hi_ddit;ddit++) {
 	      ent_dofs_data[nn*3+ddit->get_dof_rank()] = ddit->get_FieldData();
 	    }
-	} else {
+	} else {*/
 	  if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	  for(;dit!=hi_dit;dit++) {
 	    int global_idx = dit->get_petsc_gloabl_dof_idx();
@@ -177,7 +177,7 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	    if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	    ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	  }
-	}
+	//}
       }
       ent_normal_map.resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
@@ -296,7 +296,7 @@ struct C_EDGE_FEMethod:public moabField::FEMethod {
 	  }
 	  dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	  hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	  if(distance(dit,hi_dit)==0/*||ent_global_row_indices[nn]==-1*/) {
+	  /*if(distance(dit,hi_dit)==0||ent_global_row_indices[nn]==-1) {
 	    ent_global_col_indices[nn*3+0] = -1;
 	    ent_global_col_indices[nn*3+1] = -1;
 	    ent_global_col_indices[nn*3+2] = -1;
@@ -307,7 +307,7 @@ struct C_EDGE_FEMethod:public moabField::FEMethod {
 	    for(;ddit!=hi_ddit;ddit++) {
 	      ent_dofs_data[nn*3+ddit->get_dof_rank()] = ddit->get_FieldData();
 	    }
-	  } else {
+	  } else {*/
 	    if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	    for(;dit!=hi_dit;dit++) {
 	      int global_idx = dit->get_petsc_gloabl_dof_idx();
@@ -317,7 +317,7 @@ struct C_EDGE_FEMethod:public moabField::FEMethod {
 	      if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	      ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	    }
-	  }
+	  //}
 	}
 	ent_normal_map.resize(3);
 	ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
