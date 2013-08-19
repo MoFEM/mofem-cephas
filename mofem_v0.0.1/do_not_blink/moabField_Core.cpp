@@ -1180,7 +1180,9 @@ PetscErrorCode moabField_Core::modify_problem_add_finite_element(const string &n
     typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
     problems_by_name& set = problems.get<MoFEMProblem_mi_tag>();
     problems_by_name::iterator miit = set.find(name_problem);
-    if(miit==set.end()) SETERRQ(PETSC_COMM_SELF,1,"this problem is not there");
+    ostringstream ss;
+    ss << name_problem;
+    if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,1,"this problem <%s> is not there",ss.str().c_str());
     BitFEId f_id = get_BitFEId(MoFEMFiniteElement_name);
     bool success = set.modify(miit,problem_MoFEMFiniteElement_change_bit_add(f_id));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
@@ -1194,7 +1196,9 @@ PetscErrorCode moabField_Core::modify_problem_ref_level_add_bit(const string &na
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
   problems_by_name& set = problems.get<MoFEMProblem_mi_tag>();
   problems_by_name::iterator miit = set.find(name_problem);
-  if(miit==set.end()) SETERRQ(PETSC_COMM_SELF,1,"this problem is there");
+  ostringstream ss;
+  ss << name_problem;
+  if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,1,"this problem <%s> is there",ss.str().c_str());
   bool success = set.modify(miit,problem_change_ref_level_bit_add(bit));
   if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   PetscFunctionReturn(0);
@@ -2128,7 +2132,6 @@ PetscErrorCode moabField_Core::partition_finite_elements(const string &name,bool
 	problem_MoFEMFiniteElement.rows_dofs.clear();
 	problem_MoFEMFiniteElement.cols_dofs.clear();
       }
-      bool skip = true;
       NumeredDofMoFEMEntity_multiIndex_uid_view::iterator viit_rows = rows_view.begin();
       vector<int> parts(pcomm->size(),0);
       for(;viit_rows!=rows_view.end();viit_rows++) {
@@ -2140,14 +2143,13 @@ PetscErrorCode moabField_Core::partition_finite_elements(const string &name,bool
 	} catch (const char* msg) {
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
 	}
-	if((*viit_rows)->part==pcomm->rank()) skip = false;
 	parts[(*viit_rows)->part]++;
       }
       vector<int>::iterator pos = max_element(parts.begin(),parts.end());
       unsigned int max_part = std::distance(parts.begin(),pos);
       bool success = numered_finite_elements.modify(p.first,NumeredMoFEMFiniteElement_change_part(max_part));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-      if(do_skip) if(skip) continue;
+      if(do_skip) if(max_part!=pcomm->rank()) continue; 
       //cols
       const void* tag_col_uids_data = miit3->tag_col_uids_data;
       const int tag_col_uids_size = miit3->tag_col_uids_size;
