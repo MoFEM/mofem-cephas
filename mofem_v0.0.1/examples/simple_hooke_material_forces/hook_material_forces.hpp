@@ -195,10 +195,10 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	  }
 	}
       }
-      cerr << "ROWS " << ent_global_row_indices << endl;
+      /*cerr << "ROWS " << ent_global_row_indices << endl;
       cerr << "COLS " << ent_global_col_indices << endl;
       cerr << "NORMAL " << ent_normal_map << endl;
-      cerr << "MAT " << C_MAT_ELEM << endl;
+      cerr << "MAT " << C_MAT_ELEM << endl;*/
       ierr = MatSetValues(C,
 	ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
 	ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
