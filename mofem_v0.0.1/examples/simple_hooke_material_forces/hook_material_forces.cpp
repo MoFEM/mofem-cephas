@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_VERTICEs(CornersNodesMeshset,"LAMBDA_CORNER"); CHKERRQ(ierr);
 
   //set app. order
-  int order = 1;
+  int order = 2;
   ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
@@ -409,9 +409,12 @@ int main(int argc, char *argv[]) {
   PostProcVertexMethod ent_method_material_forces(moab,"MESH_NODE_POSITIONS",F_MATERIAL,"MATERIAL_FORCE");
   ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Row,ent_method_material_forces); CHKERRQ(ierr);
 
+  Mat AijMaterial;
+  ierr = mField.MatCreateMPIAIJWithArrays("MATERIAL_MECHANICS",&AijMaterial); CHKERRQ(ierr);
+
   int M,N,m,n;
-  ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
-  ierr = MatGetLocalSize(Aij,&m,&n); CHKERRQ(ierr);
+  ierr = MatGetSize(AijMaterial,&M,&N); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(AijMaterial,&m,&n); CHKERRQ(ierr);
   //
   Mat Q_ALL;
   matPROJ_ctx proj_all_ctx(mField,C_ALL,CT_ALL,CCT_ALL,"MATERIAL_MECHANICS","C_ALL_MATRIX");
@@ -450,6 +453,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&F_MATERIAL); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = MatDestroy(&AijMaterial); CHKERRQ(ierr);
   ierr = VecDestroy(&QTF_ALL_MATERIAL); CHKERRQ(ierr);
   ierr = MatDestroy(&C_ALL); CHKERRQ(ierr);
   ierr = MatDestroy(&CT_ALL); CHKERRQ(ierr);
