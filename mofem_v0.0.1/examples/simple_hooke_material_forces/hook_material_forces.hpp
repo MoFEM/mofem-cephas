@@ -143,24 +143,41 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
       rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       for(int nn = 0;nn<num_nodes;nn++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
-	dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
-	for(;dit!=hi_dit;dit++) {
-	  int global_idx = dit->get_petsc_gloabl_dof_idx();
-	  assert(nn*3+dit->get_dof_rank()<9);
-	  ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
-	  int local_idx = dit->get_petsc_local_dof_idx();
-	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
-	  ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
-	}
 	dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_SURFACE",conn_face[nn]));
 	hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_SURFACE",conn_face[nn]));
-	if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_SURFACE should be 1");
-	int global_idx = dit->get_petsc_gloabl_dof_idx();
-	ent_global_row_indices[nn] = global_idx;
-	int local_idx = dit->get_petsc_local_dof_idx();
-	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	if(distance(dit,hi_dit)==0) {
+	  ent_global_row_indices[nn] = -1;
+	} else {
+	  if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_SURFACE should be 1");
+	  int global_idx = dit->get_petsc_gloabl_dof_idx();
+	  ent_global_row_indices[nn] = global_idx;
+	  int local_idx = dit->get_petsc_local_dof_idx();
+	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	}
+	dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	if(distance(dit,hi_dit)==0||ent_global_row_indices[nn]==-1) {
+	    ent_global_col_indices[nn*3+0] = -1;
+	    ent_global_col_indices[nn*3+1] = -1;
+	    ent_global_col_indices[nn*3+2] = -1;
+	    FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator ddit,hi_ddit;
+	    ddit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    hi_ddit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    if(distance(ddit,hi_ddit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
+	    for(;ddit!=hi_ddit;ddit++) {
+	      ent_dofs_data[nn*3+ddit->get_dof_rank()] = ddit->get_FieldData();
+	    }
+	} else {
+	  if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
+	  for(;dit!=hi_dit;dit++) {
+	    int global_idx = dit->get_petsc_gloabl_dof_idx();
+	    assert(nn*3+dit->get_dof_rank()<9);
+	    ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
+	    int local_idx = dit->get_petsc_local_dof_idx();
+	    if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	    ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
+	  }
+	}
       }
       ent_normal_map.resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
@@ -178,6 +195,8 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	  }
 	}
       }
+      cerr << "ROWS " << ent_global_row_indices << endl;
+      cerr << "COLS " << ent_global_col_indices << endl;
       cerr << "NORMAL " << ent_normal_map << endl;
       cerr << "MAT " << C_MAT_ELEM << endl;
       ierr = MatSetValues(C,
@@ -279,6 +298,7 @@ struct matPROJ_ctx {
   matPROJ_ctx(moabField& _mField,Mat _C,Mat _CT,Mat _CCT,string _x_problem,string _y_problem): mField(_mField),C(_C),CT(_CT),CCT(_CCT),
     x_problem(_x_problem),y_problem(_y_problem),init(true),debug(true) {}
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
+  friend PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f);
 };
 
 PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f) {
@@ -318,6 +338,38 @@ PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f) {
   ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  void *void_ctx;
+  ierr = MatShellGetContext(P,&void_ctx); CHKERRQ(ierr);
+  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
+  if(ctx->init) {
+    ctx->init = false;
+    ierr = KSPCreate(PETSC_COMM_WORLD,&(ctx->ksp)); CHKERRQ(ierr);
+    ierr = KSPSetOperators(ctx->ksp,ctx->CCT,ctx->CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+    ierr = KSPSetFromOptions(ctx->ksp); CHKERRQ(ierr);
+    ierr = KSPSetUp(ctx->ksp); CHKERRQ(ierr);
+    ierr = MatGetVecs(ctx->C,&ctx->_x_,PETSC_NULL); CHKERRQ(ierr);
+    ierr = MatGetVecs(ctx->C,PETSC_NULL,&ctx->Cx); CHKERRQ(ierr);
+    ierr = MatGetVecs(ctx->CCT,PETSC_NULL,&ctx->CCTm1_Cx); CHKERRQ(ierr);
+    ierr = VecDuplicate(ctx->_x_,&ctx->CT_CCTm1_Cx); CHKERRQ(ierr);
+    ierr = ctx->mField.VecScatterCreate(x,ctx->x_problem,Row,ctx->_x_,ctx->y_problem,Col,&ctx->scatter); CHKERRQ(ierr);
+  }
+  ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
+  ierr = KSPSolve(ctx->ksp,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
+  ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(f); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
 
 struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
 

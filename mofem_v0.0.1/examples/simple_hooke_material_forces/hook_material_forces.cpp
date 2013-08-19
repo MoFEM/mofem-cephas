@@ -130,21 +130,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
 
-  //add tets on surface
-  EntityHandle SurfacesFacesMeshset;
-  {
-    rval = moab.create_meshset(MESHSET_SET,SurfacesFacesMeshset); CHKERR_PETSC(rval);	
-    rval = moab.add_entities(SurfacesFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
-    //add surface elements
-    Range SurfacesTets;
-    rval = moab.get_adjacencies(SurfacesFaces,3,false,SurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
-    EntityHandle SurfacesTetsMeshset;
-    rval = moab.create_meshset(MESHSET_SET,SurfacesTetsMeshset); CHKERR_PETSC(rval);	
-    rval = moab.add_entities(SurfacesTetsMeshset,SurfacesTets); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"C_SURFACE_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
-    rval = moab.delete_entities(&SurfacesTetsMeshset,1); CHKERR_PETSC(rval);
-  }
   //add tets on corners
   EntityHandle CornersNodesMeshset;
   {
@@ -160,6 +145,26 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"C_CORNER_ELEM"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
     rval = moab.delete_entities(&CornersTetsMeshset,1); CHKERR_PETSC(rval);
+  }
+  //add tets on surface
+  EntityHandle SurfacesFacesMeshset;
+  {
+    Range SurfacesNodes;
+    rval = moab.get_adjacencies(SurfacesFaces,0,false,SurfacesNodes,Interface::UNION); CHKERR_PETSC(rval);
+    SurfacesNodes = subtract(SurfacesNodes,CornersNodes);
+    rval = moab.create_meshset(MESHSET_SET,SurfacesFacesMeshset); CHKERR_PETSC(rval);	
+    rval = moab.add_entities(SurfacesFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
+    rval = moab.add_entities(SurfacesFacesMeshset,SurfacesNodes); CHKERR_PETSC(rval);
+
+    //add surface elements
+    Range SurfacesTets;
+    rval = moab.get_adjacencies(SurfacesFaces,3,false,SurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
+    EntityHandle SurfacesTetsMeshset;
+    rval = moab.create_meshset(MESHSET_SET,SurfacesTetsMeshset); CHKERR_PETSC(rval);	
+    rval = moab.add_entities(SurfacesTetsMeshset,SurfacesTets); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"C_SURFACE_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
+    rval = moab.delete_entities(&SurfacesTetsMeshset,1); CHKERR_PETSC(rval);
   }
 
   //define problems
@@ -189,7 +194,7 @@ int main(int argc, char *argv[]) {
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TRIs(SurfacesFacesMeshset,"LAMBDA_SURFACE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_VERTICEs(SurfacesFacesMeshset,"LAMBDA_SURFACE"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_VERTICEs(CornersNodesMeshset,"LAMBDA_CORNER"); CHKERRQ(ierr);
 
   //set app. order
@@ -398,6 +403,11 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   //ierr = VecView(F_MATERIAL,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+  ierr = mField.set_other_global_VecCreateGhost(
+    "MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_MATERIAL,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method_material_forces(moab,"MESH_NODE_POSITIONS",F_MATERIAL,"MATERIAL_FORCE");
+  ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Row,ent_method_material_forces); CHKERRQ(ierr);
+
   int M,N,m,n;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
   ierr = MatGetLocalSize(Aij,&m,&n); CHKERRQ(ierr);
@@ -423,16 +433,16 @@ int main(int argc, char *argv[]) {
   ierr = MatMult(Q_SURFACE,F_MATERIAL,QTF_MATERIAL); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  //
+  /*//
   ierr = VecSwap(QTF_MATERIAL,F_MATERIAL); CHKERRQ(ierr);
   ierr = MatMult(Q_CORNER,F_MATERIAL,QTF_MATERIAL); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(QTF_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);*/
 
   ierr = mField.set_other_global_VecCreateGhost(
     "MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,QTF_MATERIAL,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_material_forces(moab,"MESH_NODE_POSITIONS",QTF_MATERIAL,"MATERIAL_FORCE");
-  ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Row,ent_method_material_forces); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method_qt_material_forces(moab,"MESH_NODE_POSITIONS",QTF_MATERIAL,"QT_MATERIAL_FORCE");
+  ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Row,ent_method_qt_material_forces); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
