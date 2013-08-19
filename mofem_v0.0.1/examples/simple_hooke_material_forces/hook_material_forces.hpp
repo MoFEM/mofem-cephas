@@ -156,19 +156,7 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	}
 	dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	/*if(distance(dit,hi_dit)==0||ent_global_row_indices[nn]==-1) {
-	    ent_global_col_indices[nn*3+0] = -1;
-	    ent_global_col_indices[nn*3+1] = -1;
-	    ent_global_col_indices[nn*3+2] = -1;
-	    FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator ddit,hi_ddit;
-	    ddit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	    hi_ddit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	    if(distance(ddit,hi_ddit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
-	    for(;ddit!=hi_ddit;ddit++) {
-	      ent_dofs_data[nn*3+ddit->get_dof_rank()] = ddit->get_FieldData();
-	    }
-	} else {*/
-	  if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
+	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	  for(;dit!=hi_dit;dit++) {
 	    int global_idx = dit->get_petsc_gloabl_dof_idx();
 	    assert(nn*3+dit->get_dof_rank()<9);
@@ -176,8 +164,7 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	    int local_idx = dit->get_petsc_local_dof_idx();
 	    if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	    ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
-	  }
-	//}
+	}
       }
       ent_normal_map.resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
@@ -296,28 +283,15 @@ struct C_EDGE_FEMethod:public moabField::FEMethod {
 	  }
 	  dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	  hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	  /*if(distance(dit,hi_dit)==0||ent_global_row_indices[nn]==-1) {
-	    ent_global_col_indices[nn*3+0] = -1;
-	    ent_global_col_indices[nn*3+1] = -1;
-	    ent_global_col_indices[nn*3+2] = -1;
-	    FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator ddit,hi_ddit;
-	    ddit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	    hi_ddit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	    if(distance(ddit,hi_ddit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
-	    for(;ddit!=hi_ddit;ddit++) {
-	      ent_dofs_data[nn*3+ddit->get_dof_rank()] = ddit->get_FieldData();
-	    }
-	  } else {*/
-	    if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
-	    for(;dit!=hi_dit;dit++) {
+	  if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
+	  for(;dit!=hi_dit;dit++) {
 	      int global_idx = dit->get_petsc_gloabl_dof_idx();
 	      assert(nn*3+dit->get_dof_rank()<9);
 	      ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
 	      int local_idx = dit->get_petsc_local_dof_idx();
 	      if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	      ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
-	    }
-	  //}
+	  }
 	}
 	ent_normal_map.resize(3);
 	ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
@@ -437,6 +411,18 @@ struct matPROJ_ctx {
   bool debug;
   matPROJ_ctx(moabField& _mField,Mat _C,Mat _CT,Mat _CCT,string _x_problem,string _y_problem): mField(_mField),C(_C),CT(_CT),CCT(_CCT),
     x_problem(_x_problem),y_problem(_y_problem),init(true),debug(true) {}
+  PetscErrorCode Destroy() {
+    PetscFunctionBegin;
+    if(init) PetscFunctionReturn(0);
+    PetscErrorCode ierr;
+    ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
+    ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
+    ierr = VecDestroy(&_x_); CHKERRQ(ierr);
+    ierr = VecDestroy(&Cx); CHKERRQ(ierr);
+    ierr = VecDestroy(&CCTm1_Cx); CHKERRQ(ierr);
+    ierr = VecDestroy(&CT_CCTm1_Cx); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
   friend PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f);
 };
