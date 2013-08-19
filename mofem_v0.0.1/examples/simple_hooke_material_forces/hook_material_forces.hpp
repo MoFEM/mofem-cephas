@@ -213,25 +213,25 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 
 };
 
-struct C_EDGES_FEMethod:public moabField::FEMethod {
+struct C_EDGE_FEMethod:public moabField::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
   Interface& moab;
 
   Mat C;
-  Range edges;
-  Tag th_material_normal;
+  Range edges,faces;
   vector<double> diffNTRI;
   vector<double> g_NTRI3;
   const double *G_TRI_W;
-  C_EDGES_FEMethod(Interface& _moab,EntityHandle edges_meshset,Mat _C,int _verbose = 0): 
+  C_EDGE_FEMethod(Interface& _moab,EntityHandle edges_meshset,Mat _C,int _verbose = 0): 
     FEMethod(),moab(_moab),C(_C) {
     diffNTRI.resize(6);
     ShapeDiffMBTRI(&diffNTRI[0]);
     g_NTRI3.resize(3*3);
     ShapeMBTRI(&g_NTRI3[0],G_TRI_X3,G_TRI_Y3,3);
     G_TRI_W = G_TRI_W3;
-    rval = moab.get_entities_by_type(edges_meshset,MBTRI,edges,true);  CHKERR_THROW(rval);
+    rval = moab.get_entities_by_type(edges_meshset,MBEDGE,edges,true);  CHKERR_THROW(rval);
+    rval = moab.get_entities_by_type(edges_meshset,MBTRI,faces,true);  CHKERR_THROW(rval);
   }
 
   map<EntityHandle,vector<EntityHandle> > edges_face_map;
@@ -252,15 +252,16 @@ struct C_EDGES_FEMethod:public moabField::FEMethod {
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
     for(;siit!=hi_siit;siit++) {
       EntityHandle face = siit->ent;
+      if(find(faces.begin(),faces.end(),face)==faces.end()) continue;
       Range adj_edges;
-      rval = moab.get_adjacencies(&face,1,0,false,adj_edges,Interface::UNION); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(&face,1,1,false,adj_edges,Interface::UNION); CHKERR_PETSC(rval);
       adj_edges = intersect(edges,adj_edges);
       Range::iterator eit = adj_edges.begin();
       for(;eit!=adj_edges.end();eit++) {
 	map<EntityHandle,vector<EntityHandle> >::iterator mit = edges_face_map.find(*eit);
 	int eq_nb = -1;
 	if(mit==edges_face_map.end()) {
-	  edges_face_map[face].push_back(face);
+	  edges_face_map[*eit].push_back(face);
 	  eq_nb = 0;
 	} else {
 	  if(mit->second.size()==1) {
@@ -281,12 +282,13 @@ struct C_EDGES_FEMethod:public moabField::FEMethod {
 	rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
 	for(int nn = 0;nn<num_nodes;nn++) {
 	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
-	  dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_SURFACE",conn_face[nn]));
-	  hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_SURFACE",conn_face[nn]));
+	  dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_EDGE",conn_face[nn]));
+	  hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_EDGE",conn_face[nn]));
 	  if(distance(dit,hi_dit)==0) {
 	    ent_global_row_indices[nn] = -1;
 	  } else {
-	    if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_SURFACE should be 1");
+	    if(distance(dit,hi_dit)!=2) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_EDGE should be 2");
+	    if(eq_nb==1) dit++;
 	    int global_idx = dit->get_petsc_gloabl_dof_idx();
 	    ent_global_row_indices[nn] = global_idx;
 	    int local_idx = dit->get_petsc_local_dof_idx();
@@ -317,12 +319,9 @@ struct C_EDGES_FEMethod:public moabField::FEMethod {
 	    }
 	  }
 	}
-
 	ent_normal_map.resize(3);
 	ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
 	ent_normal_map *= siit->sense;
-	//double area = norm_2(ent_normal_map);
-	rval = moab.tag_set_data(th_material_normal,&face,1,&ent_normal_map.data()[0]); CHKERR_PETSC(rval);
 	C_MAT_ELEM.resize(3,9);
 	ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
 	for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
