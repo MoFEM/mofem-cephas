@@ -156,7 +156,7 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	}
 	dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	if(distance(dit,hi_dit)==0||ent_global_row_indices[nn]==-1) {
+	if(distance(dit,hi_dit)==0/*||ent_global_row_indices[nn]==-1*/) {
 	    ent_global_col_indices[nn*3+0] = -1;
 	    ent_global_col_indices[nn*3+1] = -1;
 	    ent_global_col_indices[nn*3+2] = -1;
@@ -296,7 +296,7 @@ struct C_EDGE_FEMethod:public moabField::FEMethod {
 	  }
 	  dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	  hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	  if(distance(dit,hi_dit)==0||ent_global_row_indices[nn]==-1) {
+	  if(distance(dit,hi_dit)==0/*||ent_global_row_indices[nn]==-1*/) {
 	    ent_global_col_indices[nn*3+0] = -1;
 	    ent_global_col_indices[nn*3+1] = -1;
 	    ent_global_col_indices[nn*3+2] = -1;
