@@ -22,20 +22,59 @@
 
 struct matPROJ_ctx {
   moabField& mField;
-  Mat C,CT,CCT;
+  Mat C;
   KSP ksp;
   Vec _x_;
   VecScatter scatter;
+  Mat CT,CCT;
   Vec Cx,CCTm1_Cx,CT_CCTm1_Cx;
   string x_problem,y_problem;
   bool init;
   bool debug;
-  matPROJ_ctx(moabField& _mField,Mat _C,Mat _CT,Mat _CCT,string _x_problem,string _y_problem): mField(_mField),C(_C),CT(_CT),CCT(_CCT),
-    x_problem(_x_problem),y_problem(_y_problem),init(true),debug(true) {}
+  PetscLogEvent USER_EVENT_projInit;
+  PetscLogEvent USER_EVENT_projQ;
+  PetscLogEvent USER_EVENT_projP;
+  matPROJ_ctx(moabField& _mField,Mat _C,string _x_problem,string _y_problem): 
+    mField(_mField),C(_C),x_problem(_x_problem),y_problem(_y_problem),init(true),debug(true) {
+    PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
+    PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
+    PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
+  }
+  PetscErrorCode Init(Vec x) {
+    PetscFunctionBegin;
+    if(init) {
+      init = false;
+      PetscErrorCode ierr;
+      PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
+      ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
+      ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
+      if(debug) {
+	//MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
+	int m,n;
+	MatGetSize(CCT,&m,&n);
+	PetscPrintf(PETSC_COMM_WORLD,"CCT_ALL size (%d,%d)\n",m,n);
+	//std::string wait;
+	//std::cin >> wait;
+      }
+      ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr);
+      ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+      ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+      ierr = KSPSetUp(ksp); CHKERRQ(ierr);
+      ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
+      ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
+      ierr = VecDuplicate(_x_,&CT_CCTm1_Cx); CHKERRQ(ierr);
+      ierr = mField.VecScatterCreate(x,x_problem,Row,_x_,y_problem,Col,&scatter); CHKERRQ(ierr);
+      PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
+    }
+    PetscFunctionReturn(0);
+  }
   PetscErrorCode Destroy() {
     PetscFunctionBegin;
     if(init) PetscFunctionReturn(0);
     PetscErrorCode ierr;
+    ierr = MatDestroy(&CT); CHKERRQ(ierr);
+    ierr = MatDestroy(&CCT); CHKERRQ(ierr);
     ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
     ierr = VecDestroy(&_x_); CHKERRQ(ierr);
@@ -54,18 +93,8 @@ PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f) {
   void *void_ctx;
   ierr = MatShellGetContext(Q,&void_ctx); CHKERRQ(ierr);
   matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
-  if(ctx->init) {
-    ctx->init = false;
-    ierr = KSPCreate(PETSC_COMM_WORLD,&(ctx->ksp)); CHKERRQ(ierr);
-    ierr = KSPSetOperators(ctx->ksp,ctx->CCT,ctx->CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(ctx->ksp); CHKERRQ(ierr);
-    ierr = KSPSetUp(ctx->ksp); CHKERRQ(ierr);
-    ierr = MatGetVecs(ctx->C,&ctx->_x_,PETSC_NULL); CHKERRQ(ierr);
-    ierr = MatGetVecs(ctx->C,PETSC_NULL,&ctx->Cx); CHKERRQ(ierr);
-    ierr = MatGetVecs(ctx->CCT,PETSC_NULL,&ctx->CCTm1_Cx); CHKERRQ(ierr);
-    ierr = VecDuplicate(ctx->_x_,&ctx->CT_CCTm1_Cx); CHKERRQ(ierr);
-    ierr = ctx->mField.VecScatterCreate(x,ctx->x_problem,Row,ctx->_x_,ctx->y_problem,Col,&ctx->scatter); CHKERRQ(ierr);
-  }
+  PetscLogEventBegin(ctx->USER_EVENT_projQ,0,0,0,0);
+  ierr = ctx->Init(x); CHKERRQ(ierr);
   ierr = VecCopy(x,f); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -83,6 +112,7 @@ PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f) {
   ierr = VecScale(ctx->CT_CCTm1_Cx,-1); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PetscLogEventEnd(ctx->USER_EVENT_projQ,0,0,0,0);
   PetscFunctionReturn(0);
 }
 PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
@@ -91,18 +121,8 @@ PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
   void *void_ctx;
   ierr = MatShellGetContext(P,&void_ctx); CHKERRQ(ierr);
   matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
-  if(ctx->init) {
-    ctx->init = false;
-    ierr = KSPCreate(PETSC_COMM_WORLD,&(ctx->ksp)); CHKERRQ(ierr);
-    ierr = KSPSetOperators(ctx->ksp,ctx->CCT,ctx->CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(ctx->ksp); CHKERRQ(ierr);
-    ierr = KSPSetUp(ctx->ksp); CHKERRQ(ierr);
-    ierr = MatGetVecs(ctx->C,&ctx->_x_,PETSC_NULL); CHKERRQ(ierr);
-    ierr = MatGetVecs(ctx->C,PETSC_NULL,&ctx->Cx); CHKERRQ(ierr);
-    ierr = MatGetVecs(ctx->CCT,PETSC_NULL,&ctx->CCTm1_Cx); CHKERRQ(ierr);
-    ierr = VecDuplicate(ctx->_x_,&ctx->CT_CCTm1_Cx); CHKERRQ(ierr);
-    ierr = ctx->mField.VecScatterCreate(x,ctx->x_problem,Row,ctx->_x_,ctx->y_problem,Col,&ctx->scatter); CHKERRQ(ierr);
-  }
+  PetscLogEventBegin(ctx->USER_EVENT_projP,0,0,0,0);
+  ierr = ctx->Init(x); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
@@ -113,6 +133,7 @@ PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
   ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PetscLogEventEnd(ctx->USER_EVENT_projP,0,0,0,0);
   PetscFunctionReturn(0);
 }
 

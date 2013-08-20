@@ -377,18 +377,6 @@ int main(int argc, char *argv[]) {
     //std::cin >> wait;
   }
 
-  Mat CT_ALL,CCT_ALL;
-  ierr = MatTranspose(C_ALL,MAT_INITIAL_MATRIX,&CT_ALL); CHKERRQ(ierr);
-  ierr = MatTransposeMatMult(CT_ALL,CT_ALL,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT_ALL); CHKERRQ(ierr);
-  {
-    //MatView(CCT_ALL,PETSC_VIEWER_DRAW_WORLD);
-    int m,n;
-    MatGetSize(CCT_ALL,&m,&n);
-    PetscPrintf(PETSC_COMM_WORLD,"CCT_ALL size (%d,%d)\n",m,n);
-    //std::string wait;
-    //std::cin >> wait;
-  }
-
   Vec F_MATERIAL;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F_MATERIAL); CHKERRQ(ierr);
   MaterialForcesFEMethod MyMaterialFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),F_MATERIAL);
@@ -417,7 +405,7 @@ int main(int argc, char *argv[]) {
   ierr = MatGetLocalSize(AijMaterial,&m,&n); CHKERRQ(ierr);
   //
   Mat Q_ALL;
-  matPROJ_ctx proj_all_ctx(mField,C_ALL,CT_ALL,CCT_ALL,"MATERIAL_MECHANICS","C_ALL_MATRIX");
+  matPROJ_ctx proj_all_ctx(mField,C_ALL,"MATERIAL_MECHANICS","C_ALL_MATRIX");
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&Q_ALL); CHKERRQ(ierr);
   ierr = MatShellSetOperation(Q_ALL,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
 
@@ -456,8 +444,6 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&AijMaterial); CHKERRQ(ierr);
   ierr = VecDestroy(&QTF_ALL_MATERIAL); CHKERRQ(ierr);
   ierr = MatDestroy(&C_ALL); CHKERRQ(ierr);
-  ierr = MatDestroy(&CT_ALL); CHKERRQ(ierr);
-  ierr = MatDestroy(&CCT_ALL); CHKERRQ(ierr);
   ierr = MatDestroy(&Q_ALL); CHKERRQ(ierr);
 
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
