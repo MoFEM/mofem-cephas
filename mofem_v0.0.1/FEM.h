@@ -42,7 +42,6 @@
 #define LAMBDA(E,NU) (E*NU/((1.+NU)*(1.-2.*NU)))
 #define MU(E,NU) (0.5*E/(1.+NU))
 #define DELTA(NU_P,NU_PZ,E_P,E_Z) (((1+NU_P)*(1-NU_P-2*NU_PZ*(NU_PZ*E_Z/E_P)))/(E_P*E_P*E_Z))
-
 #ifdef __cplusplus
 extern "C" {
 #endif
