@@ -303,6 +303,25 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 	
 	rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);
 
+  //Principal stresses and corresponding direction
+  //Calculated from finding the eigenvalues and eigenvector
+  ublas::matrix< FieldData > eigen_vectors = Stress;
+  ublas::vector<double> eigen_values(3);
+
+  int n = 3, lda = 3, info, lwork = -1;
+  double wkopt;
+  info = lapack_dsyev('V','U',n,&(eigen_vectors.data()[0]),lda,&(eigen_values.data()[0]),&wkopt,&lwork);
+  if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
+  lwork = (int)wkopt;
+  double work[lwork];
+  info = lapack_dsyev('V','U',n,&(eigen_vectors.data()[0]),lda,&(eigen_values.data()[0]),work,&lwork);
+  if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
+  //
+  cerr << "eigen_vectors " << eigen_vectors << endl;
+  cerr << "eigen_values "<< eigen_values << endl;
+
+  rval = moab_post_proc.tag_set_data(th_prin_stress,&mit->second,1,&(eigen_values.data()[0])); CHKERR_PETSC(rval);
+
       }
 
       PetscFunctionReturn(0);
