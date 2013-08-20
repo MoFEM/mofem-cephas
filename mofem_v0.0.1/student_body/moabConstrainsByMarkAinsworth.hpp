@@ -20,12 +20,19 @@
 #ifndef __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
 #define __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
 
+namespace MoFEM {
+
+/**
+  * \brief structure for projection matries
+  *
+  */
 struct matPROJ_ctx {
   moabField& mField;
   Mat C,K;
   KSP ksp;
   Vec _x_;
   VecScatter scatter;
+  PetscErrorCode set_my_scatter(VecScatter my_scatter);
   Mat CT,CCT,CTC;
   Vec Cx,CCTm1_Cx,CT_CCTm1_Cx,CTCx;
   string x_problem,y_problem;
@@ -42,6 +49,42 @@ struct matPROJ_ctx {
     PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
     PetscLogEventRegister("ProjectionCTC_QTKQ",0,&USER_EVENT_projCTC_QTKQ);
   }
+
+  /**
+    * \brief Init vectors and matrices, user need to set scattering my himself
+    */
+  PetscErrorCode Init() {
+    if(init) {
+      init = false;
+      PetscErrorCode ierr;
+      PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
+      ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
+      ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
+      ierr = MatTransposeMatMult(C,C,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr);
+      if(debug) {
+	//MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
+	int m,n;
+	MatGetSize(CCT,&m,&n);
+	PetscPrintf(PETSC_COMM_WORLD,"CCT_ALL size (%d,%d)\n",m,n);
+	//std::string wait;
+	//std::cin >> wait;
+      }
+      ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr);
+      ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+      ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+      ierr = KSPSetUp(ksp); CHKERRQ(ierr);
+      ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
+      ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
+      ierr = MatGetVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
+      ierr = VecDuplicate(_x_,&CT_CCTm1_Cx); CHKERRQ(ierr);
+      PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
+    }
+  }
+
+  /**
+    * \brief Init vectors and matrices, stacttering is set based on x_problem and y_problem
+    */
   PetscErrorCode Init(Vec x) {
     PetscFunctionBegin;
     if(init) {
@@ -164,6 +207,8 @@ PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f) {
   ierr = MatDestroy(&Q); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projCTC_QTKQ,0,0,0,0);
   PetscFunctionReturn(0);
+}
+
 }
 
 #endif //__NONLINEAR_ELASTICITY_HPP__

@@ -74,12 +74,12 @@ struct SetPositionsEntMethod: public moabField::EntMethod {
 
 };
 
-struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
+struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
   Range& SideSet2;
 
   NL_ElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,Range &_SideSet2,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), SideSet2(_SideSet2)  {
+      FEMethod_DriverComplexForLazy_Spatial(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), SideSet2(_SideSet2)  {
 
     set_PhysicalEquationNumber(hooke);
     //set_PhysicalEquationNumber(neohookean);
@@ -88,7 +88,7 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-    ierr = FEMethod_DriverComplexForLazy::operator()(SideSet2); CHKERRQ(ierr);
+    ierr = FEMethod_DriverComplexForLazy_Spatial::operator()(SideSet2); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -399,11 +399,11 @@ struct C_CORNER_FEMethod:public moabField::FEMethod {
 
 };
 
-struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
+struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
   Vec F_MATERIAL;
   MaterialForcesFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,Vec _F_MATERIAL,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),F_MATERIAL(_F_MATERIAL) {
+      FEMethod_DriverComplexForLazy_Spatial(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),F_MATERIAL(_F_MATERIAL) {
 
     set_PhysicalEquationNumber(hooke);
     type_of_analysis = material_analysis;
@@ -433,7 +433,9 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy {
     PetscFunctionReturn(0);
   }
 
+};
 
+struct NL_MatriealFEMethod {
 };
 
 }

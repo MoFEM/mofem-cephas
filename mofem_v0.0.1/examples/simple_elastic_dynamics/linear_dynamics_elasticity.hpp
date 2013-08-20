@@ -43,6 +43,8 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
+namespace MoFEM {
+
 /// Bounadry conditions for elastic dynamics
 struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 
@@ -862,6 +864,8 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
     }
 
   };
+
+}
 
 #endif //__LINEAR_DYNAMICS_ELASTICITY_HPP
 
