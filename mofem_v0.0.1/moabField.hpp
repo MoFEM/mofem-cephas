@@ -155,22 +155,31 @@ struct moabField {
   virtual PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1) = 0;
 
   /** 
-    * \brief set tetrahedrals part of the given field 
+    * \brief set field entities on veryices
     *
     * The lower dimension entities are added depending on the space type
     * \param meshet contains set tetrahedrals
     * \param name of the field
     */
-  virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name) = 0;
+  virtual PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /** 
-    * \brief set prisms part of the given field (works only for L2 space)
+    * \brief set field entities form adjacencies of triangles
     *
-    * The lower dimension entities are added depending on the space type (works only for L2 space)
+    * The lower dimension entities are added depending on the space type
     * \param meshet contains set tetrahedrals
     * \param name of the field
     */
-  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const EntityHandle meshset,const string& name) = 0;
+  virtual PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
+
+  /** 
+    * \brief set field entities from adjacencies of tetrahedrals
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshet contains set tetrahedrals
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /**
     * \brief Set order of the entities in the field
@@ -191,16 +200,16 @@ struct moabField {
     * \brief add finite element
     * \param name finite elenent name
     */
-  virtual PetscErrorCode add_finite_element(const string &MoFEMFE_name) = 0;
+  virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name) = 0;
 
   /// \brief set field data which element use
-  virtual PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFE_name,const string &name_filed) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
 
   /// \brief set field row
-  virtual PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFE_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
   /// \brief set field col
-  virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFE_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
   /// add TET elements form meshset to finite element database given by name 
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name) = 0;
@@ -224,7 +233,7 @@ struct moabField {
   virtual PetscErrorCode add_problem(const string& name) = 0;
 
   /// \brief add finite element to problem
-  virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFE_name) = 0;
+  virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
 
   /// \brief add ref level to problem
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
@@ -248,10 +257,20 @@ struct moabField {
   virtual PetscErrorCode build_problems(int verb = -1) = 0;
 
   /// partition problem dofs
-  virtual PetscErrorCode partition_problems(const string &name,int verb = -1) = 0;
+  virtual PetscErrorCode partition_problem(const string &name,int verb = -1) = 0;
+
+  /**
+    * \brief build indexing and partition problem inhereting indexing and partitioning from other problem
+    *
+    * \param name problem name
+    * \param problem_for_rows problem used to index rows
+    * \param problem_for_cols problem used to index cols
+    */
+  virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1) = 0;
+
 
   /// determine ghost nodes
-  virtual PetscErrorCode partition_ghost_dofs(const string &name) = 0;
+  virtual PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1) = 0;
 
   /// partition finite elements
   virtual PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1) = 0;
@@ -278,6 +297,18 @@ struct moabField {
     * \param name of the problem
     */
   virtual PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1) = 0;
+
+  /**
+    * \brief create scatter for vectors form one to another problem
+    *
+    * \param xin vector
+    * \param x_proble problem name
+    * \param yin vector
+    * \param y_problem problem name
+    * \param newctx scatter
+    */
+  virtual PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
+
 
   /** 
     * \brief set values of vector form/to meshdatabase
@@ -376,8 +407,8 @@ struct moabField {
     PetscErrorCode set_moabfields(const MoFEMField_multiIndex *_moabfields);
     PetscErrorCode set_ents_multiIndex(const MoFEMEntity_multiIndex *_ents_moabfield);
     PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
-    PetscErrorCode set_fes_multiIndex(const MoFEMFE_multiIndex *_finite_elements);
-    PetscErrorCode set_fes_data_multiIndex(const EntMoFEMFE_multiIndex *_finite_elements_moabents);
+    PetscErrorCode set_fes_multiIndex(const MoFEMFiniteElement_multiIndex *_finite_elements);
+    PetscErrorCode set_fes_data_multiIndex(const EntMoFEMFiniteElement_multiIndex *_finite_elements_moabents);
     PetscErrorCode set_adjacencies(const MoFEMAdjacencies_multiIndex *_fem_adjacencies);
     //
     virtual PetscErrorCode preProcess() = 0;
@@ -387,8 +418,8 @@ struct moabField {
     const MoFEMField_multiIndex *moabfields;
     const MoFEMEntity_multiIndex *ents_moabfield;
     const DofMoFEMEntity_multiIndex *dofs_moabfield;
-    const MoFEMFE_multiIndex *finite_elements;
-    const EntMoFEMFE_multiIndex *finite_elements_moabents;
+    const MoFEMFiniteElement_multiIndex *finite_elements;
+    const EntMoFEMFiniteElement_multiIndex *finite_elements_moabents;
     const MoFEMAdjacencies_multiIndex *fem_adjacencies;
   };
 
@@ -422,13 +453,13 @@ struct moabField {
     PetscErrorCode postProcess();
     //
     PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
-    PetscErrorCode set_fe(const NumeredMoFEMFE *_fe_ptr); 
+    PetscErrorCode set_fe(const NumeredMoFEMFiniteElement *_fe_ptr); 
     PetscErrorCode set_data_multIndex(const FEDofMoFEMEntity_multiIndex *_data_multiIndex);
     PetscErrorCode set_row_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_row_multiIndex);
     PetscErrorCode set_col_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_col_multiIndex);
     string fe_name;
     const MoFEMProblem *problem_ptr;
-    const NumeredMoFEMFE *fe_ptr;
+    const NumeredMoFEMFiniteElement *fe_ptr;
     const FEDofMoFEMEntity_multiIndex *data_multiIndex;
     const FENumeredDofMoFEMEntity_multiIndex *row_multiIndex;
     const FENumeredDofMoFEMEntity_multiIndex *col_multiIndex;
@@ -503,7 +534,7 @@ struct moabField {
   /** \brief Get finite elements multi index
     *
     */
-  virtual PetscErrorCode get_finite_elements(const MoFEMFE_multiIndex **finite_elements_ptr) = 0;
+  virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finite_elements_ptr) = 0;
 
 
   /** \brief Copy vector to field which is not part of the problem

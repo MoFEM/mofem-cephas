@@ -1,9 +1,9 @@
-/** \file moabFEMethod_UpLevelStudent.hpp
- * \brief Core moabField::FEMethod class for user interface
- * 
- * Low level data structures not used directly by user
- *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ * FIXME: DESCRIPTION
+ */
+
+/* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -15,8 +15,10 @@
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+
+
 
 #ifndef __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 #define __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
@@ -97,7 +99,7 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
   //TET
   double V;
   Tag th_volume;
-  vector<ublas::vector<double,ublas::bounded_array<double, 3> > > coords_at_Gauss_nodes;
+  vector<ublas::vector<double,ublas::bounded_array<double, 3> > > coords_at_Gauss_nodes; ///< vector of coordinates at Gauss points
 
   //PRISM
   double area3,area4;

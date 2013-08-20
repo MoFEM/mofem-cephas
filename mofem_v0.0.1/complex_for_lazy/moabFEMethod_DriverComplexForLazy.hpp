@@ -1,9 +1,9 @@
-/** \file moabFEMethod_DriverComplexForLazy.hpp
- * \brief Core moabField::FEMethod class for user interface
- * 
- * Low level data structures not used directly by user
- *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ * FIXME: DESCRIPTION
+ */
+
+/* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -15,8 +15,8 @@
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #ifndef __MOABFEMETHOD_DRIVERCOMPLEXFORLAZY_HPP__
 #define __MOABFEMETHOD_DRIVERCOMPLEXFORLAZY_HPP__
@@ -100,7 +100,7 @@ struct DirihletBCMethod_DriverComplexForLazy: public BaseDirihletBC {
 
 };
 
-struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
+struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   double t_val;
   PetscErrorCode set_t_val(double t_val_) {
@@ -109,7 +109,7 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
       PetscFunctionReturn(0);
   }
 
-  FEMethod_DriverComplexForLazy(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+  FEMethod_DriverComplexForLazy_Spatial(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
   FEMethod_ComplexForLazy(_moab,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
 
   vector<DofIdx> DirihletBC;
@@ -449,6 +449,12 @@ struct FEMethod_DriverComplexForLazy: public FEMethod_ComplexForLazy {
   }
 
 };
+
+/*struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForLazy_Spatial {
+
+  FEMethod_DriverComplexForLazy_Material(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_DriverComplexForLazy_Spatial(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,
+*/
 
 }
 

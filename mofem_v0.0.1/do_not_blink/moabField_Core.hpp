@@ -48,7 +48,7 @@ struct moabField_Core: public moabField {
   Tag th_ElemType;
 
   Interface& moab;
-  int *f_shift,*MoFEMFE_shift,*p_shift;
+  int *f_shift,*MoFEMFiniteElement_shift,*p_shift;
   int verbose;
 
   //database
@@ -61,8 +61,8 @@ struct moabField_Core: public moabField {
   MoFEMEntity_multiIndex ents_moabfield;
   DofMoFEMEntity_multiIndex dofs_moabfield;
   //finite element
-  MoFEMFE_multiIndex finite_elements;
-  EntMoFEMFE_multiIndex finite_elements_moabents;
+  MoFEMFiniteElement_multiIndex finite_elements;
+  EntMoFEMFiniteElement_multiIndex finite_elements_moabents;
   //finite elemts and dofs
   MoFEMAdjacencies_multiIndex adjacencies;
   //problems
@@ -108,14 +108,16 @@ struct moabField_Core: public moabField {
 
   //field
   PetscErrorCode add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id);
-  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name);
-  PetscErrorCode add_ents_to_field_by_PRISMs(const EntityHandle meshset,const BitFieldId id);
-  PetscErrorCode add_ents_to_field_by_PRISMs(const EntityHandle meshset,const string& name);
+  PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order);
   PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order);
-  PetscErrorCode dofs_NoField(const BitFieldId id);
-  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,int verb = -1);
+  PetscErrorCode dofs_NoField(const BitFieldId id,int &dof_counter);
+  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,int &dof_counter,int verb = -1);
   PetscErrorCode list_dof_by_id(const BitFieldId id) const;
   PetscErrorCode list_ent_by_id(const BitFieldId id) const;
   PetscErrorCode list_field() const;
@@ -125,11 +127,11 @@ struct moabField_Core: public moabField {
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const string& name) const;
 
-  //MoFEMFE
-  PetscErrorCode add_finite_element(const string &MoFEMFE_name);
-  PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFE_name,const string &name_filed);
-  PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFE_name,const string &name_row);
-  PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFE_name,const string &name_col);
+  //MoFEMFiniteElement
+  PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name);
+  PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
+  PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
+  PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name);
@@ -144,16 +146,16 @@ struct moabField_Core: public moabField {
   //problem
   PetscErrorCode add_problem(const BitProblemId id,const string& name);
   PetscErrorCode add_problem(const string& name);
-  PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFE_name);
+  PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
   BitProblemId get_BitProblemId(const string& name) const;
   PetscErrorCode list_problem() const;
 
-  //build problem, adjacencies,MoFEMFE and dofs
+  //build problem, adjacencies,MoFEMFiniteElement and dofs
   PetscErrorCode build_fields(int verb = -1);
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
-  PetscErrorCode build_finite_element(const EntMoFEMFE &EntFe,int verb = -1);
+  PetscErrorCode build_finite_element(const EntMoFEMFiniteElement &EntFe,int verb = -1);
 
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entities
   PetscErrorCode build_finite_elements(int verb = -1);
@@ -165,8 +167,9 @@ struct moabField_Core: public moabField {
   PetscErrorCode list_adjacencies() const;
 
   //problem buildig
-  PetscErrorCode partition_problems(const string &name,int verb = -1);
-  PetscErrorCode partition_ghost_dofs(const string &name);
+  PetscErrorCode partition_problem(const string &name,int verb = -1);
+  PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
+  PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
 
   //clean active
@@ -181,6 +184,7 @@ struct moabField_Core: public moabField {
   PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
+  PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
 
   //topology
   PetscErrorCode get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,
@@ -206,7 +210,7 @@ struct moabField_Core: public moabField {
   //get multi_index form database
   PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr);
-  PetscErrorCode get_finite_elements(const MoFEMFE_multiIndex **finite_elements_ptr);
+  PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finite_elements_ptr);
 
   //Copy Field to Another
   //NOT TESTED DONT USE PetscErrorCode set_other_filed_values(const string& fiel_name,const string& cpy_field_name,InsertMode mode,ScatterMode scatter_mode);
@@ -246,7 +250,7 @@ struct moabField_Core: public moabField {
       DofIdx upper_dof_row = pcomm->rank()==pcomm->size()-1 ? nb_dofs_row-1 : nb_dofs_row_on_proc*(pcomm->rank()+1)-1;
       hi_miit_row = dofs_row_by_idx.upper_bound(upper_dof_row);
       if(verb > 1) {
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"partition_create_Mat: row lower %d row upper %d\n",lower_dof_row,upper_dof_row);
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tpartition_create_Mat: row lower %d row upper %d\n",lower_dof_row,upper_dof_row);
 	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       }
     } else {
@@ -266,12 +270,12 @@ struct moabField_Core: public moabField {
 	adj_by_ent::iterator hi_adj_miit = adjacencies.get<Composite_mi_tag>().upper_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
 	dofs_vec.resize(0);
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_row)) continue;
-	  if((adj_miit->EntMoFEMFE_ptr->get_id()&p_miit->get_BitFEId()).none()) continue;
-	  if((adj_miit->EntMoFEMFE_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue;
-	  int size  = adj_miit->EntMoFEMFE_ptr->tag_col_uids_size/sizeof(UId);
+	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row if element
+	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
+	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue; // if entity is not problem refinment level
+	  int size  = adj_miit->EntMoFEMFiniteElement_ptr->tag_col_uids_size/sizeof(UId);
 	  for(int ii = 0;ii<size;ii++) {
-	    UId uid = adj_miit->EntMoFEMFE_ptr->tag_col_uids_data[ii];
+	    UId uid = adj_miit->EntMoFEMFiniteElement_ptr->tag_col_uids_data[ii];
 	    NumeredDofMoFEMEntitys_by_unique_id::iterator miiit = dofs_col_by_id.find(uid);
 	    if(miiit == p_miit->numered_dofs_cols.get<Unique_mi_tag>().end()) continue;
 	    dofs_vec.insert(dofs_vec.end(),Tag::get_index(miiit));

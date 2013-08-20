@@ -1,18 +1,25 @@
 reset
 
-brick x 1 y 2 z 0.2
-brick x 2 y 1 z 0.2
+brick x 1 y 2 z 0.5
+brick x 2 y 1 z 0.5
 
 move Curve 23  midpoint location curve 11  include_merged
 unite volume all 
+
+#rotate Volume all angle 45 about X include_merged
 
 Sideset 1 surface 3 
 Sideset 2 surface 12 
 #create Displacement  on surface 3  dof all fix 0 
 #create Displacement  on surface 12  dof all fix 0 
 
+Sideset 100  curve all 
+nodeset 101 vertex all 
+Sideset 102  surface all 
+
 volume all scheme Tetmesh
 volume all size auto factor 6
 mesh volume all
 
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/LShapeDense.cub" overwrite
+

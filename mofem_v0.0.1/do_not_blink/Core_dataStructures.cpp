@@ -152,7 +152,7 @@ ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
   return os;
 }
 
-//ref moab MoFEMFE
+//ref moab MoFEMFiniteElement
 RefMoFEMElement::RefMoFEMElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
   interface_RefMoFEMEntity<RefMoFEMEntity>(_RefMoFEMEntity_ptr) {
   ErrorCode rval;
@@ -375,13 +375,6 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
       forder_face = fNBFACE_L2;
       forder_elem = fNBVOLUME_L2;
       break;
-    case L2_2D: 
-      forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_L2;
-      forder_edge = fNBEDGE_L2;
-      forder_face = fNBFACE_L2;
-      forder_elem = fNBSURFACE_L2;
-      break;
     case NoField:
       forder_entityset = fNBENTITYSET_nofield;
       forder_vertex = NULL;
@@ -435,14 +428,14 @@ MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset): meshset
 }
 ostream& operator<<(ostream& os,const MoFEMProblem& e) {
   os << "problem id " << e.get_id()
-    << " MoFEMFE id " << e.get_BitFEId() 
+    << " MoFEMFiniteElement id " << e.get_BitFEId() 
     << " name "<<e.get_name();
   return os;
 }
 BitFEId MoFEMProblem::get_BitFEId() const {
   return *tag_BitFEId_data;
 }
-void problem_MoFEMFE_change_bit_add::operator()(MoFEMProblem &p) {
+void problem_MoFEMFiniteElement_change_bit_add::operator()(MoFEMProblem &p) {
   *(p.tag_BitFEId_data) |= f_id;
 }
 problem_row_change::problem_row_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {
@@ -623,7 +616,7 @@ FEDofMoFEMEntity::FEDofMoFEMEntity(
   const DofMoFEMEntity *_DofMoFEMEntity_ptr): 
   BaseFEDofMoFEMEntity(_side_number_ptr), interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {}
 ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
-  os << "local dof MoFEMFE idx " 
+  os << "local dof MoFEMFiniteElement idx " 
     << "side_number " << e.side_number_ptr->side_number << " "
     << "sense " << e.side_number_ptr->sense << " "
     << *e.field_ptr;
@@ -635,15 +628,15 @@ FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
   const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr): 
   BaseFEDofMoFEMEntity(_side_number_ptr), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(_NumeredDofMoFEMEntity_ptr) {}
 ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e) {
-  os << "local dof MoFEMFE idx " 
+  os << "local dof MoFEMFiniteElement idx " 
     << "side_number " << e.side_number_ptr->side_number << " "
     << "sense " << e.side_number_ptr->sense << " "
     << *e.field_ptr;
   return os;
 }
 
-//MoFEMFE
-MoFEMFE::MoFEMFE(Interface &moab,const EntityHandle _meshset): meshset(_meshset) {
+//MoFEMFiniteElement
+MoFEMFiniteElement::MoFEMFiniteElement(Interface &moab,const EntityHandle _meshset): meshset(_meshset) {
   ErrorCode rval;
   Tag th_FEId;
   rval = moab.tag_get_handle("_FEId",th_FEId); CHKERR(rval);
@@ -669,21 +662,21 @@ MoFEMFE::MoFEMFE(Interface &moab,const EntityHandle _meshset): meshset(_meshset)
   string Tag_DofUidData_name = "_DofUidData_"+get_name();
   rval = moab.tag_get_handle(Tag_DofUidData_name.c_str(),th_DofUidData); CHKERR(rval);
 }
-ostream& operator<<(ostream& os,const MoFEMFE& e) {
+ostream& operator<<(ostream& os,const MoFEMFiniteElement& e) {
     os << "id " << e.get_id() << " name " << e.get_name() << " f_id_row " << e.get_BitFieldId_row() 
     << " f_id_col " << e.get_BitFieldId_col() << " BitFEId_data " << e.get_BitFieldId_data();
     return os;
 }
-void MoFEMFE_col_change_bit_add::operator()(MoFEMFE &MoFEMFE) {
-  *((BitFieldId*)(MoFEMFE.tag_BitFieldId_col_data)) |= f_id_col;
+void MoFEMFiniteElement_col_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
+  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_col_data)) |= f_id_col;
 }
-void MoFEMFE_row_change_bit_add::operator()(MoFEMFE &MoFEMFE) {
-  *((BitFieldId*)(MoFEMFE.tag_BitFieldId_row_data)) |= f_id_row;
+void MoFEMFiniteElement_row_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
+  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_row_data)) |= f_id_row;
 }
-void EntMoFEMFE_change_bit_add::operator()(MoFEMFE &MoFEMFE) {
-  *((BitFieldId*)(MoFEMFE.tag_BitFieldId_data)) |= f_id_data;
+void EntMoFEMFiniteElement_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
+  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_data)) |= f_id_data;
 }
-static void EntMoFEMFE_dofs_change(
+static void EntMoFEMFiniteElement_dofs_change(
   Interface &moab,const DofMoFEMEntity_multiIndex_uid_view &uids_view,const EntityHandle ent,const Tag th_DofUid,
   const void** tag_uids_data,int *tag_uids_size) {
   if(uids_view.empty()) return;
@@ -699,19 +692,19 @@ static void EntMoFEMFE_dofs_change(
   rval = moab.tag_set_by_ptr(th_DofUid,&ent,1,tag_data,tag_sizes); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_DofUid,&ent,1,tag_uids_data,tag_uids_size); CHKERR_THROW(rval);
 }
-void EntMoFEMFE_row_dofs_change::operator()(EntMoFEMFE &MoFEMFE) { 
-  EntMoFEMFE_dofs_change(moab,uids_view,MoFEMFE.get_ent(),MoFEMFE.fe_ptr->th_DofUidRow,(const void **)&MoFEMFE.tag_row_uids_data,&MoFEMFE.tag_row_uids_size);
+void EntMoFEMFiniteElement_row_dofs_change::operator()(EntMoFEMFiniteElement &MoFEMFiniteElement) { 
+  EntMoFEMFiniteElement_dofs_change(moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidRow,(const void **)&MoFEMFiniteElement.tag_row_uids_data,&MoFEMFiniteElement.tag_row_uids_size);
 }
-void EntMoFEMFE_col_dofs_change::operator()(EntMoFEMFE &MoFEMFE) { 
-  EntMoFEMFE_dofs_change(moab,uids_view,MoFEMFE.get_ent(),MoFEMFE.fe_ptr->th_DofUidCol,(const void **)&MoFEMFE.tag_col_uids_data,&MoFEMFE.tag_col_uids_size);
+void EntMoFEMFiniteElement_col_dofs_change::operator()(EntMoFEMFiniteElement &MoFEMFiniteElement) { 
+  EntMoFEMFiniteElement_dofs_change(moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidCol,(const void **)&MoFEMFiniteElement.tag_col_uids_data,&MoFEMFiniteElement.tag_col_uids_size);
 }
-void EntMoFEMFE_data_dofs_change::operator()(EntMoFEMFE &MoFEMFE) { 
-  EntMoFEMFE_dofs_change(moab,uids_view,MoFEMFE.get_ent(),MoFEMFE.fe_ptr->th_DofUidData,(const void **)&MoFEMFE.tag_data_uids_data,&MoFEMFE.tag_data_uids_size);
+void EntMoFEMFiniteElement_data_dofs_change::operator()(EntMoFEMFiniteElement &MoFEMFiniteElement) { 
+  EntMoFEMFiniteElement_dofs_change(moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidData,(const void **)&MoFEMFiniteElement.tag_data_uids_data,&MoFEMFiniteElement.tag_data_uids_size);
 }
 
-//MoFEMFE data
-EntMoFEMFE::EntMoFEMFE(Interface &moab,const RefMoFEMElement *_ref_MoFEMFE,const MoFEMFE *_MoFEMFE_ptr): 
-  interface_MoFEMFE<MoFEMFE>(_MoFEMFE_ptr),interface_RefMoFEMElement<RefMoFEMElement>(_ref_MoFEMFE) {
+//MoFEMFiniteElement data
+EntMoFEMFiniteElement::EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr): 
+  interface_MoFEMFiniteElement<MoFEMFiniteElement>(_MoFEMFiniteElement_ptr),interface_RefMoFEMElement<RefMoFEMElement>(_ref_MoFEMFiniteElement) {
   ErrorCode rval;
   EntityHandle ent = get_ent();
   rval = moab.tag_get_by_ptr(fe_ptr->th_DofUidRow,&ent,1,(const void **)&tag_row_uids_data,&tag_row_uids_size); 
@@ -721,7 +714,7 @@ EntMoFEMFE::EntMoFEMFE(Interface &moab,const RefMoFEMElement *_ref_MoFEMFE,const
   rval = moab.tag_get_by_ptr(fe_ptr->th_DofUidData,&ent,1,(const void **)&tag_row_uids_data,&tag_data_uids_size);
   if(rval != MB_SUCCESS) tag_data_uids_size = 0;
 }
-ostream& operator<<(ostream& os,const EntMoFEMFE& e) {
+ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e) {
   os << *e.fe_ptr << " ent " << e.get_ent() << endl; 
   DofMoFEMEntity_multiIndex_uid_view::iterator miit;
   unsigned int ii = 0;
@@ -735,39 +728,39 @@ ostream& operator<<(ostream& os,const EntMoFEMFE& e) {
   for(ii = 0;ii<e.tag_data_uids_size/sizeof(UId);ii++) os << ((UId*)e.tag_data_uids_data)[ii] << " ";
   return os;
 }
-PetscErrorCode EntMoFEMFE::get_MoFEMFE_row_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_row_uids_data,tag_row_uids_size); CHKERRQ(ierr);
+  ierr = get_MoFEMFiniteElement_dof_uid_view(dofs,dofs_view,operation_type,tag_row_uids_data,tag_row_uids_size); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFE::get_MoFEMFE_col_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
+  ierr = get_MoFEMFiniteElement_dof_uid_view(dofs,dofs_view,operation_type,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFE::get_MoFEMFE_row_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_uid_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_row_uids_data,tag_row_uids_size); CHKERRQ(ierr);
+  ierr = get_MoFEMFiniteElement_dof_uid_view(dofs,dofs_view,operation_type,tag_row_uids_data,tag_row_uids_size); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFE::get_MoFEMFE_col_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_uid_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_MoFEMFE_dof_uid_view(dofs,dofs_view,operation_type,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
+  ierr = get_MoFEMFiniteElement_dof_uid_view(dofs,dofs_view,operation_type,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFE::get_uid_side_number(
+PetscErrorCode EntMoFEMFiniteElement::get_uid_side_number(
   Interface &moab,const UId _ent_uid_,
   const DofMoFEMEntity_multiIndex &dofs_moabfield,
   int &side_number, int &sense, int &offset) const { 
@@ -779,11 +772,11 @@ PetscErrorCode EntMoFEMFE::get_uid_side_number(
 }
 
 //MoFEMAdjacencies
-MoFEMAdjacencies::MoFEMAdjacencies(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFE *_EntMoFEMFE_ptr,const by_what _by):
-  by(_by),by_other(_by),MoFEMEntity_ptr(_MoFEMEntity_ptr),EntMoFEMFE_ptr(_EntMoFEMFE_ptr) {}
+MoFEMAdjacencies::MoFEMAdjacencies(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr):
+  by_other(0),MoFEMEntity_ptr(_MoFEMEntity_ptr),EntMoFEMFiniteElement_ptr(_EntMoFEMFiniteElement_ptr) {}
 ostream& operator<<(ostream& os,const MoFEMAdjacencies& e) {
-  os << "by what "<< e.by << " by_other " << e.by_other << " "
-    << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFE_ptr;
+  os << "by_other " << bitset<3>(e.by_other) << " "
+    << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFiniteElement_ptr->fe_ptr;
   return os;
 }
 PetscErrorCode MoFEMAdjacencies::get_ent_adj_dofs_bridge(
@@ -793,14 +786,14 @@ PetscErrorCode MoFEMAdjacencies::get_ent_adj_dofs_bridge(
   PetscErrorCode ierr;
   switch (_by) {
     case by_row:  
-      ierr = EntMoFEMFE_ptr->get_MoFEMFE_row_dof_uid_view(dofs_moabfield,uids_view,operation_type); CHKERRQ(ierr);
+      ierr = EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_row_dof_uid_view(dofs_moabfield,uids_view,operation_type); CHKERRQ(ierr);
       break;
     case by_col: 
-      ierr = EntMoFEMFE_ptr->get_MoFEMFE_col_dof_uid_view(dofs_moabfield,uids_view,operation_type); CHKERRQ(ierr);
+      ierr = EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view(dofs_moabfield,uids_view,operation_type); CHKERRQ(ierr);
       break;
     default:
       ostringstream ss;
-      ss << "don't know that to do for elem " << EntMoFEMFE_ptr->get_name() << " and field " << MoFEMEntity_ptr->get_name();
+      ss << "don't know that to do for elem " << EntMoFEMFiniteElement_ptr->get_name() << " and field " << MoFEMEntity_ptr->get_name();
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
   PetscFunctionReturn(0);
@@ -812,15 +805,15 @@ PetscErrorCode MoFEMAdjacencies::get_ent_adj_dofs_bridge(
   PetscErrorCode ierr;
   switch (_by) {
     case by_row:  
-      ierr = EntMoFEMFE_ptr->get_MoFEMFE_row_dof_uid_view(dofs_moabproblem,uids_view,operation_type); CHKERRQ(ierr);
+      ierr = EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_row_dof_uid_view(dofs_moabproblem,uids_view,operation_type); CHKERRQ(ierr);
       break;
     case by_col: 
-      ierr = EntMoFEMFE_ptr->get_MoFEMFE_col_dof_uid_view(dofs_moabproblem,uids_view,operation_type); CHKERRQ(ierr);
+      ierr = EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view(dofs_moabproblem,uids_view,operation_type); CHKERRQ(ierr);
       break;
     default: 
       ostringstream ss;
       ss << *this << endl;
-      ss << "don't know that to do for elem " << EntMoFEMFE_ptr->get_name() << " and field " << MoFEMEntity_ptr->get_name();
+      ss << "don't know that to do for elem " << EntMoFEMFiniteElement_ptr->get_name() << " and field " << MoFEMEntity_ptr->get_name();
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
   PetscFunctionReturn(0);

@@ -76,7 +76,7 @@ struct AppOrder_mi_tag {};
 struct Active_mi_tag {};
 struct BitProblemId_mi_tag {};
 struct MoFEMProblem_mi_tag {};
-struct MoFEMFE_Part_mi_tag {};
+struct MoFEMFiniteElement_Part_mi_tag {};
 struct BitRefLevel_mi_tag {};
 struct ParentEntType_mi_tag {};
 struct MeshSetEnt_mi_tag{};
@@ -263,85 +263,106 @@ typedef multi_index_container<
       member<NumeredDofMoFEMEntity,const DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> > 
  > > NumeredDofMoFEMEntity_multiIndex_global_index_view;
 
-struct MoFEMFE_col_change_bit_add {
+struct MoFEMFiniteElement_col_change_bit_add {
   BitFieldId f_id_col;
-  MoFEMFE_col_change_bit_add(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
-  void operator()(MoFEMFE &MoFEMFE);
+  MoFEMFiniteElement_col_change_bit_add(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
 };
-struct MoFEMFE_row_change_bit_add {
+struct MoFEMFiniteElement_row_change_bit_add {
   BitFieldId f_id_row;
-  MoFEMFE_row_change_bit_add(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
-  void operator()(MoFEMFE &MoFEMFE);
+  MoFEMFiniteElement_row_change_bit_add(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
 };
-struct EntMoFEMFE_change_bit_add {
+struct EntMoFEMFiniteElement_change_bit_add {
   BitFieldId f_id_data;
-  EntMoFEMFE_change_bit_add(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
-  void operator()(MoFEMFE &MoFEMFE);
+  EntMoFEMFiniteElement_change_bit_add(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
 };
 
 /// set uids for finite elements dofs in rows
-struct EntMoFEMFE_row_dofs_change {
+struct EntMoFEMFiniteElement_row_dofs_change {
   Interface &moab;
   const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFE_row_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
+  EntMoFEMFiniteElement_row_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
     moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFE &MoFEMFE);
+  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
 };
 
 /// set uids for finite elements dofs in rows
-struct EntMoFEMFE_col_dofs_change {
+struct EntMoFEMFiniteElement_col_dofs_change {
   Interface &moab;
   const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFE_col_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
+  EntMoFEMFiniteElement_col_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
     moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFE &MoFEMFE);
+  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
 };
 
 /// set uids for finite elements dofs need to calulate element matrices and vectors
-struct EntMoFEMFE_data_dofs_change {
+struct EntMoFEMFiniteElement_data_dofs_change {
   Interface &moab;
   const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFE_data_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view):
+  EntMoFEMFiniteElement_data_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view):
     moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFE &MoFEMFE);
+  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
 };
 
 /**
-  * Internal _NumeredMoFEMFE_
+  * Internal _NumeredMoFEMFiniteElement_
   *
   */
-struct _NumeredMoFEMFE_: public NumeredMoFEMFE {
+struct _NumeredMoFEMFiniteElement_: public NumeredMoFEMFiniteElement {
   FENumeredDofMoFEMEntity_multiIndex rows_dofs;
   FENumeredDofMoFEMEntity_multiIndex cols_dofs;
-  _NumeredMoFEMFE_(const EntMoFEMFE *_EntMoFEMFE_ptr): NumeredMoFEMFE(_EntMoFEMFE_ptr) {};
+  _NumeredMoFEMFiniteElement_(const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr): NumeredMoFEMFiniteElement(_EntMoFEMFiniteElement_ptr) {};
 };
 
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex for entities uin the problem.
+ *
+ * \param   hashed_unique<
+      tag<Composite_unique_mi_tag>,       
+      composite_key< <br>
+	_NumeredMoFEMFiniteElement_,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
+ * \param    ordered_non_unique<
+      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
+ * \param    ordered_non_unique<
+      tag<MoFEMFiniteElement_Part_mi_tag>, <br> member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+ * \param    ordered_non_unique<
+      tag<Composite_mi_tag>,       
+      composite_key< <br>
+	_NumeredMoFEMFiniteElement_,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name>,
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
+ */
 typedef multi_index_container<
-  _NumeredMoFEMFE_,
+  _NumeredMoFEMFiniteElement_,
   indexed_by<
     hashed_unique<
       tag<Composite_unique_mi_tag>,       
       composite_key<
-	_NumeredMoFEMFE_,
-	const_mem_fun<NumeredMoFEMFE::interface_type_MoFEMFE,EntityHandle,&NumeredMoFEMFE::get_meshset>,
-	const_mem_fun<NumeredMoFEMFE::interface_type_EntMoFEMFE,EntityHandle,&NumeredMoFEMFE::get_ent> > >,
+	_NumeredMoFEMFiniteElement_,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
     ordered_non_unique<
-      tag<MoFEMFE_name_mi_tag>, const_mem_fun<NumeredMoFEMFE::interface_type_MoFEMFE,string,&NumeredMoFEMFE::get_name> >,
+      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
     ordered_non_unique<
-      tag<MoFEMFE_Part_mi_tag>, member<NumeredMoFEMFE,unsigned int,&NumeredMoFEMFE::part> >,
+      tag<MoFEMFiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
     ordered_non_unique<
       tag<Composite_mi_tag>,       
       composite_key<
-	_NumeredMoFEMFE_,
-	const_mem_fun<NumeredMoFEMFE::interface_type_MoFEMFE,string,&NumeredMoFEMFE::get_name>,
-	member<NumeredMoFEMFE,unsigned int,&NumeredMoFEMFE::part> > >
-  > > NumeredMoFEMFE_multiIndex;
+	_NumeredMoFEMFiniteElement_,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name>,
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
+  > > NumeredMoFEMFiniteElement_multiIndex;
 
-struct NumeredMoFEMFE_change_part {
+struct NumeredMoFEMFiniteElement_change_part {
   unsigned int part;
-  NumeredMoFEMFE_change_part(unsigned int _part): part(_part) {};
-  void operator()(NumeredMoFEMFE &MoFEMFE) {
-    MoFEMFE.part = part;
+  NumeredMoFEMFiniteElement_change_part(unsigned int _part): part(_part) {};
+  void operator()(NumeredMoFEMFiniteElement &MoFEMFiniteElement) {
+    MoFEMFiniteElement.part = part;
   }
 };
 
@@ -355,7 +376,7 @@ struct MoFEMAdjacencies_change_by_what {
   * _MoFEMProblem_ hidden from user
   */
 struct _MoFEMProblem_: public MoFEMProblem {
-  NumeredMoFEMFE_multiIndex numered_finite_elements;
+  NumeredMoFEMFiniteElement_multiIndex numered_finite_elements;
   _MoFEMProblem_(Interface &moab,const EntityHandle _meshset): MoFEMProblem(moab,_meshset) {};
 };
 
@@ -365,7 +386,7 @@ typedef multi_index_container<
     ordered_unique<
       tag<Meshset_mi_tag>, member<_MoFEMProblem_::MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
     hashed_unique<
-      tag<BitProblemId_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitFieldId> >,
+      tag<BitProblemId_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitProblemId> >,
     hashed_unique<
       tag<MoFEMProblem_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,string,&MoFEMProblem::get_name> >
   > > MoFEMProblem_multiIndex;
@@ -377,9 +398,9 @@ struct problem_change_ref_level_bit_add {
   void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) |= bit; };
 };
 /// \brief add finite element to problem
-struct problem_MoFEMFE_change_bit_add {
+struct problem_MoFEMFiniteElement_change_bit_add {
   BitFEId f_id;
-  problem_MoFEMFE_change_bit_add(const BitFEId _f_id): f_id(_f_id) {};
+  problem_MoFEMFiniteElement_change_bit_add(const BitFEId _f_id): f_id(_f_id) {};
   void operator()(MoFEMProblem &p);
 };
 /// \brief increase nb. dof in row
@@ -410,7 +431,7 @@ void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFE
 }
 
 template <typename T,typename V>
-PetscErrorCode get_MoFEMFE_dof_uid_view(
+PetscErrorCode get_MoFEMFiniteElement_dof_uid_view(
   const T &dofs_moabfield,V &dofs_view,
   const int operation_type,const void* tag_data,const int tag_size) {
   PetscFunctionBegin;
@@ -420,8 +441,7 @@ PetscErrorCode get_MoFEMFE_dof_uid_view(
   const UId *uids = (UId*)tag_data;
   int size = tag_size/sizeof(UId);
   vector<const value_type*> vec;
-  int ii = 0;
-  for(;ii<size;ii++) {
+  for(int ii = 0;ii<size;ii++) {
     UId uid = uids[ii];
     typename dofs_by_uid::iterator miit = dofs.find(uid);
     if(miit==dofs.end()) continue;
@@ -445,7 +465,7 @@ PetscErrorCode get_MoFEMFE_dof_uid_view(
 PetscErrorCode test_moab(Interface &moab,const EntityHandle ent);
 
 /**
- * \briMoFEMFE gives connectivity if all the edges are refined
+ * \briMoFEMFiniteElement gives connectivity if all the edges are refined
  *
  * \param moab intefcae
  * \param conn refined tet connectivity
@@ -454,7 +474,7 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent);
  */
 void tet_type_6(Interface& moab,const EntityHandle *conn,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
- * \briMoFEMFE gives connectivity if 5 out of 6 egses are refined
+ * \briMoFEMFiniteElement gives connectivity if 5 out of 6 egses are refined
  *
  * \param moab intefcae
  * \param conn refined tet connectivity
@@ -464,7 +484,7 @@ void tet_type_6(Interface& moab,const EntityHandle *conn,const EntityHandle *edg
  */
 int tet_type_5(Interface& moab,const EntityHandle *conn,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
-* \briMoFEMFE gives connectivity if 4 out of 6 egses are refined
+* \briMoFEMFiniteElement gives connectivity if 4 out of 6 egses are refined
 *
 * \param moab intefcae
 * \param conn refined tet connectivity
@@ -474,7 +494,7 @@ int tet_type_5(Interface& moab,const EntityHandle *conn,const EntityHandle *edge
 */
 int tet_type_4(const EntityHandle *conn,const int *split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
-* \briMoFEMFE gives connectivity if 3 out of 6 egses are refined
+* \briMoFEMFiniteElement gives connectivity if 3 out of 6 egses are refined
 *
 * \param moab intefcae
 * \param conn refined tet connectivity
@@ -484,7 +504,7 @@ int tet_type_4(const EntityHandle *conn,const int *split_edges,const EntityHandl
 */
 int tet_type_3(const EntityHandle *conn,const int *split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
-* \briMoFEMFE gives connectivity if 2 out of 6 egses are refined
+* \briMoFEMFiniteElement gives connectivity if 2 out of 6 egses are refined
 *
 * \param moab intefcae
 * \param conn refined tet connectivity
@@ -494,7 +514,7 @@ int tet_type_3(const EntityHandle *conn,const int *split_edges,const EntityHandl
 */
 int tet_type_2(const EntityHandle *conn,const int *split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
-* \briMoFEMFE gives connectivity if 1 out of 6 egses are refined
+* \briMoFEMFiniteElement gives connectivity if 1 out of 6 egses are refined
 *
 * \param moab intefcae
 * \param conn refined tet connectivity

@@ -2,6 +2,9 @@ set(CTEST_BUILD_OPTIONS "-DCMAKE_CXX_FLAGS=-lstdc++ -DPETSC_DIR=/opt/build_for_g
 
 set(CTEST_SITE "lukaszs-laptop.lan")
 set(CTEST_BUILD_NAME "Darwin-mpicxx")
+if(NOT DASHBOARDTEST) 
+  set(DASHBOARDTEST "Nightly")
+endif(NOT DASHBOARDTEST)
 
 include(CTestScript.cmake)
 

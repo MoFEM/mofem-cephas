@@ -107,7 +107,7 @@ struct MyDirihletBC: public DirihletBCMethod_DriverComplexForLazy {
 
 };
 
-struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
+struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
   ArcLenghtCtx* arc_ptr;
 
@@ -118,7 +118,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
   MyElasticFEMethod(
       Interface& _moab,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
       ArcLenghtCtx *_arc_ptr,Range &_SideSet2,Range &_NodeSet1,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy(_moab,_dirihlet_ptr,_lambda,_mu,_verbose), 
+      FEMethod_DriverComplexForLazy_Spatial(_moab,_dirihlet_ptr,_lambda,_mu,_verbose), 
       arc_ptr(_arc_ptr),SideSet2(_SideSet2),NodeSet1(_NodeSet1) {
 
     set_PhysicalEquationNumber(neohookean);
@@ -127,7 +127,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    ierr = FEMethod_DriverComplexForLazy::preProcess(); CHKERRQ(ierr);
+    ierr = FEMethod_DriverComplexForLazy_Spatial::preProcess(); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 

@@ -222,9 +222,9 @@ int main(int argc, char *argv[]) {
   ierr = mField2.build_problems(); CHKERRQ(ierr);
 
   //partition
-  ierr = mField2.partition_problems("COUPLED_DAMAGE_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField2.partition_problems("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField2.partition_problems("ELASTIC_MECHANICS_LEVEL0"); CHKERRQ(ierr);
+  ierr = mField2.partition_problem("COUPLED_DAMAGE_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField2.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField2.partition_problem("ELASTIC_MECHANICS_LEVEL0"); CHKERRQ(ierr);
 
   ierr = mField2.partition_finite_elements("COUPLED_DAMAGE_MECHANICS"); CHKERRQ(ierr);
   ierr = mField2.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);

@@ -1,12 +1,9 @@
-/** \file moabFEMethod_LowLevelStudent.cpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ * FIXME: DESCRIPTION
+ */
+
+/* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -18,8 +15,8 @@
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 
 #include "moabFEMethod_LowLevelStudent.hpp"
 #include "FEM.h"
@@ -441,9 +438,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
   if(verbose>2) {
     PetscPrintf(PETSC_COMM_WORLD,"Parent ent %u\n",parent);
   }
-  EntMoFEMFE_multiIndex::index<Composite_mi_tag>::type::iterator 
+  EntMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator 
     miit =  finite_elements_moabents->get<Composite_mi_tag>().lower_bound(boost::make_tuple(parent,_fe_name));
-  EntMoFEMFE_multiIndex::index<Composite_mi_tag>::type::iterator 
+  EntMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator 
     hi_miit = finite_elements_moabents->get<Composite_mi_tag>().upper_bound(boost::make_tuple(parent,_fe_name));
   if(distance(miit,hi_miit) > 1) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
   for(;miit!=hi_miit;miit++) {
@@ -997,9 +994,6 @@ PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
       case L2:
 	dim = 3;
 	break;
-      case L2_2D:
-	dim = 2;
-	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
     }
@@ -1039,9 +1033,6 @@ PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
 	case Hcurl:
 	case L2:
 	  dim = 3;
-	  break;
-	case L2_2D:
-	  dim = 2;
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");

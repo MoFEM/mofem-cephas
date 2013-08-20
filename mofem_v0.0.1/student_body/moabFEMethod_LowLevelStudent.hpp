@@ -1,9 +1,9 @@
-/** \file moabFEMethod_LowLevelStudent.hpp
- * \brief Core moabField::FEMethod class for user interface
- * 
- * Low level data structures not used directly by user
- *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ * FIXME: DESCRIPTION
+ */
+
+/* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -15,8 +15,9 @@
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+
 
 #ifndef __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
 #define __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
@@ -152,7 +153,7 @@ struct FEMethod_LowLevelStudent: public moabField::FEMethod {
   PetscErrorCode GetRowDiffNMatrix_at_GaussPoint();
   PetscErrorCode GetColDiffNMatrix_at_GaussPoint();
 
-  const EntMoFEMFE *fe_ent_ptr;
+  const EntMoFEMFiniteElement *fe_ent_ptr;
 
   /**
    * calulate element shape functions

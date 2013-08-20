@@ -22,6 +22,7 @@ include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
 include(cmake/ExportFile.cmake)
 
+
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} ) 
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
 
@@ -32,6 +33,8 @@ string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 #message(STATUS ${MPI_BIN_PATH})
 
 project(MoFEM C CXX)
+
+include(cmake/FindTAO.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
@@ -46,7 +49,7 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 #add coverage
 if(WITHCOVERAGE) 
-  SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
+  SET(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
   add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
   set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
 endif(WITHCOVERAGE) 
@@ -76,6 +79,11 @@ include_directories(
   ${PETSCVAR_DIR}/include
 )
 
+if(TAO_LIBRARY) 
+  include_directories(${TAO_DIR}/include)
+  add_definitions(-DTAO)
+endif(TAO_LIBRARY)
+
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
 include_directories("${PROJECT_SOURCE_DIR}/student_body")
@@ -83,6 +91,7 @@ include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 
 add_library(mofem_Field 
+  third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
   do_not_blink/Core_dataStructures.cpp
   do_not_blink/Core_moabMeshMBTETRefine.cpp
@@ -106,6 +115,7 @@ resolve_libraries(PROJECT_LIBS "
   ${PETSC_DIR}/${PETSC_ARCH}/lib/libpetsc.a
   ${PETSCVAR_PACKAGES_LIBS}
   ${PETSCVAR_PETSC_EXTERNAL_LIB_BASIC}
+  ${TAO_LIBRARY}
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}
   ")
