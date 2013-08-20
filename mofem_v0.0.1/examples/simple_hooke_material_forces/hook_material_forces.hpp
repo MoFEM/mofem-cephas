@@ -96,11 +96,11 @@ struct Spatial_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
 };
 
-struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
+struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
   Vec F_MATERIAL;
   MaterialForcesFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,Vec _F_MATERIAL,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy_Spatial(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),F_MATERIAL(_F_MATERIAL) {
+      FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),F_MATERIAL(_F_MATERIAL) {
 
     set_PhysicalEquationNumber(hooke);
     type_of_analysis = material_analysis;
@@ -132,7 +132,14 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
 };
 
-struct NL_MatriealFEMethod {
+struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
+
+  Material_ElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
+    set_PhysicalEquationNumber(hooke);
+    //set_PhysicalEquationNumber(neohookean);
+  }
+
 };
 
 

@@ -458,6 +458,13 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
       type_of_analysis = material_analysis;
     }
 
+  vector<DofIdx> DirihletBC;
+  PetscErrorCode SetDirihletBC_to_ElementIndicies() {
+    PetscFunctionBegin;
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,material_field_name,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode CalculateMaterialTangent(Mat B) {
     PetscFunctionBegin;
 
@@ -497,11 +504,15 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode operator()(Range& NeumannSideSet) {
+  PetscErrorCode operator()() {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
+    ierr = GetData(dofs_x_edge_data,dofs_x_edge,
+      dofs_x_face_data,dofs_x_face,
+      dofs_x_volume,dofs_x,
+      spatial_field_name); CHKERRQ(ierr);
 
     ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
     if(Diagonal!=PETSC_NULL) {

@@ -118,12 +118,34 @@ int main(int argc, char *argv[]) {
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
   ExampleDiriheltBC myDirihletBC(moab,SurfacesFaces);
+  Material_ElasticFEMethod MyFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 
+  moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
+  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("MATERIAL",&MyFE));
+  moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
+  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("MATERIAL",&MyFE));
 
+  Vec D;
+  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Col,&D); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  double step_size = -1e-3;
+  for(int step = 1;step<2; step++) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D\n",step); CHKERRQ(ierr);
+    ierr = MyFE.set_t_val(step_size*step); CHKERRQ(ierr);
+    ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
+    int its;
+    ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+  }
+  
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

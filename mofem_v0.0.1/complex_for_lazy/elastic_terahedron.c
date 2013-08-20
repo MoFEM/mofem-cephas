@@ -237,22 +237,28 @@ PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_
   if(Koff!=NULL) bzero(Koff,12*12*sizeof(double));
   //zero edges
   int ee = 0;	
-  for(;ee<6;ee++) {
-    if(NBEDGE_H1(order_edge[ee])==0) continue;
-    int nb = 3*NBEDGE_H1(order_edge[ee]);
-    if(Koff_edge[ee]!=NULL) bzero(Koff_edge[ee],nb*12*sizeof(double)); 
+  if(Koff_edge!=NULL) {
+    for(;ee<6;ee++) {
+      if(NBEDGE_H1(order_edge[ee])==0) continue;
+      int nb = 3*NBEDGE_H1(order_edge[ee]);
+      if(Koff_edge[ee]!=NULL) bzero(Koff_edge[ee],nb*12*sizeof(double)); 
+    }
   }
   //zero faces
   int ff = 0;	
-  for(;ff<4;ff++) {
-    if(NBFACE_H1(order_face[ff])==0) continue;
-    int nb = 3*NBFACE_H1(order_face[ff]);
-    if(Koff_face[ff]!=NULL) bzero(Koff_face[ff],nb*12*sizeof(double)); 
+  if(Koff_face!=NULL) {
+    for(;ff<4;ff++) {
+      if(NBFACE_H1(order_face[ff])==0) continue;
+      int nb = 3*NBFACE_H1(order_face[ff]);
+      if(Koff_face[ff]!=NULL) bzero(Koff_face[ff],nb*12*sizeof(double)); 
+    }
   }
   //zero volume
-  if(NBVOLUME_H1(order_volume)!=0) {
-    int nb = 3*NBVOLUME_H1(order_volume);
-    if(Koff_volume!=NULL) bzero(Koff_volume,nb*12*sizeof(double)); 
+  if(Koff_volume!=NULL) {
+    if(NBVOLUME_H1(order_volume)!=0) {
+      int nb = 3*NBVOLUME_H1(order_volume);
+      if(Koff_volume!=NULL) bzero(Koff_volume,nb*12*sizeof(double)); 
+    }
   }
   int dd = 0;
   for(;dd<12;dd++) {
@@ -285,30 +291,36 @@ PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_
 	  Koff[3*12*node + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
 	  Koff[3*12*node + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }}
       ee = 0;
-      for(;ee<6;ee++) {		
-        int pp = 0;
-        for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
-	  double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])+3*pp]);
-	  if(Koff_edge[ee]!=NULL) {
-	    (Koff_edge[ee])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
-	    (Koff_edge[ee])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
-	    (Koff_edge[ee])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
+      if(Koff_edge!=NULL) {
+	for(;ee<6;ee++) {		
+	  int pp = 0;
+	  for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
+	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])+3*pp]);
+	    if(Koff_edge[ee]!=NULL) {
+	      (Koff_edge[ee])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	      (Koff_edge[ee])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	      (Koff_edge[ee])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
+      }
       ff = 0;
-      for(;ff<4;ff++) {		
-        int pp = 0;
-        for(;pp<NBFACE_H1(order_face[ff]);pp++) {
-	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])+3*pp]);
-	  if(Koff_face[ff]!=NULL) {
-	    (Koff_face[ff])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
-	    (Koff_face[ff])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
-	    (Koff_face[ff])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
-      int pp = 0;
-      for(;pp<NBVOLUME_H1(order_volume);pp++) {
-	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)+3*pp]);
-	if(Koff_volume!=NULL) {
-	  (Koff_volume)[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
-  	  (Koff_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
-	  (Koff_volume)[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
+      if(Koff_face!=NULL) {
+	for(;ff<4;ff++) {		
+	  int pp = 0;
+	  for(;pp<NBFACE_H1(order_face[ff]);pp++) {
+	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])+3*pp]);
+	    if(Koff_face[ff]!=NULL) {
+	      (Koff_face[ff])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	      (Koff_face[ff])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	      (Koff_face[ff])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
+      }
+      if(Koff_volume!=NULL) {
+	int pp = 0;
+	for(;pp<NBVOLUME_H1(order_volume);pp++) {
+	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)+3*pp]);
+	  if(Koff_volume!=NULL) {
+	    (Koff_volume)[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
+	    (Koff_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
+	    (Koff_volume)[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
+      }
   }}
   PetscFunctionReturn(0);
 }

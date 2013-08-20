@@ -366,6 +366,8 @@ int main(int argc, char *argv[]) {
   ierr = MatSetOption(C_ALL,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",CFE_SURFACE_ALL);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_EDGE_ELEM",CFE_EDGE_ALL);  CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(C_ALL,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(C_ALL,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",CFE_CORNER_ALL);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(C_ALL,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(C_ALL,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

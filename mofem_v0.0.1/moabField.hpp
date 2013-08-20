@@ -318,6 +318,9 @@ struct moabField {
     * \param V vector
     * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
     * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    * 
+    * SCATTER_REVERSE set data to field entities form V vector.
+    * SCATTER_FORWARD set vector V from data field entities
     */
   virtual PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
@@ -329,6 +332,8 @@ struct moabField {
     * \param V vector
     * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
     * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    *
+    * SCATTER_REVERSE set data to field entities form V vector.
     */
   virtual PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
