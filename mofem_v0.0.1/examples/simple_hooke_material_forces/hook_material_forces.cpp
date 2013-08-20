@@ -218,7 +218,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_EDGE_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_SURFACE_ELEM"); CHKERRQ(ierr);
 
-
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
@@ -405,7 +404,7 @@ int main(int argc, char *argv[]) {
   ierr = MatGetLocalSize(AijMaterial,&m,&n); CHKERRQ(ierr);
   //
   Mat Q_ALL;
-  matPROJ_ctx proj_all_ctx(mField,C_ALL,"MATERIAL_MECHANICS","C_ALL_MATRIX");
+  matPROJ_ctx proj_all_ctx(mField,AijMaterial,C_ALL,"MATERIAL_MECHANICS","C_ALL_MATRIX");
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&Q_ALL); CHKERRQ(ierr);
   ierr = MatShellSetOperation(Q_ALL,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
 

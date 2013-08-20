@@ -2024,6 +2024,7 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name,int verb)
       const_cast<NumeredDofMoFEMEntitys_by_unique_id*>(&p_miit->numered_dofs_rows.get<Unique_mi_tag>())    
     };
     for(int ss = 0;ss<2;ss++) {
+      if(ghost_idx_row_view.empty()||ghost_idx_col_view.empty()) continue;
       NumeredDofMoFEMEntity_multiIndex_uid_view::iterator ghost_idx_miit = ghost_idx_view[ss]->begin();
       for(;ghost_idx_miit!=ghost_idx_view[ss]->end();ghost_idx_miit++) {
         NumeredDofMoFEMEntitys_by_unique_id::iterator diit = dof_by_uid_no_const[ss]->find((*ghost_idx_miit)->get_unique_id());
