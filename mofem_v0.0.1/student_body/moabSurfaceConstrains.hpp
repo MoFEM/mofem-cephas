@@ -33,8 +33,8 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
   vector<double> diffNTRI;
   vector<double> g_NTRI3;
   const double *G_TRI_W;
-  C_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,int _verbose = 0): 
-    FEMethod(),moab(_moab),C(_C) {
+  
+  void run_in_constructor() {
     diffNTRI.resize(6);
     ShapeDiffMBTRI(&diffNTRI[0]);
     g_NTRI3.resize(3*3);
@@ -43,7 +43,16 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
     double def_VAL[3*9];
     fill(&def_VAL[0],&def_VAL[3*9],0);
     rval = moab.tag_get_handle("MATERIAL_NORMAL",3,MB_TYPE_DOUBLE,th_material_normal,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+  }
+  
+  C_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,int _verbose = 0): 
+    FEMethod(),moab(_moab),C(_C) {
+    run_in_constructor();
     rval = moab.get_entities_by_type(skin_faces_meshset,MBTRI,skin_faces,true);  CHKERR_THROW(rval);
+  }
+  C_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Mat _C,int _verbose = 0): 
+    FEMethod(),moab(_moab),C(_C),skin_faces(_skin_faces) {
+    run_in_constructor();
   }
 
   PetscErrorCode preProcess() {
@@ -138,15 +147,24 @@ struct C_EDGE_FEMethod:public moabField::FEMethod {
   vector<double> diffNTRI;
   vector<double> g_NTRI3;
   const double *G_TRI_W;
-  C_EDGE_FEMethod(Interface& _moab,EntityHandle edges_meshset,Mat _C,int _verbose = 0): 
-    FEMethod(),moab(_moab),C(_C) {
+
+  void run_in_constructor() {
     diffNTRI.resize(6);
     ShapeDiffMBTRI(&diffNTRI[0]);
     g_NTRI3.resize(3*3);
     ShapeMBTRI(&g_NTRI3[0],G_TRI_X3,G_TRI_Y3,3);
     G_TRI_W = G_TRI_W3;
+  }
+
+  C_EDGE_FEMethod(Interface& _moab,EntityHandle edges_meshset,Mat _C,int _verbose = 0): 
+    FEMethod(),moab(_moab),C(_C) {
+    run_in_constructor();
     rval = moab.get_entities_by_type(edges_meshset,MBEDGE,edges,true);  CHKERR_THROW(rval);
     rval = moab.get_entities_by_type(edges_meshset,MBTRI,faces,true);  CHKERR_THROW(rval);
+  }
+  C_EDGE_FEMethod(Interface& _moab,Range &_faces,Range &_edges,Mat _C,int _verbose = 0): 
+    FEMethod(),moab(_moab),C(_C),faces(_faces),edges(_edges) {
+    run_in_constructor();
   }
 
   map<EntityHandle,vector<EntityHandle> > edges_face_map;
