@@ -1999,6 +1999,8 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name,int verb)
     fe_it = p_miit->numered_finite_elements.get<MoFEMFiniteElement_Part_mi_tag>().lower_bound(pcomm->rank());
     hi_fe_it = p_miit->numered_finite_elements.get<MoFEMFiniteElement_Part_mi_tag>().upper_bound(pcomm->rank());
     for(;fe_it!=hi_fe_it;fe_it++) {
+      if(fe_it->rows_dofs.empty()) SETERRQ(PETSC_COMM_SELF,1,"no row dofs on this element why it is here?");
+      if(fe_it->cols_dofs.empty()) SETERRQ(PETSC_COMM_SELF,1,"no col dofs on this element why it is here?");
       typedef FENumeredDofMoFEMEntity_multiIndex::iterator dof_it;
       dof_it rowdofit,hi_rowdofit;
       rowdofit = fe_it->rows_dofs.begin();
@@ -2024,7 +2026,6 @@ PetscErrorCode moabField_Core::partition_ghost_dofs(const string &name,int verb)
       const_cast<NumeredDofMoFEMEntitys_by_unique_id*>(&p_miit->numered_dofs_rows.get<Unique_mi_tag>())    
     };
     for(int ss = 0;ss<2;ss++) {
-      if(ghost_idx_row_view.empty()||ghost_idx_col_view.empty()) continue;
       NumeredDofMoFEMEntity_multiIndex_uid_view::iterator ghost_idx_miit = ghost_idx_view[ss]->begin();
       for(;ghost_idx_miit!=ghost_idx_view[ss]->end();ghost_idx_miit++) {
         NumeredDofMoFEMEntitys_by_unique_id::iterator diit = dof_by_uid_no_const[ss]->find((*ghost_idx_miit)->get_unique_id());
@@ -2124,9 +2125,16 @@ PetscErrorCode moabField_Core::partition_finite_elements(const string &name,bool
     if((miit3->get_BitRefLevel()&p_miit->get_BitRefLevel()).none()) continue;
     if((miit3->get_id()&p_miit->get_BitFEId()).any()) {
       NumeredDofMoFEMEntity_multiIndex_uid_view rows_view,cols_view;
+      //rows_view
       const void* tag_row_uids_data = miit3->tag_row_uids_data;
       const int tag_row_uids_size = miit3->tag_row_uids_size;
       ierr = get_MoFEMFiniteElement_dof_uid_view(p_miit->numered_dofs_rows,rows_view,Interface::UNION,tag_row_uids_data,tag_row_uids_size); CHKERRQ(ierr);
+      if(rows_view.empty()) continue;
+      //cols_vies
+      const void* tag_col_uids_data = miit3->tag_col_uids_data;
+      const int tag_col_uids_size = miit3->tag_col_uids_size;
+      ierr = get_MoFEMFiniteElement_dof_uid_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
+      if(cols_view.empty()) continue;
       pair<NumeredMoFEMFiniteElement_multiIndex::iterator,bool> p = numered_finite_elements.insert(_NumeredMoFEMFiniteElement_(&*miit3));
       _NumeredMoFEMFiniteElement_ &problem_MoFEMFiniteElement = const_cast<_NumeredMoFEMFiniteElement_&>(*p.first);
       if(!p.second) {
@@ -2152,9 +2160,6 @@ PetscErrorCode moabField_Core::partition_finite_elements(const string &name,bool
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       if(do_skip) if(max_part!=pcomm->rank()) continue; 
       //cols
-      const void* tag_col_uids_data = miit3->tag_col_uids_data;
-      const int tag_col_uids_size = miit3->tag_col_uids_size;
-      ierr = get_MoFEMFiniteElement_dof_uid_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
       NumeredDofMoFEMEntity_multiIndex_uid_view::iterator viit_cols = cols_view.begin();
       for(;viit_cols!=cols_view.end();viit_cols++) {
 	try {

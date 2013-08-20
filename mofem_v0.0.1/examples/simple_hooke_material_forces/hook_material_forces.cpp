@@ -144,6 +144,8 @@ int main(int argc, char *argv[]) {
 
   //add tets on corners
   EntityHandle CornersNodesMeshset;
+  Range SurfacesTets;
+  rval = moab.get_adjacencies(SurfacesFaces,3,false,SurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
   {
     rval = moab.create_meshset(MESHSET_SET,CornersNodesMeshset); CHKERR_PETSC(rval);	
     rval = moab.add_entities(CornersNodesMeshset,CornersNodes); CHKERR_PETSC(rval);
@@ -153,6 +155,7 @@ int main(int argc, char *argv[]) {
     EntityHandle CornersTetsMeshset;
     rval = moab.create_meshset(MESHSET_SET,CornersTetsMeshset); CHKERR_PETSC(rval);	
     rval = moab.add_entities(CornersTetsMeshset,CornersTets); CHKERR_PETSC(rval);
+    CornersTets = intersect(CornersTets,SurfacesTets);
     ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"C_CORNER_ELEM"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
     rval = moab.delete_entities(&CornersTetsMeshset,1); CHKERR_PETSC(rval);
@@ -171,6 +174,7 @@ int main(int argc, char *argv[]) {
     //add surface elements
     Range CornersEdgesTets;
     rval = moab.get_adjacencies(CornersEdges,3,false,CornersEdgesTets,Interface::UNION); CHKERR_PETSC(rval);
+    CornersEdgesTets = intersect(CornersEdgesTets,SurfacesTets);
     EntityHandle CornersEdgesTetsMeshset;
     rval = moab.create_meshset(MESHSET_SET,CornersEdgesTetsMeshset); CHKERR_PETSC(rval);	
     rval = moab.add_entities(CornersEdgesTetsMeshset,CornersEdgesTets); CHKERR_PETSC(rval);
@@ -191,8 +195,6 @@ int main(int argc, char *argv[]) {
     rval = moab.add_entities(SurfacesFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
     rval = moab.add_entities(SurfacesFacesMeshset,SurfacesNodes); CHKERR_PETSC(rval);
     //add surface elements
-    Range SurfacesTets;
-    rval = moab.get_adjacencies(SurfacesFaces,3,false,SurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
     EntityHandle SurfacesTetsMeshset;
     rval = moab.create_meshset(MESHSET_SET,SurfacesTetsMeshset); CHKERR_PETSC(rval);	
     rval = moab.add_entities(SurfacesTetsMeshset,SurfacesTets); CHKERR_PETSC(rval);
