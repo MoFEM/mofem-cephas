@@ -134,8 +134,9 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
 struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
-  Material_ElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
+  moabField& mField;
+  Material_ElasticFEMethod(Interface& _moab,moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),mField(_mField)  {
     set_PhysicalEquationNumber(hooke);
     //set_PhysicalEquationNumber(neohookean);
   }

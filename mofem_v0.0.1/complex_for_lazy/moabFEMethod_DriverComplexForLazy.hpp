@@ -136,14 +136,10 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
-	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	Diagonal = PETSC_NULL;
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = MatZeroEntries(*snes_B); CHKERRQ(ierr);
 	ierr = VecDuplicate(snes_f,&Diagonal); CHKERRQ(ierr);
       }
       break;
@@ -420,10 +416,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
-	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
@@ -431,12 +423,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
 	ierr = MatDiagonalSet(*snes_B,Diagonal,ADD_VALUES); CHKERRQ(ierr);
 	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	//Matrix View
-	//MatView(*snes_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-	//std::string wait;
-	//std::cin >> wait;
       }
       break;
       default:
