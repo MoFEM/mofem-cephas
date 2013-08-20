@@ -138,9 +138,23 @@ int main(int argc, char *argv[]) {
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
   }
-  
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  //ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost("MATERIAL_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method(moab,"MESH_NODE_POSITIONS");
+  ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Col,ent_method); CHKERRQ(ierr);
+
+
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("MATERIAL_MECHANICS","MATERIAL",out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
 
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
