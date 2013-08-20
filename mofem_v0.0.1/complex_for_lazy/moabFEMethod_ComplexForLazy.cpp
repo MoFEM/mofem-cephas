@@ -323,12 +323,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
     unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
     switch(sub_analysis_type) {
-      case material_analysis: {
-	ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
-	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &*KHH.data().begin(),&*KHh.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),g_dim,g_TET_W); CHKERRQ(ierr);
-      }
       case spatail_analysis: {
 	ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
@@ -349,6 +343,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	  &*Khvolume.data().begin(),&*KHvolume.data().begin(),Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(), 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
+      }
+      break;
+      case material_analysis: {
+	ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
+	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	  &*KHH.data().begin(),&*KHh.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),g_dim,g_TET_W); CHKERRQ(ierr);
       }
       break;
       default:

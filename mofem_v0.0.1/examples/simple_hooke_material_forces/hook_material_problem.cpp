@@ -1,0 +1,140 @@
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ * FIXME: DESCRIPTION
+ */
+
+/* This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#include "moabField.hpp"
+#include "moabField_Core.hpp"
+#include <petscksp.h>
+
+#include "moabSnes.hpp"
+#include "PostProcVertexMethod.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+
+#include "hook_material_forces.hpp"
+
+using namespace MoFEM;
+
+ErrorCode rval;
+PetscErrorCode ierr;
+
+static char help[] = "...\n\n";
+
+
+int main(int argc, char *argv[]) {
+
+  PetscInitialize(&argc,&argv,(char *)0,help);
+
+  Core mb_instance;
+  Interface& moab = mb_instance;
+  int rank;
+  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+
+  PetscBool flg = PETSC_TRUE;
+  char mesh_file_name[255];
+  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+  }
+ 
+  const char *option;
+  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+  PetscLogDouble t1,t2;
+  PetscLogDouble v1,v2;
+  ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+
+  moabField_Core core(moab);
+  moabField& mField = core;
+
+  BitRefLevel bit_level0;
+  bit_level0.set(0);
+
+  //build field
+  ierr = mField.build_fields(); CHKERRQ(ierr);
+  //build finite elemnts
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  //build adjacencies
+  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  //build problem
+  ierr = mField.build_problems(); CHKERRQ(ierr);
+
+  //partition
+  ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  //partition
+  ierr = mField.partition_problem("MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  //partition
+  ierr = mField.partition_problem("CCT_ALL_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("CCT_ALL_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("CCT_ALL_MATRIX"); CHKERRQ(ierr);
+  //partition
+  ierr = mField.compose_problem("C_ALL_MATRIX","CCT_ALL_MATRIX","MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("C_ALL_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("C_ALL_MATRIX"); CHKERRQ(ierr);
+
+  //create matrices
+  Vec F;
+  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F); CHKERRQ(ierr);
+  Mat Aij;
+  ierr = mField.MatCreateMPIAIJWithArrays("MATERIAL_MECHANICS",&Aij); CHKERRQ(ierr);
+
+  moabSnesCtx SnesCtx(mField,"MATERIAL_MECHANICS");
+
+  SNES snes;
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
+  ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+
+  ierr = MatSetOption(Aij,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = MatSetOption(Aij,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
+  Range SurfacesFaces;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+
+  const double YoungModulus = 1;
+  const double PoissonRatio = 0.25;
+  ExampleDiriheltBC myDirihletBC(moab,SurfacesFaces);
+
+
+
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+
+  ierr = PetscGetTime(&v2);CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
+
+  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+
+  PetscFinalize();
+
+  return 0;
+}
+
+
+
