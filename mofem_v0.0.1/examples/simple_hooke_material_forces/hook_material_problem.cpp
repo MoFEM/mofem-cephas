@@ -94,31 +94,40 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("C_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("C_ALL_MATRIX"); CHKERRQ(ierr);
 
+  Range SurfacesFaces;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+
   //create matrices
+  matPROJ_ctx proj_all_ctx(mField,"MATERIAL_MECHANICS","C_ALL_MATRIX");
+  ierr = mField.MatCreateMPIAIJWithArrays("MATERIAL_MECHANICS",&proj_all_ctx.K); CHKERRQ(ierr);
+  ierr = MatSetOption(proj_all_ctx.K,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = MatSetOption(proj_all_ctx.K,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&proj_all_ctx.C); CHKERRQ(ierr);
+  Mat CTC_QTKQ;
+  int M,N,m,n;
+  ierr = MatGetSize(proj_all_ctx.K,&M,&N); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(proj_all_ctx.K,&m,&n); CHKERRQ(ierr);
+  ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&CTC_QTKQ); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(CTC_QTKQ,MATOP_MULT,(void(*)(void))matCTC_QTKQ_mult_shell); CHKERRQ(ierr);
+
   Vec F;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F); CHKERRQ(ierr);
-  Mat Aij;
-  ierr = mField.MatCreateMPIAIJWithArrays("MATERIAL_MECHANICS",&Aij); CHKERRQ(ierr);
 
+  const double YoungModulus = 1;
+  const double PoissonRatio = 0.25;
+  ExampleDiriheltBC myDirihletBC(moab,SurfacesFaces);
+  Material_ElasticFEMethod MyFE(
+    moab,mField,proj_all_ctx,
+    &myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  
   moabSnesCtx SnesCtx(mField,"MATERIAL_MECHANICS");
 
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
   ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,CTC_QTKQ,proj_all_ctx.K,SnesMat,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
-
-  ierr = MatSetOption(Aij,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-  ierr = MatSetOption(Aij,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-
-  Range SurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.25;
-  ExampleDiriheltBC myDirihletBC(moab,SurfacesFaces);
-  Material_ElasticFEMethod MyFE(moab,mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("MATERIAL",&MyFE));
@@ -132,7 +141,6 @@ int main(int argc, char *argv[]) {
   double step_size = -1e-3;
   for(int step = 1;step<2; step++) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D\n",step); CHKERRQ(ierr);
-    ierr = MyFE.set_t_val(step_size*step); CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
@@ -147,7 +155,6 @@ int main(int argc, char *argv[]) {
   PostProcVertexMethod ent_method(moab,"MESH_NODE_POSITIONS");
   ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Col,ent_method); CHKERRQ(ierr);
 
-
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -156,10 +163,14 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
+  ierr = proj_all_ctx.DestroyQTKQ(); CHKERRQ(ierr);
+  ierr = proj_all_ctx.DestroyQorP(); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&proj_all_ctx.K); CHKERRQ(ierr);
+  ierr = MatDestroy(&proj_all_ctx.C); CHKERRQ(ierr);
+  ierr = MatDestroy(&CTC_QTKQ); CHKERRQ(ierr);
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

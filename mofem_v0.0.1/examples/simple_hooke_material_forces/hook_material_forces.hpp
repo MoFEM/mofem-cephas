@@ -134,63 +134,47 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy_Material {
 struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
   moabField& mField;
+  matPROJ_ctx &proj_all_ctx;
   bool init;
-  int M,N,m,n;
-  Material_ElasticFEMethod(Interface& _moab,moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),mField(_mField),init(true)  {
+  Material_ElasticFEMethod(
+      Interface& _moab,moabField& _mField,matPROJ_ctx _proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),mField(_mField),proj_all_ctx(_proj_all_ctx),
+      init(true)  {
     set_PhysicalEquationNumber(hooke);
     //set_PhysicalEquationNumber(neohookean);
   }
 
   Range CornersEdges,CornersNodes,SurfacesFaces;
-  Mat C,Q;
   C_SURFACE_FEMethod *CFE_SURFACE;
   C_EDGE_FEMethod *CFE_EDGE;
   C_CORNER_FEMethod *CFE_CORNER;
-  matPROJ_ctx *proj_all_ctx;
-
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
     if(init) {
       init = false;
-      M = problem_ptr->get_nb_dofs_row();
-      N = problem_ptr->get_nb_dofs_col();
-      m = problem_ptr->get_nb_local_dofs_row();
-      n = problem_ptr->get_nb_local_dofs_col();
-
       ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
       ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
       ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-
-      ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&C); CHKERRQ(ierr);
-      CFE_SURFACE = new C_SURFACE_FEMethod(moab,SurfacesFaces,C);
-      CFE_EDGE = new C_EDGE_FEMethod(moab,SurfacesFaces,CornersEdges,C);
-      CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,C);
-
-      proj_all_ctx = new matPROJ_ctx(mField,*snes_B,C,"MATERIAL_MECHANICS","C_ALL_MATRIX");
-
-      ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,proj_all_ctx,&Q); CHKERRQ(ierr);
-      ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
-
-    
-
-    ierr = MatZeroEntries(C); CHKERRQ(ierr);
-    ierr = MatSetOption(C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-    ierr = MatSetOption(C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_EDGE_ELEM",*CFE_EDGE);  CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*CFE_CORNER);  CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    {
-      MatView(C,PETSC_VIEWER_DRAW_WORLD);
-      //std::string wait;
-      //std::cin >> wait;
+      CFE_SURFACE = new C_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.C);
+      CFE_EDGE = new C_EDGE_FEMethod(moab,SurfacesFaces,CornersEdges,proj_all_ctx.C);
+      CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.C);
     }
 
+    ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
+    ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_EDGE_ELEM",*CFE_EDGE);  CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*CFE_CORNER);  CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    {
+      MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
+      //std::string wait;
+      //std::cin >> wait;
     }
 
     ierr = FEMethod_DriverComplexForLazy_Material::preProcess(); CHKERRQ(ierr);
@@ -229,12 +213,20 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	Vec Qf;
 	ierr = VecDuplicate(snes_f,&Qf); CHKERRQ(ierr);
+	int M,N,m,n;
+	ierr = MatGetSize(proj_all_ctx.K,&M,&N); CHKERRQ(ierr);
+	ierr = MatGetLocalSize(proj_all_ctx.K,&m,&n); CHKERRQ(ierr);
+	Mat Q;
+	ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&Q); CHKERRQ(ierr);
+	ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
 	ierr = MatMult(Q,snes_f,Qf); CHKERRQ(ierr);
 	ierr = VecSwap(snes_f,Qf); CHKERRQ(ierr);
 	ierr = VecDestroy(&Qf); CHKERRQ(ierr);
+	ierr = MatDestroy(&Q); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
+	
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
