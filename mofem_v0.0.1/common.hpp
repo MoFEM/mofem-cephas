@@ -364,8 +364,22 @@ struct CubitMeshSets {
   inline unsigned long int get_CubitBCType_ulong() const { return CubitBCType.to_ulong(); }
   PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive = false) const;
   PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
+    
+  /**
+   * \brief get bc_data vector from MoFEM database
+   * 
+   * \param b_data in/out vector were bc_data will be stored
+   */
   PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
+    
+  /**
+   * \brief print bc_data int stream given by os
+   *
+   * f.e. it->print_Cubit_bc_data(cout), i.e. printing to standard output
+   * f.e. it->print_Cubit_bc_data(cerr), i.e. printing to standard error output
+   */
   PetscErrorCode print_Cubit_bc_data(ostream& os) const;
+  
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
 };
 
