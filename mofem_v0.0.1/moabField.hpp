@@ -122,9 +122,9 @@ struct moabField {
     */
   virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_end(const unsigned int CubitBCType) = 0;
 
-  #define _IT_CUBITBCTYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE) \
-    moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator it = MFIELD.get_CubitBCType_meshsets_begin(CUBITBCTYPE); \
-    it!=MFIELD.get_CubitBCType_meshsets_end(CUBITBCTYPE); it++
+  #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
+    moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitBCType_meshsets_begin(CUBITBCTYPE); \
+    IT!=MFIELD.get_CubitBCType_meshsets_end(CUBITBCTYPE); IT++
 
   /// seed ref level by 3D ents in the meshset and its adjacencies (only TETs adjencies)
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit) = 0;
