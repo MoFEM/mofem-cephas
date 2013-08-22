@@ -134,10 +134,10 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy_Material {
 struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
   moabField& mField;
-  matPROJ_ctx &proj_all_ctx;
+  matPROJ_ctx& proj_all_ctx;
   bool init;
   Material_ElasticFEMethod(
-      Interface& _moab,moabField& _mField,matPROJ_ctx _proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      Interface& _moab,moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
       FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),mField(_mField),proj_all_ctx(_proj_all_ctx),
       init(true)  {
     set_PhysicalEquationNumber(hooke);

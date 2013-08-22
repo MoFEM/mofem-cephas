@@ -98,6 +98,7 @@ struct matPROJ_ctx {
     ierr = VecDestroy(&CCTm1_Cx); CHKERRQ(ierr);
     ierr = VecDestroy(&CT_CCTm1_Cx); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
+    initQorP = true;
     PetscFunctionReturn(0);
   }
   PetscErrorCode InitQTKQ() {
@@ -136,6 +137,7 @@ struct matPROJ_ctx {
     ierr = VecDestroy(&Qx); CHKERRQ(ierr);
     ierr = VecDestroy(&KQx); CHKERRQ(ierr);
     ierr = VecDestroy(&CTCx); CHKERRQ(ierr);
+    initQTKQ = true;
     PetscFunctionReturn(0);
   }
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
