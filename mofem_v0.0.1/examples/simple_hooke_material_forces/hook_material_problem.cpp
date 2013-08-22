@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
   ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,CTC_QTKQ,proj_all_ctx.K,SnesMat,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,proj_all_ctx.K/*CTC_QTKQ*/,proj_all_ctx.K,SnesMat,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
@@ -163,8 +163,8 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  ierr = proj_all_ctx.DestroyQTKQ(); CHKERRQ(ierr);
   ierr = proj_all_ctx.DestroyQorP(); CHKERRQ(ierr);
+  ierr = proj_all_ctx.DestroyQTKQ(); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);

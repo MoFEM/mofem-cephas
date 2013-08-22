@@ -34,7 +34,6 @@ struct matPROJ_ctx {
   KSP ksp;
   Vec _x_;
   VecScatter scatter;
-  PetscErrorCode set_my_scatter(VecScatter my_scatter);
   Mat CT,CCT,CTC;
   Vec Cx,CCTm1_Cx,CT_CCTm1_Cx,CTCx;
   Vec Qx,KQx;
@@ -94,11 +93,11 @@ struct matPROJ_ctx {
     ierr = MatDestroy(&CT); CHKERRQ(ierr);
     ierr = MatDestroy(&CCT); CHKERRQ(ierr);
     ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
-    ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
     ierr = VecDestroy(&_x_); CHKERRQ(ierr);
     ierr = VecDestroy(&Cx); CHKERRQ(ierr);
     ierr = VecDestroy(&CCTm1_Cx); CHKERRQ(ierr);
     ierr = VecDestroy(&CT_CCTm1_Cx); CHKERRQ(ierr);
+    ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   PetscErrorCode InitQTKQ() {
@@ -131,6 +130,7 @@ struct matPROJ_ctx {
   }
   PetscErrorCode DestroyQTKQ() {
     PetscFunctionBegin;
+    if(initQTKQ) PetscFunctionReturn(0);
     PetscErrorCode ierr;
     ierr = MatDestroy(&CTC); CHKERRQ(ierr);
     ierr = VecDestroy(&Qx); CHKERRQ(ierr);

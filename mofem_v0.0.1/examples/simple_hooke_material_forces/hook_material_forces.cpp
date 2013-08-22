@@ -450,6 +450,7 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&proj_all_ctx.K); CHKERRQ(ierr);
   ierr = MatDestroy(&proj_all_ctx.C); CHKERRQ(ierr);
   ierr = MatDestroy(&Q_ALL); CHKERRQ(ierr);
+  ierr = VecDestroy(&QTF_ALL_MATERIAL); CHKERRQ(ierr);
 
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
