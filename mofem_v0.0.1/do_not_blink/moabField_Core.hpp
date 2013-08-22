@@ -70,7 +70,7 @@ struct moabField_Core: public moabField {
   //prism 
   AdjacencyMapForBasicMoFEMEntity_multiIndex adjacencies_maps_for_prisms;
   //cubit
-  moabBaseMeshSet_multiIndex cubit_meshsets;
+  moabCubitMeshSet_multiIndex cubit_meshsets;
 
   //safty nets
   Tag th_MoFEMBuild;
@@ -84,13 +84,21 @@ struct moabField_Core: public moabField {
   PetscErrorCode map_from_mesh(int verb = -1);
   Interface& get_moab();
 
-  //meshsets
+  //cubit meshsets
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, const int dimension,Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, Range &entities,const bool recursive = false);
   PetscErrorCode get_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset);
   PetscErrorCode get_CubitBCType_meshsets(const unsigned int CubitBCType,Range &meshsets);
+  moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_begin() { return cubit_meshsets.begin(); }
+  moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_end() { return cubit_meshsets.end(); }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_begin(const unsigned int CubitBCType) { 
+    return cubit_meshsets.get<CubitMeshSets_mi_tag>().lower_bound(CubitBCType); 
+  }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_end(const unsigned int CubitBCType) { 
+    return cubit_meshsets.get<CubitMeshSets_mi_tag>().upper_bound(CubitBCType); 
+  }
 
   //refine
   PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit);

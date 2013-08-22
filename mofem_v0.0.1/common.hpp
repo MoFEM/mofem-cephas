@@ -266,6 +266,7 @@ struct hashbit
 // tags and unaryFunction functions
 
 /// MultiIndex Tag for field id 
+struct CubitMeshSets_mi_tag {};
 struct BitFieldId_mi_tag {};
 struct Unique_mi_tag {};
 struct MoABEnt_mi_tag {};
@@ -363,8 +364,41 @@ struct CubitMeshSets {
   inline unsigned long int get_CubitBCType_ulong() const { return CubitBCType.to_ulong(); }
   PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive = false) const;
   PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
+  PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
+  PetscErrorCode print_Cubit_bc_data(ostream& os) const;
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
 };
+
+/**
+ * @relates multi_index_container
+ * \brief moabCubitMeshSet_multiIndex
+ *
+ * \param    hashed_unique<
+      tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
+ * \param    ordered_non_unique<
+      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
+ * \param    hashed_unique<
+      tag<Composite_mi_tag>,       
+      composite_key<
+	CubitMeshSets, <br>
+	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
+	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
+ *
+ */
+typedef multi_index_container<
+  CubitMeshSets,
+  indexed_by<
+    hashed_unique<
+      tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
+    ordered_non_unique<
+      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
+    hashed_unique<
+      tag<Composite_mi_tag>,       
+      composite_key<
+	CubitMeshSets,
+	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
+	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
+  > > moabCubitMeshSet_multiIndex;
 
 /** 
  * \brief this struct keeps basic methods for moab enetiry

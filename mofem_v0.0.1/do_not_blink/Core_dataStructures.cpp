@@ -103,7 +103,29 @@ PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &mo
   }
   PetscFunctionReturn(0);
 }
-
+PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
+  PetscFunctionBegin;
+  bc_data.resize(tag_bc_size);
+  copy(&tag_bc_data[0],&tag_bc_data[tag_bc_size],bc_data.begin());
+  PetscFunctionReturn(0);
+}
+PetscErrorCode CubitMeshSets::print_Cubit_bc_data(ostream& os) const {
+  PetscFunctionBegin;
+  vector<char> bc_data;
+  get_Cubit_bc_data(bc_data);
+  os << "bc_data = ";
+  std::vector<char>::iterator vit = bc_data.begin();
+  for(;vit!=bc_data.end();vit++) {
+    os << std::hex << (int)((unsigned char)*vit) << " ";
+  }
+  os << ": ";
+  vit = bc_data.begin();
+  for(;vit!=bc_data.end();vit++) {
+    os << *vit;
+  }
+  os << std::endl;
+  PetscFunctionReturn(0);
+}
 ostream& operator<<(ostream& os,const CubitMeshSets& e) {
   os << "meshset " << e.meshset << " type " << e.CubitBCType;
   if(e.msId != NULL) os << " msId " << *(e.msId);
