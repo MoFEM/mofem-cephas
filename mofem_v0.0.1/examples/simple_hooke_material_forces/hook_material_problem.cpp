@@ -90,12 +90,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   //partition
-  ierr = mField.compose_problem("C_ALL_MATRIX","CCT_ALL_MATRIX","MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.compose_problem("C_ALL_MATRIX","CCT_ALL_MATRIX",false,"MATERIAL_MECHANICS",true); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("C_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("C_ALL_MATRIX"); CHKERRQ(ierr);
-
-  Range SurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
 
   //create matrices
   matPROJ_ctx proj_all_ctx(mField,"MATERIAL_MECHANICS","C_ALL_MATRIX");
@@ -113,9 +110,56 @@ int main(int argc, char *argv[]) {
   Vec F;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F); CHKERRQ(ierr);
 
+  struct materialDirihletBC: public BaseDirihletBC {
+
+    Range &CornersNodes;
+    materialDirihletBC(Interface &moab,Range& _CornerNodes): CornersNodes(_CornerNodes) {}
+
+    PetscErrorCode SetDirihletBC_to_ElementIndicies(
+      moabField::FEMethod *fe_method_ptr,string field_name,
+      vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
+      PetscFunctionBegin;
+      //Dirihlet form SideSet1
+      DirihletBC.resize(0);
+      Range::iterator siit1 = CornersNodes.begin();
+      for(;siit1!=CornersNodes.end();siit1++) {
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	  for(;riit!=hi_riit;riit++) {
+	    if(riit->get_name()!=field_name) continue;
+	    // all fixed
+	    // if some ranks are selected then we could apply BC in particular direction
+	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
+	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+	    }
+	  }
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	  for(;ciit!=hi_ciit;ciit++) {
+	    if(ciit->get_name()!=field_name) continue;
+	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
+	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	    }
+	  }
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  //Range SurfacesFaces;
+  //ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+  //ExampleDiriheltBC myDirihletBC(moab,SurfacesFaces);
+
+  Range CornersNodes;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
+  materialDirihletBC myDirihletBC(moab,CornersNodes);
+
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  ExampleDiriheltBC myDirihletBC(moab,SurfacesFaces);
   Material_ElasticFEMethod MyFE(
     moab,mField,proj_all_ctx,
     &myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
@@ -126,7 +170,7 @@ int main(int argc, char *argv[]) {
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
   ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,proj_all_ctx.K/*CTC_QTKQ*/,proj_all_ctx.K,SnesMat,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,CTC_QTKQ,proj_all_ctx.K,SnesMat,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();

@@ -159,7 +159,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
       CFE_SURFACE = new C_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.C);
       CFE_EDGE = new C_EDGE_FEMethod(moab,SurfacesFaces,CornersEdges,proj_all_ctx.C);
       CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.C);
-    }
+    //}
 
     ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
     ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -175,6 +175,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
       MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
       //std::string wait;
       //std::cin >> wait;
+    }
     }
 
     ierr = FEMethod_DriverComplexForLazy_Material::preProcess(); CHKERRQ(ierr);
@@ -226,7 +227,8 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
       }
       break;
       case ctx_SNESSetJacobian:
-	
+	ierr = proj_all_ctx.InitQTKQ(); CHKERRQ(ierr);
+	ierr = MatAXPY(*snes_B,1e6,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
