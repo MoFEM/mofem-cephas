@@ -35,5 +35,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elastic_interface")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity_trans_isotropic")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/static_pull_out_test")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity_trans_isotropic_fibre_interface")
+
 
 
