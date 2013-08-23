@@ -19,20 +19,13 @@
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
-#include "cholesky.hpp"
-#include <petscksp.h>
-
-#include "ElasticFEMethod.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = "...\n\n";
+static char help[] = "-my_file _mesh_name_ (I can read h5m, cub, vtk, etc.) \n\n";
 
 int main(int argc, char *argv[]) {
 
@@ -163,6 +156,10 @@ int main(int argc, char *argv[]) {
         }
 
     };
+
+    MyFiniteElement_For_Printing myFE;
+    ierr = mField.loop_finite_elements ("ELASTIC_MECHANICS","ELASTIC",myFE); CHKERRQ(ierr);
+  
     
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
