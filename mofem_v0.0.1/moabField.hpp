@@ -91,10 +91,40 @@ struct moabField {
   /** 
     * \brief get all CUBIT meshset by CUBIT type
     *
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more. 
+    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more). 
     * \param meshsets is range of meshsets
     */
   virtual PetscErrorCode get_CubitBCType_meshsets(const unsigned int CubitBCType,Range &meshsets) = 0;
+
+  /** 
+    * \brief get begin iterator of cubit mehset 
+    *
+    */
+  virtual moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_begin() = 0;
+
+  /** 
+    * \brief get end iterator of cubit mehset 
+    *
+    */
+  virtual moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_end() = 0;
+
+  /** 
+    * \brief get begin iterator of cubit mehset of given type
+    *
+    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+    */
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_begin(const unsigned int CubitBCType) = 0;
+
+  /** 
+    * \brief get end iterator of cubit mehset of given type
+    *
+    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+    */
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_end(const unsigned int CubitBCType) = 0;
+
+  #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
+    moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitBCType_meshsets_begin(CUBITBCTYPE); \
+    IT!=MFIELD.get_CubitBCType_meshsets_end(CUBITBCTYPE); IT++
 
   /// seed ref level by 3D ents in the meshset and its adjacencies (only TETs adjencies)
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit) = 0;
@@ -318,6 +348,9 @@ struct moabField {
     * \param V vector
     * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
     * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    * 
+    * SCATTER_REVERSE set data to field entities form V vector.
+    * SCATTER_FORWARD set vector V from data field entities
     */
   virtual PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
@@ -329,6 +362,8 @@ struct moabField {
     * \param V vector
     * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
     * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    *
+    * SCATTER_REVERSE set data to field entities form V vector.
     */
   virtual PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 

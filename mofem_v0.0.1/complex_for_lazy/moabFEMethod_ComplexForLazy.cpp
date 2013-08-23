@@ -262,14 +262,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     int g_dim = get_dim_gNTET();
     if(type_of_analysis&spatail_analysis) {
 	assert(12 == RowGlobSpatial[0].size());
-	KHH = ublas::zero_matrix<double>(12,12);
-	KHh = ublas::zero_matrix<double>(12,12);
-	Khh = ublas::zero_matrix<double>(12,12);
-	KhH = ublas::zero_matrix<double>(12,12);
+	KhH.resize(12,12);
+	KHh.resize(12,12);
+	Khh.resize(12,12);
 	ee = 0;
 	for(;ee<6;ee++) {
 	  assert(3*(unsigned int)NBEDGE_H1(order_edges[ee]) == RowGlobSpatial[1+ee].size());
-	  KedgeH_data[ee].resize(RowGlobSpatial[1+ee].size(),12);
+	  KedgeH_data[ee].resize(12,RowGlobSpatial[1+ee].size(),12);
 	  KedgeH[ee] = &*KedgeH_data[ee].data().begin();
 	  Kedgeh_data[ee].resize(RowGlobSpatial[1+ee].size(),12);
 	  Kedgeh[ee] = &*Kedgeh_data[ee].data().begin();
@@ -323,12 +322,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
     unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
     switch(sub_analysis_type) {
-      case material_analysis: {
-	ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
-	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &*KHH.data().begin(),&*KHh.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),g_dim,g_TET_W); CHKERRQ(ierr);
-      }
       case spatail_analysis: {
 	ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
@@ -349,6 +342,14 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	  &*Khvolume.data().begin(),&*KHvolume.data().begin(),Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(), 
 	  g_dim,g_TET_W); CHKERRQ(ierr);
+      }
+      break;
+      case material_analysis: {
+	KHH.resize(12,12);
+	ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
+	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	  &*KHH.data().begin(),NULL,NULL,NULL,NULL,g_dim,g_TET_W); CHKERRQ(ierr);
       }
       break;
       default:
@@ -381,6 +382,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
       }
       diff_volumeNinvJac = &diffH1elemNinvJac[0];
       int g_dim = get_dim_gNTET();
+      if(dofs_x_edge_data.size()!=6) SETERRQ(PETSC_COMM_SELF,1,"data vectors are not set");
       ee = 0;
       for(;ee<6;ee++) {
 	  if(dofs_x_edge_data[ee].size()!=0) {
@@ -390,6 +392,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	    Fint_h_edge[ee] = NULL;
 	  }
       }
+      if(dofs_x_face_data.size()!=4) SETERRQ(PETSC_COMM_SELF,1,"data vectors are not set");
       ff = 0;
       for(;ff<4;ff++) {
 	  if(dofs_x_face_data[ff].size()!=0) {

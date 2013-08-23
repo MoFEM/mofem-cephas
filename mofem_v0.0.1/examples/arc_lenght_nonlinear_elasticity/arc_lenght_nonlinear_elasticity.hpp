@@ -170,19 +170,19 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
-	  ierr = CalculateFint(snes_f); CHKERRQ(ierr);
-	  ierr = CaluclateFext(arc_ptr->F_lambda,t,NeumannSideSet); CHKERRQ(ierr);
+	  ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
+	  ierr = CaluclateSpatialFext(arc_ptr->F_lambda,t,NeumannSideSet); CHKERRQ(ierr);
 	}
 	break;
       case ctx_SNESSetJacobian: {
-	  ierr = CalculateTangent(*snes_B); CHKERRQ(ierr);
+	  ierr = CalculateSpatialTangent(*snes_B); CHKERRQ(ierr);
 	  FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
 	  dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("LAMBDA");
 	  hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("LAMBDA");
 	  if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  double _lambda_ = dit->get_FieldData();
 	  cblas_dscal(9,_lambda_,t,1);
-	  ierr = CalculateTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
+	  ierr = CalculateSpatialTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
 	}
 	break;
       default:

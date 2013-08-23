@@ -20,6 +20,9 @@
 #ifndef __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
 #define __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
 
+#include "moabField.hpp"
+#include "moabField_Core.hpp"
+
 namespace MoFEM {
 
 /**
@@ -211,4 +214,5 @@ PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f) {
 
 }
 
-#endif //__NONLINEAR_ELASTICITY_HPP__
+#endif //__MOABCONSTRAINSBYMARKAINSWORTH_HPP__
+

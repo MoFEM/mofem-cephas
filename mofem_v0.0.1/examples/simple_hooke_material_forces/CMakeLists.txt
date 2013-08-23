@@ -19,6 +19,9 @@
 add_executable(hook_material_forces hook_material_forces.cpp)
 target_link_libraries(hook_material_forces mofem_Field ${PROJECT_LIBS})
 
+add_executable(hook_material_problem hook_material_problem.cpp)
+target_link_libraries(hook_material_problem mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../../meshes/LShape.cub" "/" export_files_hook_material_forces)
 cm_export_file("../../meshes/LShapeCoarse.cub" "/" export_files_hook_material_forces)
 cm_export_file("../../meshes/LShapeDense.cub" "/" export_files_hook_material_forces)

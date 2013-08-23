@@ -12,7 +12,7 @@ find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
 find_program(CTEST_GIT_COMMAND NAMES git)
 
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
-  set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone --branch QuickFixies https://likask@bitbucket.org/likask/mofem-joseph.git ${GID_SOURCE_REPO}")
+  set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone --branch CDashTesting https://likask@bitbucket.org/likask/mofem-joseph.git ${GID_SOURCE_REPO}")
 else(EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} pull")
 endif()
