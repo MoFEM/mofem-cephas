@@ -19,6 +19,9 @@
 add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test mofem_Field ${PROJECT_LIBS})
 
+add_executable(print_data_on_elements print_data_on_elements.cpp)
+target_link_libraries(print_data_on_elements mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/LShape.cub" "/" export_atom_tests)
 
 
