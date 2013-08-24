@@ -185,13 +185,29 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
-    ierr = FEMethod_DriverComplexForLazy_Material::operator()(); CHKERRQ(ierr);
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesMaterial(); CHKERRQ(ierr);
+    ierr = GetData(dofs_x_edge_data,dofs_x_edge,
+      dofs_x_face_data,dofs_x_face,
+      dofs_x_volume,dofs_x,
+      spatial_field_name); CHKERRQ(ierr);
+
+    ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
+    if(Diagonal!=PETSC_NULL) {
+      if(DirihletBC.size()>0) {
+	DirihletBCDiagVal.resize(DirihletBC.size());
+	fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
+	ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
+      }
+    }
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
+	ierr = CalculateMaterialFint(snes_f); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
+	ierr = CalculateMaterialTangent(proj_all_ctx.K); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -228,7 +244,10 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
       break;
       case ctx_SNESSetJacobian:
 	ierr = proj_all_ctx.InitQTKQ(); CHKERRQ(ierr);
-	ierr = MatAXPY(*snes_B,1e6,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatCopy(proj_all_ctx.K,*snes_B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+	ierr = MatAXPY(*snes_B,1e16,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");

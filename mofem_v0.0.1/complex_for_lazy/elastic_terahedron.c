@@ -31,15 +31,23 @@ void TakeRe(__CLPK_doublecomplex *xA,double *reA) {
   } 
 }
 void PiolaKrihoff1_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xP_PullBack) {
-  __CLPK_doublecomplex tmp2 = {0,0};
-  cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xP,3,inv_xH,3,&tmp2,xP_PullBack,3);
+  if(ph_eq_vol == hooke) {
+    cblas_zcopy(0,xP,1,xP_PullBack,1);
+  } else {
+    __CLPK_doublecomplex tmp2 = {0,0};
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xP,3,inv_xH,3,&tmp2,xP_PullBack,3);
+  }
+  
 }
 void ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xStress,__CLPK_doublecomplex *xStress_PullBack) {
-  __CLPK_doublecomplex tmp2 = {0,0};
-  cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xStress,3,inv_xH,3,&tmp2,xStress_PullBack,3);
+  if(ph_eq_vol == hooke) {
+    cblas_zcopy(9,xStress,1,xStress_PullBack,1);
+  } else {
+    __CLPK_doublecomplex tmp2 = {0,0};
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xStress,3,inv_xH,3,&tmp2,xStress_PullBack,3);
+  }
 }
-//assert(info ==0); 
-//assert(det_xF.r >= 0); 
+
 #define COMP_STRESSES \
   SpatialGradientOfDeformation(xh,inv_xH,xF); \
   ierr = DeterminantComplexGradient(xF,&det_xF); CHKERRQ(ierr); \

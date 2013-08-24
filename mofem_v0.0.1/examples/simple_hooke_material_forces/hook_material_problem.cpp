@@ -94,22 +94,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("C_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("C_ALL_MATRIX"); CHKERRQ(ierr);
 
-  //create matrices
-  matPROJ_ctx proj_all_ctx(mField,"MATERIAL_MECHANICS","C_ALL_MATRIX");
-  ierr = mField.MatCreateMPIAIJWithArrays("MATERIAL_MECHANICS",&proj_all_ctx.K); CHKERRQ(ierr);
-  ierr = MatSetOption(proj_all_ctx.K,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-  ierr = MatSetOption(proj_all_ctx.K,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-  ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&proj_all_ctx.C); CHKERRQ(ierr);
-  Mat CTC_QTKQ;
-  int M,N,m,n;
-  ierr = MatGetSize(proj_all_ctx.K,&M,&N); CHKERRQ(ierr);
-  ierr = MatGetLocalSize(proj_all_ctx.K,&m,&n); CHKERRQ(ierr);
-  ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&CTC_QTKQ); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(CTC_QTKQ,MATOP_MULT,(void(*)(void))matCTC_QTKQ_mult_shell); CHKERRQ(ierr);
-
-  Vec F;
-  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F); CHKERRQ(ierr);
-
+  
   struct materialDirihletBC: public BaseDirihletBC {
 
     Range &CornersNodes;
@@ -150,13 +135,27 @@ int main(int argc, char *argv[]) {
 
   };
 
-  //Range SurfacesFaces;
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-  //ExampleDiriheltBC myDirihletBC(moab,SurfacesFaces);
-
   Range CornersNodes;
   ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
   materialDirihletBC myDirihletBC(moab,CornersNodes);
+
+  //create matrices
+  matPROJ_ctx proj_all_ctx(mField,"MATERIAL_MECHANICS","C_ALL_MATRIX");
+  Mat precK;
+  ierr = mField.MatCreateMPIAIJWithArrays("MATERIAL_MECHANICS",&precK); CHKERRQ(ierr);
+  //ierr = MatSetOption(precK,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  //ierr = MatSetOption(precK,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = MatDuplicate(precK,MAT_DO_NOT_COPY_VALUES,&proj_all_ctx.K); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&proj_all_ctx.C); CHKERRQ(ierr);
+  Mat CTC_QTKQ;
+  int M,N,m,n;
+  ierr = MatGetSize(proj_all_ctx.K,&M,&N); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(proj_all_ctx.K,&m,&n); CHKERRQ(ierr);
+  ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&CTC_QTKQ); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(CTC_QTKQ,MATOP_MULT,(void(*)(void))matCTC_QTKQ_mult_shell); CHKERRQ(ierr);
+
+  Vec F;
+  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F); CHKERRQ(ierr);
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
@@ -170,7 +169,7 @@ int main(int argc, char *argv[]) {
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
   ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,CTC_QTKQ,proj_all_ctx.K,SnesMat,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,CTC_QTKQ,precK,SnesMat,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
@@ -213,6 +212,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&proj_all_ctx.K); CHKERRQ(ierr);
+  ierr = MatDestroy(&precK); CHKERRQ(ierr);
   ierr = MatDestroy(&proj_all_ctx.C); CHKERRQ(ierr);
   ierr = MatDestroy(&CTC_QTKQ); CHKERRQ(ierr);
 
