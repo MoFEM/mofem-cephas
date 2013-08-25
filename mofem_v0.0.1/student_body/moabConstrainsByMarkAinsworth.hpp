@@ -54,6 +54,7 @@ struct matPROJ_ctx {
   }
 
   Mat C,K;
+  Vec g;
 
   /**
     * \brief Init vectors and matrices for Q and P shell matrices, stacttering is set based on x_problem and y_problem

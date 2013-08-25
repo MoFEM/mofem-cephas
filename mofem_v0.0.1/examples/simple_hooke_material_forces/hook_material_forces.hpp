@@ -146,7 +146,9 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
   Range CornersEdges,CornersNodes,SurfacesFaces;
   C_SURFACE_FEMethod *CFE_SURFACE;
+  g_SURFACE_FEMethod *gFE_SURFACE;
   C_EDGE_FEMethod *CFE_EDGE;
+  g_EDGE_FEMethod *gFE_EDGE;
   C_CORNER_FEMethod *CFE_CORNER;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -157,7 +159,9 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
       ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
       ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
       CFE_SURFACE = new C_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.C);
+      gFE_SURFACE = new g_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.g);
       CFE_EDGE = new C_EDGE_FEMethod(moab,SurfacesFaces,CornersEdges,proj_all_ctx.C);
+      gFE_EDGE = new g_EDGE_FEMethod(moab,SurfacesFaces,CornersEdges,proj_all_ctx.g);
       CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.C);
     //}
 

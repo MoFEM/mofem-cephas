@@ -153,11 +153,12 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 };
 
 struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
-
-  g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,int _verbose = 0): 
-    C_SURFACE_FEMethod(_moab,skin_faces,_C,_verbose) {}
-  g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Mat _C,int _verbose = 0): 
-    C_SURFACE_FEMethod(_moab,_skin_faces,_C,_verbose) {};
+  
+  Vec g;
+  g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Vec _g,int _verbose = 0): 
+    C_SURFACE_FEMethod(_moab,skin_faces,PETSC_NULL,_verbose),g(_g) {}
+  g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Vec _g,int _verbose = 0): 
+    C_SURFACE_FEMethod(_moab,_skin_faces,PETSC_NULL,_verbose),g(_g) {};
 
   ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
   PetscErrorCode Integrate() {
@@ -183,7 +184,6 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
 struct C_EDGE_FEMethod:public C_SURFACE_FEMethod {
 
   Range edges,faces;
-
   C_EDGE_FEMethod(Interface& _moab,EntityHandle edges_meshset,Mat _C,int _verbose = 0): 
     C_SURFACE_FEMethod(_moab,_C,_verbose) {
     run_in_constructor();
@@ -278,6 +278,34 @@ struct C_EDGE_FEMethod:public C_SURFACE_FEMethod {
 
 };
 
+struct g_EDGE_FEMethod: public C_EDGE_FEMethod {
+  
+  Vec g;
+  g_EDGE_FEMethod(Interface& _moab,EntityHandle edges_meshset,Vec _g,int _verbose = 0): 
+    C_EDGE_FEMethod(_moab,edges_meshset,PETSC_NULL,_verbose),g(_g) {}
+  g_EDGE_FEMethod(Interface& _moab,Range &_faces,Range &_edges,Vec _g,int _verbose = 0): 
+    C_EDGE_FEMethod(_moab,_faces,_edges,PETSC_NULL,_verbose),g(_g) {};
+
+  ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
+  PetscErrorCode Integrate() {
+    PetscFunctionBegin;
+    g_VEC_ELEM.resize(3);
+    ublas::noalias(g_VEC_ELEM) = ublas::zero_vector<double>(9);
+    double area0 = norm_2(ent_normal_map0);
+    double area = norm_2(ent_normal_map);
+    for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
+	for(int nn = 0;nn<3;nn++) {
+	  for(int dd = 0;dd<3;dd++) {
+	    double X0_dd = cblas_ddot(3,&g_NTRI3[0],1,&coords.data()[dd],3);
+	    double X_dd = cblas_ddot(3,&g_NTRI3[0],1,&ent_dofs_data.data()[dd],3);
+	    g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X_dd-X0_dd)*(area0/area);
+	  }
+	}
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
 
 struct C_CORNER_FEMethod:public moabField::FEMethod {
   ErrorCode rval;
@@ -297,6 +325,22 @@ struct C_CORNER_FEMethod:public moabField::FEMethod {
   vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
   ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
+  PetscErrorCode Integrate() {
+    PetscFunctionBegin;
+    C_MAT_ELEM.resize(3,3);
+    for(int nn = 0;nn<3;nn++) {
+	for(int dd = 0;dd<3;dd++) {
+	  if(nn!=dd) C_MAT_ELEM(nn,dd) = 0;
+	  else C_MAT_ELEM(nn,dd) = 1;
+	}
+    }
+    //cerr << C_MAT_ELEM << endl;
+    ierr = MatSetValues(C,
+      ent_global_row_indices.size(),&(ent_global_row_indices[0]),
+      ent_global_col_indices.size(),&(ent_global_col_indices[0]),
+      &(C_MAT_ELEM.data())[0],INSERT_VALUES); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
@@ -328,18 +372,7 @@ struct C_CORNER_FEMethod:public moabField::FEMethod {
 	  int local_idx = dit->get_petsc_local_dof_idx();
 	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
       }
-      C_MAT_ELEM.resize(3,3);
-      for(int nn = 0;nn<3;nn++) {
-	for(int dd = 0;dd<3;dd++) {
-	  if(nn!=dd) C_MAT_ELEM(nn,dd) = 0;
-	  else C_MAT_ELEM(nn,dd) = 1;
-	}
-      }
-      //cerr << C_MAT_ELEM << endl;
-      ierr = MatSetValues(C,
-	ent_global_row_indices.size(),&(ent_global_row_indices[0]),
-	ent_global_col_indices.size(),&(ent_global_col_indices[0]),
-	&(C_MAT_ELEM.data())[0],INSERT_VALUES); CHKERRQ(ierr);
+      ierr = this->Integrate(); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }
@@ -349,6 +382,15 @@ struct C_CORNER_FEMethod:public moabField::FEMethod {
   }
 
 };
+
+struct g_CORNER_FEMethod:public C_CORNER_FEMethod {
+
+  Vec g;
+  g_CORNER_FEMethod(Interface& _moab,Range _corners,Vec _g,int _verbose = 0): 
+    C_CORNER_FEMethod(_moab,_corners,PETSC_NULL,_verbose),g(_g) {}
+
+};
+
 
 }
 
