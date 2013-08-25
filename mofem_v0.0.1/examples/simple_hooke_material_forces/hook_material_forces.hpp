@@ -176,6 +176,8 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
       //std::string wait;
       //std::cin >> wait;
     }
+    ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
+    ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
     }
 
     ierr = FEMethod_DriverComplexForLazy_Material::preProcess(); CHKERRQ(ierr);
@@ -247,7 +249,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatCopy(proj_all_ctx.K,*snes_B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-	ierr = MatAXPY(*snes_B,1e16,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+	ierr = MatAXPY(*snes_B,1e12,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");

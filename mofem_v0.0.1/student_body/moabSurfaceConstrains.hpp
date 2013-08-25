@@ -54,6 +54,8 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
     FEMethod(),moab(_moab),C(_C),skin_faces(_skin_faces) {
     run_in_constructor();
   }
+  C_SURFACE_FEMethod(Interface& _moab,Mat _C,int _verbose = 0): 
+    FEMethod(),moab(_moab),C(_C) {} 
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -64,6 +66,34 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
   ublas::vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
   ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
+  ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map0;
+  ublas::vector<double> coords;
+  virtual PetscErrorCode Integrate() {
+    PetscFunctionBegin;
+    C_MAT_ELEM.resize(3,9);
+    ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
+    double area0 = norm_2(ent_normal_map0);
+    double area = norm_2(ent_normal_map);
+    for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
+	for(int nn = 0;nn<3;nn++) {
+	  for(int dd = 0;dd<3;dd++) {
+	    for(int nnn = 0;nnn<3;nnn++) {
+	      C_MAT_ELEM(nn,3*nnn+dd) += G_TRI_W[gg]*ent_normal_map[dd]*g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+nnn]*(area0/area);
+	    }
+	  }
+	}
+    }
+    /*cerr << "ROWS " << ent_global_row_indices << endl;
+    cerr << "COLS " << ent_global_col_indices << endl;
+    cerr << "NORMAL " << ent_normal_map << endl;
+    cerr << "MAT " << C_MAT_ELEM << endl;*/
+    ierr = MatSetValues(C,
+      ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
+      ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
+      &(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
@@ -103,30 +133,15 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	    ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	}
       }
+      coords.resize(num_nodes*3);
+      rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+      ent_normal_map0.resize(3);
+      ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&coords.data()[0],&ent_normal_map0.data()[0]); CHKERRQ(ierr);
       ent_normal_map.resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
       ent_normal_map *= siit->sense;
-      //double area = norm_2(ent_normal_map);
       rval = moab.tag_set_data(th_material_normal,&face,1,&ent_normal_map.data()[0]); CHKERR_PETSC(rval);
-      C_MAT_ELEM.resize(3,9);
-      ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
-      for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
-	for(int nn = 0;nn<3;nn++) {
-	  for(int dd = 0;dd<3;dd++) {
-	    for(int nnn = 0;nnn<3;nnn++) {
-	      C_MAT_ELEM(nn,3*nnn+dd) += G_TRI_W[gg]*ent_normal_map[dd]*g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+nnn];
-	    }
-	  }
-	}
-      }
-      /*cerr << "ROWS " << ent_global_row_indices << endl;
-      cerr << "COLS " << ent_global_col_indices << endl;
-      cerr << "NORMAL " << ent_normal_map << endl;
-      cerr << "MAT " << C_MAT_ELEM << endl;*/
-      ierr = MatSetValues(C,
-	ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
-	ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
-	&(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = this->Integrate(); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }
@@ -137,33 +152,46 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 
 };
 
-struct C_EDGE_FEMethod:public moabField::FEMethod {
-  ErrorCode rval;
-  PetscErrorCode ierr;
-  Interface& moab;
+struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
 
-  Mat C;
-  Range edges,faces;
-  vector<double> diffNTRI;
-  vector<double> g_NTRI3;
-  const double *G_TRI_W;
+  g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,int _verbose = 0): 
+    C_SURFACE_FEMethod(_moab,skin_faces,_C,_verbose) {}
+  g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Mat _C,int _verbose = 0): 
+    C_SURFACE_FEMethod(_moab,_skin_faces,_C,_verbose) {};
 
-  void run_in_constructor() {
-    diffNTRI.resize(6);
-    ShapeDiffMBTRI(&diffNTRI[0]);
-    g_NTRI3.resize(3*3);
-    ShapeMBTRI(&g_NTRI3[0],G_TRI_X3,G_TRI_Y3,3);
-    G_TRI_W = G_TRI_W3;
+  ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
+  PetscErrorCode Integrate() {
+    PetscFunctionBegin;
+    g_VEC_ELEM.resize(3);
+    ublas::noalias(g_VEC_ELEM) = ublas::zero_vector<double>(9);
+    double area0 = norm_2(ent_normal_map0);
+    double area = norm_2(ent_normal_map);
+    for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
+	for(int nn = 0;nn<3;nn++) {
+	  for(int dd = 0;dd<3;dd++) {
+	    double X0_dd = cblas_ddot(3,&g_NTRI3[0],1,&coords.data()[dd],3);
+	    double X_dd = cblas_ddot(3,&g_NTRI3[0],1,&ent_dofs_data.data()[dd],3);
+	    g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X_dd-X0_dd)*(area0/area);
+	  }
+	}
+    }
+    PetscFunctionReturn(0);
   }
 
+};
+
+struct C_EDGE_FEMethod:public C_SURFACE_FEMethod {
+
+  Range edges,faces;
+
   C_EDGE_FEMethod(Interface& _moab,EntityHandle edges_meshset,Mat _C,int _verbose = 0): 
-    FEMethod(),moab(_moab),C(_C) {
+    C_SURFACE_FEMethod(_moab,_C,_verbose) {
     run_in_constructor();
     rval = moab.get_entities_by_type(edges_meshset,MBEDGE,edges,true);  CHKERR_THROW(rval);
     rval = moab.get_entities_by_type(edges_meshset,MBTRI,faces,true);  CHKERR_THROW(rval);
   }
   C_EDGE_FEMethod(Interface& _moab,Range &_faces,Range &_edges,Mat _C,int _verbose = 0): 
-    FEMethod(),moab(_moab),C(_C),faces(_faces),edges(_edges) {
+  C_SURFACE_FEMethod(_moab,_C,_verbose),faces(_faces),edges(_edges) {
     run_in_constructor();
   }
 
@@ -174,10 +202,6 @@ struct C_EDGE_FEMethod:public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  ublas::matrix<double> C_MAT_ELEM;
-  ublas::vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
-  ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
-  ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
@@ -239,34 +263,16 @@ struct C_EDGE_FEMethod:public moabField::FEMethod {
 	      ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	  }
 	}
+	coords.resize(num_nodes*3);
+	rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+	ent_normal_map0.resize(3);
+	ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&coords.data()[0],&ent_normal_map0.data()[0]); CHKERRQ(ierr);
 	ent_normal_map.resize(3);
 	ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
 	ent_normal_map *= siit->sense;
-	C_MAT_ELEM.resize(3,9);
-	ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
-	for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
-	  for(int nn = 0;nn<3;nn++) {
-	    for(int dd = 0;dd<3;dd++) {
-	      for(int nnn = 0;nnn<3;nnn++) {
-		C_MAT_ELEM(nn,3*nnn+dd) += G_TRI_W[gg]*ent_normal_map[dd]*g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+nnn];
-	      }
-	    }
-	  }
-	}
-	/*cerr << "ROWS " << ent_global_row_indices << endl;
-	cerr << "COLS " << ent_global_col_indices << endl;
-	cerr << "NORMAL " << ent_normal_map << endl;
-	cerr << "MAT " << C_MAT_ELEM << endl;*/
-	ierr = MatSetValues(C,
-	  ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
-	  ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
-	  &(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+	ierr = this->Integrate(); CHKERRQ(ierr);
       }
     }
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
     PetscFunctionReturn(0);
   }
 

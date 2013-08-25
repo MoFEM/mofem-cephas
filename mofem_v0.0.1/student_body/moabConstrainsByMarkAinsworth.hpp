@@ -65,8 +65,8 @@ struct matPROJ_ctx {
       PetscErrorCode ierr;
       PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
       ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
-      ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
-      ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr);
+      ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr); // need to be calulated when C is changed
+      ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr); // neet to be recalculated when C is changed
       ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
       ierr = KSPSetUp(ksp); CHKERRQ(ierr);
@@ -81,6 +81,7 @@ struct matPROJ_ctx {
   }
   PetscErrorCode RecalculateCTandCCT() {
     PetscFunctionBegin;
+    if(initQorP) PetscFunctionReturn(0);
     PetscErrorCode ierr;
     ierr = MatTranspose(C,MAT_REUSE_MATRIX,&CT); CHKERRQ(ierr);
     ierr = MatTransposeMatMult(CT,CT,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
@@ -107,7 +108,7 @@ struct matPROJ_ctx {
       initQTKQ = false;
       PetscErrorCode ierr;
       PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
-      ierr = MatTransposeMatMult(C,C,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr);
+      ierr = MatTransposeMatMult(C,C,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr); // need to be recalulated when C is changed
       /*if(debug) {
 	//MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
 	int m,n;
@@ -125,6 +126,7 @@ struct matPROJ_ctx {
   }
   PetscErrorCode RecalulateCTC() {
     PetscFunctionBegin;
+    if(initQTKQ) PetscFunctionReturn(0);
     PetscErrorCode ierr;
     ierr = MatTransposeMatMult(C,C,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
