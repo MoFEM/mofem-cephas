@@ -73,7 +73,7 @@
   } \
 } while (false) 
 
-/// check maob error and comunicate it using petsc interface
+/// check moab error and communicate it using petsc interface
 #define CHKERR_PETSC(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
@@ -102,14 +102,14 @@
 }
 
 
-/** \brief set barier start
+/** \brief set barrier start
  *
- * Run code in seqence, starting fomr proces 0, and ends on last proces.
+ * Run code in sequence, starting from process 0, and ends on last process.
  */
 #define BARRIER_RANK_START(PCMB) \
   { for(unsigned int i = 0; \
   i<PCMB->proc_config().proc_rank(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
-/// set barier end
+/// set barrier end
 #define BARRIER_RANK_END(PCMB) \
   { for(unsigned int i = PCMB->proc_config().proc_rank(); \
   i<PCMB->proc_config().proc_size(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
@@ -191,9 +191,9 @@ enum Cubit_BC {
 /// approximation space 
 enum FieldSpace { 
   NoField = 1, 	///< signel scalar or vector of scalars describe state
-  H1, 		///< continous filed
-  Hdiv,		///< field with continous normal traction
-  Hcurl,	///< field with continous tangents
+  H1, 		///< continuous field
+  Hdiv,		///< field with continuous normal traction
+  Hcurl,	///< field with continuous tangents
   L2,		///< field with C-1 continuity
   LastSpace 	///< FieldSpace in [ 0, LastSpace )
 }; 
@@ -220,8 +220,8 @@ enum by_what {
 };
 
 /* This small utility that cascades two key extractors will be
- * used througout the boost example 
- * http://www.boost.org/doc/libs/1_53_0/libs/multi_index/example/complex_structs.cpp)
+ * used throughout the boost example 
+ * http://www.boost.org/doc/libs/1_53_0/libs/multi_index/example/complex_structs.cpp
  */
 template<class KeyExtractor1,class KeyExtractor2>
 struct key_from_key
@@ -368,7 +368,7 @@ struct CubitMeshSets {
   /**
    * \brief get bc_data vector from MoFEM database
    * 
-   * \param b_data in/out vector were bc_data will be stored
+   * \param b_data is the in/out vector were bc_data will be stored
    */
   PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
     
@@ -415,7 +415,7 @@ typedef multi_index_container<
   > > moabCubitMeshSet_multiIndex;
 
 /** 
- * \brief this struct keeps basic methods for moab enetiry
+ * \brief this struct keeps basic methods for moab entity
  */
 struct BasicMoFEMEntity {
   EntityHandle ent;
@@ -428,7 +428,7 @@ struct BasicMoFEMEntity {
 };
 
 /** 
- * \brief struct keeps data about selected prism ajacencies, and potenialy othere entities
+ * \brief struct keeps data about selected prism adjacencies, and potentially other entities
  */
 struct AdjacencyMapForBasicMoFEMEntity: public BasicMoFEMEntity {
   BasicMoFEMEntity Adj; ///< adjacent entity to this AdjacencyMapForBasicMoFEMEntity

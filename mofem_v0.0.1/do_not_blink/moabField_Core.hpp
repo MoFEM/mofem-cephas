@@ -28,7 +28,7 @@ namespace MoFEM {
 
 /** \brief Core moabField class
  *
- * This clas is not used directly by the ueser
+ * This class is not used directly by the user
  */
 struct moabField_Core: public moabField {
   ErrorCode rval;
@@ -174,7 +174,7 @@ struct moabField_Core: public moabField {
   //adjacencies
   PetscErrorCode list_adjacencies() const;
 
-  //problem buildig
+  //problem building
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
