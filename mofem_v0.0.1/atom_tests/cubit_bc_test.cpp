@@ -27,6 +27,20 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
+/*! \struct bc_type
+ *  \brief Identify type of BC
+ *
+ *   Defines a string of characters which is used for comparison against the leading characters in bc_data.
+ *   Once the type of BC is identified, the corresponding bc data structure can be used.
+ *
+ */
+
+struct __attribute__((packed)) bc_type { // pack the structure to eliminate padding
+    
+    char name [20]; // BC name
+    
+};
+
 
 // Temperature (NodeSets)
 struct __attribute__((packed)) bc_temp {  // pack the structure in order to get rid of padding
@@ -183,7 +197,58 @@ int main(int argc, char *argv[]) {
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
-  } 
+      
+      //DK work in progress
+      bc_type mydata;
+      memcpy(&mydata,&bc_data[0],sizeof(bc_type));
+      
+      int scom;
+      if (strcmp (mydata.name,"Temperature") == 0)
+          scom = 1;
+      else if (strcmp (mydata.name,"Velocity") == 0)
+          scom = 2;
+      else if (strcmp (mydata.name,"Acceleration") == 0)
+          scom = 3;
+      else if (strcmp (mydata.name,"Force") == 0)
+          scom = 4;
+      else if (strcmp (mydata.name,"Displacement") == 0)
+          scom = 5;
+      else if (strcmp (mydata.name,"Pressure") == 0)
+          scom = 6;
+      else if (strcmp (mydata.name,"HeatFlux") == 0)
+          scom = 7;
+      
+      
+      switch (scom)
+      {
+          case 1:
+              cout << "Temperature";
+              break;
+          case 2:
+              cout << "Velocity";
+              break;
+          case 3:
+              cout << "Acceleration";
+              break;
+          case 4:
+              cout << "Force";
+              break;
+          case 5:
+              cout << "Displacement";
+              break;
+          case 6:
+              cout << "Pressure";
+              break;
+          case 7:
+              cout << "Heat Flux";
+              break;
+              
+          default:
+              cout << "BC not recognized";
+              
+      }
+      
+ }
 
   cout << "<<<< SideSets >>>>>" << endl;
   //SideSets
