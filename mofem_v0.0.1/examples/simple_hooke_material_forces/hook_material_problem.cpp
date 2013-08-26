@@ -147,6 +147,8 @@ int main(int argc, char *argv[]) {
   //ierr = MatSetOption(precK,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatDuplicate(precK,MAT_DO_NOT_COPY_VALUES,&proj_all_ctx.K); CHKERRQ(ierr);
   ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&proj_all_ctx.C); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("C_ALL_MATRIX",Row,&proj_all_ctx.g); CHKERRQ(ierr);
+
   Mat CTC_QTKQ;
   int M,N,m,n;
   ierr = MatGetSize(proj_all_ctx.K,&M,&N); CHKERRQ(ierr);
@@ -214,6 +216,7 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&proj_all_ctx.K); CHKERRQ(ierr);
   ierr = MatDestroy(&precK); CHKERRQ(ierr);
   ierr = MatDestroy(&proj_all_ctx.C); CHKERRQ(ierr);
+  ierr = VecDestroy(&proj_all_ctx.g); CHKERRQ(ierr);
   ierr = MatDestroy(&CTC_QTKQ); CHKERRQ(ierr);
 
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);

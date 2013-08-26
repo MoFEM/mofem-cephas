@@ -156,15 +156,19 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
   
   Vec g;
   g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Vec _g,int _verbose = 0): 
-    C_SURFACE_FEMethod(_moab,skin_faces,PETSC_NULL,_verbose),g(_g) {}
+    C_SURFACE_FEMethod(_moab,skin_faces,PETSC_NULL,_verbose),g(_g) {
+    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+  }
   g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Vec _g,int _verbose = 0): 
-    C_SURFACE_FEMethod(_moab,_skin_faces,PETSC_NULL,_verbose),g(_g) {};
+    C_SURFACE_FEMethod(_moab,_skin_faces,PETSC_NULL,_verbose),g(_g) {
+    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+  };
 
   ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
   PetscErrorCode Integrate() {
     PetscFunctionBegin;
     g_VEC_ELEM.resize(3);
-    ublas::noalias(g_VEC_ELEM) = ublas::zero_vector<double>(9);
+    ublas::noalias(g_VEC_ELEM) = ublas::zero_vector<double>(3);
     double area0 = norm_2(ent_normal_map0);
     double area = norm_2(ent_normal_map);
     for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
@@ -176,6 +180,10 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
 	  }
 	}
     }
+    if(ent_global_row_indices.size()!=g_VEC_ELEM.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    ierr = VecSetValues(g,
+      ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
+      &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -282,26 +290,33 @@ struct g_EDGE_FEMethod: public C_EDGE_FEMethod {
   
   Vec g;
   g_EDGE_FEMethod(Interface& _moab,EntityHandle edges_meshset,Vec _g,int _verbose = 0): 
-    C_EDGE_FEMethod(_moab,edges_meshset,PETSC_NULL,_verbose),g(_g) {}
+    C_EDGE_FEMethod(_moab,edges_meshset,PETSC_NULL,_verbose),g(_g) {
+    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+  }
   g_EDGE_FEMethod(Interface& _moab,Range &_faces,Range &_edges,Vec _g,int _verbose = 0): 
-    C_EDGE_FEMethod(_moab,_faces,_edges,PETSC_NULL,_verbose),g(_g) {};
+    C_EDGE_FEMethod(_moab,_faces,_edges,PETSC_NULL,_verbose),g(_g) {
+    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+  };
 
   ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
   PetscErrorCode Integrate() {
     PetscFunctionBegin;
     g_VEC_ELEM.resize(3);
-    ublas::noalias(g_VEC_ELEM) = ublas::zero_vector<double>(9);
+    ublas::noalias(g_VEC_ELEM) = ublas::zero_vector<double>(3);
     double area0 = norm_2(ent_normal_map0);
     double area = norm_2(ent_normal_map);
     for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
-	for(int nn = 0;nn<3;nn++) {
-	  for(int dd = 0;dd<3;dd++) {
-	    double X0_dd = cblas_ddot(3,&g_NTRI3[0],1,&coords.data()[dd],3);
-	    double X_dd = cblas_ddot(3,&g_NTRI3[0],1,&ent_dofs_data.data()[dd],3);
-	    g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X_dd-X0_dd)*(area0/area);
-	  }
+      for(int nn = 0;nn<3;nn++) {
+	for(int dd = 0;dd<3;dd++) {
+	  double X0_dd = cblas_ddot(3,&g_NTRI3[0],1,&coords.data()[dd],3);
+	  double X_dd = cblas_ddot(3,&g_NTRI3[0],1,&ent_dofs_data.data()[dd],3);
+	  g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X_dd-X0_dd)*(area0/area);
 	}
+      }
     }
+    ierr = VecSetValues(g,
+      ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
+      &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -325,7 +340,8 @@ struct C_CORNER_FEMethod:public moabField::FEMethod {
   vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
   ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
-  PetscErrorCode Integrate() {
+  ublas::vector<double,ublas::bounded_array<double,3> > coords; 
+  virtual PetscErrorCode Integrate() {
     PetscFunctionBegin;
     C_MAT_ELEM.resize(3,3);
     for(int nn = 0;nn<3;nn++) {
@@ -357,21 +373,23 @@ struct C_CORNER_FEMethod:public moabField::FEMethod {
       hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",node));
       if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
       for(;dit!=hi_dit;dit++) {
-	  int global_idx = dit->get_petsc_gloabl_dof_idx();
-	  ent_global_col_indices[dit->get_dof_rank()] = global_idx;
-	  int local_idx = dit->get_petsc_local_dof_idx();
-	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
-	  ent_dofs_data[dit->get_dof_rank()] = dit->get_FieldData();
+	int global_idx = dit->get_petsc_gloabl_dof_idx();
+	ent_global_col_indices[dit->get_dof_rank()] = global_idx;
+	int local_idx = dit->get_petsc_local_dof_idx();
+	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	ent_dofs_data[dit->get_dof_rank()] = dit->get_FieldData();
       }
       dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_CORNER",node));
       hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_CORNER",node));
       if(distance(dit,hi_dit)!=3) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_CORNER should be 3, but is %d",distance(dit,hi_dit));
       for(;dit!=hi_dit;dit++) {
-	  int global_idx = dit->get_petsc_gloabl_dof_idx();
-	  ent_global_row_indices[dit->get_dof_rank()] = global_idx;
-	  int local_idx = dit->get_petsc_local_dof_idx();
-	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	int global_idx = dit->get_petsc_gloabl_dof_idx();
+	ent_global_row_indices[dit->get_dof_rank()] = global_idx;
+	int local_idx = dit->get_petsc_local_dof_idx();
+	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
       }
+      coords.resize(3);
+      rval = moab.get_coords(&node,1,&*coords.data().begin()); CHKERR_PETSC(rval);
       ierr = this->Integrate(); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
@@ -383,11 +401,26 @@ struct C_CORNER_FEMethod:public moabField::FEMethod {
 
 };
 
-struct g_CORNER_FEMethod:public C_CORNER_FEMethod {
-
+struct g_CORNER_FEMethod: public C_CORNER_FEMethod {
+  
   Vec g;
   g_CORNER_FEMethod(Interface& _moab,Range _corners,Vec _g,int _verbose = 0): 
-    C_CORNER_FEMethod(_moab,_corners,PETSC_NULL,_verbose),g(_g) {}
+    C_CORNER_FEMethod(_moab,_corners,PETSC_NULL,_verbose),g(_g) {
+    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+  }
+
+  ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
+  PetscErrorCode Integrate() {
+    PetscFunctionBegin;
+    g_VEC_ELEM.resize(3);
+    for(int nn = 0;nn<3;nn++) {
+      g_VEC_ELEM[nn] = ent_dofs_data[nn] - coords[nn];
+    }
+    ierr = VecSetValues(g,
+      ent_global_row_indices.size(),&(ent_global_row_indices[0]),
+      &(g_VEC_ELEM.data())[0],INSERT_VALUES); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
 };
 
