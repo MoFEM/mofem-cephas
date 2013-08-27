@@ -43,6 +43,7 @@ struct matPROJ_ctx {
   PetscLogEvent USER_EVENT_projInit;
   PetscLogEvent USER_EVENT_projQ;
   PetscLogEvent USER_EVENT_projP;
+  PetscLogEvent USER_EVENT_projR;
   PetscLogEvent USER_EVENT_projCTC_QTKQ;
   matPROJ_ctx(moabField& _mField,string _x_problem,string _y_problem): 
     mField(_mField),x_problem(_x_problem),y_problem(_y_problem),
@@ -50,6 +51,7 @@ struct matPROJ_ctx {
     PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
     PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
     PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
+    PetscLogEventRegister("ProjectionR",0,&USER_EVENT_projR);
     PetscLogEventRegister("ProjectionCTC_QTKQ",0,&USER_EVENT_projCTC_QTKQ);
   }
 
@@ -145,6 +147,7 @@ struct matPROJ_ctx {
   }
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
   friend PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f);
+  friend PetscErrorCode matR_mult_shell(Mat P,Vec x,Vec f);
   friend PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f);
 };
 
@@ -195,6 +198,24 @@ PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
   ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projP,0,0,0,0);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  void *void_ctx;
+  ierr = MatShellGetContext(R,&void_ctx); CHKERRQ(ierr);
+  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
+  PetscLogEventBegin(ctx->USER_EVENT_projR,0,0,0,0);
+  ierr = ctx->InitQorP(x); CHKERRQ(ierr);
+  ierr = KSPSolve(ctx->ksp,x,ctx->CCTm1_Cx); CHKERRQ(ierr);
+  ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(f); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PetscLogEventEnd(ctx->USER_EVENT_projR,0,0,0,0);
   PetscFunctionReturn(0);
 }
 PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f) {

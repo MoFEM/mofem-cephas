@@ -179,13 +179,6 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*gFE_SURFACE);  CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_EDGE_ELEM",*gFE_EDGE);  CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*gFE_CORNER);  CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
     {
       MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
       //std::string wait;
@@ -194,6 +187,19 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
     ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
     }
+
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*gFE_SURFACE);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_EDGE_ELEM",*gFE_EDGE);  CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*gFE_CORNER);  CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
+  
+    PetscReal g_nrm2;
+    ierr = VecNorm(proj_all_ctx.g, NORM_2,&g_nrm2); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,"\t g_nrm2 = %6.4e\n",g_nrm2);
+
 
     ierr = FEMethod_DriverComplexForLazy_Material::preProcess(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
