@@ -256,13 +256,29 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 	int M,N,m,n;
 	ierr = MatGetSize(proj_all_ctx.K,&M,&N); CHKERRQ(ierr);
 	ierr = MatGetLocalSize(proj_all_ctx.K,&m,&n); CHKERRQ(ierr);
-	Mat Q;
+	Mat Q,R;
 	ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&Q); CHKERRQ(ierr);
 	ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+	int C_M,C_N,C_m,C_n;
+	ierr = MatGetSize(proj_all_ctx.C,&C_M,&C_N); CHKERRQ(ierr);
+	ierr = MatGetLocalSize(proj_all_ctx.C,&C_m,&C_n); CHKERRQ(ierr);
+	ierr = MatCreateShell(PETSC_COMM_WORLD,m,C_m,M,C_m,&proj_all_ctx,&R); CHKERRQ(ierr);
+	ierr = MatShellSetOperation(R,MATOP_MULT,(void(*)(void))matR_mult_shell); CHKERRQ(ierr);
+	//Qf = R*g
+	ierr = proj_all_ctx.InitQorP(snes_f); CHKERRQ(ierr);
+	ierr = MatMult(R,proj_all_ctx.g,Qf); CHKERRQ(ierr);
+	ierr = VecScale(Qf,-1); CHKERRQ(ierr);
+	//snes_f = snes_f+K*R*g < snes_f += K*Qf >
+	ierr = MatMultAdd(proj_all_ctx.K,Qf,snes_f,snes_f); CHKERRQ(ierr);
+	//Qf = QT*(f + K*R*Qf) < Qf = Q*snes_f >
 	ierr = MatMult(Q,snes_f,Qf); CHKERRQ(ierr);
+	//Qf = CT*g + QT*(f+K*R*g) < Qf += Qf >
+	ierr = MatMultAdd(proj_all_ctx.CT,proj_all_ctx.g,Qf,Qf); CHKERRQ(ierr);
+	//Swap vectors Qf <--> snes_f
 	ierr = VecSwap(snes_f,Qf); CHKERRQ(ierr);
 	ierr = VecDestroy(&Qf); CHKERRQ(ierr);
 	ierr = MatDestroy(&Q); CHKERRQ(ierr);
+	ierr = MatDestroy(&R); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:

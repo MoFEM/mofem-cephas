@@ -147,7 +147,7 @@ struct matPROJ_ctx {
   }
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
   friend PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f);
-  friend PetscErrorCode matR_mult_shell(Mat P,Vec x,Vec f);
+  friend PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f);
   friend PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f);
 };
 
@@ -207,7 +207,7 @@ PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f) {
   ierr = MatShellGetContext(R,&void_ctx); CHKERRQ(ierr);
   matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projR,0,0,0,0);
-  ierr = ctx->InitQorP(x); CHKERRQ(ierr);
+  if(ctx->initQorP) SETERRQ(PETSC_COMM_SELF,1,"you have to call first InitQorP or use Q matrix");
   ierr = KSPSolve(ctx->ksp,x,ctx->CCTm1_Cx); CHKERRQ(ierr);
   ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
   ierr = VecZeroEntries(f); CHKERRQ(ierr);

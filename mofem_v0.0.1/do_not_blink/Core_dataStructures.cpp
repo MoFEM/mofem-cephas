@@ -232,10 +232,12 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
   int side_number,sense,offset;
   rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
   if(side_number==-1) {
+    //get prism connectivity
     int num_nodes;
     const EntityHandle* conn;
     rval = moab.get_connectivity(ref_ptr->ent,conn,num_nodes,true); CHKERR_THROW(rval);
-    assert(num_nodes==6);	
+    assert(num_nodes==6);
+    //get ent connectivity	
     const EntityHandle* conn_ent;
     rval = moab.get_connectivity(ent,conn_ent,num_nodes,true); CHKERR_THROW(rval);
     /*
@@ -249,7 +251,9 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
     cerr << endl;
     */
     if(num_nodes == 3) {
+      //buttom face
       EntityHandle face3[3] = { conn[0], conn[1], conn[2] };
+      //top face
       EntityHandle face4[3] = { conn[3], conn[4], conn[5] };
       int sense_p1_map[3][3] = { {0,1,2}, {1,2,0}, {2,0,1} };
       int sense_m1_map[3][3] = { {0,2,1}, {2,1,0}, {1,0,2} };
