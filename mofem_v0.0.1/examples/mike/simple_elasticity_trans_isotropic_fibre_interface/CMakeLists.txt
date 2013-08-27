@@ -25,5 +25,5 @@ file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../meshes/3threadMesh.cub
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../meshes/medium3helix.cub
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

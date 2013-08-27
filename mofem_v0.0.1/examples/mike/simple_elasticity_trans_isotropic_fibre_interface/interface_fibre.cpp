@@ -522,7 +522,13 @@ int main(int argc, char *argv[]) {
     ierr = mField.get_msId_meshset(3,SideSet,meshset_interface); CHKERRQ(ierr);
 //    ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
 //    ierr = mField.get_msId_meshset(5,SideSet,meshset_interface); CHKERRQ(ierr);
+    if(pcomm->rank()==0) {
+        //        EntityHandle out_meshset;
+        //        rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+        rval = moab.write_file("refinedMesh.vtk","VTK","",&meshset_interface,1); CHKERR_PETSC(rval);
+    }
   ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
+
   // stl::bitset see for more details
   BitRefLevel bit_level_interface;
   bit_level_interface.set(0);
@@ -556,11 +562,11 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
-    if(pcomm->rank()==0) {
-//        EntityHandle out_meshset;
-//        rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-        rval = moab.write_file("refinedMesh.vtk","VTK","",&meshset_interface,1); CHKERR_PETSC(rval);
-    }
+//  Range tetNextInterface;
+//  rval = moab.get_entities_by_dimension(meshset_interface,3,tetNextInterface);CHKERR_PETSC(rval);
+//  rval = moab.remove_entities(meshset_interface,tetNextInterface);CHKERR_PETSC(rval);
+    
+
   /*BitRefLevel bit_level1;
   bit_level1.set(2);
   ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
