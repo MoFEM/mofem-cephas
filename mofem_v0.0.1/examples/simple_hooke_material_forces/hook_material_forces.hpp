@@ -166,9 +166,12 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
       CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.C);
       gFE_CORNER = new g_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.g);
 
+      ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+      ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
+    }
+
     ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
-    ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-    ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_EDGE_ELEM",*CFE_EDGE);  CHKERRQ(ierr);
     ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -177,12 +180,8 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     //
-    //ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
-    //ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
-
-
-    }
-
+    ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
+    ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
 
     {
       MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
