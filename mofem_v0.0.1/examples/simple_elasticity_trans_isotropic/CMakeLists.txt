@@ -16,12 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(elasticity_trans_isotropic elasticity.cpp)
-target_link_libraries(elasticity_trans_isotropic mofem_Field ${PROJECT_LIBS})
-
-add_executable(elasticity_tube elasticityTube.cpp)
-target_link_libraries(elasticity_tube mofem_Field ${PROJECT_LIBS})
-
 add_executable(elasticity_candy elasticityCandy.cpp)
 target_link_libraries(elasticity_candy mofem_Field ${PROJECT_LIBS})
 
