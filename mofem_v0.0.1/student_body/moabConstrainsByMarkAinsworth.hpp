@@ -86,8 +86,17 @@ struct matPROJ_ctx {
     PetscFunctionBegin;
     if(initQorP) PetscFunctionReturn(0);
     PetscErrorCode ierr;
-    ierr = MatTranspose(C,MAT_REUSE_MATRIX,&CT); CHKERRQ(ierr);
-    ierr = MatTransposeMatMult(CT,CT,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
+    ierr = MatDestroy(&CT); CHKERRQ(ierr);
+    ierr = MatDestroy(&CCT); CHKERRQ(ierr);
+    ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
+    ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
+    ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
+    ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr); // neet to be recalculated when C is changed
+    ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+    ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+    ierr = KSPSetUp(ksp); CHKERRQ(ierr);
+    //ierr = MatTranspose(C,MAT_REUSE_MATRIX,&CT); CHKERRQ(ierr);
+    //ierr = MatTransposeMatMult(CT,CT,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   PetscErrorCode DestroyQorP() {
@@ -131,6 +140,8 @@ struct matPROJ_ctx {
     PetscFunctionBegin;
     if(initQTKQ) PetscFunctionReturn(0);
     PetscErrorCode ierr;
+    //ierr = MatDestroy(&CCT); CHKERRQ(ierr);
+    //ierr = MatTransposeMatMult(C,C,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr);
     ierr = MatTransposeMatMult(C,C,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
