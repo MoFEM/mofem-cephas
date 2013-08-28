@@ -546,7 +546,7 @@ struct moabField {
    *
    * For more details pleas look to examples.
    *
-   * \param problem_name \param fe_name \param method is class derived form
+   * \param problem_name fe_name \param method is class derived form
    * moabField::FEMethod
   **/ 
   virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
@@ -563,7 +563,7 @@ struct moabField {
    *
    * For more details pleas look to examples.
    *
-   * \param problem_name \param fe_name \param method is class derived form
+   * \param problem_name fe_name \param method is class derived form
    * moabField::FEMethod
   **/ 
   virtual PetscErrorCode loop_finite_elements(
