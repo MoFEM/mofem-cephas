@@ -29,10 +29,193 @@
 
 using namespace MoFEM;
 
+struct TransverseIsotropicStiffnessMatrix {
+    
+    double nu_p, nu_pz, E_p, E_z, G_zp;
+    
+    ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
+    
+    TransverseIsotropicStiffnessMatrix(double nu_p, double nu_pz, double E_p, double E_z, double G_zp){
+                
+        //Young's Modulus E_p and Poisson's Ratio n_p are in the x-y plane
+        //Young's Modulus E_z, Poisson's Ratio n_pz and Shear Modulus G_zp are in the z-direction (Main axis of fibre)
+        
+        const double nu_zp=(nu_pz*E_z)/E_p;
+        const double delta=((1+nu_p)*(1-nu_p-2*nu_pz*(nu_pz*E_z/E_p)))/(E_p*E_p*E_z);
+        
+        StiffnessMatrix.resize(6);
+        StiffnessMatrix.clear();
+        StiffnessMatrix(0,0)=StiffnessMatrix(1,1)=(1-nu_pz*nu_zp)/(E_p*E_z*delta);
+        StiffnessMatrix(2,2)=(1-nu_p*nu_p)/(E_p*E_p*delta);
+        
+        StiffnessMatrix(0,1)=StiffnessMatrix(1,0)=(nu_p+nu_zp*nu_pz)/(E_p*E_z*delta);
+        StiffnessMatrix(0,2)=StiffnessMatrix(2,0)=StiffnessMatrix(1,2)=StiffnessMatrix(2,1)=(nu_zp+nu_p*nu_zp)/(E_p*E_z*delta);
+        
+        StiffnessMatrix(4,4)=E_p/(2*(1+nu_p));
+        StiffnessMatrix(5,5)=StiffnessMatrix(3,3)=G_zp;
+    };
+};
+        
+struct IsotropicStiffnessMatrix {
+    
+    double lambda, mu;
+    
+    ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
+    
+    IsotropicStiffnessMatrix(double lambda, double mu){
+        
+        ublas::symmetric_matrix<FieldData,ublas::upper> D_lambda,D_mu;
+        
+        D_lambda.resize(6);
+        D_lambda.clear();
+        for(int rr = 0;rr<3;rr++) {
+            for(int cc = 0;cc<3;cc++) {
+                D_lambda(rr,cc) = 1;
+            }
+        }
+        D_mu.resize(6);
+        D_mu.clear();
+        for(int rr = 0;rr<6;rr++) {
+            D_mu(rr,rr) = rr<3 ? 2 : 1;
+        }
+        StiffnessMatrix.resize(6);
+        StiffnessMatrix.clear();
+        StiffnessMatrix = ublas::zero_matrix<FieldData>(6,6);
+        StiffnessMatrix = lambda*D_lambda + mu*D_mu;
+    };
+};
+
+struct RotationMatrixForTransverseIsotropy {
+    
+    double coordinatesX, coordinatesY;
+
+    ublas::matrix<double> TrpMatrix,Rotational_Matrix; 
+
+    RotationMatrixForTransverseIsotropy(double coordinatesX, double coordinatesY){
+        
+//        printf("%f\t:\t%f\n",coordinatesX,coordinatesY);
+        
+        //setting vectors of rotation and angle (axis-angle rotation)
+        double AxVector1[3]={0,1,0};
+        double norm_AxVector1 = 1.0;
+        double AxAngle1 = 0.5*M_PI;
+        
+        double AxVector2[3]={coordinatesX,coordinatesY,0};
+        double norm_AxVector2 = sqrt(pow(AxVector2[0],2) + pow(AxVector2[1],2) + pow(AxVector2[2],2)); 
+        const double pitch = 6;
+        double radius = sqrt(pow(coordinatesX,2)+pow(coordinatesY,2));
+        double AxAngle2 = -atan(pitch/(2*M_PI*radius)); //Angle of helix
+        
+        double AxVector3[3]={0,0,1};
+        double norm_AxVector3 = sqrt(pow(AxVector3[0],2) + pow(AxVector3[1],2) + pow(AxVector3[2],2));
+        double AxAngle3 = -acos(coordinatesY/sqrt(pow(coordinatesX,2)+pow(coordinatesY,2)));
+        if (coordinatesX<0) {
+            AxAngle3=-AxAngle3;
+        }else{}
+        
+        //Rotational Matrices
+        ublas::matrix<double> RotationC; //Rotate about z-axis by 90 degrees
+        RotationC = ublas::zero_matrix<FieldData>(3,3);
+        ublas::matrix<double> RotationD; //Rotate about z-axis by the angle between [0,1,0] and [coordX,coordY,0]
+        RotationD = ublas::zero_matrix<FieldData>(3,3);
+        ublas::matrix<double> RotationE; //Rotate about [coordX,coordY,0] by angle of helix
+        RotationE = ublas::zero_matrix<FieldData>(3,3);
+        
+        RotationC(0,0) = 1-((1-cos(AxAngle1))*(pow(AxVector1[1],2)+pow(AxVector1[2],2))/pow(norm_AxVector1,2)); 
+        RotationC(1,1) = 1-((1-cos(AxAngle1))*(pow(AxVector1[0],2)+pow(AxVector1[2],2))/pow(norm_AxVector1,2)); 
+        RotationC(2,2) = 1-((1-cos(AxAngle1))*(pow(AxVector1[0],2)+pow(AxVector1[1],2))/pow(norm_AxVector1,2)); 
+        
+        RotationC(0,1) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[1]-norm_AxVector1*AxVector1[2]*sin(AxAngle1))/pow(norm_AxVector1,2);
+        RotationC(1,0) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[1]+norm_AxVector1*AxVector1[2]*sin(AxAngle1))/pow(norm_AxVector1,2);
+        
+        RotationC(0,2) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[2]+norm_AxVector1*AxVector1[1]*sin(AxAngle1))/pow(norm_AxVector1,2);
+        RotationC(2,0) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[2]-norm_AxVector1*AxVector1[1]*sin(AxAngle1))/pow(norm_AxVector1,2);
+        
+        RotationC(1,2) = ((1-cos(AxAngle1))*AxVector1[1]*AxVector1[2]-norm_AxVector1*AxVector1[0]*sin(AxAngle1))/pow(norm_AxVector1,2);
+        RotationC(2,1) = ((1-cos(AxAngle1))*AxVector1[1]*AxVector1[2]+norm_AxVector1*AxVector1[0]*sin(AxAngle1))/pow(norm_AxVector1,2); 
+
+        RotationD(0,0) = 1-((1-cos(AxAngle2))*(pow(AxVector2[1],2)+pow(AxVector2[2],2))/pow(norm_AxVector2,2)); 
+        RotationD(1,1) = 1-((1-cos(AxAngle2))*(pow(AxVector2[0],2)+pow(AxVector2[2],2))/pow(norm_AxVector2,2)); 
+        RotationD(2,2) = 1-((1-cos(AxAngle2))*(pow(AxVector2[0],2)+pow(AxVector2[1],2))/pow(norm_AxVector2,2)); 
+        
+        RotationD(0,1) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[1]-norm_AxVector2*AxVector2[2]*sin(AxAngle2))/pow(norm_AxVector2,2);
+        RotationD(1,0) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[1]+norm_AxVector2*AxVector2[2]*sin(AxAngle2))/pow(norm_AxVector2,2);
+        
+        RotationD(0,2) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[2]+norm_AxVector2*AxVector2[1]*sin(AxAngle2))/pow(norm_AxVector2,2);
+        RotationD(2,0) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[2]-norm_AxVector2*AxVector2[1]*sin(AxAngle2))/pow(norm_AxVector2,2);
+        
+        RotationD(1,2) = ((1-cos(AxAngle2))*AxVector2[1]*AxVector2[2]-norm_AxVector2*AxVector2[0]*sin(AxAngle2))/pow(norm_AxVector2,2);
+        RotationD(2,1) = ((1-cos(AxAngle2))*AxVector2[1]*AxVector2[2]+norm_AxVector2*AxVector2[0]*sin(AxAngle2))/pow(norm_AxVector2,2); 
+
+        RotationE(0,0) = 1-((1-cos(AxAngle3))*(pow(AxVector3[1],2)+pow(AxVector3[2],2))/pow(norm_AxVector3,2)); 
+        RotationE(1,1) = 1-((1-cos(AxAngle3))*(pow(AxVector3[0],2)+pow(AxVector3[2],2))/pow(norm_AxVector3,2)); 
+        RotationE(2,2) = 1-((1-cos(AxAngle3))*(pow(AxVector3[0],2)+pow(AxVector3[1],2))/pow(norm_AxVector3,2)); 
+        
+        RotationE(0,1) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[1]-norm_AxVector3*AxVector3[2]*sin(AxAngle3))/pow(norm_AxVector3,2);
+        RotationE(1,0) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[1]+norm_AxVector3*AxVector3[2]*sin(AxAngle3))/pow(norm_AxVector3,2);
+        
+        RotationE(0,2) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[2]+norm_AxVector3*AxVector3[1]*sin(AxAngle3))/pow(norm_AxVector3,2);
+        RotationE(2,0) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[2]-norm_AxVector3*AxVector3[1]*sin(AxAngle3))/pow(norm_AxVector3,2);
+        
+        RotationE(1,2) = ((1-cos(AxAngle3))*AxVector3[1]*AxVector3[2]-norm_AxVector3*AxVector3[0]*sin(AxAngle3))/pow(norm_AxVector3,2);
+        RotationE(2,1) = ((1-cos(AxAngle3))*AxVector3[1]*AxVector3[2]+norm_AxVector3*AxVector3[0]*sin(AxAngle3))/pow(norm_AxVector3,2); 
+        
+        //Combine Rotational Matrices to rotate the stiffness matrix
+        ublas::matrix<double> Rotational_Matrix1 = prod(RotationE,RotationC);
+        Rotational_Matrix = ublas::zero_matrix<FieldData>(3,3);
+        Rotational_Matrix = prod(RotationD,Rotational_Matrix1);            
+        
+        TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
+        
+        TrpMatrix(0, 0) = Rotational_Matrix(0,0) * Rotational_Matrix(0,0);
+        TrpMatrix(0, 1) = Rotational_Matrix(1,0) * Rotational_Matrix(1,0);
+        TrpMatrix(0, 2) = Rotational_Matrix(2,0) * Rotational_Matrix(2,0);
+        TrpMatrix(0, 3) = Rotational_Matrix(1,0) * Rotational_Matrix(2,0);
+        TrpMatrix(0, 4) = Rotational_Matrix(0,0) * Rotational_Matrix(2,0);
+        TrpMatrix(0, 5) = Rotational_Matrix(0,0) * Rotational_Matrix(1,0);
+        
+        TrpMatrix(1, 0) = Rotational_Matrix(0,1) * Rotational_Matrix(0,1);
+        TrpMatrix(1, 1) = Rotational_Matrix(1,1) * Rotational_Matrix(1,1);
+        TrpMatrix(1, 2) = Rotational_Matrix(2,1) * Rotational_Matrix(2,1);
+        TrpMatrix(1, 3) = Rotational_Matrix(1,1) * Rotational_Matrix(2,1);
+        TrpMatrix(1, 4) = Rotational_Matrix(0,1) * Rotational_Matrix(2,1);
+        TrpMatrix(1, 5) = Rotational_Matrix(0,1) * Rotational_Matrix(1,1);
+        
+        TrpMatrix(2, 0) = Rotational_Matrix(0,2) * Rotational_Matrix(0,2);
+        TrpMatrix(2, 1) = Rotational_Matrix(1,2) * Rotational_Matrix(1,2);
+        TrpMatrix(2, 2) = Rotational_Matrix(2,2) * Rotational_Matrix(2,2);
+        TrpMatrix(2, 3) = Rotational_Matrix(1,2) * Rotational_Matrix(2,2);
+        TrpMatrix(2, 4) = Rotational_Matrix(0,2) * Rotational_Matrix(2,2);
+        TrpMatrix(2, 5) = Rotational_Matrix(0,2) * Rotational_Matrix(1,2);
+        
+        TrpMatrix(3, 0) = 2.0 * Rotational_Matrix(0,1) * Rotational_Matrix(0,2);
+        TrpMatrix(3, 1) = 2.0 * Rotational_Matrix(1,1) * Rotational_Matrix(1,2);
+        TrpMatrix(3, 2) = 2.0 * Rotational_Matrix(2,1) * Rotational_Matrix(2,2);
+        TrpMatrix(3, 3) = ( Rotational_Matrix(1,1) * Rotational_Matrix(2,2) + Rotational_Matrix(2,1) * Rotational_Matrix(1,2) );
+        TrpMatrix(3, 4) = ( Rotational_Matrix(0,1) * Rotational_Matrix(2,2) + Rotational_Matrix(2,1) * Rotational_Matrix(0,2) );
+        TrpMatrix(3, 5) = ( Rotational_Matrix(0,1) * Rotational_Matrix(1,2) + Rotational_Matrix(1,1) * Rotational_Matrix(0,2) );
+        
+        TrpMatrix(4, 0) = 2.0 * Rotational_Matrix(0,0) * Rotational_Matrix(0,2);
+        TrpMatrix(4, 1) = 2.0 * Rotational_Matrix(1,0) * Rotational_Matrix(1,2);
+        TrpMatrix(4, 2) = 2.0 * Rotational_Matrix(2,0) * Rotational_Matrix(2,2);
+        TrpMatrix(4, 3) = ( Rotational_Matrix(1,0) * Rotational_Matrix(2,2) + Rotational_Matrix(2,0) * Rotational_Matrix(1,2) );
+        TrpMatrix(4, 4) = ( Rotational_Matrix(0,0) * Rotational_Matrix(2,2) + Rotational_Matrix(2,0) * Rotational_Matrix(0,2) );
+        TrpMatrix(4, 5) = ( Rotational_Matrix(0,0) * Rotational_Matrix(1,2) + Rotational_Matrix(1,0) * Rotational_Matrix(0,2) );
+        
+        TrpMatrix(5, 0) = 2.0 * Rotational_Matrix(0,0) * Rotational_Matrix(0,1);
+        TrpMatrix(5, 1) = 2.0 * Rotational_Matrix(1,0) * Rotational_Matrix(1,1);
+        TrpMatrix(5, 2) = 2.0 * Rotational_Matrix(2,0) * Rotational_Matrix(2,1);
+        TrpMatrix(5, 3) = ( Rotational_Matrix(1,0) * Rotational_Matrix(2,1) + Rotational_Matrix(2,0) * Rotational_Matrix(1,1) );
+        TrpMatrix(5, 4) = ( Rotational_Matrix(0,0) * Rotational_Matrix(2,1) + Rotational_Matrix(2,0) * Rotational_Matrix(0,1) );
+        TrpMatrix(5, 5) = ( Rotational_Matrix(0,0) * Rotational_Matrix(1,1) + Rotational_Matrix(1,0) * Rotational_Matrix(0,1) );
+        
+    };
+};
+
 struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
     
     double nu_p, nu_pz, E_p, E_z, G_zp;
-            
+          
     TranIsotropicElasticFEMethod(
                              Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
                              double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, Range &_SideSet1,Range &_SideSet2 ): 
@@ -72,156 +255,27 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
         ierr = GetMatrices(); CHKERRQ(ierr);
         
+        ublas::symmetric_matrix<FieldData,ublas::upper> TrpMatrix;
+        
         for(int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
 
             //Get the Axis and Angles according to the position of gauss point
             double coordinates[3]={(coords_at_Gauss_nodes[gg]).data()[0],(coords_at_Gauss_nodes[gg]).data()[1],(coords_at_Gauss_nodes[gg]).data()[2]};
-            ublas::vector<FieldData> CoordinateVector=coords_at_Gauss_nodes[gg];
-            CoordinateVector[2]=0; //keep the vector in xy plane
             
-            //setting vectors of rotation and angle (axis-angle rotation)
-            double AxVector1[3]={0,1,0};
-            double norm_AxVector1 = 1.0;
-            double AxAngle1 = 0.5*M_PI;
-            
-            double AxVector2[3]={coordinates[0],coordinates[1],0};
-            double norm_AxVector2 = sqrt(pow(AxVector2[0],2) + pow(AxVector2[1],2) + pow(AxVector2[2],2)); 
-            const double pitch = 6;
-            double radius = sqrt(pow(coordinates[0],2)+pow(coordinates[1],2));
-            double AxAngle2 = -atan(pitch/(2*M_PI*radius)); //Angle of helix
-            
-            double AxVector3[3]={0,0,1};
-            double norm_AxVector3 = sqrt(pow(AxVector3[0],2) + pow(AxVector3[1],2) + pow(AxVector3[2],2));
-            double AxAngle3 = -acos(CoordinateVector[1]/sqrt(pow(CoordinateVector[0],2)+pow(CoordinateVector[1],2)));
-            if (CoordinateVector[0]<0) {
-                AxAngle3=-AxAngle3;
-            }else{}
-            
-            //Rotational Matrices
-            ublas::matrix<double> RotationC; //Rotate about z-axis by 90 degrees
-            RotationC = ublas::zero_matrix<FieldData>(3,3);
-            ublas::matrix<double> RotationD; //Rotate about z-axis by the angle between [0,1,0] and [coordX,coordY,0]
-            RotationD = ublas::zero_matrix<FieldData>(3,3);
-            ublas::matrix<double> RotationE; //Rotate about [coordX,coordY,0] by angle of helix
-            RotationE = ublas::zero_matrix<FieldData>(3,3);
-            
-            RotationC(0,0) = 1-((1-cos(AxAngle1))*(pow(AxVector1[1],2)+pow(AxVector1[2],2))/pow(norm_AxVector1,2)); 
-            RotationC(1,1) = 1-((1-cos(AxAngle1))*(pow(AxVector1[0],2)+pow(AxVector1[2],2))/pow(norm_AxVector1,2)); 
-            RotationC(2,2) = 1-((1-cos(AxAngle1))*(pow(AxVector1[0],2)+pow(AxVector1[1],2))/pow(norm_AxVector1,2)); 
-            
-            RotationC(0,1) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[1]-norm_AxVector1*AxVector1[2]*sin(AxAngle1))/pow(norm_AxVector1,2);
-            RotationC(1,0) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[1]+norm_AxVector1*AxVector1[2]*sin(AxAngle1))/pow(norm_AxVector1,2);
-            
-            RotationC(0,2) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[2]+norm_AxVector1*AxVector1[1]*sin(AxAngle1))/pow(norm_AxVector1,2);
-            RotationC(2,0) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[2]-norm_AxVector1*AxVector1[1]*sin(AxAngle1))/pow(norm_AxVector1,2);
-            
-            RotationC(1,2) = ((1-cos(AxAngle1))*AxVector1[1]*AxVector1[2]-norm_AxVector1*AxVector1[0]*sin(AxAngle1))/pow(norm_AxVector1,2);
-            RotationC(2,1) = ((1-cos(AxAngle1))*AxVector1[1]*AxVector1[2]+norm_AxVector1*AxVector1[0]*sin(AxAngle1))/pow(norm_AxVector1,2); 
-            
-            RotationD(0,0) = 1-((1-cos(AxAngle2))*(pow(AxVector2[1],2)+pow(AxVector2[2],2))/pow(norm_AxVector2,2)); 
-            RotationD(1,1) = 1-((1-cos(AxAngle2))*(pow(AxVector2[0],2)+pow(AxVector2[2],2))/pow(norm_AxVector2,2)); 
-            RotationD(2,2) = 1-((1-cos(AxAngle2))*(pow(AxVector2[0],2)+pow(AxVector2[1],2))/pow(norm_AxVector2,2)); 
-            
-            RotationD(0,1) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[1]-norm_AxVector2*AxVector2[2]*sin(AxAngle2))/pow(norm_AxVector2,2);
-            RotationD(1,0) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[1]+norm_AxVector2*AxVector2[2]*sin(AxAngle2))/pow(norm_AxVector2,2);
-            
-            RotationD(0,2) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[2]+norm_AxVector2*AxVector2[1]*sin(AxAngle2))/pow(norm_AxVector2,2);
-            RotationD(2,0) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[2]-norm_AxVector2*AxVector2[1]*sin(AxAngle2))/pow(norm_AxVector2,2);
-            
-            RotationD(1,2) = ((1-cos(AxAngle2))*AxVector2[1]*AxVector2[2]-norm_AxVector2*AxVector2[0]*sin(AxAngle2))/pow(norm_AxVector2,2);
-            RotationD(2,1) = ((1-cos(AxAngle2))*AxVector2[1]*AxVector2[2]+norm_AxVector2*AxVector2[0]*sin(AxAngle2))/pow(norm_AxVector2,2); 
-            
-            RotationE(0,0) = 1-((1-cos(AxAngle3))*(pow(AxVector3[1],2)+pow(AxVector3[2],2))/pow(norm_AxVector3,2)); 
-            RotationE(1,1) = 1-((1-cos(AxAngle3))*(pow(AxVector3[0],2)+pow(AxVector3[2],2))/pow(norm_AxVector3,2)); 
-            RotationE(2,2) = 1-((1-cos(AxAngle3))*(pow(AxVector3[0],2)+pow(AxVector3[1],2))/pow(norm_AxVector3,2)); 
-            
-            RotationE(0,1) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[1]-norm_AxVector3*AxVector3[2]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            RotationE(1,0) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[1]+norm_AxVector3*AxVector3[2]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            
-            RotationE(0,2) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[2]+norm_AxVector3*AxVector3[1]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            RotationE(2,0) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[2]-norm_AxVector3*AxVector3[1]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            
-            RotationE(1,2) = ((1-cos(AxAngle3))*AxVector3[1]*AxVector3[2]-norm_AxVector3*AxVector3[0]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            RotationE(2,1) = ((1-cos(AxAngle3))*AxVector3[1]*AxVector3[2]+norm_AxVector3*AxVector3[0]*sin(AxAngle3))/pow(norm_AxVector3,2); 
-            
-            //Combine Rotational Matrices to rotate the stiffness matrix
-            ublas::matrix<double> Rotational_Matrix1 = prod(RotationE,RotationC);
-            ublas::matrix<double> Rotational_Matrix = prod(RotationD,Rotational_Matrix1);            
-            
-            ublas::matrix<double> TrpMatrix;
+            //Get Rotation matrix according to coordinate of Gauss Point
+            ublas::matrix<double> TrpMatrix; 
             TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
+            RotationMatrixForTransverseIsotropy RotMat(coordinates[0],coordinates[1]);
+            TrpMatrix=RotMat.TrpMatrix;
             
-            TrpMatrix(0, 0) = Rotational_Matrix(0,0) * Rotational_Matrix(0,0);
-            TrpMatrix(0, 1) = Rotational_Matrix(1,0) * Rotational_Matrix(1,0);
-            TrpMatrix(0, 2) = Rotational_Matrix(2,0) * Rotational_Matrix(2,0);
-            TrpMatrix(0, 3) = Rotational_Matrix(1,0) * Rotational_Matrix(2,0);
-            TrpMatrix(0, 4) = Rotational_Matrix(0,0) * Rotational_Matrix(2,0);
-            TrpMatrix(0, 5) = Rotational_Matrix(0,0) * Rotational_Matrix(1,0);
-            
-            TrpMatrix(1, 0) = Rotational_Matrix(0,1) * Rotational_Matrix(0,1);
-            TrpMatrix(1, 1) = Rotational_Matrix(1,1) * Rotational_Matrix(1,1);
-            TrpMatrix(1, 2) = Rotational_Matrix(2,1) * Rotational_Matrix(2,1);
-            TrpMatrix(1, 3) = Rotational_Matrix(1,1) * Rotational_Matrix(2,1);
-            TrpMatrix(1, 4) = Rotational_Matrix(0,1) * Rotational_Matrix(2,1);
-            TrpMatrix(1, 5) = Rotational_Matrix(0,1) * Rotational_Matrix(1,1);
-            
-            TrpMatrix(2, 0) = Rotational_Matrix(0,2) * Rotational_Matrix(0,2);
-            TrpMatrix(2, 1) = Rotational_Matrix(1,2) * Rotational_Matrix(1,2);
-            TrpMatrix(2, 2) = Rotational_Matrix(2,2) * Rotational_Matrix(2,2);
-            TrpMatrix(2, 3) = Rotational_Matrix(1,2) * Rotational_Matrix(2,2);
-            TrpMatrix(2, 4) = Rotational_Matrix(0,2) * Rotational_Matrix(2,2);
-            TrpMatrix(2, 5) = Rotational_Matrix(0,2) * Rotational_Matrix(1,2);
-            
-            TrpMatrix(3, 0) = 2.0 * Rotational_Matrix(0,1) * Rotational_Matrix(0,2);
-            TrpMatrix(3, 1) = 2.0 * Rotational_Matrix(1,1) * Rotational_Matrix(1,2);
-            TrpMatrix(3, 2) = 2.0 * Rotational_Matrix(2,1) * Rotational_Matrix(2,2);
-            TrpMatrix(3, 3) = ( Rotational_Matrix(1,1) * Rotational_Matrix(2,2) + Rotational_Matrix(2,1) * Rotational_Matrix(1,2) );
-            TrpMatrix(3, 4) = ( Rotational_Matrix(0,1) * Rotational_Matrix(2,2) + Rotational_Matrix(2,1) * Rotational_Matrix(0,2) );
-            TrpMatrix(3, 5) = ( Rotational_Matrix(0,1) * Rotational_Matrix(1,2) + Rotational_Matrix(1,1) * Rotational_Matrix(0,2) );
-            
-            TrpMatrix(4, 0) = 2.0 * Rotational_Matrix(0,0) * Rotational_Matrix(0,2);
-            TrpMatrix(4, 1) = 2.0 * Rotational_Matrix(1,0) * Rotational_Matrix(1,2);
-            TrpMatrix(4, 2) = 2.0 * Rotational_Matrix(2,0) * Rotational_Matrix(2,2);
-            TrpMatrix(4, 3) = ( Rotational_Matrix(1,0) * Rotational_Matrix(2,2) + Rotational_Matrix(2,0) * Rotational_Matrix(1,2) );
-            TrpMatrix(4, 4) = ( Rotational_Matrix(0,0) * Rotational_Matrix(2,2) + Rotational_Matrix(2,0) * Rotational_Matrix(0,2) );
-            TrpMatrix(4, 5) = ( Rotational_Matrix(0,0) * Rotational_Matrix(1,2) + Rotational_Matrix(1,0) * Rotational_Matrix(0,2) );
-            
-            TrpMatrix(5, 0) = 2.0 * Rotational_Matrix(0,0) * Rotational_Matrix(0,1);
-            TrpMatrix(5, 1) = 2.0 * Rotational_Matrix(1,0) * Rotational_Matrix(1,1);
-            TrpMatrix(5, 2) = 2.0 * Rotational_Matrix(2,0) * Rotational_Matrix(2,1);
-            TrpMatrix(5, 3) = ( Rotational_Matrix(1,0) * Rotational_Matrix(2,1) + Rotational_Matrix(2,0) * Rotational_Matrix(1,1) );
-            TrpMatrix(5, 4) = ( Rotational_Matrix(0,0) * Rotational_Matrix(2,1) + Rotational_Matrix(2,0) * Rotational_Matrix(0,1) );
-            TrpMatrix(5, 5) = ( Rotational_Matrix(0,0) * Rotational_Matrix(1,1) + Rotational_Matrix(1,0) * Rotational_Matrix(0,1) );
-            
-            //Transverse-isotropic stiffness matrix
-            ublas::matrix<double> StiffnessMatrix;
-            StiffnessMatrix = ublas::zero_matrix<FieldData>(6,6);
-            const double nu_zp=(nu_pz*E_z)/E_p;
-            const double delta=((1+nu_p)*(1-nu_p-2*nu_pz*(nu_pz*E_z/E_p)))/(E_p*E_p*E_z);
-            
-            StiffnessMatrix(0,0)=StiffnessMatrix(1,1)=(1-nu_pz*nu_zp)/(E_p*E_z*delta);
-            StiffnessMatrix(2,2)=(1-nu_p*nu_p)/(E_p*E_p*delta);
-            
-            StiffnessMatrix(0,1)=StiffnessMatrix(1,0)=(nu_p+nu_zp*nu_pz)/(E_p*E_z*delta);
-            StiffnessMatrix(0,2)=StiffnessMatrix(2,0)=StiffnessMatrix(1,2)=StiffnessMatrix(2,1)=(nu_zp+nu_p*nu_zp)/(E_p*E_z*delta);
-            
-            StiffnessMatrix(4,4)=E_p/(2*(1+nu_p));
-            StiffnessMatrix(5,5)=StiffnessMatrix(3,3)=G_zp;
-            
-            //Isotropic stiffness matrix            
-//            D_lambda.resize(6);
-//            D_lambda.clear();
-//            for(int rr = 0;rr<3;rr++) {
-//                for(int cc = 0;cc<3;cc++) {
-//                    D_lambda(rr,cc) = 1;
-//                }
-//            }
-//            D_mu.resize(6);
-//            D_mu.clear();
-//            for(int rr = 0;rr<6;rr++) {
-//                D_mu(rr,rr) = rr<3 ? 2 : 1;
-//            }
-//            StiffnessMatrix = lambda*D_lambda + mu*D_mu;
+            //Get Stiffness Matrix
+            ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
+            StiffnessMatrix.resize(6);
+            StiffnessMatrix.clear();
+            TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
+            StiffnessMatrix=TranIsoMat.StiffnessMatrix;
+//            IsotropicStiffnessMatrix IsoMat(lambda, mu);
+//            StiffnessMatrix=IsoMat.StiffnessMatrix;
 
             //Rotating the Stiffness matrix according to the fibre direction
             D.resize(6);
@@ -286,77 +340,15 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
             
             //Get the Axis and Angles according to the position of gauss point
             double coordinates[3]={(coords_at_Gauss_nodes[gg]).data()[0],(coords_at_Gauss_nodes[gg]).data()[1],(coords_at_Gauss_nodes[gg]).data()[2]};
-            ublas::vector<FieldData> CoordinateVector=coords_at_Gauss_nodes[gg];
-            CoordinateVector[2]=0; //keep the vector in xy plane
 
-            //setting vectors of rotation and angle (axis-angle rotation)
-            double AxVector1[3]={0,1,0};
-            double norm_AxVector1 = 1.0;
-            double AxAngle1 = 0.5*M_PI;
+            //Get Rotation matrix according to coordinate of Gauss Point
+            ublas::matrix<double> TrpMatrix,Rotational_Matrix;
+            TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
+            Rotational_Matrix = ublas::zero_matrix<FieldData>(3,3);
+            RotationMatrixForTransverseIsotropy RotMat(coordinates[0],coordinates[1]);
             
-            double AxVector2[3]={coordinates[0],coordinates[1],0};
-            double norm_AxVector2 = sqrt(pow(AxVector2[0],2) + pow(AxVector2[1],2) + pow(AxVector2[2],2)); 
-            const double pitch = 6;
-            double radius = sqrt(pow(coordinates[0],2)+pow(coordinates[1],2));
-            double AxAngle2 = -atan(pitch/(2*M_PI*radius)); //Angle of helix
-            
-            double AxVector3[3]={0,0,1};
-            double norm_AxVector3 = 1.0;
-            double AxAngle3 = -acos(CoordinateVector[1]/sqrt(pow(CoordinateVector[0],2)+pow(CoordinateVector[1],2)));
-            if (CoordinateVector[0]<0) {
-                AxAngle3=-AxAngle3;
-            }else{}
-
-            //Rotational Matrices based on the axis-angle method
-            ublas::matrix<double> RotationC; //Rotate about z-axis by 90 degrees
-            RotationC = ublas::zero_matrix<FieldData>(3,3);
-            ublas::matrix<double> RotationD; //Rotate about z-axis by the angle between [0,1,0] and [coordX,coordY,0]
-            RotationD = ublas::zero_matrix<FieldData>(3,3);
-            ublas::matrix<double> RotationE; //Rotate about [coordX,coordY,0] by angle of helix
-            RotationE = ublas::zero_matrix<FieldData>(3,3);
-            
-            RotationC(0,0) = 1-((1-cos(AxAngle1))*(pow(AxVector1[1],2)+pow(AxVector1[2],2))/pow(norm_AxVector1,2)); 
-            RotationC(1,1) = 1-((1-cos(AxAngle1))*(pow(AxVector1[0],2)+pow(AxVector1[2],2))/pow(norm_AxVector1,2)); 
-            RotationC(2,2) = 1-((1-cos(AxAngle1))*(pow(AxVector1[0],2)+pow(AxVector1[1],2))/pow(norm_AxVector1,2)); 
-            
-            RotationC(0,1) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[1]-norm_AxVector1*AxVector1[2]*sin(AxAngle1))/pow(norm_AxVector1,2);
-            RotationC(1,0) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[1]+norm_AxVector1*AxVector1[2]*sin(AxAngle1))/pow(norm_AxVector1,2);
-            
-            RotationC(0,2) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[2]+norm_AxVector1*AxVector1[1]*sin(AxAngle1))/pow(norm_AxVector1,2);
-            RotationC(2,0) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[2]-norm_AxVector1*AxVector1[1]*sin(AxAngle1))/pow(norm_AxVector1,2);
-        
-            RotationC(1,2) = ((1-cos(AxAngle1))*AxVector1[1]*AxVector1[2]-norm_AxVector1*AxVector1[0]*sin(AxAngle1))/pow(norm_AxVector1,2);
-            RotationC(2,1) = ((1-cos(AxAngle1))*AxVector1[1]*AxVector1[2]+norm_AxVector1*AxVector1[0]*sin(AxAngle1))/pow(norm_AxVector1,2); 
-        
-            RotationD(0,0) = 1-((1-cos(AxAngle2))*(pow(AxVector2[1],2)+pow(AxVector2[2],2))/pow(norm_AxVector2,2)); 
-            RotationD(1,1) = 1-((1-cos(AxAngle2))*(pow(AxVector2[0],2)+pow(AxVector2[2],2))/pow(norm_AxVector2,2)); 
-            RotationD(2,2) = 1-((1-cos(AxAngle2))*(pow(AxVector2[0],2)+pow(AxVector2[1],2))/pow(norm_AxVector2,2)); 
-            
-            RotationD(0,1) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[1]-norm_AxVector2*AxVector2[2]*sin(AxAngle2))/pow(norm_AxVector2,2);
-            RotationD(1,0) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[1]+norm_AxVector2*AxVector2[2]*sin(AxAngle2))/pow(norm_AxVector2,2);
-                
-            RotationD(0,2) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[2]+norm_AxVector2*AxVector2[1]*sin(AxAngle2))/pow(norm_AxVector2,2);
-            RotationD(2,0) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[2]-norm_AxVector2*AxVector2[1]*sin(AxAngle2))/pow(norm_AxVector2,2);
-                
-            RotationD(1,2) = ((1-cos(AxAngle2))*AxVector2[1]*AxVector2[2]-norm_AxVector2*AxVector2[0]*sin(AxAngle2))/pow(norm_AxVector2,2);
-            RotationD(2,1) = ((1-cos(AxAngle2))*AxVector2[1]*AxVector2[2]+norm_AxVector2*AxVector2[0]*sin(AxAngle2))/pow(norm_AxVector2,2); 
-            
-            RotationE(0,0) = 1-((1-cos(AxAngle3))*(pow(AxVector3[1],2)+pow(AxVector3[2],2))/pow(norm_AxVector3,2)); 
-            RotationE(1,1) = 1-((1-cos(AxAngle3))*(pow(AxVector3[0],2)+pow(AxVector3[2],2))/pow(norm_AxVector3,2)); 
-            RotationE(2,2) = 1-((1-cos(AxAngle3))*(pow(AxVector3[0],2)+pow(AxVector3[1],2))/pow(norm_AxVector3,2)); 
-            
-            RotationE(0,1) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[1]-norm_AxVector3*AxVector3[2]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            RotationE(1,0) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[1]+norm_AxVector3*AxVector3[2]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            
-            RotationE(0,2) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[2]+norm_AxVector3*AxVector3[1]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            RotationE(2,0) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[2]-norm_AxVector3*AxVector3[1]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            
-            RotationE(1,2) = ((1-cos(AxAngle3))*AxVector3[1]*AxVector3[2]-norm_AxVector3*AxVector3[0]*sin(AxAngle3))/pow(norm_AxVector3,2);
-            RotationE(2,1) = ((1-cos(AxAngle3))*AxVector3[1]*AxVector3[2]+norm_AxVector3*AxVector3[0]*sin(AxAngle3))/pow(norm_AxVector3,2); 
-            
-            //Combine Rotational Matrices to rotate the stiffness matrix
-            ublas::matrix<double> Rotational_Matrix1 = prod(RotationE,RotationC);
-            ublas::matrix<double> Rotational_Matrix = prod(RotationD,Rotational_Matrix1);           
+            TrpMatrix=RotMat.TrpMatrix;
+            Rotational_Matrix=RotMat.Rotational_Matrix;
 
             //Rotate AxisYVector[0,1,0] to the direction of the fibre and save in TAG
             ublas::vector<FieldData> AxisYVector(3);
@@ -364,81 +356,15 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
             ublas::vector<FieldData> Fibre = prod(Rotational_Matrix,AxisYVector);
 
             rval = moab_post_proc.tag_set_data(th_fibre_orientation,&mit->second,1,&Fibre[0]); CHKERR_PETSC(rval);
-            
-            ublas::matrix<double> TrpMatrix;
-            TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
-            
-            TrpMatrix(0, 0) = Rotational_Matrix(0,0) * Rotational_Matrix(0,0);
-            TrpMatrix(0, 1) = Rotational_Matrix(1,0) * Rotational_Matrix(1,0);
-            TrpMatrix(0, 2) = Rotational_Matrix(2,0) * Rotational_Matrix(2,0);
-            TrpMatrix(0, 3) = Rotational_Matrix(1,0) * Rotational_Matrix(2,0);
-            TrpMatrix(0, 4) = Rotational_Matrix(0,0) * Rotational_Matrix(2,0);
-            TrpMatrix(0, 5) = Rotational_Matrix(0,0) * Rotational_Matrix(1,0);
-            
-            TrpMatrix(1, 0) = Rotational_Matrix(0,1) * Rotational_Matrix(0,1);
-            TrpMatrix(1, 1) = Rotational_Matrix(1,1) * Rotational_Matrix(1,1);
-            TrpMatrix(1, 2) = Rotational_Matrix(2,1) * Rotational_Matrix(2,1);
-            TrpMatrix(1, 3) = Rotational_Matrix(1,1) * Rotational_Matrix(2,1);
-            TrpMatrix(1, 4) = Rotational_Matrix(0,1) * Rotational_Matrix(2,1);
-            TrpMatrix(1, 5) = Rotational_Matrix(0,1) * Rotational_Matrix(1,1);
-            
-            TrpMatrix(2, 0) = Rotational_Matrix(0,2) * Rotational_Matrix(0,2);
-            TrpMatrix(2, 1) = Rotational_Matrix(1,2) * Rotational_Matrix(1,2);
-            TrpMatrix(2, 2) = Rotational_Matrix(2,2) * Rotational_Matrix(2,2);
-            TrpMatrix(2, 3) = Rotational_Matrix(1,2) * Rotational_Matrix(2,2);
-            TrpMatrix(2, 4) = Rotational_Matrix(0,2) * Rotational_Matrix(2,2);
-            TrpMatrix(2, 5) = Rotational_Matrix(0,2) * Rotational_Matrix(1,2);
-            
-            TrpMatrix(3, 0) = 2.0 * Rotational_Matrix(0,1) * Rotational_Matrix(0,2);
-            TrpMatrix(3, 1) = 2.0 * Rotational_Matrix(1,1) * Rotational_Matrix(1,2);
-            TrpMatrix(3, 2) = 2.0 * Rotational_Matrix(2,1) * Rotational_Matrix(2,2);
-            TrpMatrix(3, 3) = ( Rotational_Matrix(1,1) * Rotational_Matrix(2,2) + Rotational_Matrix(2,1) * Rotational_Matrix(1,2) );
-            TrpMatrix(3, 4) = ( Rotational_Matrix(0,1) * Rotational_Matrix(2,2) + Rotational_Matrix(2,1) * Rotational_Matrix(0,2) );
-            TrpMatrix(3, 5) = ( Rotational_Matrix(0,1) * Rotational_Matrix(1,2) + Rotational_Matrix(1,1) * Rotational_Matrix(0,2) );
-            
-            TrpMatrix(4, 0) = 2.0 * Rotational_Matrix(0,0) * Rotational_Matrix(0,2);
-            TrpMatrix(4, 1) = 2.0 * Rotational_Matrix(1,0) * Rotational_Matrix(1,2);
-            TrpMatrix(4, 2) = 2.0 * Rotational_Matrix(2,0) * Rotational_Matrix(2,2);
-            TrpMatrix(4, 3) = ( Rotational_Matrix(1,0) * Rotational_Matrix(2,2) + Rotational_Matrix(2,0) * Rotational_Matrix(1,2) );
-            TrpMatrix(4, 4) = ( Rotational_Matrix(0,0) * Rotational_Matrix(2,2) + Rotational_Matrix(2,0) * Rotational_Matrix(0,2) );
-            TrpMatrix(4, 5) = ( Rotational_Matrix(0,0) * Rotational_Matrix(1,2) + Rotational_Matrix(1,0) * Rotational_Matrix(0,2) );
-            
-            TrpMatrix(5, 0) = 2.0 * Rotational_Matrix(0,0) * Rotational_Matrix(0,1);
-            TrpMatrix(5, 1) = 2.0 * Rotational_Matrix(1,0) * Rotational_Matrix(1,1);
-            TrpMatrix(5, 2) = 2.0 * Rotational_Matrix(2,0) * Rotational_Matrix(2,1);
-            TrpMatrix(5, 3) = ( Rotational_Matrix(1,0) * Rotational_Matrix(2,1) + Rotational_Matrix(2,0) * Rotational_Matrix(1,1) );
-            TrpMatrix(5, 4) = ( Rotational_Matrix(0,0) * Rotational_Matrix(2,1) + Rotational_Matrix(2,0) * Rotational_Matrix(0,1) );
-            TrpMatrix(5, 5) = ( Rotational_Matrix(0,0) * Rotational_Matrix(1,1) + Rotational_Matrix(1,0) * Rotational_Matrix(0,1) );
-            
-            //Transverse-isotropic stiffness matrix
-            ublas::matrix<double> StiffnessMatrix;
-            StiffnessMatrix = ublas::zero_matrix<FieldData>(6,6);
-            const double nu_zp=(nu_pz*E_z)/E_p;
-            const double delta=((1+nu_p)*(1-nu_p-2*nu_pz*(nu_pz*E_z/E_p)))/(E_p*E_p*E_z);
-
-            StiffnessMatrix(0,0)=StiffnessMatrix(1,1)=(1-nu_pz*nu_zp)/(E_p*E_z*delta);
-            StiffnessMatrix(2,2)=(1-nu_p*nu_p)/(E_p*E_p*delta);
-            
-            StiffnessMatrix(0,1)=StiffnessMatrix(1,0)=(nu_p+nu_zp*nu_pz)/(E_p*E_z*delta);
-            StiffnessMatrix(0,2)=StiffnessMatrix(2,0)=StiffnessMatrix(1,2)=StiffnessMatrix(2,1)=(nu_zp+nu_p*nu_zp)/(E_p*E_z*delta);
-            
-            StiffnessMatrix(4,4)=E_p/(2*(1+nu_p));
-            StiffnessMatrix(5,5)=StiffnessMatrix(3,3)=G_zp;
-            
-            //Isotropic stiffness matrix
-//            D_lambda.resize(6,6);
-//            D_lambda.clear();
-//            for(int rr = 0;rr<3;rr++) {
-//                for(int cc = 0;cc<3;cc++) {
-//                    D_lambda(rr,cc) = 1;
-//                }
-//            }
-//            D_mu.resize(6,6);
-//            D_mu.clear();
-//            for(int rr = 0;rr<6;rr++) {
-//                D_mu(rr,rr) = rr<3 ? 2 : 1;
-//            }
-//            StiffnessMatrix = lambda*D_lambda + mu*D_mu;
+                        
+            //Get Stiffness Matrix
+            ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
+            StiffnessMatrix.resize(6);
+            StiffnessMatrix.clear();
+            TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
+            StiffnessMatrix=TranIsoMat.StiffnessMatrix;            
+//            IsotropicStiffnessMatrix IsoMat(lambda, mu);
+//            StiffnessMatrix=IsoMat.StiffnessMatrix;
             
             //Rotating the Stiffness matrix according to the fibre direction
             D.resize(6,6);
