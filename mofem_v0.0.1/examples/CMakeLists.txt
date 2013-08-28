@@ -29,14 +29,4 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface"
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_hooke_material_forces")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity_trans_isotropic")
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/arc_length_nonlinear_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/pull_out_test")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elastic_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity_trans_isotropic")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/static_pull_out_test")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity_trans_isotropic_fibre_interface")
-
-
 
