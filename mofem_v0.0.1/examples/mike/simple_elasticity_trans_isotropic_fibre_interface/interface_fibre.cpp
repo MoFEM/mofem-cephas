@@ -31,6 +31,17 @@
 
 using namespace MoFEM;
 
+/** 
+* \brief Function to Calculate Transverse Isotropic Stiffness Matrix
+* this is similiar to Orthotropic Stiffness Matrix but material parameters in x and y are identical
+* hence it is used for modelling of fibre and wood
+*
+*\param E_p Young's Modulus in x and y direction
+*\param nu_p Poisson's Ratio in x-y plane
+*\param E_z Young's Modulus in z-direction (direction of fibre)
+*\param n_pz Poisson's Ratio in z-direction
+*\param G_zp Shear Modulus in z-direction
+*/
 struct TransverseIsotropicStiffnessMatrix {
     
     double nu_p, nu_pz, E_p, E_z, G_zp;
@@ -38,9 +49,6 @@ struct TransverseIsotropicStiffnessMatrix {
     ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
     
     TransverseIsotropicStiffnessMatrix(double nu_p, double nu_pz, double E_p, double E_z, double G_zp){
-        
-        //Young's Modulus E_p and Poisson's Ratio n_p are in the x-y plane
-        //Young's Modulus E_z, Poisson's Ratio n_pz and Shear Modulus G_zp are in the z-direction (Main axis of fibre)
         
         const double nu_zp=(nu_pz*E_z)/E_p;
         const double delta=((1+nu_p)*(1-nu_p-2*nu_pz*(nu_pz*E_z/E_p)))/(E_p*E_p*E_z);
@@ -58,6 +66,12 @@ struct TransverseIsotropicStiffnessMatrix {
     };
 };
 
+/** 
+ * \brief Function to Calculate Isotropic Stiffness Matrix
+ *
+ *\param lambda is the Lame's first parameter, computed using LAMBDA(Young's Modulus,Poisson's Ratio)
+ *\param mu is computed using MU(Young's Modulus,Poisson's Ratio)
+ */
 struct IsotropicStiffnessMatrix {
     
     double lambda, mu;
@@ -87,6 +101,16 @@ struct IsotropicStiffnessMatrix {
     };
 };
 
+/** 
+ * \brief Function to Calculate the Rotation Matrix at every gauss point 
+ * to rotate the Transverse Isotroptic Stiffness Matrix in the direction of the fibre
+ * z-direction of the stiffness matrix would be orientated along the fibre
+ * This transformation depends on the geometry and hence, in the case
+ * the pitch size of a 3 strand wire was specified, while the wire was oriented along the z-direction
+ 
+ *\param coordinateX is the x-coordinate of the gauss point at which the rotational matrix is constructed
+ *\param coordinateZ is the y-coordinate of the gauss point at which the rotational matrix is constructed
+ */
 struct RotationMatrixForTransverseIsotropy {
     
     double coordinatesX, coordinatesY;
@@ -94,9 +118,7 @@ struct RotationMatrixForTransverseIsotropy {
     ublas::matrix<double> TrpMatrix,Rotational_Matrix; 
     
     RotationMatrixForTransverseIsotropy(double coordinatesX, double coordinatesY){
-        
-        //        printf("%f\t:\t%f\n",coordinatesX,coordinatesY);
-        
+                
         //setting vectors of rotation and angle (axis-angle rotation)
         double AxVector1[3]={0,1,0};
         double norm_AxVector1 = 1.0;
@@ -259,16 +281,16 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
         
         for(int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
             
-            //Get the Axis and Angles according to the position of gauss point
+            ///Get the Axis and Angles according to the position of gauss point
             double coordinates[3]={(coords_at_Gauss_nodes[gg]).data()[0],(coords_at_Gauss_nodes[gg]).data()[1],(coords_at_Gauss_nodes[gg]).data()[2]};
             
-            //Get Rotation matrix according to coordinate of Gauss Point
+            ///Get Rotation matrix according to coordinate of Gauss Point
             ublas::matrix<double> TrpMatrix; 
             TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
             RotationMatrixForTransverseIsotropy RotMat(coordinates[0],coordinates[1]);
             TrpMatrix=RotMat.TrpMatrix;
 
-            //Get Stiffness Matrix
+            ///Get Stiffness Matrix
             ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
             StiffnessMatrix.resize(6);
             StiffnessMatrix.clear();
@@ -277,12 +299,11 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
 //            IsotropicStiffnessMatrix IsoMat(lambda, mu);
 //            StiffnessMatrix=IsoMat.StiffnessMatrix;
             
-            //Rotating the Stiffness matrix according to the fibre direction
+            ///Rotating the Stiffness matrix according to the fibre direction
             D.resize(6);
             D.clear();
             ublas::matrix< FieldData > dummy2 = prod( StiffnessMatrix , TrpMatrix );
             D=prod( trans(TrpMatrix) , dummy2 );
-            //            D=StiffnessMatrix;
             
         }
         
@@ -332,16 +353,15 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
         
         for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
             
-            //Compute Strains and save them on TAG
+            ///Compute Strains and save them on TAG
             ublas::matrix< FieldData > GradU = *viit;
             ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
             rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
-            //            cout << coords_at_Gauss_nodes[gg] << endl;
             
-            //Get the Axis and Angles according to the position of gauss point
+            ///Get the Axis and Angles according to the position of gauss point
             double coordinates[3]={(coords_at_Gauss_nodes[gg]).data()[0],(coords_at_Gauss_nodes[gg]).data()[1],(coords_at_Gauss_nodes[gg]).data()[2]};
             
-            //Get Rotation matrix according to coordinate of Gauss Point
+            ///Get Rotation matrix according to coordinate of Gauss Point
             ublas::matrix<double> TrpMatrix,Rotational_Matrix;
             TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
             Rotational_Matrix = ublas::zero_matrix<FieldData>(3,3);
@@ -350,30 +370,29 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
             TrpMatrix=RotMat.TrpMatrix;
             Rotational_Matrix=RotMat.Rotational_Matrix;
             
-            //Rotate AxisYVector[0,1,0] to the direction of the fibre and save in TAG
+            ///Rotate AxisYVector[0,1,0] to the direction of the fibre and save in TAG
             ublas::vector<FieldData> AxisYVector(3);
             AxisYVector[0]=0; AxisYVector[1]=0;AxisYVector[2]=1;
             ublas::vector<FieldData> Fibre = prod(Rotational_Matrix,AxisYVector);
             
             rval = moab_post_proc.tag_set_data(th_fibre_orientation,&mit->second,1,&Fibre[0]); CHKERR_PETSC(rval);
             
-            //Get Stiffness Matrix
+            ///Get Stiffness Matrix
             ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
             StiffnessMatrix.resize(6);
             StiffnessMatrix.clear();
             TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
             StiffnessMatrix=TranIsoMat.StiffnessMatrix;            
-            //            IsotropicStiffnessMatrix IsoMat(lambda, mu);
-            //            StiffnessMatrix=IsoMat.StiffnessMatrix;
+//            IsotropicStiffnessMatrix IsoMat(lambda, mu);
+//            StiffnessMatrix=IsoMat.StiffnessMatrix;
             
-            //Rotating the Stiffness matrix according to the fibre direction
+            ///Rotating the Stiffness matrix according to the fibre direction
             D.resize(6,6);
             D.clear();
             ublas::matrix< FieldData > dummy2 = prod( StiffnessMatrix , TrpMatrix );
             D=prod( trans(TrpMatrix) , dummy2 );
-            //            D=StiffnessMatrix;
             
-            //calculate stress and save it into tag
+            ///calculate stress and save it into tag
             ublas::vector<FieldData> Strain_VectorNotation(6);
             Strain_VectorNotation[0] = Strain(0,0);
             Strain_VectorNotation[1] = Strain(1,1);
@@ -444,11 +463,8 @@ int main(int argc, char *argv[]) {
     //Interface
     EntityHandle meshset_interface;
     ierr = mField.get_msId_meshset(3,SideSet,meshset_interface); CHKERRQ(ierr);
-    //    ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
-    //    ierr = mField.get_msId_meshset(5,SideSet,meshset_interface); CHKERRQ(ierr);
+
     if(pcomm->rank()==0) {
-        //        EntityHandle out_meshset;
-        //        rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
         rval = moab.write_file("refinedMesh.vtk","VTK","",&meshset_interface,1); CHKERR_PETSC(rval);
     }
     ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
