@@ -109,14 +109,22 @@ struct moabField {
   virtual moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_end() = 0;
 
   /** 
-    * \brief get begin iterator of cubit mehset of given type
+    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    *
+    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet,it) {
+    * 	...
+    * }
     *
     * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
     */
   virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_begin(const unsigned int CubitBCType) = 0;
 
   /** 
-    * \brief get end iterator of cubit mehset of given type
+    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    *
+    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet,it) {
+    * 	...
+    * }
     *
     * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
     */
@@ -298,6 +306,17 @@ struct moabField {
     */
   virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1) = 0;
 
+  /**
+    * \brief build indexing and partition problem inhereting indexing and partitioning from other problem
+    *
+    * \param name problem name
+    * \param problem_for_rows problem used to index rows
+    * \param copy_rows just copy rows dofs
+    * \param problem_for_cols problem used to index cols
+    * \param copy_cols just copy cols dofs
+    *
+    */
+  virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1) = 0;
 
   /// determine ghost nodes
   virtual PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1) = 0;

@@ -1236,6 +1236,61 @@ struct MoFEMProblem {
   BitRefLevel* tag_BitRefLevel;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_rows;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_cols;
+
+  /**
+    * use with loops to iterate row dofs 
+    *
+    * for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(MOFEMPROBLEM,IT)) {
+    *   ...
+    * }
+    *
+    */
+  #define _IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(MOFEMPROBLEM,IT) \
+    NumeredDofMoFEMEntity_multiIndex::iterator IT = MOFEMPROBLEM.get_numered_dofs_rows_begin(); \
+    IT!=MOFEMPROBLEM.get_numered_dofs_rows_end(); IT++
+
+  /**
+    * use with loops to iterate row dofs 
+    *
+    * for(_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(MOFEMPROBLEM,IT)) {
+    *   ...
+    * }
+    *
+    */
+  #define _IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(MOFEMPROBLEM,IT) \
+    NumeredDofMoFEMEntity_multiIndex::iterator IT = MOFEMPROBLEM.get_numered_dofs_cols_begin(); \
+    IT!=MOFEMPROBLEM.get_numered_dofs_cols_end(); IT++
+
+  /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_ for loops)
+  NumeredDofMoFEMEntity_multiIndex::iterator get_numered_dofs_rows_begin() const { return numered_dofs_rows.begin(); }
+
+  /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_ for loops)
+  NumeredDofMoFEMEntity_multiIndex::iterator get_numered_dofs_rows_end() const { return numered_dofs_rows.end(); }
+
+  /// get begin iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_ for loops)
+  NumeredDofMoFEMEntity_multiIndex::iterator get_numered_dofs_cols_begin() const { return numered_dofs_cols.begin(); }
+
+  /// get end iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_ for loops)
+  NumeredDofMoFEMEntity_multiIndex::iterator get_numered_dofs_cols_end() const { return numered_dofs_cols.end(); }
+
+  /**
+    * get iterator of dof in row by uid
+    */
+  #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_UID_FOR_LOOP_(MOFEMPROBLEM,UID,IT) \
+    NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator IT = MOFEMPROBLEM.get_row_dof_by_uid(UID);
+
+  /**
+    * get iterator of dof in col by uid
+    */
+  #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_UID_FOR_LOOP_(MOFEMPROBLEM,UID,IT) \
+    NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator IT = MOFEMPROBLEM.get_row_dof_by_uid(UID);
+
+  /// get iterator of dof in row by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_UID_FOR_LOOP_)
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_row_dof_by_uid(UId uid) const { return numered_dofs_rows.get<Unique_mi_tag>().find(uid); };
+
+  /// get iterator of dof in column by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_UID_FOR_LOOP_)
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_col_dof_by_uid(UId uid) const { return numered_dofs_cols.get<Unique_mi_tag>().find(uid); };
+
   MoFEMProblem(Interface &moab,const EntityHandle _meshset);
   inline BitProblemId get_id() const { return *((BitProblemId*)tag_id_data); }
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }

@@ -1804,6 +1804,9 @@ PetscErrorCode moabField_Core::partition_problem(const string &name,int verb) {
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int verb) {
+  ierr = compose_problem(name,problem_for_rows,false,problem_for_cols,false,verb); CHKERRQ(ierr);
+}
+PetscErrorCode moabField_Core::compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
@@ -1820,17 +1823,20 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
   if(verb>0) {
     PetscPrintf(PETSC_COMM_WORLD,"Partition problem %s\n",p_miit->get_name().c_str());
   }
+  //find p_miit_row
   problems_by_name::iterator p_miit_row = problems_set.find(problem_for_rows);
   if(p_miit_row==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",problem_for_rows.c_str());
   problems_by_name::iterator p_miit_col = problems_set.find(problem_for_cols);
+  //find p_mit_col
   if(p_miit_col==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",problem_for_cols.c_str());
-  const NumeredDofMoFEMEntity_multiIndex &dofs_row = p_miit_row->numered_dofs_rows;
   const NumeredDofMoFEMEntity_multiIndex &dofs_col = p_miit_col->numered_dofs_cols;
-  MoFEMEntity *MoFEMEntity_ptr = NULL;
   //do rows
+  map<DofIdx,const NumeredDofMoFEMEntity*> rows_problem_map;
+  const NumeredDofMoFEMEntity_multiIndex &dofs_row = p_miit_row->numered_dofs_rows;
+  if(!copy_rows) {
+  MoFEMEntity *MoFEMEntity_ptr = NULL;
   NumeredDofMoFEMEntity_multiIndex::iterator miit_row = dofs_row.begin();
   NumeredDofMoFEMEntity_multiIndex::iterator hi_miit_row = dofs_row.end();
-  map<DofIdx,const NumeredDofMoFEMEntity*> rows_problem_map;
   for(;miit_row!=hi_miit_row;miit_row++) {
     if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->field_ptr->field_ptr->get_unique_id()) ) {
       MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->field_ptr->field_ptr);
@@ -1852,11 +1858,14 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
       }
     }
   }
+  if(rows_problem_map.size() != p_miit->get_nb_dofs_row()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  } 
   //do cols
-  MoFEMEntity_ptr == NULL;
+  map<DofIdx,const NumeredDofMoFEMEntity*> cols_problem_map;
+  if(!copy_cols) {
+  MoFEMEntity *MoFEMEntity_ptr = NULL;
   NumeredDofMoFEMEntity_multiIndex::iterator miit_col = dofs_col.begin();
   NumeredDofMoFEMEntity_multiIndex::iterator hi_miit_col = dofs_col.end();
-  map<DofIdx,const NumeredDofMoFEMEntity*> cols_problem_map;
   for(;miit_col!=hi_miit_col;miit_col++) {
     if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_col->field_ptr->field_ptr->get_unique_id()) ) {
       MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_col->field_ptr->field_ptr);
@@ -1878,13 +1887,13 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
       }
     }
   }
+  if(cols_problem_map.size() != p_miit->get_nb_dofs_col()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  }
   // build indices 
   NumeredDofMoFEMEntitys_by_uid &dofs_row_by_uid = const_cast<NumeredDofMoFEMEntitys_by_uid&>(p_miit->numered_dofs_rows.get<Unique_mi_tag>());
-  NumeredDofMoFEMEntitys_by_uid &dofs_col_by_uid = const_cast<NumeredDofMoFEMEntitys_by_uid&>(p_miit->numered_dofs_cols.get<Unique_mi_tag>());
   DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
-  DofIdx &nb_col_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_col);
   nb_row_local_dofs = 0;
-  nb_col_local_dofs = 0;
+  if(!copy_rows) {
   //rows
   map<DofIdx,const NumeredDofMoFEMEntity*>::iterator miit_map_row = rows_problem_map.begin();
   for(;miit_map_row!=rows_problem_map.end();miit_map_row++) {
@@ -1902,7 +1911,28 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
   }
+  } else {
+    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_((*p_miit_row),diit)) {
+      bool success = problems.modify(problems.project<0>(p_miit),problem_row_change(diit->get_DofMoFEMEntity_ptr()));
+      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      UId uid = diit->get_unique_id();
+      int part_number = diit->get_part();
+      int petsc_global_dof = diit->get_petsc_gloabl_dof_idx();
+      NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_row_by_uid.find(diit->get_unique_id());
+      if(pr_dof == dofs_row_by_uid.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
+      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      if(pr_dof->get_part() == pcomm->rank()) {
+	success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
+	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      }
+    }
+  }
   //cols
+  NumeredDofMoFEMEntitys_by_uid &dofs_col_by_uid = const_cast<NumeredDofMoFEMEntitys_by_uid&>(p_miit->numered_dofs_cols.get<Unique_mi_tag>());
+  DofIdx &nb_col_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_col);
+  nb_col_local_dofs = 0;
+  if(!copy_cols) {
   map<DofIdx,const NumeredDofMoFEMEntity*>::iterator miit_map_col = cols_problem_map.begin();
   for(;miit_map_col!=cols_problem_map.end();miit_map_col++) {
     NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_col_by_uid.find(miit_map_col->second->get_unique_id());
@@ -1917,6 +1947,22 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
     if(pr_dof->get_part() == pcomm->rank()) {
       success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+    }
+  }
+  } else {
+    for(_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_((*p_miit_col),diit)) {
+      bool success = problems.modify(problems.project<0>(p_miit),problem_col_change(diit->get_DofMoFEMEntity_ptr()));
+      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      UId uid = diit->get_unique_id();
+      int part_number = diit->get_part();
+      int petsc_global_dof = diit->get_petsc_gloabl_dof_idx();
+      NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_col_by_uid.find(diit->get_unique_id());
+      success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
+      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      if(pr_dof->get_part() == pcomm->rank()) {
+	success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
+	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      }
     }
   }
   if(verbose>0) {
