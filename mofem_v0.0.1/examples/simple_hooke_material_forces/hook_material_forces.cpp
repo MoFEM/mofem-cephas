@@ -170,7 +170,6 @@ int main(int argc, char *argv[]) {
     rval = moab.add_entities(CornersEdgesMeshset,CornersEdges); CHKERR_PETSC(rval);
     rval = moab.add_entities(CornersEdgesMeshset,CornersEdgesNodes); CHKERR_PETSC(rval);
     rval = moab.add_entities(CornersEdgesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
-
     //add surface elements
     Range CornersEdgesTets;
     rval = moab.get_adjacencies(CornersEdges,3,false,CornersEdgesTets,Interface::UNION); CHKERR_PETSC(rval);
@@ -188,7 +187,7 @@ int main(int argc, char *argv[]) {
     Range SurfacesNodes;
     rval = moab.get_adjacencies(SurfacesFaces,0,false,SurfacesNodes,Interface::UNION); CHKERR_PETSC(rval);
     Range CornersEdgesNodes;
-    rval = moab.get_adjacencies(CornersEdges,0,false,CornersEdgesNodes,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
     SurfacesNodes = subtract(SurfacesNodes,CornersNodes);
     SurfacesNodes = subtract(SurfacesNodes,CornersEdgesNodes);
     rval = moab.create_meshset(MESHSET_SET,SurfacesFacesMeshset); CHKERR_PETSC(rval);	

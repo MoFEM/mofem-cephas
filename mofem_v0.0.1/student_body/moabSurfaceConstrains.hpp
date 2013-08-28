@@ -176,7 +176,7 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
 	  for(int dd = 0;dd<3;dd++) {
 	    double X0_dd = cblas_ddot(3,&g_NTRI3[0],1,&coords.data()[dd],3);
 	    double X_dd = cblas_ddot(3,&g_NTRI3[0],1,&ent_dofs_data.data()[dd],3);
-	    g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X_dd-X0_dd)*(area0/area);
+	    g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X0_dd - X_dd)*(area0/area);
 	  }
 	}
     }
@@ -225,17 +225,21 @@ struct C_EDGE_FEMethod:public C_SURFACE_FEMethod {
       for(;eit!=adj_edges.end();eit++) {
 	map<EntityHandle,vector<EntityHandle> >::iterator mit = edges_face_map.find(*eit);
 	int eq_nb = -1;
-	if(mit==edges_face_map.end()) {
+	if(mit == edges_face_map.end()) {
 	  edges_face_map[*eit].push_back(face);
 	  eq_nb = 0;
 	} else {
 	  if(mit->second.size()==1) {
-	    if(mit->second[0]==face) eq_nb = 0;
-	    else mit->second.push_back(face);
-	    eq_nb = 1;
+	    if(mit->second[0]==face) {
+	      eq_nb = 0;
+	    } else {
+	      mit->second.push_back(face);
+	      eq_nb = 1;
+	    }
 	  } else {
 	    if(mit->second[0]==face) eq_nb = 0;
 	    else if(mit->second[1]==face) eq_nb = 1;
+	    else SETERRQ(PETSC_COMM_SELF,1,"something is wrong");
 	  }
 	}
 	if(eq_nb == -1) SETERRQ(PETSC_COMM_SELF,1,"something is wrong");
@@ -250,7 +254,7 @@ struct C_EDGE_FEMethod:public C_SURFACE_FEMethod {
 	  dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_EDGE",conn_face[nn]));
 	  hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_EDGE",conn_face[nn]));
 	  if(distance(dit,hi_dit)==0) {
-	    ent_global_row_indices[nn] = -1;
+	    ent_global_row_indices[nn]=-1;
 	  } else {
 	    if(distance(dit,hi_dit)!=2) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_EDGE should be 2");
 	    if(eq_nb==1) dit++;
@@ -310,7 +314,7 @@ struct g_EDGE_FEMethod: public C_EDGE_FEMethod {
 	for(int dd = 0;dd<3;dd++) {
 	  double X0_dd = cblas_ddot(3,&g_NTRI3[0],1,&coords.data()[dd],3);
 	  double X_dd = cblas_ddot(3,&g_NTRI3[0],1,&ent_dofs_data.data()[dd],3);
-	  g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X_dd-X0_dd)*(area0/area);
+	  g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X0_dd - X_dd)*(area0/area);
 	}
       }
     }
@@ -414,7 +418,7 @@ struct g_CORNER_FEMethod: public C_CORNER_FEMethod {
     PetscFunctionBegin;
     g_VEC_ELEM.resize(3);
     for(int nn = 0;nn<3;nn++) {
-      g_VEC_ELEM[nn] = ent_dofs_data[nn] - coords[nn];
+      g_VEC_ELEM[nn] = coords[nn] - ent_dofs_data[nn];
     }
     ierr = VecSetValues(g,
       ent_global_row_indices.size(),&(ent_global_row_indices[0]),

@@ -168,7 +168,6 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
       ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
       ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-
     }
 
     ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
@@ -189,6 +188,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
       //std::cin >> wait;
     }
 
+    ierr = VecZeroEntries(proj_all_ctx.g); CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*gFE_SURFACE);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_EDGE_ELEM",*gFE_EDGE);  CHKERRQ(ierr);
     ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
@@ -267,9 +267,11 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 	ierr = MatShellSetOperation(R,MATOP_MULT,(void(*)(void))matR_mult_shell); CHKERRQ(ierr);
 	//Qf = R*g
 	ierr = proj_all_ctx.InitQorP(snes_f); CHKERRQ(ierr);
-	ierr = VecScale(proj_all_ctx.g,-1); CHKERRQ(ierr);
 	ierr = MatMult(R,proj_all_ctx.g,Qf); CHKERRQ(ierr);
 	ierr = VecScale(Qf,-1); CHKERRQ(ierr);
+	PetscReal Rg_nrm2;
+	ierr = VecNorm(Qf,NORM_2,&Rg_nrm2); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\t Rg_nrm2 = %6.4e\n",Rg_nrm2);
 	//snes_f = snes_f+K*R*g < snes_f += K*Qf >
 	ierr = MatMultAdd(proj_all_ctx.K,Qf,snes_f,snes_f); CHKERRQ(ierr);
 	//Qf = QT*(f + K*R*Qf) < Qf = Q*snes_f >
@@ -288,7 +290,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatCopy(proj_all_ctx.K,*snes_B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-	ierr = MatAXPY(*snes_B,1e12,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+	ierr = MatAXPY(*snes_B,1e8,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
