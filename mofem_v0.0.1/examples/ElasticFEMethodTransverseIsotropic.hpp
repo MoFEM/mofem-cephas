@@ -17,6 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+//CREATE BY MICHAEL - SideSet3 was removed from the functions and added later when it was necessary
+
 #ifndef __ELASTICFEMETHODFORINTERFACE_HPP__
 #define __ELASTICFEMETHODFORINTERFACE_HPP__
 

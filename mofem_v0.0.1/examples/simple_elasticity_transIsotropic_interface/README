@@ -1,0 +1,16 @@
+#example how to run
+
+mpirun -np 3 ./wire_interface -my_file wiremesh29_08.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor 
+
+#input
+
+3threadMesh.cub - input mesh consisting SideSet 1 (consiting faces where dirihlet
+bc. are applied), SideSet2 (faces where tractions t = [0,1,0], are applied),
+SideSet 3,4,5 are the face between the 3 fibres but not used.
+
+
+#Output
+
+out.vtk - computational mesh
+out_post_proc.vtk - refinded mesh of TETs for prostrocesing
+out_post_proc_prisms.vtk - refinded mesh of PRISMs for prostrocesing
