@@ -32,6 +32,93 @@
 using namespace MoFEM;
 
 /** 
+ * \brief Function which get automatic direction of fibre from mesh
+ * This function will works by giving the coordinates of the Gauss Point,
+ * filters the exterior triangles (surface) according to the dia of fibre + a tolerance
+ * than loop over ever triangle, loop over a set of vectors (pre-defined)
+ * and the length of ray will be recorded in order to identify those 2 vectors
+ * having the lowest magnitude of ray length.
+ * hence cross product of these 2 vectors gives the vector axis of the direction of fibre
+ *
+ *\param outerSurface is a Range with all the exterior surfaces
+ *\param GPcoord is the coordinates of gauss point
+ *\param fibreDia is the average fibre diameter
+ *\param axisVector is the Vector axis along the fibre
+ */
+struct DirectionVectorFibre {
+    
+    double GPcoord[3];
+    Range OuterTri;
+    double axisFibreVector[3];
+    double fibreDia;
+        
+    DirectionVectorFibre(Interface &moab, double GPcoord[], double fibreDia, Range& OuterTri){
+        
+//GPcoord passed OK
+        double ray1[3],ray2[3],rayDummy[3];
+        double vectLenght1[2]={10000000,10000000};
+//OuterTri Range has 796 tri
+        Range::iterator tiit1 = OuterTri.begin();
+        for(;tiit1!=OuterTri.end();tiit1++) {
+            double triCoord[9];
+            const EntityHandle* conn;
+            int num_nodes;
+            moab.get_connectivity(*tiit1,conn,num_nodes);
+            assert(num_nodes==3);
+            moab.get_coords(conn,num_nodes,triNodes);
+            printf("%f\t%f\t%f \t%f\t%f\t%f \t%f\t%f\t%f\n",triCoord[0],triCoord[1],triCoord[2],triCoord[3],triCoord[4],triCoord[5],triCoord[6],triCoord[7],triCoord[8]);
+            double GPtriDist[3];
+            GPtriDist[0] = sqrt(pow(triCoord[0]-GPcoord[0],2)+pow(triCoord[1]-GPcoord[1],2)+pow(triCoord[2]-GPcoord[2],2));
+            GPtriDist[1] = sqrt(pow(triCoord[3]-GPcoord[0],2)+pow(triCoord[4]-GPcoord[1],2)+pow(triCoord[5]-GPcoord[2],2));
+            GPtriDist[2] = sqrt(pow(triCoord[6]-GPcoord[0],2)+pow(triCoord[7]-GPcoord[1],2)+pow(triCoord[8]-GPcoord[2],2));
+            double vectLenght2[2]={10000000,10000000};
+            
+            if(GPtriDist[0]<1.05*fibreDia && GPtriDist[1]<1.05*fibreDia && GPtriDist[2]<1.05*fibreDia){
+
+                double universal_array[50][3];
+                for (int ii=0; ii<50;ii++){
+                    universal_array[ii][0]=rand() % 100 + 1;
+                    universal_array[ii][1]=rand() % 100 + 1;
+                    universal_array[ii][2]=rand() % 100 + 1;
+                    double magArray=sqrt(pow(universal_array[ii][0],2)+pow(universal_array[ii][1],2)+pow(universal_array[ii][2],2));
+                    universal_array[ii][0]=universal_array[ii][0]/magArray;
+                    universal_array[ii][1]=universal_array[ii][1]/magArray;
+                    universal_array[ii][2]=universal_array[ii][2]/magArray;
+
+                    const CartVect triCorners[3]={ CartVect( triCoord[0],triCoord[1],triCoord[2] ),
+                                                   CartVect( triCoord[3],triCoord[4],triCoord[5] ),
+                                                   CartVect( triCoord[6],triCoord[7],triCoord[8] )};
+                    const CartVect origin = CartVect( GPcoord[0],GPcoord[1],GPcoord[2] ) ;
+                    const CartVect direction = CartVect( universal_array[ii][0],universal_array[ii][1],universal_array[ii][2] ) ;
+
+                    double disToTri;
+                    double tolerance=0.01;
+                    moab::GeomUtil::plucker_ray_tri_intersect (triCorners,origin,direction,tolerance,vectLenght2[1]);  
+                    
+                    if(vectLenght2[1]<vectLenght2[0]){
+                        vectLenght2[0]=vectLenght2[1];
+                        for (int jj=0; jj<3; jj++) rayDummy[jj]=universal_array[ii][jj];
+                    }else{}
+                }
+                
+                vectLenght1[1]=vectLenght2[0];
+
+                if (vectLenght1[1]<vectLenght1[0]) {
+                    vectLenght1[0]=vectLenght1[1];
+                    for (int jj=0; jj<3; jj++) ray1[jj]=rayDummy[jj];
+                }else{
+                    for (int jj=0; jj<3; jj++) ray2[jj]=rayDummy[jj];
+                }    
+            }
+        }
+        axisFibreVector[0]=ray1[1]*ray2[2] - ray1[2]*ray2[1];
+        axisFibreVector[1]=ray1[2]*ray2[0] - ray1[0]*ray2[2];
+        axisFibreVector[2]=ray1[0]*ray2[1] - ray1[1]*ray2[0];
+        
+    };
+};
+
+/** 
 * \brief Function to Calculate Transverse Isotropic Stiffness Matrix
 * this is similiar to Orthotropic Stiffness Matrix but material parameters in x and y are identical
 * hence it is used for modelling of fibre and wood
@@ -601,12 +688,13 @@ int main(int argc, char *argv[]) {
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
     
     //Get SideSet 1 and SideSet 2 defined in CUBIT
-    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5;
+    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5,SideSet6;
     ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSet4,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(5,SideSet,2,SideSet5,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(6,SideSet,2,SideSet6,true); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
@@ -622,6 +710,19 @@ int main(int argc, char *argv[]) {
     const double YoungModulus = 1;
     const double PoissonRatio = 0.3;
     const double alpha = 0.05;
+    
+    
+    //*****************************Test of DirectionVectorFibre ***************************//
+    
+    double coordOfGP[3] = {-18.4,22,95};
+    double fibreDia= 30;
+    double axisVector[3];
+    DirectionVectorFibre dirFibre(moab, coordOfGP, fibreDia, SideSet6);
+    axisVector[0]=dirFibre.axisFibreVector[0];
+    axisVector[1]=dirFibre.axisFibreVector[1];
+    axisVector[2]=dirFibre.axisFibreVector[2];
+    printf("axisVector: %f\t%f\t%f\n",axisVector[0],axisVector[1],axisVector[2]);
+
     
     struct MyDirihletBC: public BaseDirihletBC {
         Range& SideSet1;
