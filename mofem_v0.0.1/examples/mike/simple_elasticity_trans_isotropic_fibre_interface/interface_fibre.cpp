@@ -65,7 +65,7 @@ struct DirectionVectorFibre {
             int num_nodes;
             moab.get_connectivity(*tiit1,conn,num_nodes);
             assert(num_nodes==3);
-            moab.get_coords(conn,num_nodes,triNodes);
+            moab.get_coords(conn,num_nodes,triCoord);
             printf("%f\t%f\t%f \t%f\t%f\t%f \t%f\t%f\t%f\n",triCoord[0],triCoord[1],triCoord[2],triCoord[3],triCoord[4],triCoord[5],triCoord[6],triCoord[7],triCoord[8]);
             double GPtriDist[3];
             GPtriDist[0] = sqrt(pow(triCoord[0]-GPcoord[0],2)+pow(triCoord[1]-GPcoord[1],2)+pow(triCoord[2]-GPcoord[2],2));
