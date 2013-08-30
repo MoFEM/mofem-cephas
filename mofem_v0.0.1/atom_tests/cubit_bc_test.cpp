@@ -48,6 +48,7 @@ struct generic_cubit_bc_data {
 };
 
 struct displacement_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) {
     char name[12]; // 12 characters for "Displacement"
     char zero;
     char four;
@@ -63,7 +64,9 @@ struct displacement_cubit_bc_data: public generic_cubit_bc_data {
     double value4; // Value of X-Rotation
     double value5; // Value of Y-Rotation
     double value6; // Value of Z-Rotation
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    } data;
+    
+        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
@@ -71,9 +74,9 @@ struct displacement_cubit_bc_data: public generic_cubit_bc_data {
 };
 
 struct force_cubit_bc_data: public generic_cubit_bc_data {
-    struct __attribute__ ((packed)) data{
+    struct __attribute__ ((packed)) {
     char name[5]; // 5 characters for "Force"
-    char zero[3]; //
+    char zero[3]; // 3 zeros
     double value1; // Value of Force
     double value2; // Value of Moment
     double value3; // X-component of force direction vector
@@ -83,9 +86,9 @@ struct force_cubit_bc_data: public generic_cubit_bc_data {
     double value7; // Y-component of moment direction vector
     double value8; // Z-component of moment direction vector
     char zero2; // 0
-    };
+    } data;
     
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
@@ -93,6 +96,7 @@ struct force_cubit_bc_data: public generic_cubit_bc_data {
 };
 
 struct velocity_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) {
     char name[8]; // 8 characters for "Velocity"
     char zero[2];
     char flag1; // Flag for X-Translation (0: not used, 1: applied)
@@ -107,7 +111,9 @@ struct velocity_cubit_bc_data: public generic_cubit_bc_data {
     double value4; // Value of X-Rotation
     double value5; // Value of Y-Rotation
     double value6; // Value of Z-Rotation
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    } data;
+    
+        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
@@ -115,6 +121,7 @@ struct velocity_cubit_bc_data: public generic_cubit_bc_data {
 };
 
 struct acceleration_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) {
     char name[12]; // 12 characters for "Acceleration"
     char zero[2]; //
     char flag1; // Flag for X-Translation (0: not used, 1: applied)
@@ -129,7 +136,9 @@ struct acceleration_cubit_bc_data: public generic_cubit_bc_data {
     double value4; // Value of X-Rotation
     double value5; // Value of Y-Rotation
     double value6; // Value of Z-Rotation
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    } data;
+    
+        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
@@ -137,6 +146,7 @@ struct acceleration_cubit_bc_data: public generic_cubit_bc_data {
 };
 
 struct temperature_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) {
     char name[11]; // 11 characters for "Temperature"
     char zero[2]; //
     char flag1; // Flag for X-Translation (0: not used, 1: applied)
@@ -151,7 +161,9 @@ struct temperature_cubit_bc_data: public generic_cubit_bc_data {
     double value4; // Value of X-Rotation
     double value5; // Value of Y-Rotation
     double value6; // Value of Z-Rotation
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    } data;
+
+        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
@@ -159,12 +171,15 @@ struct temperature_cubit_bc_data: public generic_cubit_bc_data {
 };
 
 struct pressure_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) {
     char name[8]; // 8 characters for "Pressure"
     char flag1; //
     char flag2; //
     double value1; // Pressure value
     char zero; //
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    } data;
+    
+        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
@@ -172,6 +187,7 @@ struct pressure_cubit_bc_data: public generic_cubit_bc_data {
 };
 
 struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) {
     char name[8]; // 8 characters for "HeatFlux" (no space)
     char flag1; //
     char flag2; //
@@ -181,7 +197,9 @@ struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
     double value1; //
     double value2; //
     double value3; //
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    } data;
+
+        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
@@ -216,7 +234,6 @@ PetscErrorCode func(const vector<char> &bc_data,generic_cubit_bc_data *ptr_cubit
         case 1: {
             //Displacement
             //FILL displacement_cubit_bc_data
-            cout << "<Displacement>";
             ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
             
         }
@@ -231,7 +248,6 @@ PetscErrorCode func(const vector<char> &bc_data,generic_cubit_bc_data *ptr_cubit
         case 3: {
             //Velocity
             //FILL velocity_cubit_bc_data
-            cout << "Velocity" << endl;
             ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
             
         }
@@ -239,28 +255,24 @@ PetscErrorCode func(const vector<char> &bc_data,generic_cubit_bc_data *ptr_cubit
         case 4: {
             //Acceleration
             //FILL acceleration_cubit_bc_data
-            cout << "Acceleration" << endl;
             ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
         }
             break;
         case 5: {
             //Temperature
             //FILL temperature_cubit_bc_data
-            cout << "Temperature" << endl;
             ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
         }
             break;
         case 6: {
             //Pressure
             //FILL pressure_cubit_bc_data
-            cout << "Pressure" << endl;
             ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
         }
             break;
         case 7: {
             //Heat Flux
             //FILL heatflux_cubit_bc_data
-            cout << "Heat Flux" << endl;
             ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
         }
             break;
@@ -319,18 +331,27 @@ int main(int argc, char *argv[]) {
       //displacement_cubit_bc_data disp_cubit_bc_struct;
       force_cubit_bc_data force_cubit_bc_struct;
       
+      
       ierr = func(bc_data,&force_cubit_bc_struct); CHKERRQ(ierr);
       
+      //memcpy(&force_cubit_bc_struct,&bc_data[0],sizeof(force_cubit_bc_struct));
       
-      //testing
-      int z;
-      z=sizeof(force_cubit_bc_struct); cout << z;
       
-      //memcpy(&force_cubit_bc_struct,&bc_data[0],sizeof(z));
-
-
-       //printf("---> value1 %f\n",force_cubit_bc_struct.value1);
-
+//      printf("BC type: ");
+//      for(int uu = 0;uu<5;uu++) {
+//          printf("%c ",force_cubit_bc_struct.data.name[uu]);
+//      }
+//      printf("\n");
+//      
+//      printf("Force value: %f\n",force_cubit_bc_struct.data.value1);
+//      printf("Moment value: %f\n",force_cubit_bc_struct.data.value2);
+//      printf("Force direction vector X-component: %f\n",force_cubit_bc_struct.data.value3);
+//      printf("Force direction vector Y-component: %f\n",force_cubit_bc_struct.data.value4);
+//      printf("Force direction vector Z-component: %f\n",force_cubit_bc_struct.data.value5);
+//      printf("Moment direction vector X-component: %f\n",force_cubit_bc_struct.data.value6);
+//      printf("Moment direction vector Y-component: %f\n",force_cubit_bc_struct.data.value7);
+//      printf("Moment direction vector Z-component: %f\n",force_cubit_bc_struct.data.value8);
+      
       
   }
 
