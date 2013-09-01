@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   {
     Range CornersEdgesNodes;
     rval = moab.get_adjacencies(CornersEdges,0,false,CornersEdgesNodes,Interface::UNION); CHKERR_PETSC(rval);
-    CornersEdgesNodes = subtract(CornersEdgesNodes,CornersNodes);
+    //CornersEdgesNodes = subtract(CornersEdgesNodes,CornersNodes);
     rval = moab.create_meshset(MESHSET_SET,CornersEdgesMeshset); CHKERR_PETSC(rval);	
     rval = moab.add_entities(CornersEdgesMeshset,CornersEdges); CHKERR_PETSC(rval);
     rval = moab.add_entities(CornersEdgesMeshset,CornersEdgesNodes); CHKERR_PETSC(rval);
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     rval = moab.get_adjacencies(SurfacesFaces,0,false,SurfacesNodes,Interface::UNION); CHKERR_PETSC(rval);
     Range CornersEdgesNodes;
     rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
-    SurfacesNodes = subtract(SurfacesNodes,CornersNodes);
+    //SurfacesNodes = subtract(SurfacesNodes,CornersNodes);
     SurfacesNodes = subtract(SurfacesNodes,CornersEdgesNodes);
     rval = moab.create_meshset(MESHSET_SET,SurfacesFacesMeshset); CHKERR_PETSC(rval);	
     rval = moab.add_entities(SurfacesFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_SURFACE",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_EDGE",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_CORNER",1); CHKERRQ(ierr);
+  //ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_CORNER",1); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -388,7 +388,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_EDGE_ELEM",CFE_EDGE_ALL);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",CFE_CORNER_ALL);  CHKERRQ(ierr);
+  //ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",CFE_CORNER_ALL);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   {
