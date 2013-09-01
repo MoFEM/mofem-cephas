@@ -127,7 +127,11 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	  for(;dit!=hi_dit;dit++) {
 	    int global_idx = dit->get_petsc_gloabl_dof_idx();
 	    assert(nn*3+dit->get_dof_rank()<9);
-	    ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
+	    //if(ent_global_row_indices[nn] == -1) {
+	      //ent_global_col_indices[nn*3+dit->get_dof_rank()] = -1;
+	    //} else {
+	      ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
+	    //}
 	    int local_idx = dit->get_petsc_local_dof_idx();
 	    if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	    ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
@@ -140,6 +144,7 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
       ent_normal_map.resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
       ent_normal_map *= siit->sense;
+      ent_normal_map0 *= siit->sense;
       rval = moab.tag_set_data(th_material_normal,&face,1,&ent_normal_map.data()[0]); CHKERR_PETSC(rval);
       ierr = this->Integrate(); CHKERRQ(ierr);
     }
@@ -269,7 +274,11 @@ struct C_EDGE_FEMethod:public C_SURFACE_FEMethod {
 	  for(;dit!=hi_dit;dit++) {
 	      int global_idx = dit->get_petsc_gloabl_dof_idx();
 	      assert(nn*3+dit->get_dof_rank()<9);
-	      ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
+	      if(ent_global_row_indices[nn] == -1) {
+		ent_global_col_indices[nn*3+dit->get_dof_rank()] = -1;
+	      } else {
+		ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
+	      }
 	      int local_idx = dit->get_petsc_local_dof_idx();
 	      if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	      ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
@@ -281,6 +290,7 @@ struct C_EDGE_FEMethod:public C_SURFACE_FEMethod {
 	ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&coords.data()[0],&ent_normal_map0.data()[0]); CHKERRQ(ierr);
 	ent_normal_map.resize(3);
 	ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
+	ent_normal_map0 *= siit->sense;
 	ent_normal_map *= siit->sense;
 	ierr = this->Integrate(); CHKERRQ(ierr);
       }
