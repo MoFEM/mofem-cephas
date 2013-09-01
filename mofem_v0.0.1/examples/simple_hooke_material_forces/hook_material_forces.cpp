@@ -395,7 +395,7 @@ int main(int argc, char *argv[]) {
     //MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
     int m,n;
     MatGetSize(proj_all_ctx.C,&m,&n);
-    PetscPrintf(PETSC_COMM_WORLD,"C_CORNER size (%d,%d)\n",m,n);
+    PetscPrintf(PETSC_COMM_WORLD,"C size (%d,%d)\n",m,n);
     //std::string wait;
     //std::cin >> wait;
   }
