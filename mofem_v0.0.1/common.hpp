@@ -55,10 +55,6 @@
 #include<moab/Interface.hpp>
 #include<moab/Skinner.hpp>
 #include<moab/GeomUtil.hpp>
-<<<<<<< HEAD
-=======
-
->>>>>>> mike_trans_isotropic_test
 #include<moab/Range.hpp>
 #include<moab/MeshTopoUtil.hpp>
 #include<moab/MergeMesh.hpp>
