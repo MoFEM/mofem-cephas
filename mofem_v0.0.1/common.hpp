@@ -55,6 +55,7 @@
 #include<moab/Interface.hpp>
 #include<moab/Skinner.hpp>
 #include<moab/GeomUtil.hpp>
+#include<DagMC.hpp>
 #include<moab/Range.hpp>
 #include<moab/MeshTopoUtil.hpp>
 #include<moab/MergeMesh.hpp>

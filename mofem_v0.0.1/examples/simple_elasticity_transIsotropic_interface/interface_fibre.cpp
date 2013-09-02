@@ -27,7 +27,7 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-#include "ElasticFEMethodTransverseIsotropic.hpp"
+#include "ElasticFEMethodForInterface.hpp"
 
 using namespace MoFEM;
 
@@ -239,21 +239,22 @@ struct RotationMatrixForTransverseIsotropy {
 struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
     
     double nu_p, nu_pz, E_p, E_z, G_zp;
-    
+        
     TranIsotropicElasticFEMethod(
                                  Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
-                                 double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, Range &_SideSet1,Range &_SideSet2 ): 
-    InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp) {};
+                                 double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, Range &_SideSet1,Range &_SideSet2, Range &_SideSet3 ): 
+    InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp) {};
     
     PetscErrorCode NeumannBC() {
         PetscFunctionBegin;
-        ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
+        ublas::vector<FieldData,ublas::bounded_array<double,3> > traction2(3);
         //Set Direction of Traction On SideSet2
-        traction[0] = 0; //X
-        traction[1] = 0; //Y 
-        traction[2] = +1; //Z
+        traction2[0] = 0; //X
+        traction2[1] = 0; //Y 
+        traction2[2] = +1; //Z
         //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
-        ierr = ElasticFEMethod::NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
+        ierr = ElasticFEMethod::NeumannBC(F,traction2,SideSet2); CHKERRQ(ierr);
+        
         PetscFunctionReturn(0);
     }
     
@@ -462,7 +463,7 @@ int main(int argc, char *argv[]) {
     
     //Interface
     EntityHandle meshset_interface;
-    ierr = mField.get_msId_meshset(3,SideSet,meshset_interface); CHKERRQ(ierr);
+    ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
 
     if(pcomm->rank()==0) {
         rval = moab.write_file("refinedMesh.vtk","VTK","",&meshset_interface,1); CHKERR_PETSC(rval);
@@ -493,6 +494,9 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_SideSet5; //Dirihlet BC is there
     ierr = mField.get_msId_meshset(5,SideSet,meshset_SideSet5); CHKERRQ(ierr);
     ierr = mField.refine_get_childern(meshset_SideSet5,bit_level_interface,meshset_SideSet5,MBTRI,true); CHKERRQ(ierr);
+    EntityHandle meshset_SideSet6; //Dirihlet BC is there
+    ierr = mField.get_msId_meshset(6,SideSet,meshset_SideSet6); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(meshset_SideSet6,bit_level_interface,meshset_SideSet6,MBTRI,true); CHKERRQ(ierr);
     
     // stl::bitset see for more details
     BitRefLevel bit_level0;
@@ -601,17 +605,20 @@ int main(int argc, char *argv[]) {
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
     
     //Get SideSet 1 and SideSet 2 defined in CUBIT
-    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5;
+    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5,SideSet6;
     ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSet4,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(5,SideSet,2,SideSet5,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(6,SideSet,2,SideSet6,true); CHKERRQ(ierr);
+
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 4 : %u\n",SideSet4.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 5 : %u\n",SideSet5.size());
+    PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 6 : %u\n",SideSet6.size());
     
     //Assemble F and Aij
     const double YoungModulusP = 1.0;
@@ -701,8 +708,8 @@ int main(int argc, char *argv[]) {
     
     MyDirihletBC myDirihletBC(moab,SideSet1);
     //    InterfaceElasticFEMethod MyFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
-    TranIsotropicElasticFEMethod MyTIsotFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,SideSet1,SideSet2);
-    InterfaceFEMethod IntMyFE(moab,&myDirihletBC,Aij,F,YoungModulus*alpha,SideSet1,SideSet2);
+    TranIsotropicElasticFEMethod MyTIsotFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,SideSet1,SideSet2,SideSet3);
+    InterfaceFEMethod IntMyFE(moab,&myDirihletBC,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
     
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -716,7 +723,10 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
     
-    
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
     ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     

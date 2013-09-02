@@ -27,7 +27,7 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-#include "ElasticFEMethodTransverseIsotropic.hpp"
+#include "ElasticFEMethodForInterface.hpp"
 
 using namespace MoFEM;
 
@@ -49,72 +49,180 @@ struct DirectionVectorFibre {
     
     double GPcoord[3];
     Range OuterTri;
-    double axisFibreVector[3];
+    Range SphereTri;
     double fibreDia;
-        
+    ublas::vector<double> axisFibreVector;
+    ublas::vector<double> ray1;
+    ublas::vector<double> ray2;
+    ublas::matrix<double> Rotation; 
+    double averageVector[3];
+
     DirectionVectorFibre(Interface &moab, double GPcoord[], double fibreDia, Range& OuterTri){
         
-//GPcoord passed OK
-        double ray1[3],ray2[3],rayDummy[3];
-        double vectLenght1[2]={10000000,10000000};
-//OuterTri Range has 796 tri
+        ray1 = ublas::zero_vector<FieldData>(3);
+        ray2 = ublas::zero_vector<FieldData>(3);
+
+        double vectLenght1= 10000000.0;
+        double vectLenght2= 10000000.0;
+
+        int NoOfRays=11; ///always odd, so would be symetric and the vector [0,0,0] will exist
+        int NoOfRays2=NoOfRays*NoOfRays;
+        int NoOfRays3=NoOfRays*NoOfRays*NoOfRays;
+        
+        ///Creating a Ray Vector in +ve and -ve dir, but has to be normalized 
+        double universal_array[NoOfRays3][3];
+        for (int xx=0; xx<NoOfRays; xx++) {
+            for (int yy=0; yy<NoOfRays; yy++) {
+                for (int zz=0; zz<NoOfRays; zz++){
+                    universal_array[zz + yy*NoOfRays + xx*NoOfRays2][0]=xx-0.5*(NoOfRays-1);
+                    universal_array[zz + yy*NoOfRays + xx*NoOfRays2][1]=yy-0.5*(NoOfRays-1);
+                    universal_array[zz + yy*NoOfRays + xx*NoOfRays2][2]=zz-0.5*(NoOfRays-1);
+                }}}
+        ///Normalized Ray Vector
+        for (int ii=0; ii<NoOfRays3; ii++) {
+            if (ii==(NoOfRays3-1)/2) {
+                continue;}
+            double uniVecMag=sqrt(pow(universal_array[ii][0],2)+pow(universal_array[ii][1],2)+pow(universal_array[ii][2],2));
+            universal_array[ii][0]=universal_array[ii][0]/uniVecMag;
+            universal_array[ii][1]=universal_array[ii][1]/uniVecMag;
+            universal_array[ii][2]=universal_array[ii][2]/uniVecMag;
+        }
+        
+        ///Get Entities which crosses a ray
+        
+//        Range StoredFaces;
+//        EntityHandle meshsetForRay;
+//        moab.create_meshset(MESHSET_SET,meshsetForRay);
+//        moab.add_entities(meshsetForRay,OuterTri);
+//        
+//        for (int ii=0; ii<NoOfRays3; ii++) {
+//
+//            EntityHandle ray_surfaces;
+//            double distRay;
+//            moab::DagMC::ray_fire (&meshsetForRay,&GPcoord[0],&universal_array[ii][0],ray_surfaces,distRay);
+//            StoredFaces.insert(ray_surfaces);
+//        }
+
+        ///Looping over all the Outer Triangles from Range
+//        cout<<OuterTri.size()<<endl;
         Range::iterator tiit1 = OuterTri.begin();
         for(;tiit1!=OuterTri.end();tiit1++) {
+                        
+            ///Get Connectivity and Coordinates of every triangle
             double triCoord[9];
             const EntityHandle* conn;
             int num_nodes;
             moab.get_connectivity(*tiit1,conn,num_nodes);
             assert(num_nodes==3);
             moab.get_coords(conn,num_nodes,triCoord);
-            printf("%f\t%f\t%f \t%f\t%f\t%f \t%f\t%f\t%f\n",triCoord[0],triCoord[1],triCoord[2],triCoord[3],triCoord[4],triCoord[5],triCoord[6],triCoord[7],triCoord[8]);
+
+            ///Compute Distance between Gauss Point and every node of Triangle
             double GPtriDist[3];
             GPtriDist[0] = sqrt(pow(triCoord[0]-GPcoord[0],2)+pow(triCoord[1]-GPcoord[1],2)+pow(triCoord[2]-GPcoord[2],2));
             GPtriDist[1] = sqrt(pow(triCoord[3]-GPcoord[0],2)+pow(triCoord[4]-GPcoord[1],2)+pow(triCoord[5]-GPcoord[2],2));
             GPtriDist[2] = sqrt(pow(triCoord[6]-GPcoord[0],2)+pow(triCoord[7]-GPcoord[1],2)+pow(triCoord[8]-GPcoord[2],2));
-            double vectLenght2[2]={10000000,10000000};
-            
+                        
+            ///If coordinates of triangle falls in a distance range of 5% more than the Fibre Diameter then use this triangles only
             if(GPtriDist[0]<1.05*fibreDia && GPtriDist[1]<1.05*fibreDia && GPtriDist[2]<1.05*fibreDia){
-
-                double universal_array[50][3];
-                for (int ii=0; ii<50;ii++){
-                    universal_array[ii][0]=rand() % 100 + 1;
-                    universal_array[ii][1]=rand() % 100 + 1;
-                    universal_array[ii][2]=rand() % 100 + 1;
-                    double magArray=sqrt(pow(universal_array[ii][0],2)+pow(universal_array[ii][1],2)+pow(universal_array[ii][2],2));
-                    universal_array[ii][0]=universal_array[ii][0]/magArray;
-                    universal_array[ii][1]=universal_array[ii][1]/magArray;
-                    universal_array[ii][2]=universal_array[ii][2]/magArray;
-
+                for (int ii=0; ii<NoOfRays3; ii++) {
+                
+                    ///Convert Coordinates of Triangle, Gauss Point and Ray(normalized) in CartVect form
                     const CartVect triCorners[3]={ CartVect( triCoord[0],triCoord[1],triCoord[2] ),
                                                    CartVect( triCoord[3],triCoord[4],triCoord[5] ),
                                                    CartVect( triCoord[6],triCoord[7],triCoord[8] )};
                     const CartVect origin = CartVect( GPcoord[0],GPcoord[1],GPcoord[2] ) ;
-                    const CartVect direction = CartVect( universal_array[ii][0],universal_array[ii][1],universal_array[ii][2] ) ;
-
-                    double disToTri;
-                    double tolerance=0.01;
-                    moab::GeomUtil::plucker_ray_tri_intersect (triCorners,origin,direction,tolerance,vectLenght2[1]);  
                     
-                    if(vectLenght2[1]<vectLenght2[0]){
-                        vectLenght2[0]=vectLenght2[1];
-                        for (int jj=0; jj<3; jj++) rayDummy[jj]=universal_array[ii][jj];
+                    const CartVect direction = CartVect( universal_array[ii][0], universal_array[ii][1], universal_array[ii][2] ) ;
+                    
+                    double rayMag=0.0;
+                    ///to get distance from Gauss Point to triangle if ONLY intersect
+                    moab::GeomUtil::ray_tri_intersect(triCorners,origin,direction,NULL,rayMag,NULL);
+                    if (rayMag==0) {
+//                        SphereTri.erase(*tiit1);
+                        continue;
+                    }
+                    SphereTri.insert(*tiit1);
+//                    cout<<rayMag<<" "<<universal_array[ii][0]<<" "<<universal_array[ii][1]<<" "<<universal_array[ii][2]<<endl;
+                    if(rayMag<vectLenght2){
+                        vectLenght1=vectLenght2;
+                        vectLenght2=rayMag;
+                        for (int jj=0; jj<3; jj++) {
+                            ray2[jj] = ray1[jj];
+                            ray1[jj] = universal_array[ii][jj];}
                     }else{}
-                }
-                
-                vectLenght1[1]=vectLenght2[0];
-
-                if (vectLenght1[1]<vectLenght1[0]) {
-                    vectLenght1[0]=vectLenght1[1];
-                    for (int jj=0; jj<3; jj++) ray1[jj]=rayDummy[jj];
-                }else{
-                    for (int jj=0; jj<3; jj++) ray2[jj]=rayDummy[jj];
-                }    
-            }
+                }   
+            }else{}
         }
+        
+        cout<<SphereTri.size()<<endl;
+//        Range extEdges,allNodes;
+//        moab.get_adjacencies(SphereTri,0,false,allNodes,Interface::UNION);
+////        cout<<allNodes.size()<<endl;
+//                
+//        averageVector[0]=0.0;averageVector[1]=0.0;averageVector[2]=0.0;
+//        Range::iterator niit1 = allNodes.begin();
+//        for(;niit1!=allNodes.end();niit1++) {       
+//            
+//            double coords[3];
+//            moab.get_coords(&*niit1,1,&coords[0]);
+//            averageVector[0]+=GPcoord[0]-coords[0];
+//            averageVector[1]+=GPcoord[1]-coords[1];
+//            averageVector[2]+=GPcoord[2]-coords[2];
+//        }
+//        
+        averageVector[0]=-averageVector[0];
+        averageVector[1]=-averageVector[1];
+        averageVector[2]=-averageVector[2];
+
+//        cout<<vectLenght2<<" "<<vectLenght1<<endl;
+        ///Compute direction of fibre axisFibreVector = ray1 X ray2 (cross product)
+        axisFibreVector = ublas::zero_vector<FieldData>(3);
+        
         axisFibreVector[0]=ray1[1]*ray2[2] - ray1[2]*ray2[1];
         axisFibreVector[1]=ray1[2]*ray2[0] - ray1[0]*ray2[2];
         axisFibreVector[2]=ray1[0]*ray2[1] - ray1[1]*ray2[0];
         
+//        ///Compute angle between 0,0,1 and axisFibreVector
+//        double zVector[3]={0,0,1};
+//        double aFVecXzVector[3];
+//        aFVecXzVector[0]=axisFibreVector[1]*zVector[2] - axisFibreVector[2]*zVector[1];
+//        aFVecXzVector[1]=axisFibreVector[2]*zVector[0] - axisFibreVector[0]*zVector[2];
+//        aFVecXzVector[2]=axisFibreVector[0]*zVector[1] - axisFibreVector[1]*zVector[0];
+//        double normaFVecXz=sqrt(pow(aFVecXzVector[0],2)+pow(aFVecXzVector[1],2)+pow(aFVecXzVector[2],2));
+//        
+//        double rotAngle=asin(axisFibreVector[2]/(sqrt(pow(axisFibreVector[0],2)+pow(axisFibreVector[1],2)+pow(axisFibreVector[2],2))))-(0.5*M_PI);
+        
+        Rotation = ublas::zero_matrix<FieldData>(3,3);
+        
+//        Rotation(0,0) = 1-((1-cos(rotAngle))*(pow(aFVecXzVector[1],2)+pow(aFVecXzVector[2],2))/pow(normaFVecXz,2)); 
+//        Rotation(1,1) = 1-((1-cos(rotAngle))*(pow(aFVecXzVector[0],2)+pow(aFVecXzVector[2],2))/pow(normaFVecXz,2)); 
+//        Rotation(2,2) = 1-((1-cos(rotAngle))*(pow(aFVecXzVector[0],2)+pow(aFVecXzVector[1],2))/pow(normaFVecXz,2)); 
+//        
+//        Rotation(0,1) = ((1-cos(rotAngle))*aFVecXzVector[0]*aFVecXzVector[1]-normaFVecXz*aFVecXzVector[2]*sin(rotAngle))/pow(normaFVecXz,2);
+//        Rotation(1,0) = ((1-cos(rotAngle))*aFVecXzVector[0]*aFVecXzVector[1]+normaFVecXz*aFVecXzVector[2]*sin(rotAngle))/pow(normaFVecXz,2);
+//        
+//        Rotation(0,2) = ((1-cos(rotAngle))*aFVecXzVector[0]*aFVecXzVector[2]+normaFVecXz*aFVecXzVector[1]*sin(rotAngle))/pow(normaFVecXz,2);
+//        Rotation(2,0) = ((1-cos(rotAngle))*aFVecXzVector[0]*aFVecXzVector[2]-normaFVecXz*aFVecXzVector[1]*sin(rotAngle))/pow(normaFVecXz,2);
+//        
+//        Rotation(1,2) = ((1-cos(rotAngle))*aFVecXzVector[1]*aFVecXzVector[2]-normaFVecXz*aFVecXzVector[0]*sin(rotAngle))/pow(normaFVecXz,2);
+//        Rotation(2,1) = ((1-cos(rotAngle))*aFVecXzVector[1]*aFVecXzVector[2]+normaFVecXz*aFVecXzVector[0]*sin(rotAngle))/pow(normaFVecXz,2); 
+        
+//        for(int rr=0;rr<3;rr++){
+//            for (int cc=0; cc<3; cc++) {
+//                printf("%f \t",Rotation(rr,cc));
+//            }printf("\n");
+//        }printf("\n");
+        //Test of ray_tri_intersect function//
+//        const CartVect triCorners[3]={  CartVect( 0,0,0 ),
+//                                        CartVect( 0,1,0 ),
+//                                        CartVect( 1,0,0 )};
+//        const CartVect origin = CartVect(0,0,3);
+//        const CartVect direction = CartVect(0,0,-1);
+//        double rayMag;
+//        double tolerance=0.01;
+//        moab::GeomUtil::ray_tri_intersect(triCorners,origin,direction,tolerance,rayMag,NULL);
+//        cout<<rayMag<<endl;
+//        
     };
 };
 
@@ -329,18 +437,23 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
     
     TranIsotropicElasticFEMethod(
                                  Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
-                                 double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, Range &_SideSet1,Range &_SideSet2 ): 
-    InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp) {};
+                                 double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, Range &_SideSet1,Range &_SideSet2, Range &_SideSet3 ): 
+    InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp) {};
     
     PetscErrorCode NeumannBC() {
         PetscFunctionBegin;
-        ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
-        //Set Direction of Traction On SideSet2
-        traction[0] = 0; //X
-        traction[1] = 0; //Y 
-        traction[2] = +1; //Z
-        //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
-        ierr = ElasticFEMethod::NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
+        ublas::vector<FieldData,ublas::bounded_array<double,3> > traction2(3);
+        traction2[0] = 0;
+        traction2[1] = 0;
+        traction2[2] = +1;
+        ierr = ElasticFEMethod::NeumannBC(F,traction2,SideSet2); CHKERRQ(ierr);
+        
+        ublas::vector<FieldData,ublas::bounded_array<double,3> > traction3(3);
+        traction3[0] = 0;
+        traction3[1] = 0;
+        traction3[2] = +1;
+        ierr = ElasticFEMethod::NeumannBC(F,traction3,SideSet3); CHKERRQ(ierr);
+        
         PetscFunctionReturn(0);
     }
     
@@ -549,7 +662,7 @@ int main(int argc, char *argv[]) {
     
     //Interface
     EntityHandle meshset_interface;
-    ierr = mField.get_msId_meshset(3,SideSet,meshset_interface); CHKERRQ(ierr);
+    ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
 
     if(pcomm->rank()==0) {
         rval = moab.write_file("refinedMesh.vtk","VTK","",&meshset_interface,1); CHKERR_PETSC(rval);
@@ -580,6 +693,9 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_SideSet5; //Dirihlet BC is there
     ierr = mField.get_msId_meshset(5,SideSet,meshset_SideSet5); CHKERRQ(ierr);
     ierr = mField.refine_get_childern(meshset_SideSet5,bit_level_interface,meshset_SideSet5,MBTRI,true); CHKERRQ(ierr);
+    EntityHandle meshset_SideSet6; //Dirihlet BC is there
+    ierr = mField.get_msId_meshset(6,SideSet,meshset_SideSet6); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(meshset_SideSet6,bit_level_interface,meshset_SideSet6,MBTRI,true); CHKERRQ(ierr);
     
     // stl::bitset see for more details
     BitRefLevel bit_level0;
@@ -688,18 +804,20 @@ int main(int argc, char *argv[]) {
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
     
     //Get SideSet 1 and SideSet 2 defined in CUBIT
-    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5,SideSet6;
+    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5,SideSet6,SideSet7;
     ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSet4,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(5,SideSet,2,SideSet5,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(6,SideSet,2,SideSet6,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(7,SideSet,2,SideSet7,true); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 4 : %u\n",SideSet4.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 5 : %u\n",SideSet5.size());
+    PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 6 : %u\n",SideSet6.size());
     
     //Assemble F and Aij
     const double YoungModulusP = 1.0;
@@ -714,15 +832,60 @@ int main(int argc, char *argv[]) {
     
     //*****************************Test of DirectionVectorFibre ***************************//
     
-    double coordOfGP[3] = {-18.4,22,95};
+//    double coordOfGP[3] = {-18.4,22,95};
+    double coordOfGP[3] = {21,0,88};
+    EntityHandle GPVertex;
+    moab.create_vertex(coordOfGP,GPVertex);
     double fibreDia= 30;
-    double axisVector[3];
-    DirectionVectorFibre dirFibre(moab, coordOfGP, fibreDia, SideSet6);
-    axisVector[0]=dirFibre.axisFibreVector[0];
-    axisVector[1]=dirFibre.axisFibreVector[1];
-    axisVector[2]=dirFibre.axisFibreVector[2];
-    printf("axisVector: %f\t%f\t%f\n",axisVector[0],axisVector[1],axisVector[2]);
+    DirectionVectorFibre dirFibre(moab, coordOfGP, fibreDia, SideSet7);
+    ublas::vector<double> axisFibreVector(3);
+    axisFibreVector=dirFibre.axisFibreVector;
+    ublas::matrix<double> Rotation;
+    Rotation = ublas::zero_matrix<FieldData>(3,3);
+    Rotation=dirFibre.Rotation;
+    ublas::vector<double> ray1(3);
+    ray1=dirFibre.ray1;
+    ublas::vector<double> ray2(3);
+    ray2=dirFibre.ray2;
+    Range SphereTri;
+    SphereTri=dirFibre.SphereTri;
+    double averageVector[3];
+    for(int ii=0; ii<3; ii++)averageVector[ii]=dirFibre.averageVector[ii];
+    
+    EntityHandle meshsetOuterTri;
+    moab.create_meshset(MESHSET_SET,meshsetOuterTri);
+    moab.add_entities(meshsetOuterTri,SphereTri);
 
+    ublas::vector<FieldData> AxisYVector(3);
+    AxisYVector[0]=0; AxisYVector[1]=0;AxisYVector[2]=1;
+    ublas::vector<FieldData> Fibre2 = prod(Rotation,AxisYVector);
+    
+    printf("axisVector: %f\t%f\t%f\n",axisFibreVector[0],axisFibreVector[1],axisFibreVector[2]);
+
+    Tag th_func_fibre_orient;
+    double def_VAL2[3] = {0,0,0};
+    rval = moab.tag_get_handle("NEW_FIBRE_DIR",3,MB_TYPE_DOUBLE,th_func_fibre_orient,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
+
+//    rval = moab.tag_set_data(th_func_fibre_orient,&GPVertex,1,&Fibre2[0]); CHKERR_PETSC(rval);  
+    
+    EntityHandle GPVertex1,GPVertex2,GPVertex3;
+    moab.create_vertex(coordOfGP,GPVertex1);
+    moab.create_vertex(coordOfGP,GPVertex2);
+    moab.create_vertex(coordOfGP,GPVertex3);
+
+//    rval = moab.tag_set_data(th_func_fibre_orient,&GPVertex1,1,&averageVector[0]); CHKERR_PETSC(rval);  
+    rval = moab.tag_set_data(th_func_fibre_orient,&GPVertex2,1,&axisFibreVector[0]); CHKERR_PETSC(rval);  
+//    rval = moab.tag_set_data(th_func_fibre_orient,&GPVertex3,1,&ray2[0]); CHKERR_PETSC(rval);  
+
+    if(pcomm->rank()==0) {
+        rval = moab.write_file("TriAroundPoint.vtk","VTK","",&meshsetOuterTri,1); CHKERR_PETSC(rval);
+    }
+    
+    if(pcomm->rank()==0) {
+        rval = moab.write_file("MeshFibreDirectionTest.vtk","VTK",""); CHKERR_PETSC(rval);
+    }
+    
+  //**************************** Function to Set Boundary Conditions ******************************//  
     
     struct MyDirihletBC: public BaseDirihletBC {
         Range& SideSet1;
@@ -802,8 +965,8 @@ int main(int argc, char *argv[]) {
     
     MyDirihletBC myDirihletBC(moab,SideSet1);
     //    InterfaceElasticFEMethod MyFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
-    TranIsotropicElasticFEMethod MyTIsotFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,SideSet1,SideSet2);
-    InterfaceFEMethod IntMyFE(moab,&myDirihletBC,Aij,F,YoungModulus*alpha,SideSet1,SideSet2);
+    TranIsotropicElasticFEMethod MyTIsotFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,SideSet1,SideSet2,SideSet3);
+    InterfaceFEMethod IntMyFE(moab,&myDirihletBC,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
     
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -817,7 +980,10 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
     
-    
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
     ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     
