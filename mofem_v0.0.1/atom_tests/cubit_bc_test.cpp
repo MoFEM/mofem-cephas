@@ -232,74 +232,7 @@ PetscErrorCode func(const vector<char> &bc_data,generic_cubit_bc_data *ptr_cubit
     
     PetscErrorCode ierr;
     
-    int scom;
-    if (strcmp (&bc_data[0],"Displacement") == 0)
-        scom = 1;
-    else if (strcmp (&bc_data[0],"Force") == 0)
-        scom = 2;
-    else if (strcmp (&bc_data[0],"Velocity") == 0)
-        scom = 3;
-    else if (strcmp (&bc_data[0],"Acceleration") == 0)
-        scom = 4;
-    else if (strcmp (&bc_data[0],"Temperature") == 0)
-        scom = 5;
-    else if (strcmp (&bc_data[0],"Pressure") == 0)
-        scom = 6;
-    else if (strcmp (&bc_data[0],"HeatFlux") == 0)
-        scom = 7;
-    else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
-    
-    switch (scom)
-    {
-        case 1: {
-            //Displacement
-            //FILL displacement_cubit_bc_data
-            ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
-
-        }
-            break;
-        case 2: {
-            //Force
-            //FILL force_cubit_bc_data
-            ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
-            
-        }
-            break;
-        case 3: {
-            //Velocity
-            //FILL velocity_cubit_bc_data
-            ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
-            
-        }
-            break;
-        case 4: {
-            //Acceleration
-            //FILL acceleration_cubit_bc_data
-            ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
-        }
-            break;
-        case 5: {
-            //Temperature
-            //FILL temperature_cubit_bc_data
-            ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
-        }
-            break;
-        case 6: {
-            //Pressure
-            //FILL pressure_cubit_bc_data
-            ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
-        }
-            break;
-        case 7: {
-            //Heat Flux
-            //FILL heatflux_cubit_bc_data
-            ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
-        }
-            break;
-    
-        default:
-            SETERRQ(PETSC_COMM_SELF,1,"Something went wrong filling cubit_bc_data");
-    }
+    ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
     
     PetscFunctionReturn(0);
 }
@@ -347,28 +280,137 @@ int main(int argc, char *argv[]) {
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
       
-      
-      force_cubit_bc_data force_cubit_bc_struct;
-      
-      
-      ierr = func(bc_data,&force_cubit_bc_struct); CHKERRQ(ierr);
-      
-      //test
-      printf("BC type: ");
-      for(int uu = 0;uu<5;uu++) {
-          printf("%c ",force_cubit_bc_struct.data.name[uu]);
+      //Displacement
+      if (strcmp (&bc_data[0],"Displacement") == 0)
+      {
+          displacement_cubit_bc_data displacement_cubit_bc_struct;
+          //Fill bc data
+          ierr = func(bc_data,&displacement_cubit_bc_struct); CHKERRQ(ierr);
+          
+          //Print bc data
+          printf("\n");
+          printf("BC type: ");
+          for(int uu = 0;uu<12;uu++)
+          {
+              printf("%c ",displacement_cubit_bc_struct.data.name[uu]);
+          }
+          printf("\n");
+
+          //printf("Flag for X-Translation (0/1): %c\n",displacement_cubit_bc_struct.data.flag1);
+          //printf("Flag for Y-Translation (0/1): %c\n",displacement_cubit_bc_struct.data.flag2);
+          //printf("Flag for Z-Translation (0/1): %c\n",displacement_cubit_bc_struct.data.flag3);
+          //printf("Flag for X-Rotation (0/1): %c\n",displacement_cubit_bc_struct.data.flag4;
+          //printf("Flag for Y-Rotation (0/1): %c\n",displacement_cubit_bc_struct.data.flag5;
+          //printf("Flag for Z-Rotation (0/1): %c\n",displacement_cubit_bc_struct.data.flag6;
+                 
+          printf("Displacement magnitude (X-Translation): %f\n",displacement_cubit_bc_struct.data.value1);
+          printf("Displacement magnitude (Y-Translation): %f\n",displacement_cubit_bc_struct.data.value2);
+          printf("Displacement magnitude (Z-Translation): %f\n",displacement_cubit_bc_struct.data.value3);
+          printf("Displacement magnitude (X-Rotation): %f\n",displacement_cubit_bc_struct.data.value4);
+          printf("Displacement magnitude (Y-Rotation): %f\n",displacement_cubit_bc_struct.data.value5);
+          printf("Displacement magnitude (Z-Rotation): %f\n",displacement_cubit_bc_struct.data.value6);
+          printf("\n");
       }
-      printf("\n");
       
-      printf("Force value: %f\n",force_cubit_bc_struct.data.value1);
-      printf("Moment value: %f\n",force_cubit_bc_struct.data.value2);
-      printf("Force direction vector X-component: %f\n",force_cubit_bc_struct.data.value3);
-      printf("Force direction vector Y-component: %f\n",force_cubit_bc_struct.data.value4);
-      printf("Force direction vector Z-component: %f\n",force_cubit_bc_struct.data.value5);
-      printf("Moment direction vector X-component: %f\n",force_cubit_bc_struct.data.value6);
-      printf("Moment direction vector Y-component: %f\n",force_cubit_bc_struct.data.value7);
-      printf("Moment direction vector Z-component: %f\n",force_cubit_bc_struct.data.value8);
+      //Force
+      else if (strcmp (&bc_data[0],"Force") == 0)
+      {
+          force_cubit_bc_data force_cubit_bc_struct;
+          //Fill bc data
+          ierr = func(bc_data,&force_cubit_bc_struct); CHKERRQ(ierr);
+          
+          //Print bc data
+          printf("\n");
+          printf("BC type: ");
+          for(int uu = 0;uu<5;uu++)
+          {
+              printf("%c ",force_cubit_bc_struct.data.name[uu]);
+          }
+          printf("\n");
+          printf("Force magnitude: %f\n",force_cubit_bc_struct.data.value1);
+          printf("Moment magnitude: %f\n",force_cubit_bc_struct.data.value2);
+          printf("Force direction vector (X-component): %f\n",force_cubit_bc_struct.data.value3);
+          printf("Force direction vector (Y-component): %f\n",force_cubit_bc_struct.data.value4);
+          printf("Force direction vector (Z-component): %f\n",force_cubit_bc_struct.data.value5);
+          printf("Moment direction vector (X-component): %f\n",force_cubit_bc_struct.data.value6);
+          printf("Moment direction vector (Y-component): %f\n",force_cubit_bc_struct.data.value7);
+          printf("Moment direction vector (Z-component): %f\n",force_cubit_bc_struct.data.value8);
+          printf("\n");
+      }
       
+      //Velocity
+      else if (strcmp (&bc_data[0],"Velocity") == 0)
+      {
+          velocity_cubit_bc_data velocity_cubit_bc_struct;
+          //Fill bc data
+          ierr = func(bc_data,&velocity_cubit_bc_struct); CHKERRQ(ierr);
+          
+          //Print bc data
+          printf("\n");
+          printf("BC type: ");
+          for(int uu = 0;uu<8;uu++)
+          {
+              printf("%c ",velocity_cubit_bc_struct.data.name[uu]);
+          }
+          printf("\n");
+          printf("Velocity magnitude (X-Translation): %f\n",velocity_cubit_bc_struct.data.value1);
+          printf("Velocity magnitude (Y-Translation): %f\n",velocity_cubit_bc_struct.data.value2);
+          printf("Velocity magnitude (Z-Translation): %f\n",velocity_cubit_bc_struct.data.value3);
+          printf("Velocity magnitude (X-Rotation): %f\n",velocity_cubit_bc_struct.data.value4);
+          printf("Velocity magnitude (Y-Rotation): %f\n",velocity_cubit_bc_struct.data.value5);
+          printf("Velocity magnitude (Z-Rotation): %f\n",velocity_cubit_bc_struct.data.value6);
+          printf("\n");
+      }
+      
+      //Acceleration
+      else if (strcmp (&bc_data[0],"Acceleration") == 0)
+      {
+          acceleration_cubit_bc_data acceleration_cubit_bc_struct;
+          //Fill bc data
+          ierr = func(bc_data,&acceleration_cubit_bc_struct); CHKERRQ(ierr);
+          
+          //Print bc data
+          printf("\n");
+          printf("BC type: ");
+          for(int uu = 0;uu<12;uu++)
+          {
+              printf("%c ",acceleration_cubit_bc_struct.data.name[uu]);
+          }
+          printf("\n");
+          printf("Acceleration magnitude (X-Translation): %f\n",acceleration_cubit_bc_struct.data.value1);
+          printf("Acceleration magnitude (Y-Translation): %f\n",acceleration_cubit_bc_struct.data.value2);
+          printf("Acceleration magnitude (Z-Translation): %f\n",acceleration_cubit_bc_struct.data.value3);
+          printf("Acceleration magnitude (X-Rotation): %f\n",acceleration_cubit_bc_struct.data.value4);
+          printf("Acceleration magnitude (Y-Rotation): %f\n",acceleration_cubit_bc_struct.data.value5);
+          printf("Acceleration magnitude (Z-Rotation): %f\n",acceleration_cubit_bc_struct.data.value6);
+          printf("\n");
+      }
+      
+      //Temperature
+      else if (strcmp (&bc_data[0],"Temperature") == 0)
+      {
+          temperature_cubit_bc_data temperature_cubit_bc_struct;
+          //Fill bc data
+          ierr = func(bc_data,&temperature_cubit_bc_struct); CHKERRQ(ierr);
+          
+          //Print bc data
+          printf("\n");
+          printf("BC type: ");
+          for(int uu = 0;uu<11;uu++)
+          {
+              printf("%c ",temperature_cubit_bc_struct.data.name[uu]);
+          }
+          printf("\n");
+          printf("Temperature: %f\n",temperature_cubit_bc_struct.data.value1);
+          //printf("Temperature (Y-Translation): %f\n",temperature_cubit_bc_struct.data.value2);
+          //printf("Temperature (Z-Translation): %f\n",temperature_cubit_bc_struct.data.value3);
+          //printf("Temperature (X-Rotation): %f\n",temperature_cubit_bc_struct.data.value4);
+          //printf("Temperature (Y-Rotation): %f\n",temperature_cubit_bc_struct.data.value5);
+          //printf("Temperature (Z-Rotation): %f\n",temperature_cubit_bc_struct.data.value6);
+          printf("\n");          
+      }
+      
+      else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
       
   }
 
@@ -379,7 +421,52 @@ int main(int argc, char *argv[]) {
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
-  } 
+      
+      //Pressure
+      if (strcmp (&bc_data[0],"Pressure") == 0)
+      {
+          pressure_cubit_bc_data pressure_cubit_bc_struct;
+          //Fill bc data
+          ierr = func(bc_data,&pressure_cubit_bc_struct); CHKERRQ(ierr);
+          
+          //Print bc data
+          printf("\n");
+          printf("BC type: ");
+          for(int uu = 0;uu<8;uu++)
+          {
+              printf("%c ",pressure_cubit_bc_struct.data.name[uu]);
+          }
+          printf("\n");                    
+          printf("Pressure value: %f\n",pressure_cubit_bc_struct.data.value1);
+          printf("\n");
+      }
+
+      //Heat Flux
+      else if (strcmp (&bc_data[0],"HeatFlux") == 0)
+      {
+          heatflux_cubit_bc_data heatflux_cubit_bc_struct;
+          //Fill bc data
+          ierr = func(bc_data,&heatflux_cubit_bc_struct); CHKERRQ(ierr);
+          
+          //Print bc data
+          printf("\n");
+          printf("BC type: ");
+          for(int uu = 0;uu<8;uu++)
+          {
+              printf("%c ",heatflux_cubit_bc_struct.data.name[uu]);
+          }
+          printf("\n");
+          printf("Heat flux applied on thin shells (Yes=1, No=0): %c\n",heatflux_cubit_bc_struct.data.flag2);
+          printf("Heat flux value (no thin shells): %f\n",heatflux_cubit_bc_struct.data.value1);
+          printf("Heat flux value (top of thin shells): %f\n",heatflux_cubit_bc_struct.data.value2);
+          printf("Heat flux value (bottom of thin shells): %f\n",heatflux_cubit_bc_struct.data.value3);
+          printf("\n");
+      }
+                 
+      else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
+  }
+
+                 
 
   cout << "<<<< BlockSets >>>>>" << endl;
   //BlockSets
