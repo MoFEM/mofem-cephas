@@ -16,17 +16,21 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-#include subdirectory
-include_directories("${PROJECT_SOURCE_DIR}/examples")
+add_executable(elasticity_candy elasticityCandy.cpp)
+target_link_libraries(elasticity_candy mofem_Field ${PROJECT_LIBS})
 
-#add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_dynamics")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_hooke_material_forces")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity_trans_isotropic")
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/wiremesh29_08.cub
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
+#testing
+#add_test(SimpleElasticityTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
+ # -my_file LShapeCoarse.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary)
+
+
 
 
