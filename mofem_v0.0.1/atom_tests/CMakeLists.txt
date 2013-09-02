@@ -21,6 +21,8 @@ target_link_libraries(cubit_bc_test mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../meshes/LShape.cub" "/" export_atom_tests)
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/disp02.cub" "/" export_atom_tests)
+
 
 
 
