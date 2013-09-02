@@ -286,29 +286,55 @@ int main(int argc, char *argv[]) {
           displacement_cubit_bc_data displacement_cubit_bc_struct;
           //Fill bc data
           ierr = func(bc_data,&displacement_cubit_bc_struct); CHKERRQ(ierr);
-          
+                    
           //Print bc data
-          printf("\n");
+          printf(" \n");
           printf("BC type: ");
           for(int uu = 0;uu<12;uu++)
           {
               printf("%c ",displacement_cubit_bc_struct.data.name[uu]);
           }
-          printf("\n");
+          printf("\n \n");
 
-          //printf("Flag for X-Translation (0/1): %c\n",displacement_cubit_bc_struct.data.flag1);
-          //printf("Flag for Y-Translation (0/1): %c\n",displacement_cubit_bc_struct.data.flag2);
-          //printf("Flag for Z-Translation (0/1): %c\n",displacement_cubit_bc_struct.data.flag3);
-          //printf("Flag for X-Rotation (0/1): %c\n",displacement_cubit_bc_struct.data.flag4;
-          //printf("Flag for Y-Rotation (0/1): %c\n",displacement_cubit_bc_struct.data.flag5;
-          //printf("Flag for Z-Rotation (0/1): %c\n",displacement_cubit_bc_struct.data.flag6;
-                 
-          printf("Displacement magnitude (X-Translation): %f\n",displacement_cubit_bc_struct.data.value1);
-          printf("Displacement magnitude (Y-Translation): %f\n",displacement_cubit_bc_struct.data.value2);
-          printf("Displacement magnitude (Z-Translation): %f\n",displacement_cubit_bc_struct.data.value3);
-          printf("Displacement magnitude (X-Rotation): %f\n",displacement_cubit_bc_struct.data.value4);
-          printf("Displacement magnitude (Y-Rotation): %f\n",displacement_cubit_bc_struct.data.value5);
-          printf("Displacement magnitude (Z-Rotation): %f\n",displacement_cubit_bc_struct.data.value6);
+          printf("Flag for X-Translation (0/1): %d\n",displacement_cubit_bc_struct.data.flag1);
+          printf("Flag for Y-Translation (0/1): %d\n",displacement_cubit_bc_struct.data.flag2);
+          printf("Flag for Z-Translation (0/1): %d\n",displacement_cubit_bc_struct.data.flag3);
+          printf("Flag for X-Rotation (0/1): %d\n",displacement_cubit_bc_struct.data.flag4);
+          printf("Flag for Y-Rotation (0/1): %d\n",displacement_cubit_bc_struct.data.flag5);
+          printf("Flag for Z-Rotation (0/1): %d\n",displacement_cubit_bc_struct.data.flag6);
+          printf("\n");
+          
+          
+          if (displacement_cubit_bc_struct.data.flag1 == 1)
+              printf("Displacement magnitude (X-Translation): %f\n",displacement_cubit_bc_struct.data.value1);
+          else
+              printf("Displacement magnitude (X-Translation): N/A \n");
+          
+          if (displacement_cubit_bc_struct.data.flag2 == 1)
+              printf("Displacement magnitude (Y-Translation): %f\n",displacement_cubit_bc_struct.data.value2);
+          else
+              printf("Displacement magnitude (Y-Translation): N/A \n");
+          
+          if (displacement_cubit_bc_struct.data.flag3 == 1)
+              printf("Displacement magnitude (Z-Translation): %f\n",displacement_cubit_bc_struct.data.value3);
+          else
+              printf("Displacement magnitude (Z-Translation): N/A \n");
+          
+          if (displacement_cubit_bc_struct.data.flag4 == 1)
+              printf("Displacement magnitude (X-Rotation): %f\n",displacement_cubit_bc_struct.data.value4);
+          else
+              printf("Displacement magnitude (X-Rotation): N/A \n");
+          
+          if (displacement_cubit_bc_struct.data.flag5 == 1)
+              printf("Displacement magnitude (Y-Rotation): %f\n",displacement_cubit_bc_struct.data.value5);
+          else
+              printf("Displacement magnitude (Y-Rotation): N/A \n");
+          
+          if (displacement_cubit_bc_struct.data.flag6 == 1)
+              printf("Displacement magnitude (Z-Rotation): %f\n",displacement_cubit_bc_struct.data.value6);
+          else
+              printf("Displacement magnitude (Z-Rotation): N/A \n");
+          
           printf("\n");
       }
       
