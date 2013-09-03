@@ -201,19 +201,23 @@ struct temperature_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
+/*! \struct pressure_cubit_bc_data
+ *  \brief Definition of the pressure bc data structure
+ */
 struct pressure_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
     char name[8]; // 8 characters for "Pressure"
-    char flag1; //
-    char flag2; //
+    char flag1; // This is always zero
+    char flag2; // 0: Pressure is interpeted as pure pressure 1: pressure is interpreted as total force
     double value1; // Pressure value
-    char zero; //
+    char zero; // This is always zero
     };
     
     _data_ data;
     
         virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
+            //Fill data
             memcpy(&data, &bc_data[0], sizeof(data));
         PetscFunctionReturn(0);
     }
@@ -549,8 +553,10 @@ int main(int argc, char *argv[]) {
           {
               printf("%c ",pressure_cubit_bc_struct.data.name[uu]);
           }
-          printf("\n");                    
+          printf("\n \n");
+          
           printf("Pressure value: %f\n",pressure_cubit_bc_struct.data.value1);
+          
           printf("\n");
       }
 
