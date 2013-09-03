@@ -204,8 +204,8 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
     for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
 	for(int nn = 0;nn<3;nn++) {
 	  for(int dd = 0;dd<3;dd++) {
-	    double X0_dd = cblas_ddot(3,&g_NTRI3[0],1,&coords.data()[dd],3);
-	    double X_dd = cblas_ddot(3,&g_NTRI3[0],1,&ent_dofs_data.data()[dd],3);
+	    double X0_dd = cblas_ddot(3,&g_NTRI3[3*gg],1,&coords.data()[dd],3);
+	    double X_dd = cblas_ddot(3,&g_NTRI3[3*gg],1,&ent_dofs_data.data()[dd],3);
 	    g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X0_dd - X_dd)*(area0/area);
 	  }
 	}
@@ -391,8 +391,8 @@ struct g_EDGE_FEMethod: public C_EDGE_FEMethod {
     for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
       for(int nn = 0;nn<3;nn++) {
 	for(int dd = 0;dd<3;dd++) {
-	  double X0_dd = cblas_ddot(3,&g_NTRI3[0],1,&coords.data()[dd],3);
-	  double X_dd = cblas_ddot(3,&g_NTRI3[0],1,&ent_dofs_data.data()[dd],3);
+	  double X0_dd = cblas_ddot(3,&g_NTRI3[3*gg],1,&coords.data()[dd],3);
+	  double X_dd = cblas_ddot(3,&g_NTRI3[3*gg],1,&ent_dofs_data.data()[dd],3);
 	  g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X0_dd - X_dd)*(area0/area);
 	}
       }
