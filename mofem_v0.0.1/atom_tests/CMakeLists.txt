@@ -41,4 +41,8 @@ cm_export_file("../meshes/accel03.cub" "/" export_atom_tests)
 cm_export_file("../meshes/accel04.cub" "/" export_atom_tests)
 cm_export_file("../meshes/accel05.cub" "/" export_atom_tests)
 
-
+cm_export_file("../meshes/temper01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/temper02.cub" "/" export_atom_tests)
+cm_export_file("../meshes/temper03.cub" "/" export_atom_tests)
+cm_export_file("../meshes/temper04.cub" "/" export_atom_tests)
+cm_export_file("../meshes/temper05.cub" "/" export_atom_tests)

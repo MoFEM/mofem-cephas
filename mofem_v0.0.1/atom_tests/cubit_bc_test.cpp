@@ -168,28 +168,33 @@ struct acceleration_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
+/*! \struct temperature_cubit_bc_data
+ *  \brief Definition of the temperature bc data structure
+ */
 struct temperature_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
     char name[11]; // 11 characters for "Temperature"
-    char zero[2]; //
-    char flag1; // Flag for X-Translation (0: not used, 1: applied)
-    char flag2; // Flag for Y-Translation (0: not used, 1: applied)
-    char flag3; // Flag for Z-Translation (0: not used, 1: applied)
-    char flag4; // Flag for X-Rotation (0: not used, 1: applied)
-    char flag5; // Flag for Y-Rotation (0: not used, 1: applied)
-    char flag6; // Flag for Z-Rotation (0: not used, 1: applied)
-    double value1; // Value of X-Translation
-    double value2; // Value of Y-Translation
-    double value3; // Value of Z-Translation
-    double value4; // Value of X-Rotation
-    double value5; // Value of Y-Rotation
-    double value6; // Value of Z-Rotation
+    char pre1; // This is always zero
+    char pre2; // 0: temperature is not applied on thin shells (default); 1: temperature is applied on thin shells
+    char flag1; // 0: N/A, 1: temperature value applied (not on thin shells)
+    char flag2; // 0: N/A, 1: temperature applied on thin shell middle
+    char flag3; // 0: N/A, 1: thin shell temperature gradient specified
+    char flag4; // 0: N/A, 1: top thin shell temperature
+    char flag5; // 0: N/A, 1: bottom thin shell temperature
+    char flag6; // This is always zero
+    double value1; // Temperature (default case - no thin shells)
+    double value2; // Temperature for middle of thin shells
+    double value3; // Temperature gradient for thin shells
+    double value4; // Temperature for top of thin shells
+    double value5; // Temperature for bottom of thin shells
+    double value6; // This is always zero, i.e. ignore
     };
     
     _data_ data;
 
         virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
+            //Fill data
             memcpy(&data, &bc_data[0], sizeof(data));
         PetscFunctionReturn(0);
     }
@@ -488,13 +493,33 @@ int main(int argc, char *argv[]) {
           {
               printf("%c ",temperature_cubit_bc_struct.data.name[uu]);
           }
-          printf("\n");
-          printf("Temperature: %f\n",temperature_cubit_bc_struct.data.value1);
-          //printf("Temperature (Y-Translation): %f\n",temperature_cubit_bc_struct.data.value2);
-          //printf("Temperature (Z-Translation): %f\n",temperature_cubit_bc_struct.data.value3);
-          //printf("Temperature (X-Rotation): %f\n",temperature_cubit_bc_struct.data.value4);
-          //printf("Temperature (Y-Rotation): %f\n",temperature_cubit_bc_struct.data.value5);
-          //printf("Temperature (Z-Rotation): %f\n",temperature_cubit_bc_struct.data.value6);
+          printf("\n \n");
+          
+          if (temperature_cubit_bc_struct.data.flag1 == 1)
+              printf("Temperature: %f\n",temperature_cubit_bc_struct.data.value1);
+          else
+              printf("Temperature (default case): N/A \n");
+          
+          if (temperature_cubit_bc_struct.data.flag2 == 1)
+              printf("Temperature (thin shell middle): %f\n",temperature_cubit_bc_struct.data.value2);
+          else
+              printf("Temperature (thin shell middle): N/A \n");
+
+          if (temperature_cubit_bc_struct.data.flag3 == 1)
+              printf("Temperature (thin shell gradient): %f\n",temperature_cubit_bc_struct.data.value3);
+          else
+              printf("Temperature (thin shell gradient): N/A \n");
+          
+          if (temperature_cubit_bc_struct.data.flag4 == 1)
+              printf("Temperature (thin shell top): %f\n",temperature_cubit_bc_struct.data.value4);
+          else
+              printf("Temperature (thin shell top): N/A \n");
+          
+          if (temperature_cubit_bc_struct.data.flag5 == 1)
+              printf("Temperature (thin shell bottom): %f\n",temperature_cubit_bc_struct.data.value5);
+          else
+              printf("Temperature (thin shell bottom): N/A \n");
+ 
           printf("\n");          
       }
       
