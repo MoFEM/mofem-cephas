@@ -137,6 +137,11 @@ int main(int argc, char *argv[]) {
 
   Range CornersNodes;
   ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
+  Range SideSet1;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
+  Range SideSet1Nodes;
+  rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_PETSC(rval);
+  CornersNodes.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
   materialDirihletBC myDirihletBC(moab,CornersNodes);
 
   //create matrices
