@@ -224,23 +224,27 @@ struct pressure_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
+/*! \struct heatflux_cubit_bc_data
+ *  \brief Definition of the heat flux bc data structure
+ */
 struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
     char name[8]; // 8 characters for "HeatFlux" (no space)
-    char flag1; //
-    char flag2; //
-    char flag3; //
-    char flag4; //
-    char flag5; //
-    double value1; //
-    double value2; //
-    double value3; //
+    char pre1; // This is always zero
+    char pre2; // 0: heat flux is not applied on thin shells (default); 1: heat flux is applied on thin shells
+    char flag1; // 0: N/A, 1: normal heat flux case (i.e. single value, case without thin shells)
+    char flag2; // 0: N/A, 1: Thin shell top heat flux specified
+    char flag3; // 0: N/A, 1: Thin shell bottom heat flux specidied
+    double value1; // Heat flux value for default case (no thin shells)
+    double value2; // Heat flux (thin shell top)
+    double value3; // Heat flux (thin shell bottom)
     };
     
     _data_ data;
 
         virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
+            //Fill data
             memcpy(&data, &bc_data[0], sizeof(data));
         PetscFunctionReturn(0);
     }
@@ -574,11 +578,23 @@ int main(int argc, char *argv[]) {
           {
               printf("%c ",heatflux_cubit_bc_struct.data.name[uu]);
           }
-          printf("\n");
-          printf("Heat flux applied on thin shells (Yes=1, No=0): %c\n",heatflux_cubit_bc_struct.data.flag2);
-          printf("Heat flux value (no thin shells): %f\n",heatflux_cubit_bc_struct.data.value1);
-          printf("Heat flux value (top of thin shells): %f\n",heatflux_cubit_bc_struct.data.value2);
-          printf("Heat flux value (bottom of thin shells): %f\n",heatflux_cubit_bc_struct.data.value3);
+          printf("\n \n");
+          
+          if (heatflux_cubit_bc_struct.data.flag1 == 1)
+              printf("Heat flux value: %f\n",heatflux_cubit_bc_struct.data.value1);
+          else
+              printf("Heat flux is applied on thin shells \n");
+          
+          if (heatflux_cubit_bc_struct.data.flag2 == 1)
+              printf("Heat flux value (thin shell top): %f\n",heatflux_cubit_bc_struct.data.value2);
+          else
+              printf("Heat flux value (thin shell top): N/A \n");
+          
+          if (heatflux_cubit_bc_struct.data.flag3 == 1)
+              printf("Heat flux value (thin shell bottom): %f\n",heatflux_cubit_bc_struct.data.value3);
+          else
+              printf("Heat flux value (thin shell bottom): N/A \n");
+          
           printf("\n");
       }
                  
