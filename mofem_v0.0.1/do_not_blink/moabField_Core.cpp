@@ -1109,7 +1109,7 @@ PetscErrorCode moabField_Core::erase_inactive_dofs_moabfield() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id) {
+PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   EntityHandle idm = no_handle;
@@ -1119,15 +1119,15 @@ PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHa
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
   Range tets;
-  rval = moab.get_entities_by_type(meshset,MBTET,tets,false); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERR_PETSC(rval);
   rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name) {
+PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   try {
-    ierr = add_ents_to_finite_element_by_TETs(meshset,get_BitFEId(name));  CHKERRQ(ierr);
+    ierr = add_ents_to_finite_element_by_TETs(meshset,get_BitFEId(name),recursive);  CHKERRQ(ierr);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
