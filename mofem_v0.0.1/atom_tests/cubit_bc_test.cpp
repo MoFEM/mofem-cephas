@@ -55,12 +55,12 @@ struct displacement_cubit_bc_data: public generic_cubit_bc_data {
     char flag4; // Flag for X-Rotation (0: N/A, 1: specified)
     char flag5; // Flag for Y-Rotation (0: N/A, 1: specified)
     char flag6; // Flag for Z-Rotation (0: N/A, 1: specified)
-    double value1; // Value of X-Translation
-    double value2; // Value of Y-Translation
-    double value3; // Value of Z-Translation
-    double value4; // Value of X-Rotation
-    double value5; // Value of Y-Rotation
-    double value6; // Value of Z-Rotation
+    double value1; // Value for X-Translation
+    double value2; // Value for Y-Translation
+    double value3; // Value for Z-Translation
+    double value4; // Value for X-Rotation
+    double value5; // Value for Y-Rotation
+    double value6; // Value for Z-Rotation
     };
     
     _data_ data;
@@ -110,18 +110,18 @@ struct velocity_cubit_bc_data: public generic_cubit_bc_data {
     char name[8]; // 8 characters for "Velocity"
     char pre1; // Always zero
     char pre2; // pre-processing flags for modification of displacement bcs. They should not affect analysis, i.e. safe to ignore; 1: smallest combine, 2: average, 3: largest combine, 4: overwrite or no combination defined (default)
-    char flag1; // Flag for X-Translation (0: not used, 1: applied)
-    char flag2; // Flag for Y-Translation (0: not used, 1: applied)
-    char flag3; // Flag for Z-Translation (0: not used, 1: applied)
-    char flag4; // Flag for X-Rotation (0: not used, 1: applied)
-    char flag5; // Flag for Y-Rotation (0: not used, 1: applied)
-    char flag6; // Flag for Z-Rotation (0: not used, 1: applied)
-    double value1; // Value of X-Translation
-    double value2; // Value of Y-Translation
-    double value3; // Value of Z-Translation
-    double value4; // Value of X-Rotation
-    double value5; // Value of Y-Rotation
-    double value6; // Value of Z-Rotation
+    char flag1; // Flag for X-Translation (0: N/A, 1: specified)
+    char flag2; // Flag for Y-Translation (0: N/A, 1: specified)
+    char flag3; // Flag for Z-Translation (0: N/A, 1: specified)
+    char flag4; // Flag for X-Rotation (0: N/A, 1: specified)
+    char flag5; // Flag for Y-Rotation (0: N/A, 1: specified)
+    char flag6; // Flag for Z-Rotation (0: N/A, 1: specified)
+    double value1; // Value for X-Translation
+    double value2; // Value for Y-Translation
+    double value3; // Value for Z-Translation
+    double value4; // Value for X-Rotation
+    double value5; // Value for Y-Rotation
+    double value6; // Value for Z-Rotation
     };
     
     _data_ data;
@@ -135,28 +135,33 @@ struct velocity_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
+/*! \struct acceleration_cubit_bc_data
+ *  \brief Definition of the acceleration bc data structure
+ */
 struct acceleration_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
     char name[12]; // 12 characters for "Acceleration"
-    char zero[2]; //
-    char flag1; // Flag for X-Translation (0: not used, 1: applied)
-    char flag2; // Flag for Y-Translation (0: not used, 1: applied)
-    char flag3; // Flag for Z-Translation (0: not used, 1: applied)
-    char flag4; // Flag for X-Rotation (0: not used, 1: applied)
-    char flag5; // Flag for Y-Rotation (0: not used, 1: applied)
-    char flag6; // Flag for Z-Rotation (0: not used, 1: applied)
-    double value1; // Value of X-Translation
-    double value2; // Value of Y-Translation
-    double value3; // Value of Z-Translation
-    double value4; // Value of X-Rotation
-    double value5; // Value of Y-Rotation
-    double value6; // Value of Z-Rotation
+    char pre1; // Always zero
+    char pre2; // pre-processing flags for modification of displacement bcs. They should not affect analysis, i.e. safe to ignore; 1: smallest combine, 2: average, 3: largest combine, 4: overwrite or no combination defined (default)
+    char flag1; // Flag for X-Translation (0: N/A, 1: specified)
+    char flag2; // Flag for Y-Translation (0: N/A, 1: specified)
+    char flag3; // Flag for Z-Translation (0: N/A, 1: specified)
+    char flag4; // Flag for X-Rotation (0: N/A, 1: specified)
+    char flag5; // Flag for Y-Rotation (0: N/A, 1: specified)
+    char flag6; // Flag for Z-Rotation (0: N/A, 1: specified)
+    double value1; // Value for X-Translation
+    double value2; // Value for Y-Translation
+    double value3; // Value for Z-Translation
+    double value4; // Value for X-Rotation
+    double value5; // Value for Y-Rotation
+    double value6; // Value for Z-Rotation
     };
     
     _data_ data;
     
         virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
+            //Fill data
             memcpy(&data, &bc_data[0], sizeof(data));
         PetscFunctionReturn(0);
     }
@@ -434,13 +439,38 @@ int main(int argc, char *argv[]) {
           {
               printf("%c ",acceleration_cubit_bc_struct.data.name[uu]);
           }
-          printf("\n");
-          printf("Acceleration magnitude (X-Translation): %f\n",acceleration_cubit_bc_struct.data.value1);
-          printf("Acceleration magnitude (Y-Translation): %f\n",acceleration_cubit_bc_struct.data.value2);
-          printf("Acceleration magnitude (Z-Translation): %f\n",acceleration_cubit_bc_struct.data.value3);
-          printf("Acceleration magnitude (X-Rotation): %f\n",acceleration_cubit_bc_struct.data.value4);
-          printf("Acceleration magnitude (Y-Rotation): %f\n",acceleration_cubit_bc_struct.data.value5);
-          printf("Acceleration magnitude (Z-Rotation): %f\n",acceleration_cubit_bc_struct.data.value6);
+          printf("\n \n");
+          
+          if (acceleration_cubit_bc_struct.data.flag1 == 1)
+              printf("Acceleration magnitude (X-Translation): %f\n",acceleration_cubit_bc_struct.data.value1);
+          else
+              printf("Acceleration magnitude (X-Translation): N/A \n");
+          
+          if (acceleration_cubit_bc_struct.data.flag2 == 1)
+              printf("Acceleration magnitude (Y-Translation): %f\n",acceleration_cubit_bc_struct.data.value2);
+          else
+              printf("Acceleration magnitude (Y-Translation): N/A \n");
+          
+          if (acceleration_cubit_bc_struct.data.flag3 == 1)
+              printf("Acceleration magnitude (Z-Translation): %f\n",acceleration_cubit_bc_struct.data.value3);
+          else
+              printf("Acceleration magnitude (Z-Translation): N/A \n");
+          
+          if (acceleration_cubit_bc_struct.data.flag4 == 1)
+              printf("Acceleration magnitude (X-Rotation): %f\n",acceleration_cubit_bc_struct.data.value4);
+          else
+              printf("Acceleration magnitude (X-Rotation): N/A \n");
+          
+          if (acceleration_cubit_bc_struct.data.flag5 == 1)
+              printf("Acceleration magnitude (Y-Rotation): %f\n",acceleration_cubit_bc_struct.data.value5);
+          else
+              printf("Acceleration magnitude (Y-Rotation): N/A \n");
+          
+          if (acceleration_cubit_bc_struct.data.flag6 == 1)
+              printf("Acceleration magnitude (Z-Rotation): %f\n",acceleration_cubit_bc_struct.data.value6);
+          else
+              printf("Acceleration magnitude (Z-Rotation): N/A \n");
+          
           printf("\n");
       }
       

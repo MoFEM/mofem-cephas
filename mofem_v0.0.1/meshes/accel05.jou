@@ -1,0 +1,7 @@
+#!python
+cubit.cmd('create surface circle radius 1 zplane ')
+cubit.cmd('surface 1  size auto factor 3')
+cubit.cmd('surface 1  size auto factor 3')
+cubit.cmd('mesh surface 1 ')
+cubit.cmd('create Acceleration  on curve 1  dof 1 fix -100 ')
+cubit.cmd('create Acceleration  on node 515  dof 2 dof 3 fix -200.12345 ')
