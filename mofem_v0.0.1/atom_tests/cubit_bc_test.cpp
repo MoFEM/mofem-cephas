@@ -48,7 +48,7 @@ struct displacement_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
     char name[12]; // 12 characters for "Displacement"
     char pre1; // Always zero
-    char pre2; // pre-processing flags for modifications of displacement bcs. They should not affect analysis, i.e. safe to ignore; 1: smallest combine, 2: average, 3: largest combine, overwrite or no combination defined (default)
+    char pre2; // pre-processing flags for modification of displacement bcs. They should not affect analysis, i.e. safe to ignore; 1: smallest combine, 2: average, 3: largest combine, 4: overwrite or no combination defined (default)
     char flag1; // Flag for X-Translation (0: N/A, 1: specified)
     char flag2; // Flag for Y-Translation (0: N/A, 1: specified)
     char flag3; // Flag for Z-Translation (0: N/A, 1: specified)
@@ -67,6 +67,7 @@ struct displacement_cubit_bc_data: public generic_cubit_bc_data {
     
         virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
+            //Fill data
             memcpy(&data, &bc_data[0], sizeof(data));
         PetscFunctionReturn(0);
     }
@@ -94,16 +95,21 @@ struct force_cubit_bc_data: public generic_cubit_bc_data {
     _data_ data;
         virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
+            //Fill data
             memcpy(&data, &bc_data[0], sizeof(data));
         PetscFunctionReturn(0);
     }
     
 };
 
+/*! \struct velocity_cubit_bc_data
+ *  \brief Definition of the velocity bc data structure
+ */
 struct velocity_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
     char name[8]; // 8 characters for "Velocity"
-    char zero[2];
+    char pre1; // Always zero
+    char pre2; // pre-processing flags for modification of displacement bcs. They should not affect analysis, i.e. safe to ignore; 1: smallest combine, 2: average, 3: largest combine, 4: overwrite or no combination defined (default)
     char flag1; // Flag for X-Translation (0: not used, 1: applied)
     char flag2; // Flag for Y-Translation (0: not used, 1: applied)
     char flag3; // Flag for Z-Translation (0: not used, 1: applied)
@@ -122,6 +128,7 @@ struct velocity_cubit_bc_data: public generic_cubit_bc_data {
     
         virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
+            //Fill data
             memcpy(&data, &bc_data[0], sizeof(data));
         PetscFunctionReturn(0);
     }
@@ -378,13 +385,38 @@ int main(int argc, char *argv[]) {
           {
               printf("%c ",velocity_cubit_bc_struct.data.name[uu]);
           }
-          printf("\n");
-          printf("Velocity magnitude (X-Translation): %f\n",velocity_cubit_bc_struct.data.value1);
-          printf("Velocity magnitude (Y-Translation): %f\n",velocity_cubit_bc_struct.data.value2);
-          printf("Velocity magnitude (Z-Translation): %f\n",velocity_cubit_bc_struct.data.value3);
-          printf("Velocity magnitude (X-Rotation): %f\n",velocity_cubit_bc_struct.data.value4);
-          printf("Velocity magnitude (Y-Rotation): %f\n",velocity_cubit_bc_struct.data.value5);
-          printf("Velocity magnitude (Z-Rotation): %f\n",velocity_cubit_bc_struct.data.value6);
+          printf("\n \n");
+          
+          if (velocity_cubit_bc_struct.data.flag1 == 1)
+              printf("Velocity magnitude (X-Translation): %f\n",velocity_cubit_bc_struct.data.value1);
+          else
+              printf("Velocity magnitude (X-Translation): N/A \n");
+
+          if (velocity_cubit_bc_struct.data.flag2 == 1)
+              printf("Velocity magnitude (Y-Translation): %f\n",velocity_cubit_bc_struct.data.value2);
+          else
+              printf("Velocity magnitude (Y-Translation): N/A \n");
+          
+          if (velocity_cubit_bc_struct.data.flag3 == 1)
+              printf("Velocity magnitude (Z-Translation): %f\n",velocity_cubit_bc_struct.data.value3);
+          else
+              printf("Velocity magnitude (Z-Translation): N/A \n");
+          
+          if (velocity_cubit_bc_struct.data.flag4 == 1)
+              printf("Velocity magnitude (X-Rotation): %f\n",velocity_cubit_bc_struct.data.value4);
+          else
+              printf("Velocity magnitude (X-Rotation): N/A \n");
+          
+          if (velocity_cubit_bc_struct.data.flag5 == 1)
+              printf("Velocity magnitude (Y-Rotation): %f\n",velocity_cubit_bc_struct.data.value5);
+          else
+              printf("Velocity magnitude (Y-Rotation): N/A \n");
+          
+          if (velocity_cubit_bc_struct.data.flag6 == 1)
+              printf("Velocity magnitude (Z-Rotation): %f\n",velocity_cubit_bc_struct.data.value6);
+          else
+              printf("Velocity magnitude (Z-Rotation): N/A \n");
+          
           printf("\n");
       }
       
