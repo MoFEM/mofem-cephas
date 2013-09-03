@@ -27,15 +27,9 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-/*! \struct xxxxxxxxx
- *  \brief xxxxxxxxxx
- *
- *   Details ...
- *
+/*! \struct generic_cubit_bc_data
+ *  \brief Generic bc data structure
  */
-
-
-// generic bc data structure
 struct generic_cubit_bc_data {
     PetscErrorCode ierr;
     
@@ -47,17 +41,20 @@ struct generic_cubit_bc_data {
     
 };
 
+/*! \struct displacement_cubit_bc_data
+ *  \brief Definition of the displacement bc data structure
+ */
 struct displacement_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
     char name[12]; // 12 characters for "Displacement"
-    char zero;
-    char four;
-    char flag1; // Flag for X-Translation (0: not used, 1: applied)
-    char flag2; // Flag for Y-Translation (0: not used, 1: applied)
-    char flag3; // Flag for Z-Translation (0: not used, 1: applied)
-    char flag4; // Flag for X-Rotation (0: not used, 1: applied)
-    char flag5; // Flag for Y-Rotation (0: not used, 1: applied)
-    char flag6; // Flag for Z-Rotation (0: not used, 1: applied)
+    char pre1; // Always zero
+    char pre2; // pre-processing flags for modifications of displacement bcs. They should not affect analysis, i.e. safe to ignore; 1: smallest combine, 2: average, 3: largest combine, overwrite or no combination defined (default)
+    char flag1; // Flag for X-Translation (0: N/A, 1: specified)
+    char flag2; // Flag for Y-Translation (0: N/A, 1: specified)
+    char flag3; // Flag for Z-Translation (0: N/A, 1: specified)
+    char flag4; // Flag for X-Rotation (0: N/A, 1: specified)
+    char flag5; // Flag for Y-Rotation (0: N/A, 1: specified)
+    char flag6; // Flag for Z-Rotation (0: N/A, 1: specified)
     double value1; // Value of X-Translation
     double value2; // Value of Y-Translation
     double value3; // Value of Z-Translation
@@ -76,12 +73,15 @@ struct displacement_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
+/*! \struct force_cubit_bc_data
+ *  \brief Definition of the force bc data structure
+ */
 struct force_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
     char name[5]; // 5 characters for "Force"
     char zero[3]; // 3 zeros
-    double value1; // Value of Force
-    double value2; // Value of Moment
+    double value1; // Force magnitude
+    double value2; // Moment magnitude
     double value3; // X-component of force direction vector
     double value4; // Y-component of force direction vector
     double value5; // Z-component of force direction vector
@@ -352,7 +352,7 @@ int main(int argc, char *argv[]) {
           {
               printf("%c ",force_cubit_bc_struct.data.name[uu]);
           }
-          printf("\n");
+          printf("\n \n");
           printf("Force magnitude: %f\n",force_cubit_bc_struct.data.value1);
           printf("Moment magnitude: %f\n",force_cubit_bc_struct.data.value2);
           printf("Force direction vector (X-component): %f\n",force_cubit_bc_struct.data.value3);
