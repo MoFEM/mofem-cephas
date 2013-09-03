@@ -1,0 +1,9 @@
+#!python
+cubit.cmd('brick x 1 y 1 z 1')
+cubit.cmd('volume 1  size 1')
+cubit.cmd('volume 1  size 1')
+cubit.cmd('mesh volume 1 ')
+cubit.cmd('create Velocity  on node 3  dof all fix 345.678 ')
+cubit.cmd('modify velocity 1 dof 2 fix -14 overwrite')
+cubit.cmd('modify velocity 1 dof 4 fix -18 overwrite')
+cubit.cmd('modify velocity 1 dof 6 fix -28 overwrite')
