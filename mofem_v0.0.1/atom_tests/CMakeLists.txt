@@ -23,6 +23,11 @@ cm_export_file("../meshes/LShape.cub" "/" export_atom_tests)
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/disp02.cub" "/" export_atom_tests)
 cm_export_file("../meshes/disp03.cub" "/" export_atom_tests)
+cm_export_file("../meshes/disp04.cub" "/" export_atom_tests)
+cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/force02.cub" "/" export_atom_tests)
+cm_export_file("../meshes/force03.cub" "/" export_atom_tests)
+cm_export_file("../meshes/force04.cub" "/" export_atom_tests)
 
 
 
