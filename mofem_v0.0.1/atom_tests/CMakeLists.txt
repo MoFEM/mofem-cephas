@@ -60,3 +60,5 @@ cm_export_file("../meshes/heatflux02.cub" "/" export_atom_tests)
 cm_export_file("../meshes/heatflux03.cub" "/" export_atom_tests)
 cm_export_file("../meshes/heatflux04.cub" "/" export_atom_tests)
 
+cm_export_file("../meshes/comb01.cub" "/" export_atom_tests)
+

@@ -1,0 +1,12 @@
+#!python
+cubit.cmd('brick x 100 y 100 z 100')
+cubit.cmd('volume 1  size 1')
+cubit.cmd('volume 1  size 1')
+cubit.cmd('mesh volume 1 ')
+cubit.cmd('create Displacement  on node 10202  dof 1 dof 3 fix 3.5 ')
+cubit.cmd('create force  on node 40499  force value -15 direction   x ')
+cubit.cmd('create Acceleration  on node 40399  dof 3 fix 7 ')
+cubit.cmd('create temperature  on node 60001  value 45')
+cubit.cmd('create Velocity  on node 10599  dof 2 fix -10 ')
+cubit.cmd('create pressure  on surface 1  magnitude 100 ')
+cubit.cmd('create heatflux  on surface 3  value 0.001 ')
