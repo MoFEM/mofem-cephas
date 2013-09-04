@@ -332,7 +332,8 @@ int main(int argc, char *argv[]) {
 
   Vec F_MATERIAL;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F_MATERIAL); CHKERRQ(ierr);
-  MaterialForcesFEMethod MyMaterialFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),F_MATERIAL);
+  MaterialForcesFEMethod MyMaterialFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),F_MATERIAL,SideSet2);
+  ierr = MyMaterialFE.set_t_val(step_size); CHKERRQ(ierr);
   ierr = VecZeroEntries(F_MATERIAL); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F_MATERIAL,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

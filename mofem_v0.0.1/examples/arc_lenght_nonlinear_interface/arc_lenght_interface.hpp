@@ -254,7 +254,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap_loc;
   ublas::vector<FieldData> g;
 
-  PetscErrorCode Calc_gap() {
+  virtual PetscErrorCode Calc_gap() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
     gap.resize(g_dim);
@@ -325,7 +325,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalcDglob(const double _omega_) {
+  virtual PetscErrorCode CalcDglob(const double _omega_) {
     PetscFunctionBegin;
     double E = (1-_omega_)*E0;
     ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
@@ -335,7 +335,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Calc_g(const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& gap_loc_at_GaussPt,double& g_at_GaussPt) {
+  virtual PetscErrorCode Calc_g(const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& gap_loc_at_GaussPt,double& g_at_GaussPt) {
     PetscFunctionBegin;
     switch (int_mat_ctx) {
       case ctx_InTBILinearSoftening:
@@ -350,7 +350,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
   
-  PetscErrorCode Calc_omega(const double _kappa_,double& _omega_) {
+  virtual PetscErrorCode Calc_omega(const double _kappa_,double& _omega_) {
     PetscFunctionBegin;
     switch (int_mat_ctx) {
       case ctx_IntLinearSoftening: {
@@ -373,7 +373,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalcTangetDglob(const double _omega_,const double _g_,const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& _gap_loc_) {
+  virtual PetscErrorCode CalcTangetDglob(const double _omega_,const double _g_,const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& _gap_loc_) {
     PetscFunctionBegin;
     switch (int_mat_ctx) {
       case ctx_IntLinearSoftening: {
@@ -396,7 +396,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode RhsInt() {
+  virtual PetscErrorCode RhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
     for(int rr = 0;rr<row_mat;rr++) {
@@ -429,7 +429,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode LhsInt() {
+  virtual PetscErrorCode LhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
     K.resize(row_mat,col_mat);
@@ -628,7 +628,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     VecDestroy(&GhostLambdaInt);
   }
 
-  PetscErrorCode potsProcessLoadPath() {
+  virtual PetscErrorCode potsProcessLoadPath() {
     PetscFunctionBegin;
     NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
     NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
@@ -670,7 +670,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calulate_lambda_int(double &_lambda_int_) {
+  virtual PetscErrorCode calulate_lambda_int(double &_lambda_int_) {
     PetscFunctionBegin;
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
     dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
@@ -703,7 +703,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calulate_db() {
+  virtual PetscErrorCode calulate_db() {
     PetscFunctionBegin;
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
     dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
@@ -789,7 +789,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calulate_dx_and_dlambda(Vec x) {
+  virtual PetscErrorCode calulate_dx_and_dlambda(Vec x) {
     PetscFunctionBegin;
     //dx
     ierr = VecCopy(x,arc_ptr->dx); CHKERRQ(ierr);
@@ -818,7 +818,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calculate_init_dlambda(double *dlambda) {
+  virtual PetscErrorCode calculate_init_dlambda(double *dlambda) {
 
       PetscFunctionBegin;
 
@@ -834,7 +834,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
       PetscFunctionReturn(0);
   }
 
-  PetscErrorCode set_dlambda_to_x(Vec x,double dlambda) {
+  virtual PetscErrorCode set_dlambda_to_x(Vec x,double dlambda) {
       PetscFunctionBegin;
 
       NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 

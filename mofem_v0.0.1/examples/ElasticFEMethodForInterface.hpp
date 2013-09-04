@@ -137,7 +137,7 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalcR() {
+  virtual PetscErrorCode CalcR() {
     PetscFunctionBegin;
     bzero(tangent1,3*sizeof(double));
     bzero(tangent2,3*sizeof(double));
@@ -172,7 +172,7 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalcDglob() {
+  virtual PetscErrorCode CalcDglob() {
     PetscFunctionBegin;
     ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
     int ii = 0;
@@ -183,7 +183,7 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode LhsInt() {
+  virtual PetscErrorCode LhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
     K.resize(row_mat,col_mat);
@@ -212,7 +212,7 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Matrices() {
+  virtual PetscErrorCode Matrices() {
     PetscFunctionBegin;
     //rows
     RowGlob.resize(1+6+2);
@@ -284,7 +284,7 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode RhsAndLhs() {
+  virtual PetscErrorCode RhsAndLhs() {
     PetscFunctionBegin;
 
     //Rotation matrix

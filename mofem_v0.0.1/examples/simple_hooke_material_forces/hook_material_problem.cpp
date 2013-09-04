@@ -133,6 +133,25 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
+    PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(vector<DofIdx>& DirihletBC,
+      vector<DofIdx> &FaceNodeIndices,
+      vector<vector<DofIdx> > &FaceEdgeIndices,
+      vector<DofIdx> &FaceIndices) {
+      PetscFunctionBegin;
+      vector<DofIdx>::iterator dit = DirihletBC.begin();
+      for(;dit!=DirihletBC.end();dit++) {
+	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
+	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
+	for(int ee = 0;ee<3;ee++) {
+	  it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
+	  if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
+	}
+	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
+	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
+      }
+      PetscFunctionReturn(0);
+    }
+
   };
 
   Range CornersNodes;
@@ -164,11 +183,14 @@ int main(int argc, char *argv[]) {
   Vec F;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F); CHKERRQ(ierr);
 
+  Range SideSet2;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
+
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
   Material_ElasticFEMethod MyFE(
     moab,mField,proj_all_ctx,
-    &myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+    &myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet2);
   
   moabSnesCtx SnesCtx(mField,"MATERIAL_MECHANICS");
 
@@ -188,8 +210,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Col,&D); CHKERRQ(ierr);
   ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+  double step_size = -1e-3;
   for(int step = 1;step<2; step++) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D\n",step); CHKERRQ(ierr);
+    ierr = MyFE.set_t_val(step_size*step); CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);

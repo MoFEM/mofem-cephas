@@ -97,9 +97,10 @@ struct Spatial_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
 struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
+  Range& SideSet2;
   Vec F_MATERIAL;
-  MaterialForcesFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,Vec _F_MATERIAL,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),F_MATERIAL(_F_MATERIAL) {
+  MaterialForcesFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,Vec _F_MATERIAL,Range& _SideSet2,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),F_MATERIAL(_F_MATERIAL),SideSet2(_SideSet2) {
 
     set_PhysicalEquationNumber(hooke);
     type_of_analysis = material_analysis;
@@ -120,6 +121,8 @@ struct MaterialForcesFEMethod: public FEMethod_DriverComplexForLazy_Material {
       dofs_x_volume,dofs_x,
       spatial_field_name); CHKERRQ(ierr);
     ierr = GetFint(); CHKERRQ(ierr);
+    double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
+    ierr = CaluclateMaterialFext(F_MATERIAL,t,SideSet2); CHKERRQ(ierr);
     ierr = VecSetValues(F_MATERIAL,RowGlobMaterial[0].size(),&(RowGlobMaterial[0])[0],&(Fint_H.data())[0],ADD_VALUES); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -135,11 +138,13 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
   moabField& mField;
   matPROJ_ctx& proj_all_ctx;
+  Range& SideSet2;
   bool init;
   Material_ElasticFEMethod(
-      Interface& _moab,moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      Interface& _moab,moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,
+      double _lambda,double _mu,Range &_SideSet2,int _verbose = 0): 
       FEMethod_DriverComplexForLazy_Material(_moab,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),mField(_mField),proj_all_ctx(_proj_all_ctx),
-      init(true)  {
+      SideSet2(_SideSet2),init(true)  {
     set_PhysicalEquationNumber(hooke);
     //set_PhysicalEquationNumber(neohookean);
   }
@@ -227,13 +232,17 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
       }
     }
 
+    double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
+
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = CalculateMaterialFint(snes_f); CHKERRQ(ierr);
+	ierr = CaluclateMaterialFext(snes_f,t,SideSet2) ; CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
 	ierr = CalculateMaterialTangent(proj_all_ctx.K); CHKERRQ(ierr);
+	ierr = CalculateMaterialTangentExt(*snes_B,t,SideSet2); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
