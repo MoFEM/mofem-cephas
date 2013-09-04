@@ -1109,7 +1109,7 @@ PetscErrorCode moabField_Core::erase_inactive_dofs_moabfield() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id) {
+PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   EntityHandle idm = no_handle;
@@ -1119,15 +1119,15 @@ PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHa
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
   Range tets;
-  rval = moab.get_entities_by_type(meshset,MBTET,tets,false); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERR_PETSC(rval);
   rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name) {
+PetscErrorCode moabField_Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   try {
-    ierr = add_ents_to_finite_element_by_TETs(meshset,get_BitFEId(name));  CHKERRQ(ierr);
+    ierr = add_ents_to_finite_element_by_TETs(meshset,get_BitFEId(name),recursive);  CHKERRQ(ierr);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -1365,7 +1365,7 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFiniteElement 
       const BitRefLevel& bit_ref_ent = ref_ent_miit->get_BitRefLevel();
       if(!(bit_ref_MoFEMFiniteElement&bit_ref_ent).any()) {
 	ostringstream ss;
-	ss << "inconsitency in database" << " type " << moab.type_from_handle(*eit2) << " bits " << bit_ref_MoFEMFiniteElement << " " << bit_ref_ent;
+	ss << "inconsitency in database" << " type " << moab.type_from_handle(*eit2) << " bits FE " << bit_ref_MoFEMFiniteElement << " bits ent " << bit_ref_ent;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       dof_set_type::iterator ents_miit2 = dof_set.lower_bound(boost::make_tuple(miit->get_name(),ref_ent_miit->get_ref_ent()));
