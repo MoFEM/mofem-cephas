@@ -65,14 +65,50 @@ struct displacement_cubit_bc_data: public generic_cubit_bc_data {
     
     _data_ data;
     
-        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
             //Fill data
             memcpy(&data, &bc_data[0], sizeof(data));
         PetscFunctionReturn(0);
     }
     
+    friend ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e);
+    
 };
+
+/*! \brief Print displacement bc data
+ */
+ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e)
+{
+    os << "\n";
+    os << "D i s p l a c e m e n t \n \n";
+    os << "Flag for X-Translation (0/1): " << (int)e.data.flag1 << "\n";
+    os << "Flag for Y-Translation (0/1): " << (int)e.data.flag2 << "\n";
+    os << "Flag for Z-Translation (0/1): " << (int)e.data.flag3 << "\n";
+    os << "Flag for X-Rotation (0/1): " << (int)e.data.flag4 << "\n";
+    os << "Flag for Y-Rotation (0/1): " << (int)e.data.flag5 << "\n";
+    os << "Flag for Z-Rotation (0/1): " << (int)e.data.flag6 << "\n \n";
+    
+    if (e.data.flag1 == 1)
+        os << "Displacement magnitude (X-Translation): " << e.data.value1 << "\n";
+    else os << "Displacement magnitude (X-Translation): N/A" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Displacement magnitude (Y-Translation): " << e.data.value2 << "\n";
+    else os << "Displacement magnitude (Y-Translation): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Displacement magnitude (Z-Translation): " << e.data.value3 << "\n";
+    else os << "Displacement magnitude (Z-Translation): N/A" << "\n";
+    if (e.data.flag4 == 1)
+        os << "Displacement magnitude (X-Rotation): " << e.data.value4 << "\n";
+    else os << "Displacement magnitude (X-Rotation): N/A" << "\n";
+    if (e.data.flag5 == 1)
+        os << "Displacement magnitude (Y-Rotation): " << e.data.value5 << "\n";
+    else os << "Displacement magnitude (Y-Rotation): N/A" << "\n";
+    if (e.data.flag6 == 1)
+        os << "Displacement magnitude (Z-Rotation): " << e.data.value6 << "\n";
+    else os << "Displacement magnitude (Z-Rotation): N/A" << "\n";
+}
+
 
 /*! \struct force_cubit_bc_data
  *  \brief Definition of the force bc data structure
@@ -100,7 +136,26 @@ struct force_cubit_bc_data: public generic_cubit_bc_data {
         PetscFunctionReturn(0);
     }
     
+    friend ostream& operator<<(ostream& os,const force_cubit_bc_data& e);
+    
 };
+
+/*! \brief Print force bc data
+ */
+ostream& operator<<(ostream& os,const force_cubit_bc_data& e)
+{
+    os << "\n";
+    os << "F o r c e \n \n";
+    os << "Force magnitude: " << e.data.value1 << "\n";
+    os << "Moment magnitude: " << e.data.value2 << "\n";
+    os << "Force direction vector (X-component): " << e.data.value3 << "\n";
+    os << "Force direction vector (Y-component): " << e.data.value4 << "\n";
+    os << "Force direction vector (Z-component): " << e.data.value5 << "\n";
+    os << "Moment direction vector (X-component): " << e.data.value6 << "\n";
+    os << "Moment direction vector (Y-component): " << e.data.value7 << "\n";
+    os << "Moment direction vector (Z-component): " << e.data.value8 << "\n";
+}
+
 
 /*! \struct velocity_cubit_bc_data
  *  \brief Definition of the velocity bc data structure
@@ -133,11 +188,40 @@ struct velocity_cubit_bc_data: public generic_cubit_bc_data {
         PetscFunctionReturn(0);
     }
     
+    friend ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e);
+    
 };
+
+/*! \brief Print velocity bc data
+ */
+ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e)
+{
+    os << "\n";
+    os << "V e l o c i t y \n \n";
+    if (e.data.flag1 == 1)
+        os << "Velocity magnitude (X-Translation): " << e.data.value1 << "\n";
+    else os << "Velocity magnitude (X-Translation): N/A" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Velocity magnitude (Y-Translation): " << e.data.value2 << "\n";
+    else os << "Velocity magnitude (Y-Translation): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Velocity magnitude (Z-Translation): " << e.data.value3 << "\n";
+    else os << "Velocity magnitude (Z-Translation): N/A" << "\n";
+    if (e.data.flag4 == 1)
+        os << "Velocity magnitude (X-Rotation): " << e.data.value4 << "\n";
+    else os << "Velocity magnitude (X-Rotation): N/A" << "\n";
+    if (e.data.flag5 == 1)
+        os << "Velocity magnitude (Y-Rotation): " << e.data.value5 << "\n";
+    else os << "Velocity magnitude (Y-Rotation): N/A" << "\n";
+    if (e.data.flag6 == 1)
+        os << "Velocity magnitude (Z-Rotation): " << e.data.value6 << "\n";
+    else os << "Velocity magnitude (Z-Rotation): N/A" << "\n";
+}
+    
 
 /*! \struct acceleration_cubit_bc_data
  *  \brief Definition of the acceleration bc data structure
- */
+ */    
 struct acceleration_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
     char name[12]; // 12 characters for "Acceleration"
@@ -166,7 +250,37 @@ struct acceleration_cubit_bc_data: public generic_cubit_bc_data {
         PetscFunctionReturn(0);
     }
     
+    friend ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e);
+    
 };
+
+/*! \brief Print acceleration bc data
+ */
+ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e)
+{
+    os << "\n";
+    os << "A c c e l e r a t i o n \n \n";
+    if (e.data.flag1 == 1)
+        os << "Acceleration magnitude (X-Translation): " << e.data.value1 << "\n";
+    else os << "Acceleration magnitude (X-Translation): N/A" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Acceleration magnitude (Y-Translation): " << e.data.value2 << "\n";
+    else os << "Acceleration magnitude (Y-Translation): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Acceleration magnitude (Z-Translation): " << e.data.value3 << "\n";
+    else os << "Acceleration magnitude (Z-Translation): N/A" << "\n";
+    if (e.data.flag4 == 1)
+        os << "Acceleration magnitude (X-Rotation): " << e.data.value4 << "\n";
+    else os << "Acceleration magnitude (X-Rotation): N/A" << "\n";
+    if (e.data.flag5 == 1)
+        os << "Acceleration magnitude (Y-Rotation): " << e.data.value5 << "\n";
+    else os << "Acceleration magnitude (Y-Rotation): N/A" << "\n";
+    if (e.data.flag6 == 1)
+        os << "Acceleration magnitude (Z-Rotation): " << e.data.value6 << "\n";
+    else os << "Acceleration magnitude (Z-Rotation): N/A" << "\n";
+}
+
+
 
 /*! \struct temperature_cubit_bc_data
  *  \brief Definition of the temperature bc data structure
@@ -199,7 +313,32 @@ struct temperature_cubit_bc_data: public generic_cubit_bc_data {
         PetscFunctionReturn(0);
     }
     
+    friend ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e);
 };
+
+/*! \brief Print temperature bc data
+ */
+ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e)
+{
+    os << "\n";
+    os << "T e m p e r a t u r e \n \n";
+    if (e.data.flag1 == 1)
+        os << "Temperature: " << e.data.value1 << "\n";
+    else os << "Temperature (default case): N/A" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Temperature (thin shell middle): " << e.data.value2 << "\n";
+    else os << "Temperature (thin shell middle): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Temperature (thin shell gradient): " << e.data.value3 << "\n";
+    else os << "Temperature (thin shell gradient): N/A" << "\n";
+    if (e.data.flag4 == 1)
+        os << "Temperature (thin shell top): " << e.data.value4 << "\n";
+    else os << "Temperature (thin shell top): N/A" << "\n";
+    if (e.data.flag5 == 1)
+        os << "Temperature (thin shell bottom): " << e.data.value5 << "\n";
+    else os << "Temperature (thin shell bottom): N/A" << "\n";
+}
+
 
 /*! \struct pressure_cubit_bc_data
  *  \brief Definition of the pressure bc data structure
@@ -222,7 +361,18 @@ struct pressure_cubit_bc_data: public generic_cubit_bc_data {
         PetscFunctionReturn(0);
     }
     
+    friend ostream& operator<<(ostream& os,const pressure_cubit_bc_data& e);
+    
 };
+
+/*! \brief Print pressure bc data
+ */
+ostream& operator<<(ostream& os,const pressure_cubit_bc_data& e)
+{
+    os << "\n";
+    os << "P r e s s u r e \n \n";
+    os << "Pressure value: " << e.data.value1 << "\n";
+}
 
 /*! \struct heatflux_cubit_bc_data
  *  \brief Definition of the heat flux bc data structure
@@ -249,9 +399,31 @@ struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
         PetscFunctionReturn(0);
     }
     
+    friend ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e);
+    
 };
 
+/*! \brief Print heat flux bc data
+ */
+ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e)
+{
+    os << "\n";
+    os << "H e a t  F l u x \n \n";
+    if (e.data.flag1 == 1)
+        os << "Heat flux value: " << e.data.value1 << "\n";
+    else os << "Heat flux is applied on thin shells" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Heat flux value (thin shell top): " << e.data.value2 << "\n";
+    else os << "Heat flux value (thin shell top): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n";
+    else os << "Heat flux value (thin shell bottom): N/A" << "\n";
+    
+}
 
+/*! \fn func
+ *  \brief Function that fills the input struct with bc_data
+ */
 PetscErrorCode func(const vector<char> &bc_data,generic_cubit_bc_data *ptr_cubit_bc_data) {
     PetscFunctionBegin;
     
@@ -304,6 +476,7 @@ int main(int argc, char *argv[]) {
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
+    if(bc_data.empty()) continue;
       
       //Displacement
       if (strcmp (&bc_data[0],"Displacement") == 0)
@@ -311,56 +484,8 @@ int main(int argc, char *argv[]) {
           displacement_cubit_bc_data displacement_cubit_bc_struct;
           //Fill bc data
           ierr = func(bc_data,&displacement_cubit_bc_struct); CHKERRQ(ierr);
-                    
-          //Print bc data
-          printf(" \n");
-          printf("BC type: ");
-          for(int uu = 0;uu<12;uu++)
-          {
-              printf("%c ",displacement_cubit_bc_struct.data.name[uu]);
-          }
-          printf("\n \n");
-
-          printf("Flag for X-Translation (0/1): %d\n",displacement_cubit_bc_struct.data.flag1);
-          printf("Flag for Y-Translation (0/1): %d\n",displacement_cubit_bc_struct.data.flag2);
-          printf("Flag for Z-Translation (0/1): %d\n",displacement_cubit_bc_struct.data.flag3);
-          printf("Flag for X-Rotation (0/1): %d\n",displacement_cubit_bc_struct.data.flag4);
-          printf("Flag for Y-Rotation (0/1): %d\n",displacement_cubit_bc_struct.data.flag5);
-          printf("Flag for Z-Rotation (0/1): %d\n",displacement_cubit_bc_struct.data.flag6);
-          printf("\n");
-          
-          
-          if (displacement_cubit_bc_struct.data.flag1 == 1)
-              printf("Displacement magnitude (X-Translation): %f\n",displacement_cubit_bc_struct.data.value1);
-          else
-              printf("Displacement magnitude (X-Translation): N/A \n");
-          
-          if (displacement_cubit_bc_struct.data.flag2 == 1)
-              printf("Displacement magnitude (Y-Translation): %f\n",displacement_cubit_bc_struct.data.value2);
-          else
-              printf("Displacement magnitude (Y-Translation): N/A \n");
-          
-          if (displacement_cubit_bc_struct.data.flag3 == 1)
-              printf("Displacement magnitude (Z-Translation): %f\n",displacement_cubit_bc_struct.data.value3);
-          else
-              printf("Displacement magnitude (Z-Translation): N/A \n");
-          
-          if (displacement_cubit_bc_struct.data.flag4 == 1)
-              printf("Displacement magnitude (X-Rotation): %f\n",displacement_cubit_bc_struct.data.value4);
-          else
-              printf("Displacement magnitude (X-Rotation): N/A \n");
-          
-          if (displacement_cubit_bc_struct.data.flag5 == 1)
-              printf("Displacement magnitude (Y-Rotation): %f\n",displacement_cubit_bc_struct.data.value5);
-          else
-              printf("Displacement magnitude (Y-Rotation): N/A \n");
-          
-          if (displacement_cubit_bc_struct.data.flag6 == 1)
-              printf("Displacement magnitude (Z-Rotation): %f\n",displacement_cubit_bc_struct.data.value6);
-          else
-              printf("Displacement magnitude (Z-Rotation): N/A \n");
-          
-          printf("\n");
+          //Print data
+          cout << displacement_cubit_bc_struct;
       }
       
       //Force
@@ -369,24 +494,8 @@ int main(int argc, char *argv[]) {
           force_cubit_bc_data force_cubit_bc_struct;
           //Fill bc data
           ierr = func(bc_data,&force_cubit_bc_struct); CHKERRQ(ierr);
-          
-          //Print bc data
-          printf("\n");
-          printf("BC type: ");
-          for(int uu = 0;uu<5;uu++)
-          {
-              printf("%c ",force_cubit_bc_struct.data.name[uu]);
-          }
-          printf("\n \n");
-          printf("Force magnitude: %f\n",force_cubit_bc_struct.data.value1);
-          printf("Moment magnitude: %f\n",force_cubit_bc_struct.data.value2);
-          printf("Force direction vector (X-component): %f\n",force_cubit_bc_struct.data.value3);
-          printf("Force direction vector (Y-component): %f\n",force_cubit_bc_struct.data.value4);
-          printf("Force direction vector (Z-component): %f\n",force_cubit_bc_struct.data.value5);
-          printf("Moment direction vector (X-component): %f\n",force_cubit_bc_struct.data.value6);
-          printf("Moment direction vector (Y-component): %f\n",force_cubit_bc_struct.data.value7);
-          printf("Moment direction vector (Z-component): %f\n",force_cubit_bc_struct.data.value8);
-          printf("\n");
+          //Print data
+          cout << force_cubit_bc_struct;
       }
       
       //Velocity
@@ -395,47 +504,8 @@ int main(int argc, char *argv[]) {
           velocity_cubit_bc_data velocity_cubit_bc_struct;
           //Fill bc data
           ierr = func(bc_data,&velocity_cubit_bc_struct); CHKERRQ(ierr);
-          
-          //Print bc data
-          printf("\n");
-          printf("BC type: ");
-          for(int uu = 0;uu<8;uu++)
-          {
-              printf("%c ",velocity_cubit_bc_struct.data.name[uu]);
-          }
-          printf("\n \n");
-          
-          if (velocity_cubit_bc_struct.data.flag1 == 1)
-              printf("Velocity magnitude (X-Translation): %f\n",velocity_cubit_bc_struct.data.value1);
-          else
-              printf("Velocity magnitude (X-Translation): N/A \n");
-
-          if (velocity_cubit_bc_struct.data.flag2 == 1)
-              printf("Velocity magnitude (Y-Translation): %f\n",velocity_cubit_bc_struct.data.value2);
-          else
-              printf("Velocity magnitude (Y-Translation): N/A \n");
-          
-          if (velocity_cubit_bc_struct.data.flag3 == 1)
-              printf("Velocity magnitude (Z-Translation): %f\n",velocity_cubit_bc_struct.data.value3);
-          else
-              printf("Velocity magnitude (Z-Translation): N/A \n");
-          
-          if (velocity_cubit_bc_struct.data.flag4 == 1)
-              printf("Velocity magnitude (X-Rotation): %f\n",velocity_cubit_bc_struct.data.value4);
-          else
-              printf("Velocity magnitude (X-Rotation): N/A \n");
-          
-          if (velocity_cubit_bc_struct.data.flag5 == 1)
-              printf("Velocity magnitude (Y-Rotation): %f\n",velocity_cubit_bc_struct.data.value5);
-          else
-              printf("Velocity magnitude (Y-Rotation): N/A \n");
-          
-          if (velocity_cubit_bc_struct.data.flag6 == 1)
-              printf("Velocity magnitude (Z-Rotation): %f\n",velocity_cubit_bc_struct.data.value6);
-          else
-              printf("Velocity magnitude (Z-Rotation): N/A \n");
-          
-          printf("\n");
+          //Print data
+          cout << velocity_cubit_bc_struct;          
       }
       
       //Acceleration
@@ -444,47 +514,8 @@ int main(int argc, char *argv[]) {
           acceleration_cubit_bc_data acceleration_cubit_bc_struct;
           //Fill bc data
           ierr = func(bc_data,&acceleration_cubit_bc_struct); CHKERRQ(ierr);
-          
-          //Print bc data
-          printf("\n");
-          printf("BC type: ");
-          for(int uu = 0;uu<12;uu++)
-          {
-              printf("%c ",acceleration_cubit_bc_struct.data.name[uu]);
-          }
-          printf("\n \n");
-          
-          if (acceleration_cubit_bc_struct.data.flag1 == 1)
-              printf("Acceleration magnitude (X-Translation): %f\n",acceleration_cubit_bc_struct.data.value1);
-          else
-              printf("Acceleration magnitude (X-Translation): N/A \n");
-          
-          if (acceleration_cubit_bc_struct.data.flag2 == 1)
-              printf("Acceleration magnitude (Y-Translation): %f\n",acceleration_cubit_bc_struct.data.value2);
-          else
-              printf("Acceleration magnitude (Y-Translation): N/A \n");
-          
-          if (acceleration_cubit_bc_struct.data.flag3 == 1)
-              printf("Acceleration magnitude (Z-Translation): %f\n",acceleration_cubit_bc_struct.data.value3);
-          else
-              printf("Acceleration magnitude (Z-Translation): N/A \n");
-          
-          if (acceleration_cubit_bc_struct.data.flag4 == 1)
-              printf("Acceleration magnitude (X-Rotation): %f\n",acceleration_cubit_bc_struct.data.value4);
-          else
-              printf("Acceleration magnitude (X-Rotation): N/A \n");
-          
-          if (acceleration_cubit_bc_struct.data.flag5 == 1)
-              printf("Acceleration magnitude (Y-Rotation): %f\n",acceleration_cubit_bc_struct.data.value5);
-          else
-              printf("Acceleration magnitude (Y-Rotation): N/A \n");
-          
-          if (acceleration_cubit_bc_struct.data.flag6 == 1)
-              printf("Acceleration magnitude (Z-Rotation): %f\n",acceleration_cubit_bc_struct.data.value6);
-          else
-              printf("Acceleration magnitude (Z-Rotation): N/A \n");
-          
-          printf("\n");
+          //Print data
+          cout << acceleration_cubit_bc_struct;          
       }
       
       //Temperature
@@ -493,42 +524,8 @@ int main(int argc, char *argv[]) {
           temperature_cubit_bc_data temperature_cubit_bc_struct;
           //Fill bc data
           ierr = func(bc_data,&temperature_cubit_bc_struct); CHKERRQ(ierr);
-          
-          //Print bc data
-          printf("\n");
-          printf("BC type: ");
-          for(int uu = 0;uu<11;uu++)
-          {
-              printf("%c ",temperature_cubit_bc_struct.data.name[uu]);
-          }
-          printf("\n \n");
-          
-          if (temperature_cubit_bc_struct.data.flag1 == 1)
-              printf("Temperature: %f\n",temperature_cubit_bc_struct.data.value1);
-          else
-              printf("Temperature (default case): N/A \n");
-          
-          if (temperature_cubit_bc_struct.data.flag2 == 1)
-              printf("Temperature (thin shell middle): %f\n",temperature_cubit_bc_struct.data.value2);
-          else
-              printf("Temperature (thin shell middle): N/A \n");
-
-          if (temperature_cubit_bc_struct.data.flag3 == 1)
-              printf("Temperature (thin shell gradient): %f\n",temperature_cubit_bc_struct.data.value3);
-          else
-              printf("Temperature (thin shell gradient): N/A \n");
-          
-          if (temperature_cubit_bc_struct.data.flag4 == 1)
-              printf("Temperature (thin shell top): %f\n",temperature_cubit_bc_struct.data.value4);
-          else
-              printf("Temperature (thin shell top): N/A \n");
-          
-          if (temperature_cubit_bc_struct.data.flag5 == 1)
-              printf("Temperature (thin shell bottom): %f\n",temperature_cubit_bc_struct.data.value5);
-          else
-              printf("Temperature (thin shell bottom): N/A \n");
- 
-          printf("\n");          
+          //Print data
+          cout << temperature_cubit_bc_struct;
       }
       
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
@@ -542,6 +539,7 @@ int main(int argc, char *argv[]) {
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
+    if(bc_data.empty()) continue;
       
       //Pressure
       if (strcmp (&bc_data[0],"Pressure") == 0)
@@ -549,19 +547,8 @@ int main(int argc, char *argv[]) {
           pressure_cubit_bc_data pressure_cubit_bc_struct;
           //Fill bc data
           ierr = func(bc_data,&pressure_cubit_bc_struct); CHKERRQ(ierr);
-          
-          //Print bc data
-          printf("\n");
-          printf("BC type: ");
-          for(int uu = 0;uu<8;uu++)
-          {
-              printf("%c ",pressure_cubit_bc_struct.data.name[uu]);
-          }
-          printf("\n \n");
-          
-          printf("Pressure value: %f\n",pressure_cubit_bc_struct.data.value1);
-          
-          printf("\n");
+          //Print data
+          cout << pressure_cubit_bc_struct;          
       }
 
       //Heat Flux
@@ -570,32 +557,8 @@ int main(int argc, char *argv[]) {
           heatflux_cubit_bc_data heatflux_cubit_bc_struct;
           //Fill bc data
           ierr = func(bc_data,&heatflux_cubit_bc_struct); CHKERRQ(ierr);
-          
-          //Print bc data
-          printf("\n");
-          printf("BC type: ");
-          for(int uu = 0;uu<8;uu++)
-          {
-              printf("%c ",heatflux_cubit_bc_struct.data.name[uu]);
-          }
-          printf("\n \n");
-          
-          if (heatflux_cubit_bc_struct.data.flag1 == 1)
-              printf("Heat flux value: %f\n",heatflux_cubit_bc_struct.data.value1);
-          else
-              printf("Heat flux is applied on thin shells \n");
-          
-          if (heatflux_cubit_bc_struct.data.flag2 == 1)
-              printf("Heat flux value (thin shell top): %f\n",heatflux_cubit_bc_struct.data.value2);
-          else
-              printf("Heat flux value (thin shell top): N/A \n");
-          
-          if (heatflux_cubit_bc_struct.data.flag3 == 1)
-              printf("Heat flux value (thin shell bottom): %f\n",heatflux_cubit_bc_struct.data.value3);
-          else
-              printf("Heat flux value (thin shell bottom): N/A \n");
-          
-          printf("\n");
+          //Print data
+          cout << heatflux_cubit_bc_struct;          
       }
                  
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
@@ -610,6 +573,7 @@ int main(int argc, char *argv[]) {
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
+    if(bc_data.empty()) continue;
   } 
 
 
