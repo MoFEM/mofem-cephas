@@ -286,6 +286,7 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
     CubitMeshSets base_meshset(moab,*mit);
     if((base_meshset.CubitBCType&Cubit_BC_bitset(NodeSet|SideSet|BlockSet)).any()) {
       pair<moabCubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(base_meshset);
+      //HERE WE HAVE TO SET TYPE
       if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"meshset not inserted");
       ostringstream ss;
       if(verb > 0) {

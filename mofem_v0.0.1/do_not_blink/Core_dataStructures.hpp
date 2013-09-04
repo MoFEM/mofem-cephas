@@ -85,6 +85,14 @@ struct ltstr
 { inline bool operator()(const string &s1, const string& s2) const
   { return strcmp(s1.c_str(), s2.c_str()) < 0; } };
 
+struct CubitMeshSets_change_add_bit_to_CubitBCType {
+  Cubit_BC_bitset bit;
+  CubitMeshSets_change_add_bit_to_CubitBCType(const Cubit_BC_bitset &_bit): bit(_bit) {};
+  void operator()(CubitMeshSets &e) { 
+    e.CubitBCType |= bit;
+  }
+};
+
 
 struct RefMoFEMEntity_change_add_bit {
   BitRefLevel bit;
