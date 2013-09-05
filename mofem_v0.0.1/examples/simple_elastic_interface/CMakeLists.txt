@@ -20,6 +20,8 @@ add_executable(interface interface.cpp)
 target_link_libraries(interface mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/PeelTest.cub" "/" export_files_interface)
+cm_export_file("../../meshes/PeelTestHalfCrack.cub" "/" export_files_interface)
+
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -28,4 +30,7 @@ file(COPY
 #testing
 add_test(SimpleInterfaceTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/interface
   -my_file PeelTest.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary)
+
+add_test(SimpleInterfaceTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/interface
+  -my_file PeelTestHalfCrack.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary)
 

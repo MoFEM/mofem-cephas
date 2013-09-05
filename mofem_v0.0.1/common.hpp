@@ -317,9 +317,10 @@ struct SideNumber {
   int side_number;
   int sense;
   int offset;
+  int brother_side_number;
   inline EntityType get_ent_type() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
   SideNumber(EntityHandle _ent,int _side_number,int _sense,int _offset):
-    ent(_ent),side_number(_side_number),sense(_sense),offset(_offset) {};
+    ent(_ent),side_number(_side_number),sense(_sense),offset(_offset),brother_side_number(-1) {};
 };
 
 
