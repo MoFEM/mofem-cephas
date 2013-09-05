@@ -1890,7 +1890,7 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
       }
     }
   }
-  if(rows_problem_map.size() != p_miit->get_nb_dofs_row()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  if(rows_problem_map.size() != (unsigned int)p_miit->get_nb_dofs_row()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   } 
   //do cols
   map<DofIdx,const NumeredDofMoFEMEntity*> cols_problem_map;
@@ -1919,7 +1919,7 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
       }
     }
   }
-  if(cols_problem_map.size() != p_miit->get_nb_dofs_col()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  if(cols_problem_map.size() != (unsigned int)p_miit->get_nb_dofs_col()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   }
   // build indices 
   NumeredDofMoFEMEntitys_by_uid &dofs_row_by_uid = const_cast<NumeredDofMoFEMEntitys_by_uid&>(p_miit->numered_dofs_rows.get<Unique_mi_tag>());
