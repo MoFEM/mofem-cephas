@@ -28,10 +28,6 @@ cm_export_file("../meshes/velocity01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/accel01.cub" "/" export_atom_tests)
 
 cm_export_file("../meshes/temper01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/temper02.cub" "/" export_atom_tests)
-cm_export_file("../meshes/temper03.cub" "/" export_atom_tests)
-cm_export_file("../meshes/temper04.cub" "/" export_atom_tests)
-cm_export_file("../meshes/temper05.cub" "/" export_atom_tests)
 
 cm_export_file("../meshes/press01.cub" "/" export_atom_tests)
 
