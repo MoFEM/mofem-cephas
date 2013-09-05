@@ -1381,12 +1381,6 @@ struct MoFEMAdjacencies {
   inline EntityHandle get_ent_entity_handle() const { return MoFEMEntity_ptr->get_ent(); };
   BitFieldId get_ent_id() const { return MoFEMEntity_ptr->get_id(); }
   BitFEId get_BitFEId() const { return EntMoFEMFiniteElement_ptr->get_id(); }
-  PetscErrorCode get_ent_adj_dofs_bridge(
-    const DofMoFEMEntity_multiIndex &dofs_moabfield,const by_what _by,
-    DofMoFEMEntity_multiIndex_uid_view &uids_view,const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_ent_adj_dofs_bridge(
-    const NumeredDofMoFEMEntity_multiIndex &dofs_moabproblem,const by_what _by,
-    NumeredDofMoFEMEntity_multiIndex_uid_view &uids_view,const int operation_type = Interface::UNION) const;
   friend ostream& operator<<(ostream& os,const MoFEMAdjacencies &e);
 };
 

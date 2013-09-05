@@ -826,45 +826,6 @@ ostream& operator<<(ostream& os,const MoFEMAdjacencies& e) {
     << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFiniteElement_ptr->fe_ptr;
   return os;
 }
-PetscErrorCode MoFEMAdjacencies::get_ent_adj_dofs_bridge(
-    const DofMoFEMEntity_multiIndex &dofs_moabfield,const by_what _by,
-    DofMoFEMEntity_multiIndex_uid_view &uids_view,const int operation_type) const {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  switch (_by) {
-    case by_row:  
-      ierr = EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_row_dof_uid_view(dofs_moabfield,uids_view,operation_type); CHKERRQ(ierr);
-      break;
-    case by_col: 
-      ierr = EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view(dofs_moabfield,uids_view,operation_type); CHKERRQ(ierr);
-      break;
-    default:
-      ostringstream ss;
-      ss << "don't know that to do for elem " << EntMoFEMFiniteElement_ptr->get_name() << " and field " << MoFEMEntity_ptr->get_name();
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode MoFEMAdjacencies::get_ent_adj_dofs_bridge(
-    const NumeredDofMoFEMEntity_multiIndex &dofs_moabproblem,const by_what _by,
-    NumeredDofMoFEMEntity_multiIndex_uid_view &uids_view,const int operation_type) const {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  switch (_by) {
-    case by_row:  
-      ierr = EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_row_dof_uid_view(dofs_moabproblem,uids_view,operation_type); CHKERRQ(ierr);
-      break;
-    case by_col: 
-      ierr = EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view(dofs_moabproblem,uids_view,operation_type); CHKERRQ(ierr);
-      break;
-    default: 
-      ostringstream ss;
-      ss << *this << endl;
-      ss << "don't know that to do for elem " << EntMoFEMFiniteElement_ptr->get_name() << " and field " << MoFEMEntity_ptr->get_name();
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  }
-  PetscFunctionReturn(0);
-}
 
 //....
 PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
