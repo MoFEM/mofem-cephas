@@ -201,7 +201,7 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
     ublas::noalias(g_VEC_ELEM) = ublas::zero_vector<double>(3);
     double area0 = norm_2(ent_normal_map0);
     double area = norm_2(ent_normal_map);
-    for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
+    for(unsigned int gg = 0;gg<g_NTRI3.size()/3;gg++) {
 	for(int nn = 0;nn<3;nn++) {
 	  for(int dd = 0;dd<3;dd++) {
 	    double X0_dd = cblas_ddot(3,&g_NTRI3[3*gg],1,&coords.data()[dd],3);
