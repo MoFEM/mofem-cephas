@@ -1,0 +1,8 @@
+#!python
+cubit.cmd('create Cylinder height 10 radius 2 ')
+cubit.cmd('volume 1  size auto factor 3')
+cubit.cmd('volume 1  size auto factor 3')
+cubit.cmd('mesh volume 1 ')
+cubit.cmd('create heatflux  on surface 3  value -100.567 ')
+cubit.cmd('create heatflux  on surface 1  value 12.3 ')
+

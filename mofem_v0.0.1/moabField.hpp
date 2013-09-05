@@ -84,7 +84,7 @@ struct moabField {
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
-    * \param meshsset 
+    * \param meshset 
     */
   virtual PetscErrorCode get_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) = 0;
 

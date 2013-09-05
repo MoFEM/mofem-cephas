@@ -1,0 +1,8 @@
+#!python
+cubit.cmd('create Cylinder height 10 radius 2 ')
+cubit.cmd('volume 1  size auto factor 3')
+cubit.cmd('volume 1  size auto factor 3')
+cubit.cmd('mesh volume 1 ')
+cubit.cmd('create pressure  on surface 3  magnitude -230.5 ')
+cubit.cmd('create pressure  on surface 2  magnitude 100.5 ')
+

@@ -1,0 +1,7 @@
+#!python
+cubit.cmd('create Cylinder height 10 radius 2 ')
+cubit.cmd('volume 1  size auto factor 5')
+cubit.cmd('volume 1  size auto factor 5')
+cubit.cmd('mesh volume 1 ')
+cubit.cmd('create force  on surface 3  force value 10.5 direction   nx ')
+cubit.cmd('create force  on node 218  force value 123 moment value -456 direction   z ')

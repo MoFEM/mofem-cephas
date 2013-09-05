@@ -1,0 +1,9 @@
+#!python
+cubit.cmd('create Cylinder height 10 radius 2 ')
+cubit.cmd('volume 1  size auto factor 3')
+cubit.cmd('volume 1  size auto factor 3')
+cubit.cmd('mesh volume 1 ')
+cubit.cmd('create Acceleration  dof all fix -32.45 ')
+cubit.cmd('create Acceleration  on node 593  dof 1 fix 33.333 ')
+cubit.cmd('create Acceleration  on curve 1  dof 3 fix 111 ')
+cubit.cmd('create Acceleration  on surface 3  dof all fix 3333 ')

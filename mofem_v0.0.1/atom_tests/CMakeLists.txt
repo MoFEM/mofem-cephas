@@ -19,6 +19,43 @@
 add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../meshes/LShape.cub" "/" export_atom_tests)
+cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
 
+cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/force02.cub" "/" export_atom_tests)
+cm_export_file("../meshes/force03.cub" "/" export_atom_tests)
+cm_export_file("../meshes/force04.cub" "/" export_atom_tests)
+
+cm_export_file("../meshes/velocity01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/velocity02.cub" "/" export_atom_tests)
+cm_export_file("../meshes/velocity03.cub" "/" export_atom_tests)
+cm_export_file("../meshes/velocity04.cub" "/" export_atom_tests)
+cm_export_file("../meshes/velocity05.cub" "/" export_atom_tests)
+
+cm_export_file("../meshes/accel01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/accel02.cub" "/" export_atom_tests)
+cm_export_file("../meshes/accel03.cub" "/" export_atom_tests)
+cm_export_file("../meshes/accel04.cub" "/" export_atom_tests)
+cm_export_file("../meshes/accel05.cub" "/" export_atom_tests)
+
+cm_export_file("../meshes/temper01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/temper02.cub" "/" export_atom_tests)
+cm_export_file("../meshes/temper03.cub" "/" export_atom_tests)
+cm_export_file("../meshes/temper04.cub" "/" export_atom_tests)
+cm_export_file("../meshes/temper05.cub" "/" export_atom_tests)
+
+cm_export_file("../meshes/press01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/press02.cub" "/" export_atom_tests)
+cm_export_file("../meshes/press03.cub" "/" export_atom_tests)
+cm_export_file("../meshes/press04.cub" "/" export_atom_tests)
+cm_export_file("../meshes/press05.cub" "/" export_atom_tests)
+cm_export_file("../meshes/press06.cub" "/" export_atom_tests)
+cm_export_file("../meshes/press07.cub" "/" export_atom_tests)
+
+cm_export_file("../meshes/heatflux01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/heatflux02.cub" "/" export_atom_tests)
+cm_export_file("../meshes/heatflux03.cub" "/" export_atom_tests)
+cm_export_file("../meshes/heatflux04.cub" "/" export_atom_tests)
+
+cm_export_file("../meshes/comb01.cub" "/" export_atom_tests)
 
