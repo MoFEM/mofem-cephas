@@ -186,6 +186,10 @@ enum Cubit_BC {
   DisplacementSet = 1<<4,
   ForceSet = 1<<5,
   PressureSet = 1<<6,
+  VelocitySet = 1<<7,
+  AccelerationSet = 1<<8,
+  TemperatureSet = 1<<9,
+  HeatfluxSet = 1<<10,
   LastSet
 };
 /// approximation space 
