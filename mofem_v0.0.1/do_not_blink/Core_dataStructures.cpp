@@ -246,11 +246,11 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
     }
     cerr << endl;
     */
+    //buttom face
+    EntityHandle face3[3] = { conn[0], conn[1], conn[2] };
+    //top face
+    EntityHandle face4[3] = { conn[3], conn[4], conn[5] };
     if(num_nodes == 3) {
-      //buttom face
-      EntityHandle face3[3] = { conn[0], conn[1], conn[2] };
-      //top face
-      EntityHandle face4[3] = { conn[3], conn[4], conn[5] };
       int sense_p1_map[3][3] = { {0,1,2}, {1,2,0}, {2,0,1} };
       int sense_m1_map[3][3] = { {0,2,1}, {2,1,0}, {1,0,2} };
       EntityHandle* conn0_3_ptr = find( face3, &face3[3], conn_ent[0] );
@@ -277,16 +277,41 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
 	    face4[ sense_p1_map[offset][0] ] == conn_ent[0] &&
 	    face4[ sense_p1_map[offset][1] ] == conn_ent[1] &&
 	    face4[ sense_p1_map[offset][2] ] == conn_ent[2] ) {
-	    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,1,offset)).first;
+	    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,1,3+offset)).first;
 	    return const_cast<SideNumber*>(&*miit);
 	  } else if (
 	    face4[ sense_m1_map[offset][0] ] == conn_ent[0] &&
 	    face4[ sense_m1_map[offset][1] ] == conn_ent[1] &&
 	    face4[ sense_m1_map[offset][2] ] == conn_ent[2] ) {
-	    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,-1,offset)).first;
+	    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,-1,3+offset)).first;
 	    return const_cast<SideNumber*>(&*miit);
 	  } else THROW_AT_LINE("Huston we have problem");
       } THROW_AT_LINE("Huston we have problem");
+    }
+    if(num_nodes == 2) {
+      EntityHandle edges[6][2] = {
+	{ conn[0], conn[1] }, { conn[1], conn[2] }, { conn[2], conn[0] },
+	{ conn[3], conn[4] }, { conn[4], conn[5] }, { conn[5], conn[3] } };
+      for(int ee = 0;ee<6;ee++) {
+	if(
+	  ( conn_ent[0] == edges[ee][0] )&&( conn_ent[1] == edges[ee][1] )||
+	  ( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0] ) ) {
+	  side_number = ee;
+	  if(ee>3) {
+	    side_number += 3;
+	    EntityHandle* conn0_4_ptr = find( face4, &face4[3], conn_ent[0] );
+	    offset = distance( face4, conn0_4_ptr ) + 3;
+	  } else {
+	    EntityHandle* conn0_3_ptr = find( face3, &face3[3], conn_ent[0] );
+	    offset = distance( face3, conn0_3_ptr );
+	  }
+	  sense = 1;
+	  if(( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0] ))  sense = -1;
+	  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
+	  return const_cast<SideNumber*>(&*miit);
+	}
+      }
+      THROW_AT_LINE("Huston we have problem");
     }
     ostringstream sss;
     sss << "this not working: " << ent << " type: " << moab.type_from_handle(ent) << " " << MBEDGE << " " << MBTRI << endl;

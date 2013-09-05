@@ -142,7 +142,7 @@ moabField_Core::moabField_Core(Interface& _moab,int _verbose):
   int def_elem_type = MBMAXTYPE;
   rval = moab.tag_get_handle("ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type); CHKERR(rval); 
   //
-  map_from_mesh(3); 
+  map_from_mesh(verbose); 
   //
   ShapeDiffMBTET(diffN_TET); 
   // Petsc Logs
@@ -1662,7 +1662,7 @@ PetscErrorCode moabField_Core::partition_problem(const string &name,int verb) {
   if(verb>1) {
     PetscPrintf(PETSC_COMM_WORLD,"\tcreate Adj matrix\n");
   }
-  ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,NULL,true,verb); CHKERRQ(ierr);
+  ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,MATMPIADJ,true,verb); CHKERRQ(ierr);
   if(verb>1) {
     PetscPrintf(PETSC_COMM_WORLD,"\t<- done\n");
   }
@@ -1803,8 +1803,16 @@ PetscErrorCode moabField_Core::partition_problem(const string &name,int verb) {
   *build_MoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
+PetscErrorCode moabField_Core::partition_problem_all_dofs_on_proc(const string &name,int proc,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+
+  PetscFunctionReturn(0);
+}
 PetscErrorCode moabField_Core::compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int verb) {
+  PetscFunctionBegin;
   ierr = compose_problem(name,problem_for_rows,false,problem_for_cols,false,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb) {
   PetscFunctionBegin;
@@ -3213,7 +3221,7 @@ PetscErrorCode moabField_Core::VecScatterCreate(Vec xin,string &x_problem,RowCol
 PetscErrorCode moabField_Core::MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  ierr = partition_create_Mat<Part_mi_tag>(name,NULL,Aij,false,verb); CHKERRQ(ierr);
+  ierr = partition_create_Mat<Part_mi_tag>(name,Aij,MATMPIAIJ,false,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {

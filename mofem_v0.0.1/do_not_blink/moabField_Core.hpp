@@ -176,6 +176,7 @@ struct moabField_Core: public moabField {
 
   //problem buildig
   PetscErrorCode partition_problem(const string &name,int verb = -1);
+  PetscErrorCode partition_problem_all_dofs_on_proc(const string &name,int proc,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
@@ -235,7 +236,7 @@ struct moabField_Core: public moabField {
 
   //Templates
   template<typename Tag> 
-  PetscErrorCode partition_create_Mat(const string &name,Mat *Adj,Mat *Aij,const bool no_diagonals = true,int verb = -1) {
+  PetscErrorCode partition_create_Mat(const string &name,Mat *M,const MatType type,const bool no_diagonals = true,int verb = -1) {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -316,14 +317,15 @@ struct moabField_Core: public moabField {
     copy(j.begin(),j.end(),_j);
     PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
     PetscInt nb_col_dofs = p_miit->get_nb_dofs_col();
-    if(Adj!=NULL) {
-      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,_i,_j,PETSC_NULL,Adj); CHKERRQ(ierr);
-    }
-    if(Aij!=NULL) {
+    if(strcmp(type,MATMPIADJ)==0) { 
+      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
+    } else if(strcmp(type,MATMPIAIJ)==0) {
       PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
       if((unsigned int)nb_local_dofs_row!=i.size()-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
-      ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,_i,_j,PETSC_NULL,Aij); CHKERRQ(ierr);
+      ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
+    } else {
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);
   }
