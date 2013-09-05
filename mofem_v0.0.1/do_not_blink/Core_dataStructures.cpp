@@ -297,8 +297,8 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
 	  ( conn_ent[0] == edges[ee][0] )&&( conn_ent[1] == edges[ee][1] )||
 	  ( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0] ) ) {
 	  side_number = ee;
-	  if(ee>2) {
-	    side_number += 3;
+	  if(ee>=3) {
+	    side_number += 6;
 	    EntityHandle* conn0_4_ptr = find( face4, &face4[3], conn_ent[0] );
 	    offset = distance( face4, conn0_4_ptr ) + 3;
 	  } else {
