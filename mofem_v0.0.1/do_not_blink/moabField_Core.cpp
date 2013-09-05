@@ -1277,7 +1277,29 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFiniteElement 
 	      if(side_ptr->side_number!=ee) SETERRQ1(PETSC_COMM_SELF,1,"data insonsitenct for edge %d",ee);
 	      rval = moab.side_element(prism,1,6+ee,edge); CHKERR_PETSC(rval);
 	      side_ptr = EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
-	      if(side_ptr->side_number!=ee+6) SETERRQ1(PETSC_COMM_SELF,1,"data insonsitenct for edge %d",ee+6);
+	      if(side_ptr->side_number!=ee+6) {
+		if(side_ptr->side_number!=ee) {
+		  SETERRQ1(PETSC_COMM_SELF,1,"data insonsitenct for edge %d",ee);
+		} else {
+		  side_ptr->brother_side_number = ee+6;
+		}
+	      }
+	    }
+	    int nn = 0;
+	    for(;nn<3;nn++) {
+	      EntityHandle node;
+	      rval = moab.side_element(prism,0,nn,node); CHKERR_PETSC(rval);
+	      SideNumber *side_ptr = EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,node);
+	      if(side_ptr->side_number!=nn) SETERRQ1(PETSC_COMM_SELF,1,"data insonsitenct for node %d",nn);
+	      rval = moab.side_element(prism,0,nn+3,node); CHKERR_PETSC(rval);
+	      side_ptr = EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,node);
+	      if(side_ptr->side_number!=nn+3) {
+		if(side_ptr->side_number!=nn) {
+		  SETERRQ1(PETSC_COMM_SELF,1,"data insonsitenct for node %d",nn);
+		} else {
+		  side_ptr->brother_side_number = nn+3; 
+		}
+	      }
 	    }
 	  } catch (const char* msg) {
 	      SETERRQ(PETSC_COMM_SELF,1,msg);
