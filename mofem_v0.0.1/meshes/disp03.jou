@@ -1,8 +1,0 @@
-#!python
-cubit.cmd('open "LShape.cub"')
-cubit.cmd('delete Sideset 1')
-cubit.cmd('delete Sideset 2')
-cubit.cmd('save as "disp03.cub" overwrite')
-cubit.cmd('create Displacement  on surface 3  dof all fix 0 ')
-cubit.cmd('create Displacement  on curve 13 17 dof 3 fix -1 ')
-

@@ -20,9 +20,6 @@ add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/disp02.cub" "/" export_atom_tests)
-cm_export_file("../meshes/disp03.cub" "/" export_atom_tests)
-cm_export_file("../meshes/disp04.cub" "/" export_atom_tests)
 
 cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/force02.cub" "/" export_atom_tests)
