@@ -29,7 +29,7 @@ cm_export_file("../meshes/accel01.cub" "/" export_atom_tests)
 
 cm_export_file("../meshes/temper01.cub" "/" export_atom_tests)
 
-cm_export_file("../meshes/press01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/pressure01.cub" "/" export_atom_tests)
 
 cm_export_file("../meshes/heatflux01.cub" "/" export_atom_tests)
 
