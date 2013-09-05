@@ -468,6 +468,10 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   moabField_Core core(moab);
   moabField& mField = core;
+    
+    //Open mesh_file_name.txt for writing
+    ofstream myfile;
+    myfile.open ((string(mesh_file_name)+".txt").c_str());
 
   cout << "<<<< NodeSets >>>>>" << endl;
   //NodeSets
@@ -486,6 +490,7 @@ int main(int argc, char *argv[]) {
           ierr = func(bc_data,&displacement_cubit_bc_struct); CHKERRQ(ierr);
           //Print data
           cout << displacement_cubit_bc_struct;
+          myfile << displacement_cubit_bc_struct;
       }
       
       //Force
@@ -496,6 +501,7 @@ int main(int argc, char *argv[]) {
           ierr = func(bc_data,&force_cubit_bc_struct); CHKERRQ(ierr);
           //Print data
           cout << force_cubit_bc_struct;
+          myfile << force_cubit_bc_struct;
       }
       
       //Velocity
@@ -505,7 +511,8 @@ int main(int argc, char *argv[]) {
           //Fill bc data
           ierr = func(bc_data,&velocity_cubit_bc_struct); CHKERRQ(ierr);
           //Print data
-          cout << velocity_cubit_bc_struct;          
+          cout << velocity_cubit_bc_struct;
+          myfile << velocity_cubit_bc_struct;
       }
       
       //Acceleration
@@ -515,7 +522,8 @@ int main(int argc, char *argv[]) {
           //Fill bc data
           ierr = func(bc_data,&acceleration_cubit_bc_struct); CHKERRQ(ierr);
           //Print data
-          cout << acceleration_cubit_bc_struct;          
+          cout << acceleration_cubit_bc_struct;
+          myfile << acceleration_cubit_bc_struct;
       }
       
       //Temperature
@@ -526,6 +534,7 @@ int main(int argc, char *argv[]) {
           ierr = func(bc_data,&temperature_cubit_bc_struct); CHKERRQ(ierr);
           //Print data
           cout << temperature_cubit_bc_struct;
+          myfile << temperature_cubit_bc_struct;
       }
       
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
@@ -548,7 +557,8 @@ int main(int argc, char *argv[]) {
           //Fill bc data
           ierr = func(bc_data,&pressure_cubit_bc_struct); CHKERRQ(ierr);
           //Print data
-          cout << pressure_cubit_bc_struct;          
+          cout << pressure_cubit_bc_struct;
+          myfile << pressure_cubit_bc_struct;
       }
 
       //Heat Flux
@@ -558,7 +568,8 @@ int main(int argc, char *argv[]) {
           //Fill bc data
           ierr = func(bc_data,&heatflux_cubit_bc_struct); CHKERRQ(ierr);
           //Print data
-          cout << heatflux_cubit_bc_struct;          
+          cout << heatflux_cubit_bc_struct;
+          myfile << heatflux_cubit_bc_struct;
       }
                  
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
@@ -576,6 +587,8 @@ int main(int argc, char *argv[]) {
     if(bc_data.empty()) continue;
   } 
 
+    //Close mesh_file_name.txt
+    myfile.close();
 
   PetscFinalize();
 
