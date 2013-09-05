@@ -1,7 +1,0 @@
-#!python
-cubit.cmd('brick x 10 y 10 z 10')
-cubit.cmd('volume 1  size 1')
-cubit.cmd('volume 1  size 1')
-cubit.cmd('mesh volume 1 ')
-cubit.cmd('create force  on node 12  vector 10 -20 30 10 -20 30 ')
-cubit.cmd('create force  on curve 1  moment value 50 direction   y ')
