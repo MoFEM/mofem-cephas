@@ -712,7 +712,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	ee = 0;
 	for(;ee<3;ee++) {
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().find(boost::make_tuple(MBEDGE,6+ee));
-	  if(siit==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(siit==side_table.get<1>().end()) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, edge side number %d",6+ee);
 	  assert(siit->side_number == 6+ee);
 	  H1edgeN[siit->side_number].resize(gNTRI_dim*NBEDGE_H1(maxOrderEdgeH1[siit->side_number]));
 	  _face_edge_sense4_[ee] = siit->sense;

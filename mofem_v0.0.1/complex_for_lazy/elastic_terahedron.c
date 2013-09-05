@@ -1086,7 +1086,7 @@ PetscErrorCode Fext_H(int order,int *order_edge,
   double *dofs_X,double *idofs_X,
   double *Fext,double *iFext,int g_dim,const double *g_w) {
   PetscFunctionBegin;
-  int dd,nn,ee,gg;
+  int dd,nn,gg;
   if(Fext!=NULL) bzero(Fext,9*sizeof(double));
   if(iFext!=NULL) bzero(iFext,9*sizeof(double));
   gg = 0;
@@ -1122,7 +1122,7 @@ PetscErrorCode KExt_HH(double eps,int order,int *order_edge,
   double *t,double *t_edge[],double *t_face,
   double *dofs_X,double *KExt_HH,int g_dim,const double *g_w) {
   PetscFunctionBegin;
-  int gg,dd,ii,nn,ee;
+  int gg,dd,ii,nn;
   bzero(KExt_HH,9*9*sizeof(double));
   for(gg = 0;gg<g_dim;gg++) {
     double traction[3] = {0,0,0};

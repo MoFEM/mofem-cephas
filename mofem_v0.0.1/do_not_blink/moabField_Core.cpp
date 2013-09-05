@@ -1273,9 +1273,11 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFiniteElement 
 	    for(;ee<3;ee++) {
 	      EntityHandle edge;
 	      rval = moab.side_element(prism,1,ee,edge); CHKERR_PETSC(rval);
-	      EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
+	      SideNumber *side_ptr = EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
+	      if(side_ptr->side_number!=ee) SETERRQ1(PETSC_COMM_SELF,1,"data insonsitenct for edge %d",ee);
 	      rval = moab.side_element(prism,1,6+ee,edge); CHKERR_PETSC(rval);
-	      EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
+	      side_ptr = EntFe.get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
+	      if(side_ptr->side_number!=ee+6) SETERRQ1(PETSC_COMM_SELF,1,"data insonsitenct for edge %d",ee+6);
 	    }
 	  } catch (const char* msg) {
 	      SETERRQ(PETSC_COMM_SELF,1,msg);
