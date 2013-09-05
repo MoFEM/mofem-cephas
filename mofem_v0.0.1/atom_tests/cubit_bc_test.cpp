@@ -105,8 +105,8 @@ ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e)
         os << "Displacement magnitude (Y-Rotation): " << e.data.value5 << "\n";
     else os << "Displacement magnitude (Y-Rotation): N/A" << "\n";
     if (e.data.flag6 == 1)
-        os << "Displacement magnitude (Z-Rotation): " << e.data.value6 << "\n";
-    else os << "Displacement magnitude (Z-Rotation): N/A" << "\n";
+        os << "Displacement magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
+    else os << "Displacement magnitude (Z-Rotation): N/A" << "\n \n";
 }
 
 
@@ -153,7 +153,7 @@ ostream& operator<<(ostream& os,const force_cubit_bc_data& e)
     os << "Force direction vector (Z-component): " << e.data.value5 << "\n";
     os << "Moment direction vector (X-component): " << e.data.value6 << "\n";
     os << "Moment direction vector (Y-component): " << e.data.value7 << "\n";
-    os << "Moment direction vector (Z-component): " << e.data.value8 << "\n";
+    os << "Moment direction vector (Z-component): " << e.data.value8 << "\n \n";
 }
 
 
@@ -214,8 +214,8 @@ ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e)
         os << "Velocity magnitude (Y-Rotation): " << e.data.value5 << "\n";
     else os << "Velocity magnitude (Y-Rotation): N/A" << "\n";
     if (e.data.flag6 == 1)
-        os << "Velocity magnitude (Z-Rotation): " << e.data.value6 << "\n";
-    else os << "Velocity magnitude (Z-Rotation): N/A" << "\n";
+        os << "Velocity magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
+    else os << "Velocity magnitude (Z-Rotation): N/A" << "\n \n";
 }
     
 
@@ -276,8 +276,8 @@ ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e)
         os << "Acceleration magnitude (Y-Rotation): " << e.data.value5 << "\n";
     else os << "Acceleration magnitude (Y-Rotation): N/A" << "\n";
     if (e.data.flag6 == 1)
-        os << "Acceleration magnitude (Z-Rotation): " << e.data.value6 << "\n";
-    else os << "Acceleration magnitude (Z-Rotation): N/A" << "\n";
+        os << "Acceleration magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
+    else os << "Acceleration magnitude (Z-Rotation): N/A" << "\n \n";
 }
 
 
@@ -335,8 +335,8 @@ ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e)
         os << "Temperature (thin shell top): " << e.data.value4 << "\n";
     else os << "Temperature (thin shell top): N/A" << "\n";
     if (e.data.flag5 == 1)
-        os << "Temperature (thin shell bottom): " << e.data.value5 << "\n";
-    else os << "Temperature (thin shell bottom): N/A" << "\n";
+        os << "Temperature (thin shell bottom): " << e.data.value5 << "\n \n";
+    else os << "Temperature (thin shell bottom): N/A" << "\n \n";
 }
 
 
@@ -371,7 +371,7 @@ ostream& operator<<(ostream& os,const pressure_cubit_bc_data& e)
 {
     os << "\n";
     os << "P r e s s u r e \n \n";
-    os << "Pressure value: " << e.data.value1 << "\n";
+    os << "Pressure value: " << e.data.value1 << "\n \n";
 }
 
 /*! \struct heatflux_cubit_bc_data
@@ -416,8 +416,8 @@ ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e)
         os << "Heat flux value (thin shell top): " << e.data.value2 << "\n";
     else os << "Heat flux value (thin shell top): N/A" << "\n";
     if (e.data.flag3 == 1)
-        os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n";
-    else os << "Heat flux value (thin shell bottom): N/A" << "\n";
+        os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n \n";
+    else os << "Heat flux value (thin shell bottom): N/A" << "\n \n";
 }
 
 /*! \fn func
