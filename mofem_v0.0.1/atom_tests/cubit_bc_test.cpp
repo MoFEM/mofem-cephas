@@ -418,7 +418,6 @@ ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e)
     if (e.data.flag3 == 1)
         os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n";
     else os << "Heat flux value (thin shell bottom): N/A" << "\n";
-    
 }
 
 /*! \fn func
@@ -430,6 +429,34 @@ PetscErrorCode func(const vector<char> &bc_data,generic_cubit_bc_data *ptr_cubit
     PetscErrorCode ierr;
     
     ierr = ptr_cubit_bc_data->fill_data(bc_data); CHKERRQ(ierr);
+    
+    PetscFunctionReturn(0);
+}
+
+/*! \fn get_type_from_bc_data
+ *  \brief Function that returns the Cubit_BC_bitset type of the contents of bc_data
+ */
+PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,int &type)
+{
+    PetscFunctionBegin;
+    
+    //See Cubit_BC_bitset in common.hpp
+    
+    if (strcmp (&bc_data[0],"Displacement") == 0)
+        type = 4;
+    else if (strcmp (&bc_data[0],"Force") == 0)
+        type = 5;
+    else if (strcmp (&bc_data[0],"Velocity") == 0)
+        type = 7;
+    else if (strcmp (&bc_data[0],"Acceleration") == 0)
+        type = 8;
+    else if (strcmp (&bc_data[0],"Temperature") == 0)
+        type = 9;
+    else if (strcmp (&bc_data[0],"Pressure") == 0)
+        type = 6;
+    else if (strcmp (&bc_data[0],"HeatFlux") == 0)
+        type = 10;
+    else type = 0; //UnknownSet
     
     PetscFunctionReturn(0);
 }
@@ -574,8 +601,6 @@ int main(int argc, char *argv[]) {
                  
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
-
-                 
 
   cout << "<<<< BlockSets >>>>>" << endl;
   //BlockSets
