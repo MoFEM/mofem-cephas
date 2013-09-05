@@ -81,7 +81,7 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
     ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
     double area0 = norm_2(ent_normal_map0);
     double area = norm_2(ent_normal_map);
-    for(int gg = 0;gg<g_NTRI3.size()/3;gg++) {
+    for(unsigned int gg = 0;gg<g_NTRI3.size()/3;gg++) {
 	for(int nn = 0;nn<3;nn++) {
 	  for(int dd = 0;dd<3;dd++) {
 	    for(int nnn = 0;nnn<3;nnn++) {
