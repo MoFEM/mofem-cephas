@@ -35,3 +35,4 @@ cm_export_file("../meshes/heatflux01.cub" "/" export_atom_tests)
 
 cm_export_file("../meshes/comb01.cub" "/" export_atom_tests)
 
+cm_export_file("../meshes/bcoverlap01.cub" "/" export_atom_tests)
