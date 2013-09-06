@@ -221,7 +221,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode NeumannBC(Vec F_ext,ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
+    virtual PetscErrorCode NeumannBC(Vec F_ext,ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
       PetscFunctionBegin;
 
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -315,7 +315,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     }
 
-    PetscErrorCode NeumannBC() {
+    virtual PetscErrorCode NeumannBC() {
       PetscFunctionBegin;
       
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
@@ -334,7 +334,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode GetMatricesRows() {
+    virtual PetscErrorCode GetMatricesRows() {
       PetscFunctionBegin;
       //indicies ROWS
       row_mat = 0;
@@ -376,7 +376,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode GetMatricesCols() {
+    virtual PetscErrorCode GetMatricesCols() {
       PetscFunctionBegin;
       //indicies COLS
       col_mat = 0;
@@ -418,7 +418,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     }
    
 
-    PetscErrorCode GetMatrices() {
+    virtual PetscErrorCode GetMatrices() {
       PetscFunctionBegin;
       ierr = GetMatricesRows(); CHKERRQ(ierr);
       ierr = GetMatricesCols(); CHKERRQ(ierr);
@@ -426,7 +426,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     }
 
     ublas::matrix<ublas::matrix<FieldData> > K;
-    PetscErrorCode Stiffness() {
+    virtual PetscErrorCode Stiffness() {
       PetscFunctionBegin;
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
@@ -451,7 +451,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode Lhs() {
+    virtual PetscErrorCode Lhs() {
       PetscFunctionBegin;
       ierr = Stiffness(); CHKERRQ(ierr);
       for(int rr = 0;rr<row_mat;rr++) {
@@ -469,7 +469,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode Rhs() {
+    virtual PetscErrorCode Rhs() {
       PetscFunctionBegin;
       ublas::vector<FieldData> f[row_mat];
       int g_dim = g_NTET.size()/4;
@@ -488,7 +488,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     }
 
     vector<ublas::vector<FieldData> > f_int;
-    PetscErrorCode Fint() {
+    virtual PetscErrorCode Fint() {
       PetscFunctionBegin;
       //Gradient at Gauss points; 
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -525,7 +525,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode Fint(Vec F_int) {
+    virtual PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
       ierr = Fint(); CHKERRQ(ierr);
       for(int rr = 0;rr<row_mat;rr++) {
@@ -537,7 +537,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     }
 
 
-    PetscErrorCode RhsAndLhs() {
+    virtual PetscErrorCode RhsAndLhs() {
       PetscFunctionBegin;
 
       ierr = Rhs(); CHKERRQ(ierr);
@@ -572,6 +572,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
   };
 
+    
 }
 
 #endif //__ELASTICFEMETHOD_HPP__

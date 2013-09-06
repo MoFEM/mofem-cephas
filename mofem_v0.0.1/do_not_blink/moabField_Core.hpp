@@ -91,13 +91,19 @@ struct moabField_Core: public moabField {
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, Range &entities,const bool recursive = false);
   PetscErrorCode get_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset);
   PetscErrorCode get_CubitBCType_meshsets(const unsigned int CubitBCType,Range &meshsets);
-  moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_begin() { return cubit_meshsets.begin(); }
-  moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_end() { return cubit_meshsets.end(); }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_begin(const unsigned int CubitBCType) { 
+  moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() { return cubit_meshsets.begin(); }
+  moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() { return cubit_meshsets.end(); }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mi_tag>().lower_bound(CubitBCType); 
   }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_end(const unsigned int CubitBCType) { 
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mi_tag>().upper_bound(CubitBCType); 
+  }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) { 
+    return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(CubitBCType); 
+  }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) { 
+    return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(CubitBCType); 
   }
 
   //refine
@@ -140,8 +146,8 @@ struct moabField_Core: public moabField {
   PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
   PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
   PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
-  PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id);
-  PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name);
+  PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive = false);
+  PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name);
   PetscErrorCode add_ents_to_finite_element_by_MESHSETs(const EntityHandle meshset,const string& name);
   PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type);
@@ -176,7 +182,9 @@ struct moabField_Core: public moabField {
 
   //problem building
   PetscErrorCode partition_problem(const string &name,int verb = -1);
+  PetscErrorCode partition_problem_all_dofs_on_proc(const string &name,int proc,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
+  PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
 
@@ -234,7 +242,7 @@ struct moabField_Core: public moabField {
 
   //Templates
   template<typename Tag> 
-  PetscErrorCode partition_create_Mat(const string &name,Mat *Adj,Mat *Aij,const bool no_diagonals = true,int verb = -1) {
+  PetscErrorCode partition_create_Mat(const string &name,Mat *M,const MatType type,const bool no_diagonals = true,int verb = -1) {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -315,14 +323,15 @@ struct moabField_Core: public moabField {
     copy(j.begin(),j.end(),_j);
     PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
     PetscInt nb_col_dofs = p_miit->get_nb_dofs_col();
-    if(Adj!=NULL) {
-      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,_i,_j,PETSC_NULL,Adj); CHKERRQ(ierr);
-    }
-    if(Aij!=NULL) {
+    if(strcmp(type,MATMPIADJ)==0) { 
+      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
+    } else if(strcmp(type,MATMPIAIJ)==0) {
       PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
       if((unsigned int)nb_local_dofs_row!=i.size()-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
-      ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,_i,_j,PETSC_NULL,Aij); CHKERRQ(ierr);
+      ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
+    } else {
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);
   }

@@ -31,15 +31,23 @@ void TakeRe(__CLPK_doublecomplex *xA,double *reA) {
   } 
 }
 void PiolaKrihoff1_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xP_PullBack) {
-  __CLPK_doublecomplex tmp2 = {0,0};
-  cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xP,3,inv_xH,3,&tmp2,xP_PullBack,3);
+  if(ph_eq_vol == hooke) {
+    cblas_zcopy(9,xP,1,xP_PullBack,1);
+  } else {
+    __CLPK_doublecomplex tmp2 = {0,0};
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xP,3,inv_xH,3,&tmp2,xP_PullBack,3);
+  }
+  
 }
 void ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xStress,__CLPK_doublecomplex *xStress_PullBack) {
-  __CLPK_doublecomplex tmp2 = {0,0};
-  cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xStress,3,inv_xH,3,&tmp2,xStress_PullBack,3);
+  if(ph_eq_vol == hooke) {
+    cblas_zcopy(9,xStress,1,xStress_PullBack,1);
+  } else {
+    __CLPK_doublecomplex tmp2 = {0,0};
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,det_xH,xStress,3,inv_xH,3,&tmp2,xStress_PullBack,3);
+  }
 }
-//assert(info ==0); 
-//assert(det_xF.r >= 0); 
+
 #define COMP_STRESSES \
   SpatialGradientOfDeformation(xh,inv_xH,xF); \
   ierr = DeterminantComplexGradient(xF,&det_xF); CHKERRQ(ierr); \
@@ -731,6 +739,7 @@ PetscErrorCode Normal_hierarchical(int order,int *order_edge,
   double complex diffY_x,diffY_y,diffY_z;
   diffX_x = diffX_x_node;diffX_y = diffX_y_node;diffX_z = diffX_z_node;
   diffY_x = diffY_x_node;diffY_y = diffY_y_node;diffY_z = diffY_z_node;
+  if((dofs_x_face!=NULL)&&(idofs_x_face!=NULL)) {
   int nb_dofs_face = NBFACE_H1(order);
   if(nb_dofs_face>0) {
     if(dofs_x_face!=NULL) {
@@ -749,8 +758,9 @@ PetscErrorCode Normal_hierarchical(int order,int *order_edge,
       diffY_y += I*cblas_ddot(nb_dofs_face,&idofs_x_face[1],3,&diffN_face[gg*nb_dofs_face+1],2);
       diffY_z += I*cblas_ddot(nb_dofs_face,&idofs_x_face[2],3,&diffN_face[gg*nb_dofs_face+1],2); 
     }
-  }
+  }}
   ee = 0;
+  if((dofs_x_edge!=NULL)&&(idofs_x_edge!=NULL)) {
   for(;ee<3;ee++) {
     int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
     if(nb_dofs_edge>0) {
@@ -774,7 +784,7 @@ PetscErrorCode Normal_hierarchical(int order,int *order_edge,
 	diffY_z += I*cblas_ddot(nb_dofs_edge,&(idofs_x_edge[ee])[2],3,&(diffN_edge[ee])[gg*nb_dofs_edge+1],2); 
       }
     }
-  }
+  }}
   double complex normal[3];
   normal[0] = diffX_y*diffY_z - diffX_z*diffY_y;
   normal[1] = diffX_z*diffY_x - diffX_x*diffY_z;
@@ -1064,6 +1074,79 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
 	for(nn = 0;nn<nb_dofs_face;nn++) {
 	  for(dd = 0;dd<3;dd++) KExt_faceface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
 	}
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Fext_H(int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_X,double *idofs_X,
+  double *Fext,double *iFext,int g_dim,const double *g_w) {
+  PetscFunctionBegin;
+  int dd,nn,gg;
+  if(Fext!=NULL) bzero(Fext,9*sizeof(double));
+  if(iFext!=NULL) bzero(iFext,9*sizeof(double));
+  gg = 0;
+  for(;gg<g_dim;gg++) {
+    double traction[3] = {0,0,0};
+    ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+    if(traction[0]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    if(traction[1]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    __CLPK_doublecomplex xnormal[3];
+    ierr = Normal_hierarchical(
+      order,order_edge,diffN,diffN_face,diffN_edge,
+      dofs_X,NULL,NULL,idofs_X,NULL,NULL,
+      xnormal,gg); CHKERRQ(ierr);
+    double normal_real[3];
+    double normal_imag[3];
+    for(dd = 0;dd<3;dd++) {
+      normal_real[dd] = xnormal[dd].r;
+      normal_imag[dd] = xnormal[dd].i;
+    }
+    nn = 0;
+    for(;nn<3;nn++) {
+      if(Fext!=NULL) 
+	for(dd = 0;dd<3;dd++) Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd]*traction[2];
+      if(iFext!=NULL) 
+	for(dd = 0;dd<3;dd++) iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
+    }
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode KExt_HH(double eps,int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_X,double *KExt_HH,int g_dim,const double *g_w) {
+  PetscFunctionBegin;
+  int gg,dd,ii,nn;
+  bzero(KExt_HH,9*9*sizeof(double));
+  for(gg = 0;gg<g_dim;gg++) {
+    double traction[3] = {0,0,0};
+    ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
+    if(traction[0]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    if(traction[1]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    //
+    __CLPK_doublecomplex xnormal[3];
+    double idofs_X[9];
+    for(ii = 0;ii<9;ii++) {
+      bzero(idofs_X,9*sizeof(double));
+      idofs_X[ii] = eps;
+      ierr = Normal_hierarchical(
+	order,order_edge,diffN,diffN_face,diffN_edge,
+	dofs_X,NULL,NULL,
+	idofs_X,NULL,NULL,
+	xnormal,gg); CHKERRQ(ierr);
+      double normal_imag[3];
+      for(dd = 0;dd<3;dd++) {
+	normal_imag[dd] = xnormal[dd].i/eps;
+      }
+      nn = 0;
+      for(;nn<3;nn++) {
+	for(dd = 0;dd<3;dd++) KExt_HH[ii+9*3*nn+9*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
       }
     }
   }

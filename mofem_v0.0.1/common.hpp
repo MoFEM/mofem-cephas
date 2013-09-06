@@ -171,27 +171,6 @@ typedef bitset<6> BitRefEdges;
 typedef bitset<8/*max number of refinments*/> BitRefLevel;
 typedef bitset<16/*max number of fields*/> BitFieldId;
 
-/** 
- * \typedef Cubit_BC_bitset
- * bc & material meshsets
- *
- */
-typedef bitset<8> Cubit_BC_bitset;
-enum Cubit_BC {
-  UnknownSet = 0,
-  NodeSet = 1<<0,
-  SideSet = 1<<1,
-  BlockSet = 1<<2,
-  MaterialSet = 1<<3,
-  DisplacementSet = 1<<4,
-  ForceSet = 1<<5,
-  PressureSet = 1<<6,
-  VelocitySet = 1<<7,
-  AccelerationSet = 1<<8,
-  TemperatureSet = 1<<9,
-  HeatfluxSet = 1<<10,
-  LastSet
-};
 /// approximation space 
 enum FieldSpace { 
   NoField = 1, 	///< signel scalar or vector of scalars describe state
@@ -271,6 +250,8 @@ struct hashbit
 
 /// MultiIndex Tag for field id 
 struct CubitMeshSets_mi_tag {};
+struct CubitMeshSets_mask_meshset_mi_tag {};
+struct CubitMeshSets_bc_data_mi_tag {};
 struct BitFieldId_mi_tag {};
 struct Unique_mi_tag {};
 struct MoABEnt_mi_tag {};
@@ -317,9 +298,10 @@ struct SideNumber {
   int side_number;
   int sense;
   int offset;
+  int brother_side_number;
   inline EntityType get_ent_type() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
   SideNumber(EntityHandle _ent,int _side_number,int _sense,int _offset):
-    ent(_ent),side_number(_side_number),sense(_sense),offset(_offset) {};
+    ent(_ent),side_number(_side_number),sense(_sense),offset(_offset),brother_side_number(-1) {};
 };
 
 
@@ -350,73 +332,6 @@ typedef multi_index_container<
     ordered_non_unique<
       const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type> >
   > > SideNumber_multiIndex; 
-
-/** 
- * \brief this struct keeps basic methods for moab meshset about material and boundary conditions
- */
-struct CubitMeshSets {
-  EntityHandle meshset;
-  Cubit_BC_bitset CubitBCType;
-  vector<Tag> tag_handles;
-  int *msId;
-  char* tag_bc_data;
-  int tag_bc_size;
-  unsigned int *tag_block_header_data;
-  CubitMeshSets(Interface &moab,const EntityHandle _meshset);
-  inline int get_msId() const { return *msId; }
-  inline Cubit_BC_bitset get_CubitBCType() const { return CubitBCType; }
-  inline unsigned long int get_CubitBCType_ulong() const { return CubitBCType.to_ulong(); }
-  PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive = false) const;
-  PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
-    
-  /**
-   * \brief get bc_data vector from MoFEM database
-   * 
-   * \param b_data is the in/out vector were bc_data will be stored
-   */
-  PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
-    
-  /**
-   * \brief print bc_data int stream given by os
-   *
-   * f.e. it->print_Cubit_bc_data(cout), i.e. printing to standard output
-   * f.e. it->print_Cubit_bc_data(cerr), i.e. printing to standard error output
-   */
-  PetscErrorCode print_Cubit_bc_data(ostream& os) const;
-  
-  friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
-};
-
-/**
- * @relates multi_index_container
- * \brief moabCubitMeshSet_multiIndex
- *
- * \param    hashed_unique<
-      tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
- * \param    ordered_non_unique<
-      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
- * \param    hashed_unique<
-      tag<Composite_mi_tag>,       
-      composite_key<
-	CubitMeshSets, <br>
-	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
-	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
- *
- */
-typedef multi_index_container<
-  CubitMeshSets,
-  indexed_by<
-    hashed_unique<
-      tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
-    ordered_non_unique<
-      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
-    hashed_unique<
-      tag<Composite_mi_tag>,       
-      composite_key<
-	CubitMeshSets,
-	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
-	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
-  > > moabCubitMeshSet_multiIndex;
 
 /** 
  * \brief this struct keeps basic methods for moab entity
@@ -1240,6 +1155,61 @@ struct MoFEMProblem {
   BitRefLevel* tag_BitRefLevel;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_rows;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_cols;
+
+  /**
+    * use with loops to iterate row dofs 
+    *
+    * for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(MOFEMPROBLEM,IT)) {
+    *   ...
+    * }
+    *
+    */
+  #define _IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(MOFEMPROBLEM,IT) \
+    NumeredDofMoFEMEntity_multiIndex::iterator IT = MOFEMPROBLEM.get_numered_dofs_rows_begin(); \
+    IT!=MOFEMPROBLEM.get_numered_dofs_rows_end(); IT++
+
+  /**
+    * use with loops to iterate row dofs 
+    *
+    * for(_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(MOFEMPROBLEM,IT)) {
+    *   ...
+    * }
+    *
+    */
+  #define _IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(MOFEMPROBLEM,IT) \
+    NumeredDofMoFEMEntity_multiIndex::iterator IT = MOFEMPROBLEM.get_numered_dofs_cols_begin(); \
+    IT!=MOFEMPROBLEM.get_numered_dofs_cols_end(); IT++
+
+  /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_ for loops)
+  NumeredDofMoFEMEntity_multiIndex::iterator get_numered_dofs_rows_begin() const { return numered_dofs_rows.begin(); }
+
+  /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_ for loops)
+  NumeredDofMoFEMEntity_multiIndex::iterator get_numered_dofs_rows_end() const { return numered_dofs_rows.end(); }
+
+  /// get begin iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_ for loops)
+  NumeredDofMoFEMEntity_multiIndex::iterator get_numered_dofs_cols_begin() const { return numered_dofs_cols.begin(); }
+
+  /// get end iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_ for loops)
+  NumeredDofMoFEMEntity_multiIndex::iterator get_numered_dofs_cols_end() const { return numered_dofs_cols.end(); }
+
+  /**
+    * get iterator of dof in row by uid
+    */
+  #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_UID_FOR_LOOP_(MOFEMPROBLEM,UID,IT) \
+    NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator IT = MOFEMPROBLEM.get_row_dof_by_uid(UID);
+
+  /**
+    * get iterator of dof in col by uid
+    */
+  #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_UID_FOR_LOOP_(MOFEMPROBLEM,UID,IT) \
+    NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator IT = MOFEMPROBLEM.get_row_dof_by_uid(UID);
+
+  /// get iterator of dof in row by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_UID_FOR_LOOP_)
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_row_dof_by_uid(UId uid) const { return numered_dofs_rows.get<Unique_mi_tag>().find(uid); };
+
+  /// get iterator of dof in column by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_UID_FOR_LOOP_)
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_col_dof_by_uid(UId uid) const { return numered_dofs_cols.get<Unique_mi_tag>().find(uid); };
+
   MoFEMProblem(Interface &moab,const EntityHandle _meshset);
   inline BitProblemId get_id() const { return *((BitProblemId*)tag_id_data); }
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }
@@ -1325,12 +1295,6 @@ struct MoFEMAdjacencies {
   inline EntityHandle get_ent_entity_handle() const { return MoFEMEntity_ptr->get_ent(); };
   BitFieldId get_ent_id() const { return MoFEMEntity_ptr->get_id(); }
   BitFEId get_BitFEId() const { return EntMoFEMFiniteElement_ptr->get_id(); }
-  PetscErrorCode get_ent_adj_dofs_bridge(
-    const DofMoFEMEntity_multiIndex &dofs_moabfield,const by_what _by,
-    DofMoFEMEntity_multiIndex_uid_view &uids_view,const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_ent_adj_dofs_bridge(
-    const NumeredDofMoFEMEntity_multiIndex &dofs_moabproblem,const by_what _by,
-    NumeredDofMoFEMEntity_multiIndex_uid_view &uids_view,const int operation_type = Interface::UNION) const;
   friend ostream& operator<<(ostream& os,const MoFEMAdjacencies &e);
 };
 
@@ -1371,6 +1335,408 @@ typedef multi_index_container<
 	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_meshset>,
 	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle> > >
   > > MoFEMAdjacencies_multiIndex;
+
+//CUBIT BC DATA
+
+/** 
+ * \typedef Cubit_BC_bitset
+ * bc & material meshsets
+ *
+ */
+typedef bitset<16> Cubit_BC_bitset;
+enum Cubit_BC {
+  UnknownSet = 0,
+  NodeSet = 1<<0,
+  SideSet = 1<<1,
+  BlockSet = 1<<2,
+  MaterialSet = 1<<3,
+  DisplacementSet = 1<<4,
+  ForceSet = 1<<5,
+  PressureSet = 1<<6,
+  VelocitySet = 1<<7,
+  AccelerationSet = 1<<8,
+  TemperatureSet = 1<<9,
+  HeatfluxSet = 1<<10,
+  LastSet
+};
+
+/*! \struct generic_cubit_bc_data
+ *  \brief Generic bc data structure
+ */
+struct generic_cubit_bc_data {
+    PetscErrorCode ierr;
+    
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        PetscFunctionBegin;
+        SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic bc type");
+        PetscFunctionReturn(0);
+    }
+    
+};
+
+/*! \struct displacement_cubit_bc_data
+ *  \brief Definition of the displacement bc data structure
+ */
+struct displacement_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) _data_{
+    char name[12]; // 12 characters for "Displacement"
+    char pre1; // Always zero
+    char pre2; // pre-processing flags for modification of displacement bcs. They should not affect analysis, i.e. safe to ignore; 1: smallest combine, 2: average, 3: largest combine, 4: overwrite or no combination defined (default)
+    char flag1; // Flag for X-Translation (0: N/A, 1: specified)
+    char flag2; // Flag for Y-Translation (0: N/A, 1: specified)
+    char flag3; // Flag for Z-Translation (0: N/A, 1: specified)
+    char flag4; // Flag for X-Rotation (0: N/A, 1: specified)
+    char flag5; // Flag for Y-Rotation (0: N/A, 1: specified)
+    char flag6; // Flag for Z-Rotation (0: N/A, 1: specified)
+    double value1; // Value for X-Translation
+    double value2; // Value for Y-Translation
+    double value3; // Value for Z-Translation
+    double value4; // Value for X-Rotation
+    double value5; // Value for Y-Rotation
+    double value6; // Value for Z-Rotation
+    };
+    
+    _data_ data;
+
+    const Cubit_BC_bitset type;
+    displacement_cubit_bc_data(): type(DisplacementSet) {};
+    
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        PetscFunctionBegin;
+        //Fill data
+	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        memcpy(&data, &bc_data[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+ 
+    /*! \brief Print displacement bc data
+     */
+    friend ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e);
+    
+};
+
+/*! \struct force_cubit_bc_data
+ *  \brief Definition of the force bc data structure
+ */
+struct force_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) _data_{
+    char name[5]; // 5 characters for "Force"
+    char zero[3]; // 3 zeros
+    double value1; // Force magnitude
+    double value2; // Moment magnitude
+    double value3; // X-component of force direction vector
+    double value4; // Y-component of force direction vector
+    double value5; // Z-component of force direction vector
+    double value6; // X-component of moment direction vector
+    double value7; // Y-component of moment direction vector
+    double value8; // Z-component of moment direction vector
+    char zero2; // 0
+    };
+    
+    _data_ data;
+    const Cubit_BC_bitset type;
+    force_cubit_bc_data(): type(ForceSet) {};
+
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        PetscFunctionBegin;
+        //Fill data
+	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        memcpy(&data, &bc_data[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+ 
+    /*! \brief Print force bc data
+    */
+    friend ostream& operator<<(ostream& os,const force_cubit_bc_data& e);
+    
+};
+
+/*! \struct velocity_cubit_bc_data
+ *  \brief Definition of the velocity bc data structure
+ */
+struct velocity_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) _data_{
+    char name[8]; // 8 characters for "Velocity"
+    char pre1; // Always zero
+    char pre2; // pre-processing flags for modification of displacement bcs. They should not affect analysis, i.e. safe to ignore; 1: smallest combine, 2: average, 3: largest combine, 4: overwrite or no combination defined (default)
+    char flag1; // Flag for X-Translation (0: N/A, 1: specified)
+    char flag2; // Flag for Y-Translation (0: N/A, 1: specified)
+    char flag3; // Flag for Z-Translation (0: N/A, 1: specified)
+    char flag4; // Flag for X-Rotation (0: N/A, 1: specified)
+    char flag5; // Flag for Y-Rotation (0: N/A, 1: specified)
+    char flag6; // Flag for Z-Rotation (0: N/A, 1: specified)
+    double value1; // Value for X-Translation
+    double value2; // Value for Y-Translation
+    double value3; // Value for Z-Translation
+    double value4; // Value for X-Rotation
+    double value5; // Value for Y-Rotation
+    double value6; // Value for Z-Rotation
+    };
+    
+    _data_ data;
+    const Cubit_BC_bitset type;
+    velocity_cubit_bc_data(): type(VelocitySet) {};
+   
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        PetscFunctionBegin;
+        //Fill data
+	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        memcpy(&data, &bc_data[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+ 
+    /*! \brief Print velocity bc data
+    */
+    friend ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e);
+    
+};  
+
+/*! \struct acceleration_cubit_bc_data
+ *  \brief Definition of the acceleration bc data structure
+ */    
+struct acceleration_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) _data_{
+    char name[12]; // 12 characters for "Acceleration"
+    char pre1; // Always zero
+    char pre2; // pre-processing flags for modification of displacement bcs. They should not affect analysis, i.e. safe to ignore; 1: smallest combine, 2: average, 3: largest combine, 4: overwrite or no combination defined (default)
+    char flag1; // Flag for X-Translation (0: N/A, 1: specified)
+    char flag2; // Flag for Y-Translation (0: N/A, 1: specified)
+    char flag3; // Flag for Z-Translation (0: N/A, 1: specified)
+    char flag4; // Flag for X-Rotation (0: N/A, 1: specified)
+    char flag5; // Flag for Y-Rotation (0: N/A, 1: specified)
+    char flag6; // Flag for Z-Rotation (0: N/A, 1: specified)
+    double value1; // Value for X-Translation
+    double value2; // Value for Y-Translation
+    double value3; // Value for Z-Translation
+    double value4; // Value for X-Rotation
+    double value5; // Value for Y-Rotation
+    double value6; // Value for Z-Rotation
+    };
+    
+    _data_ data;
+    const Cubit_BC_bitset type;
+    acceleration_cubit_bc_data(): type(AccelerationSet) {};
+
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        PetscFunctionBegin;
+        //Fill data
+	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        memcpy(&data, &bc_data[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+    
+    /*! \brief Print acceleration bc data
+    */
+    friend ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e);
+    
+};
+
+/*! \struct temperature_cubit_bc_data
+ *  \brief Definition of the temperature bc data structure
+ */
+struct temperature_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) _data_{
+    char name[11]; // 11 characters for "Temperature"
+    char pre1; // This is always zero
+    char pre2; // 0: temperature is not applied on thin shells (default); 1: temperature is applied on thin shells
+    char flag1; // 0: N/A, 1: temperature value applied (not on thin shells)
+    char flag2; // 0: N/A, 1: temperature applied on thin shell middle
+    char flag3; // 0: N/A, 1: thin shell temperature gradient specified
+    char flag4; // 0: N/A, 1: top thin shell temperature
+    char flag5; // 0: N/A, 1: bottom thin shell temperature
+    char flag6; // This is always zero
+    double value1; // Temperature (default case - no thin shells)
+    double value2; // Temperature for middle of thin shells
+    double value3; // Temperature gradient for thin shells
+    double value4; // Temperature for top of thin shells
+    double value5; // Temperature for bottom of thin shells
+    double value6; // This is always zero, i.e. ignore
+    };
+    
+    _data_ data;
+    const Cubit_BC_bitset type;
+    temperature_cubit_bc_data(): type(TemperatureSet) {};
+
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        PetscFunctionBegin;
+        //Fill data
+	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        memcpy(&data, &bc_data[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+    
+    /*! \brief Print temperature bc data
+    */
+    friend ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e);
+};
+
+/*! \struct pressure_cubit_bc_data
+ *  \brief Definition of the pressure bc data structure
+ */
+struct pressure_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) _data_{
+    char name[8]; // 8 characters for "Pressure"
+    char flag1; // This is always zero
+    char flag2; // 0: Pressure is interpeted as pure pressure 1: pressure is interpreted as total force
+    double value1; // Pressure value
+    char zero; // This is always zero
+    };
+    
+    _data_ data;
+    const Cubit_BC_bitset type;
+    pressure_cubit_bc_data(): type(PressureSet) {};
+   
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        PetscFunctionBegin;
+        //Fill data
+	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        memcpy(&data, &bc_data[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+ 
+    /*! \brief Print pressure bc data
+    */
+    friend ostream& operator<<(ostream& os,const pressure_cubit_bc_data& e);
+    
+};
+
+/*! \struct heatflux_cubit_bc_data
+ *  \brief Definition of the heat flux bc data structure
+ */
+struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) _data_{
+    char name[8]; // 8 characters for "HeatFlux" (no space)
+    char pre1; // This is always zero
+    char pre2; // 0: heat flux is not applied on thin shells (default); 1: heat flux is applied on thin shells
+    char flag1; // 0: N/A, 1: normal heat flux case (i.e. single value, case without thin shells)
+    char flag2; // 0: N/A, 1: Thin shell top heat flux specified
+    char flag3; // 0: N/A, 1: Thin shell bottom heat flux specidied
+    double value1; // Heat flux value for default case (no thin shells)
+    double value2; // Heat flux (thin shell top)
+    double value3; // Heat flux (thin shell bottom)
+    };
+    
+    _data_ data;
+    const Cubit_BC_bitset type;
+    heatflux_cubit_bc_data(): type(HeatfluxSet) {};
+
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        PetscFunctionBegin;
+        //Fill data
+	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        memcpy(&data, &bc_data[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+ 
+    /*! \brief Print heat flux bc data
+    */
+    friend ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e);
+    
+};
+
+/** 
+ * \brief this struct keeps basic methods for moab meshset about material and boundary conditions
+ */
+struct CubitMeshSets {
+  EntityHandle meshset;
+  Cubit_BC_bitset CubitBCType;
+  vector<Tag> tag_handles;
+  int *msId;
+  char* tag_bc_data;
+  int tag_bc_size;
+  unsigned int *tag_block_header_data;
+  const Cubit_BC_bitset meshsets_mask;
+  CubitMeshSets(Interface &moab,const EntityHandle _meshset);
+  inline int get_msId() const { return *msId; }
+  inline Cubit_BC_bitset get_CubitBCType() const { return CubitBCType; }
+
+  inline unsigned long int get_CubitBCType_ulong() const { return CubitBCType.to_ulong(); }
+  inline unsigned long int get_CubitBCType_mask_meshset_types_ulong() const { return (CubitBCType&meshsets_mask).to_ulong(); }
+  inline unsigned long int get_CubitBCType_bc_data_types_ulong() const { return (CubitBCType&(~meshsets_mask)).to_ulong(); }
+
+  PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive = false) const;
+  PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
+
+  /** 
+   *  \brief Function that returns the Cubit_BC_bitset type of the contents of bc_data
+  */
+  PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const;
+
+  /** 
+   *  \brief Function that returns the Cubit_BC_bitset type of the contents of bc_data
+  */
+  PetscErrorCode get_type_from_bc_data(Cubit_BC_bitset &type) const;
+    
+  /**
+   * \brief get bc_data vector from MoFEM database
+   * 
+   * \param b_data is the in/out vector were bc_data will be stored
+   */
+  PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
+    
+  /**
+   * \brief print bc_data int stream given by os
+   *
+   * f.e. it->print_Cubit_bc_data(cout), i.e. printing to standard output
+   * f.e. it->print_Cubit_bc_data(cerr), i.e. printing to standard error output
+   */
+  PetscErrorCode print_Cubit_bc_data(ostream& os) const;
+
+  template<class _CUBIT_BC_DATA_TYPE_>
+  PetscErrorCode get_cubit_bc_data_structure(_CUBIT_BC_DATA_TYPE_& data) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    if((CubitBCType&data.type).none()) {
+      SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for _CUBIT_BC_DATA_TYPE_ structure");  
+    }
+    vector<char> bc_data;
+    get_Cubit_bc_data(bc_data);
+    ierr = data.fill_data(bc_data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
+};
+
+/**
+ * @relates multi_index_container
+ * \brief moabCubitMeshSet_multiIndex
+ *
+ * \param hashed_unique<
+      tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
+ * \param ordered_non_unique<
+      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
+ * \param ordered_non_unique<
+      tag<CubitMeshSets_mask_meshset_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_mask_meshset_types_ulong> >,
+ * \param ordered_non_unique<
+      tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_bc_data_types_ulong> >,
+ *
+ * \param    hashed_unique<
+      tag<Composite_mi_tag>,       
+      composite_key<
+	CubitMeshSets, <br>
+	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
+	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
+ *
+ */
+typedef multi_index_container<
+  CubitMeshSets,
+  indexed_by<
+    hashed_unique<
+      tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
+    ordered_non_unique<
+      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
+    ordered_non_unique<
+      tag<CubitMeshSets_mask_meshset_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_mask_meshset_types_ulong> >,
+    ordered_non_unique<
+      tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_bc_data_types_ulong> >,
+    hashed_unique<
+      tag<Composite_mi_tag>,       
+      composite_key<
+	CubitMeshSets,
+	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
+	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_mask_meshset_types_ulong> > >
+  > > moabCubitMeshSet_multiIndex;
 
 }
 

@@ -100,31 +100,66 @@ struct moabField {
     * \brief get begin iterator of cubit mehset 
     *
     */
-  virtual moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_begin() = 0;
+  virtual moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() = 0;
 
   /** 
     * \brief get end iterator of cubit mehset 
     *
     */
-  virtual moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_end() = 0;
+  virtual moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() = 0;
 
   /** 
-    * \brief get begin iterator of cubit mehset of given type
+    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    *
+    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet|DisplacementSet,it) {
+    * 	...
+    * }
     *
     * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
     */
-  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_begin(const unsigned int CubitBCType) = 0;
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) = 0;
 
   /** 
-    * \brief get end iterator of cubit mehset of given type
+    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    *
+    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet,it) {
+    * 	...
+    * }
     *
     * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
     */
-  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_end(const unsigned int CubitBCType) = 0;
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) = 0;
 
   #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-    moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitBCType_meshsets_begin(CUBITBCTYPE); \
-    IT!=MFIELD.get_CubitBCType_meshsets_end(CUBITBCTYPE); IT++
+    moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_begin(CUBITBCTYPE); \
+    IT!=MFIELD.get_CubitMeshSets_end(CUBITBCTYPE); IT++
+
+  /** 
+    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    *
+    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet|DisplacementSet,it) {
+    * 	...
+    * }
+    *
+    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+    */
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) = 0;
+
+  /** 
+    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    *
+    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet,it) {
+    * 	...
+    * }
+    *
+    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+    */
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) = 0;
+
+  #define _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
+    moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
+    IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
+
 
   /// seed ref level by 3D ents in the meshset and its adjacencies (only TETs adjencies)
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit) = 0;
@@ -242,7 +277,7 @@ struct moabField {
   virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
   /// add TET elements form meshset to finite element database given by name 
-  virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
 
   /// add TET elements from given refinment level to finite element database given by name 
   virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) = 0;
@@ -298,6 +333,17 @@ struct moabField {
     */
   virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1) = 0;
 
+  /**
+    * \brief build indexing and partition problem inhereting indexing and partitioning from other problem
+    *
+    * \param name problem name
+    * \param problem_for_rows problem used to index rows
+    * \param copy_rows just copy rows dofs
+    * \param problem_for_cols problem used to index cols
+    * \param copy_cols just copy cols dofs
+    *
+    */
+  virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1) = 0;
 
   /// determine ghost nodes
   virtual PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1) = 0;
@@ -527,7 +573,7 @@ struct moabField {
    *
    * For more details pleas look to examples.
    *
-   * \param problem_name \param fe_name \param method is class derived form
+   * \param problem_name fe_name \param method is class derived form
    * moabField::FEMethod
   **/ 
   virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
@@ -544,7 +590,7 @@ struct moabField {
    *
    * For more details pleas look to examples.
    *
-   * \param problem_name \param fe_name \param method is class derived form
+   * \param problem_name fe_name \param method is class derived form
    * moabField::FEMethod
   **/ 
   virtual PetscErrorCode loop_finite_elements(
