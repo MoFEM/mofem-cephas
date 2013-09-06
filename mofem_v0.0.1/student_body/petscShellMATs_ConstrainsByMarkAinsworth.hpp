@@ -37,8 +37,10 @@ struct matPROJ_ctx {
   Mat CT,CCT,CTC;
   Vec Cx,CCTm1_Cx,CT_CCTm1_Cx,CTCx;
   Vec Qx,KQx;
+  Mat CTC_Self;
   string x_problem,y_problem;
   bool initQorP,initQTKQ;
+  bool initQTKQ_Self;
   bool debug;
   PetscLogEvent USER_EVENT_projInit;
   PetscLogEvent USER_EVENT_projQ;
@@ -47,7 +49,7 @@ struct matPROJ_ctx {
   PetscLogEvent USER_EVENT_projCTC_QTKQ;
   matPROJ_ctx(moabField& _mField,string _x_problem,string _y_problem): 
     mField(_mField),x_problem(_x_problem),y_problem(_y_problem),
-    initQorP(true),initQTKQ(true),debug(true) {
+    initQorP(true),initQTKQ(true),initQTKQ_Self,debug(true) {
     PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
     PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
     PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
@@ -154,6 +156,25 @@ struct matPROJ_ctx {
     ierr = VecDestroy(&KQx); CHKERRQ(ierr);
     ierr = VecDestroy(&CTCx); CHKERRQ(ierr);
     initQTKQ = true;
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode InitQTKQ_Self() {
+    PetscFunctionBegin;
+    if(initQTKQ_Self) {
+      initQTKQ_Self = false;
+      PetscErrorCode ierr;
+      PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
+      ierr = InitQTKQ(); CHKERRQ(ierr);
+      //ierr = MatConvert(CTC,MATAIJ,MAT_INITIAL_MATRIX,CTC_Self); CHKERRQ(ierr);
+      PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
+    }
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode RecalulateCTC_Self() {
+    PetscFunctionBegin;
+    if(initQTKQ) PetscFunctionReturn(0);
+    PetscErrorCode ierr;
+    //ierr = MatConvert(CTC,MATAIJ,MAT_REUSE_MATRIX,CTC_Self); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);

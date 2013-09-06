@@ -29,8 +29,8 @@
 #include "moabSnes.hpp"
 #include "moabFEMethod_ComplexForLazy.hpp"
 #include "moabFEMethod_DriverComplexForLazy.hpp"
-#include "moabConstrainsByMarkAinsworth.hpp"
-#include "moabSurfaceConstrains.hpp"
+#include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
+#include "moabFEMethod_SurfaceConstrains.hpp"
 #include "ElasticFEMethod.hpp"
 
 #include "complex_for_lazy.h"
