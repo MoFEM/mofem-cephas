@@ -20,19 +20,15 @@ add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
-
 cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
-
 cm_export_file("../meshes/velocity01.cub" "/" export_atom_tests)
-
 cm_export_file("../meshes/accel01.cub" "/" export_atom_tests)
-
 cm_export_file("../meshes/temper01.cub" "/" export_atom_tests)
-
 cm_export_file("../meshes/pressure01.cub" "/" export_atom_tests)
-
 cm_export_file("../meshes/heatflux01.cub" "/" export_atom_tests)
-
 cm_export_file("../meshes/comb01.cub" "/" export_atom_tests)
-
 cm_export_file("../meshes/bcoverlap01.cub" "/" export_atom_tests)
+
+add_test(cubit_bc_test_disp01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
+add_test(cubit_bc_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
+

@@ -29,150 +29,6 @@ namespace MoFEM {
 const bool Idx_mi_tag::IamNotPartitioned = true;
 const bool Part_mi_tag::IamNotPartitioned = false;
 
-//moab base meshsets
-CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
-  meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),tag_block_header_data(NULL),
-  meshsets_mask(NodeSet|SideSet|BlockSet) {
-  ErrorCode rval;
-  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
-  rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,ssTag); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle((string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle((string(NEUMANN_SET_TAG_NAME)+"__BC_DATA").c_str(),ssTag_data); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME,bhTag); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("BLOCK_HEADER",bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
-  vector<Tag>::iterator tit = tag_handles.begin();
-  for(;tit!=tag_handles.end();tit++) {
-    if(
-      *tit == nsTag ||
-      *tit == ssTag ||
-      *tit == bhTag) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&msId); CHKERR(rval);CHKERR_THROW(rval);
-    }
-    if(
-      (*tit == nsTag_data)||
-      (*tit == ssTag_data)) {
-    }
-    if(*tit == nsTag) {
-      if(*msId != -1) {
-	CubitBCType = NodeSet;
-      }
-    }
-    if(*tit == ssTag) {
-      if(*msId != -1) {
-	CubitBCType = SideSet;
-      }
-    }
-    if(*tit == bhTag) {
-      if(*msId != -1) {
-	CubitBCType = BlockSet;
-      }
-    }
-    if(
-      (*tit == nsTag_data) ||
-      (*tit == ssTag_data)) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size); CHKERR(rval);CHKERR_THROW(rval);
-      PetscErrorCode ierr;
-      ierr = get_type_from_bc_data(CubitBCType); if(ierr>0) throw("unrecognised bc_data type");
-    }
-    if(*tit == bhTag_header) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR(rval);CHKERR_THROW(rval);
-      if(tag_block_header_data[9]>0) CubitBCType |= MaterialSet;
-    }
-  }
-}
-PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
-  PetscFunctionBegin;
-  ErrorCode rval;
-  rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive); CHKERR_PETSC(rval);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive)  const {
-  PetscFunctionBegin;
-  if((CubitBCType&Cubit_BC_bitset(BlockSet)).any()) {
-    if(tag_block_header_data!=NULL) {
-      return get_Cubit_msId_entities_by_dimension(moab,tag_block_header_data[11],entities,recursive);
-    } else {
-      SETERRQ(PETSC_COMM_SELF,1,"dimension unknown");
-    }
-  }
-  if((CubitBCType&Cubit_BC_bitset(NodeSet)).any()) {
-    return get_Cubit_msId_entities_by_dimension(moab,1,entities,recursive);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
-  PetscFunctionBegin;
-  bc_data.resize(tag_bc_size);
-  copy(&tag_bc_data[0],&tag_bc_data[tag_bc_size],bc_data.begin());
-  PetscFunctionReturn(0);
-}
-PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const {
-    PetscFunctionBegin;
-    
-    //See Cubit_BC_bitset in common.hpp
-    if(bc_data.size()==0) {
-      PetscFunctionReturn(0);
-    }
-    
-    if (strcmp (&bc_data[0],"Displacement") == 0)
-        type |= DisplacementSet;
-    else if (strcmp (&bc_data[0],"Force") == 0)
-        type |= ForceSet;
-    else if (strcmp (&bc_data[0],"Velocity") == 0)
-        type |= PressureSet;
-    else if (strcmp (&bc_data[0],"Acceleration") == 0)
-        type |= VelocitySet;
-    else if (strcmp (&bc_data[0],"Temperature") == 0)
-        type |= AccelerationSet;
-    else if (strcmp (&bc_data[0],"Pressure") == 0)
-        type |= TemperatureSet;
-    else if (strcmp (&bc_data[0],"HeatFlux") == 0)
-        type |= HeatfluxSet;
-    else SETERRQ(PETSC_COMM_SELF,1,"this bc_data is unknown");
-    
-    PetscFunctionReturn(0);
-}
-PetscErrorCode CubitMeshSets::get_type_from_bc_data(Cubit_BC_bitset &type) const {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  vector<char> bc_data;
-  ierr = get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
-  ierr = get_type_from_bc_data(bc_data,type); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode CubitMeshSets::print_Cubit_bc_data(ostream& os) const {
-  PetscFunctionBegin;
-  vector<char> bc_data;
-  get_Cubit_bc_data(bc_data);
-  os << "bc_data = ";
-  std::vector<char>::iterator vit = bc_data.begin();
-  for(;vit!=bc_data.end();vit++) {
-    os << std::hex << (int)((unsigned char)*vit) << " ";
-  }
-  os << ": ";
-  vit = bc_data.begin();
-  for(;vit!=bc_data.end();vit++) {
-    os << *vit;
-  }
-  os << std::endl;
-  PetscFunctionReturn(0);
-}
-ostream& operator<<(ostream& os,const CubitMeshSets& e) {
-  os << "meshset " << e.meshset << " type " << e.CubitBCType;
-  if(e.msId != NULL) os << " msId " << *(e.msId);
-  if(e.tag_block_header_data != NULL) {
-    os << " block header: ";
-    os << " blockID = " << e.tag_block_header_data[0];
-    os << " blockElemType = " << e.tag_block_header_data[1];
-    os << " blockMat = " << e.tag_block_header_data[9];
-    os << " blockAttributeOrder = " << e.tag_block_header_data[5];
-    os << " blockDimension = " << e.tag_block_header_data[11];
-  }
-  return os;
-}
-
 //basic moab ent
 BasicMoFEMEntity::BasicMoFEMEntity(const EntityHandle _ent): ent(_ent) {
   switch (get_ent_type()) {
@@ -874,6 +730,281 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
   EntityID id = (EntityType)(ent&MB_ID_MASK);
   if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,1,"incositencies with id_from_handle"); 
   PetscFunctionReturn(0);
+}
+
+//CUBIT BC Data
+
+//moab base meshsets
+CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
+  meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),tag_block_header_data(NULL),
+  meshsets_mask(NodeSet|SideSet|BlockSet) {
+  ErrorCode rval;
+  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
+  rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,ssTag); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_handle((string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_handle((string(NEUMANN_SET_TAG_NAME)+"__BC_DATA").c_str(),ssTag_data); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME,bhTag); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("BLOCK_HEADER",bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
+  vector<Tag>::iterator tit = tag_handles.begin();
+  for(;tit!=tag_handles.end();tit++) {
+    if(
+      *tit == nsTag ||
+      *tit == ssTag ||
+      *tit == bhTag) {
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&msId); CHKERR(rval);CHKERR_THROW(rval);
+    }
+    if(
+      (*tit == nsTag_data)||
+      (*tit == ssTag_data)) {
+    }
+    if(*tit == nsTag) {
+      if(*msId != -1) {
+	CubitBCType = NodeSet;
+      }
+    }
+    if(*tit == ssTag) {
+      if(*msId != -1) {
+	CubitBCType = SideSet;
+      }
+    }
+    if(*tit == bhTag) {
+      if(*msId != -1) {
+	CubitBCType = BlockSet;
+      }
+    }
+    if(
+      (*tit == nsTag_data) ||
+      (*tit == ssTag_data)) {
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size); CHKERR(rval);CHKERR_THROW(rval);
+      PetscErrorCode ierr;
+      ierr = get_type_from_bc_data(CubitBCType); if(ierr>0) throw("unrecognised bc_data type");
+    }
+    if(*tit == bhTag_header) {
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR(rval);CHKERR_THROW(rval);
+      if(tag_block_header_data[9]>0) CubitBCType |= MaterialSet;
+    }
+  }
+}
+PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
+  PetscFunctionBegin;
+  ErrorCode rval;
+  rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive)  const {
+  PetscFunctionBegin;
+  if((CubitBCType&Cubit_BC_bitset(BlockSet)).any()) {
+    if(tag_block_header_data!=NULL) {
+      return get_Cubit_msId_entities_by_dimension(moab,tag_block_header_data[11],entities,recursive);
+    } else {
+      SETERRQ(PETSC_COMM_SELF,1,"dimension unknown");
+    }
+  }
+  if((CubitBCType&Cubit_BC_bitset(NodeSet)).any()) {
+    return get_Cubit_msId_entities_by_dimension(moab,1,entities,recursive);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
+  PetscFunctionBegin;
+  bc_data.resize(tag_bc_size);
+  copy(&tag_bc_data[0],&tag_bc_data[tag_bc_size],bc_data.begin());
+  PetscFunctionReturn(0);
+}
+PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const {
+    PetscFunctionBegin;
+    
+    //See Cubit_BC_bitset in common.hpp
+    if(bc_data.size()==0) {
+      PetscFunctionReturn(0);
+    }
+    
+    if (strcmp (&bc_data[0],"Displacement") == 0)
+        type |= DisplacementSet;
+    else if (strcmp (&bc_data[0],"Force") == 0)
+        type |= ForceSet;
+    else if (strcmp (&bc_data[0],"Velocity") == 0)
+        type |= PressureSet;
+    else if (strcmp (&bc_data[0],"Acceleration") == 0)
+        type |= VelocitySet;
+    else if (strcmp (&bc_data[0],"Temperature") == 0)
+        type |= AccelerationSet;
+    else if (strcmp (&bc_data[0],"Pressure") == 0)
+        type |= TemperatureSet;
+    else if (strcmp (&bc_data[0],"HeatFlux") == 0)
+        type |= HeatfluxSet;
+    else SETERRQ(PETSC_COMM_SELF,1,"this bc_data is unknown");
+    
+    PetscFunctionReturn(0);
+}
+PetscErrorCode CubitMeshSets::get_type_from_bc_data(Cubit_BC_bitset &type) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  vector<char> bc_data;
+  ierr = get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
+  ierr = get_type_from_bc_data(bc_data,type); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode CubitMeshSets::print_Cubit_bc_data(ostream& os) const {
+  PetscFunctionBegin;
+  vector<char> bc_data;
+  get_Cubit_bc_data(bc_data);
+  os << "bc_data = ";
+  std::vector<char>::iterator vit = bc_data.begin();
+  for(;vit!=bc_data.end();vit++) {
+    os << std::hex << (int)((unsigned char)*vit) << " ";
+  }
+  os << ": ";
+  vit = bc_data.begin();
+  for(;vit!=bc_data.end();vit++) {
+    os << *vit;
+  }
+  os << std::endl;
+  PetscFunctionReturn(0);
+}
+ostream& operator<<(ostream& os,const CubitMeshSets& e) {
+  os << "meshset " << e.meshset << " type " << e.CubitBCType;
+  if(e.msId != NULL) os << " msId " << *(e.msId);
+  if(e.tag_block_header_data != NULL) {
+    os << " block header: ";
+    os << " blockID = " << e.tag_block_header_data[0];
+    os << " blockElemType = " << e.tag_block_header_data[1];
+    os << " blockMat = " << e.tag_block_header_data[9];
+    os << " blockAttributeOrder = " << e.tag_block_header_data[5];
+    os << " blockDimension = " << e.tag_block_header_data[11];
+  }
+  return os;
+}
+
+ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e) {
+    os << "\n";
+    os << "D i s p l a c e m e n t \n \n";
+    os << "Flag for X-Translation (0/1): " << (int)e.data.flag1 << "\n";
+    os << "Flag for Y-Translation (0/1): " << (int)e.data.flag2 << "\n";
+    os << "Flag for Z-Translation (0/1): " << (int)e.data.flag3 << "\n";
+    os << "Flag for X-Rotation (0/1): " << (int)e.data.flag4 << "\n";
+    os << "Flag for Y-Rotation (0/1): " << (int)e.data.flag5 << "\n";
+    os << "Flag for Z-Rotation (0/1): " << (int)e.data.flag6 << "\n \n";
+    
+    if (e.data.flag1 == 1)
+        os << "Displacement magnitude (X-Translation): " << e.data.value1 << "\n";
+    else os << "Displacement magnitude (X-Translation): N/A" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Displacement magnitude (Y-Translation): " << e.data.value2 << "\n";
+    else os << "Displacement magnitude (Y-Translation): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Displacement magnitude (Z-Translation): " << e.data.value3 << "\n";
+    else os << "Displacement magnitude (Z-Translation): N/A" << "\n";
+    if (e.data.flag4 == 1)
+        os << "Displacement magnitude (X-Rotation): " << e.data.value4 << "\n";
+    else os << "Displacement magnitude (X-Rotation): N/A" << "\n";
+    if (e.data.flag5 == 1)
+        os << "Displacement magnitude (Y-Rotation): " << e.data.value5 << "\n";
+    else os << "Displacement magnitude (Y-Rotation): N/A" << "\n";
+    if (e.data.flag6 == 1)
+        os << "Displacement magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
+    else os << "Displacement magnitude (Z-Rotation): N/A" << "\n \n";
+}
+
+ostream& operator<<(ostream& os,const force_cubit_bc_data& e) {
+    os << "\n";
+    os << "F o r c e \n \n";
+    os << "Force magnitude: " << e.data.value1 << "\n";
+    os << "Moment magnitude: " << e.data.value2 << "\n";
+    os << "Force direction vector (X-component): " << e.data.value3 << "\n";
+    os << "Force direction vector (Y-component): " << e.data.value4 << "\n";
+    os << "Force direction vector (Z-component): " << e.data.value5 << "\n";
+    os << "Moment direction vector (X-component): " << e.data.value6 << "\n";
+    os << "Moment direction vector (Y-component): " << e.data.value7 << "\n";
+    os << "Moment direction vector (Z-component): " << e.data.value8 << "\n \n";
+}
+
+ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e) {
+    os << "\n";
+    os << "V e l o c i t y \n \n";
+    if (e.data.flag1 == 1)
+        os << "Velocity magnitude (X-Translation): " << e.data.value1 << "\n";
+    else os << "Velocity magnitude (X-Translation): N/A" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Velocity magnitude (Y-Translation): " << e.data.value2 << "\n";
+    else os << "Velocity magnitude (Y-Translation): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Velocity magnitude (Z-Translation): " << e.data.value3 << "\n";
+    else os << "Velocity magnitude (Z-Translation): N/A" << "\n";
+    if (e.data.flag4 == 1)
+        os << "Velocity magnitude (X-Rotation): " << e.data.value4 << "\n";
+    else os << "Velocity magnitude (X-Rotation): N/A" << "\n";
+    if (e.data.flag5 == 1)
+        os << "Velocity magnitude (Y-Rotation): " << e.data.value5 << "\n";
+    else os << "Velocity magnitude (Y-Rotation): N/A" << "\n";
+    if (e.data.flag6 == 1)
+        os << "Velocity magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
+    else os << "Velocity magnitude (Z-Rotation): N/A" << "\n \n";
+}
+ 
+ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e) {
+    os << "\n";
+    os << "A c c e l e r a t i o n \n \n";
+    if (e.data.flag1 == 1)
+        os << "Acceleration magnitude (X-Translation): " << e.data.value1 << "\n";
+    else os << "Acceleration magnitude (X-Translation): N/A" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Acceleration magnitude (Y-Translation): " << e.data.value2 << "\n";
+    else os << "Acceleration magnitude (Y-Translation): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Acceleration magnitude (Z-Translation): " << e.data.value3 << "\n";
+    else os << "Acceleration magnitude (Z-Translation): N/A" << "\n";
+    if (e.data.flag4 == 1)
+        os << "Acceleration magnitude (X-Rotation): " << e.data.value4 << "\n";
+    else os << "Acceleration magnitude (X-Rotation): N/A" << "\n";
+    if (e.data.flag5 == 1)
+        os << "Acceleration magnitude (Y-Rotation): " << e.data.value5 << "\n";
+    else os << "Acceleration magnitude (Y-Rotation): N/A" << "\n";
+    if (e.data.flag6 == 1)
+        os << "Acceleration magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
+    else os << "Acceleration magnitude (Z-Rotation): N/A" << "\n \n";
+}
+
+ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e) {
+    os << "\n";
+    os << "T e m p e r a t u r e \n \n";
+    if (e.data.flag1 == 1)
+        os << "Temperature: " << e.data.value1 << "\n";
+    else os << "Temperature (default case): N/A" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Temperature (thin shell middle): " << e.data.value2 << "\n";
+    else os << "Temperature (thin shell middle): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Temperature (thin shell gradient): " << e.data.value3 << "\n";
+    else os << "Temperature (thin shell gradient): N/A" << "\n";
+    if (e.data.flag4 == 1)
+        os << "Temperature (thin shell top): " << e.data.value4 << "\n";
+    else os << "Temperature (thin shell top): N/A" << "\n";
+    if (e.data.flag5 == 1)
+        os << "Temperature (thin shell bottom): " << e.data.value5 << "\n \n";
+    else os << "Temperature (thin shell bottom): N/A" << "\n \n";
+}
+
+ostream& operator<<(ostream& os,const pressure_cubit_bc_data& e) {
+    os << "\n";
+    os << "P r e s s u r e \n \n";
+    os << "Pressure value: " << e.data.value1 << "\n \n";
+}
+
+ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
+    os << "\n";
+    os << "H e a t  F l u x \n \n";
+    if (e.data.flag1 == 1)
+        os << "Heat flux value: " << e.data.value1 << "\n";
+    else os << "Heat flux is applied on thin shells" << "\n";
+    if (e.data.flag2 == 1)
+        os << "Heat flux value (thin shell top): " << e.data.value2 << "\n";
+    else os << "Heat flux value (thin shell top): N/A" << "\n";
+    if (e.data.flag3 == 1)
+        os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n \n";
+    else os << "Heat flux value (thin shell bottom): N/A" << "\n \n";
 }
 
 }
