@@ -31,6 +31,6 @@ file(COPY
 add_test(SimpleInterfaceTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/interface
   -my_file PeelTest.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary)
 
-add_test(SimpleInterfaceTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/interface
+add_test(SimpleInterfaceTestHalfCrack ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/interface
   -my_file PeelTestHalfCrack.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary)
 

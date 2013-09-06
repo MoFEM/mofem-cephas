@@ -28,7 +28,7 @@ namespace MoFEM {
 
 /** \brief Core moabField class
  *
- * This clas is not used directly by the ueser
+ * This class is not used directly by the user
  */
 struct moabField_Core: public moabField {
   ErrorCode rval;
@@ -91,13 +91,19 @@ struct moabField_Core: public moabField {
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, Range &entities,const bool recursive = false);
   PetscErrorCode get_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset);
   PetscErrorCode get_CubitBCType_meshsets(const unsigned int CubitBCType,Range &meshsets);
-  moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_begin() { return cubit_meshsets.begin(); }
-  moabCubitMeshSet_multiIndex::iterator get_CubitBCType_meshsets_end() { return cubit_meshsets.end(); }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_begin(const unsigned int CubitBCType) { 
+  moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() { return cubit_meshsets.begin(); }
+  moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() { return cubit_meshsets.end(); }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mi_tag>().lower_bound(CubitBCType); 
   }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitBCType_meshsets_end(const unsigned int CubitBCType) { 
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mi_tag>().upper_bound(CubitBCType); 
+  }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) { 
+    return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(CubitBCType); 
+  }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) { 
+    return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(CubitBCType); 
   }
 
   //refine
@@ -174,7 +180,7 @@ struct moabField_Core: public moabField {
   //adjacencies
   PetscErrorCode list_adjacencies() const;
 
-  //problem buildig
+  //problem building
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem_all_dofs_on_proc(const string &name,int proc,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
