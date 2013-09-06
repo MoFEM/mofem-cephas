@@ -502,7 +502,7 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< NodeSets >>>>>" << endl;
   //NodeSets
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,NodeSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
@@ -570,7 +570,7 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< SideSets >>>>>" << endl;
   //SideSets
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
@@ -604,7 +604,7 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< BlockSets >>>>>" << endl;
   //BlockSets
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,BlockSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;

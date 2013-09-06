@@ -1947,7 +1947,6 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
     for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_((*p_miit_row),diit)) {
       bool success = problems.modify(problems.project<0>(p_miit),problem_row_change(diit->get_DofMoFEMEntity_ptr()));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-      UId uid = diit->get_unique_id();
       int part_number = diit->get_part();
       int petsc_global_dof = diit->get_petsc_gloabl_dof_idx();
       NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_row_by_uid.find(diit->get_unique_id());
@@ -1985,7 +1984,6 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
     for(_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_((*p_miit_col),diit)) {
       bool success = problems.modify(problems.project<0>(p_miit),problem_col_change(diit->get_DofMoFEMEntity_ptr()));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-      UId uid = diit->get_unique_id();
       int part_number = diit->get_part();
       int petsc_global_dof = diit->get_petsc_gloabl_dof_idx();
       NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_col_by_uid.find(diit->get_unique_id());

@@ -31,7 +31,8 @@ const bool Part_mi_tag::IamNotPartitioned = false;
 
 //moab base meshsets
 CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
-  meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),tag_block_header_data(NULL) {
+  meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),tag_block_header_data(NULL),
+  meshsets_mask(NodeSet|SideSet|BlockSet) {
   ErrorCode rval;
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR(rval);CHKERR_THROW(rval);
@@ -72,6 +73,8 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       (*tit == nsTag_data) ||
       (*tit == ssTag_data)) {
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size); CHKERR(rval);CHKERR_THROW(rval);
+      PetscErrorCode ierr;
+      ierr = get_type_from_bc_data(CubitBCType); if(ierr>0) throw("unrecognised bc_data type");
     }
     if(*tit == bhTag_header) {
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR(rval);CHKERR_THROW(rval);
@@ -103,6 +106,40 @@ PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
   PetscFunctionBegin;
   bc_data.resize(tag_bc_size);
   copy(&tag_bc_data[0],&tag_bc_data[tag_bc_size],bc_data.begin());
+  PetscFunctionReturn(0);
+}
+PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const {
+    PetscFunctionBegin;
+    
+    //See Cubit_BC_bitset in common.hpp
+    if(bc_data.empty()) {
+      type = 0;
+      PetscFunctionReturn(0);
+    }
+    
+    if (strcmp (&bc_data[0],"Displacement") == 0)
+        type |= DisplacementSet;
+    else if (strcmp (&bc_data[0],"Force") == 0)
+        type |= ForceSet;
+    else if (strcmp (&bc_data[0],"Velocity") == 0)
+        type |= PressureSet;
+    else if (strcmp (&bc_data[0],"Acceleration") == 0)
+        type |= VelocitySet;
+    else if (strcmp (&bc_data[0],"Temperature") == 0)
+        type |= AccelerationSet;
+    else if (strcmp (&bc_data[0],"Pressure") == 0)
+        type |= TemperatureSet;
+    else if (strcmp (&bc_data[0],"HeatFlux") == 0)
+        type |= HeatfluxSet;
+    else SETERRQ(PETSC_COMM_SELF,1,"this bc_data is unknown");
+    
+    PetscFunctionReturn(0);
+}
+PetscErrorCode CubitMeshSets::get_type_from_bc_data(Cubit_BC_bitset &type) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  vector<char> bc_data;
+  ierr = get_type_from_bc_data(bc_data,type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode CubitMeshSets::print_Cubit_bc_data(ostream& os) const {
