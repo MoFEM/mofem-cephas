@@ -176,7 +176,7 @@ typedef bitset<16/*max number of fields*/> BitFieldId;
  * bc & material meshsets
  *
  */
-typedef bitset<8> Cubit_BC_bitset;
+typedef bitset<16> Cubit_BC_bitset;
 enum Cubit_BC {
   UnknownSet = 0,
   NodeSet = 1<<0,

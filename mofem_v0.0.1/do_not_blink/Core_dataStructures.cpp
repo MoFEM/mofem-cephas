@@ -112,8 +112,7 @@ PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,
     PetscFunctionBegin;
     
     //See Cubit_BC_bitset in common.hpp
-    if(bc_data.empty()) {
-      type = 0;
+    if(bc_data.size()==0) {
       PetscFunctionReturn(0);
     }
     
@@ -139,6 +138,7 @@ PetscErrorCode CubitMeshSets::get_type_from_bc_data(Cubit_BC_bitset &type) const
   PetscFunctionBegin;
   PetscErrorCode ierr;
   vector<char> bc_data;
+  ierr = get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
   ierr = get_type_from_bc_data(bc_data,type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
