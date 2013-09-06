@@ -1,7 +1,0 @@
-#!python
-cubit.cmd('create Cylinder height 10 radius 2 ')
-cubit.cmd('volume 1  size auto factor 4')
-cubit.cmd('volume 1  size auto factor 4')
-cubit.cmd('mesh volume 1 ')
-cubit.cmd('create temperature  on surface 3  value -25')
-cubit.cmd('create temperature  on curve 1  top 10 bottom -20 ')

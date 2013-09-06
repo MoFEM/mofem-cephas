@@ -1,7 +1,11 @@
 #!python
 cubit.cmd('brick x 1 y 1 z 1')
 cubit.cmd('volume 1  size 1')
-cubit.cmd('volume 1  size 1')
-cubit.cmd('mesh volume 1 ')
-cubit.cmd('create temperature  on node 2  value -23.5')
+cubit.cmd('volume 1 scheme Tetmesh')
+cubit.cmd('mesh volume 1')
+cubit.cmd('create temperature  on node 3  value -25.5')
+cubit.cmd('create temperature  on node 5  top 10 bottom 20 ')
+cubit.cmd('create temperature  on node 4  middle 15 gradient 2 ')
+cubit.cmd('create temperature  on node 1  middle -10 ')
+cubit.cmd('create temperature  on node 6  gradient 1 ')
 

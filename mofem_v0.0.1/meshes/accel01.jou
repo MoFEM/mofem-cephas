@@ -1,9 +1,8 @@
 #!python
 cubit.cmd('brick x 1 y 1 z 1')
 cubit.cmd('volume 1  size 1')
-cubit.cmd('volume 1  size 1')
-cubit.cmd('mesh volume 1 ')
-cubit.cmd('create Acceleration  on node 2  dof 1 dof 3 dof 5 fix -123.456 ')
-cubit.cmd('modify acceleration 1 dof 3 fix 234.567 overwrite')
-cubit.cmd('modify acceleration 1 dof 5 fix -321 overwrite')
-
+cubit.cmd('volume 1 scheme Tetmesh')
+cubit.cmd('mesh volume 1')
+cubit.cmd('create Acceleration  on node 3  dof all fix 0.55 ')
+cubit.cmd('create Acceleration  on node 5  dof 1 dof 3 dof 5 fix -1.1 ')
+cubit.cmd('create Acceleration  on node 1  dof 2 fix 0.0 ')

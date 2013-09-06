@@ -1,7 +1,0 @@
-#!python
-cubit.cmd('create surface rectangle width 10 height 5 zplane ')
-cubit.cmd('surface 1  size auto factor 5')
-cubit.cmd('surface 1  size auto factor 5')
-cubit.cmd('mesh surface 1 ')
-cubit.cmd('create Velocity  on node 59  dof 1 fix -456.789 ')
-cubit.cmd('create Velocity  on curve 2  dof 2 fix 123.456 ')

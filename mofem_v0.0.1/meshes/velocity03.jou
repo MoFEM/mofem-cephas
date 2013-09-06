@@ -1,8 +1,0 @@
-#!python
-cubit.cmd('brick x 10 y 10 z 10')
-cubit.cmd('volume 1  size 1')
-cubit.cmd('volume 1  size 1')
-cubit.cmd('mesh volume 1 ')
-cubit.cmd('create Velocity  on curve 2  dof 2 fix -3.4567 ')
-cubit.cmd('create Velocity  on surface 6  dof 3 fix 5.67 ')
-cubit.cmd('create Velocity  on node 82  dof 1 dof 3 fix 7.89 ')

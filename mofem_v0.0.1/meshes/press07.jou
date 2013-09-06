@@ -1,6 +1,0 @@
-#!python
-cubit.cmd('create surface circle radius 5 zplane ')
-cubit.cmd('surface 1  size auto factor 4')
-cubit.cmd('surface 1  size auto factor 4')
-cubit.cmd('mesh surface 1 ')
-cubit.cmd('create pressure  on surface 1  magnitude -100.5 ')
