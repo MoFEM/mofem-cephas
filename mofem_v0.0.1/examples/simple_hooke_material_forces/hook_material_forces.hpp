@@ -177,6 +177,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
       ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
       ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
     }
 
     ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
@@ -190,11 +191,11 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
     ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
 
-    {
-      MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
+    //{
+      //MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
       //std::string wait;
       //std::cin >> wait;
-    }
+    //}
 
     ierr = VecZeroEntries(proj_all_ctx.g); CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*gFE_SURFACE);  CHKERRQ(ierr);
@@ -237,12 +238,12 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = CalculateMaterialFint(snes_f); CHKERRQ(ierr);
-	ierr = CaluclateMaterialFext(snes_f,t,SideSet2) ; CHKERRQ(ierr);
+	//ierr = CaluclateMaterialFext(snes_f,t,SideSet2) ; CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
 	ierr = CalculateMaterialTangent(proj_all_ctx.K); CHKERRQ(ierr);
-	ierr = CalculateMaterialTangentExt(*snes_B,t,SideSet2); CHKERRQ(ierr);
+	//ierr = CalculateMaterialTangentExt(*snes_B,t,SideSet2); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
