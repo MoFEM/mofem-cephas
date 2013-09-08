@@ -752,7 +752,7 @@ int main(int argc, char *argv[]) {
 
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
-    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc_wire.vtk","VTK",""); CHKERR_PETSC(rval);
+      rval = fe_post_proc_method_elastic.fe_post_proc_method_tran_iso.moab_post_proc.write_file(outName2,"VTK",""); CHKERR_PETSC(rval);
   }
 
   //detroy matrices
