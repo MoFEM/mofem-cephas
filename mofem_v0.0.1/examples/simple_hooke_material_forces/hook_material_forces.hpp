@@ -140,6 +140,9 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
   matPROJ_ctx& proj_all_ctx;
   Range& SideSet2;
   bool init;
+
+  double alpha;
+
   Material_ElasticFEMethod(
       Interface& _moab,moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,
       double _lambda,double _mu,Range &_SideSet2,int _verbose = 0): 
@@ -149,6 +152,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     //set_PhysicalEquationNumber(neohookean);
   }
 
+
   Range CornersEdges,CornersNodes,SurfacesFaces;
   C_SURFACE_FEMethod *CFE_SURFACE;
   g_SURFACE_FEMethod *gFE_SURFACE;
@@ -156,6 +160,12 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
   g_CORNER_FEMethod *gFE_CORNER;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+
+    PetscBool flg;
+    ierr = PetscOptionsGetReal("","-my_penalty",&alpha,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_penalty need to be given");
+    }
 
     if(init) {
       init = false;
@@ -302,7 +312,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatCopy(proj_all_ctx.K,*snes_B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-	ierr = MatAXPY(*snes_B,1.,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+	ierr = MatAXPY(*snes_B,alpha,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
