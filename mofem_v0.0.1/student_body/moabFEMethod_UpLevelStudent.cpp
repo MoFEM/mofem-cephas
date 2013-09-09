@@ -655,17 +655,17 @@ PetscErrorCode FEMethod_UpLevelStudent::MakeBMatrix3D(
     int m = diffMat.size1();
     int n = diffMat.size2();
     if(m != 9)  SETERRQ(PETSC_COMM_SELF,1,"wrong matrix size");
-    BMat.resize(6,n);
+    if((BMat.size1()!=6)||(BMat.size2()!=n)) BMat.resize(6,n);
     // page 30 CHAPTER 6. DISPLACEMENT METHODS, FEAP Version 7.3 Theory Manual Robert L. Taylor
     // dX/dx (0) dX/dy (1) dX/dz (2); dY/dx (3) dY/dy (4) dY/dz (5); dZ/dx (6) dZ/dy (7) dZ/dz (8)
-    ublas::matrix_row<ublas::matrix<FieldData> >(BMat,0) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,0); //dX/dx
-    ublas::matrix_row<ublas::matrix<FieldData> >(BMat,1) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,4); //dY/dy
-    ublas::matrix_row<ublas::matrix<FieldData> >(BMat,2) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,8); //dZ/dz
-    ublas::matrix_row<ublas::matrix<FieldData> >(BMat,3) = //dX/dy+dY/dx
+    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,0)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,0); //dX/dx
+    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,1)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,4); //dY/dy
+    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,2)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,8); //dZ/dz
+    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,3)) = //dX/dy+dY/dx
       ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,1)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,3);
-    ublas::matrix_row<ublas::matrix<FieldData> >(BMat,4) = //dY/dz+dZ/dy
+    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,4)) = //dY/dz+dZ/dy
       ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,5)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,7);
-    ublas::matrix_row<ublas::matrix<FieldData> >(BMat,5) = //dX/dz+dZ/dx
+    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,5)) = //dX/dz+dZ/dx
       ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,2)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,6);
   }
   PetscFunctionReturn(0);

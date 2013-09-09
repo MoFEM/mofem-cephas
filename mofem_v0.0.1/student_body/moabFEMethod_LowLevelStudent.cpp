@@ -1296,7 +1296,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       for(;gg<g_dim;gg++) {
 	if(diff_shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	ublas::matrix<FieldData> &mat = data[gg];
-	mat.resize(nb_rows,nb_dofs);
+	if((mat.size1()!=nb_rows)||(mat.size2()!=nb_dofs)) mat.resize(nb_rows,nb_dofs);
 	mat = ublas::zero_matrix<FieldData>(nb_rows,nb_dofs);
 	for(int rr = 0;rr<rank;rr++) {
 	  for(int dd = 0;dd<dim;dd++) {
