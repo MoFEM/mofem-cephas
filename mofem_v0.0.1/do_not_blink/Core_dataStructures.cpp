@@ -826,13 +826,13 @@ PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,
     else if (strcmp (&bc_data[0],"Force") == 0)
         type |= ForceSet;
     else if (strcmp (&bc_data[0],"Velocity") == 0)
-        type |= PressureSet;
-    else if (strcmp (&bc_data[0],"Acceleration") == 0)
         type |= VelocitySet;
-    else if (strcmp (&bc_data[0],"Temperature") == 0)
+    else if (strcmp (&bc_data[0],"Acceleration") == 0)
         type |= AccelerationSet;
-    else if (strcmp (&bc_data[0],"Pressure") == 0)
+    else if (strcmp (&bc_data[0],"Temperature") == 0)
         type |= TemperatureSet;
+    else if (strcmp (&bc_data[0],"Pressure") == 0)
+        type |= PressureSet;
     else if (strcmp (&bc_data[0],"HeatFlux") == 0)
         type |= HeatfluxSet;
     else SETERRQ(PETSC_COMM_SELF,1,"this bc_data is unknown");
