@@ -884,11 +884,11 @@ int main(int argc, char *argv[]) {
     ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
     ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-    //ierr = KSPSetUp(solver); CHKERRQ(ierr);
+    ierr = KSPSetUp(solver); CHKERRQ(ierr);
     
     Vec D;
     ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
-    //ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+    ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     
