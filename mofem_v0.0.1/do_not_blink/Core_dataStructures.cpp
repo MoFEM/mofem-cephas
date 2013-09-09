@@ -906,6 +906,7 @@ ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e) {
     if (e.data.flag6 == 1)
         os << "Displacement magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
     else os << "Displacement magnitude (Z-Rotation): N/A" << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const force_cubit_bc_data& e) {
@@ -942,6 +943,7 @@ ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e) {
     if (e.data.flag6 == 1)
         os << "Velocity magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
     else os << "Velocity magnitude (Z-Rotation): N/A" << "\n \n";
+    return os;
 }
  
 ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e) {
@@ -965,6 +967,7 @@ ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e) {
     if (e.data.flag6 == 1)
         os << "Acceleration magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
     else os << "Acceleration magnitude (Z-Rotation): N/A" << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e) {
@@ -985,12 +988,14 @@ ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e) {
     if (e.data.flag5 == 1)
         os << "Temperature (thin shell bottom): " << e.data.value5 << "\n \n";
     else os << "Temperature (thin shell bottom): N/A" << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const pressure_cubit_bc_data& e) {
     os << "\n";
     os << "P r e s s u r e \n \n";
     os << "Pressure value: " << e.data.value1 << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
@@ -1005,6 +1010,7 @@ ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
     if (e.data.flag3 == 1)
         os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n \n";
     else os << "Heat flux value (thin shell bottom): N/A" << "\n \n";
+    return os;   
 }
 
 }
