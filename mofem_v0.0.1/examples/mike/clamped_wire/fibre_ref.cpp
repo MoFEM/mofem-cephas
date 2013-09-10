@@ -137,6 +137,9 @@ struct RotationMatrixForTransverseIsotropy {
             AxAngle3=-AxAngle3;
         }else{}
         
+        //Cannot combine two or more rotation vectors into one, unless their rotational matrices are computed individually
+        //check this: http://www.euclideanspace.com/maths/geometry/rotations/axisAngle/
+        
         //Rotational Matrices
         ublas::matrix<double> RotationC; //Rotate about z-axis by 90 degrees
         RotationC = ublas::zero_matrix<FieldData>(3,3);
@@ -187,7 +190,7 @@ struct RotationMatrixForTransverseIsotropy {
         //Combine Rotational Matrices to rotate the stiffness matrix
         ublas::matrix<double> Rotational_Matrix1 = prod(RotationE,RotationC);
         Rotational_Matrix = ublas::zero_matrix<FieldData>(3,3);
-        Rotational_Matrix = prod(RotationD,Rotational_Matrix1);            
+        Rotational_Matrix = prod(RotationD,Rotational_Matrix1);  
         
         TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
         
@@ -478,7 +481,7 @@ int main(int argc, char *argv[]) {
     rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-    
+
     //We need that for code profiling
     PetscLogDouble t1,t2;
     PetscLogDouble v1,v2;
@@ -512,6 +515,8 @@ int main(int argc, char *argv[]) {
 //    EntityHandle meshset_NodeSet1; 
 //    ierr = mField.get_msId_meshset(1,NodeSet,meshset_NodeSet1); CHKERRQ(ierr);    
     
+
+    
     for (int ref_lev=0; ref_lev<mesh_refinement_level+1; ref_lev++ ) {
 
         general_level[ref_lev].set(ref_lev+1);
@@ -536,7 +541,7 @@ int main(int argc, char *argv[]) {
     }
     
     BitRefLevel problem_bit_level = general_level[mesh_refinement_level];
-        
+
     /***/
     //Define problem
     
@@ -570,7 +575,7 @@ int main(int argc, char *argv[]) {
     //Declare problem
     
     //add entitities (by tets) to the field
-    ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);    
     
     //add finite elements entities
     ierr = mField.add_ents_to_finite_element_by_TETs(meshset_BlockSet1,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
@@ -629,8 +634,8 @@ int main(int argc, char *argv[]) {
 
     
     //Assemble F and Aij
-    const double YoungModulusP = 135000;
-    const double PoissonRatioP = 0.77;
+    const double YoungModulusP = 700000;
+    const double PoissonRatioP = 0.2;
     const double YoungModulusZ = 135000;
     const double PoissonRatioPZ = 0.2;
     const double ShearModulusZP = 5000;

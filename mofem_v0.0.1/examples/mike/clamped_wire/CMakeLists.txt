@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(wire_clamped interface_fibre.cpp)
+add_executable(wire_clamped fibre.cpp)
 target_link_libraries(wire_clamped mofem_Field ${PROJECT_LIBS})
 
-add_executable(wire_clamped_ref interface_fibre_ref.cpp)
+add_executable(wire_clamped_ref fibre_ref.cpp)
 target_link_libraries(wire_clamped_ref mofem_Field ${PROJECT_LIBS})
 
 #cm_export_file("../../meshes/PeelTest.cub" "/" export_files_interface)
