@@ -633,8 +633,8 @@ PetscErrorCode moabField_Core::set_field_order(const EntityHandle meshset,const 
       assert(miit4!=ents_moabfield.end());
       typedef DofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type dof_set_type;
       dof_set_type& set_set = dofs_moabfield.get<Composite_mi_tag2>();
-      dof_set_type::iterator miit5 = set_set.lower_bound(boost::make_tuple(miit4->get_name(),miit4->get_ent()));
-      dof_set_type::iterator hi_miit6 = set_set.upper_bound(boost::make_tuple(miit4->get_name(),miit4->get_ent()));
+      dof_set_type::iterator miit5 = set_set.lower_bound(boost::make_tuple(miit4->get_name_ref(),miit4->get_ent()));
+      dof_set_type::iterator hi_miit6 = set_set.upper_bound(boost::make_tuple(miit4->get_name_ref(),miit4->get_ent()));
       for(;miit5!=hi_miit6;miit5++) {
 	if(miit5->get_dof_order()<=order) continue;
 	bool success = dofs_moabfield.modify(dofs_moabfield.project<0>(miit5),DofMoFEMEntity_active_change(false));
@@ -1392,8 +1392,8 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFiniteElement 
 	ss << "inconsitency in database" << " type " << moab.type_from_handle(*eit2) << " bits FE " << bit_ref_MoFEMFiniteElement << " bits ent " << bit_ref_ent;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      dof_set_type::iterator ents_miit2 = dof_set.lower_bound(boost::make_tuple(miit->get_name(),ref_ent_miit->get_ref_ent()));
-      dof_set_type::iterator ents_hi_miit2 = dof_set.upper_bound(boost::make_tuple(miit->get_name(),ref_ent_miit->get_ref_ent()));
+      dof_set_type::iterator ents_miit2 = dof_set.lower_bound(boost::make_tuple(miit->get_name_ref(),ref_ent_miit->get_ref_ent()));
+      dof_set_type::iterator ents_hi_miit2 = dof_set.upper_bound(boost::make_tuple(miit->get_name_ref(),ref_ent_miit->get_ref_ent()));
       for(int ss = 0;ss<Last;ss++) {
 	if( !(FEAdj_fields[ss].test(ii)) ) continue;
 	dof_set_type::iterator ents_miit3 = ents_miit2;
