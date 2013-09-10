@@ -3246,6 +3246,12 @@ PetscErrorCode moabField_Core::MatCreateMPIAIJWithArrays(const string &name,Mat 
   ierr = partition_create_Mat<Part_mi_tag>(name,Aij,MATMPIAIJ,false,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+PetscErrorCode moabField_Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  ierr = partition_create_Mat<Part_mi_tag>(name,Aij,MATAIJ,false,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 PetscErrorCode moabField_Core::set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
