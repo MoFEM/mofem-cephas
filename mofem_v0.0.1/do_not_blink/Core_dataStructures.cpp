@@ -920,6 +920,7 @@ ostream& operator<<(ostream& os,const force_cubit_bc_data& e) {
     os << "Moment direction vector (X-component): " << e.data.value6 << "\n";
     os << "Moment direction vector (Y-component): " << e.data.value7 << "\n";
     os << "Moment direction vector (Z-component): " << e.data.value8 << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e) {
