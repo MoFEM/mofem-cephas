@@ -658,7 +658,7 @@ PetscErrorCode FEMethod_UpLevelStudent::MakeBMatrix3D(
     if((BMat.size1()!=6)||(BMat.size2()!=n)) BMat.resize(6,n);
     // page 30 CHAPTER 6. DISPLACEMENT METHODS, FEAP Version 7.3 Theory Manual Robert L. Taylor
     // dX/dx (0) dX/dy (1) dX/dz (2); dY/dx (3) dY/dy (4) dY/dz (5); dZ/dx (6) dZ/dy (7) dZ/dz (8)
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,0)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,0); //dX/dx
+    /*ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,0)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,0); //dX/dx
     ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,1)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,4); //dY/dy
     ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,2)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,8); //dZ/dz
     ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,3)) = //dX/dy+dY/dx
@@ -666,7 +666,19 @@ PetscErrorCode FEMethod_UpLevelStudent::MakeBMatrix3D(
     ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,4)) = //dY/dz+dZ/dy
       ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,5)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,7);
     ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,5)) = //dX/dz+dZ/dx
-      ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,2)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,6);
+      ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,2)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,6);*/
+    cblas_dcopy(BMat.size2(),&diffMat.data()[0*diffMat.size2()],1,&BMat.data()[0*BMat.size2()],1);
+    cblas_dcopy(BMat.size2(),&diffMat.data()[4*diffMat.size2()],1,&BMat.data()[1*BMat.size2()],1);
+    cblas_dcopy(BMat.size2(),&diffMat.data()[8*diffMat.size2()],1,&BMat.data()[2*BMat.size2()],1);
+    //
+    cblas_dcopy(BMat.size2(),&diffMat.data()[1*diffMat.size2()],1,&BMat.data()[3*BMat.size2()],1);
+    cblas_daxpy(BMat.size2(),1.,&diffMat.data()[3*diffMat.size2()],1,&BMat.data()[3*BMat.size2()],1);
+    //
+    cblas_dcopy(BMat.size2(),&diffMat.data()[5*diffMat.size2()],1,&BMat.data()[4*BMat.size2()],1);
+    cblas_daxpy(BMat.size2(),1.,&diffMat.data()[7*diffMat.size2()],1,&BMat.data()[4*BMat.size2()],1);
+    //
+    cblas_dcopy(BMat.size2(),&diffMat.data()[2*diffMat.size2()],1,&BMat.data()[5*BMat.size2()],1);
+    cblas_daxpy(BMat.size2(),1.,&diffMat.data()[6*diffMat.size2()],1,&BMat.data()[5*BMat.size2()],1);
   }
   PetscFunctionReturn(0);
 }

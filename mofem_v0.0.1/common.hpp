@@ -157,6 +157,10 @@ using boost::multi_index_container;
 using namespace boost::multi_index;
 using namespace boost::multiprecision;
 
+
+//set that with care, it turns off check for ublas
+//#define BOOST_UBLAS_NDEBUG
+
 namespace MoFEM {
 
 const int max_ApproximationOrder = 5;
@@ -478,7 +482,7 @@ struct MoFEMField {
     */
   MoFEMField(Interface &moab,const EntityHandle _meshset);					
   inline EntityHandle get_meshset() const { return meshset; };
-  inline BitFieldId get_id() const { return *((BitFieldId*)tag_id_data); }; 			
+  inline const BitFieldId& get_id() const { return *((BitFieldId*)tag_id_data); }; 			
   inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); };	
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };	
   inline FieldSpace get_space() const { return *tag_space_data; };
@@ -496,7 +500,7 @@ struct interface_MoFEMField {
   const T *field_ptr;
   interface_MoFEMField(const T *_field_ptr): field_ptr(_field_ptr) {};
   inline EntityHandle get_meshset() const { return field_ptr->get_meshset(); };
-  inline BitFieldId get_id() const { return field_ptr->get_id(); };
+  inline const BitFieldId& get_id() const { return field_ptr->get_id(); };
   inline unsigned int get_bit_number() const { return field_ptr->get_bit_number(); }
   inline boost::string_ref get_name_ref() const { return field_ptr->get_name_ref(); };
   inline string get_name() const { return field_ptr->get_name(); };
@@ -530,7 +534,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   inline int get_order_nb_dofs_diff(int order) const { return forder(order)-forder(order-1); }
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return ref_mab_ent_ptr; }
-  UId get_unique_id() const { return uid; }
+  const UId& get_unique_id() const { return uid; }
   UId get_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<=32);
@@ -554,7 +558,7 @@ struct interface_MoFEMEntity: public interface_MoFEMField<T>,interface_RefMoFEME
   inline int get_order_nb_dofs(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs(order); }
   inline int get_order_nb_dofs_diff(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs_diff(order); }
   inline ApproximationOrder get_max_order() const { return interface_MoFEMField<T>::field_ptr->get_max_order(); }
-  inline UId get_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_unique_id(); }
+  inline const UId& get_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_unique_id(); }
   inline const MoFEMEntity* get_MoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_MoFEMEntity_ptr(); };
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_RefMoFEMEntity_ptr(); }
 };
@@ -692,7 +696,7 @@ struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDof
  * \brief MoFEMField_multiIndex for MoFEMField
  *
  * \param hashed_unique<
- *     tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,BitFieldId,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
+ *     tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
  * \param   ordered_unique<
  *     tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshset> >,
  * \param hashed_unique<
@@ -704,7 +708,7 @@ typedef multi_index_container<
   MoFEMField,
   indexed_by<
     hashed_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,BitFieldId,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
     ordered_unique<
       tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshset> >,
     ordered_unique<
@@ -717,7 +721,7 @@ typedef multi_index_container<
   const MoFEMField*,
   indexed_by<
     ordered_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,BitFieldId,&MoFEMField::get_id>, ltbit<BitFieldId> >
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, ltbit<BitFieldId> >
    > > MoFEMField_multiIndex_view;
 
 /** 
@@ -727,7 +731,7 @@ typedef multi_index_container<
  * \param ordered_unique<
  *    tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
  * \param ordered_non_unique<
- *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,BitFieldId,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
+ *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
  * \param ordered_non_unique<
  *    tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
  * \param hashed_non_unique<
@@ -739,7 +743,7 @@ typedef multi_index_container<
     ordered_unique<
       tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,BitFieldId,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
     hashed_non_unique<
@@ -756,7 +760,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,BitFieldId,&DofMoFEMEntity::get_id>, ltbit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&DofMoFEMEntity::get_id>, ltbit<BitFieldId> >,
     ordered_non_unique<
       tag<Composite_mi_tag>, 
       composite_key<
