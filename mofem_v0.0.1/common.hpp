@@ -989,6 +989,7 @@ struct MoFEMFiniteElement {
   /// get meshset
   inline EntityHandle get_meshset() const { return meshset; }
   /// get FE name
+  inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }
   /// get BitFieldId col
   inline BitFieldId get_BitFieldId_col() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
@@ -1008,6 +1009,7 @@ struct interface_MoFEMFiniteElement {
   interface_MoFEMFiniteElement(const T *_ptr): fe_ptr(_ptr) {};
   inline BitFEId get_id() const { return fe_ptr->get_id(); }
   inline EntityHandle get_meshset() const { return fe_ptr->get_meshset(); }
+  inline boost::string_ref get_name_ref() const { return fe_ptr->get_name_ref(); }
   inline string get_name() const { return fe_ptr->get_name(); }
   inline BitFieldId get_BitFieldId_col() const { return fe_ptr->get_BitFieldId_col(); }
   inline BitFieldId get_BitFieldId_row() const { return fe_ptr->get_BitFieldId_row(); }
@@ -1105,7 +1107,7 @@ struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteEleme
  * \param    ordered_non_unique<
       tag<MoABEnt_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
  * \param    ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&EntMoFEMFiniteElement::get_name> >,
+      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
  * \param    ordered_non_unique<
       tag<BitFEId_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, ltbit<BitFEId> >,
  * \param    ordered_non_unique<
@@ -1115,7 +1117,7 @@ struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteEleme
       composite_key<
 	EntMoFEMFiniteElement, <br>
 	const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent>,
-	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&EntMoFEMFiniteElement::get_name> > >
+	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> > >
  */
 typedef multi_index_container<
   EntMoFEMFiniteElement,
@@ -1129,7 +1131,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
     ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&EntMoFEMFiniteElement::get_name> >,
+      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
     ordered_non_unique<
       tag<BitFEId_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, ltbit<BitFEId> >,
     ordered_non_unique<
@@ -1139,7 +1141,7 @@ typedef multi_index_container<
       composite_key<
 	EntMoFEMFiniteElement,
 	const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent>,
-	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&EntMoFEMFiniteElement::get_name> > >
+	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> > >
   > > EntMoFEMFiniteElement_multiIndex;
 
 /// \brief keeps data about problem
@@ -1236,8 +1238,8 @@ typedef multi_index_container<
       tag<MoFEMFiniteElement_Meshset_mi_tag>, member<MoFEMFiniteElement,EntityHandle,&MoFEMFiniteElement::meshset> >,
     hashed_unique<
       tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFiniteElement,BitFEId,&MoFEMFiniteElement::get_id>, hashbit<BitFEId>, eqbit<BitFEId> >,
-    hashed_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,string,&MoFEMFiniteElement::get_name> >
+    ordered_unique<
+      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,boost::string_ref,&MoFEMFiniteElement::get_name_ref> >
   > > MoFEMFiniteElement_multiIndex;
 
 

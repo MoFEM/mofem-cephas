@@ -603,7 +603,7 @@ MoFEMFiniteElement::MoFEMFiniteElement(Interface &moab,const EntityHandle _meshs
   rval = moab.tag_get_handle(Tag_DofUidData_name.c_str(),th_DofUidData); CHKERR(rval);
 }
 ostream& operator<<(ostream& os,const MoFEMFiniteElement& e) {
-    os << "id " << e.get_id() << " name " << e.get_name() << " f_id_row " << e.get_BitFieldId_row() 
+    os << "id " << e.get_id() << " name " << e.get_name_ref() << " f_id_row " << e.get_BitFieldId_row() 
     << " f_id_col " << e.get_BitFieldId_col() << " BitFEId_data " << e.get_BitFieldId_data();
     return os;
 }
