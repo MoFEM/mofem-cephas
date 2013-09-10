@@ -327,7 +327,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
   }
 }
 ostream& operator<<(ostream& os,const MoFEMField& e) {
-  os << "name "<<e.get_name()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number() 
+  os << "name "<<e.get_name_ref()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number() 
     << " space " << e.get_space() << " rank " << e.get_max_rank() << " meshset " << e.meshset;
   return os;
 }
