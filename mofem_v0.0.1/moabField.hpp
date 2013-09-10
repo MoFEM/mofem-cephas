@@ -375,6 +375,13 @@ struct moabField {
   virtual PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1) = 0;
 
   /**
+    * \brief create Mat (AIJ) for problem
+    *
+    * \param name of the problem
+    */
+  virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb = -1) = 0;
+
+  /**
     * \brief create scatter for vectors form one to another problem
     *
     * \param xin vector
