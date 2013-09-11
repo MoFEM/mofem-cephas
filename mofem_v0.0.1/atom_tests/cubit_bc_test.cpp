@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
-  //Reade parameters from line command
+  //Read parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
@@ -60,34 +60,119 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   moabField_Core core(moab);
   moabField& mField = core;
+    
+    //Open mesh_file_name.txt for writing
+    ofstream myfile;
+    myfile.open ((string(mesh_file_name)+".txt").c_str());
 
   cout << "<<<< NodeSets >>>>>" << endl;
   //NodeSets
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,NodeSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
-  } 
+    if(bc_data.empty()) continue;
+      
+      //Displacement
+      if (strcmp (&bc_data[0],"Displacement") == 0)
+      {
+          displacement_cubit_bc_data mydata;
+	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          //Print data
+          cout << mydata;
+          myfile << mydata;
+      }
+      
+      //Force
+      else if (strcmp (&bc_data[0],"Force") == 0)
+      {
+          force_cubit_bc_data mydata;
+	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          //Print data
+          cout << mydata;
+          myfile << mydata;
+      }
+      
+      //Velocity
+      else if (strcmp (&bc_data[0],"Velocity") == 0)
+      {
+          velocity_cubit_bc_data mydata;
+	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          //Print data
+          cout << mydata;
+          myfile << mydata;
+      }
+      
+      //Acceleration
+      else if (strcmp (&bc_data[0],"Acceleration") == 0)
+      {
+          acceleration_cubit_bc_data mydata;
+	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          //Print data
+          cout << mydata;
+          myfile << mydata;
+      }
+      
+      //Temperature
+      else if (strcmp (&bc_data[0],"Temperature") == 0)
+      {
+          temperature_cubit_bc_data mydata;
+	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          //Print data
+          cout << mydata;
+          myfile << mydata;
+      }
+      
+      else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
+      
+  }
 
   cout << "<<<< SideSets >>>>>" << endl;
   //SideSets
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
-  } 
+    if(bc_data.empty()) continue;
+      
+      //Pressure
+      if (strcmp (&bc_data[0],"Pressure") == 0)
+      {
+          pressure_cubit_bc_data mydata;
+	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          //Print data
+          cout << mydata;
+          myfile << mydata;
+      }
+
+      //Heat Flux
+      else if (strcmp (&bc_data[0],"HeatFlux") == 0)
+      {
+          heatflux_cubit_bc_data mydata;
+	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          //Print data
+          cout << mydata;
+          myfile << mydata;
+
+      }
+                 
+      else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
+  }
 
   cout << "<<<< BlockSets >>>>>" << endl;
   //BlockSets
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,BlockSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
+    if(bc_data.empty()) continue;
   } 
 
+    //Close mesh_file_name.txt
+    myfile.close();
 
   PetscFinalize();
 

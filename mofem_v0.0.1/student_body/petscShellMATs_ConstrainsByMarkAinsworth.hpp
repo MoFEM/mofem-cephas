@@ -31,7 +31,7 @@ namespace MoFEM {
   */
 struct matPROJ_ctx {
   moabField& mField;
-  KSP ksp;
+  KSP ksp,ksp_self;
   Vec _x_;
   VecScatter scatter;
   Mat CT,CCT,CTC;
@@ -73,6 +73,7 @@ struct matPROJ_ctx {
       ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
       ierr = KSPSetUp(ksp); CHKERRQ(ierr);
+      ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
       ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
       ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
       ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
@@ -90,11 +91,13 @@ struct matPROJ_ctx {
     ierr = MatDestroy(&CCT); CHKERRQ(ierr);
     ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
     ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
-    ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
-    ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr); // neet to be recalculated when C is changed
-    ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-    ierr = KSPSetUp(ksp); CHKERRQ(ierr);
+    //ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
+    //ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr); // neet to be recalculated when C is changed
+    //ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+    //ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+    //ierr = KSPMonitorSet(ksp,PETSC_NULL,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    //ierr = KSPSetUp(ksp); CHKERRQ(ierr);
+    //ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
     //ierr = MatTranspose(C,MAT_REUSE_MATRIX,&CT); CHKERRQ(ierr);
     //ierr = MatTransposeMatMult(CT,CT,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -140,8 +143,6 @@ struct matPROJ_ctx {
     PetscFunctionBegin;
     if(initQTKQ) PetscFunctionReturn(0);
     PetscErrorCode ierr;
-    //ierr = MatDestroy(&CCT); CHKERRQ(ierr);
-    //ierr = MatTransposeMatMult(C,C,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr);
     ierr = MatTransposeMatMult(C,C,MAT_REUSE_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -156,10 +157,12 @@ struct matPROJ_ctx {
     initQTKQ = true;
     PetscFunctionReturn(0);
   }
+
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
   friend PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f);
   friend PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f);
   friend PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f);
+
 };
 
 PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f) {

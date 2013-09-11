@@ -353,8 +353,7 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
         
         double def_VAL2[3] = {0,0,0};
         rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
-        double def_VAL3=0.0;
-        rval = moab_post_proc.tag_get_handle("SURFACE_DISTANCE",1,MB_TYPE_DOUBLE,th_dist_from_surface,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL3,1); CHKERR_THROW(rval);
+        rval = moab.tag_get_handle("SURFACE_DISTANCE",1,MB_TYPE_DOUBLE,th_dist_from_surface); CHKERR_THROW(rval);
         
     }
     
@@ -363,6 +362,16 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
         
         ierr = do_operator(); CHKERRQ(ierr);
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+        
+        ///Getting distance of nodes of tethra from the nearest tri fibre surface
+        EntityHandle fe_ent = fe_ptr->get_ent();
+        Range tetNodes;
+        int num_nodes;
+        rval = moab.get_connectivity(&fe_ent,num_nodes,tetNodes);
+        assert(num_nodes==4);
+        double distance[num_nodes];
+        rval = moab.tag_get_data(th_dist_from_surface,tetNodes,&distance); CHKERR_PETSC(rval); 
+        cout<<distance[0]<<"  "<<distance[1]<<"  "<<distance[2]<<"  "<<distance[3]<<endl;
         
         int gg=0;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -431,17 +440,8 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
             rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);  
             
             ///Get Gradients for fibre_direction
-            
-//            EntityType type=moab_post_proc.type_from_handle(mit->second);
-//            if(type == MBVERTEX){cout<<"MBVERTEX"<<endl;}
-//            if(type == MBEDGE){cout<<"MBEDGE"<<endl;}
-//            if(type == MBTRI){cout<<"MBTRI"<<endl;}
-//            if(type == MBTET){cout<<"MBTET"<<endl;}
 
-            double distance[4];
-            EntityHandle fe_ent = fe_ptr->get_ent();
-            rval = moab_post_proc.tag_get_data(th_dist_from_surface,&fe_ent,4,distance); CHKERR_PETSC(rval); 
-            cout<<distance[0]<<"  "<<distance[1]<<"  "<<distance[2]<<"  "<<distance[3]<<endl;
+
             
 //            double diffN[12];
 //            ShapeDiffMBTET(diffN);
@@ -620,6 +620,7 @@ int main(int argc, char *argv[]) {
     
     //Fields
     ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+    ierr = mField.add_field("SURFACE_DISTANCE",H1,1); CHKERRQ(ierr);
     
     //FE
     ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -634,6 +635,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_row("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","SURFACE_DISTANCE"); CHKERRQ(ierr);
     //FE Interface
     ierr = mField.modify_finite_element_add_field_row("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);

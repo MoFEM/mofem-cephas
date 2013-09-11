@@ -113,12 +113,12 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   FEMethod_ComplexForLazy(_moab,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
 
   vector<DofIdx> DirihletBC;
-  PetscErrorCode SetDirihletBC_to_ElementIndicies() {
+  virtual PetscErrorCode SetDirihletBC_to_ElementIndicies() {
     PetscFunctionBegin;
     ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,spatial_field_name,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace() {
+  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesFace() {
     PetscFunctionBegin;
     ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices,FaceEdgeIndices_data,FaceIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -151,7 +151,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   vector<FieldData> DirihletBCDiagVal;
   
-  PetscErrorCode CalculateSpatialFint(Vec f) {
+  virtual PetscErrorCode CalculateSpatialFint(Vec f) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
@@ -183,7 +183,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalculateSpatialTangent(Mat B) {
+  virtual PetscErrorCode CalculateSpatialTangent(Mat B) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
@@ -277,7 +277,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   }
 
-  PetscErrorCode CaluclateSpatialFext(Vec f,double *t,Range& NeumannSideSet) {
+  virtual PetscErrorCode CaluclateSpatialFext(Vec f,double *t,Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -315,7 +315,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalculateSpatialTangentExt(Mat B,double *t,Range& NeumannSideSet) {
+  virtual PetscErrorCode CalculateSpatialTangentExt(Mat B,double *t,Range& NeumannSideSet) {
     PetscFunctionBegin;
     if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
   
@@ -378,7 +378,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode operator()(Range& NeumannSideSet) {
+  virtual PetscErrorCode operator()(Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
@@ -451,7 +451,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalculateMaterialTangent(Mat B) {
+  virtual PetscErrorCode CalculateMaterialTangent(Mat B) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
@@ -471,7 +471,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
   }
 
 
-  PetscErrorCode CalculateMaterialFint(Vec f) {
+  virtual PetscErrorCode CalculateMaterialFint(Vec f) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
@@ -490,7 +490,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CaluclateMaterialFext(Vec f,double *t,Range& NeumannSideSet) {
+  virtual PetscErrorCode CaluclateMaterialFext(Vec f,double *t,Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -518,7 +518,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalculateMaterialTangentExt(Mat B,double *t,Range& NeumannSideSet) {
+  virtual PetscErrorCode CalculateMaterialTangentExt(Mat B,double *t,Range& NeumannSideSet) {
     PetscFunctionBegin;
     if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
   
