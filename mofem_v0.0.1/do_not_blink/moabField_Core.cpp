@@ -3978,6 +3978,12 @@ PetscErrorCode moabField_Core::get_dofs_moabfield(const DofMoFEMEntity_multiInde
   *dofs_moabfield_ptr = &dofs_moabfield;
   PetscFunctionReturn(0);
 }
+DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator moabField_Core::get_dofs_moabfield_by_name_begin(const string &field_name) {
+  return dofs_moabfield.get<FieldName_mi_tag>().lower_bound(field_name);
+}
+DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator moabField_Core::get_dofs_moabfield_by_name_end(const string &field_name) {
+  return dofs_moabfield.get<FieldName_mi_tag>().upper_bound(field_name);
+}
 PetscErrorCode moabField_Core::get_finite_elements(const MoFEMFiniteElement_multiIndex **finite_elements_ptr) {
   PetscFunctionBegin;
   *finite_elements_ptr = &finite_elements;

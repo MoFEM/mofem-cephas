@@ -79,10 +79,13 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,BaseDirihletBC
   ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
   g_TRI_dim = 13;
   g_TRI_W = G_TRI_W13;
+  //
 }
 PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
   PetscFunctionBegin;
   ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal("","-my_alpha2",&alpha2,&flg_gamma); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal("","-my_gamma",&alpha2,&flg_gamma); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetIndices(
@@ -407,33 +410,43 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	  Fint_h_volume.resize(dofs_x_volume.size());
       }
       ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
-      unsigned int sub_analysis_type = (spatail_analysis|material_analysis)&type_of_analysis;
-      switch(sub_analysis_type) {
-        case spatail_analysis: {
-  	ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,lambda,mu,ptr_matctx, 
-  	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-  	  &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
-  	  &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-  	  NULL,&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
-  	  NULL,NULL,NULL,NULL,NULL,
-  	  g_dim,g_TET_W); CHKERRQ(ierr);
-        }
-        break;
-	case material_analysis: {
-	 ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,lambda,mu,ptr_matctx, 
-  	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-  	  &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
-  	  &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-  	  &*Fint_H.data().begin(),&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
-  	  NULL,NULL,NULL,NULL,NULL,
-  	  g_dim,g_TET_W); CHKERRQ(ierr);
-	}
-	break;
-        default:
-	 SETERRQ(PETSC_COMM_SELF,1,"sorry.. I don't know what to do");
+      unsigned int sub_analysis_type[3] = { spatail_analysis, material_analysis, mesh_quality_analysis };
+      for(int ss = 0;ss<3;ss++) {
+	switch(sub_analysis_type[ss]&type_of_analysis) {
+	  case spatail_analysis: {
+	    ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,lambda,mu,ptr_matctx, 
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
+	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      NULL,&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
+	      NULL,NULL,NULL,NULL,NULL,
+	      g_dim,g_TET_W); CHKERRQ(ierr);
+	  }
+	  break;
+	  case material_analysis: {
+	    ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,lambda,mu,ptr_matctx, 
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
+	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      &*Fint_H.data().begin(),&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
+	      NULL,NULL,NULL,NULL,NULL,
+	      g_dim,g_TET_W); CHKERRQ(ierr);
+	  }
+	  break;
+	  case mesh_quality_analysis: {
+	    if(!flg_alpha2) SETERRQ(PETSC_COMM_SELF,1,"-my_alpha2 is not set");
+	    if(!flg_gamma) SETERRQ(PETSC_COMM_SELF,1,"-my_gamma is not set");
+
+	    /*quality_volume_length_F(V,alpha2,gamma,&diffNTETinvJac[0], 
+double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
+  double *F,double *iF)*/
+	  }
+	  break;
+	  default: 
+	    continue;
       }
     }
-    break;
+    } break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"no implemented");
   }
