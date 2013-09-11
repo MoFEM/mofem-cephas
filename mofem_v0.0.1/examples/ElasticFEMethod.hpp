@@ -148,7 +148,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     PetscLogDouble v1,v2;
 
     double lambda,mu;
-    ublas::symmetric_matrix<FieldData,ublas::upper> D_lambda,D_mu,D;
+    ublas::matrix<FieldData> D_lambda,D_mu,D;
 
     Range& SideSet1;
     Range& SideSet2;
@@ -184,14 +184,14 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
       G_W_TRI = G_TRI_W13;
       // See FEAP - - A Finite Element Analysis Program
-      D_lambda.resize(6);
+      D_lambda.resize(6,6);
       D_lambda.clear();
       for(int rr = 0;rr<3;rr++) {
 	for(int cc = 0;cc<3;cc++) {
 	  D_lambda(rr,cc) = 1;
 	}
       }
-      D_mu.resize(6);
+      D_mu.resize(6,6);
       D_mu.clear();
       for(int rr = 0;rr<6;rr++) {
 	D_mu(rr,rr) = rr<3 ? 2 : 1;
@@ -426,24 +426,39 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     }
 
     ublas::matrix<ublas::matrix<FieldData> > K;
+    ublas::matrix<FieldData> BD;
     virtual PetscErrorCode Stiffness() {
       PetscFunctionBegin;
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
-      ublas::matrix<FieldData> BTD;
       for(int rr = 0;rr<row_mat;rr++) {
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
 	  double w = V*G_W_TET[gg];
-	  BTD.resize(row_Mat.size2(),6);
-	  ublas::noalias(BTD) = prod( trans(row_Mat), w*D );
+	  BD.resize(6,row_Mat.size2());
+	  //ublas::noalias(BD) = prod( w*D,row_Mat );
+	  cblas_dsymm(CblasRowMajor,CblasLeft,CblasUpper,
+	    BD.size1(),BD.size2(),
+	    w,&*D.data().begin(),D.size2(),
+	    &*row_Mat.data().begin(),row_Mat.size2(),
+	    0.,&*BD.data().begin(),BD.size2());
 	  for(int cc = rr;cc<col_mat;cc++) {
 	    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
 	    if(gg == 0) {
-	      K(rr,cc).resize(BTD.size1(),col_Mat.size2());
-	      ublas::noalias(K(rr,cc)) = prod(BTD , col_Mat ); // int BT*D*B
+	      K(rr,cc).resize(BD.size2(),col_Mat.size2());
+	      //ublas::noalias(K(rr,cc)) = prod(trans(BD) , col_Mat ); // int BT*D*B
+	      cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
+		BD.size2(),col_Mat.size2(),BD.size1(),
+		1.,&*BD.data().begin(),BD.size2(),
+		&*col_Mat.data().begin(),col_Mat.size2(),
+		0.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
 	    } else {
-	      ublas::noalias(K(rr,cc)) += prod(BTD , col_Mat ); // int BT*D*B
+	      //ublas::noalias(K(rr,cc)) += prod(trans(BTD) , col_Mat ); // int BT*D*B
+	      cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
+		BD.size2(),col_Mat.size2(),BD.size1(),
+		1.,&*BD.data().begin(),BD.size2(),
+		&*col_Mat.data().begin(),col_Mat.size2(),
+		1.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
 	    }
 	  }
 	}

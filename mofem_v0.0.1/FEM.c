@@ -195,7 +195,8 @@ double Shape_intVolumeMBTET(double *diffN,const double *coords) {
   //print_mat(Jac,3,3);
   return detJac*G_TET_W1[0]/6.;
 }
-void ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM) {
+PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM) {
+  PetscFunctionBegin;
   int ii = 0;
   for(; ii<DIM; ii++) {
     double x = G_X[ii],y = G_Y[ii],z = G_Z[ii];
@@ -204,6 +205,7 @@ void ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,
     N[4*ii+2] = N_MBTET2(x,y,z);
     N[4*ii+3] = N_MBTET3(x,y,z);
   }
+  PetscFunctionReturn(0);
 }
 void ShapeDiffMBTET(double *diffN) {
   diffN[0] = diffN_MBTET0x; diffN[1] = diffN_MBTET0y; diffN[2] = diffN_MBTET0z;
@@ -249,11 +251,14 @@ PetscErrorCode ShapeDiffMBTETinvJ(double *diffN,double *invJac,double *diffNinvJ
   }
   PetscFunctionReturn(0);
 }
-void GradientOfDeformation(double *diffN,double *dofs,double *F) {
+PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F) {
+  PetscFunctionBegin;
   int col,row = 0;
   for(;row<3;row++)
   for(col = 0;col<3;col++) {
-    F[3*row+col] = cblas_ddot(4,&diffN[col],3,&dofs[row],3); }
+    F[3*row+col] = cblas_ddot(4,&diffN[col],3,&dofs[row],3); 
+  }
+  PetscFunctionReturn(0);
 }
 
 // Approximation
@@ -323,7 +328,8 @@ void ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__
   xnormal[2].r = creal(tmp);
   xnormal[2].i = cimag(tmp);
 }
-void MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA) {
+PetscErrorCode MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA) {
+  PetscFunctionBegin;
   int ii = 0,jj;
   for(;ii<3;ii++) {
     for(jj=0;jj<3;jj++) {
@@ -331,6 +337,7 @@ void MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA) {
       xA[3*ii+jj].i = imA[3*ii+jj];
     }
   }
+  PetscFunctionReturn(0);
 }
 PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF) {
   PetscFunctionBegin;

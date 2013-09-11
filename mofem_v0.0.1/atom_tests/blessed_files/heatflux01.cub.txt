@@ -1,0 +1,14 @@
+
+H e a t  F l u x 
+ 
+Heat flux is applied on thin shells
+Heat flux value (thin shell top): 100
+Heat flux value (thin shell bottom): -200
+ 
+
+H e a t  F l u x 
+ 
+Heat flux value: -25
+Heat flux value (thin shell top): N/A
+Heat flux value (thin shell bottom): N/A
+ 
