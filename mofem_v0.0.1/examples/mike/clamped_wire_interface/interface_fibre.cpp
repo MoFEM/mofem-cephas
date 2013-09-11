@@ -346,12 +346,16 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
     
     double nu_p, nu_pz, E_p, E_z, G_zp;
     Tag th_fibre_orientation;
-    
+    Tag th_dist_from_surface;
+
     TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
     PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
         
         double def_VAL2[3] = {0,0,0};
         rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
+        double def_VAL3=0.0;
+        rval = moab_post_proc.tag_get_handle("SURFACE_DISTANCE",1,MB_TYPE_DOUBLE,th_dist_from_surface,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL3,1); CHKERR_THROW(rval);
+        
     }
     
     PetscErrorCode operator()() {
@@ -424,7 +428,27 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
             Stress(1,2) = Stress(2,1) = Stress_VectorNotation[4];
             Stress(2,0) = Stress(0,2) = Stress_VectorNotation[5];
             
-            rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);   
+            rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);  
+            
+            ///Get Gradients for fibre_direction
+            
+//            EntityType type=moab_post_proc.type_from_handle(mit->second);
+//            if(type == MBVERTEX){cout<<"MBVERTEX"<<endl;}
+//            if(type == MBEDGE){cout<<"MBEDGE"<<endl;}
+//            if(type == MBTRI){cout<<"MBTRI"<<endl;}
+//            if(type == MBTET){cout<<"MBTET"<<endl;}
+
+            double distance[4];
+            EntityHandle fe_ent = fe_ptr->get_ent();
+            rval = moab_post_proc.tag_get_data(th_dist_from_surface,&fe_ent,4,distance); CHKERR_PETSC(rval); 
+            cout<<distance[0]<<"  "<<distance[1]<<"  "<<distance[2]<<"  "<<distance[3]<<endl;
+            
+//            double diffN[12];
+//            ShapeDiffMBTET(diffN);
+//            double Jac[9];
+//            ShapeJacMBTET(diffN,coordinates,Jac);
+//            Shape_invJac(Jac);
+            
             
         }
         
@@ -678,14 +702,14 @@ int main(int argc, char *argv[]) {
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
     
     //Get SideSet 1 and SideSet 2 defined in CUBIT
-    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5,SideSet6,SideSet13;
+    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5,SideSet6,SurfaceMesh;
     ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSet4,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(5,SideSet,2,SideSet5,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(6,SideSet,2,SideSet6,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(13,SideSet,2,SideSet13,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(13,SideSet,2,SurfaceMesh,true); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
@@ -714,7 +738,7 @@ int main(int argc, char *argv[]) {
     
     EntityHandle tree_root;
     AdaptiveKDTree tool( &moab );
-    rval = tool.build_tree( SideSet13, tree_root ); CHKERR(rval);
+    rval = tool.build_tree( SurfaceMesh, tree_root ); CHKERR(rval);
     
     Range::iterator niit1 = allNodes.begin();
     for(;niit1!=allNodes.end();niit1++) {
