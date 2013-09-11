@@ -90,8 +90,8 @@ int get_qual_ver() { return qual_ver; }
   ierr = calculate_xQ(&xlrms,inv_xH,dofs_egdes_Chi,dofs_egdes_X,xQ); CHKERRQ(ierr); \
   /* some useful varibles */ \
   __CLPK_doublecomplex xV; \
-  xV.r = det_xH.r*alpha; \
-  xV.i = det_xH.i*alpha; \
+  xV.r = det_xH.r*V; \
+  xV.i = det_xH.i*V; \
   complex double complex_b = (det_xH.r+I*det_xH.i)/cpow((xlrms.r+I*xlrms.i)/xlrms0.r,3); \
   __CLPK_doublecomplex xb = { creal(complex_b), cimag(complex_b) }; \
   complex double complex_q = 6.*sqrt(2.)*(xV.r+I*xV.i)/cpow(xlrms.r+I*xlrms.i,3.); \
@@ -112,7 +112,7 @@ int get_qual_ver() { return qual_ver; }
   __CLPK_doublecomplex xgrad = { creal(complex_grad), cimag(complex_grad) }; \
   cblas_zscal(9,&xgrad,xQ,1); 
 
-PetscErrorCode quality_volume_length_F(double alpha,double *alpha2,double gamma,double *diffN,
+PetscErrorCode quality_volume_length_F(double V,double *alpha2,double gamma,double *diffN,
   double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
   double *F,double *iF) {
   PetscFunctionBegin;
@@ -140,7 +140,7 @@ PetscErrorCode quality_volume_length_F(double alpha,double *alpha2,double gamma,
   //print_mat_complex(xQ,3,3); 
   //print_mat_complex(xH,3,3); 
   //print_mat_complex(inv_xH,3,3); 
-  *quality0 = 6.*sqrt(2.)*(alpha)/pow(xlrms0.r,3); 
+  *quality0 = 6.*sqrt(2.)*(V)/pow(xlrms0.r,3); 
   *quality = xq.r;
   *b = xb.r;
   if( F==NULL ) { 
@@ -170,7 +170,7 @@ PetscErrorCode quality_volume_length_F(double alpha,double *alpha2,double gamma,
   }}
   PetscFunctionReturn(0);
 }
-int quality_volume_length_K(double eps,double alpha,double *alpha2,double gamma,double *diffN,double *coords_edges,double *dofs_X,double *dofs_x,double *K,double *Koff) {
+int quality_volume_length_K(double eps,double V,double *alpha2,double gamma,double *diffN,double *coords_edges,double *dofs_X,double *dofs_x,double *K,double *Koff) {
   double N4[4*4]; 
   ierr = ShapeMBTET(N4,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
   double H[9];

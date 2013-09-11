@@ -132,8 +132,21 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  SetPositionsEntMethod set_positions(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,set_positions); CHKERRQ(ierr);
+  {
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
+      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get_ent();
+      int dof_rank = dof_ptr->get_dof_rank();
+      double &fval = dof_ptr->get_FieldData();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+      fval = coords[dof_rank];
+    }
+  }
 
   Range SideSet1,SideSet2;
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
