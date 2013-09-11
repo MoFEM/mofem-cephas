@@ -17,19 +17,13 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 #include subdirectory
-include_directories("${PROJECT_SOURCE_DIR}/examples")
+include_directories("${PROJECT_SOURCE_DIR}/examples/mike")
 
 #add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_dynamics")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_hooke_material_forces")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity_trans_isotropic")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity_transIsotropic_interface")
-
-#add mike executable library form subdirectory
-
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/arc_length_nonlinear_interface")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/clamped_wire")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/clamped_wire_interface")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elastic_interface")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity_trans_isotropic")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity_trans_isotropic_fibre_interface")
