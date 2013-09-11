@@ -678,13 +678,14 @@ int main(int argc, char *argv[]) {
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
     
     //Get SideSet 1 and SideSet 2 defined in CUBIT
-    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5,SideSet6;
+    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5,SideSet6,SideSet13;
     ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSet4,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(5,SideSet,2,SideSet5,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(6,SideSet,2,SideSet6,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(13,SideSet,2,SideSet13,true); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
@@ -702,6 +703,31 @@ int main(int argc, char *argv[]) {
     const double YoungModulus = 200000;
     const double PoissonRatio = 0.3;
     const double alpha = 0.05;
+    
+    //************************* Get shortest distance to the surface of mesh for every node and save it into tags **********************//
+    
+    Range allNodes;
+    rval = moab.get_entities_by_type(0,MBVERTEX,allNodes);CHKERR_PETSC(rval);
+    Tag th_dist_from_surface;
+    double def_VAL3=0.0;
+    rval = moab.tag_get_handle("SURFACE_DISTANCE",1,MB_TYPE_DOUBLE,th_dist_from_surface,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL3); CHKERR_THROW(rval);
+    
+    EntityHandle tree_root;
+    AdaptiveKDTree tool( &moab );
+    rval = tool.build_tree( SideSet13, tree_root ); CHKERR(rval);
+    
+    Range::iterator niit1 = allNodes.begin();
+    for(;niit1!=allNodes.end();niit1++) {
+        double nodeCoord[3];
+        double closestPoint[3];
+        EntityHandle closestTri;
+        moab.get_coords(&*niit1,1,nodeCoord);
+        rval = tool.closest_triangle(tree_root,nodeCoord,closestPoint,closestTri);CHKERR(rval);
+        double distance = sqrt(pow(closestPoint[0]-nodeCoord[0],2)+pow(closestPoint[1]-nodeCoord[1],2)+pow(closestPoint[2]-nodeCoord[2],2));
+        rval = moab.tag_set_data(th_dist_from_surface,&*niit1,1,&distance); CHKERR_PETSC(rval);  
+    }
+    
+    //**************************** Function to Set Boundary Conditions ******************************//  
     
     struct MyElasticFEMethod: public ElasticFEMethod {
         MyElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_ptr,
