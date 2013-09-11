@@ -255,8 +255,6 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  SetPositionsEntMethod set_positions(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,set_positions); CHKERRQ(ierr);
   {
     EntityHandle node = no_handle;
     double coords[3];
