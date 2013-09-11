@@ -327,7 +327,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
   }
 }
 ostream& operator<<(ostream& os,const MoFEMField& e) {
-  os << "name "<<e.get_name()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number() 
+  os << "name "<<e.get_name_ref()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number() 
     << " space " << e.get_space() << " rank " << e.get_max_rank() << " meshset " << e.meshset;
   return os;
 }
@@ -603,7 +603,7 @@ MoFEMFiniteElement::MoFEMFiniteElement(Interface &moab,const EntityHandle _meshs
   rval = moab.tag_get_handle(Tag_DofUidData_name.c_str(),th_DofUidData); CHKERR(rval);
 }
 ostream& operator<<(ostream& os,const MoFEMFiniteElement& e) {
-    os << "id " << e.get_id() << " name " << e.get_name() << " f_id_row " << e.get_BitFieldId_row() 
+    os << "id " << e.get_id() << " name " << e.get_name_ref() << " f_id_row " << e.get_BitFieldId_row() 
     << " f_id_col " << e.get_BitFieldId_col() << " BitFEId_data " << e.get_BitFieldId_data();
     return os;
 }
@@ -826,13 +826,13 @@ PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,
     else if (strcmp (&bc_data[0],"Force") == 0)
         type |= ForceSet;
     else if (strcmp (&bc_data[0],"Velocity") == 0)
-        type |= PressureSet;
-    else if (strcmp (&bc_data[0],"Acceleration") == 0)
         type |= VelocitySet;
-    else if (strcmp (&bc_data[0],"Temperature") == 0)
+    else if (strcmp (&bc_data[0],"Acceleration") == 0)
         type |= AccelerationSet;
-    else if (strcmp (&bc_data[0],"Pressure") == 0)
+    else if (strcmp (&bc_data[0],"Temperature") == 0)
         type |= TemperatureSet;
+    else if (strcmp (&bc_data[0],"Pressure") == 0)
+        type |= PressureSet;
     else if (strcmp (&bc_data[0],"HeatFlux") == 0)
         type |= HeatfluxSet;
     else SETERRQ(PETSC_COMM_SELF,1,"this bc_data is unknown");
@@ -906,6 +906,7 @@ ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e) {
     if (e.data.flag6 == 1)
         os << "Displacement magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
     else os << "Displacement magnitude (Z-Rotation): N/A" << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const force_cubit_bc_data& e) {
@@ -919,6 +920,7 @@ ostream& operator<<(ostream& os,const force_cubit_bc_data& e) {
     os << "Moment direction vector (X-component): " << e.data.value6 << "\n";
     os << "Moment direction vector (Y-component): " << e.data.value7 << "\n";
     os << "Moment direction vector (Z-component): " << e.data.value8 << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e) {
@@ -942,6 +944,7 @@ ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e) {
     if (e.data.flag6 == 1)
         os << "Velocity magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
     else os << "Velocity magnitude (Z-Rotation): N/A" << "\n \n";
+    return os;
 }
  
 ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e) {
@@ -965,6 +968,7 @@ ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e) {
     if (e.data.flag6 == 1)
         os << "Acceleration magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
     else os << "Acceleration magnitude (Z-Rotation): N/A" << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e) {
@@ -985,12 +989,14 @@ ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e) {
     if (e.data.flag5 == 1)
         os << "Temperature (thin shell bottom): " << e.data.value5 << "\n \n";
     else os << "Temperature (thin shell bottom): N/A" << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const pressure_cubit_bc_data& e) {
     os << "\n";
     os << "P r e s s u r e \n \n";
     os << "Pressure value: " << e.data.value1 << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
@@ -1005,6 +1011,7 @@ ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
     if (e.data.flag3 == 1)
         os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n \n";
     else os << "Heat flux value (thin shell bottom): N/A" << "\n \n";
+    return os;   
 }
 
 }

@@ -21,3 +21,5 @@
 
 #include "physical_quations.c"
 #include "elastic_terahedron.c"
+#include "quality_tetrahedorn.c"
+

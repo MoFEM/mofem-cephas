@@ -200,6 +200,7 @@ struct moabField_Core: public moabField {
   PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
+  PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
   PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
 
   //topology
@@ -317,8 +318,8 @@ struct moabField_Core: public moabField {
     //build adj matrix
     i.push_back(j.size());
     PetscInt *_i,*_j;
-    PetscMalloc(i.size()*sizeof(PetscInt),&_i);
-    PetscMalloc(j.size()*sizeof(PetscInt),&_j);
+    ierr = PetscMalloc(i.size()*sizeof(PetscInt),&_i); CHKERRQ(ierr);
+    ierr = PetscMalloc(j.size()*sizeof(PetscInt),&_j); CHKERRQ(ierr);
     copy(i.begin(),i.end(),_i);
     copy(j.begin(),j.end(),_j);
     PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
@@ -330,7 +331,15 @@ struct moabField_Core: public moabField {
       if((unsigned int)nb_local_dofs_row!=i.size()-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
       ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
+      ierr = PetscFree(_i); CHKERRQ(ierr);
+      ierr = PetscFree(_j); CHKERRQ(ierr);
+    } else if(strcmp(type,MATAIJ)==0) {
+      ierr = PetscFree(_i); CHKERRQ(ierr);
+      ierr = PetscFree(_j); CHKERRQ(ierr);
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     } else {
+      ierr = PetscFree(_i); CHKERRQ(ierr);
+      ierr = PetscFree(_j); CHKERRQ(ierr);
       SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);

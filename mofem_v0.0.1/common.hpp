@@ -47,6 +47,7 @@
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
+#include <boost/utility/string_ref.hpp>
 
 #include<moab_mpi.h>
 #include<moab/ParallelComm.hpp>
@@ -155,6 +156,10 @@ using namespace std;
 using boost::multi_index_container;
 using namespace boost::multi_index;
 using namespace boost::multiprecision;
+
+
+//set that with care, it turns off check for ublas
+//#define BOOST_UBLAS_NDEBUG
 
 namespace MoFEM {
 
@@ -477,7 +482,8 @@ struct MoFEMField {
     */
   MoFEMField(Interface &moab,const EntityHandle _meshset);					
   inline EntityHandle get_meshset() const { return meshset; };
-  inline BitFieldId get_id() const { return *((BitFieldId*)tag_id_data); }; 			
+  inline const BitFieldId& get_id() const { return *((BitFieldId*)tag_id_data); }; 			
+  inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); };	
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };	
   inline FieldSpace get_space() const { return *tag_space_data; };
   inline ApproximationRank get_max_rank() const { return *tag_rank_data; };
@@ -494,8 +500,9 @@ struct interface_MoFEMField {
   const T *field_ptr;
   interface_MoFEMField(const T *_field_ptr): field_ptr(_field_ptr) {};
   inline EntityHandle get_meshset() const { return field_ptr->get_meshset(); };
-  inline BitFieldId get_id() const { return field_ptr->get_id(); };
+  inline const BitFieldId& get_id() const { return field_ptr->get_id(); };
   inline unsigned int get_bit_number() const { return field_ptr->get_bit_number(); }
+  inline boost::string_ref get_name_ref() const { return field_ptr->get_name_ref(); };
   inline string get_name() const { return field_ptr->get_name(); };
   inline FieldSpace get_space() const { return field_ptr->get_space(); };
   inline ApproximationRank get_max_rank() const { return field_ptr->get_max_rank(); };
@@ -527,7 +534,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   inline int get_order_nb_dofs_diff(int order) const { return forder(order)-forder(order-1); }
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return ref_mab_ent_ptr; }
-  UId get_unique_id() const { return uid; }
+  const UId& get_unique_id() const { return uid; }
   UId get_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<=32);
@@ -551,7 +558,7 @@ struct interface_MoFEMEntity: public interface_MoFEMField<T>,interface_RefMoFEME
   inline int get_order_nb_dofs(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs(order); }
   inline int get_order_nb_dofs_diff(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs_diff(order); }
   inline ApproximationOrder get_max_order() const { return interface_MoFEMField<T>::field_ptr->get_max_order(); }
-  inline UId get_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_unique_id(); }
+  inline const UId& get_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_unique_id(); }
   inline const MoFEMEntity* get_MoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_MoFEMEntity_ptr(); };
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_RefMoFEMEntity_ptr(); }
 };
@@ -689,11 +696,11 @@ struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDof
  * \brief MoFEMField_multiIndex for MoFEMField
  *
  * \param hashed_unique<
- *     tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,BitFieldId,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
+ *     tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
  * \param   ordered_unique<
  *     tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshset> >,
  * \param hashed_unique<
- *     tag<FieldName_mi_tag>, const_mem_fun<MoFEMField,string,&MoFEMField::get_name> >,
+ *     tag<FieldName_mi_tag>, const_mem_fun<MoFEMField,boost::string_ref,&MoFEMField::get_name_ref> >,
  * \param ordered_non_unique<
  *     tag<BitFieldId_space_mi_tag>, const_mem_fun<MoFEMField,FieldSpace,&MoFEMField::get_space> >
  */
@@ -701,11 +708,11 @@ typedef multi_index_container<
   MoFEMField,
   indexed_by<
     hashed_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,BitFieldId,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
     ordered_unique<
       tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshset> >,
-    hashed_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<MoFEMField,string,&MoFEMField::get_name> >,
+    ordered_unique<
+      tag<FieldName_mi_tag>, const_mem_fun<MoFEMField,boost::string_ref,&MoFEMField::get_name_ref> >,
     ordered_non_unique<
       tag<BitFieldId_space_mi_tag>, const_mem_fun<MoFEMField,FieldSpace,&MoFEMField::get_space> >
   > > MoFEMField_multiIndex;
@@ -714,7 +721,7 @@ typedef multi_index_container<
   const MoFEMField*,
   indexed_by<
     ordered_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,BitFieldId,&MoFEMField::get_id>, ltbit<BitFieldId> >
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, ltbit<BitFieldId> >
    > > MoFEMField_multiIndex_view;
 
 /** 
@@ -724,9 +731,9 @@ typedef multi_index_container<
  * \param ordered_unique<
  *    tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
  * \param ordered_non_unique<
- *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,BitFieldId,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
+ *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
  * \param ordered_non_unique<
- *    tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,string,&MoFEMEntity::get_name> >,
+ *    tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
  * \param hashed_non_unique<
  *    tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
  */
@@ -736,9 +743,9 @@ typedef multi_index_container<
     ordered_unique<
       tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,BitFieldId,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,string,&MoFEMEntity::get_name> >,
+      tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
     hashed_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
   > > MoFEMEntity_multiIndex;
@@ -749,16 +756,16 @@ typedef multi_index_container<
     ordered_unique< 
       tag<Unique_mi_tag>, member<DofMoFEMEntity,UId,&DofMoFEMEntity::uid> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,string,&DofMoFEMEntity::get_name> >,
+      tag<FieldName_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref> >,
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,BitFieldId,&DofMoFEMEntity::get_id>, ltbit<BitFieldId> >,
-    hashed_non_unique<
+      tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&DofMoFEMEntity::get_id>, ltbit<BitFieldId> >,
+    ordered_non_unique<
       tag<Composite_mi_tag>, 
       composite_key<
 	DofMoFEMEntity,
-	const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,string,&DofMoFEMEntity::get_name>,
+	const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
 	const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
 	const_mem_fun<DofMoFEMEntity,DofIdx,&DofMoFEMEntity::get_EntDofIdx> 
       > >,
@@ -766,7 +773,7 @@ typedef multi_index_container<
       tag<Composite_mi_tag2>, 
       composite_key<
 	DofMoFEMEntity,
-	const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,string,&DofMoFEMEntity::get_name>,
+	const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
 	const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>
       > >
   > > DofMoFEMEntity_multiIndex;
@@ -803,14 +810,14 @@ typedef multi_index_container<
  *     tag<Composite_mi_tag2>,  <br>
  *     composite_key<
  *	FEDofMoFEMEntity, <br> 
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>  <br>
  *	> >,
  * \param ordered_non_unique<
  *     tag<Composite_mi_tag3>,  <br>
  *     composite_key<
  *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
  *	> >
  */
@@ -822,12 +829,12 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name> >,
+      tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref> >,
     ordered_non_unique<
       tag<Composite_mi_tag>, 
       composite_key<
 	FEDofMoFEMEntity,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,
+	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,
 	  key_from_key<
 	    member<SideNumber,int,&SideNumber::side_number>,
@@ -838,14 +845,14 @@ typedef multi_index_container<
       tag<Composite_mi_tag2>, 
       composite_key<
 	FEDofMoFEMEntity,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,
+	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>
 	> >,
     ordered_non_unique<
       tag<Composite_mi_tag3>, 
       composite_key<
 	FEDofMoFEMEntity,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,
+	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
 	> >
   > > FEDofMoFEMEntity_multiIndex;
@@ -864,7 +871,7 @@ typedef multi_index_container<
  *    tag<Composite_mi_tag>, <br>
  *     composite_key<  
  *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,  <br>
  *	  key_from_key< <br>
  *	    member<SideNumber,int,&SideNumber::side_number>,  <br>
@@ -875,14 +882,14 @@ typedef multi_index_container<
  *     tag<Composite_mi_tag2>,  <br>
  *     composite_key<
  *	FEDofMoFEMEntity, <br> 
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>  <br>
  *	> >,
  * \param ordered_non_unique<
  *     tag<Composite_mi_tag3>,  <br>
  *     composite_key<
  *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
+ *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
  *	> >
  */
@@ -894,12 +901,12 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FENumeredDofMoFEMEntity::get_ent> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,string,&FENumeredDofMoFEMEntity::get_name> >,
+      tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref> >,
     ordered_non_unique<
       tag<Composite_mi_tag>, 
       composite_key<
 	FENumeredDofMoFEMEntity,
-	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,string,&FENumeredDofMoFEMEntity::get_name>,
+	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref>,
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FENumeredDofMoFEMEntity::get_ent_type>,
 	  key_from_key<
 	    member<SideNumber,int,&SideNumber::side_number>,
@@ -910,14 +917,14 @@ typedef multi_index_container<
       tag<Composite_mi_tag2>, 
       composite_key<
 	FENumeredDofMoFEMEntity,
-	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,string,&FENumeredDofMoFEMEntity::get_name>,
+	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref>,
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FENumeredDofMoFEMEntity::get_ent_type>
 	> >,
     ordered_non_unique<
       tag<Composite_mi_tag3>, 
       composite_key<
 	FENumeredDofMoFEMEntity,
-	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,string,&FENumeredDofMoFEMEntity::get_name>,
+	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref>,
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FENumeredDofMoFEMEntity::get_ent>
 	> >
   > > FENumeredDofMoFEMEntity_multiIndex;
@@ -931,7 +938,7 @@ typedef multi_index_container<
  * \param    ordered_unique< 
       tag<Idx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::dof_idx> >,
  * \param    ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,string,&NumeredDofMoFEMEntity::get_name> >,
+      tag<FieldName_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name> >,
  * \param    ordered_non_unique< 
       tag<PetscGlobalIdx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> >,
  * \param    ordered_non_unique< 
@@ -950,7 +957,7 @@ typedef multi_index_container<
     ordered_unique< 
       tag<Idx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::dof_idx> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,string,&NumeredDofMoFEMEntity::get_name> >,
+      tag<FieldName_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref> >,
     ordered_non_unique< 
       tag<PetscGlobalIdx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> >,
     ordered_non_unique< 
@@ -986,6 +993,7 @@ struct MoFEMFiniteElement {
   /// get meshset
   inline EntityHandle get_meshset() const { return meshset; }
   /// get FE name
+  inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }
   /// get BitFieldId col
   inline BitFieldId get_BitFieldId_col() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
@@ -1005,6 +1013,7 @@ struct interface_MoFEMFiniteElement {
   interface_MoFEMFiniteElement(const T *_ptr): fe_ptr(_ptr) {};
   inline BitFEId get_id() const { return fe_ptr->get_id(); }
   inline EntityHandle get_meshset() const { return fe_ptr->get_meshset(); }
+  inline boost::string_ref get_name_ref() const { return fe_ptr->get_name_ref(); }
   inline string get_name() const { return fe_ptr->get_name(); }
   inline BitFieldId get_BitFieldId_col() const { return fe_ptr->get_BitFieldId_col(); }
   inline BitFieldId get_BitFieldId_row() const { return fe_ptr->get_BitFieldId_row(); }
@@ -1102,7 +1111,7 @@ struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteEleme
  * \param    ordered_non_unique<
       tag<MoABEnt_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
  * \param    ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&EntMoFEMFiniteElement::get_name> >,
+      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
  * \param    ordered_non_unique<
       tag<BitFEId_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, ltbit<BitFEId> >,
  * \param    ordered_non_unique<
@@ -1112,7 +1121,7 @@ struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteEleme
       composite_key<
 	EntMoFEMFiniteElement, <br>
 	const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent>,
-	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&EntMoFEMFiniteElement::get_name> > >
+	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> > >
  */
 typedef multi_index_container<
   EntMoFEMFiniteElement,
@@ -1126,7 +1135,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
     ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&EntMoFEMFiniteElement::get_name> >,
+      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
     ordered_non_unique<
       tag<BitFEId_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, ltbit<BitFEId> >,
     ordered_non_unique<
@@ -1136,7 +1145,7 @@ typedef multi_index_container<
       composite_key<
 	EntMoFEMFiniteElement,
 	const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent>,
-	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&EntMoFEMFiniteElement::get_name> > >
+	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> > >
   > > EntMoFEMFiniteElement_multiIndex;
 
 /// \brief keeps data about problem
@@ -1233,8 +1242,8 @@ typedef multi_index_container<
       tag<MoFEMFiniteElement_Meshset_mi_tag>, member<MoFEMFiniteElement,EntityHandle,&MoFEMFiniteElement::meshset> >,
     hashed_unique<
       tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFiniteElement,BitFEId,&MoFEMFiniteElement::get_id>, hashbit<BitFEId>, eqbit<BitFEId> >,
-    hashed_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,string,&MoFEMFiniteElement::get_name> >
+    ordered_unique<
+      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,boost::string_ref,&MoFEMFiniteElement::get_name_ref> >
   > > MoFEMFiniteElement_multiIndex;
 
 
