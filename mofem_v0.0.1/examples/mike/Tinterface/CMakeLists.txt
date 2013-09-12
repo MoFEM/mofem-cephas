@@ -16,15 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-#include subdirectory
-include_directories("${PROJECT_SOURCE_DIR}/examples/mike")
+add_executable(tInterface tInterface.cpp)
+target_link_libraries(tInterface mofem_Field ${PROJECT_LIBS})
 
-#add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/arc_length_nonlinear_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/clamped_wire")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/clamped_wire_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elastic_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity_trans_isotropic")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/simple_elasticity_trans_isotropic_fibre_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mike/Tinterface")
+#cm_export_file("../../meshes/PeelTest.cub" "/" export_files_interface)
+
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../meshes/T3interfaceCubes.cub
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

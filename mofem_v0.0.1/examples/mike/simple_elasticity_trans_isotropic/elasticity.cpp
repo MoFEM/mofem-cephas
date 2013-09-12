@@ -387,7 +387,7 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
         StiffnessMatrix(3,3)=E_p/(1+nu_p);
         StiffnessMatrix(5,5)=StiffnessMatrix(4,4)=2*G_zp;
         
-        D.resize(6);
+        D.resize(6,6);
         D.clear();
         ublas::matrix< FieldData > dummy2 = prod( StiffnessMatrix , TrpMatrix );
         D=prod( trans(TrpMatrix) , dummy2 );

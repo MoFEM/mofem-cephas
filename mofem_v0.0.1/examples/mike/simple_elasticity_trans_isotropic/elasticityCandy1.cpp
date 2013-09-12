@@ -224,7 +224,7 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
 //            StiffnessMatrix = lambda*D_lambda + mu*D_mu;
 
             //Rotating the Stiffness matrix according to the fibre direction
-            D.resize(6);
+            D.resize(6,6);
             D.clear();
             ublas::matrix< FieldData > dummy2 = prod( StiffnessMatrix , TrpMatrix );
             D=prod( trans(TrpMatrix) , dummy2 );

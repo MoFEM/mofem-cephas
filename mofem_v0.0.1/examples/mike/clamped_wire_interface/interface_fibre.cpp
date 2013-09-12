@@ -368,10 +368,11 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
         Range tetNodes;
         int num_nodes;
         rval = moab.get_connectivity(&fe_ent,num_nodes,tetNodes);
-        assert(num_nodes==4);
-        double distance[num_nodes];
-        rval = moab.tag_get_data(th_dist_from_surface,tetNodes,&distance); CHKERR_PETSC(rval); 
-        cout<<distance[0]<<"  "<<distance[1]<<"  "<<distance[2]<<"  "<<distance[3]<<endl;
+//        cout<<tetNodes.size()<<endl;
+//        assert(num_nodes==4);
+        double distance[4];
+        rval = moab.tag_get_data(th_dist_from_surface,tetNodes,distance); CHKERR_PETSC(rval); 
+//        cout<<distance[0]<<"  "<<distance[1]<<"  "<<distance[2]<<"  "<<distance[3]<<endl;
         
         int gg=0;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -658,10 +659,11 @@ int main(int argc, char *argv[]) {
     
     //add entitities (by tets) to the field
     ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
-    
+    ierr = mField.add_ents_to_field_by_TETs(meshset_BlockSet2OnLevel0,"SURFACE_DISTANCE"); CHKERRQ(ierr);
+
     //add finite elements entities
-    ierr = mField.add_ents_to_finite_element_by_TETs(meshset_BlockSet1OnLevel0,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TETs(meshset_BlockSet2OnLevel0,"ELASTIC",true); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TETs(meshset_BlockSet2OnLevel0,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TETs(meshset_BlockSet1OnLevel0,"ELASTIC",true); CHKERRQ(ierr);
 //    ierr = mField.add_ents_to_finite_element_by_TETs(meshset_BlockSet3OnLevel0,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
     //    ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
@@ -672,6 +674,11 @@ int main(int argc, char *argv[]) {
     ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+    
+    ierr = mField.set_field_order(0,MBTET,"SURFACE_DISTANCE",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"SURFACE_DISTANCE",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"SURFACE_DISTANCE",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBVERTEX,"SURFACE_DISTANCE",1); CHKERRQ(ierr);
     
     /****/
     //build database
@@ -750,8 +757,33 @@ int main(int argc, char *argv[]) {
         moab.get_coords(&*niit1,1,nodeCoord);
         rval = tool.closest_triangle(tree_root,nodeCoord,closestPoint,closestTri);CHKERR(rval);
         double distance = sqrt(pow(closestPoint[0]-nodeCoord[0],2)+pow(closestPoint[1]-nodeCoord[1],2)+pow(closestPoint[2]-nodeCoord[2],2));
-        rval = moab.tag_set_data(th_dist_from_surface,&*niit1,1,&distance); CHKERR_PETSC(rval);  
+//        rval = moab.tag_set_data(th_dist_from_surface,&*niit1,1,&distance); CHKERR_PETSC(rval);  
     }
+    
+    //*********************** Saving Shortest distance from fibre outer surface to SURFACE_DISTANCE field ************************//
+    
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"SURFACE_DISTANCE",dof_ptr)) {
+//        cout<<"loop ......"<<endl;
+        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+        EntityHandle ent = dof_ptr->get_ent();
+        double &fval = dof_ptr->get_FieldData();
+        double distance2;
+//        int dof_rank = dof_ptr->get_dof_rank();
+        if(node!=ent) {
+            rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+            node = ent;
+            double closestPoint1[3];
+            EntityHandle closestTri1;
+            rval = tool.closest_triangle(tree_root,coords,closestPoint1,closestTri1);CHKERR(rval);
+            distance2 = sqrt(pow(closestPoint1[0]-coords[0],2)+pow(closestPoint1[1]-coords[1],2)+pow(closestPoint1[2]-coords[2],2));
+//            cout<<distance2<<endl;
+            rval = moab.tag_set_data(th_dist_from_surface,&ent,1,&distance2); CHKERR_PETSC(rval);  
+        }
+        fval = distance2;
+    }
+    
     
     //**************************** Function to Set Boundary Conditions ******************************//  
     
