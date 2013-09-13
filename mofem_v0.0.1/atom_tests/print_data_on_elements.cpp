@@ -88,6 +88,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+    
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","TEMPERATURE"); CHKERRQ(ierr);
 
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -135,6 +137,26 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
+    //    Tag th_temperature;
+    //    double defaultval=0;
+    //    rval = moab.tag_get_handle("TEMPERATURE",1,MB_TYPE_DOUBLE,th_temperature,MB_TAG_CREAT|MB_TAG_SPARSE,&defaultval); CHKERR_THROW(rval);
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"TEMPERATURE",dof_ptr)) {
+        //            if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+        //            EntityHandle ent = dof_ptr->get_ent();
+        //            double &fval = dof_ptr->get_FieldData();
+        //            double tempcoord;
+        //            if(node!=ent) {
+        //                rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+        //                tempcoord = 30*coords[0];
+        //                fval = tempcoord;
+        //                rval=moab.tag_set_data(th_temperature,&ent,1,&tempcoord); CHKERR_PETSC(rval);
+        //                node = ent;
+        //            }
+    }
+    
+    
   /****/
   //mesh partitioning 
 
@@ -144,25 +166,6 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
-    Tag th_temperature;
-    double defaultval=0;
-    rval = moab.tag_get_handle("TEMPERATURE",1,MB_TYPE_DOUBLE,th_temperature,MB_TAG_CREAT|MB_TAG_SPARSE,&defaultval);CHKERR_THROW(rval);
-    EntityHandle node = 0;
-    double coords[3];
-    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"TEMPERATURE",dof_ptr)) {
-        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-        EntityHandle ent = dof_ptr->get_ent();
-        double &fval = dof_ptr->get_FieldData();
-        double tempcoord;
-        if(node!=ent) {
-            rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-            tempcoord = 30*coords[0];
-            fval = tempcoord;
-            rval=moab.tag_set_data(th_temperature,&ent,1,&tempcoord); CHKERR_PETSC(rval);
-            node = ent;
-        }
-    }
-    
     struct MyFiniteElement_For_Printing: public moabField::FEMethod {
         MyFiniteElement_For_Printing() {};
         
@@ -216,18 +219,7 @@ int main(int argc, char *argv[]) {
  
                 
                 
-//                cout<<"\n\n==============Contents of container ents_moabfield==================\n";
-//                for(MoFEMEntity_multiIndex::iterator it=ents_moabfield->begin();it!=ents_moabfield->end();++it){
-//                    cout<<"UID ="<<it->uid<<"\tID ="<<it->get_id()<<"\tName ="<<it->get_name()<<"\tEntity ="<<it->get_ent()<<endl;
-//                }
-                
-                                
-                
-                
-
-                
-                
-                
+                 
             }
                 
                 
@@ -259,7 +251,6 @@ int main(int argc, char *argv[]) {
     MyFiniteElement_For_Printing myFE;
     ierr = mField.loop_finite_elements ("ELASTIC_MECHANICS","ELASTIC",myFE); CHKERRQ(ierr);
   
-    
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 
