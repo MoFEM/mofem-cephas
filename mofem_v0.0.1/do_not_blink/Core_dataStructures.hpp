@@ -85,6 +85,14 @@ struct ltstr
 { inline bool operator()(const string &s1, const string& s2) const
   { return strcmp(s1.c_str(), s2.c_str()) < 0; } };
 
+struct CubitMeshSets_change_add_bit_to_CubitBCType {
+  Cubit_BC_bitset bit;
+  CubitMeshSets_change_add_bit_to_CubitBCType(const Cubit_BC_bitset &_bit): bit(_bit) {};
+  void operator()(CubitMeshSets &e) { 
+    e.CubitBCType |= bit;
+  }
+};
+
 
 struct RefMoFEMEntity_change_add_bit {
   BitRefLevel bit;
@@ -314,7 +322,7 @@ struct _NumeredMoFEMFiniteElement_: public NumeredMoFEMFiniteElement {
       tag<Composite_mi_tag>,       
       composite_key< <br>
 	_NumeredMoFEMFiniteElement_,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
 	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
  */
 typedef multi_index_container<
@@ -327,14 +335,14 @@ typedef multi_index_container<
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
     ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
+      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
     ordered_non_unique<
       tag<MoFEMFiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
     ordered_non_unique<
       tag<Composite_mi_tag>,       
       composite_key<
 	_NumeredMoFEMFiniteElement_,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
 	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
   > > NumeredMoFEMFiniteElement_multiIndex;
 

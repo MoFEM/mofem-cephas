@@ -113,12 +113,12 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   FEMethod_ComplexForLazy(_moab,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { };
 
   vector<DofIdx> DirihletBC;
-  PetscErrorCode SetDirihletBC_to_ElementIndicies() {
+  virtual PetscErrorCode SetDirihletBC_to_ElementIndicies() {
     PetscFunctionBegin;
     ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,spatial_field_name,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace() {
+  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesFace() {
     PetscFunctionBegin;
     ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices,FaceEdgeIndices_data,FaceIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -151,7 +151,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   vector<FieldData> DirihletBCDiagVal;
   
-  PetscErrorCode CalculateSpatialFint(Vec f) {
+  virtual PetscErrorCode CalculateSpatialFint(Vec f) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
@@ -183,7 +183,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalculateSpatialTangent(Mat B) {
+  virtual PetscErrorCode CalculateSpatialTangent(Mat B) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
@@ -277,7 +277,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   }
 
-  PetscErrorCode CaluclateSpatialFext(Vec f,double *t,Range& NeumannSideSet) {
+  virtual PetscErrorCode CaluclateSpatialFext(Vec f,double *t,Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -315,7 +315,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalculateSpatialTangentExt(Mat B,double *t,Range& NeumannSideSet) {
+  virtual PetscErrorCode CalculateSpatialTangentExt(Mat B,double *t,Range& NeumannSideSet) {
     PetscFunctionBegin;
     if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
   
@@ -378,7 +378,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode operator()(Range& NeumannSideSet) {
+  virtual PetscErrorCode operator()(Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
@@ -451,7 +451,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CalculateMaterialTangent(Mat B) {
+  virtual PetscErrorCode CalculateMaterialTangent(Mat B) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
@@ -471,7 +471,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
   }
 
 
-  PetscErrorCode CalculateMaterialFint(Vec f) {
+  virtual PetscErrorCode CalculateMaterialFint(Vec f) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
@@ -490,7 +490,64 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode operator()() {
+  virtual PetscErrorCode CaluclateMaterialFext(Vec f,double *t,Range& NeumannSideSet) {
+    PetscFunctionBegin;
+
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
+    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+	for(;siit!=hi_siit;siit++) {
+	  VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
+	  if(fit==NeumannSideSet.end()) continue;
+	  ierr = GetFaceIndicesAndData_Material(siit->ent); CHKERRQ(ierr);
+	  ierr = GetFExt_Material(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
+	  ierr = SetDirihletBC_to_ElementIndiciesFace(); CHKERRQ(ierr);
+	  ierr = VecSetValues(f,FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),&*FExt_Material.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	}
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode CalculateMaterialTangentExt(Mat B,double *t,Range& NeumannSideSet) {
+    PetscFunctionBegin;
+    if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
+  
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
+    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
+
+    switch(snes_ctx) {
+      case ctx_SNESSetJacobian:
+	for(;siit!=hi_siit;siit++) {
+	  Range::iterator fit = find(NeumannSideSet.begin(),NeumannSideSet.end(),siit->ent);
+	  if(fit==NeumannSideSet.end()) continue;
+	  ierr = GetFaceIndicesAndData_Material(siit->ent); CHKERRQ(ierr);
+	  ierr = GetTangentExt_Material(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
+	  ierr = SetDirihletBC_to_ElementIndiciesFace(); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    FaceNodeIndices.size(),&(FaceNodeIndices_Material[0]),FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),
+	    &*(KExt_HH_Material.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+
+  PetscErrorCode operator()(Range& NeumannSideSet) {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
@@ -509,13 +566,17 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
       }
     }
 
+    double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
+
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = CalculateMaterialFint(snes_f); CHKERRQ(ierr);
+	ierr = CaluclateMaterialFext(snes_f,t,NeumannSideSet) ; CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
 	ierr = CalculateMaterialTangent(*snes_B); CHKERRQ(ierr);
+	ierr = CalculateMaterialTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");

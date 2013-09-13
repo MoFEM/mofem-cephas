@@ -151,8 +151,8 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   ublas::vector<double> FaceData;
   vector<double> N_face;
   vector<double> diffN_face;
-  vector<DofIdx> FaceNodeIndices;
-  ublas::vector<double> FaceNodeData;
+  vector<DofIdx> FaceNodeIndices,FaceNodeIndices_Material;
+  ublas::vector<double> FaceNodeData,FaceNodeData_Material;
   vector<vector<DofIdx> > FaceEdgeIndices_data;
   vector<ublas::vector<double> > FaceEdgeData_data;
   double *EdgeData[3];
@@ -164,14 +164,14 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   vector<int> FaceEdgeSense;
   PetscErrorCode GetFaceIndicesAndData(EntityHandle face);
 
-  ublas::vector<double> FExt;
+  ublas::vector<double> FExt,FExt_Material;
   vector<ublas::vector<double> > FExt_edge_data;
   double *FExt_edge[3];
   ublas::vector<double> FExt_face;
   PetscErrorCode GetFExt(EntityHandle face,double *t,double *t_edge[],double *t_face);
 
   //KExt_hh_hierarchical
-  ublas::matrix<double> KExt_hh;
+  ublas::matrix<double> KExt_hh,KExt_HH_Material;
   vector<ublas::matrix<double> > KExt_edgeh_data;
   double* KExt_edgeh[3];
   ublas::matrix<double> KExt_faceh;
@@ -188,6 +188,10 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
   double* KExt_edgeface[3];
   ublas::matrix<double> KExt_faceface;
   PetscErrorCode GetTangentExt(EntityHandle face,double *t,double *t_edge[],double *t_face);
+
+  PetscErrorCode GetFaceIndicesAndData_Material(EntityHandle face);
+  PetscErrorCode GetFExt_Material(EntityHandle face,double *t,double *t_edge[],double *t_face);
+  PetscErrorCode GetTangentExt_Material(EntityHandle face,double *t,double *t_edge[],double *t_face);
 
   PetscErrorCode OpComplexForLazyStart();
 

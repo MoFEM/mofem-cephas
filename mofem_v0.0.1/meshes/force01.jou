@@ -1,0 +1,8 @@
+#!python
+cubit.cmd('brick x 1 y 1 z 1')
+cubit.cmd('volume 1  size 1')
+cubit.cmd('volume 1 scheme Tetmesh')
+cubit.cmd('mesh volume 1')
+cubit.cmd('create force  on node 3  force value 10.55 moment value -0.5 direction   ny ')
+cubit.cmd('create force  on node 5  vector 0 0 -10.33 0 0 0 ')
+cubit.cmd('create force  on node 1  moment value 50 direction   z 1')

@@ -41,6 +41,7 @@
 
 #define LAMBDA(E,NU) (E*NU/((1.+NU)*(1.-2.*NU)))
 #define MU(E,NU) (0.5*E/(1.+NU))
+#define DELTA(NU_P,NU_PZ,E_P,E_Z) (((1+NU_P)*(1-NU_P-2*NU_PZ*(NU_PZ*E_Z/E_P)))/(E_P*E_P*E_Z))
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,7 +73,7 @@ void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
 /// calulate direvatives of shape functions in space
 void ShapeDiffMBTRIinvJ(double *diffN,double *invJac,double *diffNinvJac);
 /// caluate shape functions
-void ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM);
+PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM);
 /// calulare direvatives of shape functions
 void ShapeDiffMBTET(double *diffN);
 /// determinad of jacobian
@@ -93,7 +94,7 @@ PetscErrorCode ShapeDiffMBTETinvJ(double *diffN,double *invJac,double *diffNinvJ
  */
 PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords);
 /// calculate gradient of deformation
-void GradientOfDeformation(double *diffN,double *dofs,double *F);
+PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
 
 /** 
  * \brief Calulate Lagrange approximation basis
@@ -110,7 +111,7 @@ PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *di
 //complex part
 void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLPK_doublecomplex *diffNinvJac,const enum CBLAS_TRANSPOSE Trans);
 void ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__CLPK_doublecomplex *xnormal);
-void MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA);
+PetscErrorCode MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA);
 PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF);
 PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *det_xF);
 

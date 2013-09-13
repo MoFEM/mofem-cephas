@@ -656,6 +656,100 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
   } 
   PetscFunctionReturn(0);
 }
+PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHandle face) {
+  PetscFunctionBegin;
+  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dofs_iterator;
+  try {
+  FaceNodeIndices_Material.resize(9);
+  FaceNodeData_Material.resize(9);
+  const EntityHandle* conn_face; 
+  int num_nodes; 
+  rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+  int nn = 0,dd = 0;
+  for(;nn<3;nn++) {
+    dofs_iterator niit,hi_niit;
+    dofs_iterator col_niit,hi_col_niit;
+    niit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    hi_niit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    col_niit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    hi_col_niit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    for(;niit!=hi_niit;niit++,col_niit++,dd++) {
+      assert(col_niit->get_petsc_gloabl_dof_idx() == niit->get_petsc_gloabl_dof_idx());
+      FaceNodeIndices_Material[dd] = niit->get_petsc_gloabl_dof_idx();
+      FaceNodeData_Material[dd] = niit->get_FieldData();
+    }
+  }
+  if(dd != 9) {
+    SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET"); 
+  }
+  GetFaceIndicesAndData_face = face;
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,double *t,double *t_edge[],double *t_face) {
+  PetscFunctionBegin;
+  try {
+  if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData_Material(face) before call of this function");
+  FExt_Material.resize(9);
+  const EntityHandle* conn_face;
+  ublas::vector<double> coords_face;
+  coords_face.resize(9);
+  int num_nodes;
+  rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
+  if(get_PhysicalEquationNumber()==hooke) {
+    ierr = Fext_H(
+      face_order,&FaceEdgeOrder[0],//2
+      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
+      t,t_edge,t_face,//11
+      &*coords_face.data().begin(),NULL,
+      &*FExt_Material.begin(),NULL,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  } else {
+    ierr = Fext_H(
+      face_order,&FaceEdgeOrder[0],//2
+      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
+      t,t_edge,t_face,//11
+      &*FaceNodeData_Material.data().begin(),NULL,
+      &*FExt_Material.begin(),NULL,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  }
+  FExt_Material *= -1;
+  } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face,double *t,double *t_edge[],double *t_face) {
+  PetscFunctionBegin;
+  try {
+    if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData_Material(face) before call of this function");
+    const EntityHandle* conn_face;
+    ublas::vector<double> coords_face;
+    coords_face.resize(9);
+    int num_nodes;
+    rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+    rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
+    double normal[3];
+    ierr = ShapeFaceNormalMBTRI(diffNTRI,&*coords_face.data().begin(),normal); CHKERRQ(ierr);
+    double r = cblas_dnrm2(3,normal,1);
+    KExt_HH_Material.resize(9,9);
+    ierr = KExt_HH(r*eps,face_order,&FaceEdgeOrder[0],
+      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+      t,t_edge,t_face,
+      &*FaceNodeData_Material.data().begin(),
+      &*KExt_HH_Material.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
+  PetscFunctionReturn(0);
+}
 
 
 }

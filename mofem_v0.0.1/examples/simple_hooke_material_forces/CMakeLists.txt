@@ -25,6 +25,7 @@ target_link_libraries(hook_material_problem mofem_Field ${PROJECT_LIBS})
 cm_export_file("../../meshes/LShape.cub" "/" export_files_hook_material_forces)
 cm_export_file("../../meshes/LShapeCoarse.cub" "/" export_files_hook_material_forces)
 cm_export_file("../../meshes/LShapeDense.cub" "/" export_files_hook_material_forces)
+cm_export_file("../../meshes/chees.cub" "/" export_files_hook_material_forces)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
