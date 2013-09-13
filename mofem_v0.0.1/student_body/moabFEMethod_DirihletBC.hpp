@@ -104,7 +104,7 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
 
   PetscErrorCode Init() {
     PetscFunctionBegin;
-    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
       ostringstream ss;
       ss << *it << endl;
       displacement_cubit_bc_data mydata;

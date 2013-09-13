@@ -152,16 +152,11 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
   ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
 
-  //update BC for refined (with interface) mesh
-  EntityHandle meshset_SideSet1; //Dirihlet BC is there
-  ierr = mField.get_msId_meshset(1,SideSet,meshset_SideSet1); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet1,bit_level_interface,meshset_SideSet1,MBTRI,true); CHKERRQ(ierr);
-  EntityHandle meshset_SideSet2; //Dirihlet BC is there
-  ierr = mField.get_msId_meshset(2,SideSet,meshset_SideSet2); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet2,bit_level_interface,meshset_SideSet2,MBTRI,true); CHKERRQ(ierr);
-  EntityHandle meshset_SideSet3; //Dirihlet BC is there
-  ierr = mField.get_msId_meshset(3,SideSet,meshset_SideSet3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level_interface,meshset_SideSet3,MBTRI,true); CHKERRQ(ierr);
+  //add refined ent to cubit meshsets
+  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
+    EntityHandle cubit_meshset = cubit_it->meshset; 
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+  }
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
@@ -176,9 +171,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_PRISM(meshset_level0,bit_level1); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet1,bit_level1,meshset_SideSet1,MBTRI,true,3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet2,bit_level1,meshset_SideSet2,MBTRI,true,3); CHKERRQ(ierr);
-  ierr = mField.refine_get_childern(meshset_SideSet3,bit_level1,meshset_SideSet3,MBTRI,true,3); CHKERRQ(ierr);*/
+  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
+    EntityHandle cubit_meshset = cubit_it->meshset; 
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+  }*/
 
   BitRefLevel problem_bit_level = bit_level0;
 
@@ -253,27 +249,39 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create matrices
-  Vec F;
+  Vec D,F;
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  //Get SideSet 1 and SideSet 2 defined in CUBIT
-  Range SideSet1,SideSet2,SideSet3;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
+  struct MyElasticFEMethod: public ElasticFEMethod {
+    MyElasticFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_ptr,
+      Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
+      ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
+
+    PetscErrorCode Fint(Vec F_int) {
+      PetscFunctionBegin;
+      ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
+      for(int rr = 0;rr<row_mat;rr++) {
+	if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	if(RowGlob[rr].size()==0) continue;
+	f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+	ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
 
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
   const double alpha = 0.05;
-  ExampleDiriheltBC myDirihletBC(moab,SideSet1);
-  InterfaceElasticFEMethod MyFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2,SideSet3);
-  InterfaceFEMethod IntMyFE(moab,&myDirihletBC,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
+  CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
+  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+  MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -306,8 +314,6 @@ int main(int argc, char *argv[]) {
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
-  Vec D;
-  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -335,7 +341,7 @@ int main(int argc, char *argv[]) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
-  PostProcCohesiveForces fe_post_proc_prisms(moab,YoungModulus*alpha);
+  PostProcCohesiveForces fe_post_proc_prisms(mField,YoungModulus*alpha);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {

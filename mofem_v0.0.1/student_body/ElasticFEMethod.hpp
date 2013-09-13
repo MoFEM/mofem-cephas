@@ -242,7 +242,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     virtual PetscErrorCode NeumannBC() {
       PetscFunctionBegin;
       
-      for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
 	
 	ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
 

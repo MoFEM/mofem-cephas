@@ -1,4 +1,4 @@
-/* Copyright (C) 2009, Lukasz Kaczmarczyk (likask AT civil.gla.ac.uk)
+/* Copyright (C) 2009, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -16,7 +16,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with mofem. If not, see <http://www.gnu.org/licenses/>. */
-
 
 #ifndef __COMPLEX_FOR_LAZY_H__
 #define __COMPLEX_FOR_LAZY_H__

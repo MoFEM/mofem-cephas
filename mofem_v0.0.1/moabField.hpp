@@ -96,22 +96,33 @@ struct moabField {
     */
   virtual PetscErrorCode get_CubitBCType_meshsets(const unsigned int CubitBCType,Range &meshsets) = 0;
 
-  /** 
-    * \brief get begin iterator of cubit mehset 
+   /** 
+    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    *
+    * for(_IT_CUBITMESHSETS_BYFOR_LOOP_(mFiled,it) {
+    * 	...
+    * }
     *
     */
   virtual moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() = 0;
 
-  /** 
-    * \brief get end iterator of cubit mehset 
+   /** 
+    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    *
+    * for(_IT_CUBITMESHSETS_BYFOR_LOOP_(mFiled,it) {
+    * 	...
+    * }
     *
     */
   virtual moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() = 0;
 
+  #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,IT) \
+    moabCubitMeshSet_multiIndex::iterator IT = MFIELD.get_CubitMeshSets_begin(); IT!=MFIELD.get_CubitMeshSets_end(); IT++
+
   /** 
-    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet|DisplacementSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mFiled,NodeSet|DisplacementSet,it) {
     * 	...
     * }
     *
@@ -120,9 +131,9 @@ struct moabField {
   virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) = 0;
 
   /** 
-    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mFiled,NodeSet,it) {
     * 	...
     * }
     *
@@ -130,14 +141,14 @@ struct moabField {
     */
   virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) = 0;
 
-  #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
+  #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
     moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_begin(CUBITBCTYPE); \
     IT!=MFIELD.get_CubitMeshSets_end(CUBITBCTYPE); IT++
 
   /** 
-    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet|DisplacementSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mFiled,NodeSet|DisplacementSet,it) {
     * 	...
     * }
     *
@@ -146,9 +157,9 @@ struct moabField {
   virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) = 0;
 
   /** 
-    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mFiled,NodeSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mFiled,NodeSet,it) {
     * 	...
     * }
     *

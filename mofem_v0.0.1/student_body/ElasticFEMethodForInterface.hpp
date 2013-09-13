@@ -34,63 +34,7 @@
 
 namespace MoFEM {
 
-struct InterfaceElasticFEMethod: public ElasticFEMethod {
-
-  Range& SideSet3;
-
-  InterfaceElasticFEMethod(Interface& _moab): ElasticFEMethod(_moab),SideSet3(dummy) {};
-
-  InterfaceElasticFEMethod(
-      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
-      double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
-      ElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2), SideSet3(_SideSet3) {};
-
-  PetscErrorCode NeumannBC() {
-      PetscFunctionBegin;
-      
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction2(3);
-      traction2[0] = 0;
-      traction2[1] = +1;
-      traction2[2] = 0;
-      ierr = ElasticFEMethod::NeumannBC(F,traction2,SideSet2); CHKERRQ(ierr);
-
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction3(3);
-      traction3[0] = 0;
-      traction3[1] = -1;
-      traction3[2] = 0;
-      ierr = ElasticFEMethod::NeumannBC(F,traction3,SideSet3); CHKERRQ(ierr);
-
-      PetscFunctionReturn(0);
-  }
-
-
-  PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-
-      ierr = GetMatrices(); CHKERRQ(ierr);
-      //Dirihlet Boundary Condition
-      SetDirihletBC_to_ElementIndicies();
-      if(Diagonal!=PETSC_NULL) {
-	if(DirihletBC.size()>0) {
-	  DirihletBCDiagVal.resize(DirihletBC.size());
-	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
-	}
-      }
-
-      //Assembly Aij and F
-      ierr = RhsAndLhs(); CHKERRQ(ierr);
-      //Neumann Boundary Conditions
-      ierr = NeumannBC(); CHKERRQ(ierr);
-
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-  }
-
-};
-
-struct InterfaceFEMethod: public InterfaceElasticFEMethod {
+struct InterfaceFEMethod: public ElasticFEMethod {
 
   double YoungModulus; 
   ublas::matrix<double> R;
@@ -100,14 +44,14 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
   vector<ublas::vector<FieldData> > DispData;
 
   InterfaceFEMethod(
-      Interface& _moab,double _YoungModulus): 
-      InterfaceElasticFEMethod(_moab),YoungModulus(_YoungModulus) {
+      moabField& _mField,double _YoungModulus): 
+      ElasticFEMethod(_mField),YoungModulus(_YoungModulus) {
       DispData.resize(1+6+2);
     };
 
   InterfaceFEMethod(
-      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,double _YoungModulus,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3): 
-	InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,0,0,_SideSet1,_SideSet2,_SideSet3),YoungModulus(_YoungModulus) {
+      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _YoungModulus): 
+	ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0),YoungModulus(_YoungModulus) {
     DispData.resize(1+6+2);
     };
 
@@ -317,9 +261,9 @@ struct InterfaceFEMethod: public InterfaceElasticFEMethod {
 
 struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
   
-    PostProcCohesiveForces(Interface &_moab,double _YoungModulus): 
-      InterfaceFEMethod(_moab,_YoungModulus), PostProcOnRefMesh_Base() {
-      pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    PostProcCohesiveForces(moabField& _mField,double _YoungModulus): 
+      InterfaceFEMethod(_mField,_YoungModulus), PostProcOnRefMesh_Base() {
+      pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     };
 
     vector<double> g_NTRI;
