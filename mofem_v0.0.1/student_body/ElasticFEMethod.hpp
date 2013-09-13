@@ -24,89 +24,22 @@
 
 namespace MoFEM {
 
-struct ExampleDiriheltBC: public BaseDirihletBC {
-  Range SideSet1_;
-
-  ExampleDiriheltBC(Interface &moab,Range& SideSet1) {
-	ErrorCode rval;
-	Range SideSet1Edges,SideSet1Nodes;
-	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
-	rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
-	SideSet1_.insert(SideSet1.begin(),SideSet1.end());
-	SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
-	SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
-  }
-
-  PetscErrorCode SetDirihletBC_to_ElementIndicies(
-      moabField::FEMethod *fe_method_ptr,string field_name,
-      vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
-      PetscFunctionBegin;
-      //Dirihlet form SideSet1
-      DirihletBC.resize(0);
-      Range::iterator siit1 = SideSet1_.begin();
-      for(;siit1!=SideSet1_.end();siit1++) {
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;riit!=hi_riit;riit++) {
-	    if(riit->get_name()!=field_name) continue;
-	    // all fixed
-	    // if some ranks are selected then we could apply BC in particular direction
-	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
-	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-	    }
-	  }
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;ciit!=hi_ciit;ciit++) {
-	    if(ciit->get_name()!=field_name) continue;
-	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
-	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	    }
-	  }
-      }
-      PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(vector<DofIdx>& DirihletBC,
-      vector<DofIdx> &FaceNodeIndices,
-      vector<vector<DofIdx> > &FaceEdgeIndices,
-      vector<DofIdx> &FaceIndices) {
-      PetscFunctionBegin;
-      vector<DofIdx>::iterator dit = DirihletBC.begin();
-      for(;dit!=DirihletBC.end();dit++) {
-	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
-	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-	for(int ee = 0;ee<3;ee++) {
-	  it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
-	  if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
-	}
-	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
-	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-      }
-      PetscFunctionReturn(0);
-  }
-
-};
-
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     Range SideSet1Edges,SideSet1Nodes;
 
     Mat Aij;
-    Vec F,Diagonal;
+    Vec Data,F;
     Range dummy;
 
     ElasticFEMethod(
       Interface& _moab): FEMethod_UpLevelStudent(_moab,1),
-      Aij(PETSC_NULL),F(PETSC_NULL),SideSet1(dummy),SideSet2(dummy) {};
+      Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL),SideSet1(dummy),SideSet2(dummy) {};
 
     ElasticFEMethod(
-      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
+      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      FEMethod_UpLevelStudent(_moab,_dirihlet_ptr,1),Aij(_Aij),F(_F),Diagonal(PETSC_NULL),
+      FEMethod_UpLevelStudent(_moab,_dirihlet_ptr,1),Aij(_Aij),Data(_D),F(_F),
       lambda(_lambda),mu(_mu),
       SideSet1(_SideSet1),SideSet2(_SideSet2) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -200,21 +133,22 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       //cerr << D_lambda << endl;
       //cerr << D_mu << endl;
       //cerr << D << endl;
-      ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
+
+      ierr = VecZeroEntries(F); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
+
       PetscFunctionReturn(0);
     }
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      if(Diagonal!=PETSC_NULL) {
-	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-	ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
-	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
-      }
       // Note MAT_FLUSH_ASSEMBLY
       ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,Aij); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,F); CHKERRQ(ierr);
       ierr = PetscGetTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
@@ -308,7 +242,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  ierr = VecSetValues(F_ext,RowGlob_face.size(),&(RowGlob_face)[0],&(f_ext_faces.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
 
-
       }
 
       PetscFunctionReturn(0);
@@ -330,7 +263,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     PetscErrorCode SetDirihletBC_to_ElementIndicies() {
       PetscFunctionBegin;
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,"DISPLACEMENT",RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -486,6 +419,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     virtual PetscErrorCode Rhs() {
       PetscFunctionBegin;
+      ierr = Fint(F); CHKERRQ(ierr);
       ublas::vector<FieldData> f[row_mat];
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
@@ -567,13 +501,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = GetMatrices(); CHKERRQ(ierr);
       //Dirihlet Boundary Condition
       SetDirihletBC_to_ElementIndicies();
-      if(Diagonal!=PETSC_NULL) {
-	if(DirihletBC.size()>0) {
-	  DirihletBCDiagVal.resize(DirihletBC.size());
-	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
-	}
-      }
 
       //Assembly Aij and F
       ierr = RhsAndLhs(); CHKERRQ(ierr);
@@ -585,7 +512,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-  };
+};
 
     
 }

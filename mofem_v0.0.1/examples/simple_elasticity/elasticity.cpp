@@ -144,8 +144,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create matrices
-  Vec F;
+  Vec F,D;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
+
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
@@ -158,9 +160,9 @@ int main(int argc, char *argv[]) {
 
   struct MyElasticFEMethod: public ElasticFEMethod {
     MyElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_ptr,
-      Mat &_Aij,Vec& _F,
+      Mat &_Aij,Vec &_D,Vec& _F,
       double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      ElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,
+      ElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu,
       _SideSet1,_SideSet2) {};
 
     /// Set Neumann Boundary Conditions on SideSet2
@@ -176,28 +178,15 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode operator()() {
+    PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-
-      //Dirihlet Boundary Condition
-      ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
-      if(Diagonal!=PETSC_NULL) {
-	if(DirihletBC.size()>0) {
-	  DirihletBCDiagVal.resize(DirihletBC.size());
-	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
-	}
+      ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
+      for(int rr = 0;rr<row_mat;rr++) {
+	if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	if(RowGlob[rr].size()==0) continue;
+	f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+	ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
       }
-
-      //Assembly Aij and F
-      ierr = RhsAndLhs(); CHKERRQ(ierr);
-
-      //Neumann Boundary Conditions
-      ierr = NeumannBC(); CHKERRQ(ierr);
-
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -206,8 +195,9 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
-  ExampleDiriheltBC myDirihletBC(moab,SideSet1);
-  MyElasticFEMethod MyFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
+  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+  MyElasticFEMethod MyFE(moab,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -237,8 +227,6 @@ int main(int argc, char *argv[]) {
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
-  Vec D;
-  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

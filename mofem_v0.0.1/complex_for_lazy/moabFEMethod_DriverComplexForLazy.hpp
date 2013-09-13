@@ -116,7 +116,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   vector<DofIdx> DirihletBC;
   virtual PetscErrorCode SetDirihletBC_to_ElementIndicies() {
     PetscFunctionBegin;
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,spatial_field_name,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesFace() {
@@ -448,7 +448,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
   vector<DofIdx> DirihletBC;
   PetscErrorCode SetDirihletBC_to_ElementIndicies() {
     PetscFunctionBegin;
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,material_field_name,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
