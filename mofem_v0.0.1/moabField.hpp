@@ -537,6 +537,17 @@ struct moabField {
      *
      * It is used to assembly matrices and vectors, calulating global varibles,
      * f.e. total internal energy, ect.
+     * 
+     * Iterating over dofs:
+     * Example1 iteratong over dofs in row by name of the field
+     * for(_IT_GET_FEROW_DOFS_FOR_LOOP_("DISPLACEMENT")) { ... } 
+     * 
+     * Example2 iteratong over dofs in row by name of the field and type of the entity
+     * for(_IT_GET_FEROW_DOFS_FOR_LOOP_("DISPLACEMENT",MBVERTEX)) { ... } 
+     * 
+     * Example2 iteratong over dofs in row by name of the field, type of the entity and side number
+     * for(_IT_GET_FEROW_DOFS_FOR_LOOP_("DISPLACEMENT",MBEDGE,0)) { ... }
+     * 
      */
     PetscErrorCode postProcess();
     //
@@ -551,6 +562,99 @@ struct moabField {
     const FEDofMoFEMEntity_multiIndex *data_multiIndex;
     const FENumeredDofMoFEMEntity_multiIndex *row_multiIndex;
     const FENumeredDofMoFEMEntity_multiIndex *col_multiIndex;
+
+    template<class MULTIINDEX>
+    typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,  
+      const string &field_name,const EntityType type,const int side_number) const {
+      return index.lower_bound(boost::make_tuple(field_name,type,side_number));
+    } 
+    template<class MULTIINDEX>
+    typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,  
+      const string &field_name,const EntityType type,const int side_number) const {
+      return index.upper_bound(boost::make_tuple(field_name,type,side_number));
+    } 
+
+    #define _IT_GET_FEROW_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->row_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
+      IT != FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->row_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
+
+    #define _IT_GET_FECOL_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->col_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
+      IT != FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->col_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
+
+    #define _IT_GET_FEDATA_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
+    FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->data_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
+      IT != FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->data_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
+
+    template<class MULTIINDEX>
+    typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name,const EntityType type) const {
+      return index.lower_bound(boost::make_tuple(field_name,type));
+    } 
+    template<class MULTIINDEX>
+    typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name,const EntityType type) const {
+      return index.upper_bound(boost::make_tuple(field_name,type));
+    } 
+
+    #define _IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->row_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
+      IT != FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->row_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
+    #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(NAME,TYPE,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->col_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
+      IT != FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->col_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
+    #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(NAME,TYPE,IT) \
+    FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->data_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
+      IT != FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->data_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
+
+    template<class MULTIINDEX>
+    typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name) const {
+      return index.lower_bound(field_name);
+    } 
+    template<class MULTIINDEX>
+    typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name) const {
+      return index.upper_bound(field_name);
+    } 
+
+    #define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE,NAME,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->row_multiIndex->get<FieldName_mi_tag>(),NAME); \
+      IT != FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->row_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
+    #define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE,NAME,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->col_multiIndex->get<FieldName_mi_tag>(),NAME); \
+      IT != FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->col_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
+    #define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE,NAME,IT) \
+    FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->data_multiIndex->get<FieldName_mi_tag>(),NAME); \
+      IT != FE->get_begin<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->data_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
+
+    template<class MULTIINDEX>
+    typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const EntityHandle ent) const {
+      return index.lower_bound(ent);
+    } 
+    template<class MULTIINDEX>
+    typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const EntityHandle ent) const {
+      return index.upper_bound(ent);
+    } 
+
+    #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
+      IT != FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
+    #define _IT_GET_FECOL_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->col_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
+      IT != FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->col_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
+    #define _IT_GET_FEDATA_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
+    FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->data_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
+      IT != FE->get_begin<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->data_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
+
   };
 
   struct EntMethod: public BasicMethod {
@@ -618,6 +722,32 @@ struct moabField {
     *
     */
   virtual PetscErrorCode get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr) = 0;
+
+  /** 
+    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    *
+    * for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * 	...
+    * }
+    *
+    * \param field_name  
+    */
+  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_moabfield_by_name_begin(const string &field_name) = 0;
+
+  /** 
+    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    *
+    * for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * 	...
+    * }
+    *
+    * \param field_name  
+    */
+  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_moabfield_by_name_end(const string &field_name) = 0;
+
+  #define _IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_moabfield_by_name_begin(NAME); \
+      IT != MFIELD.get_dofs_moabfield_by_name_end(NAME); IT++
 
   /** \brief Get finite elements multi index
     *

@@ -24,6 +24,7 @@
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
+#include "moabFEMethod_DirihletBC.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
