@@ -26,22 +26,20 @@ namespace MoFEM {
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
-    Range SideSet1Edges,SideSet1Nodes;
-
+    moabField& mField;
     Mat Aij;
     Vec Data,F;
-    Range dummy;
 
     ElasticFEMethod(
-      Interface& _moab): FEMethod_UpLevelStudent(_moab,1),
-      Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL),SideSet1(dummy),SideSet2(dummy) {};
+      moabField& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
+      Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL) {};
 
     ElasticFEMethod(
-      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
-      double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      FEMethod_UpLevelStudent(_moab,_dirihlet_ptr,1),Aij(_Aij),Data(_D),F(_F),
-      lambda(_lambda),mu(_mu),
-      SideSet1(_SideSet1),SideSet2(_SideSet2) { 
+      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
+      double _lambda,double _mu): 
+      FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
+      Aij(_Aij),Data(_D),F(_F),
+      lambda(_lambda),mu(_mu) { 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
       RowGlob.resize(1+6+4+1);
@@ -56,10 +54,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       colBMatrices.resize(1+6+4+1);
 
       if(F!=PETSC_NULL) {
-	//
-	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
-	rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
-
 	//VEC & MAT Options
 	//If index is set to -1 ingonre its assembly
 	VecSetOption(F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
@@ -82,9 +76,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     double lambda,mu;
     ublas::matrix<FieldData> D_lambda,D_mu,D;
-
-    Range& SideSet1;
-    Range& SideSet2;
 
     int row_mat,col_mat;
     vector<vector<DofIdx> > RowGlob;
@@ -155,7 +146,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode NeumannBC(Vec F_ext,ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
+    virtual PetscErrorCode NeumannBC_Faces(Vec F_ext,ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
       PetscFunctionBegin;
 
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -251,12 +242,28 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     virtual PetscErrorCode NeumannBC() {
       PetscFunctionBegin;
       
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
-      traction[0] = 0;
-      traction[1] = 1;
-      traction[2] = 0;
+      for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+	
+	ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
 
-      ierr = NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
+	force_cubit_bc_data mydata;
+	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+	Range faces;
+	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,faces,true); CHKERRQ(ierr);
+	/*ostringstream ss;
+	ss << *it << endl;
+	ss << mydata;
+	ss << "nb faces " << faces.size() << endl;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
+
+	traction[0] = mydata.data.value3;
+	traction[1] = mydata.data.value4;
+	traction[2] = mydata.data.value5;
+	traction *= mydata.data.value1;
+
+	ierr = NeumannBC_Faces(F,traction,faces); CHKERRQ(ierr);
+
+      }
 
       PetscFunctionReturn(0);
     }

@@ -151,32 +151,10 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  //Get SideSet 1 and SideSet 2 defined in CUBIT
-  Range SideSet1,SideSet2;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
-
   struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_ptr,
-      Mat &_Aij,Vec &_D,Vec& _F,
-      double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      ElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu,
-      _SideSet1,_SideSet2) {};
-
-    /// Set Neumann Boundary Conditions on SideSet2
-    PetscErrorCode NeumannBC() {
-      PetscFunctionBegin;
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
-      //Set Direction of Traction On SideSet2
-      traction[0] = 1; //X
-      traction[1] = 0; //Y 
-      traction[2] = 0; //Z
-      //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
-      ierr = ElasticFEMethod::NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
+    MyElasticFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_ptr,
+      Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
+      ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
 
     PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
@@ -197,7 +175,7 @@ int main(int argc, char *argv[]) {
   const double PoissonRatio = 0.0;
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-  MyElasticFEMethod MyFE(moab,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
