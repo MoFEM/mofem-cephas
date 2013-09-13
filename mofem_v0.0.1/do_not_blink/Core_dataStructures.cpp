@@ -813,6 +813,32 @@ PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
   copy(&tag_bc_data[0],&tag_bc_data[tag_bc_size],bc_data.begin());
   PetscFunctionReturn(0);
 }
+
+//NEW
+    PetscErrorCode CubitMeshSets::get_Cubit_material_data(vector<unsigned int>& material_data) const {
+        PetscFunctionBegin;
+        copy(&tag_block_header_data[0],&tag_block_header_data[12],material_data.begin());
+        PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode CubitMeshSets::print_Cubit_material_data(ostream& os) const {
+        PetscFunctionBegin;
+        vector<unsigned int> material_data;
+        get_Cubit_material_data(material_data);
+        os << "material_data = ";
+        std::vector<unsigned int>::iterator vit = material_data.begin();
+        for(;vit!=material_data.end();vit++) {
+            os << std::hex << (int)((unsigned int)*vit) << " ";
+        }
+        os << ": ";
+        vit = material_data.begin();
+        for(;vit!=material_data.end();vit++) {
+            os << *vit;
+        }
+        os << std::endl;
+        PetscFunctionReturn(0);
+    }
+            
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const {
     PetscFunctionBegin;
     

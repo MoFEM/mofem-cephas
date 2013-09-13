@@ -1670,9 +1670,25 @@ struct CubitMeshSets {
   /**
    * \brief get bc_data vector from MoFEM database
    * 
-   * \param b_data is the in/out vector were bc_data will be stored
+   * \param bc_data is the in/out vector were bc_data will be stored
    */
   PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
+    
+//NEW
+/**
+ * \brief get block_headers vector from MoFEM database
+ *
+ * \param material_data is the in/out vector were the material data will be stored
+ */
+PetscErrorCode get_Cubit_material_data(vector<unsigned int>& material_data) const;
+
+/**
+ * \brief print material_data int stream given by os
+ *
+ * f.e. it->print_Cubit_material_data(cout), i.e. printing to standard output
+ * f.e. it->print_Cubit_material_data(cerr), i.e. printing to standard error output
+ */
+PetscErrorCode print_Cubit_material_data(ostream& os) const;
     
   /**
    * \brief print bc_data int stream given by os

@@ -169,7 +169,19 @@ int main(int argc, char *argv[]) {
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
     if(bc_data.empty()) continue;
-  } 
+  }
+    
+    cout << "<<<< MaterialSets >>>>>" << endl;
+    //MaterialSets
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+    {
+        //cout << *it << endl;
+        //ierr = it->print_Cubit_material_data(cout); CHKERRQ(ierr);
+        //vector<unsigned int> material_data;
+        //ierr = it->get_Cubit_material_data(material_data); CHKERRQ(ierr);
+        //if(material_data.empty()) continue;
+    }
+    
 
     //Close mesh_file_name.txt
     myfile.close();
