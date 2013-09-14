@@ -158,12 +158,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  Range SideSet1,SideSet2;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
-
   DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 

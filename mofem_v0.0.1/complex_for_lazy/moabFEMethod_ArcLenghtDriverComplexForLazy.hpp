@@ -40,7 +40,6 @@
 
 #include "complex_for_lazy.h"
 
-#include "nonlinear_elasticity.hpp"
 #include "ArcLeghtTools.hpp"
 
 #ifdef __cplusplus
@@ -56,70 +55,17 @@ namespace MoFEM {
 ErrorCode rval;
 PetscErrorCode ierr;
 
-struct MyDirihletBC: public DirihletBCMethod_DriverComplexForLazy {
-  Range& SideSet1;
-  Range& SideSet3;
-  Range& SideSet4;
-
-  Range SideSet1_;
-  Range SideSet3_;
-  Range SideSet4_;
-
-  MyDirihletBC(Interface &moab,
-      Range &_SideSet1,Range &_SideSet3,Range &_SideSet4):
-      SideSet1(_SideSet1),SideSet3(_SideSet3),SideSet4(_SideSet4) {
-    Range SideSetEdges,SideSetNodes;
-    rval = moab.get_connectivity(SideSet1,SideSetNodes,true); CHKERR_THROW(rval);
-    SideSet1_.insert(SideSet1.begin(),SideSet1.end());
-    SideSet1_.insert(SideSetNodes.begin(),SideSetNodes.end());
-
-    SideSetEdges.clear();
-    SideSetNodes.clear();
-    rval = moab.get_adjacencies(SideSet3,1,false,SideSetEdges,Interface::UNION); CHKERR_THROW(rval);
-    rval = moab.get_connectivity(SideSet3,SideSetNodes,true); CHKERR_THROW(rval);
-    SideSet3_.insert(SideSet3.begin(),SideSet3.end());
-    SideSet3_.insert(SideSetEdges.begin(),SideSetEdges.end());
-    SideSet3_.insert(SideSetNodes.begin(),SideSetNodes.end());
-
-    SideSetEdges.clear();
-    SideSetNodes.clear();
-    rval = moab.get_adjacencies(SideSet4,1,false,SideSetEdges,Interface::UNION); CHKERR_THROW(rval);
-    rval = moab.get_connectivity(SideSet4,SideSetNodes,true); CHKERR_THROW(rval);
-    SideSet4_.insert(SideSet4.begin(),SideSet4.end());
-    SideSet4_.insert(SideSetEdges.begin(),SideSetEdges.end());
-    SideSet4_.insert(SideSetNodes.begin(),SideSetNodes.end());
-  }
-
-  PetscErrorCode SetDirihletBC_to_ElementIndicies(
-    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
-    PetscFunctionBegin;
-
-    Range& DirihletSideSet = SideSet1_;
-    Range& SymmBC_Y = SideSet3_;
-    Range& SymmBC_X = SideSet4_;
-
-    ierr = DirihletBCMethod_DriverComplexForLazy::SetDirihletBC_to_ElementIndicies(fe_method_ptr,RowGlob,ColGlob,DirihletBC,"SPATIAL_POSITION",DirihletSideSet,fixed_z,true); CHKERRQ(ierr);
-    ierr = DirihletBCMethod_DriverComplexForLazy::SetDirihletBC_to_ElementIndicies(fe_method_ptr,RowGlob,ColGlob,DirihletBC,"SPATIAL_POSITION",SymmBC_Y,fixed_y,false); CHKERRQ(ierr);
-    ierr = DirihletBCMethod_DriverComplexForLazy::SetDirihletBC_to_ElementIndicies(fe_method_ptr,RowGlob,ColGlob,DirihletBC,"SPATIAL_POSITION",SymmBC_X,fixed_x,false); CHKERRQ(ierr);
-
-    PetscFunctionReturn(0);
-  }
-
-};
-
 struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
   ArcLenghtCtx* arc_ptr;
 
-  Range& SideSet2;
   Range& NodeSet1;
 
-
   MyElasticFEMethod(
-      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
-      ArcLenghtCtx *_arc_ptr,Range &_SideSet2,Range &_NodeSet1,int _verbose = 0): 
-      FEMethod_DriverComplexForLazy_Spatial(_moab,_dirihlet_ptr,_lambda,_mu,_verbose), 
-      arc_ptr(_arc_ptr),SideSet2(_SideSet2),NodeSet1(_NodeSet1) {
+      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
+      ArcLenghtCtx *_arc_ptr,Range &_NodeSet1,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_ptr,_lambda,_mu,_verbose), 
+      arc_ptr(_arc_ptr),NodeSet1(_NodeSet1) {
 
     set_PhysicalEquationNumber(neohookean);
 
@@ -146,36 +92,50 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
     PetscFunctionReturn(0);
   }
 
-
-
-
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
 
-    ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
-    if(Diagonal!=PETSC_NULL) {
-	if(DirihletBC.size()>0) {
-	  DirihletBCDiagVal.resize(DirihletBC.size());
-	  fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	  ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
-	}
-    }
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
 
-    double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
-
-    Range& NeumannSideSet = SideSet2;
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	  ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
-	  ierr = CaluclateSpatialFext(arc_ptr->F_lambda,t,NeumannSideSet); CHKERRQ(ierr);
 	}
 	break;
       case ctx_SNESSetJacobian: {
 	  ierr = CalculateSpatialTangent(*snes_B); CHKERRQ(ierr);
+	}
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+
+      pressure_cubit_bc_data mydata;
+      ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+      /*ostringstream ss;
+      ss << *it << endl;
+      ss << mydata;
+      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
+
+      double t_val = this->t_val*mydata.data.value1;
+      double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
+
+      Range NeumannSideSet;
+      ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
+
+      switch(snes_ctx) {
+	case ctx_SNESNone:
+	case ctx_SNESSetFunction: { 
+	  ierr = CaluclateSpatialFext(arc_ptr->F_lambda,t,NeumannSideSet); CHKERRQ(ierr);
+	  }
+	  break;
+	case ctx_SNESSetJacobian: {
 	  FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
 	  dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("LAMBDA");
 	  hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("LAMBDA");
@@ -183,23 +143,13 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 	  double _lambda_ = dit->get_FieldData();
 	  cblas_dscal(9,_lambda_,t,1);
 	  ierr = CalculateSpatialTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
-	}
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	  } break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+
     }
 
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction: {  
-      }
-      break;
-      case ctx_SNESSetJacobian: {
-      }
-      break;
-      default:
-      break;
-    }
- 
     PetscFunctionReturn(0);
   }
 
@@ -208,6 +158,9 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
     switch(snes_ctx) {
       case ctx_SNESNone:
 	//snes_f //assemble only if ctx_SNESNone
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
@@ -224,10 +177,11 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-	ierr = MatDiagonalSet(*snes_B,Diagonal,ADD_VALUES); CHKERRQ(ierr);
-	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*snes_B); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:
