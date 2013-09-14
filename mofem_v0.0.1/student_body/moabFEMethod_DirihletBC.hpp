@@ -226,12 +226,15 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
 	  map<int,Range>::iterator bit = bc_map[ss].begin();
 	  for(;bit!=bc_map[ss].end();bit++) {
 	    if(find(bit->second.begin(),bit->second.end(),dit->get_ent()) == bit->second.end()) continue;
-	    ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),(bc_map_val[ss])[bit->first],INSERT_VALUES); CHKERRQ(ierr);
+	    if(dit->get_ent_type()==MBVERTEX) {
+	      ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),(bc_map_val[ss])[bit->first],INSERT_VALUES); CHKERRQ(ierr);
+	    } else {
+	      ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
+	    }
 	  }
 	}
       }
     }
-
 
     PetscFunctionReturn(0);
   }
@@ -240,6 +243,8 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
     PetscFunctionBegin;
 
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+
+    ierr = mField.set_local_VecCreateGhost(problem_name,Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
       if(dit->get_part()!=pcomm->rank()) continue;

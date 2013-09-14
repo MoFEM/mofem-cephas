@@ -125,7 +125,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       //cerr << D_mu << endl;
       //cerr << D << endl;
 
-      ierr = VecZeroEntries(F); CHKERRQ(ierr);
+      ierr = VecZeroEntries(Data); CHKERRQ(ierr);
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
@@ -140,21 +140,23 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,F); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       ierr = PetscGetTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode NeumannBC_Faces(Vec F_ext,ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& SideSet) {
+    virtual PetscErrorCode NeumannBC_Faces(Vec F_ext,ublas::vector<FieldData,ublas::bounded_array<double,3> > &traction,Range& faces) {
       PetscFunctionBegin;
 
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
       SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
       for(;siit!=hi_siit;siit++) {
-	Range::iterator fit = find(SideSet.begin(),SideSet.end(),siit->ent);
-	if(fit==SideSet.end()) continue;
+	Range::iterator fit = find(faces.begin(),faces.end(),siit->ent);
+	if(fit==faces.end()) continue;
 
 	ierr = ShapeFunctions_TRI(siit->ent,g_NTRI);  CHKERRQ(ierr);
 
