@@ -25,7 +25,7 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-#include "nonlinear_elasticity.hpp"
+#include "moabFEMethod_DriverComplexForLazy.hpp"
 
 using namespace MoFEM;
 
@@ -34,72 +34,15 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-struct ExampleDiriheltBC: public BaseDirihletBC {
-  Range SideSet1_;
+struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
-  string field_name;
-  ExampleDiriheltBC(Interface &moab,Range& SideSet1): field_name("SPATIAL_POSITION") {
-	ErrorCode rval;
-	Range SideSet1Edges,SideSet1Nodes;
-	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
-	rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
-	SideSet1_.insert(SideSet1.begin(),SideSet1.end());
-	SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
-	SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
-  }
-
-  PetscErrorCode SetDirihletBC_to_ElementIndicies(
-      moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
-      PetscFunctionBegin;
-      //Dirihlet form SideSet1
-      DirihletBC.resize(0);
-      Range::iterator siit1 = SideSet1_.begin();
-      for(;siit1!=SideSet1_.end();siit1++) {
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;riit!=hi_riit;riit++) {
-	    if(riit->get_name()!=field_name) continue;
-	    // all fixed
-	    // if some ranks are selected then we could apply BC in particular direction
-	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
-	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-	    }
-	  }
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;ciit!=hi_ciit;ciit++) {
-	    if(ciit->get_name()!=field_name) continue;
-	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
-	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	    }
-	  }
-      }
-      PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(vector<DofIdx>& DirihletBC,
-      vector<DofIdx> &FaceNodeIndices,
-      vector<vector<DofIdx> > &FaceEdgeIndices,
-      vector<DofIdx> &FaceIndices) {
-      PetscFunctionBegin;
-      vector<DofIdx>::iterator dit = DirihletBC.begin();
-      for(;dit!=DirihletBC.end();dit++) {
-	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
-	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-	for(int ee = 0;ee<3;ee++) {
-	  it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
-	  if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
-	}
-	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
-	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-      }
-      PetscFunctionReturn(0);
+  NL_ElasticFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
+    set_PhysicalEquationNumber(neohookean);
   }
 
 };
+
 
 int main(int argc, char *argv[]) {
 
@@ -170,9 +113,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
-  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",5); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",5); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",5); CHKERRQ(ierr);
+  int order = 4;
+  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
   //build field
@@ -220,10 +164,12 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
   PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
 
+  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
+  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  ExampleDiriheltBC myDirihletBC(moab,SideSet1);
-  NL_ElasticFEMethod MyFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  NL_ElasticFEMethod MyFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 
   moabSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
   

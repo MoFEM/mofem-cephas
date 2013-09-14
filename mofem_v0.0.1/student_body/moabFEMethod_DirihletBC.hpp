@@ -157,7 +157,6 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
 	for(;eit!=bit->second.end();eit++) {
 	  for(_IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(fe_method_ptr,field_name,*eit,dit)) {
 	    if(dit->get_dof_rank()!=ss) continue;
-	    dit->get_FieldData() = (bc_map_val[ss])[bit->first];
 	    // if some ranks are selected then we could apply BC in particular direction
 	    DirihletBC.push_back(dit->get_petsc_gloabl_dof_idx());
 	    for(unsigned int cc = 0;cc<ColGlobDofs.size();cc++) {
@@ -248,6 +247,7 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
 
     for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
       if(dit->get_part()!=pcomm->rank()) continue;
+      if(dit->get_ent_type()!=MBVERTEX) continue;
       for(int ss = 0;ss<3;ss++) {
 	if(dit->get_dof_rank()==ss) {
 	  map<int,Range>::iterator bit = bc_map[ss].begin();
