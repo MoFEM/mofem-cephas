@@ -46,13 +46,16 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
   enum eRowGlob { i_nodes = 0, i_edge0=1+0, i_edge1=1+1, i_edge2=1+2, i_edge3=1+3, i_edge4=1+4, i_edge5=1+5, 
     i_face0=1+6+0, i_face1=1+6+1, i_face2=1+6+2, i_face3=1+6+3, i_volume=1+6+4, i_last=1+6+4+1 };
-  enum analysis { spatail_analysis = 1, material_analysis = 1<<1 };
+  enum analysis { spatail_analysis = 1, material_analysis = 1<<1, mesh_quality_analysis = 1<<2 };
   analysis type_of_analysis;
 
   double lambda,mu;
   void *ptr_matctx;
 
   double eps;
+
+  PetscBool flg_alpha2,flg_gamma;
+  double alpha2,gamma;
 
   string spatial_field_name;
   string material_field_name;
@@ -141,6 +144,9 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
   PetscErrorCode GetDofs_X_FromElementData();
 
+  Tag th_quality0,th_quality,th_b;
+  double *quality0,*quality,*b;
+  PetscErrorCode get_edges_from_elem_coords(double *cords,double *coords_edges);
   PetscErrorCode GetTangent();
   PetscErrorCode GetFint();
 

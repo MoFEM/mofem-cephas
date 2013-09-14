@@ -199,8 +199,9 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode SetDirihletBC_to_RHS(moabField::FEMethod *fe_method_ptr) {
+    PetscErrorCode SetDirihletBC_to_RHS(moabField::FEMethod *fe_method_ptr,Vec F) {
       PetscFunctionBegin;
+      NOT_USED(F);
 
       if(bc->Dirihlet_BC_on_SideSet2) {
 
@@ -317,7 +318,7 @@ struct DynamicExampleDiriheltBC: public BaseDirihletBC {
 
     PetscErrorCode SetDirihletBC_to_RHS() {
       PetscFunctionBegin;
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,PETSC_NULL); CHKERRQ(ierr);
       PetscFunctionReturn(0);
 
     }
