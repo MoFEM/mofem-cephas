@@ -90,8 +90,8 @@ struct BaseDirihletBC {
 
 struct CubitDisplacementDirihletBC: public BaseDirihletBC {
   moabField& mField;
-  const string field_name;
   const string problem_name;  
+  const string field_name;
 
   CubitDisplacementDirihletBC(moabField& _mField,const string _problem_name,const string _field_name): 
     mField(_mField),problem_name(_problem_name),field_name(_field_name) {};
