@@ -39,35 +39,15 @@ extern "C" {
 
 namespace MoFEM {
 
-struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
+struct ArcElasticFEMethod: public ElasticFEMethod {
 
-  ArcInterfaceElasticFEMethod(Interface& _moab): InterfaceElasticFEMethod(_moab) {};
+  ArcElasticFEMethod(moabField& _mField): ElasticFEMethod(_mField) {};
 
   ArcLenghtCtx *arc_ptr;
-  ArcInterfaceElasticFEMethod(
-      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
-      double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2,Range &_SideSet3,
-      ArcLenghtCtx *_arc_ptr): 
-      InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3)
-      ,arc_ptr(_arc_ptr) {};
-
-  PetscErrorCode NeumannBC() {
-      PetscFunctionBegin;
-      
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction2(3);
-      traction2[0] = 0;
-      traction2[1] = +1;
-      traction2[2] = 0;
-      ierr = ElasticFEMethod::NeumannBC(arc_ptr->F_lambda,traction2,SideSet2); CHKERRQ(ierr);
-
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction3(3);
-      traction3[0] = 0;
-      traction3[1] = -1;
-      traction3[2] = 0;
-      ierr = ElasticFEMethod::NeumannBC(arc_ptr->F_lambda,traction3,SideSet3); CHKERRQ(ierr);
-
-      PetscFunctionReturn(0);
-  }
+  ArcElasticFEMethod(
+      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
+      double _lambda,double _mu,ArcLenghtCtx *_arc_ptr): 
+      ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu),arc_ptr(_arc_ptr) {};
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -97,11 +77,9 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 	ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	Diagonal = PETSC_NULL;
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
       }
       break;
       default:
@@ -125,14 +103,7 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 	case ctx_SNESSetJacobian: 
 	case ctx_SNESSetFunction: { 
 	  //Dirihlet Boundary Condition
-	  ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
-	  if(Diagonal!=PETSC_NULL) {
-	    if(DirihletBC.size()>0) {
-	      DirihletBCDiagVal.resize(DirihletBC.size());
-	      fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-	      ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
-	    }
-	  }
+	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 	}
 	break;
 	default:
@@ -145,7 +116,7 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
 	  //Assembly  F
 	  ierr = Fint(F); CHKERRQ(ierr);
 	  //Neumann Boundary Conditions
-	  ierr = NeumannBC(); CHKERRQ(ierr);
+	  ierr = NeumannBC(arc_ptr->F_lambda); CHKERRQ(ierr);
 	}
 	break;
 	case ctx_SNESSetJacobian: {
@@ -180,11 +151,10 @@ struct ArcInterfaceElasticFEMethod: public InterfaceElasticFEMethod {
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = VecAssemblyBegin(Diagonal); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(Diagonal); CHKERRQ(ierr);
-	ierr = MatDiagonalSet(Aij,Diagonal,ADD_VALUES); CHKERRQ(ierr);
-	ierr = VecDestroy(&Diagonal); CHKERRQ(ierr);
 	//Note MAT_FLUSH_ASSEMBLY
+	ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,Aij); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
@@ -204,8 +174,8 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   interface_materials_context int_mat_ctx;
 
   ArcInterfaceFEMethod(
-      Interface& _moab,double _YoungModulus): 
-      InterfaceFEMethod(_moab,_YoungModulus),int_mat_ctx(ctx_IntLinearSoftening) {};
+      moabField& _mField,double _YoungModulus): 
+      InterfaceFEMethod(_mField,_YoungModulus),int_mat_ctx(ctx_IntLinearSoftening) {};
 
   double h,beta,ft,Gf,E0,g0,kappa1;
   enum interface_context { ctx_KappaUpdate = 1,  ctx_InterfaceNone = 2 };
@@ -214,10 +184,9 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
   Vec D;
   ArcInterfaceFEMethod(
-      Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,Vec& _D,
-      double _YoungModulus,double _h,double _beta,double _ft,double _Gf,
-      Range &_SideSet1,Range &_SideSet2,Range &_SideSet3,interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
-      InterfaceFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_YoungModulus,_SideSet1,_SideSet2,_SideSet3),int_mat_ctx(_int_mat_ctx),
+      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
+      double _YoungModulus,double _h,double _beta,double _ft,double _Gf,interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
+      InterfaceFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_YoungModulus),int_mat_ctx(_int_mat_ctx),
       h(_h),beta(_beta),ft(_ft),Gf(_Gf),D(_D) {
     
     E0 = YoungModulus/h;
@@ -512,7 +481,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
       case ctx_SNESSetJacobian: 
       case ctx_SNESSetFunction: { 
 	//Apply Dirihlet BC
-	ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
       }
       break;
       default:

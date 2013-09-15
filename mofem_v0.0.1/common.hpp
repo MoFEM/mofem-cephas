@@ -1751,7 +1751,7 @@ struct CubitMeshSets {
 
   /** 
    *  \brief Function that returns the Cubit_BC_bitset type of the contents of bc_data
-  */
+   */
   PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const;
 
   /** 

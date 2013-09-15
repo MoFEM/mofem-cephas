@@ -808,7 +808,7 @@ PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &mo
     }
   }
   if((CubitBCType&Cubit_BC_bitset(NodeSet)).any()) {
-    return get_Cubit_msId_entities_by_dimension(moab,1,entities,recursive);
+    return get_Cubit_msId_entities_by_dimension(moab,0,entities,recursive);
   }
   PetscFunctionReturn(0);
 }
