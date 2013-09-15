@@ -478,7 +478,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 
       if(fe_name=="STIFFNESS") {
 	ierr = GetMatrices(); CHKERRQ(ierr);
-	ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSTSMonitorSet: {
 	    ierr = Fint(); CHKERRQ(ierr);
@@ -538,7 +538,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	}
 	ierr = GetMatricesRows(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
-	ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 	ierr = MassLhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSSetRHSFunction: {
@@ -623,7 +623,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       if(fe_name=="COPUPLING_VU") {
 	ierr = GetMatricesCols(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
-	ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 	ierr = VULhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSSetRHSFunction: {

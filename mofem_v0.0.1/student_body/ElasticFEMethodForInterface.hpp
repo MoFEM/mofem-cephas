@@ -238,7 +238,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     //Calculate Matrices
     ierr = Matrices();    CHKERRQ(ierr);
     //Apply Dirihlet BC
-    ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
     //Assemble interface
     ierr = LhsInt(); CHKERRQ(ierr);

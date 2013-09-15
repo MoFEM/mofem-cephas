@@ -90,7 +90,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     vector<vector<ublas::matrix<FieldData> > > colBMatrices;
 
     vector<DofIdx> DirihletBC;
-    vector<FieldData> DirihletBCDiagVal;
 
     vector<double> g_NTET,g_NTRI;
     const double* G_W_TET;
@@ -241,7 +240,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     }
 
-    virtual PetscErrorCode NeumannBC() {
+    virtual PetscErrorCode NeumannBC(Vec F) {
       PetscFunctionBegin;
       
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
@@ -267,12 +266,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       }
 
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode SetDirihletBC_to_ElementIndicies() {
-      PetscFunctionBegin;
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -509,13 +502,13 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
       //Dirihlet Boundary Condition
-      SetDirihletBC_to_ElementIndicies();
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
       //Assembly Aij and F
       ierr = RhsAndLhs(); CHKERRQ(ierr);
 
       //Neumann Boundary Conditions
-      ierr = NeumannBC(); CHKERRQ(ierr);
+      ierr = NeumannBC(F); CHKERRQ(ierr);
 
       ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
