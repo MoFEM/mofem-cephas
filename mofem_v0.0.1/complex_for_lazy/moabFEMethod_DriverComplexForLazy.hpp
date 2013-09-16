@@ -678,8 +678,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 
     ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
 
-    double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
-
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = CalculateMaterialFint(snes_f); CHKERRQ(ierr);
