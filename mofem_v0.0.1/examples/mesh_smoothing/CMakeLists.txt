@@ -26,11 +26,3 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 
-#testing
-add_test(SimpleMeshSmoothingTest ${MPI_BIN_PATH}/mpirun -np 4 
-  ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing
-  -my_file chees.cub
-  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10
-  -snes_monitor -snes_type ls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8
-  -log_summary)
-

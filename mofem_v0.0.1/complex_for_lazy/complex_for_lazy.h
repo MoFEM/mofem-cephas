@@ -127,6 +127,8 @@ PetscErrorCode KExt_HH(double eps,int order,int *order_edge,
   double *dofs_X,double *KExt_HH,int g_dim,const double *g_w);
 
 //quality
+void set_qual_ver(int ver);
+int get_qual_ver();
 PetscErrorCode quality_volume_length_F(double alpha,double *alpha2,double gamma,double *diffN,
   double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
   double *F,double *iF);
