@@ -17,15 +17,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
-
-
 #ifndef __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 #define __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 
+#include "Core_dataStructures.hpp"
 #include "moabField.hpp"
 #include "moabFEMethod_LowLevelStudent.hpp"
-#include "Core_dataStructures.hpp"
+#include "moabFEMethod_DirihletBC.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -34,56 +32,6 @@
 using namespace boost::numeric;
 
 namespace MoFEM {
-
-/** 
- * \brief The student user interface for Dirihlet boundary conditions
- * 
-*/
-struct BaseDirihletBC {
-
-  BaseDirihletBC() {};
-
-  virtual PetscErrorCode SetDirihletBC_to_ElementIndicies(
-    moabField::FEMethod *fe_method_ptr,string field_name,
-    vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(field_name);
-    NOT_USED(RowGlobDofs);
-    NOT_USED(ColGlobDofs);
-    NOT_USED(DirihletBC);
-    PetscFunctionReturn(0);
-  }
-
-  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
-    vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(FaceNodeGlobalDofs);
-    NOT_USED(FaceEdgeGlobalDofs);
-    NOT_USED(FaceGlobalDofs);
-    NOT_USED(DirihletBC);
-    PetscFunctionReturn(0);
-  }
-
-  virtual PetscErrorCode SetDirihletBC_to_MatrixDiagonal(
-    moabField::FEMethod *fe_method_ptr,Mat Aij) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(Aij);
-    PetscFunctionReturn(0);
-  }
-
-  virtual PetscErrorCode SetDirihletBC_to_RHS(moabField::FEMethod *fe_method_ptr) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    PetscFunctionReturn(0);
-  }
-
-};
 
 /** 
  * \brief The student user interface for FE method

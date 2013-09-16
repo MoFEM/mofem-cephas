@@ -260,32 +260,37 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
   //id
   Tag th_FieldId;
   rval = moab.tag_get_handle("_FieldId",th_FieldId); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_FieldId,&meshset,1,(const void **)&tag_id_data); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_FieldId,&meshset,1,(const void **)&tag_id_data); CHKERR_THROW(rval);
   //space
   Tag th_FieldSpace;
   rval = moab.tag_get_handle("_FieldSpace",th_FieldSpace); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_FieldSpace,&meshset,1,(const void **)&tag_space_data); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_FieldSpace,&meshset,1,(const void **)&tag_space_data); CHKERR_THROW(rval);
   //name
   Tag th_FieldName;
   rval = moab.tag_get_handle("_FieldName",th_FieldName); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_FieldName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_FieldName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); CHKERR_THROW(rval);
+  //name prefix
+  Tag th_FieldName_DataNamePrefix;
+  rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_FieldName_DataNamePrefix); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_FieldName_DataNamePrefix,&meshset,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); CHKERR_THROW(rval);
+  string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
   //data
-  string Tag_data_name = "_App_Data_"+get_name();
-  rval = moab.tag_get_handle(Tag_data_name.c_str(),th_FieldData); CHKERR(rval);
+  string Tag_data_name = name_data_prefix+get_name();
+  rval = moab.tag_get_handle(Tag_data_name.c_str(),th_FieldData); CHKERR_THROW(rval);
   //order
   string Tag_ApproximationOrder_name = "_App_Order_"+get_name();
-  rval = moab.tag_get_handle(Tag_ApproximationOrder_name.c_str(),th_AppOrder); CHKERR(rval);
+  rval = moab.tag_get_handle(Tag_ApproximationOrder_name.c_str(),th_AppOrder); CHKERR_THROW(rval);
   //dof order
   string Tag_dof_ApproximationOrder_name = "_App_Dof_Order"+get_name();
-  rval = moab.tag_get_handle(Tag_dof_ApproximationOrder_name.c_str(),th_AppDofOrder); CHKERR(rval);
+  rval = moab.tag_get_handle(Tag_dof_ApproximationOrder_name.c_str(),th_AppDofOrder); CHKERR_THROW(rval);
   //rank
   Tag th_Rank;
   string Tag_rank_name = "_Field_Rank_"+get_name();
-  rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_Rank); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_Rank,&meshset,1,(const void **)&tag_rank_data); CHKERR(rval);
+  rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_Rank); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_Rank,&meshset,1,(const void **)&tag_rank_data); CHKERR_THROW(rval);
   //dof rank
   string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
-  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); CHKERR(rval);
+  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); CHKERR_THROW(rval);
   switch (*tag_space_data) {
     case H1:
       forder_entityset = NULL;
@@ -435,15 +440,15 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefM
   }
   ErrorCode rval;
   EntityHandle ent = get_ent();
-  rval = moab.tag_get_by_ptr(field_ptr->th_AppOrder,&ent,1,(const void **)&tag_order_data); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(field_ptr->th_AppOrder,&ent,1,(const void **)&tag_order_data); CHKERR_THROW(rval);
   uid = get_unique_id_calculate();
   rval = moab.tag_get_by_ptr(field_ptr->th_FieldData,&ent,1,(const void **)&tag_FieldData,&tag_FieldData_size); 
   if(rval == MB_SUCCESS) {
     if( (unsigned int)tag_FieldData_size != 0 ) {
       int tag_size[1];
-      rval = moab.tag_get_by_ptr(field_ptr->th_AppDofOrder,&ent,1,(const void **)&tag_dof_order_data,tag_size); CHKERR(rval);
+      rval = moab.tag_get_by_ptr(field_ptr->th_AppDofOrder,&ent,1,(const void **)&tag_dof_order_data,tag_size); CHKERR_THROW(rval);
       assert(tag_size[0]/sizeof(ApproximationOrder) == tag_FieldData_size/sizeof(FieldData));
-      rval = moab.tag_get_by_ptr(field_ptr->th_DofRank,&ent,1,(const void **)&tag_dof_rank_data,tag_size); CHKERR(rval);
+      rval = moab.tag_get_by_ptr(field_ptr->th_DofRank,&ent,1,(const void **)&tag_dof_rank_data,tag_size); CHKERR_THROW(rval);
       assert(tag_size[0]/sizeof(ApproximationRank) == tag_FieldData_size/sizeof(FieldData));
     }
   }
@@ -803,7 +808,7 @@ PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &mo
     }
   }
   if((CubitBCType&Cubit_BC_bitset(NodeSet)).any()) {
-    return get_Cubit_msId_entities_by_dimension(moab,1,entities,recursive);
+    return get_Cubit_msId_entities_by_dimension(moab,0,entities,recursive);
   }
   PetscFunctionReturn(0);
 }
