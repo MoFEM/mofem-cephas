@@ -236,27 +236,26 @@ struct RotationMatrixForTransverseIsotropy {
     };
 };
 
-struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
+struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
     
     double nu_p, nu_pz, E_p, E_z, G_zp;
         
     TranIsotropicElasticFEMethod(
-                                 Interface& _moab,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _F,
-                                 double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, Range &_SideSet1,Range &_SideSet2, Range &_SideSet3 ): 
-    InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp) {};
+                                 moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
+                                 double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp): 
+    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp) {};
     
     vector< ublas::symmetric_matrix<FieldData,ublas::upper> > D_At_GaussPoint;
-
-    PetscErrorCode NeumannBC() {
+    
+    PetscErrorCode Fint(Vec F_int) {
         PetscFunctionBegin;
-        ublas::vector<FieldData,ublas::bounded_array<double,3> > traction2(3);
-        //Set Direction of Traction On SideSet2
-        traction2[0] = 0; //X
-        traction2[1] = 0; //Y 
-        traction2[2] = +1; //Z
-        //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
-        ierr = ElasticFEMethod::NeumannBC(F,traction2,SideSet2); CHKERRQ(ierr);
-        
+        ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
+        for(int rr = 0;rr<row_mat;rr++) {
+            if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+            if(RowGlob[rr].size()==0) continue;
+            f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+            ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+        }
         PetscFunctionReturn(0);
     }
     
@@ -289,6 +288,8 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
         PetscFunctionBegin;
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
         ierr = GetMatrices(); CHKERRQ(ierr);
+        //Dirihlet Boundary Condition
+        ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
         
         D_At_GaussPoint.resize(coords_at_Gauss_nodes.size());
 
@@ -319,22 +320,14 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
             D_At_GaussPoint[gg] = prod( trans(TrpMatrix) , dummy2 );
         }
         
-        //Dirihlet Boundary Condition
-        ierr = SetDirihletBC_to_ElementIndicies(); CHKERRQ(ierr);
-        if(Diagonal!=PETSC_NULL) {
-            if(DirihletBC.size()>0) {
-                DirihletBCDiagVal.resize(DirihletBC.size());
-                fill(DirihletBCDiagVal.begin(),DirihletBCDiagVal.end(),1);
-                ierr = VecSetValues(Diagonal,DirihletBC.size(),&(DirihletBC[0]),&DirihletBCDiagVal[0],INSERT_VALUES); CHKERRQ(ierr);
-            }
-        }
         //Assembly Aij and F
         ierr = RhsAndLhs(); CHKERRQ(ierr);
-        
+       
         //Neumann Boundary Conditions
-        ierr = NeumannBC(); CHKERRQ(ierr);
+        ierr = NeumannBC(F); CHKERRQ(ierr);
         
         ierr = OpStudentEnd(); CHKERRQ(ierr);
+        
         PetscFunctionReturn(0); }
     
 };
@@ -476,12 +469,12 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_interface;
     ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
 
-    if(pcomm->rank()==0) {
-        rval = moab.write_file("refinedMesh.vtk","VTK","",&meshset_interface,1); CHKERR_PETSC(rval);
-    }
+//    if(pcomm->rank()==0) {
+//        rval = moab.write_file("refinedMesh.vtk","VTK","",&meshset_interface,1); CHKERR_PETSC(rval);
+//    }
     ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
     
-    // stl::bitset see for more details
+    // stl::bitset see formore details
     BitRefLevel bit_level_interface;
     bit_level_interface.set(0);
     ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
@@ -489,25 +482,11 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
     ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
     
-    //update BC for refined (with interface) mesh
-    EntityHandle meshset_SideSet1; //Dirihlet BC is there
-    ierr = mField.get_msId_meshset(1,SideSet,meshset_SideSet1); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_SideSet1,bit_level_interface,meshset_SideSet1,MBTRI,true); CHKERRQ(ierr);
-    EntityHandle meshset_SideSet2; //Dirihlet BC is there
-    ierr = mField.get_msId_meshset(2,SideSet,meshset_SideSet2); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_SideSet2,bit_level_interface,meshset_SideSet2,MBTRI,true); CHKERRQ(ierr);
-    EntityHandle meshset_SideSet3; //Dirihlet BC is there
-    ierr = mField.get_msId_meshset(3,SideSet,meshset_SideSet3); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_SideSet3,bit_level_interface,meshset_SideSet3,MBTRI,true); CHKERRQ(ierr);
-    EntityHandle meshset_SideSet4; //Dirihlet BC is there
-    ierr = mField.get_msId_meshset(4,SideSet,meshset_SideSet4); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_SideSet4,bit_level_interface,meshset_SideSet4,MBTRI,true); CHKERRQ(ierr);
-    EntityHandle meshset_SideSet5; //Dirihlet BC is there
-    ierr = mField.get_msId_meshset(5,SideSet,meshset_SideSet5); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_SideSet5,bit_level_interface,meshset_SideSet5,MBTRI,true); CHKERRQ(ierr);
-    EntityHandle meshset_SideSet6; //Dirihlet BC is there
-    ierr = mField.get_msId_meshset(6,SideSet,meshset_SideSet6); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_SideSet6,bit_level_interface,meshset_SideSet6,MBTRI,true); CHKERRQ(ierr);
+    //add refined ent to cubit meshsets
+    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
+        EntityHandle cubit_meshset = cubit_it->meshset; 
+        ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+    }
     
     // stl::bitset see for more details
     BitRefLevel bit_level0;
@@ -610,26 +589,35 @@ int main(int argc, char *argv[]) {
     ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     
     //create matrices
-    Vec F;
+    Vec F,D;
     ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
+
     Mat Aij;
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-    
-    //Get SideSet 1 and SideSet 2 defined in CUBIT
-    Range SideSet1,SideSet2,SideSet3,SideSet4,SideSet5,SideSet6;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSet4,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(5,SideSet,2,SideSet5,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(6,SideSet,2,SideSet6,true); CHKERRQ(ierr);
 
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 4 : %u\n",SideSet4.size());
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 5 : %u\n",SideSet5.size());
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 6 : %u\n",SideSet6.size());
+    
+    struct MyElasticFEMethod: public ElasticFEMethod {
+        MyElasticFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_ptr,
+                          Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
+        ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
+        
+        PetscErrorCode Fint(Vec F_int) {
+            PetscFunctionBegin;
+            ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
+            for(int rr = 0;rr<row_mat;rr++) {
+                if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+                if(RowGlob[rr].size()==0) continue;
+                f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+                ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+            }
+            PetscFunctionReturn(0);
+        }
+        
+    };
+    
+    CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
+    ierr = myDirihletBC.Init(); CHKERRQ(ierr);
     
     //Assemble F and Aij
     const double YoungModulusP = 1.0;
@@ -641,86 +629,9 @@ int main(int argc, char *argv[]) {
     const double PoissonRatio = 0.3;
     const double alpha = 0.05;
     
-    struct MyDirihletBC: public BaseDirihletBC {
-        Range& SideSet1;
-        Range SideSet1_;
-        
-        // Constructor
-        MyDirihletBC(Interface &moab,Range& _SideSet1): 
-        BaseDirihletBC(),SideSet1(_SideSet1){
-            
-            //Add to SideSet1_ nodes,edges, and faces, where dirihilet boundary conditions are applied.
-            //Note that SideSet1 consist only faces in this particular example.
-            ErrorCode rval;
-            Range SideSet1Edges,SideSet1Nodes;
-            
-            rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
-            rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
-            SideSet1_.insert(SideSet1.begin(),SideSet1.end());
-            SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
-            SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
-            
-        }
-        
-        //This method is called insiaid finite element loop to apply boundary conditions
-        PetscErrorCode SetDirihletBC_to_ElementIndicies(
-                                                        moabField::FEMethod *fe_method_ptr,string field_name,
-                                                        vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
-            PetscFunctionBegin;
-            
-            ierr = InternalClassBCSet(fe_method_ptr,RowGlob,ColGlob,DirihletBC,field_name,SideSet1_,fixed_x|fixed_y|fixed_z,false); CHKERRQ(ierr);
-            
-            PetscFunctionReturn(0);
-            
-            
-        }
-        
-    private:
-        //Only to use in this auxiliary function
-        enum bc_type { fixed_x = 1,fixed_y = 1<<1, fixed_z = 1<<2 };
-        PetscErrorCode InternalClassBCSet(
-                                          moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC,
-                                          string field_name,Range &SideSet,unsigned int bc = fixed_x|fixed_y|fixed_z,bool zero_bc = true) {
-            PetscFunctionBegin;
-            //Dirihlet form SideSet1
-            if(zero_bc) DirihletBC.resize(0);
-            Range::iterator siit1 = SideSet.begin();
-            for(;siit1!=SideSet.end();siit1++) {
-                FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-                FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-                for(;riit!=hi_riit;riit++) {
-                    if(riit->get_name()!=field_name) continue;
-                    unsigned int my_bc = 0;
-                    switch(riit->get_dof_rank()) {
-                        case 0: my_bc = fixed_x; break;
-                        case 1: my_bc = fixed_y; break;
-                        case 2: my_bc = fixed_z; break;
-                        default:
-                            SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-                    }
-                    if((bc&my_bc) == 0) continue;
-                    // all fixed
-                    // if some ranks are selected then we could apply BC in particular direction
-                    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-                    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
-                        vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),riit->get_petsc_gloabl_dof_idx());
-                        if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-                    }
-                    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
-                        vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
-                        if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-                    }
-                }
-            }
-            PetscFunctionReturn(0);
-        }
-        
-    };
-    
-    MyDirihletBC myDirihletBC(moab,SideSet1);
-    //    InterfaceElasticFEMethod MyFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
-    TranIsotropicElasticFEMethod MyTIsotFE(moab,&myDirihletBC,Aij,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,SideSet1,SideSet2,SideSet3);
-    InterfaceFEMethod IntMyFE(moab,&myDirihletBC,Aij,F,YoungModulus*alpha,SideSet1,SideSet2,SideSet3);
+//    MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+    TranIsotropicElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+    InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
     
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -730,7 +641,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
     
-    //  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
     
@@ -754,8 +665,6 @@ int main(int argc, char *argv[]) {
     ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
     ierr = KSPSetUp(solver); CHKERRQ(ierr);
     
-    Vec D;
-    ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
     ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -787,7 +696,7 @@ int main(int argc, char *argv[]) {
         rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
     }
     
-    PostProcCohesiveForces fe_post_proc_prisms(moab,YoungModulus*alpha);
+    PostProcCohesiveForces fe_post_proc_prisms(mField,YoungModulus*alpha);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
     if(pcomm->rank()==0) {
