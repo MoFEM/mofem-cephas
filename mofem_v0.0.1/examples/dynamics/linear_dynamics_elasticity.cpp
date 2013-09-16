@@ -23,15 +23,14 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "linear_dynamics_elasticity.hpp"
+#include "ElasticFEMethodForDynamics.hpp"
 
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-struct MyBC: public DynamicExampleDiriheltBC::BC {
+struct MyBC: public DynamicNeumannBC {
 
-    MyBC(): DynamicExampleDiriheltBC::BC()  {}
     PetscErrorCode f_CalcTraction(double ts_t,ublas::vector<double,ublas::bounded_array<double,3> >& traction) const {
       PetscFunctionBegin;
       
@@ -45,35 +44,6 @@ struct MyBC: public DynamicExampleDiriheltBC::BC {
       traction[0] = 0; //X
       traction[1] = 0; //Y 
       traction[2] = scale; //Z*/
-
-      PetscFunctionReturn(0);
-    }
-
-    MyBC(double _final_time): DynamicExampleDiriheltBC::BC(_final_time) {};
-    PetscErrorCode f_CalcDisp(double ts_t,
-      ublas::vector<double,ublas::bounded_array<double,3> >& disp,
-      ublas::vector<double,ublas::bounded_array<double,3> >& vel) const {
-
-      PetscFunctionBegin;
-
-      double disp_val = 0;
-      double vel_val = 0;
-      const double v1 = 0.2;
-      const double init_t = 1.;
-      if(ts_t < init_t) {
-	  disp_val = v1 * ( (ts_t*ts_t/2.)/init_t );
-	  vel_val = v1* ( ts_t/init_t );
-      } else if(ts_t < final_time) {
-	  disp_val = v1*( ((init_t*init_t/2.)/init_t) + (ts_t-init_t) );
-	  vel_val = v1;
-      } 
-
-      disp[0] = 0;
-      vel[0] = 0;
-      disp[1] = 0;
-      vel[1] = 0;
-      disp[2] = disp_val;
-      vel[2] = vel_val;
 
       PetscFunctionReturn(0);
     }
@@ -226,13 +196,6 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
-  //Get SideSet 1 and SideSet 2 defined in CUBIT
-  Range SideSet1,SideSet2;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
-
   //create matrices
   Vec D,F;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
@@ -248,8 +211,10 @@ int main(int argc, char *argv[]) {
   const double rho = 1;
 
   MyBC mybc;
-  DynamicExampleDiriheltBC dirihlet_bc(moab,&mybc,SideSet1,SideSet2);
-  DynamicElasticFEMethod MyFE(moab,&dirihlet_bc,mField,Aij,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,SideSet1,SideSet2,&mybc);
+  CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
+  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+
+  DynamicElasticFEMethod MyFE(moab,&myDirihletBC,mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,&mybc);
 
   moabTsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
@@ -282,8 +247,7 @@ int main(int argc, char *argv[]) {
 
   //PetscReal alpha_m,alpha_f,gamma;
   //ierr = TSAlphaGetParams(ts,&alpha_m,&alpha_f,&gamma); CHKERRQ(ierr);
-  //PetscPrintf(PETSC_COMM_WORLD,
-    //"alpha_m = %6.4e alpha_f = %6.4e gamma = %6.4e\n",alpha_m,alpha_f,gamma);
+  //PetscPrintf(PETSC_COMM_WORLD,"alpha_m = %6.4e alpha_f = %6.4e gamma = %6.4e\n",alpha_m,alpha_f,gamma);
 
   ierr = TSSolve(ts,D,&ftime); CHKERRQ(ierr);
 

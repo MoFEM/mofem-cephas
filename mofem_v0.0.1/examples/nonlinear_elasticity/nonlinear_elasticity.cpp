@@ -25,7 +25,7 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-#include "nonlinear_elasticity.hpp"
+#include "moabFEMethod_DriverComplexForLazy.hpp"
 
 using namespace MoFEM;
 
@@ -33,6 +33,15 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
+
+struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
+
+  NL_ElasticFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
+    set_PhysicalEquationNumber(neohookean);
+  }
+
+};
 
 
 int main(int argc, char *argv[]) {
@@ -104,9 +113,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
-  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",5); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",5); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",5); CHKERRQ(ierr);
+  int order = 4;
+  ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
   //build field
@@ -148,16 +158,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  Range SideSet1,SideSet2;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
+  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
+  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  ExampleDiriheltBC myDirihletBC(moab,SideSet1);
-  NL_ElasticFEMethod MyFE(moab,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),SideSet1,SideSet2);
+  NL_ElasticFEMethod MyFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 
   moabSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
   
