@@ -25,11 +25,17 @@ set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTO
 
 # Perform the Nightly build
 ctest_start(${DASHBOARDTEST})
-ctest_update(SOURCE "${GID_SOURCE_REPO}")
-ctest_configure()
-ctest_build()
-ctest_test()
-if(CTEST_COVERAGE_COMMAND)
-  ctest_coverage()
-endif(CTEST_COVERAGE_COMMAND)
-ctest_submit()
+
+ctest_update(SOURCE "${GID_SOURCE_REPO}" RETURN_VALUE NUMBER_FILES)
+message ( "Found ${NUMBER_FILES} updated files." )
+
+if(${NUMBER_FILES} GREATER 0)
+  ctest_configure()
+  ctest_build()
+  ctest_test()
+  if(CTEST_COVERAGE_COMMAND)
+    ctest_coverage()
+  endif(CTEST_COVERAGE_COMMAND)
+endif(${NUMBER_FILES} GREATER 0)
+
+#ctest_submit()
