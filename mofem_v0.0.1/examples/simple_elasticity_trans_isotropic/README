@@ -1,0 +1,10 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what verion of openmoi (or other MPI library) are you using
+
+Example run
+===========
+mprirun -np 4 ./elasticity_candy -my_file medium3helix.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor-- /opt/local/lib/libmpi_f90.dylib
+
