@@ -866,6 +866,8 @@ PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,
         type |= PressureSet;
     else if (strcmp (&bc_data[0],"HeatFlux") == 0)
         type |= HeatfluxSet;
+    else if (strcmp (&bc_data[0],"cfd_bc") == 0)
+        type |= InterfaceSet;
     else SETERRQ(PETSC_COMM_SELF,1,"this bc_data is unknown");
     
     PetscFunctionReturn(0);
@@ -1042,6 +1044,13 @@ ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
     if (e.data.flag3 == 1)
         os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n \n";
     else os << "Heat flux value (thin shell bottom): N/A" << "\n \n";
+    return os;   
+}
+
+ostream& operator<<(ostream& os,const interface_cubit_bc_data& e) {
+    os << "\n";
+    os << "I n t e r f a c e (cfd_bc) \n \n";
+    os << "This sideset is associated with an interface" << "\n \n";
     return os;   
 }
 
