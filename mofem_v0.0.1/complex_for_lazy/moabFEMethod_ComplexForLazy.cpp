@@ -83,8 +83,8 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(Interface& _moab,BaseDirihletBC
 PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
   PetscFunctionBegin;
   ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-  ierr = PetscOptionsGetReal("","-my_alpha2",&alpha2,&flg_gamma); CHKERRQ(ierr);
-  ierr = PetscOptionsGetReal("","-my_gamma",&alpha2,&flg_gamma); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal("","-my_alpha2",&alpha2,&flg_alpha2); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal("","-my_gamma",&gamma,&flg_gamma); CHKERRQ(ierr);
   //
   int def_quality = -1;
   rval = moab.tag_get_handle("QUALITY0",1,MB_TYPE_DOUBLE,th_quality0,MB_TAG_CREAT|MB_TAG_SPARSE,&def_quality); 
@@ -335,7 +335,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
     unsigned int sub_analysis_type[3] = { spatail_analysis, material_analysis, mesh_quality_analysis };
     for(int ss = 0;ss<3;ss++) {
-      switch(sub_analysis_type[ss]) {
+      switch(sub_analysis_type[ss]&type_of_analysis) {
 	case spatail_analysis: {
 	ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 

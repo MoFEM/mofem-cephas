@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   //partition
-  ierr = mField.compose_problem("C_ALL_MATRIX","CCT_ALL_MATRIX","MESH_SMOOTHING"); CHKERRQ(ierr);
+  ierr = mField.compose_problem("C_ALL_MATRIX","CCT_ALL_MATRIX",false,"MESH_SMOOTHING",true); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("C_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("C_ALL_MATRIX"); CHKERRQ(ierr);
 
