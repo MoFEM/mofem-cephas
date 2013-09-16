@@ -342,18 +342,18 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
     
 };
 
-struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
+struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
     
     double nu_p, nu_pz, E_p, E_z, G_zp;
     Tag th_fibre_orientation;
-    Tag th_dist_from_surface;
-
-    TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
+    Tag th_gradient;
+    
+    TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
     PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
         
         double def_VAL2[3] = {0,0,0};
         rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
-        rval = moab.tag_get_handle("SURFACE_DISTANCE",1,MB_TYPE_DOUBLE,th_dist_from_surface); CHKERR_THROW(rval);
+        rval = moab_post_proc.tag_get_handle("GRADIENT",3,MB_TYPE_DOUBLE,th_gradient,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
         
     }
     
@@ -364,15 +364,89 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
         
         ///Getting distance of nodes of tethra from the nearest tri fibre surface
-        EntityHandle fe_ent = fe_ptr->get_ent();
+        EntityHandle fe_handle = fe_ptr->get_ent();
         Range tetNodes;
-        int num_nodes;
-        rval = moab.get_connectivity(&fe_ent,num_nodes,tetNodes);
-//        cout<<tetNodes.size()<<endl;
-//        assert(num_nodes==4);
-        double distance[4];
-        rval = moab.tag_get_data(th_dist_from_surface,tetNodes,distance); CHKERR_PETSC(rval); 
-//        cout<<distance[0]<<"  "<<distance[1]<<"  "<<distance[2]<<"  "<<distance[3]<<endl;
+        rval = moab.get_connectivity(&fe_handle,1,tetNodes); CHKERR_THROW(rval);
+        
+        ublas::vector<FieldData> surf_disp_node(4);
+        int iii=0;
+        Range::iterator niit1 = tetNodes.begin();
+        for(;niit1!=tetNodes.end();niit1++,iii++) {
+            FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator it = data_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*niit1);
+            FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_it = data_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*niit1);
+            for(;it!=hi_it;it++) {
+                
+                //            for(FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator it = data_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*niit1); it != data_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*niit1);++it){ 
+                
+                if(it->get_name()!="SURFACE_DISTANCE") continue;
+                double &distVal = it->get_FieldData();
+                //                cout<<it->get_name()<<"   "<<distVal<<endl;
+                surf_disp_node[iii]=distVal;
+            }
+        }
+        
+        ublas::matrix<double> JacMat; //Rotate about z-axis by 90 degrees
+        JacMat = ublas::zero_matrix<FieldData>(3,3);
+        ublas::matrix<double> diffNMat; //Rotate about z-axis by 90 degrees
+        diffNMat = ublas::zero_matrix<FieldData>(3,4);
+        
+        double diffN[12];
+        ShapeDiffMBTET(diffN);
+        for (int rr=0; rr<3; rr++) {
+            for(int cc=0; cc<4; cc++) {
+                diffNMat(rr,cc)=diffN[cc+4*rr];}}
+        
+        double Jac[9];
+        double coords[12];
+        rval = moab.get_coords(tetNodes,coords); CHKERR_PETSC(rval);
+        
+        ShapeJacMBTET(diffN,coords,Jac);
+        
+        for (int rr=0; rr<3; rr++) {
+            for(int cc=0; cc<3; cc++){
+                JacMat(rr,cc)=Jac[cc+3*rr];}}
+        
+        //        cout<<JacMat(0,0)<<"  "<<JacMat(0,1)<<"  "<<JacMat(0,2)<<endl;
+        //        cout<<JacMat(1,0)<<"  "<<JacMat(1,1)<<"  "<<JacMat(1,2)<<endl;
+        //        cout<<JacMat(2,0)<<"  "<<JacMat(2,1)<<"  "<<JacMat(2,2)<<endl;
+        //        cout<<endl;
+        
+        ublas::matrix<double> diffN_Jac = prod(trans(diffNMat),JacMat);
+        ublas::vector<FieldData> Gradient = prod(diffN_Jac,surf_disp_node);
+        
+        //        cout<<Gradient[0]<<"  "<<Gradient[1]<<"  "<<Gradient[2]<<endl;
+//        double prevGradient[3];
+//        Range::iterator niit2 = tetNodes.begin();
+//        map<EntityHandle,EntityHandle>::iterator mit2 = node_map.begin();
+//        for(;niit2!=tetNodes.end();niit2++,mit2++) {
+//            rval = moab_post_proc.tag_get_data(th_gradient,&mit2->second,1,prevGradient); CHKERR_PETSC(rval);  
+//            double tempGradient[3];
+//            for (int ii=0; ii<3; ii++) {
+//                tempGradient[ii] = 0.5*(prevGradient[ii]+Gradient[ii]);
+//            }
+//            rval = moab_post_proc.tag_set_data(th_gradient,&mit2->second,1,&tempGradient[0]); CHKERR_PETSC(rval);  
+//        }
+        
+        int gg3=0;
+        vector< ublas::matrix< FieldData > > surfDistGrad;
+        ierr = GetGaussDiffDataVector("SURFACE_DISTANCE",surfDistGrad); CHKERRQ(ierr);        
+        vector< ublas::matrix< FieldData > >::iterator viit3 = surfDistGrad.begin();
+        map<EntityHandle,EntityHandle>::iterator mit3 = node_map.begin();
+        for(;viit3!=surfDistGrad.end();viit3++,mit3++,gg3++) {
+            ublas::matrix< FieldData > GradU = *viit3;
+            cout << GradU << endl;
+//            ublas::vector<FieldData> GradU2 = prod(GradU,surf_disp_node);
+            double prevGradient[3];
+//            rval = moab_post_proc.tag_get_data(th_gradient,&mit3->second,1,prevGradient); CHKERR_PETSC(rval);  
+            double tempGradient[3];
+            for (int ii=0; ii<3; ii++) {
+//                tempGradient[ii] = 0.5*(prevGradient[ii]+GradU[ii]);
+                tempGradient[ii] = GradU(0,ii);
+            }
+            cout<<tempGradient[0]<<"  "<<tempGradient[1]<<"  "<<tempGradient[2]<<endl;
+            rval = moab_post_proc.tag_set_data(th_gradient,&mit3->second,1,&tempGradient[0]); CHKERR_PETSC(rval);  
+        }
+        cout<<endl;
         
         int gg=0;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -408,12 +482,12 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
             
             ///Get Stiffness Matrix
             ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
-//            StiffnessMatrix.resize(6);
-//            StiffnessMatrix.clear();
+            //            StiffnessMatrix.resize(6);
+            //            StiffnessMatrix.clear();
             TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
             StiffnessMatrix=TranIsoMat.StiffnessMatrix;            
-//            IsotropicStiffnessMatrix IsoMat(lambda, mu);
-//            StiffnessMatrix=IsoMat.StiffnessMatrix;
+            //            IsotropicStiffnessMatrix IsoMat(lambda, mu);
+            //            StiffnessMatrix=IsoMat.StiffnessMatrix;
             
             ///Rotating the Stiffness matrix according to the fibre direction
             D.resize(6,6);
@@ -441,15 +515,8 @@ struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMes
             rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);  
             
             ///Get Gradients for fibre_direction
-
-
             
-//            double diffN[12];
-//            ShapeDiffMBTET(diffN);
-//            double Jac[9];
-//            ShapeJacMBTET(diffN,coordinates,Jac);
-//            Shape_invJac(Jac);
-            
+            //            double surf_disp_gauss_point = g_NTET[4*gg+0]*surf_disp_node[0] + g_NTET[4*gg+1]*surf_disp_node[1] + g_NTET[4*gg+2]*surf_disp_node[2] + g_NTET[4*gg+3]*surf_disp_node[3];
             
         }
         
@@ -615,14 +682,13 @@ int main(int argc, char *argv[]) {
     
     BitRefLevel problem_bit_level = bit_level0;
     
-    
     /***/
     //Define problem
     
     //Fields
     ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
     ierr = mField.add_field("SURFACE_DISTANCE",H1,1); CHKERRQ(ierr);
-    
+
     //FE
     ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
     ierr = mField.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
@@ -737,10 +803,8 @@ int main(int argc, char *argv[]) {
     const double PoissonRatio = 0.3;
     const double alpha = 0.05;
     
-    //************************* Get shortest distance to the surface of mesh for every node and save it into tags **********************//
+    //*********************** Saving Shortest distance from fibre outer surface to SURFACE_DISTANCE field ************************//
     
-    Range allNodes;
-    rval = moab.get_entities_by_type(0,MBVERTEX,allNodes);CHKERR_PETSC(rval);
     Tag th_dist_from_surface;
     double def_VAL3=0.0;
     rval = moab.tag_get_handle("SURFACE_DISTANCE",1,MB_TYPE_DOUBLE,th_dist_from_surface,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL3); CHKERR_THROW(rval);
@@ -749,23 +813,9 @@ int main(int argc, char *argv[]) {
     AdaptiveKDTree tool( &moab );
     rval = tool.build_tree( SurfaceMesh, tree_root ); CHKERR(rval);
     
-    Range::iterator niit1 = allNodes.begin();
-    for(;niit1!=allNodes.end();niit1++) {
-        double nodeCoord[3];
-        double closestPoint[3];
-        EntityHandle closestTri;
-        moab.get_coords(&*niit1,1,nodeCoord);
-        rval = tool.closest_triangle(tree_root,nodeCoord,closestPoint,closestTri);CHKERR(rval);
-        double distance = sqrt(pow(closestPoint[0]-nodeCoord[0],2)+pow(closestPoint[1]-nodeCoord[1],2)+pow(closestPoint[2]-nodeCoord[2],2));
-//        rval = moab.tag_set_data(th_dist_from_surface,&*niit1,1,&distance); CHKERR_PETSC(rval);  
-    }
-    
-    //*********************** Saving Shortest distance from fibre outer surface to SURFACE_DISTANCE field ************************//
-    
     EntityHandle node = 0;
     double coords[3];
     for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"SURFACE_DISTANCE",dof_ptr)) {
-//        cout<<"loop ......"<<endl;
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
         EntityHandle ent = dof_ptr->get_ent();
         double &fval = dof_ptr->get_FieldData();
@@ -972,13 +1022,15 @@ int main(int argc, char *argv[]) {
     }
     
     //  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-    TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+    TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_fibre_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+    
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_fibre_post_proc_method);  CHKERRQ(ierr);
     
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
     if(pcomm->rank()==0) {
-        rval = fe_post_proc_method.moab_post_proc.write_file(outName2,"VTK",""); CHKERR_PETSC(rval);
+        rval = fe_fibre_post_proc_method.moab_post_proc.write_file(outName2,"VTK",""); CHKERR_PETSC(rval);
     }
 
     PostProcCohesiveForces fe_post_proc_prisms(moab,YoungModulus*alpha);
