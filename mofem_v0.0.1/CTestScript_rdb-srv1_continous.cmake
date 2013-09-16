@@ -7,10 +7,6 @@ if(NOT DASHBOARDTEST)
   set(DASHBOARDTEST "Continuous")
 endif(NOT DASHBOARDTEST)
 
-# specify how long to run the continuous in minutes
-SET (CTEST_CONTINUOUS_DURATION 960)
-SET (CTEST_CONTINUOUS_MINIMUM_INTERVAL 60)
-
 include(CTestScript.cmake)
 
 
