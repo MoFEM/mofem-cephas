@@ -260,32 +260,37 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
   //id
   Tag th_FieldId;
   rval = moab.tag_get_handle("_FieldId",th_FieldId); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_FieldId,&meshset,1,(const void **)&tag_id_data); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_FieldId,&meshset,1,(const void **)&tag_id_data); CHKERR_THROW(rval);
   //space
   Tag th_FieldSpace;
   rval = moab.tag_get_handle("_FieldSpace",th_FieldSpace); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_FieldSpace,&meshset,1,(const void **)&tag_space_data); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_FieldSpace,&meshset,1,(const void **)&tag_space_data); CHKERR_THROW(rval);
   //name
   Tag th_FieldName;
   rval = moab.tag_get_handle("_FieldName",th_FieldName); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_FieldName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_FieldName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); CHKERR_THROW(rval);
+  //name prefix
+  Tag th_FieldName_DataNamePrefix;
+  rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_FieldName_DataNamePrefix); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(th_FieldName_DataNamePrefix,&meshset,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); CHKERR_THROW(rval);
+  string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
   //data
-  string Tag_data_name = "_App_Data_"+get_name();
-  rval = moab.tag_get_handle(Tag_data_name.c_str(),th_FieldData); CHKERR(rval);
+  string Tag_data_name = name_data_prefix+get_name();
+  rval = moab.tag_get_handle(Tag_data_name.c_str(),th_FieldData); CHKERR_THROW(rval);
   //order
   string Tag_ApproximationOrder_name = "_App_Order_"+get_name();
-  rval = moab.tag_get_handle(Tag_ApproximationOrder_name.c_str(),th_AppOrder); CHKERR(rval);
+  rval = moab.tag_get_handle(Tag_ApproximationOrder_name.c_str(),th_AppOrder); CHKERR_THROW(rval);
   //dof order
   string Tag_dof_ApproximationOrder_name = "_App_Dof_Order"+get_name();
-  rval = moab.tag_get_handle(Tag_dof_ApproximationOrder_name.c_str(),th_AppDofOrder); CHKERR(rval);
+  rval = moab.tag_get_handle(Tag_dof_ApproximationOrder_name.c_str(),th_AppDofOrder); CHKERR_THROW(rval);
   //rank
   Tag th_Rank;
   string Tag_rank_name = "_Field_Rank_"+get_name();
-  rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_Rank); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_Rank,&meshset,1,(const void **)&tag_rank_data); CHKERR(rval);
+  rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_Rank); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_Rank,&meshset,1,(const void **)&tag_rank_data); CHKERR_THROW(rval);
   //dof rank
   string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
-  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); CHKERR(rval);
+  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); CHKERR_THROW(rval);
   switch (*tag_space_data) {
     case H1:
       forder_entityset = NULL;
@@ -327,7 +332,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
   }
 }
 ostream& operator<<(ostream& os,const MoFEMField& e) {
-  os << "name "<<e.get_name()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number() 
+  os << "name "<<e.get_name_ref()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number() 
     << " space " << e.get_space() << " rank " << e.get_max_rank() << " meshset " << e.meshset;
   return os;
 }
@@ -435,15 +440,15 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefM
   }
   ErrorCode rval;
   EntityHandle ent = get_ent();
-  rval = moab.tag_get_by_ptr(field_ptr->th_AppOrder,&ent,1,(const void **)&tag_order_data); CHKERR(rval);
+  rval = moab.tag_get_by_ptr(field_ptr->th_AppOrder,&ent,1,(const void **)&tag_order_data); CHKERR_THROW(rval);
   uid = get_unique_id_calculate();
   rval = moab.tag_get_by_ptr(field_ptr->th_FieldData,&ent,1,(const void **)&tag_FieldData,&tag_FieldData_size); 
   if(rval == MB_SUCCESS) {
     if( (unsigned int)tag_FieldData_size != 0 ) {
       int tag_size[1];
-      rval = moab.tag_get_by_ptr(field_ptr->th_AppDofOrder,&ent,1,(const void **)&tag_dof_order_data,tag_size); CHKERR(rval);
+      rval = moab.tag_get_by_ptr(field_ptr->th_AppDofOrder,&ent,1,(const void **)&tag_dof_order_data,tag_size); CHKERR_THROW(rval);
       assert(tag_size[0]/sizeof(ApproximationOrder) == tag_FieldData_size/sizeof(FieldData));
-      rval = moab.tag_get_by_ptr(field_ptr->th_DofRank,&ent,1,(const void **)&tag_dof_rank_data,tag_size); CHKERR(rval);
+      rval = moab.tag_get_by_ptr(field_ptr->th_DofRank,&ent,1,(const void **)&tag_dof_rank_data,tag_size); CHKERR_THROW(rval);
       assert(tag_size[0]/sizeof(ApproximationRank) == tag_FieldData_size/sizeof(FieldData));
     }
   }
@@ -603,7 +608,7 @@ MoFEMFiniteElement::MoFEMFiniteElement(Interface &moab,const EntityHandle _meshs
   rval = moab.tag_get_handle(Tag_DofUidData_name.c_str(),th_DofUidData); CHKERR(rval);
 }
 ostream& operator<<(ostream& os,const MoFEMFiniteElement& e) {
-    os << "id " << e.get_id() << " name " << e.get_name() << " f_id_row " << e.get_BitFieldId_row() 
+    os << "id " << e.get_id() << " name " << e.get_name_ref() << " f_id_row " << e.get_BitFieldId_row() 
     << " f_id_col " << e.get_BitFieldId_col() << " BitFEId_data " << e.get_BitFieldId_data();
     return os;
 }
@@ -803,7 +808,7 @@ PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &mo
     }
   }
   if((CubitBCType&Cubit_BC_bitset(NodeSet)).any()) {
-    return get_Cubit_msId_entities_by_dimension(moab,1,entities,recursive);
+    return get_Cubit_msId_entities_by_dimension(moab,0,entities,recursive);
   }
   PetscFunctionReturn(0);
 }
@@ -932,6 +937,7 @@ ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e) {
     if (e.data.flag6 == 1)
         os << "Displacement magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
     else os << "Displacement magnitude (Z-Rotation): N/A" << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const force_cubit_bc_data& e) {
@@ -945,6 +951,7 @@ ostream& operator<<(ostream& os,const force_cubit_bc_data& e) {
     os << "Moment direction vector (X-component): " << e.data.value6 << "\n";
     os << "Moment direction vector (Y-component): " << e.data.value7 << "\n";
     os << "Moment direction vector (Z-component): " << e.data.value8 << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e) {
@@ -968,6 +975,7 @@ ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e) {
     if (e.data.flag6 == 1)
         os << "Velocity magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
     else os << "Velocity magnitude (Z-Rotation): N/A" << "\n \n";
+    return os;
 }
  
 ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e) {
@@ -991,6 +999,7 @@ ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e) {
     if (e.data.flag6 == 1)
         os << "Acceleration magnitude (Z-Rotation): " << e.data.value6 << "\n \n";
     else os << "Acceleration magnitude (Z-Rotation): N/A" << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e) {
@@ -1011,12 +1020,14 @@ ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e) {
     if (e.data.flag5 == 1)
         os << "Temperature (thin shell bottom): " << e.data.value5 << "\n \n";
     else os << "Temperature (thin shell bottom): N/A" << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const pressure_cubit_bc_data& e) {
     os << "\n";
     os << "P r e s s u r e \n \n";
     os << "Pressure value: " << e.data.value1 << "\n \n";
+    return os;
 }
 
 ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
@@ -1031,6 +1042,7 @@ ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
     if (e.data.flag3 == 1)
         os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n \n";
     else os << "Heat flux value (thin shell bottom): N/A" << "\n \n";
+    return os;   
 }
 
 }

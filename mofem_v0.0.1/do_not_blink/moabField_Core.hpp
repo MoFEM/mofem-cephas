@@ -36,7 +36,7 @@ struct moabField_Core: public moabField {
   //Data and low level methods 
   Tag th_Part;
   Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitEdge;
-  Tag th_FieldId,th_FieldName,th_FieldSpace;
+  Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace;
   Tag th_FEId,th_FEName;
   Tag th_FEIdCol,th_FEIdRow,th_FEIdData;
   Tag th_ProblemId,th_ProblemName,th_ProblemFEId;
@@ -122,6 +122,7 @@ struct moabField_Core: public moabField {
 
   //field
   PetscErrorCode add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,int verb = -1);
+  PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
@@ -135,7 +136,6 @@ struct moabField_Core: public moabField {
   PetscErrorCode list_dof_by_id(const BitFieldId id) const;
   PetscErrorCode list_ent_by_id(const BitFieldId id) const;
   PetscErrorCode list_field() const;
-  PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1);
   BitFieldId get_BitFieldId(const string& name) const;
   string get_BitFieldId_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
@@ -200,6 +200,7 @@ struct moabField_Core: public moabField {
   PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
+  PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
   PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
 
   //topology
@@ -228,13 +229,12 @@ struct moabField_Core: public moabField {
   PetscErrorCode get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr);
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finite_elements_ptr);
 
-  //Copy Field to Another
-  //NOT TESTED DONT USE PetscErrorCode set_other_filed_values(const string& fiel_name,const string& cpy_field_name,InsertMode mode,ScatterMode scatter_mode);
-  
+  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_moabfield_by_name_begin(const string &field_name);
+  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_moabfield_by_name_end(const string &field_name);
+
   //Copy Vector of Field to Another
   PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
-
 
   //constructor
   moabField_Core(Interface& _moab,int _verbose = 1);
@@ -317,8 +317,8 @@ struct moabField_Core: public moabField {
     //build adj matrix
     i.push_back(j.size());
     PetscInt *_i,*_j;
-    PetscMalloc(i.size()*sizeof(PetscInt),&_i);
-    PetscMalloc(j.size()*sizeof(PetscInt),&_j);
+    ierr = PetscMalloc(i.size()*sizeof(PetscInt),&_i); CHKERRQ(ierr);
+    ierr = PetscMalloc(j.size()*sizeof(PetscInt),&_j); CHKERRQ(ierr);
     copy(i.begin(),i.end(),_i);
     copy(j.begin(),j.end(),_j);
     PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
@@ -330,7 +330,15 @@ struct moabField_Core: public moabField {
       if((unsigned int)nb_local_dofs_row!=i.size()-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
       ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
+      ierr = PetscFree(_i); CHKERRQ(ierr);
+      ierr = PetscFree(_j); CHKERRQ(ierr);
+    } else if(strcmp(type,MATAIJ)==0) {
+      ierr = PetscFree(_i); CHKERRQ(ierr);
+      ierr = PetscFree(_j); CHKERRQ(ierr);
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     } else {
+      ierr = PetscFree(_i); CHKERRQ(ierr);
+      ierr = PetscFree(_j); CHKERRQ(ierr);
       SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);

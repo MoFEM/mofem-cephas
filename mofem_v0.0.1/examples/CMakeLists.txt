@@ -20,13 +20,11 @@
 include_directories("${PROJECT_SOURCE_DIR}/examples")
 
 #add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elastic_dynamics")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/elasticity")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/interface")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/dynamics")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/nonlinear_elasticity")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_elasticity")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_hooke_material_forces")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity_trans_isotropic")
-
-
+#add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_hooke_material_forces")
+#add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity_transIsotropic_interface")

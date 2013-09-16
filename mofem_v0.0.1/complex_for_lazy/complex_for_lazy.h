@@ -1,4 +1,4 @@
-/* Copyright (C) 2009, Lukasz Kaczmarczyk (likask AT civil.gla.ac.uk)
+/* Copyright (C) 2009, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -16,7 +16,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with mofem. If not, see <http://www.gnu.org/licenses/>. */
-
 
 #ifndef __COMPLEX_FOR_LAZY_H__
 #define __COMPLEX_FOR_LAZY_H__
@@ -126,6 +125,12 @@ PetscErrorCode KExt_HH(double eps,int order,int *order_edge,
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
   double *dofs_X,double *KExt_HH,int g_dim,const double *g_w);
+
+//quality
+PetscErrorCode quality_volume_length_F(double alpha,double *alpha2,double gamma,double *diffN,
+  double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
+  double *F,double *iF);
+int quality_volume_length_K(double eps,double alpha,double *alpha2,double gamma,double *diffN,double *coords_edges,double *dofs_X,double *dofs_x,double *K,double *Koff);
 
 void EdgeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 void FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);

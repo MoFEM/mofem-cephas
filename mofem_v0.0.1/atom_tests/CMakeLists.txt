@@ -29,29 +29,29 @@ cm_export_file("../meshes/heatflux01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/comb01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/bcoverlap01.cub" "/" export_atom_tests)
 
-add_test(cubit_bc_test_disp01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
+add_test(cubit_bc_test_disp01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
 
-add_test(cubit_bc_test_force01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file force01.cub)
+add_test(cubit_bc_test_force01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file force01.cub)
 add_test(cubit_bc_test_force01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/force01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/force01.cub.txt)
 
-add_test(cubit_bc_test_velocity01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file velocity01.cub)
+add_test(cubit_bc_test_velocity01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file velocity01.cub)
 add_test(cubit_bc_test_velocity01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/velocity01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/velocity01.cub.txt)
 
-add_test(cubit_bc_test_accel01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file accel01.cub)
+add_test(cubit_bc_test_accel01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file accel01.cub)
 add_test(cubit_bc_test_accel01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/accel01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/accel01.cub.txt)
 
-add_test(cubit_bc_test_temper01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file temper01.cub)
+add_test(cubit_bc_test_temper01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file temper01.cub)
 add_test(cubit_bc_test_temper01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/temper01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/temper01.cub.txt)
 
-add_test(cubit_bc_test_pressure01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file pressure01.cub)
+add_test(cubit_bc_test_pressure01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file pressure01.cub)
 add_test(cubit_bc_test_pressure01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/pressure01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/pressure01.cub.txt)
 
-add_test(cubit_bc_test_heatflux01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file heatflux01.cub)
+add_test(cubit_bc_test_heatflux01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file heatflux01.cub)
 add_test(cubit_bc_test_heatflux01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/heatflux01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/heatflux01.cub.txt)
 
-add_test(cubit_bc_test_comb01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file comb01.cub)
+add_test(cubit_bc_test_comb01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file comb01.cub)
 add_test(cubit_bc_test_comb01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/comb01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/comb01.cub.txt)
 
-add_test(cubit_bc_test_bcoverlap01 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file bcoverlap01.cub)
+add_test(cubit_bc_test_bcoverlap01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file bcoverlap01.cub)
 add_test(cubit_bc_test_bcoverlap01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/bcoverlap01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/bcoverlap01.cub.txt)

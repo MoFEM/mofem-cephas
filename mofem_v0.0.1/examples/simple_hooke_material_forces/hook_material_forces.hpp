@@ -29,51 +29,13 @@
 #include "moabSnes.hpp"
 #include "moabFEMethod_ComplexForLazy.hpp"
 #include "moabFEMethod_DriverComplexForLazy.hpp"
-#include "moabConstrainsByMarkAinsworth.hpp"
-#include "moabSurfaceConstrains.hpp"
+#include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
+#include "moabFEMethod_SurfaceConstrains.hpp"
 #include "ElasticFEMethod.hpp"
 
 #include "complex_for_lazy.h"
 
 namespace MoFEM {
-
-struct SetPositionsEntMethod: public moabField::EntMethod {
-    ErrorCode rval;
-    PetscErrorCode ierr;
-    Interface& moab;
-
-    EntityHandle node;
-    double coords[3];
-
-    SetPositionsEntMethod(Interface& _moab): EntMethod(),moab(_moab),node(no_handle) {}
-    
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscPrintf(PETSC_COMM_WORLD,"Start Set Positions\n");
-      PetscFunctionReturn(0);
-    } 
-     
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      if(dof_ptr->get_ent_type()!=MBVERTEX) PetscFunctionReturn(0);
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
-      double &fval = dof_ptr->get_FieldData();
-      if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
-      }
-      fval = coords[dof_rank];
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      PetscPrintf(PETSC_COMM_WORLD,"End Set Positions\n");
-      PetscFunctionReturn(0);
-    }
-
-};
 
 struct Spatial_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
@@ -140,6 +102,9 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
   matPROJ_ctx& proj_all_ctx;
   Range& SideSet2;
   bool init;
+
+  double alpha;
+
   Material_ElasticFEMethod(
       Interface& _moab,moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,
       double _lambda,double _mu,Range &_SideSet2,int _verbose = 0): 
@@ -149,6 +114,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     //set_PhysicalEquationNumber(neohookean);
   }
 
+
   Range CornersEdges,CornersNodes,SurfacesFaces;
   C_SURFACE_FEMethod *CFE_SURFACE;
   g_SURFACE_FEMethod *gFE_SURFACE;
@@ -156,6 +122,12 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
   g_CORNER_FEMethod *gFE_CORNER;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+
+    PetscBool flg;
+    ierr = PetscOptionsGetReal("","-my_penalty",&alpha,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_penalty need to be given");
+    }
 
     if(init) {
       init = false;
@@ -177,6 +149,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
       ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
       ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
     }
 
     ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
@@ -190,11 +163,11 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
     ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
 
-    {
-      MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
+    //{
+      //MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
       //std::string wait;
       //std::cin >> wait;
-    }
+    //}
 
     ierr = VecZeroEntries(proj_all_ctx.g); CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*gFE_SURFACE);  CHKERRQ(ierr);
@@ -237,12 +210,12 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = CalculateMaterialFint(snes_f); CHKERRQ(ierr);
-	ierr = CaluclateMaterialFext(snes_f,t,SideSet2) ; CHKERRQ(ierr);
+	//ierr = CaluclateMaterialFext(snes_f,t,SideSet2) ; CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
 	ierr = CalculateMaterialTangent(proj_all_ctx.K); CHKERRQ(ierr);
-	ierr = CalculateMaterialTangentExt(*snes_B,t,SideSet2); CHKERRQ(ierr);
+	//ierr = CalculateMaterialTangentExt(*snes_B,t,SideSet2); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -301,7 +274,7 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatCopy(proj_all_ctx.K,*snes_B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-	ierr = MatAXPY(*snes_B,1.,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+	ierr = MatAXPY(*snes_B,alpha,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");

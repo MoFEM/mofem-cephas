@@ -245,6 +245,8 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
                                  double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, Range &_SideSet1,Range &_SideSet2, Range &_SideSet3 ): 
     InterfaceElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,_SideSet1,_SideSet2,_SideSet3), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp) {};
     
+    vector< ublas::symmetric_matrix<FieldData,ublas::upper> > D_At_GaussPoint;
+
     PetscErrorCode NeumannBC() {
         PetscFunctionBegin;
         ublas::vector<FieldData,ublas::bounded_array<double,3> > traction2(3);
@@ -258,21 +260,29 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
         PetscFunctionReturn(0);
     }
     
-    PetscErrorCode preProcess() {
+    PetscErrorCode Stiffness() {
         PetscFunctionBegin;
-        
-        PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n",pcomm->rank(),v2-v1,t2-t1);
-        
-        ierr = PetscGetTime(&v1); CHKERRQ(ierr);
-        ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-        g_NTET.resize(4*45);
-        ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-        g_NTRI.resize(3*13);
-        ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
-        
-        
-        ierr = VecDuplicate(F,&Diagonal); CHKERRQ(ierr);
-        PetscFunctionReturn(0);        
+        K.resize(row_mat,col_mat);
+        int g_dim = g_NTET.size()/4;
+        ublas::matrix<FieldData> BTD;
+        for(int rr = 0;rr<row_mat;rr++) {
+            for(int gg = 0;gg<g_dim;gg++) {
+                ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
+                double w = V*G_W_TET[gg];
+                BTD.resize(row_Mat.size2(),6);
+                ublas::noalias(BTD) = prod( trans(row_Mat), w*D_At_GaussPoint[gg] );
+                for(int cc = rr;cc<col_mat;cc++) {
+                    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
+                    if(gg == 0) {
+                        K(rr,cc).resize(BTD.size1(),col_Mat.size2());
+                        ublas::noalias(K(rr,cc)) = prod(BTD , col_Mat ); // int BT*D*B
+                    } else {
+                        ublas::noalias(K(rr,cc)) += prod(BTD , col_Mat ); // int BT*D*B
+                    }
+                }
+            }
+        }
+        PetscFunctionReturn(0);
     }
     
     PetscErrorCode operator()() {
@@ -280,6 +290,8 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
         ierr = GetMatrices(); CHKERRQ(ierr);
         
+        D_At_GaussPoint.resize(coords_at_Gauss_nodes.size());
+
         for(int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
             
             ///Get the Axis and Angles according to the position of gauss point
@@ -301,11 +313,10 @@ struct TranIsotropicElasticFEMethod: public InterfaceElasticFEMethod {
 //            StiffnessMatrix=IsoMat.StiffnessMatrix;
             
             ///Rotating the Stiffness matrix according to the fibre direction
-            D.resize(6);
-            D.clear();
+            D_At_GaussPoint[gg].resize(6);
+            D_At_GaussPoint[gg].clear();
             ublas::matrix< FieldData > dummy2 = prod( StiffnessMatrix , TrpMatrix );
-            D=prod( trans(TrpMatrix) , dummy2 );
-            
+            D_At_GaussPoint[gg] = prod( trans(TrpMatrix) , dummy2 );
         }
         
         //Dirihlet Boundary Condition
