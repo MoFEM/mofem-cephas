@@ -1261,7 +1261,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       int rank = field_ptr->get_max_rank();
       int order = ent_ptr->get_max_order();
-      int dim = 0,nb_rows = 0;
+      unsigned int dim = 0,nb_rows = 0;
       switch(field_ptr->get_space()) {
 	case H1:
 	  dim = 3;

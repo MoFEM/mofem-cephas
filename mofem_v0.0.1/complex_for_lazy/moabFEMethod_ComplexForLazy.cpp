@@ -210,7 +210,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator niit,hi_niit;
       niit = data_multiIndex->get<Composite_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX,0));
       hi_niit = data_multiIndex->get<Composite_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX,4));
-      assert(distance(niit,hi_niit)==12);   
+      if(distance(niit,hi_niit)!=12) SETERRQ(PETSC_COMM_SELF,1,"I can not find dofs on vertices, it should be 12 dofs (i.e. 4 nodes and 3 dofs for each node)");
       for(int dd = 0;niit!=hi_niit;niit++,dd++) {
 	dofs_nodes[3*niit->side_number_ptr->side_number+niit->get_dof_rank()] = niit->get_FieldData(); 
       }
@@ -371,7 +371,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	double coords_edges[2*3*6]; 
 	double alpha2_array[4] = { alpha2,alpha2,alpha2,alpha2 }; 
 	ierr = get_edges_from_elem_coords(&coords[0],coords_edges); CHKERRQ(ierr);
-	ierr = quality_volume_length_K(eps*r,V,alpha2_array,gamma,&diffNTETinvJac[0],coords_edges,&dofs_X.data()[0],&dofs_x[0],&*KHH.data().begin(),NULL); CHKERRQ(ierr);
+	ierr = quality_volume_length_K(eps*r,V,alpha2_array,gamma,&diffNTETinvJac[0],coords_edges,&dofs_X.data()[0],NULL,&*KHH.data().begin(),NULL); CHKERRQ(ierr);
 	}
 	default:
 	  continue;
@@ -420,25 +420,29 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
       }
       diff_volumeNinvJac = &diffH1elemNinvJac[0];
       int g_dim = get_dim_gNTET();
-      if(dofs_x_edge_data.size()!=6) SETERRQ(PETSC_COMM_SELF,1,"data vectors are not set");
-      ee = 0;
-      for(;ee<6;ee++) {
+      if(!dofs_x_edge_data.empty()) {
+	if(dofs_x_edge_data.size()!=6) SETERRQ(PETSC_COMM_SELF,1,"data vectors are not set");
+	ee = 0;
+	for(;ee<6;ee++) {
 	  if(dofs_x_edge_data[ee].size()!=0) {
 	    Fint_h_edge_data[ee].resize(dofs_x_edge_data[ee].size());
 	    Fint_h_edge[ee] = &Fint_h_edge_data[ee].data()[0];
 	  } else {
 	    Fint_h_edge[ee] = NULL;
 	  }
+	}
       }
-      if(dofs_x_face_data.size()!=4) SETERRQ(PETSC_COMM_SELF,1,"data vectors are not set");
-      ff = 0;
-      for(;ff<4;ff++) {
+      if(!dofs_x_face_data.empty()) {
+	if(dofs_x_face_data.size()!=4) SETERRQ(PETSC_COMM_SELF,1,"data vectors are not set");
+	ff = 0;
+	for(;ff<4;ff++) {
 	  if(dofs_x_face_data[ff].size()!=0) {
 	    Fint_h_face_data[ff].resize(dofs_x_face_data[ff].size());
 	    Fint_h_face[ff] = &Fint_h_face_data[ff].data()[0];
 	  } else {
 	    Fint_h_face[ff] = NULL;
 	  }
+	}
       }
       if(dofs_x_volume.size()!=0) {
 	  assert(RowGlobSpatial[i_volume].size() == (unsigned int)3*NBVOLUME_H1(order_volume));
@@ -475,7 +479,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	    double alpha2_array[4] = { alpha2,alpha2,alpha2,alpha2 }; 
 	    ierr = get_edges_from_elem_coords(&coords[0],coords_edges); CHKERRQ(ierr);
 	    ierr = quality_volume_length_F(V,alpha2_array,gamma,&diffNTETinvJac[0],coords_edges,
-	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,quality0,quality,b,
+	      &dofs_X.data()[0],NULL,NULL,NULL,quality0,quality,b,
 	      &*Fint_H.data().begin(),NULL); CHKERRQ(ierr);
 	  }
 	  break;
