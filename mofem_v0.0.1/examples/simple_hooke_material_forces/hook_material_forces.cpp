@@ -32,7 +32,7 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = "...\n\n";
+static char help[] = "....\n\n";
 
 struct ExampleDiriheltBC: public BaseDirihletBC {
   Range SideSet1_;
