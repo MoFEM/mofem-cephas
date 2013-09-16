@@ -29,4 +29,4 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface"
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mesh_smoothing")
 
 #add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_hooke_material_forces")
-#add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_elasticity_transIsotropic_interface")
+#add_subdirectory("${PROJECT_SOURCE_DIR}/examples/rope")
