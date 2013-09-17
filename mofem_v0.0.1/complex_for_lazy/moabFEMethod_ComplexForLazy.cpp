@@ -367,6 +367,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	}
 	break;
 	case mesh_quality_analysis: {
+	if(!flg_alpha2) SETERRQ(PETSC_COMM_SELF,1,"-my_alpha2 is not set");
+	if(!flg_gamma) SETERRQ(PETSC_COMM_SELF,1,"-my_gamma is not set");
 	KHH.resize(12,12);
 	double coords_edges[2*3*6]; 
 	double alpha2_array[4] = { alpha2,alpha2,alpha2,alpha2 }; 

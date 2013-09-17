@@ -90,10 +90,6 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
 	  }
 	}
     }
-    /*cerr << "ROWS " << ent_global_row_indices << endl;
-    cerr << "COLS " << ent_global_col_indices << endl;
-    cerr << "NORMAL " << ent_normal_map << endl;
-    cerr << "MAT " << C_MAT_ELEM << endl;*/
     ierr = MatSetValues(C,
       ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
       ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
@@ -150,7 +146,11 @@ struct C_SURFACE_FEMethod:public moabField::FEMethod {
       ent_normal_map0.resize(3);
       ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&coords.data()[0],&ent_normal_map0.data()[0]); CHKERRQ(ierr);
       ent_normal_map.resize(3);
-      ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
+      //ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&ent_dofs_data.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
+      ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&coords.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
+      //cerr << ent_normal_map << endl << ent_normal_map0 << endl 
+	//<< inner_prod(ent_normal_map,ent_normal_map0)/inner_prod(ent_normal_map0,ent_normal_map0) << endl << endl;
+      //cerr << ent_dofs_data << "\n" << coords << endl << endl;
       ent_normal_map *= siit->sense;
       ent_normal_map0 *= siit->sense;
       if(debug_constrains) {
@@ -206,7 +206,7 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
 	  for(int dd = 0;dd<3;dd++) {
 	    double X0_dd = cblas_ddot(3,&g_NTRI3[3*gg],1,&coords.data()[dd],3);
 	    double X_dd = cblas_ddot(3,&g_NTRI3[3*gg],1,&ent_dofs_data.data()[dd],3);
-	    g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*ent_normal_map[dd]*(X0_dd - X_dd)*(area0/area);
+	    g_VEC_ELEM[nn] += G_TRI_W[gg]*g_NTRI3[3*gg+nn]*(ent_normal_map[dd]*X_dd*(area0/area) - ent_normal_map0[dd]*X0_dd);
 	  }
 	}
     }
