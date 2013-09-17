@@ -90,8 +90,8 @@ struct BaseDirihletBC {
 
 struct CubitDisplacementDirihletBC: public BaseDirihletBC {
   moabField& mField;
-  const string field_name;
   const string problem_name;  
+  const string field_name;
 
   CubitDisplacementDirihletBC(moabField& _mField,const string _problem_name,const string _field_name): 
     mField(_mField),problem_name(_problem_name),field_name(_field_name) {};
@@ -193,9 +193,9 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode SetDirihletBC_to_MatrixDiagonal(
-    moabField::FEMethod *fe_method_ptr,Mat Aij) {
+  PetscErrorCode SetDirihletBC_to_MatrixDiagonal(moabField::FEMethod *fe_method_ptr,Mat Aij) {
     PetscFunctionBegin;
+
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
 
     for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {

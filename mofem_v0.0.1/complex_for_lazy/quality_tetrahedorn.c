@@ -135,6 +135,8 @@ PetscErrorCode quality_volume_length_F(double V,double *alpha2,double gamma,doub
   double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
   double *F,double *iF) {
   PetscFunctionBegin;
+  double N4[4*4]; 
+  ierr = ShapeMBTET(N4,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double iH[9];
@@ -165,12 +167,11 @@ PetscErrorCode quality_volume_length_F(double V,double *alpha2,double gamma,doub
   if( F==NULL ) { 
     PetscFunctionReturn(0);
   }
+ 
   double reQ[9];
   TakeRe(xQ,reQ);
   double imQ[9];
   TakeIm(xQ,imQ);
-  double N4[4*4]; 
-  ierr = ShapeMBTET(N4,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
   int gg = 0;
   for(;gg<4;gg++) {
     double alpha2_val = cblas_ddot(4,&N4[4*gg],1,alpha2,1);

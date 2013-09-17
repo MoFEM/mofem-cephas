@@ -652,8 +652,8 @@ PetscErrorCode FEMethod_UpLevelStudent::MakeBMatrix3D(
   for(int gg = 0;gg<g_dim;gg++) {
     ublas::matrix<FieldData> &diffMat = diffNMatrix[gg];
     ublas::matrix<FieldData> &BMat = BMatrix[gg];
-    int m = diffMat.size1();
-    int n = diffMat.size2();
+    unsigned int m = diffMat.size1();
+    unsigned int n = diffMat.size2();
     if(m != 9)  SETERRQ(PETSC_COMM_SELF,1,"wrong matrix size");
     if((BMat.size1()!=6)||(BMat.size2()!=n)) BMat.resize(6,n);
     // page 30 CHAPTER 6. DISPLACEMENT METHODS, FEAP Version 7.3 Theory Manual Robert L. Taylor

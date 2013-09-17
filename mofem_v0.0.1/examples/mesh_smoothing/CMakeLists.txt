@@ -16,17 +16,13 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-#include subdirectory
-include_directories("${PROJECT_SOURCE_DIR}/examples")
+add_executable(mesh_smoothing mesh_smoothing.cpp)
+target_link_libraries(mesh_smoothing mofem_Field ${PROJECT_LIBS})
 
-#add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/dynamics")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/nonlinear_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_elasticity")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mesh_smoothing")
+cm_export_file("../../meshes/chees.cub" "/" export_files_mesh_smoothing)
 
-#add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_hooke_material_forces")
-#add_subdirectory("${PROJECT_SOURCE_DIR}/examples/rope")
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
+

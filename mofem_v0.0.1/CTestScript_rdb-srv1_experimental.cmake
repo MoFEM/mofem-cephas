@@ -5,7 +5,7 @@ set(CTEST_BUILD_NAME "Linux-mpicxx")
 
 if(NOT DASHBOARDTEST) 
   set(FORCETESTING "YES")
-  set(DASHBOARDTEST "Nightly")
+  set(DASHBOARDTEST "Experimental")
 endif(NOT DASHBOARDTEST)
 
 include(CTestScript.cmake)
