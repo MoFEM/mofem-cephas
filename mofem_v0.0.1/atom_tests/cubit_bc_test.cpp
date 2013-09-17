@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
       if (strcmp (&bc_data[0],"Displacement") == 0)
       {
           displacement_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Force") == 0)
       {
           force_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Velocity") == 0)
       {
           velocity_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Acceleration") == 0)
       {
           acceleration_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Temperature") == 0)
       {
           temperature_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
       if (strcmp (&bc_data[0],"Pressure") == 0)
       {
           pressure_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -145,13 +145,22 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"HeatFlux") == 0)
       {
           heatflux_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
-
       }
-                 
+      
+      //Interface
+      else if (strcmp (&bc_data[0],"cfd_bc") == 0)
+      {
+          interface_cubit_bc_data mydata;
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          //Print data
+          cout << mydata;
+          myfile << mydata;
+      }
+          
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 
@@ -163,7 +172,19 @@ int main(int argc, char *argv[]) {
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
     if(bc_data.empty()) continue;
-  } 
+  }
+    
+    cout << "<<<< MaterialSets >>>>>" << endl;
+    //MaterialSets
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+    {
+        //cout << *it << endl;
+        //ierr = it->print_Cubit_material_data(cout); CHKERRQ(ierr);
+        //vector<unsigned int> material_data;
+        //ierr = it->get_Cubit_material_data(material_data); CHKERRQ(ierr);
+        //if(material_data.empty()) continue;
+    }
+    
 
     //Close mesh_file_name.txt
     myfile.close();
