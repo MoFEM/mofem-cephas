@@ -13,7 +13,7 @@ find_program(CTEST_GIT_COMMAND NAMES git)
 
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(INIT_REPOSITORY "YES")
-  set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone --branch CDashTesting https://likask@bitbucket.org/likask/mofem-joseph.git ${GID_SOURCE_REPO}")
+  set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone --branch CDashTesting https://bitbucket.org/likask/mofem-joseph.git ${GID_SOURCE_REPO}")
 else(EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} submodule update")
 endif()
