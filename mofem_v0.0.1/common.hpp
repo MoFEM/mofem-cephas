@@ -1449,6 +1449,7 @@ enum Cubit_BC {
   AccelerationSet = 1<<8,
   TemperatureSet = 1<<9,
   HeatfluxSet = 1<<10,
+  InterfaceSet = 1<<11,
   LastSet
 };
 
@@ -1726,6 +1727,34 @@ struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
+    /*! \struct interface_cubit_bc_data
+     *  \brief Definition of the interface (cfd_bc) data structure
+     */
+    struct interface_cubit_bc_data: public generic_cubit_bc_data {
+        struct __attribute__ ((packed)) _data_{
+            char name[6]; // 6 characters for "cfd_bc"
+            char pre1; // This is always zero
+            char pre2; // 6
+        };
+        
+        _data_ data;
+        const Cubit_BC_bitset type;
+        interface_cubit_bc_data(): type(InterfaceSet) {};
+        
+        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+            PetscFunctionBegin;
+            //Fill data
+            if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+            memcpy(&data, &bc_data[0], sizeof(data));
+            PetscFunctionReturn(0);
+        }
+        
+        /*! \brief Print interface bc data
+         */
+        friend ostream& operator<<(ostream& os,const interface_cubit_bc_data& e);
+        
+};
+    
 /** 
  * \brief this struct keeps basic methods for moab meshset about material and boundary conditions
  */
@@ -1762,9 +1791,25 @@ struct CubitMeshSets {
   /**
    * \brief get bc_data vector from MoFEM database
    * 
-   * \param b_data is the in/out vector were bc_data will be stored
+   * \param bc_data is the in/out vector were bc_data will be stored
    */
   PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
+    
+//NEW
+/**
+ * \brief get block_headers vector from MoFEM database
+ *
+ * \param material_data is the in/out vector were the material data will be stored
+ */
+PetscErrorCode get_Cubit_material_data(vector<unsigned int>& material_data) const;
+
+/**
+ * \brief print material_data int stream given by os
+ *
+ * f.e. it->print_Cubit_material_data(cout), i.e. printing to standard output
+ * f.e. it->print_Cubit_material_data(cerr), i.e. printing to standard error output
+ */
+PetscErrorCode print_Cubit_material_data(ostream& os) const;
     
   /**
    * \brief print bc_data int stream given by os

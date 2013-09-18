@@ -170,10 +170,14 @@ struct Material_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Material {
     //}
 
     ierr = VecZeroEntries(proj_all_ctx.g); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(proj_all_ctx.g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(proj_all_ctx.g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*gFE_SURFACE);  CHKERRQ(ierr);
     ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*gFE_CORNER);  CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(proj_all_ctx.g,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(proj_all_ctx.g,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
   

@@ -135,6 +135,10 @@ PetscErrorCode quality_volume_length_F(double V,double *alpha2,double gamma,doub
   double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
   double *F,double *iF) {
   PetscFunctionBegin;
+  if(F!=NULL) bzero(F,sizeof(double)*12);
+  if(iF!=NULL) bzero(iF,sizeof(double)*12);
+  double N4[4*4]; 
+  ierr = ShapeMBTET(N4,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double iH[9];
@@ -169,8 +173,6 @@ PetscErrorCode quality_volume_length_F(double V,double *alpha2,double gamma,doub
   TakeRe(xQ,reQ);
   double imQ[9];
   TakeIm(xQ,imQ);
-  double N4[4*4]; 
-  ierr = ShapeMBTET(N4,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
   int gg = 0;
   for(;gg<4;gg++) {
     double alpha2_val = cblas_ddot(4,&N4[4*gg],1,alpha2,1);
@@ -198,6 +200,7 @@ int quality_volume_length_K(double eps,double V,double *alpha2,double gamma,doub
   bzero(ZERO,sizeof(double)*9);
   __CLPK_doublecomplex xlrms0; 
   __CLPK_doublecomplex dofs_egdes_Chi[3*6]; 
+  bzero(K,sizeof(double)*12*12);
   ierr = calculate_push_edge_relative(coords_edges,NULL,dofs_egdes_Chi,&xlrms0);  CHKERRQ(ierr);
   double _idofs_X[12],_iH[9];
   int dd = 0;
