@@ -556,6 +556,11 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
   FEMethod_DriverComplexForLazy_MeshSmoothing(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
     FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,0,0,_verbose) {
       type_of_analysis = mesh_quality_analysis;
+
+      g_NTET.resize(4*1);
+      ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
+      g_TET_W = G_TET_W1;
+
     }
 
   PetscErrorCode operator()() {
@@ -750,7 +755,7 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 	int M,N,m,n;
 	ierr = MatGetSize(proj_all_ctx.K,&M,&N); CHKERRQ(ierr);
 	ierr = MatGetLocalSize(proj_all_ctx.K,&m,&n); CHKERRQ(ierr);
-	Mat Q,R;
+	Mat Q;
 	ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&Q); CHKERRQ(ierr);
 	ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
 	ierr = proj_all_ctx.InitQorP(snes_f); CHKERRQ(ierr);
