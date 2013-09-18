@@ -6,5 +6,4 @@ Check before run
 
 Example run
 ===========
-mpirun -np 4 ./elasticity -my_file LShape.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor
-
+./mesh_smoothing -my_file chees.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-12 -ksp_rtol 1e-12 -snes_monitor -snes_type ls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason -my_penalty 1e8 -my_gamma 0 -my_alpha2 1
