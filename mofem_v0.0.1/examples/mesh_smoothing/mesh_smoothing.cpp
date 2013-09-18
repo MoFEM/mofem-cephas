@@ -350,12 +350,6 @@ int main(int argc, char *argv[]) {
   Range SideSet101Nodes;
   rval = moab.get_connectivity(SideSet101,SideSet101Nodes,true); CHKERR_PETSC(rval);
   CornersNodes.insert(SideSet101Nodes.begin(),SideSet101Nodes.end());
-  //Fix all surfcae nodes
-  /*Range SideSet102;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SideSet102,true); CHKERRQ(ierr);
-  Range SideSet102Nodes;
-  rval = moab.get_connectivity(SideSet102,SideSet102Nodes,true); CHKERR_PETSC(rval);
-  CornersNodes.insert(SideSet102Nodes.begin(),SideSet102Nodes.end());*/
 
   materialDirihletBC myDirihletBC(moab,CornersNodes);
 
