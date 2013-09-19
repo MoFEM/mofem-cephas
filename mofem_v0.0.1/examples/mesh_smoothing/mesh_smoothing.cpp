@@ -39,7 +39,7 @@ struct MyMeshSmoothing_ElasticFEMethod: public /*FEMethod_DriverComplexForLazy_M
   MyMeshSmoothing_ElasticFEMethod(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
     FEMethod_DriverComplexForLazy_MeshSmoothingProjected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_verbose) {
     //FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_verbose) {
-    set_qual_ver(2);
+    set_qual_ver(1);
   }
 
 };
@@ -168,6 +168,33 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
+  //random mesh refinment
+  EntityHandle meshset_ref_edges;
+  rval = moab.create_meshset(MESHSET_SET,meshset_ref_edges); CHKERR_PETSC(rval);
+  Range edges_to_refine;
+  rval = moab.get_entities_by_type(meshset_level0,MBEDGE,edges_to_refine);  CHKERR_PETSC(rval);
+  for(Range::iterator eit = edges_to_refine.begin();eit!=edges_to_refine.end();eit++) {
+    int numb = rand() % 2;
+    if(numb == 0) {
+      ierr = moab.add_entities(meshset_ref_edges,&*eit,1); CHKERRQ(ierr);
+    }
+  }
+  BitRefLevel bit_level1;
+  bit_level1.set(1);
+  ierr = mField.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
+  ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
+
+  //add refined ent to cubit meshsets
+  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
+    EntityHandle cubit_meshset = cubit_it->meshset; 
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+  }
+
+  BitRefLevel &problem_level = bit_level1;
+
+
   //Fields
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("LAMBDA_SURFACE",H1,1); CHKERRQ(ierr);
@@ -217,15 +244,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_SURFACE_ELEM"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("MESH_SMOOTHING",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("MESH_SMOOTHING",problem_level); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",problem_level); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("C_ALL_MATRIX",problem_level); CHKERRQ(ierr);
 
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_level,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
 
   //add tets on corners
   EntityHandle CornersNodesMeshset,SurfacesFacesMeshset;
@@ -290,7 +317,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = mField.build_adjacencies(problem_level); CHKERRQ(ierr);
 
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
