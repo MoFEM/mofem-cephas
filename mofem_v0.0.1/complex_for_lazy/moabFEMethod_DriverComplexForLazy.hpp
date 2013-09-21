@@ -628,6 +628,8 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
+	ierr = MatZeroEntries(proj_all_ctx.K); CHKERRQ(ierr);
       }
 
       ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
@@ -665,7 +667,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
       ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
 
-  
       PetscReal g_nrm2;
       ierr = VecNorm(proj_all_ctx.g, NORM_2,&g_nrm2); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"\t g_nrm2 = %6.4e\n",g_nrm2);
@@ -746,7 +747,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
-
 
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

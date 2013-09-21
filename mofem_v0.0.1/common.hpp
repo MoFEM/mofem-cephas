@@ -173,7 +173,7 @@ typedef int EntPart;
 typedef checked_uint128_t UId;
 
 typedef bitset<6> BitRefEdges;
-typedef bitset<8/*max number of refinments*/> BitRefLevel;
+typedef bitset<16/*max number of refinments*/> BitRefLevel;
 typedef bitset<16/*max number of fields*/> BitFieldId;
 
 /// approximation space 
