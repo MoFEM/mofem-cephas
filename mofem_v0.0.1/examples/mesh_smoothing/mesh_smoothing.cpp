@@ -261,6 +261,25 @@ int main(int argc, char *argv[]) {
     ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",CornersEdges.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+    if(SurfacesFaces.empty()) {
+      Skinner skin(&moab);
+      Range tets;
+      rval = moab.get_entities_by_type(0,MBTET,tets,true);  CHKERR_PETSC(rval);
+      rval = skin.find_skin(tets,false,SurfacesFaces); CHKERR(rval);
+      EntityHandle meshset;
+      ierr = mField.get_msId_meshset(102,SideSet,meshset); CHKERRQ(ierr);
+      rval = moab.add_entities(meshset,SurfacesFaces); CHKERR_PETSC(rval);
+      if(CornersNodes.empty()) {
+	Range Nodes;
+	rval = moab.get_connectivity(SurfacesFaces,Nodes,true);  CHKERR_PETSC(rval);
+	CornersNodes.insert(Nodes[0]);
+	ierr = mField.get_msId_meshset(101,NodeSet,meshset); CHKERRQ(ierr);
+	rval = moab.add_entities(meshset,CornersNodes); CHKERR_PETSC(rval);
+      }
+    }
     Range SurfacesTets;
     rval = moab.get_adjacencies(SurfacesFaces,3,false,SurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
     {
