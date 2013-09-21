@@ -3889,13 +3889,14 @@ PetscErrorCode moabField_Core::loop_finite_elements(
   // find p_miit
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
   problems_by_name::iterator p_miit = problems_set.find(problem_name);
-  if(p_miit == problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem not in databse %s",problem_name.c_str());
+  if(p_miit == problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem is not in databse %s",problem_name.c_str());
   // finite element
   typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
   FEs_by_composite &numered_finite_elements = 
     (const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numered_finite_elements)).get<Composite_mi_tag>();
   FEs_by_composite::iterator miit = numered_finite_elements.lower_bound(boost::make_tuple(fe_name,lower_rank));
   FEs_by_composite::iterator hi_miit = numered_finite_elements.upper_bound(boost::make_tuple(fe_name,upper_rank));
+  if(miit == hi_miit) SETERRQ1(PETSC_COMM_SELF,1,"fe is not in databse %s",fe_name.c_str());
   method.fe_name = fe_name;
   ierr = method.set_problem(&*p_miit); CHKERRQ(ierr);
   ierr = method.set_moabfields(&moabfields); CHKERRQ(ierr);

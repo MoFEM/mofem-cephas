@@ -340,7 +340,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
 
       double t_val = this->t_val*mydata.data.value1;
-      double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
+      double t[] = { 0,0,-t_val, 0,0,-t_val, 0,0,-t_val };
 
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
@@ -525,7 +525,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
 
       double t_val = this->t_val*mydata.data.value1;
-      double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
+      double t[] = { 0,0,-t_val, 0,0,-t_val, 0,0,-t_val };
 
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
