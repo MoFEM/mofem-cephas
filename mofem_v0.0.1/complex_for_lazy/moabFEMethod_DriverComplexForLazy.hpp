@@ -601,6 +601,20 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
   g_SURFACE_FEMethod *gFE_SURFACE;
   C_CORNER_FEMethod *CFE_CORNER;
   g_CORNER_FEMethod *gFE_CORNER;
+
+  PetscErrorCode set_local_VecCreateGhost_for_ConstrainsProblem() {
+    PetscFunctionBegin;
+    Vec _x_;
+    ierr = mField.VecCreateGhost("C_ALL_MATRIX",Col,&_x_); CHKERRQ(ierr);
+    ierr = VecScatterBegin(proj_all_ctx.scatter,snes_x,_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterEnd(proj_all_ctx.scatter,snes_x,_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost("C_ALL_MATRIX",Col,_x_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecDestroy(&_x_); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
@@ -618,6 +632,8 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 	ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
 	ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
 	ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+	ierr = mField.set_global_VecCreateGhost("MESH_SMOOTHING",Col,snes_x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
 	Range CornersEdgesNodes;
 	rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
 	CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
@@ -628,26 +644,29 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-      }
 
-      ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
-      ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
-      ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*CFE_CORNER);  CHKERRQ(ierr);
-      ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*CFE_CORNER);  CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-      ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
-      ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
+	ierr = proj_all_ctx.InitQorP(snes_f); CHKERRQ(ierr);
+	ierr = proj_all_ctx.InitQTKQ(); CHKERRQ(ierr);
 
-      /*{
+	//ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
+	//ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
+
+	/*{
 	MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
 	std::string wait;
 	std::cin >> wait;
-      }*/
-
-      ierr = mField.set_global_VecCreateGhost("MESH_SMOOTHING",Col,snes_x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	}*/
+      }  else {
+	ierr = set_local_VecCreateGhost_for_ConstrainsProblem(); CHKERRQ(ierr);
+      }
 
       ierr = VecZeroEntries(proj_all_ctx.g); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(proj_all_ctx.g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -665,7 +684,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
       ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
 
-  
       PetscReal g_nrm2;
       ierr = VecNorm(proj_all_ctx.g, NORM_2,&g_nrm2); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"\t g_nrm2 = %6.4e\n",g_nrm2);
@@ -747,7 +765,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 
-
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
@@ -758,23 +775,51 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 	Mat Q;
 	ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&Q); CHKERRQ(ierr);
 	ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
-	ierr = proj_all_ctx.InitQorP(snes_f); CHKERRQ(ierr);
 
+	Mat R;
+	int C_M,C_N,C_m,C_n;
+	ierr = MatGetSize(proj_all_ctx.C,&C_M,&C_N); CHKERRQ(ierr);
+	ierr = MatGetLocalSize(proj_all_ctx.C,&C_m,&C_n); CHKERRQ(ierr);
+	if(C_n != m) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	if(C_N != M) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	ierr = MatCreateShell(PETSC_COMM_WORLD,m,C_m,M,C_M,&proj_all_ctx,&R); CHKERRQ(ierr);
+	ierr = MatShellSetOperation(R,MATOP_MULT,(void(*)(void))matR_mult_shell); CHKERRQ(ierr);
+
+	//-QTKRg
+	Vec Rg;
+	ierr = VecDuplicate(snes_f,&Rg); CHKERRQ(ierr);
+	ierr = MatMult(R,proj_all_ctx.g,Rg); CHKERRQ(ierr);
+	PetscReal Rg_nrm2;
+	ierr = VecNorm(Rg,NORM_2,&Rg_nrm2); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\t Rg_nrm2 = %6.4e\n",Rg_nrm2);
+	Vec KRg;
+	ierr = VecDuplicate(snes_f,&KRg); CHKERRQ(ierr);
+	ierr = MatMult(proj_all_ctx.K,Rg,KRg); CHKERRQ(ierr);
+	PetscReal KRg_nrm2;
+	ierr = VecNorm(KRg,NORM_2,&KRg_nrm2); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\t KRg_nrm2 = %6.4e\n",KRg_nrm2);
+	ierr = VecAXPY(snes_f,-1.,KRg); CHKERRQ(ierr);
+
+	//+QT*(f-QTKRg)
 	PetscReal f_nrm2;
 	ierr = VecNorm(snes_f,NORM_2,&f_nrm2); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\t f_nrm2 = %6.4e\n",f_nrm2);
-	Vec Qf;
-	ierr = VecDuplicate(snes_f,&Qf); CHKERRQ(ierr);
-	ierr = MatMult(Q,snes_f,Qf); CHKERRQ(ierr);
+	Vec tmp_f;
+	ierr = VecDuplicate(snes_f,&tmp_f); CHKERRQ(ierr);
+	ierr = MatMult(Q,snes_f,tmp_f); CHKERRQ(ierr);
 	PetscReal QTf_nrm2;
-	ierr = VecNorm(Qf,NORM_2,&QTf_nrm2); CHKERRQ(ierr);
+	ierr = VecNorm(tmp_f,NORM_2,&QTf_nrm2); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\t QTf_nrm2 = %6.4e\n",QTf_nrm2);
-	ierr = VecSwap(snes_f,Qf); CHKERRQ(ierr);
+	ierr = VecSwap(snes_f,tmp_f); CHKERRQ(ierr);
 
+	//CTg
 	ierr = MatMultAdd(proj_all_ctx.CT,proj_all_ctx.g,snes_f,snes_f); CHKERRQ(ierr);
 	
-	ierr = VecDestroy(&Qf); CHKERRQ(ierr);
+	ierr = VecDestroy(&KRg); CHKERRQ(ierr);
+	ierr = VecDestroy(&Rg); CHKERRQ(ierr);
+	ierr = VecDestroy(&tmp_f); CHKERRQ(ierr);
 	ierr = MatDestroy(&Q); CHKERRQ(ierr);
+	ierr = MatDestroy(&R); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
@@ -783,7 +828,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = proj_all_ctx.InitQTKQ(); CHKERRQ(ierr);
 	ierr = MatCopy(proj_all_ctx.K,*snes_B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
 	ierr = MatAXPY(*snes_B,alpha,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
 	break;
