@@ -601,6 +601,20 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
   g_SURFACE_FEMethod *gFE_SURFACE;
   C_CORNER_FEMethod *CFE_CORNER;
   g_CORNER_FEMethod *gFE_CORNER;
+
+  PetscErrorCode set_local_VecCreateGhost_for_ConstrainsProblem() {
+    PetscFunctionBegin;
+    Vec _x_;
+    ierr = mField.VecCreateGhost("C_ALL_MATRIX",Col,&_x_); CHKERRQ(ierr);
+    ierr = VecScatterBegin(proj_all_ctx.scatter,snes_x,_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterEnd(proj_all_ctx.scatter,snes_x,_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost("C_ALL_MATRIX",Col,_x_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecDestroy(&_x_); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
@@ -613,13 +627,13 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 
-      ierr = mField.set_global_VecCreateGhost("MESH_SMOOTHING",Col,snes_x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
       if(init) {
 	init = false;
 	ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
 	ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
 	ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+	ierr = mField.set_global_VecCreateGhost("MESH_SMOOTHING",Col,snes_x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
 	Range CornersEdgesNodes;
 	rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
 	CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
@@ -631,8 +645,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
-	ierr = MatZeroEntries(proj_all_ctx.K); CHKERRQ(ierr);
-  
 	ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
 	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -652,6 +664,8 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 	std::string wait;
 	std::cin >> wait;
 	}*/
+      }  else {
+	ierr = set_local_VecCreateGhost_for_ConstrainsProblem(); CHKERRQ(ierr);
       }
 
       ierr = VecZeroEntries(proj_all_ctx.g); CHKERRQ(ierr);
