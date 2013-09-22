@@ -1797,21 +1797,20 @@ struct CubitMeshSets {
    */
   PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
     
-//NEW
-/**
- * \brief get block_headers vector from MoFEM database
- *
- * \param material_data is the in/out vector were the material data will be stored
- */
-PetscErrorCode get_Cubit_material_data(vector<unsigned int>& material_data) const;
+  /**
+  * \brief get block_headers vector from MoFEM database
+  *
+  * \param material_data is the in/out vector were the material data will be stored
+  */
+  PetscErrorCode get_Cubit_material_data(vector<unsigned int>& material_data) const;
 
-/**
- * \brief print material_data int stream given by os
- *
- * f.e. it->print_Cubit_material_data(cout), i.e. printing to standard output
- * f.e. it->print_Cubit_material_data(cerr), i.e. printing to standard error output
- */
-PetscErrorCode print_Cubit_material_data(ostream& os) const;
+  /**
+  * \brief print material_data int stream given by os
+  *
+  * f.e. it->print_Cubit_material_data(cout), i.e. printing to standard output
+  * f.e. it->print_Cubit_material_data(cerr), i.e. printing to standard error output
+  */
+  PetscErrorCode print_Cubit_material_data(ostream& os) const;
     
   /**
    * \brief print bc_data int stream given by os
@@ -1833,6 +1832,13 @@ PetscErrorCode print_Cubit_material_data(ostream& os) const;
     ierr = data.fill_data(bc_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
+  
+  /**
+   * \brief get cubit block attributes
+   *
+   * \param attributes vector where attributes
+   */
+  PetscErrorCode get_Cubit_attributes(vector<double> &attributes) const;
 
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
 };
