@@ -49,16 +49,22 @@ struct DirihletBCMethod_DriverComplexForLazy: public CubitDisplacementDirihletBC
 
 struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
-  double t_val;
+  double *t_val;
   PetscErrorCode set_t_val(double t_val_) {
       PetscFunctionBegin;
-      t_val = t_val_;
+      *t_val = t_val_;
       PetscFunctionReturn(0);
   }
 
+  Tag th_t_val;
   moabField& mField;
   FEMethod_DriverComplexForLazy_Spatial(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-  FEMethod_ComplexForLazy(_mField.get_moab(),_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose),mField(_mField) { };
+  FEMethod_ComplexForLazy(_mField.get_moab(),_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose),mField(_mField) { 
+    double def_t_val = 0;
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+    mField.get_moab().tag_get_handle("_LoadFactor_t_val",1,MB_TYPE_INTEGER,th_t_val,MB_TAG_CREAT|MB_TAG_MESH,&def_t_val); 
+    rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_THROW(rval);
+  };
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -339,7 +345,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       ss << mydata;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
 
-      double t_val = this->t_val*mydata.data.value1;
+      double t_val = *(this->t_val)*mydata.data.value1;
       double t[] = { 0,0,-t_val, 0,0,-t_val, 0,0,-t_val };
 
       Range NeumannSideSet;
@@ -524,7 +530,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
       ss << mydata;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
 
-      double t_val = this->t_val*mydata.data.value1;
+      double t_val = *(this->t_val)*mydata.data.value1;
       double t[] = { 0,0,-t_val, 0,0,-t_val, 0,0,-t_val };
 
       Range NeumannSideSet;

@@ -744,7 +744,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),tag_block_header_data(NULL),
   meshsets_mask(NodeSet|SideSet|BlockSet) {
   ErrorCode rval;
-  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
+  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,ssTag); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle((string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR(rval);CHKERR_THROW(rval);
@@ -752,6 +752,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME,bhTag); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle("BLOCK_HEADER",bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
+  //rval = moab.tag_get_handle("Block_Attributes",block_attribs); CHKERR(rval); CHKERR_THROW(rval);
   vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {
     if(
@@ -790,6 +791,12 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR(rval);CHKERR_THROW(rval);
       if(tag_block_header_data[9]>0) CubitBCType |= MaterialSet;
     }
+    //if(*tit == block_attribs) {
+      //rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR(rval);CHKERR_THROW(rval);
+      //for(int ii = 0;ii<tag_block_attributes_size;ii++) {
+	//cerr << "RRRRR " << tag_block_attributes[ii] << endl;
+      //}
+   //}
   }
 }
 PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {

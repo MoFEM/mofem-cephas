@@ -1766,6 +1766,8 @@ struct CubitMeshSets {
   char* tag_bc_data;
   int tag_bc_size;
   unsigned int *tag_block_header_data;
+  double* tag_block_attributes;
+  int tag_block_attributes_size;
   const Cubit_BC_bitset meshsets_mask;
   CubitMeshSets(Interface &moab,const EntityHandle _meshset);
   inline int get_msId() const { return *msId; }

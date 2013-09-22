@@ -17,6 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
+
 #include "configurational_mechanics.hpp"
 
 using namespace MoFEM;
@@ -70,12 +72,13 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
-  ierr = ConfigurationalMechanics_PhysicalProblemDefinition(mField); CHKERRQ(ierr);
+  ierr = ConfigurationalMechanics_ConstrainsProblemDefinition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
+
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -86,12 +89,6 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
-  //partition problems
-  ierr = ConfigurationalMechanics_PhysicalPartitionProblems(mField); CHKERRQ(ierr);
-
-  //solve problem
-  ierr = ConfigurationalMechanics_SetPhysicalPositions(mField); CHKERRQ(ierr);
-  ierr = ConfigurationalMechanics_SolvePhysicalProblem(mField); CHKERRQ(ierr);
 
   rval = moab.write_file("out.h5m"); CHKERR_PETSC(rval);
 
@@ -113,7 +110,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-
-
-

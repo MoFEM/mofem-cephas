@@ -19,10 +19,14 @@
 add_executable(physical_problem physical_problem.cpp)
 target_link_libraries(physical_problem mofem_Field ${PROJECT_LIBS})
 
-#add_executable(hook_material_problem hook_material_problem.cpp)
-#target_link_libraries(hook_material_problem mofem_Field ${PROJECT_LIBS})
+add_executable(material_force material_force.cpp)
+target_link_libraries(material_force mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/chees.cub" "/" export_files_hook_material_forces)
+add_executable(material_force_projected material_force_projected.cpp)
+target_link_libraries(material_force_projected mofem_Field ${PROJECT_LIBS})
+
+
+cm_export_file("../../meshes/chees.cub" "/" export_files_material_mechanics)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
