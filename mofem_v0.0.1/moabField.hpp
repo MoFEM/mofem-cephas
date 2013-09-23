@@ -807,6 +807,32 @@ struct moabField {
     */
   virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finite_elements_ptr) = 0;
 
+  /** 
+    * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    *
+    * for(_IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * 	...
+    * }
+    *
+    * \param fe_name
+    */
+  virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name) = 0;
+
+  /** 
+    * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    *
+    * for(_IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * 	...
+    * }
+    *
+    * \param fe_name
+    */
+  virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
+
+  #define _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
+      IT != MFIELD.get_fes_moabfield_by_name_end(NAME); IT++
+
 
 };
 
