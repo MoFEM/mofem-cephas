@@ -173,17 +173,15 @@ int main(int argc, char *argv[]) {
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
     vector<double> attributes;
     ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
-    for(int ii = 0;ii<attributes.size();ii++) {
+    for(unsigned int ii = 0;ii<attributes.size();ii++) {
       cout << "attr: " << ii << " " << attributes[ii] << endl;     
       myfile << "attr: " << ii << " " << attributes[ii] << endl; 
     }
     if(bc_data.empty()) continue;
   }
     
-    
-
-    //Close mesh_file_name.txt
-    myfile.close();
+  //Close mesh_file_name.txt
+  myfile.close();
 
   PetscFinalize();
 
