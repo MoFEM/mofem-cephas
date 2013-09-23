@@ -1519,11 +1519,11 @@ typedef multi_index_container<
   MoFEMProblem,
   indexed_by<
     ordered_unique<
-      tag<Meshset_mi_tag>, member<MoFEMProblem::MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
+      tag<Meshset_mi_tag>, member<MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
     hashed_unique<
-      tag<BitProblemId_mi_tag>, const_mem_fun<MoFEMProblem::MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitProblemId> >,
+      tag<BitProblemId_mi_tag>, const_mem_fun<MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitProblemId> >,
     hashed_unique<
-      tag<MoFEMProblem_mi_tag>, const_mem_fun<MoFEMProblem::MoFEMProblem,string,&MoFEMProblem::get_name> >
+      tag<MoFEMProblem_mi_tag>, const_mem_fun<MoFEMProblem,string,&MoFEMProblem::get_name> >
   > > MoFEMProblem_multiIndex;
 
 //CUBIT BC DATA
