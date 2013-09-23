@@ -994,8 +994,12 @@ PetscErrorCode moabField_Core::modify_finite_element_add_field_data(const string
   finite_elements_by_name &MoFEMFiniteElement_name_set = finite_elements.get<MoFEMFiniteElement_name_mi_tag>();
   finite_elements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,1,"this MoFEMFiniteElement is there");
-  bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,EntMoFEMFiniteElement_change_bit_add(get_BitFieldId(name_data)));
-  if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  try {
+    bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,EntMoFEMFiniteElement_change_bit_add(get_BitFieldId(name_data)));
+    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row) {
@@ -1005,8 +1009,12 @@ PetscErrorCode moabField_Core::modify_finite_element_add_field_row(const string 
   finite_elements_by_name &MoFEMFiniteElement_name_set = finite_elements.get<MoFEMFiniteElement_name_mi_tag>();
   finite_elements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,1,"this MoFEMFiniteElement is there");
-  bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_row_change_bit_add(get_BitFieldId(name_row)));
-  if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  try {
+    bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_row_change_bit_add(get_BitFieldId(name_row)));
+    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField_Core::modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_col) {
@@ -1016,8 +1024,12 @@ PetscErrorCode moabField_Core::modify_finite_element_add_field_col(const string 
   finite_elements_by_name &MoFEMFiniteElement_name_set = finite_elements.get<MoFEMFiniteElement_name_mi_tag>();
   finite_elements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,1,"this MoFEMFiniteElement is there");
-  bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_col_change_bit_add(get_BitFieldId(name_col)));
-  if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  try {
+    bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_col_change_bit_add(get_BitFieldId(name_col)));
+    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
   PetscFunctionReturn(0);
 }
 BitFEId moabField_Core::get_BitFEId(const string& name) const {
