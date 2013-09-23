@@ -19,6 +19,7 @@
 
 #include "moabField.hpp"
 #include "moabField_Core.hpp"
+#include "PostProcVertexMethod.hpp"
 
 using namespace MoFEM;
 
@@ -137,26 +138,56 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
-    //    Tag th_temperature;
-    //    double defaultval=0;
-    //    rval = moab.tag_get_handle("TEMPERATURE",1,MB_TYPE_DOUBLE,th_temperature,MB_TAG_CREAT|MB_TAG_SPARSE,&defaultval); CHKERR_THROW(rval);
+    
+    
+//============================= New iterator to to get initial temprature and display it on the paraviewo mesh  =========================
+    Tag th_temperature;
+    double defaultval=0;
+    rval = moab.tag_get_handle("TEMPERATURE",1,MB_TYPE_DOUBLE,th_temperature,MB_TAG_CREAT|MB_TAG_SPARSE,&defaultval); CHKERR_THROW(rval);
     EntityHandle node = 0;
     double coords[3];
     for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"TEMPERATURE",dof_ptr)) {
-        //            if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-        //            EntityHandle ent = dof_ptr->get_ent();
-        //            double &fval = dof_ptr->get_FieldData();
-        //            double tempcoord;
-        //            if(node!=ent) {
-        //                rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-        //                tempcoord = 30*coords[0];
-        //                fval = tempcoord;
-        //                rval=moab.tag_set_data(th_temperature,&ent,1,&tempcoord); CHKERR_PETSC(rval);
-        //                node = ent;
-        //            }
+        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+
+        EntityHandle ent = dof_ptr->get_ent();
+        double &fval = dof_ptr->get_FieldData();
+        double tempcoord;
+        if(node!=ent) {
+            rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+            tempcoord = coords[0];
+            fval = tempcoord;
+            rval=moab.tag_set_data(th_temperature,&ent,1,&tempcoord); CHKERR_PETSC(rval);
+            node = ent;
+        }
     }
+
+    
+    FILE *fout_ptr;
+    fout_ptr = fopen ("IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP.txt", "w");
+    fprintf(fout_ptr, "=====================     Display Data of the DOFs     =============================\n");
+    
+    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"TEMPERATURE",dof_ptr)) {
+            ostringstream ss;
+            ss << *dof_ptr;
+            PetscSynchronizedFPrintf(PETSC_COMM_WORLD, fout_ptr, "%s\n\n",ss.str().c_str());
+    }
+    fclose (fout_ptr);
+
     
     
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
   /****/
   //mesh partitioning 
 
@@ -182,7 +213,7 @@ int main(int argc, char *argv[]) {
 //            cout<<"FE name"<<fe_name.c_str(); 
 //            cout<<"\n\n";
             
-            if(fe_ptr->get_ent_id()==1){                
+                 //if(fe_ptr->get_ent_id()==1){
 //                cout<<"\n\n";
 //                PetscSynchronizedPrintf(PETSC_COMM_WORLD,"FE name %s proc %u\n",fe_name.c_str(),fe_ptr->get_part());
 //                PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Entity ID %u\n",fe_ptr->get_ent_id());
@@ -192,42 +223,62 @@ int main(int argc, char *argv[]) {
 //                ss << *fe_ptr;
 //                PetscSynchronizedPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str()  );
 //                cout<<"\n\n";
-                
-                
-                                
-                cout<<"\n\n==============Contents of container row_multiIndex==================\n";
-                for(FENumeredDofMoFEMEntity_multiIndex::iterator it=row_multiIndex->begin();it!=row_multiIndex->end();++it){
-                    cout<<"Unique ID ="<<it->get_unique_id()<<"\tEntity ="<<it->get_ent()<<"\tName ="<<it->get_name()<<endl;
-                    //need to understand the use of the composite key here. 
-                    //pair<FENumeredDofMoFEMEntity_multiIndex::iterator,FENumeredDofMoFEMEntity_multiIndex::iterator> it1;                    
-                }
-                
-                cout<<"\n\n==============Contents of container col_multiIndex==================\n";
-                for(FENumeredDofMoFEMEntity_multiIndex::iterator it=col_multiIndex->begin();it!=col_multiIndex->end();++it){
-                    cout<<"Unique ID ="<<it->get_unique_id()<<"\tEntity ="<<it->get_ent()<<"\tName ="<<it->get_name()<<endl;
-                }
-                
-                cout<<"\n\n==============Contents of container data_multiIndex==================\n";
-                for(FEDofMoFEMEntity_multiIndex::iterator it=data_multiIndex->begin();it!=data_multiIndex->end();++it){
-                    cout<<"Unique ID ="<<it->get_unique_id()<<"\tEntity ="<<it->get_ent()<<"\tName ="<<it->get_name()<<endl;
-                }
-
-                cout<<"\n\n==============Contents of container moabfields==================\n";
-                for(MoFEMField_multiIndex::iterator it=moabfields->begin();it!=moabfields->end();++it){
-                    cout<<"ID ="<<it->get_id()<<"\tmeshset ="<<it->meshset<<"\tName ="<<it->get_name()<<"\tSpace ="<<it->get_space()<<endl;
-                }
+//                
+//                
+//                                
+//                cout<<"\n\n==============Contents of container row_multiIndex==================\n";
+//                for(FENumeredDofMoFEMEntity_multiIndex::iterator it=row_multiIndex->begin();it!=row_multiIndex->end();++it){
+//                    cout<<"Unique ID ="<<it->get_unique_id()<<"\tEntity ="<<it->get_ent()<<"\tName ="<<it->get_name()<<endl;
+//                    //need to understand the use of the composite key here. 
+//                    //pair<FENumeredDofMoFEMEntity_multiIndex::iterator,FENumeredDofMoFEMEntity_multiIndex::iterator> it1;                    
+//                }
+//
+//                cout<<"\n\n==============Contents of container col_multiIndex==================\n";
+//                for(FENumeredDofMoFEMEntity_multiIndex::iterator it=col_multiIndex->begin();it!=col_multiIndex->end();++it){
+//                    cout<<"Unique ID ="<<it->get_unique_id()<<"\tEntity ="<<it->get_ent()<<"\tName ="<<it->get_name()<<endl;
+//                }
+//                
+//                cout<<"\n\n==============Contents of container data_multiIndex==================\n";
+//                for(FEDofMoFEMEntity_multiIndex::iterator it=data_multiIndex->begin();it!=data_multiIndex->end();++it){
+//                    cout<<"Unique ID ="<<it->get_unique_id()<<"\tEntity ="<<it->get_ent()<<"\tName ="<<it->get_name()<<endl;
+//                }
+//
+//                cout<<"\n\n==============Contents of container moabfields==================\n";
+//                for(MoFEMField_multiIndex::iterator it=moabfields->begin();it!=moabfields->end();++it){
+//                    cout<<"ID ="<<it->get_id()<<"\tmeshset ="<<it->meshset<<"\tName ="<<it->get_name()<<"\tSpace ="<<it->get_space()<<endl;
+//                }
  
                 
-                
-                 
-            }
+            //}
                 
                 
                 
             //cout<<"\n\n\n\n";
             
             
+//            //cout<<"\n\n\n\n\n\n";
+//            for(_IT_GET_FEROW_BY_SIDE_DOFS_FOR_LOOP_(this,"DISPLACEMENT",MBVERTEX,1,it)) {
+//                ostringstream ss;
+//                ss << it->get_ent();
+//                
+//                cerr << ss << endl;
+//                PetscSynchronizedPrintf(PETSC_COMM_WORLD, "%s\n\n",ss.str().c_str());
+//            }
+//            //cout<<"\n\n\n\n\n\n";
             
+            
+
+//            cout<<"\n\n\n\n\n";
+//            for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,"TEMPERATURE",MBTET, dof_ptr)) {
+//                
+//                cout<<"-------------"<<endl;
+//                cout<<dof_ptr-> get_FieldData();
+//                //ostringstream ss;
+//                //ss << *dof_ptr;
+//                //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "%s\n\n",ss.str().c_str());
+//            }
+//            cout<<"\n\n\n\n\n";
+//
             
     
             
@@ -250,6 +301,19 @@ int main(int argc, char *argv[]) {
 
     MyFiniteElement_For_Printing myFE;
     ierr = mField.loop_finite_elements ("ELASTIC_MECHANICS","ELASTIC",myFE); CHKERRQ(ierr);
+    
+//Save data on mesh
+
+    PostProcVertexMethod ent_method(moab);
+    ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
+
+    if(pcomm->rank()==0) {
+        EntityHandle out_meshset;
+        rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+        ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+        rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+        rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    }
   
   ierr = PetscGetTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

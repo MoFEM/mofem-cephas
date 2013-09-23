@@ -173,7 +173,7 @@ typedef int EntPart;
 typedef checked_uint128_t UId;
 
 typedef bitset<6> BitRefEdges;
-typedef bitset<8/*max number of refinments*/> BitRefLevel;
+typedef bitset<16/*max number of refinments*/> BitRefLevel;
 typedef bitset<16/*max number of fields*/> BitFieldId;
 
 /// approximation space 
@@ -294,6 +294,9 @@ struct Meshset_mi_tag {};
 /// MultiIndex Tag for field name
 struct FieldName_mi_tag {};
 struct BitFieldId_space_mi_tag {};
+struct MoFEMFiniteElement_Part_mi_tag {};
+struct BitProblemId_mi_tag {};
+struct MoFEMProblem_mi_tag {};
 
 /**
  * \brief keeps information about side number for the finite element
@@ -1084,6 +1087,8 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
   typedef interface_MoFEMFiniteElement<EntMoFEMFiniteElement> interface_type_MoFEMFiniteElement;
   typedef interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement> interface_type_EntMoFEMFiniteElement;
   unsigned int part;
+  FENumeredDofMoFEMEntity_multiIndex rows_dofs;
+  FENumeredDofMoFEMEntity_multiIndex cols_dofs;
   NumeredMoFEMFiniteElement(const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr): interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement>(EntMoFEMFiniteElement_ptr),part(-1) {};
   inline unsigned int get_part() const { return part; };
   friend ostream& operator<<(ostream& os,const NumeredMoFEMFiniteElement& e) {
@@ -1150,6 +1155,48 @@ typedef multi_index_container<
 	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> > >
   > > EntMoFEMFiniteElement_multiIndex;
 
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex for entities uin the problem.
+ *
+ * \param   hashed_unique<
+      tag<Composite_unique_mi_tag>,       
+      composite_key< <br>
+	NumeredMoFEMFiniteElement,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
+ * \param    ordered_non_unique<
+      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
+ * \param    ordered_non_unique<
+      tag<MoFEMFiniteElement_Part_mi_tag>, <br> member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+ * \param    ordered_non_unique<
+      tag<Composite_mi_tag>,       
+      composite_key< <br>
+	NumeredMoFEMFiniteElement,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
+ */
+typedef multi_index_container<
+  NumeredMoFEMFiniteElement,
+  indexed_by<
+    hashed_unique<
+      tag<Composite_unique_mi_tag>,       
+      composite_key<
+	NumeredMoFEMFiniteElement,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
+    ordered_non_unique<
+      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
+    ordered_non_unique<
+      tag<MoFEMFiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+    ordered_non_unique<
+      tag<Composite_mi_tag>,       
+      composite_key<
+	NumeredMoFEMFiniteElement,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
+  > > NumeredMoFEMFiniteElement_multiIndex;
+
 /// \brief keeps data about problem
 struct MoFEMProblem {
   EntityHandle meshset;
@@ -1166,6 +1213,47 @@ struct MoFEMProblem {
   BitRefLevel* tag_BitRefLevel;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_rows;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_cols;
+  NumeredMoFEMFiniteElement_multiIndex numered_finite_elements;
+
+  /**
+    * use with loops to iterate problem fes 
+    *
+    * for(_IT_NUMEREDFEMOFEMENTITY_FOR_LOOP_(MOFEMPROBLEM,NAME,IT)) {
+    *   ...
+    * }
+    *
+    */
+  #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(MOFEMPROBLEM,NAME,IT) \
+    NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME); \
+    IT!=MOFEMPROBLEM->get_numered_fes_begin(NAME); IT++
+
+  NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_numered_fes_begin(string fe_name) const { 
+    return numered_finite_elements.get<MoFEMFiniteElement_name_mi_tag>().lower_bound(fe_name);
+  }
+
+  NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_numered_fes_end(string fe_name) const { 
+    return numered_finite_elements.get<MoFEMFiniteElement_name_mi_tag>().upper_bound(fe_name);
+  }
+
+  /**
+    * use with loops to iterate problem fes 
+    *
+    * for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_AND_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,PART,IT)) {
+    *   ...
+    * }
+    *
+    */
+  #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_AND_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,PART,IT) \
+    NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); \
+    IT!=MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); IT++
+
+  NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const { 
+    return numered_finite_elements.get<Composite_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
+  }
+
+  NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const { 
+    return numered_finite_elements.get<Composite_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
+  }
 
   /**
     * use with loops to iterate row dofs 
@@ -1317,7 +1405,6 @@ struct MoFEMProblem {
 };
 
 // indexes
-
 typedef multi_index_container<
   MoFEMFiniteElement,
   indexed_by<
@@ -1428,6 +1515,17 @@ typedef multi_index_container<
 	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle> > >
   > > MoFEMAdjacencies_multiIndex;
 
+typedef multi_index_container<
+  MoFEMProblem,
+  indexed_by<
+    ordered_unique<
+      tag<Meshset_mi_tag>, member<MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
+    hashed_unique<
+      tag<BitProblemId_mi_tag>, const_mem_fun<MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitProblemId> >,
+    hashed_unique<
+      tag<MoFEMProblem_mi_tag>, const_mem_fun<MoFEMProblem,string,&MoFEMProblem::get_name> >
+  > > MoFEMProblem_multiIndex;
+
 //CUBIT BC DATA
 
 /** 
@@ -1449,6 +1547,7 @@ enum Cubit_BC {
   AccelerationSet = 1<<8,
   TemperatureSet = 1<<9,
   HeatfluxSet = 1<<10,
+  InterfaceSet = 1<<11,
   LastSet
 };
 
@@ -1726,6 +1825,34 @@ struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
+    /*! \struct interface_cubit_bc_data
+     *  \brief Definition of the interface (cfd_bc) data structure
+     */
+    struct interface_cubit_bc_data: public generic_cubit_bc_data {
+        struct __attribute__ ((packed)) _data_{
+            char name[6]; // 6 characters for "cfd_bc"
+            char pre1; // This is always zero
+            char pre2; // 6
+        };
+        
+        _data_ data;
+        const Cubit_BC_bitset type;
+        interface_cubit_bc_data(): type(InterfaceSet) {};
+        
+        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+            PetscFunctionBegin;
+            //Fill data
+            if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+            memcpy(&data, &bc_data[0], sizeof(data));
+            PetscFunctionReturn(0);
+        }
+        
+        /*! \brief Print interface bc data
+         */
+        friend ostream& operator<<(ostream& os,const interface_cubit_bc_data& e);
+        
+};
+    
 /** 
  * \brief this struct keeps basic methods for moab meshset about material and boundary conditions
  */
@@ -1737,6 +1864,8 @@ struct CubitMeshSets {
   char* tag_bc_data;
   int tag_bc_size;
   unsigned int *tag_block_header_data;
+  double* tag_block_attributes;
+  int tag_block_attributes_size;
   const Cubit_BC_bitset meshsets_mask;
   CubitMeshSets(Interface &moab,const EntityHandle _meshset);
   inline int get_msId() const { return *msId; }
@@ -1751,7 +1880,7 @@ struct CubitMeshSets {
 
   /** 
    *  \brief Function that returns the Cubit_BC_bitset type of the contents of bc_data
-  */
+   */
   PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const;
 
   /** 
@@ -1762,9 +1891,24 @@ struct CubitMeshSets {
   /**
    * \brief get bc_data vector from MoFEM database
    * 
-   * \param b_data is the in/out vector were bc_data will be stored
+   * \param bc_data is the in/out vector were bc_data will be stored
    */
   PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
+    
+  /**
+  * \brief get block_headers vector from MoFEM database
+  *
+  * \param material_data is the in/out vector were the material data will be stored
+  */
+  PetscErrorCode get_Cubit_material_data(vector<unsigned int>& material_data) const;
+
+  /**
+  * \brief print material_data int stream given by os
+  *
+  * f.e. it->print_Cubit_material_data(cout), i.e. printing to standard output
+  * f.e. it->print_Cubit_material_data(cerr), i.e. printing to standard error output
+  */
+  PetscErrorCode print_Cubit_material_data(ostream& os) const;
     
   /**
    * \brief print bc_data int stream given by os
@@ -1786,6 +1930,13 @@ struct CubitMeshSets {
     ierr = data.fill_data(bc_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
+  
+  /**
+   * \brief get cubit block attributes
+   *
+   * \param attributes vector where attributes
+   */
+  PetscErrorCode get_Cubit_attributes(vector<double> &attributes) const;
 
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
 };

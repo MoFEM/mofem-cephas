@@ -1261,7 +1261,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       int rank = field_ptr->get_max_rank();
       int order = ent_ptr->get_max_order();
-      int dim = 0,nb_rows = 0;
+      unsigned int dim = 0,nb_rows = 0;
       switch(field_ptr->get_space()) {
 	case H1:
 	  dim = 3;
@@ -1299,7 +1299,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
 	if((mat.size1()!=nb_rows)||(mat.size2()!=nb_dofs)) mat.resize(nb_rows,nb_dofs);
 	mat = ublas::zero_matrix<FieldData>(nb_rows,nb_dofs);
 	for(int rr = 0;rr<rank;rr++) {
-	  for(int dd = 0;dd<dim;dd++) {
+	  for(unsigned int dd = 0;dd<dim;dd++) {
 	    ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr*dim+dd);
 	    for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
 	      mr(jj*rank + rr) =  (diff_shape_by_gauss_pt[gg])[dim*jj + dd];     

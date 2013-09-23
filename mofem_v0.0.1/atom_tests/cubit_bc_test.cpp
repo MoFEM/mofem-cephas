@@ -51,12 +51,6 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  //We need that for code profiling
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
-  ierr = PetscGetTime(&v1); CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-
   //Create MoFEM (Joseph) database
   moabField_Core core(moab);
   moabField& mField = core;
@@ -78,7 +72,7 @@ int main(int argc, char *argv[]) {
       if (strcmp (&bc_data[0],"Displacement") == 0)
       {
           displacement_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -88,7 +82,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Force") == 0)
       {
           force_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -98,7 +92,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Velocity") == 0)
       {
           velocity_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -108,7 +102,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Acceleration") == 0)
       {
           acceleration_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -118,7 +112,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Temperature") == 0)
       {
           temperature_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -141,7 +135,7 @@ int main(int argc, char *argv[]) {
       if (strcmp (&bc_data[0],"Pressure") == 0)
       {
           pressure_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
@@ -151,13 +145,22 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"HeatFlux") == 0)
       {
           heatflux_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
-
       }
-                 
+      
+      //Interface
+      else if (strcmp (&bc_data[0],"cfd_bc") == 0)
+      {
+          interface_cubit_bc_data mydata;
+          ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+          //Print data
+          cout << mydata;
+          myfile << mydata;
+      }
+          
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 
@@ -168,11 +171,17 @@ int main(int argc, char *argv[]) {
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
     ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
+    vector<double> attributes;
+    ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
+    for(unsigned int ii = 0;ii<attributes.size();ii++) {
+      cout << "attr: " << ii << " " << attributes[ii] << endl;     
+      myfile << "attr: " << ii << " " << attributes[ii] << endl; 
+    }
     if(bc_data.empty()) continue;
-  } 
-
-    //Close mesh_file_name.txt
-    myfile.close();
+  }
+    
+  //Close mesh_file_name.txt
+  myfile.close();
 
   PetscFinalize();
 

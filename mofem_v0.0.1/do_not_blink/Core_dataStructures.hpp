@@ -70,16 +70,7 @@ inline int fNBFACE_Hdiv(int P) { return NBFACE_Hdiv(P); }
 inline int fNBVOLUME_Hdiv(int P) { return NBVOLUME_Hdiv(P); }
 
 //MultiIndex Tags
-struct BitFieldId_col_id_mi_tag {};
-struct BitFieldId_row_id_mi_tag {};
-struct AppOrder_mi_tag {};
-struct Active_mi_tag {};
-struct BitProblemId_mi_tag {};
-struct MoFEMProblem_mi_tag {};
-struct MoFEMFiniteElement_Part_mi_tag {};
-struct BitRefLevel_mi_tag {};
 struct ParentEntType_mi_tag {};
-struct MeshSetEnt_mi_tag{};
 
 struct ltstr
 { inline bool operator()(const string &s1, const string& s2) const
@@ -294,58 +285,6 @@ struct EntMoFEMFiniteElement_data_dofs_change {
   void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
 };
 
-/**
-  * Internal _NumeredMoFEMFiniteElement_
-  *
-  */
-struct _NumeredMoFEMFiniteElement_: public NumeredMoFEMFiniteElement {
-  FENumeredDofMoFEMEntity_multiIndex rows_dofs;
-  FENumeredDofMoFEMEntity_multiIndex cols_dofs;
-  _NumeredMoFEMFiniteElement_(const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr): NumeredMoFEMFiniteElement(_EntMoFEMFiniteElement_ptr) {};
-};
-
-/** 
- * @relates multi_index_container
- * \brief MultiIndex for entities uin the problem.
- *
- * \param   hashed_unique<
-      tag<Composite_unique_mi_tag>,       
-      composite_key< <br>
-	_NumeredMoFEMFiniteElement_,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
- * \param    ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
- * \param    ordered_non_unique<
-      tag<MoFEMFiniteElement_Part_mi_tag>, <br> member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
- * \param    ordered_non_unique<
-      tag<Composite_mi_tag>,       
-      composite_key< <br>
-	_NumeredMoFEMFiniteElement_,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
-	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
- */
-typedef multi_index_container<
-  _NumeredMoFEMFiniteElement_,
-  indexed_by<
-    hashed_unique<
-      tag<Composite_unique_mi_tag>,       
-      composite_key<
-	_NumeredMoFEMFiniteElement_,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
-    ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
-    ordered_non_unique<
-      tag<MoFEMFiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
-    ordered_non_unique<
-      tag<Composite_mi_tag>,       
-      composite_key<
-	_NumeredMoFEMFiniteElement_,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
-	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
-  > > NumeredMoFEMFiniteElement_multiIndex;
-
 struct NumeredMoFEMFiniteElement_change_part {
   unsigned int part;
   NumeredMoFEMFiniteElement_change_part(unsigned int _part): part(_part) {};
@@ -359,25 +298,6 @@ struct MoFEMAdjacencies_change_by_what {
   MoFEMAdjacencies_change_by_what(const by_what _by): by(_by) {}
   void operator()(MoFEMAdjacencies &e) { e.by_other |= by; }
 };
-
-/** 
-  * _MoFEMProblem_ hidden from user
-  */
-struct _MoFEMProblem_: public MoFEMProblem {
-  NumeredMoFEMFiniteElement_multiIndex numered_finite_elements;
-  _MoFEMProblem_(Interface &moab,const EntityHandle _meshset): MoFEMProblem(moab,_meshset) {};
-};
-
-typedef multi_index_container<
-  _MoFEMProblem_,
-  indexed_by<
-    ordered_unique<
-      tag<Meshset_mi_tag>, member<_MoFEMProblem_::MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
-    hashed_unique<
-      tag<BitProblemId_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitProblemId> >,
-    hashed_unique<
-      tag<MoFEMProblem_mi_tag>, const_mem_fun<_MoFEMProblem_::MoFEMProblem,string,&MoFEMProblem::get_name> >
-  > > MoFEMProblem_multiIndex;
 
 /// \brief add ref level to problem
 struct problem_change_ref_level_bit_add {
@@ -395,21 +315,21 @@ struct problem_MoFEMFiniteElement_change_bit_add {
 struct problem_row_change {
   const DofMoFEMEntity *dof_ptr;
   problem_row_change(const DofMoFEMEntity *_dof_ptr);
-  void operator()(_MoFEMProblem_ &e);
+  void operator()(MoFEMProblem &e);
 };
 /// \brief increase nb. dof in col
 struct problem_col_change {
   const DofMoFEMEntity *dof_ptr;
   problem_col_change(const DofMoFEMEntity *_dof_ptr);
-  void operator()(_MoFEMProblem_ &e);
+  void operator()(MoFEMProblem &e);
 };
 /// \brief zero nb. of dofs in row
 struct problem_zero_nb_rows_change {
-  void operator()(_MoFEMProblem_ &e);
+  void operator()(MoFEMProblem &e);
 };
 /// \brief zero nb. of dofs in col
 struct problem_zero_nb_cols_change {
-  void operator()(_MoFEMProblem_ &e);
+  void operator()(MoFEMProblem &e);
 };
 
 template<typename Tag> 
