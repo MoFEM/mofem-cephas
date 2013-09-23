@@ -60,6 +60,12 @@ struct moabField {
   virtual Interface& get_moab() = 0; 
 
   /** 
+    * \brief check data consistency in ents_moabfield
+    *
+    */
+  virtual PetscErrorCode check_NumbetOfEnts_in_ents_moabfield(const string& name) = 0;
+
+  /** 
     * \brief get entities form CUBIT/meshset 
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT

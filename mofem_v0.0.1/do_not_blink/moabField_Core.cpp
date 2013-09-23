@@ -328,6 +328,11 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
       } else {
 	Range ents;
 	rval = moab.get_entities_by_handle(*mit,ents,false); CHKERR_PETSC(rval);
+	if(verb > 1) {
+	  ostringstream ss;
+	  ss << "read field ents " << ents.size() << endl;;
+	  PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	}
 	Range::iterator eit = ents.begin();
 	for(;eit!=ents.end();eit++) {
 	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refined_mofem_entities.insert(RefMoFEMEntity(moab,*eit));
@@ -4016,6 +4021,17 @@ EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::i
 }
 EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator moabField_Core::get_fes_moabfield_by_name_end(const string &fe_name) {
   return finite_elements_moabents.get<MoFEMFiniteElement_name_mi_tag>().upper_bound(fe_name);
+}
+PetscErrorCode moabField_Core::check_NumbetOfEnts_in_ents_moabfield(const string& name) {
+  PetscFunctionBegin;
+  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator it = ents_moabfield.get<FieldName_mi_tag>().find(name);
+  EntityHandle meshset = it->get_meshset();
+  int num_entities;
+  rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
+  if(num_entities != distance(ents_moabfield.get<FieldName_mi_tag>().lower_bound(name),ents_moabfield.get<FieldName_mi_tag>().upper_bound(name))) {
+    SETERRQ1(PETSC_COMM_SELF,1,"not equal number of entities in meshset and multiindex < %s >",name.c_str());
+  }
+  PetscFunctionReturn(0);
 }
 
 }
