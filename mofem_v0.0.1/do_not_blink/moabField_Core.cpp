@@ -381,7 +381,7 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
     BitProblemId problem_id;
     rval = moab.tag_get_data(th_ProblemId,&*mit,1,&problem_id); CHKERR_PETSC(rval);
     if(problem_id!=0) {
-      pair<MoFEMProblem_multiIndex::iterator,bool> p = problems.insert(_MoFEMProblem_(moab,*mit));
+      pair<MoFEMProblem_multiIndex::iterator,bool> p = problems.insert(MoFEMProblem(moab,*mit));
       if(verb > 0) {
      	ostringstream ss;
 	ss << "read problem " << *p.first << endl;;
@@ -1065,7 +1065,7 @@ PetscErrorCode moabField_Core::add_problem(const BitProblemId id,const string& n
   int tag_sizes[] = { name.size() };
   rval = moab.tag_set_by_ptr(th_ProblemName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   //create entry
-  pair<MoFEMProblem_multiIndex::iterator,bool> p = problems.insert(_MoFEMProblem_(moab,meshset));
+  pair<MoFEMProblem_multiIndex::iterator,bool> p = problems.insert(MoFEMProblem(moab,meshset));
   NOT_USED(p);
   assert(p.second);
   if(verbose>0) {
@@ -2221,8 +2221,8 @@ PetscErrorCode moabField_Core::partition_finite_elements(const string &name,bool
       const int tag_col_uids_size = miit3->tag_col_uids_size;
       ierr = get_MoFEMFiniteElement_dof_uid_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
       if(cols_view.empty()) continue;
-      pair<NumeredMoFEMFiniteElement_multiIndex::iterator,bool> p = numered_finite_elements.insert(_NumeredMoFEMFiniteElement_(&*miit3));
-      _NumeredMoFEMFiniteElement_ &problem_MoFEMFiniteElement = const_cast<_NumeredMoFEMFiniteElement_&>(*p.first);
+      pair<NumeredMoFEMFiniteElement_multiIndex::iterator,bool> p = numered_finite_elements.insert(NumeredMoFEMFiniteElement(&*miit3));
+      NumeredMoFEMFiniteElement &problem_MoFEMFiniteElement = const_cast<NumeredMoFEMFiniteElement&>(*p.first);
       if(!p.second) {
 	problem_MoFEMFiniteElement.rows_dofs.clear();
 	problem_MoFEMFiniteElement.cols_dofs.clear();
@@ -3999,6 +3999,11 @@ PetscErrorCode moabField_Core::get_finite_elements(const MoFEMFiniteElement_mult
   *finite_elements_ptr = &finite_elements;
   PetscFunctionReturn(0);
 }
-
+EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator moabField_Core::get_fes_moabfield_by_name_begin(const string &fe_name) {
+  return finite_elements_moabents.get<MoFEMFiniteElement_name_mi_tag>().lower_bound(fe_name);
+}
+EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator moabField_Core::get_fes_moabfield_by_name_end(const string &fe_name) {
+  return finite_elements_moabents.get<MoFEMFiniteElement_name_mi_tag>().upper_bound(fe_name);
+}
 
 }

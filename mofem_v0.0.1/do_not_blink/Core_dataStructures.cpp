@@ -386,7 +386,7 @@ void problem_MoFEMFiniteElement_change_bit_add::operator()(MoFEMProblem &p) {
 problem_row_change::problem_row_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {
   assert(dof_ptr->active);
 }
-void problem_row_change::operator()(_MoFEMProblem_ &e) { 
+void problem_row_change::operator()(MoFEMProblem &e) { 
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
     = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity((*(DofIdx*)e.tag_nbdof_data_row),dof_ptr)); 
   if(p.second) {
@@ -394,18 +394,18 @@ void problem_row_change::operator()(_MoFEMProblem_ &e) {
   }
 }
 problem_col_change::problem_col_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
-void problem_col_change::operator()(_MoFEMProblem_ &e) { 
+void problem_col_change::operator()(MoFEMProblem &e) { 
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
     = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity((*(DofIdx*)e.tag_nbdof_data_col),dof_ptr)); 
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_col)++;
   }
 }
-void problem_zero_nb_rows_change::operator()(_MoFEMProblem_ &e) { 
+void problem_zero_nb_rows_change::operator()(MoFEMProblem &e) { 
   (*(DofIdx*)e.tag_nbdof_data_row) = 0;
   e.numered_dofs_rows.clear();
 }
-void problem_zero_nb_cols_change::operator()(_MoFEMProblem_ &e) { 
+void problem_zero_nb_cols_change::operator()(MoFEMProblem &e) { 
   (*(DofIdx*)e.tag_nbdof_data_col) = 0;
   e.numered_dofs_cols.clear();
 }

@@ -294,6 +294,9 @@ struct Meshset_mi_tag {};
 /// MultiIndex Tag for field name
 struct FieldName_mi_tag {};
 struct BitFieldId_space_mi_tag {};
+struct MoFEMFiniteElement_Part_mi_tag {};
+struct BitProblemId_mi_tag {};
+struct MoFEMProblem_mi_tag {};
 
 /**
  * \brief keeps information about side number for the finite element
@@ -1084,6 +1087,8 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
   typedef interface_MoFEMFiniteElement<EntMoFEMFiniteElement> interface_type_MoFEMFiniteElement;
   typedef interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement> interface_type_EntMoFEMFiniteElement;
   unsigned int part;
+  FENumeredDofMoFEMEntity_multiIndex rows_dofs;
+  FENumeredDofMoFEMEntity_multiIndex cols_dofs;
   NumeredMoFEMFiniteElement(const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr): interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement>(EntMoFEMFiniteElement_ptr),part(-1) {};
   inline unsigned int get_part() const { return part; };
   friend ostream& operator<<(ostream& os,const NumeredMoFEMFiniteElement& e) {
@@ -1150,6 +1155,48 @@ typedef multi_index_container<
 	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> > >
   > > EntMoFEMFiniteElement_multiIndex;
 
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex for entities uin the problem.
+ *
+ * \param   hashed_unique<
+      tag<Composite_unique_mi_tag>,       
+      composite_key< <br>
+	NumeredMoFEMFiniteElement,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
+ * \param    ordered_non_unique<
+      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
+ * \param    ordered_non_unique<
+      tag<MoFEMFiniteElement_Part_mi_tag>, <br> member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+ * \param    ordered_non_unique<
+      tag<Composite_mi_tag>,       
+      composite_key< <br>
+	NumeredMoFEMFiniteElement,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
+ */
+typedef multi_index_container<
+  NumeredMoFEMFiniteElement,
+  indexed_by<
+    hashed_unique<
+      tag<Composite_unique_mi_tag>,       
+      composite_key<
+	NumeredMoFEMFiniteElement,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_meshset>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
+    ordered_non_unique<
+      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
+    ordered_non_unique<
+      tag<MoFEMFiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+    ordered_non_unique<
+      tag<Composite_mi_tag>,       
+      composite_key<
+	NumeredMoFEMFiniteElement,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
+  > > NumeredMoFEMFiniteElement_multiIndex;
+
 /// \brief keeps data about problem
 struct MoFEMProblem {
   EntityHandle meshset;
@@ -1166,6 +1213,47 @@ struct MoFEMProblem {
   BitRefLevel* tag_BitRefLevel;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_rows;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_cols;
+  NumeredMoFEMFiniteElement_multiIndex numered_finite_elements;
+
+  /**
+    * use with loops to iterate problem fes 
+    *
+    * for(_IT_NUMEREDFEMOFEMENTITY_FOR_LOOP_(MOFEMPROBLEM,NAME,IT)) {
+    *   ...
+    * }
+    *
+    */
+  #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(MOFEMPROBLEM,NAME,IT) \
+    NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME); \
+    IT!=MOFEMPROBLEM->get_numered_fes_begin(NAME); IT++
+
+  NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_numered_fes_begin(string fe_name) const { 
+    return numered_finite_elements.get<MoFEMFiniteElement_name_mi_tag>().lower_bound(fe_name);
+  }
+
+  NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_numered_fes_end(string fe_name) const { 
+    return numered_finite_elements.get<MoFEMFiniteElement_name_mi_tag>().upper_bound(fe_name);
+  }
+
+  /**
+    * use with loops to iterate problem fes 
+    *
+    * for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_AND_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,PART,IT)) {
+    *   ...
+    * }
+    *
+    */
+  #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_AND_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,PART,IT) \
+    NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); \
+    IT!=MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); IT++
+
+  NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const { 
+    return numered_finite_elements.get<Composite_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
+  }
+
+  NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const { 
+    return numered_finite_elements.get<Composite_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
+  }
 
   /**
     * use with loops to iterate row dofs 
@@ -1317,7 +1405,6 @@ struct MoFEMProblem {
 };
 
 // indexes
-
 typedef multi_index_container<
   MoFEMFiniteElement,
   indexed_by<
@@ -1427,6 +1514,17 @@ typedef multi_index_container<
 	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_meshset>,
 	const_mem_fun<MoFEMAdjacencies,EntityHandle,&MoFEMAdjacencies::get_ent_entity_handle> > >
   > > MoFEMAdjacencies_multiIndex;
+
+typedef multi_index_container<
+  MoFEMProblem,
+  indexed_by<
+    ordered_unique<
+      tag<Meshset_mi_tag>, member<MoFEMProblem::MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
+    hashed_unique<
+      tag<BitProblemId_mi_tag>, const_mem_fun<MoFEMProblem::MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, hashbit<BitProblemId>, eqbit<BitProblemId> >,
+    hashed_unique<
+      tag<MoFEMProblem_mi_tag>, const_mem_fun<MoFEMProblem::MoFEMProblem,string,&MoFEMProblem::get_name> >
+  > > MoFEMProblem_multiIndex;
 
 //CUBIT BC DATA
 
