@@ -54,7 +54,6 @@ PetscErrorCode ConfigurationalMechanics_SetMaterialFireWall(moabField& mField) {
   PetscFunctionBegin;
 
   ErrorCode rval;
-  PetscErrorCode ierr;
 
   BitRefLevel def_bit_level = 0;
   rval = mField.get_moab().tag_get_handle("_Materiar_FireWall",sizeof(Material_FirelWall_def),MB_TYPE_OPAQUE,
@@ -114,7 +113,6 @@ PetscErrorCode ConfigurationalMechanics_MaterialProblemDefinition(moabField& mFi
   if(Material_FirelWall->operator[](1)) PetscFunctionReturn(0);
   Material_FirelWall->set(1);
 
-  ErrorCode rval;
   PetscErrorCode ierr;
 
   //Fields
@@ -304,7 +302,6 @@ PetscErrorCode ConfigurationalMechanics_SetPhysicalPositions(moabField& mField) 
   if(Material_FirelWall->operator[](3)) PetscFunctionReturn(0);
   Material_FirelWall->set(3);
 
-  PetscErrorCode ierr;
   ErrorCode rval;
 
   EntityHandle node = 0;
@@ -328,7 +325,6 @@ PetscErrorCode ConfigurationalMechanics_SetMaterialPositions(moabField& mField) 
   if(Material_FirelWall->operator[](4)) PetscFunctionReturn(0);
   Material_FirelWall->set(4);
 
-  PetscErrorCode ierr;
   ErrorCode rval;
 
   EntityHandle node = 0;
@@ -351,7 +347,6 @@ PetscErrorCode ConfigurationalMechanics_SolvePhysicalProblem(moabField& mField) 
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-  ErrorCode rval;
 
   //create matrices
   Vec F;
