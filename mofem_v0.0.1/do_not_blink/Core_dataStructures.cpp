@@ -828,31 +828,6 @@ PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
   PetscFunctionReturn(0);
 }
 
-//NEW
-PetscErrorCode CubitMeshSets::get_Cubit_material_data(vector<unsigned int>& material_data) const {
-    PetscFunctionBegin;
-    copy(&tag_block_header_data[0],&tag_block_header_data[12],material_data.begin());
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode CubitMeshSets::print_Cubit_material_data(ostream& os) const {
-    PetscFunctionBegin;
-    vector<unsigned int> material_data;
-    get_Cubit_material_data(material_data);
-    os << "material_data = ";
-    std::vector<unsigned int>::iterator vit = material_data.begin();
-    for(;vit!=material_data.end();vit++) {
-	os << std::hex << (int)((unsigned int)*vit) << " ";
-    }
-    os << ": ";
-    vit = material_data.begin();
-    for(;vit!=material_data.end();vit++) {
-      os << *vit;
-    }
-    os << std::endl;
-    PetscFunctionReturn(0);
-}
-            
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const {
     PetscFunctionBegin;
     
@@ -906,7 +881,7 @@ PetscErrorCode CubitMeshSets::print_Cubit_bc_data(ostream& os) const {
   os << std::endl;
   PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::get_Cubit_attributes(vector<double> &attributes) const {
+PetscErrorCode CubitMeshSets::get_Cubit_attributes(vector<double>& attributes) const {
   PetscFunctionBegin;
   attributes.resize(tag_block_attributes_size);
   if(tag_block_attributes_size>0) {
@@ -914,6 +889,22 @@ PetscErrorCode CubitMeshSets::get_Cubit_attributes(vector<double> &attributes) c
   }
   PetscFunctionReturn(0);
 }
+    
+PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
+    PetscFunctionBegin;
+    vector<double> attributes;
+    get_Cubit_attributes(attributes);
+    os << endl;
+    os << "Block attributes" << endl;
+    os << "----------------" << endl;
+    for(unsigned int ii = 0;ii<attributes.size();ii++)
+        {
+            cout << "attr. no: " << ii << "   value: " << attributes[ii] << endl;
+        }
+    os << endl;
+    PetscFunctionReturn(0);
+}
+    
 ostream& operator<<(ostream& os,const CubitMeshSets& e) {
   os << "meshset " << e.meshset << " type " << e.CubitBCType;
   if(e.msId != NULL) os << " msId " << *(e.msId);

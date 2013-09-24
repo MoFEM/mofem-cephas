@@ -365,7 +365,7 @@ PetscErrorCode get_MoFEMFiniteElement_dof_uid_view(
 }
 
 /**
- * \brief test if MoFEM is comapatibele with linked version of moab
+ * \brief test if MoFEM is compatible with linked version of moab
  *
  * test EntityID <br>
  * test EntityType <br>
