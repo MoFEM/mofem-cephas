@@ -899,7 +899,7 @@ PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
     os << "----------------" << endl;
     for(unsigned int ii = 0;ii<attributes.size();ii++)
         {
-            cout << "attr. no: " << ii << "   value: " << attributes[ii] << endl;
+            cout << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
         }
     os << endl;
     PetscFunctionReturn(0);

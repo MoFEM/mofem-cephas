@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
       myfile << "----------------" << endl;
       for(unsigned int ii = 0;ii<attributes.size();ii++)
       {
-          myfile << "attr. no: " << ii << "   value: " << attributes[ii] << endl;
+          myfile << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
       }
       myfile << endl;
 
