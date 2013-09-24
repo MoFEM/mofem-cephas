@@ -763,6 +763,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,doubl
       &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
       t,t_edge,t_face,//11
       &*coords_face.data().begin(),NULL,
+      &*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+      NULL,NULL,NULL,
       &*FExt_Material.begin(),NULL,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
   } else {
     ierr = Fext_H(
@@ -770,6 +772,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,doubl
       &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
       t,t_edge,t_face,//11
       &*FaceNodeData_Material.data().begin(),NULL,
+      &*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+      NULL,NULL,NULL,
       &*FExt_Material.begin(),NULL,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
   }
   FExt_Material *= -1;
@@ -798,6 +802,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face
       &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
       t,t_edge,t_face,
       &*FaceNodeData_Material.data().begin(),
+      &*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
       &*KExt_HH_Material.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
   } catch (const std::exception& ex) {
       ostringstream ss;
