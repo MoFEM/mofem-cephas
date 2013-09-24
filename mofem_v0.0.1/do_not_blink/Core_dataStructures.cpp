@@ -534,7 +534,8 @@ ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
     << " dof_rank " << e.get_dof_rank()
     << " dof " << e.dof
     << " active " << e.active 
-    << " " << *(e.field_ptr);
+    << " " << *(e.field_ptr)
+    << " Data " << e.get_FieldData();
   return os;
 }
 DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}

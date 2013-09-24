@@ -84,6 +84,9 @@ struct moabField_Core: public moabField {
   PetscErrorCode map_from_mesh(int verb = -1);
   Interface& get_moab();
 
+  //check consistency
+  PetscErrorCode check_NumbetOfEnts_in_ents_moabfield(const string& name);
+
   //cubit meshsets
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, const int dimension,Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, Range &entities,const bool recursive = false);

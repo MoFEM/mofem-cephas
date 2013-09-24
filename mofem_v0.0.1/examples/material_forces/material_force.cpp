@@ -60,18 +60,11 @@ int main(int argc, char *argv[]) {
 
   ierr = ConfigurationalMechanics_SetMaterialFireWall(mField); CHKERRQ(ierr);
 
-  Range CubitSideSets_meshsets;
-  ierr = mField.get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
-
   //ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
+  ierr = ConfigurationalMechanics_PhysicalProblemDefinition(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_MaterialProblemDefinition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
@@ -90,12 +83,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition problems
+  ierr = ConfigurationalMechanics_PhysicalPartitionProblems(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_MaterialPartitionProblems(mField); CHKERRQ(ierr);
+
   //caculate material forces
   ierr = ConfigurationalMechanics_SetMaterialPositions(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_CalculateMaterialForces(mField); CHKERRQ(ierr);
 
-  rval = moab.write_file("out.h5m"); CHKERR_PETSC(rval);
+  rval = moab.write_file("out_material.h5m"); CHKERR_PETSC(rval);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
