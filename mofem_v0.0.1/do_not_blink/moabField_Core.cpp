@@ -1623,6 +1623,7 @@ PetscErrorCode moabField_Core::build_problems(int verb) {
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,1,"adjacencies not build");
   MoFEMProblem_multiIndex::iterator p_miit = problems.begin();
   for(;p_miit!=problems.end();p_miit++) {
+    if(p_miit->get_BitRefLevel().none()) SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinment level not set",p_miit->get_name().c_str());
     //miit2 iterator for finite elements
     EntMoFEMFiniteElement_multiIndex::iterator miit2 = finite_elements_moabents.begin();
     EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = finite_elements_moabents.end();
