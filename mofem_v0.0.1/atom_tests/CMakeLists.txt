@@ -29,6 +29,7 @@ cm_export_file("../meshes/heatflux01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/comb01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/bcoverlap01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/interf01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/block01.cub" "/" export_atom_tests)
 
 add_test(cubit_bc_test_disp01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
@@ -59,4 +60,8 @@ add_test(cubit_bc_test_bcoverlap01_compare ${CMAKE_COMMAND} -E compare_files ${C
 
 add_test(cubit_bc_test_interf01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file interf01.cub)
 add_test(cubit_bc_test_interf01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/interf01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/interf01.cub.txt)
+
+add_test(cubit_bc_test_block01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file block01.cub)
+add_test(cubit_bc_test_block01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/block01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/block01.cub.txt)
+
 
