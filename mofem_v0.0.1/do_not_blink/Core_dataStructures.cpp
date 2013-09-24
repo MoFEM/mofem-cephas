@@ -743,7 +743,7 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
 //moab base meshsets
 CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
   meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),
-  tag_block_attributes(NULL),tag_block_attributes_size(0),tag_block_header_data(NULL),
+  tag_block_header_data(NULL),tag_block_attributes(NULL),tag_block_attributes_size(0),
   meshsets_mask(NodeSet|SideSet|BlockSet) {
   ErrorCode rval;
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs;
