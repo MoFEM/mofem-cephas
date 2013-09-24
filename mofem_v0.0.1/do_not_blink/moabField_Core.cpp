@@ -3407,6 +3407,7 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
   int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type dofs_by_name;
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
@@ -3502,6 +3503,10 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
 	      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
 	    }
 	  }
+	    //if(verb > 0) {
+	      //cerr << "AAAAAAAAAAAA\n";
+	      //ierr = check_NumbetOfEnts_in_ents_moabfield(cpy_field_name); CHKERRQ(ierr);
+	    //}
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -3515,6 +3520,7 @@ PetscErrorCode moabField_Core::set_other_global_VecCreateGhost(
       switch (mode) {
 	case INSERT_VALUES:
 	  for(;miit!=hi_miit;miit++) {
+	    if(pcomm->rank()!=miit->get_part()) continue;
 	    DofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator diiiit;
 	    diiiit = dofs_moabfield.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
 	    if(diiiit==dofs_moabfield.get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no data to fill the vector");
