@@ -29,6 +29,9 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
+    try {
+
+    
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   Core mb_instance;
@@ -167,23 +170,34 @@ int main(int argc, char *argv[]) {
   cout << "<<<< BlockSets >>>>>" << endl;
   //BlockSets
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
-    cout << *it << endl;
-    ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
-    vector<char> bc_data;
-    ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
-    vector<double> attributes;
-    ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
-    for(unsigned int ii = 0;ii<attributes.size();ii++) {
-      cout << "attr: " << ii << " " << attributes[ii] << endl;     
-      myfile << "attr: " << ii << " " << attributes[ii] << endl; 
-    }
-    if(bc_data.empty()) continue;
+      cout << endl << *it << endl;
+
+      vector<double> attributes;
+      ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
+      
+      //Print data
+      ierr = it->print_Cubit_attributes(cout); CHKERRQ(ierr);
+      myfile << endl;
+      myfile << "Block attributes" << endl;
+      myfile << "----------------" << endl;
+      for(unsigned int ii = 0;ii<attributes.size();ii++)
+      {
+          myfile << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
+      }
+      myfile << endl;
+
+      if(attributes.empty()) continue;
   }
     
   //Close mesh_file_name.txt
   myfile.close();
 
   PetscFinalize();
+        
+    } catch (const char* msg) {
+        SETERRQ(PETSC_COMM_SELF,1,msg);
+    }
+
 
 }
 

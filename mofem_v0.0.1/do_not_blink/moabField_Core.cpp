@@ -293,6 +293,8 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
   rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,false);  CHKERR_PETSC(rval);
   Range::iterator mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
+      try {
+ 
     CubitMeshSets base_meshset(moab,*mit);
     if((base_meshset.CubitBCType&Cubit_BC_bitset(NodeSet|SideSet|BlockSet)).any()) {
       pair<moabCubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(base_meshset);
@@ -306,6 +308,9 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
       //PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       ierr = seed_ref_level_MESHSET(*mit,0); CHKERRQ(ierr);
     }
+      } catch (const char* msg) {
+          SETERRQ(PETSC_COMM_SELF,1,msg);
+      }
     BitFieldId field_id;
     rval = moab.tag_get_data(th_FieldId,&*mit,1,&field_id); CHKERR_PETSC(rval);
     if(field_id!=0) {
