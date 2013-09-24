@@ -534,7 +534,8 @@ ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
     << " dof_rank " << e.get_dof_rank()
     << " dof " << e.dof
     << " active " << e.active 
-    << " " << *(e.field_ptr);
+    << " " << *(e.field_ptr)
+    << " Data " << e.get_FieldData();
   return os;
 }
 DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}
@@ -742,7 +743,7 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
 //moab base meshsets
 CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
   meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),
-  tag_block_attributes(NULL),tag_block_attributes_size(0),tag_block_header_data(NULL),
+  tag_block_header_data(NULL),tag_block_attributes(NULL),tag_block_attributes_size(0),
   meshsets_mask(NodeSet|SideSet|BlockSet) {
   ErrorCode rval;
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs;
