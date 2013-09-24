@@ -743,10 +743,10 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
 //moab base meshsets
 CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
   meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),
-  tag_block_header_data(NULL),tag_block_attributes(NULL),tag_block_attributes_size(0),
+  tag_block_header_data(NULL),tag_block_attributes(NULL),tag_block_attributes_size(0),tag_name_data(NULL),
   meshsets_mask(NodeSet|SideSet|BlockSet) {
   ErrorCode rval;
-  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs;
+  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,ssTag); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle((string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR(rval);CHKERR_THROW(rval);
@@ -755,6 +755,8 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   rval = moab.tag_get_handle("BLOCK_HEADER",bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle("Block_Attributes",block_attribs); CHKERR(rval); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR_THROW(rval);
+
   vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {
     if(
@@ -799,6 +801,11 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
 	//cerr << "RRRRR " << tag_block_attributes[ii] << endl;
       //}
     }
+    if(*tit == entityNameTag) {
+      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR_THROW(rval);
+      cerr << "AAAAAAAAAAAAA\n";
+      cout << string(tag_name_data) << endl;
+    }
   }
 }
 PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
@@ -828,6 +835,34 @@ PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
   PetscFunctionReturn(0);
 }
 
+<<<<<<< HEAD
+=======
+//NEW
+PetscErrorCode CubitMeshSets::get_Cubit_block_header_data(vector<unsigned int>& material_data) const {
+    PetscFunctionBegin;
+    copy(&tag_block_header_data[0],&tag_block_header_data[12],material_data.begin());
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode CubitMeshSets::print_Cubit_block_header_data(ostream& os) const {
+    PetscFunctionBegin;
+    vector<unsigned int> material_data;
+    get_Cubit_block_header_data(material_data);
+    os << "block_header_data = ";
+    std::vector<unsigned int>::iterator vit = material_data.begin();
+    for(;vit!=material_data.end();vit++) {
+	os << std::hex << (int)((unsigned int)*vit) << " ";
+    }
+    os << ": ";
+    vit = material_data.begin();
+    for(;vit!=material_data.end();vit++) {
+      os << *vit;
+    }
+    os << std::endl;
+    PetscFunctionReturn(0);
+}
+            
+>>>>>>> ad67d68... block name from cubit
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const {
     PetscFunctionBegin;
     

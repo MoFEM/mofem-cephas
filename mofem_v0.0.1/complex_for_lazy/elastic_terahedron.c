@@ -1116,16 +1116,24 @@ PetscErrorCode Fext_H(int order,int *order_edge,
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
     if(traction[0]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     if(traction[1]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    __CLPK_doublecomplex xnormal[3];
+    __CLPK_doublecomplex xnormal0[3];
     ierr = Normal_hierarchical(
       order,order_edge,diffN,diffN_face,diffN_edge,
       dofs_X,NULL,NULL,idofs_X,NULL,NULL,
+      xnormal0,gg); CHKERRQ(ierr);
+    __CLPK_doublecomplex xnormal[3];
+    ierr = Normal_hierarchical(
+      order,order_edge,diffN,diffN_face,diffN_edge,
+      dofs_x,dofs_x_edge,dofs_x_face,idofs_x,idofs_x_edge,idofs_x_face,
       xnormal,gg); CHKERRQ(ierr);
+    fprintf(stderr,"%e %e %e %e %e %e\n",
+      xnormal0[0].r,xnormal0[1].r,xnormal0[2].r,
+      xnormal[0].r,xnormal[1].r,xnormal[2].r);
     double normal_real[3];
     double normal_imag[3];
     for(dd = 0;dd<3;dd++) {
-      normal_real[dd] = xnormal[dd].r;
-      normal_imag[dd] = xnormal[dd].i;
+      normal_real[dd] = xnormal0[dd].r;
+      normal_imag[dd] = xnormal0[dd].i;
     }
     nn = 0;
     for(;nn<3;nn++) {

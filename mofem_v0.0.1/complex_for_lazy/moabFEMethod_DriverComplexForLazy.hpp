@@ -62,8 +62,14 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   FEMethod_ComplexForLazy(_mField.get_moab(),_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose),mField(_mField) { 
     double def_t_val = 0;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
-    mField.get_moab().tag_get_handle("_LoadFactor_t_val",1,MB_TYPE_INTEGER,th_t_val,MB_TAG_CREAT|MB_TAG_MESH,&def_t_val); 
-    rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_THROW(rval);
+    rval = mField.get_moab().tag_get_handle("_LoadFactor_t_val",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    if(rval == MB_ALREADY_ALLOCATED) {
+      rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_THROW(rval);
+    } else {
+      CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_set_data(th_t_val,&root_meshset,1,&def_t_val); CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_THROW(rval);
+    }
   };
 
   PetscLogDouble t1,t2;
@@ -345,8 +351,8 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       ss << mydata;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
 
-      double t_val = *(this->t_val)*mydata.data.value1;
-      double t[] = { 0,0,-t_val, 0,0,-t_val, 0,0,-t_val };
+      double t_val_ = *(this->t_val)*mydata.data.value1;
+      double t[] = { 0,0,-t_val_, 0,0,-t_val_, 0,0,-t_val_ };
 
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
@@ -530,8 +536,8 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
       ss << mydata;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
 
-      double t_val = *(this->t_val)*mydata.data.value1;
-      double t[] = { 0,0,-t_val, 0,0,-t_val, 0,0,-t_val };
+      double t_val_ = *(this->t_val)*mydata.data.value1;
+      double t[] = { 0,0,-t_val_, 0,0,-t_val_, 0,0,-t_val_ };
 
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
