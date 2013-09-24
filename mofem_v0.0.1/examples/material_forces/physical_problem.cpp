@@ -58,9 +58,6 @@ int main(int argc, char *argv[]) {
 
   ierr = ConfigurationalMechanics_SetMaterialFireWall(mField); CHKERRQ(ierr);
 
-  Range CubitSideSets_meshsets;
-  ierr = mField.get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
-
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
   BitRefLevel bit_level0;
@@ -93,7 +90,7 @@ int main(int argc, char *argv[]) {
   ierr = ConfigurationalMechanics_SetPhysicalPositions(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_SolvePhysicalProblem(mField); CHKERRQ(ierr);
 
-  rval = moab.write_file("out.h5m"); CHKERR_PETSC(rval);
+  rval = moab.write_file("out_physical.h5m"); CHKERR_PETSC(rval);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;

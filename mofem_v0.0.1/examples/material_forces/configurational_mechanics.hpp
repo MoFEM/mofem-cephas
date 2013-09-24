@@ -155,7 +155,8 @@ PetscErrorCode ConfigurationalMechanics_ConstrainsProblemDefinition(moabField& m
   PetscErrorCode ierr;
 
   //Fields
-  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("LAMBDA_SURFACE",H1,1); CHKERRQ(ierr);
+  ierr = mField.add_field("LAMBDA_CORNER",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("C_SURFACE_ELEM"); CHKERRQ(ierr);
@@ -440,45 +441,86 @@ PetscErrorCode ConfigurationalMechanics_CalculateMaterialForces(moabField& mFiel
   PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS",F_Material,"MATERIAL_FORCE");
   ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
 
+  //Fields
+  ierr = mField.set_other_global_VecCreateGhost("MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  //for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
+    //cerr << *dof << endl;
+  //}
+
+
   //detroy matrices
   ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics_CalculateMaterialForcesProjected(moabField& mField) {
+PetscErrorCode ConfigurationalMechanics_ProcectForceVector(moabField& mField) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
+  ErrorCode rval;
 
-  DirihletBCMethod_DriverComplexForLazy myDirihletBCMaterial(mField,"MATERIAL_MECHANICS","MESH_NODE_POSITIONS");
-  ierr = myDirihletBCMaterial.Init(); CHKERRQ(ierr);
+  Range CornersEdges,CornersNodes,SurfacesFaces;
 
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.25;
-  NL_MaterialFEMethod MyMaterialFE(mField,&myDirihletBCMaterial,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
 
+  Interface& moab = mField.get_moab();
+
+  Range CornersEdgesNodes;
+  rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
+  CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
+
+  matPROJ_ctx proj_all_ctx(mField,"MATERIAL_MECHANICS","C_ALL_MATRIX");
+  ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&proj_all_ctx.C); CHKERRQ(ierr);
+
+  C_SURFACE_FEMethod CFE_SURFACE(moab,SurfacesFaces,proj_all_ctx.C);
+  C_CORNER_FEMethod CFE_CORNER(moab,CornersNodes,proj_all_ctx.C);
+
+  ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
+  ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",CFE_SURFACE);  CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",CFE_CORNER);  CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  //Matrix View
+  //MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+  //std::string wait;
+  //std::cin >> wait;
+  
   Vec F_Material;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Col,&F_Material); CHKERRQ(ierr);
-  ierr = VecZeroEntries(F_Material); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  MyMaterialFE.snes_f = F_Material;
-  MyMaterialFE.set_snes_ctx(moabField::SnesMethod::ctx_SNESSetFunction);
-  ierr = mField.loop_finite_elements("MATERIAL_MECHANICS","MATERIAL",MyMaterialFE);  CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(F_Material); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(F_Material); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS",F_Material,"MATERIAL_FORCE");
+  /*for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
+    cerr << *dof << endl;
+  }*/
+  ierr = mField.set_other_global_VecCreateGhost("MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  ierr = proj_all_ctx.InitQorP(F_Material); CHKERRQ(ierr);
+
+  int M,m;
+  ierr = VecGetSize(F_Material,&M); CHKERRQ(ierr);
+  ierr = VecGetLocalSize(F_Material,&m); CHKERRQ(ierr);
+  Mat Q;
+  ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&proj_all_ctx,&Q); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+
+  Vec QTF_Material;
+  ierr = VecDuplicate(F_Material,&QTF_Material); CHKERRQ(ierr);
+  ierr = MatMult(Q,F_Material,QTF_Material); CHKERRQ(ierr);
+
+  PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS",QTF_Material,"MATERIAL_FORCE_PROJECTED");
   ierr = mField.loop_dofs("MATERIAL_MECHANICS","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
 
-  //Fields
-  ierr = mField.set_other_global_VecCreateGhost("MATERIAL_MECHANICS","MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-  //detroy matrices
+  ierr = VecDestroy(&QTF_Material); CHKERRQ(ierr);
   ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
+  ierr = MatDestroy(&proj_all_ctx.C); CHKERRQ(ierr);
+  ierr = MatDestroy(&Q); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
-
