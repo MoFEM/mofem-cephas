@@ -64,6 +64,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   MyElasticFEMethod(
       moabField& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
       ArcLenghtCtx *_arc_ptr,Range &_NodeSet1,int _verbose = 0): 
+      FEMethod_ComplexForLazy_Data(_mField,_dirihlet_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_ptr,_lambda,_mu,_verbose), 
       arc_ptr(_arc_ptr),NodeSet1(_NodeSet1) {
 
