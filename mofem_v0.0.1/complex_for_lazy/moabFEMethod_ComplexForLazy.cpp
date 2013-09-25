@@ -764,7 +764,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
     assert((unsigned int)3*NBFACE_H1(face_order)==distance(fiit,hi_fiit));
     if(NBFACE_H1(face_order)>0) {
       for(data_dofs_iterator fiiit = fiit;fiiit!=hi_fiit;fiiit++) {
-	FaceData[fiit->get_EntDofIdx()] = fiiit->get_FieldData();
+	FaceData[fiiit->get_EntDofIdx()] = fiiit->get_FieldData();
       }
     }
     N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
