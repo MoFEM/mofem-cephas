@@ -1897,8 +1897,6 @@ struct CubitMeshSets {
   PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
     
   /**
-<<<<<<< HEAD
-=======
   * \brief get block_headers vector from MoFEM database
   *
   * \param material_data is the in/out vector were the material data will be stored
@@ -1914,7 +1912,6 @@ struct CubitMeshSets {
   PetscErrorCode print_Cubit_block_header_data(ostream& os) const;
     
   /**
->>>>>>> ad67d68... block name from cubit
    * \brief print bc_data int stream given by os
    *
    * f.e. it->print_Cubit_bc_data(cout), i.e. printing to standard output
@@ -1949,6 +1946,13 @@ struct CubitMeshSets {
    * f.e. it->print_Cubit_attributes(cerr), i.e. printing to standard error output
    */
   PetscErrorCode print_Cubit_attributes(ostream& os) const;
+
+  /**
+   * \brief get name of block, sideset etc. (this is set in Cubit setting properties) 
+   *
+   * \param nam
+   */
+  PetscErrorCode get_Cubit_name(string& name) const;
     
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
     
