@@ -33,6 +33,14 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+struct FEMethod_ComplexForLazy_Data: public FEMethod_UpLevelStudent {
+
+  moabField& mField;
+  FEMethod_ComplexForLazy_Data(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+    FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_bc_method_ptr,_verbose),mField(_mField) {}
+
+};
+
 /** \brief The user interface for NonLineae FE method (tangent is calulated
  * using complex direvatives)
  * 
@@ -42,11 +50,11 @@ namespace MoFEM {
  *
  * 
 */
-struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
+struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
 
   enum eRowGlob { i_nodes = 0, i_edge0=1+0, i_edge1=1+1, i_edge2=1+2, i_edge3=1+3, i_edge4=1+4, i_edge5=1+5, 
     i_face0=1+6+0, i_face1=1+6+1, i_face2=1+6+2, i_face3=1+6+3, i_volume=1+6+4, i_last=1+6+4+1 };
-  enum analysis { spatail_analysis = 1, material_analysis = 1<<1, mesh_quality_analysis = 1<<2 };
+  enum analysis { spatail_analysis = 1, material_analysis = 1<<1, mesh_quality_analysis = 1<<2, analaysis_none = 1<<3 };
   analysis type_of_analysis;
   enum forces { conservative = 1, nonconservative = 2};
   forces type_of_forces;
@@ -61,7 +69,7 @@ struct FEMethod_ComplexForLazy: public FEMethod_UpLevelStudent {
 
   string spatial_field_name;
   string material_field_name;
-  FEMethod_ComplexForLazy(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,
+  FEMethod_ComplexForLazy(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
     analysis _type,double _lambda,double _mu,int _verbose = 0);
 
   int g_TRI_dim;
