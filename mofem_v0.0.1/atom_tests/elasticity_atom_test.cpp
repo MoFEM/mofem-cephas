@@ -24,8 +24,8 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+//#include "PostProcVertexMethod.hpp"
+//#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 
@@ -220,29 +220,67 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  PostProcVertexMethod ent_method(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
+//  PostProcVertexMethod ent_method(moab);
+//  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
 
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-    //rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-      rval = moab.write_file((string(mesh_file_name)+".vtk").c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
+//  if(pcomm->rank()==0) {
+//    EntityHandle out_meshset;
+//    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+//    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+//    //rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+//      rval = moab.write_file((string(mesh_file_name)+".vtk").c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+//    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+//  }
 
   //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+//  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+//  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
 
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-  if(pcomm->rank()==0) {
-    //rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-      rval = fe_post_proc_method.moab_post_proc.write_file((string(mesh_file_name)+".out.vtk").c_str(),"VTK",""); CHKERR_PETSC(rval);
-  }
+//  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+//  if(pcomm->rank()==0) {
+//    //rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
+//      rval = fe_post_proc_method.moab_post_proc.write_file((string(mesh_file_name)+".out.vtk").c_str(),"VTK",""); CHKERR_PETSC(rval);
+//  }
 
-  //detroy matrices
+    //Open mesh_file_name.txt for writing
+    ofstream myfile;
+    myfile.open ((string(mesh_file_name)+".txt").c_str());
+    
+    //Output displacements
+    cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
+    myfile << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
+    
+    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dof_ptr))
+    {
+        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+        //cout<<dof_ptr->get_ent_id()<<endl;
+        EntityHandle ent = dof_ptr->get_ent();
+        
+        if(dof_ptr->get_dof_rank()==0)
+        {
+            double fval = dof_ptr->get_FieldData();
+            printf("%.2lf", fval); cout << "  ";
+            myfile << boost::format("%.2lf") % fval << "  ";
+        }
+        if(dof_ptr->get_dof_rank()==1)
+        {
+            double fval = dof_ptr->get_FieldData();
+            printf("%.2lf", fval); cout << "  ";
+            myfile << boost::format("%.2lf") % fval << "  ";
+        }
+        if(dof_ptr->get_dof_rank()==2)
+        {
+            double fval = dof_ptr->get_FieldData();
+            printf("%.2lf", fval); cout << endl;
+            myfile << boost::format("%.2lf") % fval << endl;
+        }
+        
+    }
+    
+    //Close mesh_file_name.txt
+    myfile.close();
+
+  //destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
