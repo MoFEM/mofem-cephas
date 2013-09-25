@@ -33,7 +33,7 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
   NL_ElasticFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
       FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
-    set_PhysicalEquationNumber(hooke);
+    set_PhysicalEquationNumber(stvenant_kirchhoff);
   }
 
 };
@@ -42,7 +42,7 @@ struct NL_MaterialFEMethod: public FEMethod_DriverComplexForLazy_Material {
 
   NL_MaterialFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
       FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
-    set_PhysicalEquationNumber(hooke);
+    set_PhysicalEquationNumber(stvenant_kirchhoff);
   }
 
 };

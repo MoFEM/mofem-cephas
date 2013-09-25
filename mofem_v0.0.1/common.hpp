@@ -1866,6 +1866,7 @@ struct CubitMeshSets {
   unsigned int *tag_block_header_data;
   double* tag_block_attributes;
   int tag_block_attributes_size;
+  char* tag_name_data;
   const Cubit_BC_bitset meshsets_mask;
   CubitMeshSets(Interface &moab,const EntityHandle _meshset);
   inline int get_msId() const { return *msId; }
@@ -1894,6 +1895,21 @@ struct CubitMeshSets {
    * \param bc_data is the in/out vector were bc_data will be stored
    */
   PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
+    
+  /**
+  * \brief get block_headers vector from MoFEM database
+  *
+  * \param material_data is the in/out vector were the material data will be stored
+  */
+  PetscErrorCode get_Cubit_block_header_data(vector<unsigned int>& material_data) const;
+
+  /**
+  * \brief print material_data int stream given by os
+  *
+  * f.e. it->print_Cubit_material_data(cout), i.e. printing to standard output
+  * f.e. it->print_Cubit_material_data(cerr), i.e. printing to standard error output
+  */
+  PetscErrorCode print_Cubit_block_header_data(ostream& os) const;
     
   /**
    * \brief print bc_data int stream given by os
@@ -1930,6 +1946,13 @@ struct CubitMeshSets {
    * f.e. it->print_Cubit_attributes(cerr), i.e. printing to standard error output
    */
   PetscErrorCode print_Cubit_attributes(ostream& os) const;
+
+  /**
+   * \brief get name of block, sideset etc. (this is set in Cubit setting properties) 
+   *
+   * \param nam
+   */
+  PetscErrorCode get_Cubit_name(string& name) const;
     
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
     
