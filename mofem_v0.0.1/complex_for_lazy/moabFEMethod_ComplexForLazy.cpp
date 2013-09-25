@@ -837,6 +837,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,doubl
 	&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
 	NULL,NULL,NULL,
 	&*FExt_Material.begin(),NULL,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+      break;
     case nonconservative:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented"); 
       break;

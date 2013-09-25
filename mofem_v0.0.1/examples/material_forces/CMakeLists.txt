@@ -25,6 +25,8 @@ target_link_libraries(material_force mofem_Field ${PROJECT_LIBS})
 add_executable(material_force_projected material_force_projected.cpp)
 target_link_libraries(material_force_projected mofem_Field ${PROJECT_LIBS})
 
+add_executable(material_problem material_problem.cpp)
+target_link_libraries(material_problem mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/chees.cub" "/" export_files_material_mechanics)
 
