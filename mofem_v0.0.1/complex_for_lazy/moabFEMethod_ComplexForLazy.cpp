@@ -535,9 +535,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     face_order = fiit->get_max_order();
     assert((unsigned int)3*NBFACE_H1(face_order)==distance(fiit,hi_fiit));
     if(NBFACE_H1(face_order)>0) {
-      for(dofs_iterator fiiit = fiit;fiiit!=hi_fiit;fiiit++) {
-	FaceIndices[fiit->get_EntDofIdx()] = fiiit->get_petsc_gloabl_dof_idx();
-	FaceData[fiit->get_EntDofIdx()] = fiiit->get_FieldData();
+      dd = 0;
+      for(dofs_iterator fiiit = fiit;fiiit!=hi_fiit;fiiit++,dd++) {
+	FaceIndices[fiiit->get_EntDofIdx()] = fiiit->get_petsc_gloabl_dof_idx();
+	FaceData[fiiit->get_EntDofIdx()] = fiiit->get_FieldData();
       }
     }
     N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
@@ -569,8 +570,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
 	FaceEdgeIndices_data[ee].resize(distance(eiit,hi_eiit));
 	FaceEdgeData_data[ee].resize(distance(eiit,hi_eiit));
 	for(;eiit!=hi_eiit;eiit++) {
-	  FaceEdgeIndices_data[ee][fiit->get_EntDofIdx()] = eiit->get_petsc_gloabl_dof_idx();
-	  FaceEdgeData_data[ee][fiit->get_EntDofIdx()] = eiit->get_FieldData();
+	  FaceEdgeIndices_data[ee][eiit->get_EntDofIdx()] = eiit->get_petsc_gloabl_dof_idx();
+	  FaceEdgeData_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData();
 	}
 	EdgeData[ee] = &*(FaceEdgeData_data[ee].data().begin());
 	N_edge_data[ee].resize(g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
@@ -616,26 +617,21 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
   int num_nodes;
   rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
   rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
-  if(get_PhysicalEquationNumber()==hooke) {
-    ierr = Fext_h_hierarchical(
-      face_order,&FaceEdgeOrder[0],//2
-      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
-      t,t_edge,t_face,//11
-      &*coords_face.data().begin(),NULL,NULL,//14
-      NULL,NULL,NULL,//17
-      &*FExt.data().begin(),FExt_edge,&*FExt_face.data().begin(),//20
-      NULL,NULL,NULL,//23
-      g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
-  } else {
-    ierr = Fext_h_hierarchical(
-      face_order,&FaceEdgeOrder[0],//2
-      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
-      t,t_edge,t_face,//11
-      &*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),//14
-      NULL,NULL,NULL,//17
-      &*FExt.data().begin(),FExt_edge,&*FExt_face.data().begin(),//20
-      NULL,NULL,NULL,//23
-      g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  switch(type_of_forces) {
+    case conservative:
+      ierr = Fext_h_hierarchical(
+	face_order,&FaceEdgeOrder[0],//2
+	&g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
+	t,t_edge,t_face,//11
+	&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),//14
+	NULL,NULL,NULL,//17
+	&*FExt.data().begin(),FExt_edge,&*FExt_face.data().begin(),//20
+	NULL,NULL,NULL,//23
+	g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+      break;
+    case nonconservative:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented"); 
+      break;
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
@@ -648,62 +644,70 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
   PetscFunctionBegin;
   try {
   if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData(face) before call of this function");
-  const EntityHandle* conn_face;
-  ublas::vector<double> coords_face;
-  coords_face.resize(9);
-  int num_nodes;
-  rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
-  double normal[3];
-  ierr = ShapeFaceNormalMBTRI(diffNTRI,&*coords_face.data().begin(),normal); CHKERRQ(ierr);
-  double r = cblas_dnrm2(3,normal,1);
-  KExt_hh.resize(9,9);
-  KExt_edgeh_data.resize(3);
-  int ee = 0;
-  for(;ee<3;ee++) {
-    assert((unsigned int)3*NBEDGE_H1(FaceEdgeOrder[ee]) == FaceEdgeIndices_data[ee].size());
-    KExt_edgeh_data[ee].resize(FaceEdgeIndices_data[ee].size(),9);
-    KExt_edgeh[ee] = &*KExt_edgeh_data[ee].data().begin();
-  }
-  KExt_faceh.resize(FaceIndices.size(),9);
-  ierr = KExt_hh_hierarchical(r*eps,face_order,&FaceEdgeOrder[0],
-      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
-      t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
-      &*KExt_hh.data().begin(),KExt_edgeh,&*KExt_faceh.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
-  //KExt_hh = trans( KExt_hh );
-  //
-  KExt_hedge_data.resize(3);
-  KExt_edgeedge_data.resize(3,3);
-  KExt_faceedge_data.resize(3);
-  for(ee = 0;ee<3;ee++) {
-    KExt_hedge_data[ee].resize(9,FaceEdgeIndices_data[ee].size());
-    KExt_hedge[ee] = &*KExt_hedge_data[ee].data().begin();
-    for(int eee = 0;eee<3;eee++) {
-      KExt_edgeedge_data(ee,eee).resize(FaceEdgeIndices_data[ee].size(),FaceEdgeIndices_data[eee].size());
-      KExt_edgeedge[ee][eee] = &*KExt_edgeedge_data(ee,eee).data().begin();
+  switch(type_of_forces) {
+    case conservative: {
+      const EntityHandle* conn_face;
+      ublas::vector<double> coords_face;
+      coords_face.resize(9);
+      int num_nodes;
+      rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+      rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
+      double normal[3];
+      ierr = ShapeFaceNormalMBTRI(diffNTRI,&*coords_face.data().begin(),normal); CHKERRQ(ierr);
+      double r = cblas_dnrm2(3,normal,1);
+      KExt_hh.resize(9,9);
+      KExt_edgeh_data.resize(3);
+      int ee = 0;
+      for(;ee<3;ee++) {
+        assert((unsigned int)3*NBEDGE_H1(FaceEdgeOrder[ee]) == FaceEdgeIndices_data[ee].size());
+        KExt_edgeh_data[ee].resize(FaceEdgeIndices_data[ee].size(),9);
+        KExt_edgeh[ee] = &*KExt_edgeh_data[ee].data().begin();
+      }
+      KExt_faceh.resize(FaceIndices.size(),9);
+      ierr = KExt_hh_hierarchical(r*eps,face_order,&FaceEdgeOrder[0],
+          &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+          t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+          &*KExt_hh.data().begin(),KExt_edgeh,&*KExt_faceh.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+      //KExt_hh = trans( KExt_hh );
+      //
+      KExt_hedge_data.resize(3);
+      KExt_edgeedge_data.resize(3,3);
+      KExt_faceedge_data.resize(3);
+      for(ee = 0;ee<3;ee++) {
+        KExt_hedge_data[ee].resize(9,FaceEdgeIndices_data[ee].size());
+        KExt_hedge[ee] = &*KExt_hedge_data[ee].data().begin();
+        for(int eee = 0;eee<3;eee++) {
+          KExt_edgeedge_data(ee,eee).resize(FaceEdgeIndices_data[ee].size(),FaceEdgeIndices_data[eee].size());
+          KExt_edgeedge[ee][eee] = &*KExt_edgeedge_data(ee,eee).data().begin();
+        }
+        KExt_faceedge_data[ee].resize(FaceIndices.size(),FaceEdgeIndices_data[ee].size());
+        KExt_faceedge[ee] = &*KExt_faceedge_data[ee].data().begin();
+      }
+      ierr = KExt_hh_hierarchical_edge(r*eps,face_order,&FaceEdgeOrder[0],
+          &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+          t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+          KExt_hedge,KExt_edgeedge,KExt_faceedge,
+          g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+      //
+      KExt_hface.resize(9,FaceIndices.size());
+      KExt_edgeface_data.resize(3);
+      for(ee = 0;ee<3;ee++) {
+        KExt_edgeface_data[ee].resize(FaceEdgeIndices_data[ee].size(),FaceIndices.size());
+        KExt_edgeface[ee] = &*KExt_edgeface_data[ee].data().begin();
+      }
+      assert(FaceIndices.size() == (unsigned int)3*NBFACE_H1(face_order));
+      KExt_faceface.resize(FaceIndices.size(),FaceIndices.size());
+      ierr = KExt_hh_hierarchical_face(r*eps,face_order,&FaceEdgeOrder[0],
+          &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+          t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+          &*KExt_hface.data().begin(),KExt_edgeface,&*KExt_faceface.data().begin(),
+          g_TRI_dim,g_TRI_W); CHKERRQ(ierr); 
+      }
+      break;
+    case nonconservative:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented"); 
+      break;
     }
-    KExt_faceedge_data[ee].resize(FaceIndices.size(),FaceEdgeIndices_data[ee].size());
-    KExt_faceedge[ee] = &*KExt_faceedge_data[ee].data().begin();
-  }
-  ierr = KExt_hh_hierarchical_edge(r*eps,face_order,&FaceEdgeOrder[0],
-      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
-      t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
-      KExt_hedge,KExt_edgeedge,KExt_faceedge,
-      g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
-  //
-  KExt_hface.resize(9,FaceIndices.size());
-  KExt_edgeface_data.resize(3);
-  for(ee = 0;ee<3;ee++) {
-    KExt_edgeface_data[ee].resize(FaceEdgeIndices_data[ee].size(),FaceIndices.size());
-    KExt_edgeface[ee] = &*KExt_edgeface_data[ee].data().begin();
-  }
-  assert(FaceIndices.size() == (unsigned int)3*NBFACE_H1(face_order));
-  KExt_faceface.resize(FaceIndices.size(),FaceIndices.size());
-  ierr = KExt_hh_hierarchical_face(r*eps,face_order,&FaceEdgeOrder[0],
-      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
-      t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
-      &*KExt_hface.data().begin(),KExt_edgeface,&*KExt_faceface.data().begin(),
-      g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
   } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -823,27 +827,19 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,doubl
   int num_nodes;
   rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
   rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
-  if(get_PhysicalEquationNumber()==hooke) {
-    ierr = Fext_H(
-      face_order,&FaceEdgeOrder[0],//2
-      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
-      t,t_edge,t_face,//11
-      &*coords_face.data().begin(),NULL,
-      &*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
-      NULL,NULL,NULL,
-      &*FExt_Material.begin(),NULL,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
-      cerr << FaceNodeData << endl;
-      cerr << FaceNodeData_Material << endl;
-      cerr << coords_face << endl;
-  } else {
-    ierr = Fext_H(
-      face_order,&FaceEdgeOrder[0],//2
-      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
-      t,t_edge,t_face,//11
-      &*FaceNodeData_Material.data().begin(),NULL,
-      &*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
-      NULL,NULL,NULL,
-      &*FExt_Material.begin(),NULL,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+  switch(type_of_forces) {
+    case conservative:
+      ierr = Fext_H(
+	face_order,&FaceEdgeOrder[0],//2
+	&g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
+	t,t_edge,t_face,//11
+	&*FaceNodeData_Material.data().begin(),NULL,
+	&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+	NULL,NULL,NULL,
+	&*FExt_Material.begin(),NULL,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+    case nonconservative:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented"); 
+      break;
   }
   FExt_Material *= -1;
   } catch (const std::exception& ex) {
@@ -856,23 +852,31 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,doubl
 PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face,double *t,double *t_edge[],double *t_face) {
   PetscFunctionBegin;
   try {
-    if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData_Material(face) before call of this function");
-    const EntityHandle* conn_face;
-    ublas::vector<double> coords_face;
-    coords_face.resize(9);
-    int num_nodes;
-    rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-    rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
-    double normal[3];
-    ierr = ShapeFaceNormalMBTRI(diffNTRI,&*coords_face.data().begin(),normal); CHKERRQ(ierr);
-    double r = cblas_dnrm2(3,normal,1);
-    KExt_HH_Material.resize(9,9);
-    ierr = KExt_HH(r*eps,face_order,&FaceEdgeOrder[0],
-      &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
-      t,t_edge,t_face,
-      &*FaceNodeData_Material.data().begin(),
-      &*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
-      &*KExt_HH_Material.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+    switch(type_of_forces) {
+      case conservative: {
+        if(GetFaceIndicesAndData_face!=face) SETERRQ(PETSC_COMM_SELF,1,"run GetFaceIndicesAndData_Material(face) before call of this function");
+        const EntityHandle* conn_face;
+        ublas::vector<double> coords_face;
+        coords_face.resize(9);
+        int num_nodes;
+        rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+        rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
+        double normal[3];
+        ierr = ShapeFaceNormalMBTRI(diffNTRI,&*coords_face.data().begin(),normal); CHKERRQ(ierr);
+        double r = cblas_dnrm2(3,normal,1);
+        KExt_HH_Material.resize(9,9);
+        ierr = KExt_HH(r*eps,face_order,&FaceEdgeOrder[0],
+          &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
+          t,t_edge,t_face,
+          &*FaceNodeData_Material.data().begin(),
+          &*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
+          &*KExt_HH_Material.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
+      }
+      break;
+    case nonconservative:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented"); 
+      break;
+    }
   } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
