@@ -563,6 +563,187 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 
 };
 
+class FEMethod_DriverComplexForLazy_Projected {
+
+  private:
+  moabField& mField;
+  Interface& moab;
+  PetscErrorCode ierr;
+  ErrorCode rval;
+  public:
+
+  matPROJ_ctx& proj_all_ctx;
+  bool init;
+  double alpha;
+
+  FEMethod_DriverComplexForLazy_Projected(moabField& _mField,matPROJ_ctx &_proj_all_ctx,Mat _B,Vec _x,Vec _f): 
+    mField(_mField),moab(_mField.get_moab()),proj_all_ctx(_proj_all_ctx),init(true) {};
+
+  Range CornersEdges,CornersNodes,SurfacesFaces;
+  C_SURFACE_FEMethod *CFE_SURFACE;
+  g_SURFACE_FEMethod *gFE_SURFACE;
+  C_CORNER_FEMethod *CFE_CORNER;
+  g_CORNER_FEMethod *gFE_CORNER;
+
+  PetscErrorCode set_local_VecCreateGhost_for_ConstrainsProblem(Vec x) {
+    PetscFunctionBegin;
+    Vec _x_;
+    ierr = mField.VecCreateGhost("C_ALL_MATRIX",Col,&_x_); CHKERRQ(ierr);
+    ierr = VecScatterBegin(proj_all_ctx.scatter,x,_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterEnd(proj_all_ctx.scatter,x,_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost("C_ALL_MATRIX",Col,_x_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecDestroy(&_x_); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode _preProcess_(Vec x,Vec f) {
+    PetscFunctionBegin;
+
+    PetscBool flg;
+    ierr = PetscOptionsGetReal("","-my_penalty",&alpha,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_penalty need to be given");
+    }
+
+    if(init) {
+	init = false;
+	ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
+	ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
+	ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+	ierr = mField.set_global_VecCreateGhost("MESH_SMOOTHING",Col,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+	Range CornersEdgesNodes;
+	rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
+	CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
+	CFE_SURFACE = new C_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.C);
+	gFE_SURFACE = new g_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.g);
+	CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.C);
+	gFE_CORNER = new g_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.g);
+
+	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
+	ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*CFE_CORNER);  CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+	ierr = proj_all_ctx.InitQorP(f); CHKERRQ(ierr);
+	ierr = proj_all_ctx.InitQTKQ(); CHKERRQ(ierr);
+
+	//ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
+	//ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
+
+	/*{
+	MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
+	std::string wait;
+	std::cin >> wait;
+	}*/
+    }  else {
+	ierr = set_local_VecCreateGhost_for_ConstrainsProblem(x); CHKERRQ(ierr);
+    }
+
+    ierr = VecZeroEntries(proj_all_ctx.g); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(proj_all_ctx.g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(proj_all_ctx.g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*gFE_SURFACE);  CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(proj_all_ctx.g,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(proj_all_ctx.g,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
+
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*gFE_CORNER);  CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(proj_all_ctx.g,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(proj_all_ctx.g,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
+
+    PetscReal g_nrm2;
+    ierr = VecNorm(proj_all_ctx.g, NORM_2,&g_nrm2); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,"\t g_nrm2 = %6.4e\n",g_nrm2);
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode _postProcess_ctx_SNESSetFunction(Vec f) {
+    PetscFunctionBegin;
+
+	ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
+	int M,N,m,n;
+	ierr = MatGetSize(proj_all_ctx.K,&M,&N); CHKERRQ(ierr);
+	ierr = MatGetLocalSize(proj_all_ctx.K,&m,&n); CHKERRQ(ierr);
+	Mat Q;
+	ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&proj_all_ctx,&Q); CHKERRQ(ierr);
+	ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+
+	Mat R;
+	int C_M,C_N,C_m,C_n;
+	ierr = MatGetSize(proj_all_ctx.C,&C_M,&C_N); CHKERRQ(ierr);
+	ierr = MatGetLocalSize(proj_all_ctx.C,&C_m,&C_n); CHKERRQ(ierr);
+	if(C_n != m) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	if(C_N != M) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	ierr = MatCreateShell(PETSC_COMM_WORLD,m,C_m,M,C_M,&proj_all_ctx,&R); CHKERRQ(ierr);
+	ierr = MatShellSetOperation(R,MATOP_MULT,(void(*)(void))matR_mult_shell); CHKERRQ(ierr);
+
+	//-QTKRg
+	Vec Rg;
+	ierr = VecDuplicate(f,&Rg); CHKERRQ(ierr);
+	ierr = MatMult(R,proj_all_ctx.g,Rg); CHKERRQ(ierr);
+	PetscReal Rg_nrm2;
+	ierr = VecNorm(Rg,NORM_2,&Rg_nrm2); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\t Rg_nrm2 = %6.4e\n",Rg_nrm2);
+	Vec KRg;
+	ierr = VecDuplicate(f,&KRg); CHKERRQ(ierr);
+	ierr = MatMult(proj_all_ctx.K,Rg,KRg); CHKERRQ(ierr);
+	PetscReal KRg_nrm2;
+	ierr = VecNorm(KRg,NORM_2,&KRg_nrm2); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\t KRg_nrm2 = %6.4e\n",KRg_nrm2);
+	ierr = VecAXPY(f,-1.,KRg); CHKERRQ(ierr);
+
+	//+QT*(f-QTKRg)
+	PetscReal f_nrm2;
+	ierr = VecNorm(f,NORM_2,&f_nrm2); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\t f_nrm2 = %6.4e\n",f_nrm2);
+	Vec tmp_f;
+	ierr = VecDuplicate(f,&tmp_f); CHKERRQ(ierr);
+	ierr = MatMult(Q,f,tmp_f); CHKERRQ(ierr);
+	PetscReal QTf_nrm2;
+	ierr = VecNorm(tmp_f,NORM_2,&QTf_nrm2); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\t QTf_nrm2 = %6.4e\n",QTf_nrm2);
+	ierr = VecSwap(f,tmp_f); CHKERRQ(ierr);
+
+	//CTg
+	ierr = MatMultAdd(proj_all_ctx.CT,proj_all_ctx.g,f,f); CHKERRQ(ierr);
+	
+	ierr = VecDestroy(&KRg); CHKERRQ(ierr);
+	ierr = VecDestroy(&Rg); CHKERRQ(ierr);
+	ierr = VecDestroy(&tmp_f); CHKERRQ(ierr);
+	ierr = MatDestroy(&Q); CHKERRQ(ierr);
+	ierr = MatDestroy(&R); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode _postProcess_ctx_SNESSetJacobian(Mat B) {
+    PetscFunctionBegin;
+
+	ierr = MatCopy(proj_all_ctx.K,B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+	ierr = MatAXPY(B,alpha,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+};
+
 struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComplexForLazy_Material {
 
   FEMethod_DriverComplexForLazy_MeshSmoothing(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
@@ -850,10 +1031,7 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
     PetscFunctionReturn(0);
   }
 
-
 };
-
-
 
 }
 
