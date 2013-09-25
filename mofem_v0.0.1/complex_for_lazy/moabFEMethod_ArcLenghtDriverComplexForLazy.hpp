@@ -123,7 +123,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
       ss << mydata;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
 
-      double t_val = this->t_val*mydata.data.value1;
+      double t_val = *(this->t_val)*mydata.data.value1;
       double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
 
       Range NeumannSideSet;

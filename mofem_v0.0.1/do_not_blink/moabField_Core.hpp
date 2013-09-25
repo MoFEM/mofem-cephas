@@ -84,6 +84,9 @@ struct moabField_Core: public moabField {
   PetscErrorCode map_from_mesh(int verb = -1);
   Interface& get_moab();
 
+  //check consistency
+  PetscErrorCode check_NumbetOfEnts_in_ents_moabfield(const string& name);
+
   //cubit meshsets
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, const int dimension,Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, Range &entities,const bool recursive = false);
@@ -231,6 +234,9 @@ struct moabField_Core: public moabField {
 
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_moabfield_by_name_begin(const string &field_name);
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_moabfield_by_name_end(const string &field_name);
+
+  EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name);
+  EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name);
 
   //Copy Vector of Field to Another
   PetscErrorCode set_other_global_VecCreateGhost(

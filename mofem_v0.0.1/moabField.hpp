@@ -60,6 +60,12 @@ struct moabField {
   virtual Interface& get_moab() = 0; 
 
   /** 
+    * \brief check data consistency in ents_moabfield
+    *
+    */
+  virtual PetscErrorCode check_NumbetOfEnts_in_ents_moabfield(const string& name) = 0;
+
+  /** 
     * \brief get entities form CUBIT/meshset 
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT
@@ -414,6 +420,7 @@ struct moabField {
     * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
     * 
     * SCATTER_REVERSE set data to field entities form V vector.
+    *
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
@@ -432,6 +439,23 @@ struct moabField {
     *
     */
   virtual PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+
+  /** \brief Copy vector to field which is not part of the problem
+    *
+    * \param name problem name
+    * \param field_name field name used for indexing petsc vectors used in the problem
+    * \param cpy_field field name where data from vector are stored
+    * \param RowColData for row or column
+    * \param V vector
+    * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+    * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    *
+    * SCATTER_REVERSE set data to field entities form V vector.
+    *
+    */
+  virtual PetscErrorCode set_other_global_VecCreateGhost(
+    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+
 
 
   //topoltgy
@@ -615,11 +639,11 @@ struct moabField {
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->row_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->row_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
-    #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(NAME,TYPE,IT) \
+    #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->col_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->col_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
-    #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(NAME,TYPE,IT) \
+    #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->data_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
       IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->data_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
@@ -789,19 +813,32 @@ struct moabField {
     */
   virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finite_elements_ptr) = 0;
 
-
-  /** \brief Copy vector to field which is not part of the problem
+  /** 
+    * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
     *
-    * \param name problem name
-    * \param field_name field name used for indexing petsc vectors used in the problem
-    * \param cpy_field field name where data from vector are stored
-    * \param RowColData for row or column
-    * \param V vector
-    * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
-    * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    * for(_IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * 	...
+    * }
+    *
+    * \param fe_name
     */
-  virtual PetscErrorCode set_other_global_VecCreateGhost(
-    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+  virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name) = 0;
+
+  /** 
+    * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    *
+    * for(_IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * 	...
+    * }
+    *
+    * \param fe_name
+    */
+  virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
+
+  #define _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
+      IT != MFIELD.get_fes_moabfield_by_name_end(NAME); IT++
+
 
 };
 

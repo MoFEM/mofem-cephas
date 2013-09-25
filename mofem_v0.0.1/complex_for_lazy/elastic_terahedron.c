@@ -1103,6 +1103,8 @@ PetscErrorCode Fext_H(int order,int *order_edge,
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
   double *dofs_X,double *idofs_X,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
   double *Fext,double *iFext,int g_dim,const double *g_w) {
   PetscFunctionBegin;
   int dd,nn,gg;
@@ -1114,16 +1116,24 @@ PetscErrorCode Fext_H(int order,int *order_edge,
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
     if(traction[0]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     if(traction[1]!=0) SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    __CLPK_doublecomplex xnormal[3];
+    __CLPK_doublecomplex xnormal0[3];
     ierr = Normal_hierarchical(
       order,order_edge,diffN,diffN_face,diffN_edge,
       dofs_X,NULL,NULL,idofs_X,NULL,NULL,
+      xnormal0,gg); CHKERRQ(ierr);
+    __CLPK_doublecomplex xnormal[3];
+    ierr = Normal_hierarchical(
+      order,order_edge,diffN,diffN_face,diffN_edge,
+      dofs_x,dofs_x_edge,dofs_x_face,idofs_x,idofs_x_edge,idofs_x_face,
       xnormal,gg); CHKERRQ(ierr);
+    fprintf(stderr,"%e %e %e %e %e %e\n",
+      xnormal0[0].r,xnormal0[1].r,xnormal0[2].r,
+      xnormal[0].r,xnormal[1].r,xnormal[2].r);
     double normal_real[3];
     double normal_imag[3];
     for(dd = 0;dd<3;dd++) {
-      normal_real[dd] = xnormal[dd].r;
-      normal_imag[dd] = xnormal[dd].i;
+      normal_real[dd] = xnormal0[dd].r;
+      normal_imag[dd] = xnormal0[dd].i;
     }
     nn = 0;
     for(;nn<3;nn++) {
@@ -1139,7 +1149,9 @@ PetscErrorCode KExt_HH(double eps,int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
-  double *dofs_X,double *KExt_HH,int g_dim,const double *g_w) {
+  double *dofs_X,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *KExt_HH,int g_dim,const double *g_w) {
   PetscFunctionBegin;
   int gg,dd,ii,nn;
   bzero(KExt_HH,9*9*sizeof(double));

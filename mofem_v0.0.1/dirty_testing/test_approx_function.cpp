@@ -23,6 +23,11 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
+//PetscErrorCode  PetscGetTime(PetscLogDouble *t);
+
+#include <petscsys.h> 
+#include <petsctime.h>
+
 using namespace MoFEM;
 
 ErrorCode rval;

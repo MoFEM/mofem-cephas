@@ -386,7 +386,7 @@ void problem_MoFEMFiniteElement_change_bit_add::operator()(MoFEMProblem &p) {
 problem_row_change::problem_row_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {
   assert(dof_ptr->active);
 }
-void problem_row_change::operator()(_MoFEMProblem_ &e) { 
+void problem_row_change::operator()(MoFEMProblem &e) { 
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
     = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity((*(DofIdx*)e.tag_nbdof_data_row),dof_ptr)); 
   if(p.second) {
@@ -394,18 +394,18 @@ void problem_row_change::operator()(_MoFEMProblem_ &e) {
   }
 }
 problem_col_change::problem_col_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
-void problem_col_change::operator()(_MoFEMProblem_ &e) { 
+void problem_col_change::operator()(MoFEMProblem &e) { 
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
     = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity((*(DofIdx*)e.tag_nbdof_data_col),dof_ptr)); 
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_col)++;
   }
 }
-void problem_zero_nb_rows_change::operator()(_MoFEMProblem_ &e) { 
+void problem_zero_nb_rows_change::operator()(MoFEMProblem &e) { 
   (*(DofIdx*)e.tag_nbdof_data_row) = 0;
   e.numered_dofs_rows.clear();
 }
-void problem_zero_nb_cols_change::operator()(_MoFEMProblem_ &e) { 
+void problem_zero_nb_cols_change::operator()(MoFEMProblem &e) { 
   (*(DofIdx*)e.tag_nbdof_data_col) = 0;
   e.numered_dofs_cols.clear();
 }
@@ -534,7 +534,8 @@ ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
     << " dof_rank " << e.get_dof_rank()
     << " dof " << e.dof
     << " active " << e.active 
-    << " " << *(e.field_ptr);
+    << " " << *(e.field_ptr)
+    << " Data " << e.get_FieldData();
   return os;
 }
 DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}
@@ -741,10 +742,11 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
 
 //moab base meshsets
 CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
-  meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),tag_block_header_data(NULL),
+  meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),
+  tag_block_header_data(NULL),tag_block_attributes(NULL),tag_block_attributes_size(0),tag_name_data(NULL),
   meshsets_mask(NodeSet|SideSet|BlockSet) {
   ErrorCode rval;
-  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
+  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,ssTag); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle((string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR(rval);CHKERR_THROW(rval);
@@ -752,6 +754,9 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME,bhTag); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle("BLOCK_HEADER",bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("Block_Attributes",block_attribs); CHKERR(rval); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR_THROW(rval);
+
   vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {
     if(
@@ -790,6 +795,15 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR(rval);CHKERR_THROW(rval);
       if(tag_block_header_data[9]>0) CubitBCType |= MaterialSet;
     }
+    if(*tit == block_attribs) {
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR(rval);CHKERR_THROW(rval);
+      //for(int ii = 0;ii<tag_block_attributes_size;ii++) {
+	//cerr << "RRRRR " << tag_block_attributes[ii] << endl;
+      //}
+    }
+    if(*tit == entityNameTag) {
+      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR_THROW(rval);
+    }
   }
 }
 PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
@@ -819,31 +833,40 @@ PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
   PetscFunctionReturn(0);
 }
 
-//NEW
-    PetscErrorCode CubitMeshSets::get_Cubit_material_data(vector<unsigned int>& material_data) const {
-        PetscFunctionBegin;
-        copy(&tag_block_header_data[0],&tag_block_header_data[12],material_data.begin());
-        PetscFunctionReturn(0);
-    }
+PetscErrorCode CubitMeshSets::get_Cubit_block_header_data(vector<unsigned int>& material_data) const {
+    PetscFunctionBegin;
+    copy(&tag_block_header_data[0],&tag_block_header_data[12],material_data.begin());
+    PetscFunctionReturn(0);
+}
 
-    PetscErrorCode CubitMeshSets::print_Cubit_material_data(ostream& os) const {
-        PetscFunctionBegin;
-        vector<unsigned int> material_data;
-        get_Cubit_material_data(material_data);
-        os << "material_data = ";
-        std::vector<unsigned int>::iterator vit = material_data.begin();
-        for(;vit!=material_data.end();vit++) {
-            os << std::hex << (int)((unsigned int)*vit) << " ";
-        }
-        os << ": ";
-        vit = material_data.begin();
-        for(;vit!=material_data.end();vit++) {
-            os << *vit;
-        }
-        os << std::endl;
-        PetscFunctionReturn(0);
+PetscErrorCode CubitMeshSets::print_Cubit_block_header_data(ostream& os) const {
+    PetscFunctionBegin;
+    vector<unsigned int> material_data;
+    get_Cubit_block_header_data(material_data);
+    os << "block_header_data = ";
+    std::vector<unsigned int>::iterator vit = material_data.begin();
+    for(;vit!=material_data.end();vit++) {
+	os << std::hex << (int)((unsigned int)*vit) << " ";
     }
-            
+    os << ": ";
+    vit = material_data.begin();
+    for(;vit!=material_data.end();vit++) {
+      os << *vit;
+    }
+    os << std::endl;
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode CubitMeshSets::get_Cubit_name(string& name) const {
+  PetscFunctionBegin;
+  if(tag_name_data!=NULL) {
+    name = string(tag_name_data);
+  } else {
+    name = "NoNameSet";
+  }
+  PetscFunctionReturn(0);
+}
+           
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const {
     PetscFunctionBegin;
     
@@ -897,9 +920,38 @@ PetscErrorCode CubitMeshSets::print_Cubit_bc_data(ostream& os) const {
   os << std::endl;
   PetscFunctionReturn(0);
 }
+PetscErrorCode CubitMeshSets::get_Cubit_attributes(vector<double>& attributes) const {
+  PetscFunctionBegin;
+  attributes.resize(tag_block_attributes_size);
+  if(tag_block_attributes_size>0) {
+    copy(&tag_block_attributes[0],&tag_block_attributes[tag_block_attributes_size],attributes.begin());
+  }
+  PetscFunctionReturn(0);
+}
+    
+PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
+    PetscFunctionBegin;
+    vector<double> attributes;
+    get_Cubit_attributes(attributes);
+    os << endl;
+    os << "Block attributes" << endl;
+    os << "----------------" << endl;
+    for(unsigned int ii = 0;ii<attributes.size();ii++)
+        {
+            cout << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
+        }
+    os << endl;
+    PetscFunctionReturn(0);
+}
+    
 ostream& operator<<(ostream& os,const CubitMeshSets& e) {
   os << "meshset " << e.meshset << " type " << e.CubitBCType;
   if(e.msId != NULL) os << " msId " << *(e.msId);
+  if(e.tag_name_data!=NULL) {
+    string name;
+    e.get_Cubit_name(name);
+    os << " name " << name;
+  }
   if(e.tag_block_header_data != NULL) {
     os << " block header: ";
     os << " blockID = " << e.tag_block_header_data[0];
