@@ -100,6 +100,9 @@ add_library(mofem_Field
   complex_for_lazy/moabFEMethod_ComplexForLazy.cpp
   student_body/moabFEMethod_LowLevelStudent.cpp
   student_body/moabFEMethod_UpLevelStudent.cpp
+  student_body/moabFEMethod_DirihletBC.cpp
+  student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
+  student_body/moabFEMethod_SurfaceConstrains.cpp
   moabField.cpp
   FEM.c
   H1.c
@@ -131,6 +134,7 @@ enable_testing()
 include(CTest)
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
+add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
 
 # add a target to generate API documentation with Doxygen

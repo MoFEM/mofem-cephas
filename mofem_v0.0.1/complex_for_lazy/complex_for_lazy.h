@@ -1,4 +1,4 @@
-/* Copyright (C) 2009, Lukasz Kaczmarczyk (likask AT civil.gla.ac.uk)
+/* Copyright (C) 2009, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -16,7 +16,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with mofem. If not, see <http://www.gnu.org/licenses/>. */
-
 
 #ifndef __COMPLEX_FOR_LAZY_H__
 #define __COMPLEX_FOR_LAZY_H__
@@ -115,6 +114,29 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
   double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
   double *KExt_hface,double *KExt_egdeface[3],double *KExt_faceface,
   int g_dim,const double *g_w);
+PetscErrorCode Fext_H(int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_X,double *idofs_X,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
+  double *Fext,double *iFext,int g_dim,const double *g_w);
+PetscErrorCode KExt_HH(double eps,int order,int *order_edge,
+  double *N,double *N_face,double *N_edge[],
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *t,double *t_edge[],double *t_face,
+  double *dofs_X,
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *KExt_HH,int g_dim,const double *g_w);
+
+//quality
+void set_qual_ver(int ver);
+int get_qual_ver();
+PetscErrorCode quality_volume_length_F(double alpha,double *alpha2,double gamma,double *diffN,
+  double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
+  double *F,double *iF);
+int quality_volume_length_K(double eps,double alpha,double *alpha2,double gamma,double *diffN,double *coords_edges,double *dofs_X,double *dofs_x,double *K,double *Koff);
 
 void EdgeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 void FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);

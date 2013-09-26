@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "arc_lenght_nonlinear_elasticity.hpp"
+#include "moabFEMethod_ArcLenghtDriverComplexForLazy.hpp"
 
 static char help[] = "\
 -my_file mesh file name\n\
@@ -197,30 +197,33 @@ int main(int argc, char *argv[]) {
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_lenght_mult_shell); CHKERRQ(ierr);
 
   if(step==1) {
-    SetPositionsEntMethod set_positions(moab);
-    ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,set_positions); CHKERRQ(ierr);
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
+      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get_ent();
+      int dof_rank = dof_ptr->get_dof_rank();
+      double &fval = dof_ptr->get_FieldData();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+      fval = coords[dof_rank];
+    }
   }
 
-  Range SideSet1,SideSet2,SideSet3,SideSet4;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,1,SideSet1,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(4,SideSet,2,SideSet4,true); CHKERRQ(ierr);
-  Range NodeSet1;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
-
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. edges in SideSet 1 : %u\n",SideSet1.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 4 : %u\n",SideSet4.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
+  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
+  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  MyDirihletBC  myDirihletBC(moab,SideSet1,SideSet3,SideSet4);
-  MyElasticFEMethod MyFE(moab,&myDirihletBC,
+  Range NodeSet1;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
+
+  MyElasticFEMethod MyFE(mField,&myDirihletBC,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
-    ArcCtx,SideSet2,NodeSet1);
+    ArcCtx,NodeSet1);
 
   ArcLenghtElemFEMethod* MyArcMethod_ptr = new ArcLenghtElemFEMethod(moab,ArcCtx);
   ArcLenghtElemFEMethod& MyArcMethod = *MyArcMethod_ptr;

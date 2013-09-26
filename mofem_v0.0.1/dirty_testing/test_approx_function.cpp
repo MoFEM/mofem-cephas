@@ -23,6 +23,11 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
+//PetscErrorCode  PetscGetTime(PetscLogDouble *t);
+
+#include <petscsys.h> 
+#include <petsctime.h>
+
 using namespace MoFEM;
 
 ErrorCode rval;
@@ -356,7 +361,7 @@ int main(int argc, char *argv[]) {
 
   ierr = mField2.set_global_VecCreateGhost("PROBLEM_APPROXIMATION",Col,solution,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  struct MyEntMethod: public moabField::EntMethod {
+  /*struct MyEntMethod: public moabField::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
     Interface& moab;
@@ -382,7 +387,20 @@ int main(int argc, char *argv[]) {
   };
   
   MyEntMethod ent_method(moab);
-  ierr = mField2.loop_dofs("PROBLEM_APPROXIMATION","H1FIELD",Col,ent_method); CHKERRQ(ierr);
+  ierr = mField2.loop_dofs("PROBLEM_APPROXIMATION","H1FIELD",Col,ent_method); CHKERRQ(ierr);*/
+
+  {
+    Tag th_val;
+    double def_VAL = 0;
+    rval = moab.tag_get_handle("H1FIELD_VAL",1,MB_TYPE_DOUBLE,th_val,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"PROBLEM_APPROXIMATION",dof_ptr)) {
+      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get_ent();
+      double fval = dof_ptr->get_FieldData();
+      rval = moab.tag_set_data(th_val,&ent,1,&fval);  CHKERR_PETSC(rval);
+    }
+  }
+
 
   ierr = VecDestroy(&solution); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);

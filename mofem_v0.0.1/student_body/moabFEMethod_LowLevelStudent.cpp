@@ -119,13 +119,17 @@ PetscErrorCode MapDataPRISM(It &it,
   const MoFEMField* field_ptr = it->get_MoFEMField_ptr();
   const MoFEMEntity* ent_ptr = it->get_MoFEMEntity_ptr();
   switch (it->get_ent_type()) {
-    case MBVERTEX:
+    case MBVERTEX: {
       assert(side_number>=0);
       assert(side_number<6);
       nb_dofs_for_order = 1;
       nodes[field_ptr].resize(max_rank*6,-1);
       (nodes[field_ptr])[side_number*max_rank + it->get_dof_rank()] =  UnaryOp()(&*it);
-      break;
+      int brother_side_number = it->side_number_ptr->brother_side_number;
+      if(brother_side_number!=-1) {
+	(nodes[field_ptr])[brother_side_number*max_rank + it->get_dof_rank()] =  UnaryOp()(&*it);
+      }
+      } break;
     case MBEDGE:
       assert(side_number>=0);
       assert(side_number<9);
@@ -162,6 +166,10 @@ PetscErrorCode SetMaxOrder(const T &miit,
       assert(e->size() > (unsigned int)miit->side_number_ptr->side_number);
       int &a = (*e)[miit->side_number_ptr->side_number];
       a = a < miit->get_max_order() ? miit->get_max_order() : a;
+      if(miit->side_number_ptr->brother_side_number!=-1) {
+	int &b = (*e)[miit->side_number_ptr->side_number];
+	b = b < miit->get_max_order() ? miit->get_max_order() : b;
+      }
     }
     break;
     case MBTRI: {
@@ -676,6 +684,10 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	    int side_number3 = fe_ent_ptr->get_side_number_ptr(moab,conn_face3[nn])->side_number;
 	    int side_number4 = fe_ent_ptr->get_side_number_ptr(moab,conn_face4[nn])->side_number;
 	    assert(side_number3 <= 2);
+	    if(side_number4 < 3) {
+	      side_number4 = fe_ent_ptr->get_side_number_ptr(moab,conn_face4[nn])->brother_side_number;
+	      assert(side_number4 != -1);
+	    }
 	    assert(side_number4 >= 3);
 	    for(int gg = 0;gg<gNTRI_dim;gg++) {
 	      double val3 = gNTRI[gg*3+side_number3];
@@ -712,12 +724,18 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	ee = 0;
 	for(;ee<3;ee++) {
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().find(boost::make_tuple(MBEDGE,6+ee));
-	  if(siit==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  assert(siit->side_number == 6+ee);
-	  H1edgeN[siit->side_number].resize(gNTRI_dim*NBEDGE_H1(maxOrderEdgeH1[siit->side_number]));
+	  int side_number;
+	  if(siit==side_table.get<1>().end()) {
+	    siit = side_table.get<1>().find(boost::make_tuple(MBEDGE,ee));
+	    if(siit==side_table.get<1>().end()) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, edge side number %d",6+ee);
+	    side_number = siit->brother_side_number;
+	  } else {
+	    side_number = siit->side_number;
+	  }
+	  H1edgeN[side_number].resize(gNTRI_dim*NBEDGE_H1(maxOrderEdgeH1[side_number]));
 	  _face_edge_sense4_[ee] = siit->sense;
-	  _face_edge_order4_[ee] = maxOrderEdgeH1[siit->side_number];
-	  _edgeN4_[ee] = &*H1edgeN[siit->side_number].begin();
+	  _face_edge_order4_[ee] = maxOrderEdgeH1[side_number];
+	  _edgeN4_[ee] = &*H1edgeN[side_number].begin();
 	}
 	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense4_,_face_edge_order4_,&gNTRI[0],NULL,_edgeN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	ee = 0;
@@ -1243,7 +1261,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       int rank = field_ptr->get_max_rank();
       int order = ent_ptr->get_max_order();
-      int dim = 0,nb_rows = 0;
+      unsigned int dim = 0,nb_rows = 0;
       switch(field_ptr->get_space()) {
 	case H1:
 	  dim = 3;
@@ -1278,10 +1296,10 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       for(;gg<g_dim;gg++) {
 	if(diff_shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	ublas::matrix<FieldData> &mat = data[gg];
-	mat.resize(nb_rows,nb_dofs);
+	if((mat.size1()!=nb_rows)||(mat.size2()!=nb_dofs)) mat.resize(nb_rows,nb_dofs);
 	mat = ublas::zero_matrix<FieldData>(nb_rows,nb_dofs);
 	for(int rr = 0;rr<rank;rr++) {
-	  for(int dd = 0;dd<dim;dd++) {
+	  for(unsigned int dd = 0;dd<dim;dd++) {
 	    ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr*dim+dd);
 	    for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
 	      mr(jj*rank + rr) =  (diff_shape_by_gauss_pt[gg])[dim*jj + dd];     
