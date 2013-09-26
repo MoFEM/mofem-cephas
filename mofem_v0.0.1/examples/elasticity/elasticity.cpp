@@ -118,16 +118,10 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-<<<<<<< HEAD:mofem_v0.0.1/examples/simple_elasticity/elasticity.cpp
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",3); CHKERRQ(ierr);
-=======
   //int order = 5;
   ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
->>>>>>> 1859cefa88c6c7a3c7a1459e1555e7d10f0d9abc:mofem_v0.0.1/examples/elasticity/elasticity.cpp
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
@@ -163,30 +157,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   struct MyElasticFEMethod: public ElasticFEMethod {
-<<<<<<< HEAD:mofem_v0.0.1/examples/simple_elasticity/elasticity.cpp
-    MyElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_ptr,
-      Mat &_Aij,Vec& _F,
-      double _lambda,double _mu,Range &_SideSet1,Range &_SideSet2): 
-      ElasticFEMethod(_moab,_dirihlet_ptr,_Aij,_F,_lambda,_mu,
-      _SideSet1,_SideSet2) {};
-
-    /// Set Neumann Boundary Conditions on SideSet2
-    PetscErrorCode NeumannBC() {
-      PetscFunctionBegin;
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
-      //Set Direction of Traction On SideSet2
-      traction[0] = -1; //X
-      traction[1] = 0; //Y 
-      traction[2] = 0; //Z
-      //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
-      ierr = ElasticFEMethod::NeumannBC(F,traction,SideSet2); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
-=======
     MyElasticFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_ptr,
       Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
       ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
->>>>>>> 1859cefa88c6c7a3c7a1459e1555e7d10f0d9abc:mofem_v0.0.1/examples/elasticity/elasticity.cpp
 
     PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
