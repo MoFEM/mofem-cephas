@@ -87,12 +87,12 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double *diff_volumeNinvJac;
 
   //Tangent_HH_hierachical
-  ublas::matrix<double> KHH,KHh,KvolumeH;
+  ublas::matrix<double> KHH,KhH,KvolumeH;
   vector<ublas::matrix<double> > KedgeH_data,KfaceH_data;
   double* KedgeH[6];
   double* KfaceH[4];
   //Tangent_hh_hierachical
-  ublas::matrix<double> Khh,KhH,Kvolumeh;
+  ublas::matrix<double> Khh,KHh,Kvolumeh;
   vector<ublas::matrix<double> > Kedgeh_data,Kfaceh_data;
   double* Kedgeh[6];
   double* Kfaceh[4];
