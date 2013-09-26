@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
       //Set Direction of Traction On SideSet2
-      traction[0] = 1; //X
+      traction[0] = -1; //X
       traction[1] = 0; //Y 
       traction[2] = 0; //Z
       //ElasticFEMethod::NeumannBC(...) function calulating external forces (see file ElasticFEMethod.hpp)
