@@ -259,19 +259,19 @@ int main(int argc, char *argv[]) {
         if(dof_ptr->get_dof_rank()==0)
         {
             double fval = dof_ptr->get_FieldData();
-            printf("%.2lf", fval); cout << "  ";
+            cout << boost::format("%.2lf") % fval << "  ";
             myfile << boost::format("%.2lf") % fval << "  ";
         }
         if(dof_ptr->get_dof_rank()==1)
         {
             double fval = dof_ptr->get_FieldData();
-            printf("%.2lf", fval); cout << "  ";
+            cout << boost::format("%.2lf") % fval << "  ";
             myfile << boost::format("%.2lf") % fval << "  ";
         }
         if(dof_ptr->get_dof_rank()==2)
         {
             double fval = dof_ptr->get_FieldData();
-            printf("%.2lf", fval); cout << endl;
+            cout << boost::format("%.2lf") % fval << endl;
             myfile << boost::format("%.2lf") % fval << endl;
         }
         
