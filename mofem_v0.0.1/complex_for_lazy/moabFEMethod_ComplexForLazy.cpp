@@ -331,15 +331,40 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
       assert(12 == RowGlobMaterial[0].size());
       KHH.resize(12,12);
       KhH.resize(12,12);
-      /*ee = 0;
+      ee = 0;
       for(;ee<6;ee++) {
-	assert(3*(unsigned int)NBEDGE_H1(order_edges[ee]) == RowGlobSpatial[1+ee].size());
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
+	eiit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(spatial_field_name,MBEDGE,ee));
+	if(eiit==data_multiIndex->get<Composite_mi_tag>().end()) {
+	  order_edges[ee] = 0;
+	} else {
+	  order_edges[ee] = eiit->get_max_order();
+	}
+	assert(3*(unsigned int)NBEDGE_H1(order_edges[ee]) == dofs_x_edge_data[ee].size());
+	KedgeH_data[ee].resize(dofs_x_edge_data[ee].size(),12);
+	KedgeH[ee] = &*KedgeH_data[ee].data().begin();
       }
       ff = 0;
       for(;ff<4;ff++) {
-	  assert(3*(unsigned int)NBFACE_H1(order_faces[ff]) == RowGlobSpatial[1+6+ff].size());
-      }*/
-
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator fiit;
+	fiit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(spatial_field_name,MBTRI,ff));
+	if(fiit==data_multiIndex->get<Composite_mi_tag>().end()) {
+	  order_faces[ff] = 0; 
+	} else {
+	  order_faces[ff] = fiit->get_max_order();
+	}
+	assert(3*(unsigned int)NBFACE_H1(order_faces[ff]) == dofs_x_face_data[ff].size());
+	KfaceH_data[ff].resize(dofs_x_face_data[ff].size(),12);
+	KfaceH[ff] = &*KfaceH_data[ff].data().begin();
+      }
+      FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit;
+      viit = data_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(spatial_field_name,MBTET));
+      if(viit==data_multiIndex->get<Composite_mi_tag2>().end()) {
+	order_volume = 0;
+      } else {
+	order_volume = viit->get_max_order();
+      }
+      KvolumeH.resize(dofs_x_volume.size(),12);
     }
     ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
     unsigned int sub_analysis_type[3] = { spatail_analysis, material_analysis, mesh_quality_analysis };
@@ -372,7 +397,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &*KHH.data().begin(),&*KhH.data().begin(),NULL,NULL,NULL,g_dim,g_TET_W); CHKERRQ(ierr);
+	  &*KHH.data().begin(),NULL,NULL,NULL,NULL,//&*KhH.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),
+	  g_dim,g_TET_W); CHKERRQ(ierr);
 	}
 	break;
 	case mesh_quality_analysis: {
