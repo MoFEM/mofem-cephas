@@ -33,6 +33,39 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
+#define RND_EPS 1e-6
+
+//Rounding
+double roundn(double n)
+{
+	//break n into fractional part (fract) and integral part (intp)
+    double fract, intp;
+    fract = modf(n,&intp);
+    
+//    //round up
+//    if (fract>=.5)
+//    {
+//        n*=10;
+//        ceil(n);
+//        n/=10;
+//    }
+//	//round down
+//    if (fract<=.5)
+//    {
+//		n*=10;
+//        floor(n);
+//        n/=10;
+//    }
+    // case where n approximates zero, set n to "positive" zero
+    if (abs(intp)==0)
+    {
+        if(abs(fract)<=RND_EPS)
+           {
+               n=0.000;
+           }
+    }
+    return n;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -258,21 +291,24 @@ int main(int argc, char *argv[]) {
         
         if(dof_ptr->get_dof_rank()==0)
         {
+            //Round and truncate to 3 decimal places
             double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.2lf") % fval << "  ";
-            myfile << boost::format("%.2lf") % fval << "  ";
+            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
         if(dof_ptr->get_dof_rank()==1)
         {
+            //Round and truncate to 3 decimal places
             double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.2lf") % fval << "  ";
-            myfile << boost::format("%.2lf") % fval << "  ";
+            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
         if(dof_ptr->get_dof_rank()==2)
         {
+            //Round and truncate to 3 decimal places
             double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.2lf") % fval << endl;
-            myfile << boost::format("%.2lf") % fval << endl;
+            cout << boost::format("%.3lf") % roundn(fval) << endl;
+            myfile << boost::format("%.3lf") % roundn(fval) << endl;
         }
         
     }
