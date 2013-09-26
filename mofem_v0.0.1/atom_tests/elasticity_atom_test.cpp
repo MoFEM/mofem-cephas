@@ -33,6 +33,7 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
+#define RND_EPS 1e-6
 
 //Rounding
 double roundn(double n)
@@ -41,24 +42,24 @@ double roundn(double n)
     double fract, intp;
     fract = modf(n,&intp);
     
-    //round up
-    if (fract>=.5)
-    {
-        n*=10;
-        ceil(n);
-        n/=10;
-    }
-	//round down
-    if (fract<=.5)
-    {
-		n*=10;
-        floor(n);
-        n/=10;
-    }
+//    //round up
+//    if (fract>=.5)
+//    {
+//        n*=10;
+//        ceil(n);
+//        n/=10;
+//    }
+//	//round down
+//    if (fract<=.5)
+//    {
+//		n*=10;
+//        floor(n);
+//        n/=10;
+//    }
     // case where n approximates zero, set n to "positive" zero
     if (abs(intp)==0)
     {
-        if(abs(fract)<=0.001)
+        if(abs(fract)<=RND_EPS)
            {
                n=0.000;
            }
