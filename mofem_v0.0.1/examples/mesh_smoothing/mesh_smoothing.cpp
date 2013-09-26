@@ -34,11 +34,11 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-struct MyMeshSmoothing_ElasticFEMethod: public /*FEMethod_DriverComplexForLazy_MeshSmoothing {*/ FEMethod_DriverComplexForLazy_MeshSmoothingProjected {
+struct MyMeshSmoothing_ElasticFEMethod: public FEMethod_DriverComplexForLazy_MeshSmoothingProjected {
 
   MyMeshSmoothing_ElasticFEMethod(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     FEMethod_DriverComplexForLazy_MeshSmoothingProjected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_verbose) {
-    //FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_verbose) {
     set_qual_ver(1);
   }
 
@@ -127,6 +127,8 @@ struct materialDirihletBC: public BaseDirihletBC {
 
 
 int main(int argc, char *argv[]) {
+
+  try {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -472,6 +474,10 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
   PetscFinalize();
+
+  } catch (const char* msg) {
+        SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
 
   return 0;
 }

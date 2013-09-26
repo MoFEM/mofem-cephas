@@ -100,6 +100,9 @@ add_library(mofem_Field
   complex_for_lazy/moabFEMethod_ComplexForLazy.cpp
   student_body/moabFEMethod_LowLevelStudent.cpp
   student_body/moabFEMethod_UpLevelStudent.cpp
+  student_body/moabFEMethod_DirihletBC.cpp
+  student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
+  student_body/moabFEMethod_SurfaceConstrains.cpp
   moabField.cpp
   FEM.c
   H1.c
