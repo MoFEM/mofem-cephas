@@ -15,6 +15,7 @@ cubit.cmd('block 1 attribute index 2 0')
 #!Displacement bcs
 cubit.cmd('create Displacement  on surface 4  dof 1 fix  ')
 cubit.cmd('create Displacement  on node 4  dof 2 dof 3 fix  ')
+cubit.cmd('create displacement on node 7 dof 2 dof 3 fix')
 
 #!Force
 cubit.cmd('create force  on surface 6  force value 1 direction   x ')
