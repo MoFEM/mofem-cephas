@@ -3358,6 +3358,7 @@ PetscErrorCode moabField_Core::set_global_VecCreateGhost(const string &name,RowC
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type dofs_by_global_idx;
   problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
   problems_by_name::iterator p_miit = problems_set.find(name);
+  if(p_miit==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   dofs_by_global_idx *dofs;
   DofIdx nb_dofs;
   switch (rc) {

@@ -66,12 +66,17 @@ int main(int argc, char *argv[]) {
 
   ierr = ConfigurationalMechanics_PhysicalProblemDefinition(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_MaterialProblemDefinition(mField); CHKERRQ(ierr);
+  ierr = ConfigurationalMechanics_ConstrainsProblemDefinition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
+
+  //set refinment level for problem
+  ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -85,10 +90,12 @@ int main(int argc, char *argv[]) {
   //partition problems
   ierr = ConfigurationalMechanics_PhysicalPartitionProblems(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_MaterialPartitionProblems(mField); CHKERRQ(ierr);
+  ierr = ConfigurationalMechanics_ConstrainsPartitionProblems(mField); CHKERRQ(ierr);
 
   //caculate material forces
   ierr = ConfigurationalMechanics_SetMaterialPositions(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_CalculateMaterialForces(mField); CHKERRQ(ierr);
+  ierr = ConfigurationalMechanics_ProcectForceVector(mField); CHKERRQ(ierr);
 
   rval = moab.write_file("out_material.h5m"); CHKERR_PETSC(rval);
 
