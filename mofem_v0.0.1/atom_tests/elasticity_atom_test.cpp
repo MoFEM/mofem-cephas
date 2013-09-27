@@ -286,8 +286,6 @@ int main(int argc, char *argv[]) {
     for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dof_ptr))
     {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-        //cout<<dof_ptr->get_ent_id()<<endl;
-        EntityHandle ent = dof_ptr->get_ent();
         
         if(dof_ptr->get_dof_rank()==0)
         {
