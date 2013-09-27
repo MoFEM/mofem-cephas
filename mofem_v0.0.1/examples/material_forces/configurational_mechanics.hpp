@@ -157,11 +157,49 @@ PetscErrorCode ConfigurationalMechanics_MaterialProblemDefinition(moabField& mFi
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics_ConstrainsProblemDefinition(moabField& mField) {
+PetscErrorCode ConfigurationalMechanics_CoupledProblemDefinition(moabField& mField) {
   PetscFunctionBegin;
 
   if(Material_FirelWall->operator[](2)) PetscFunctionReturn(0);
-  Material_FirelWall->set(2);
+  Material_FirelWall->set(3);
+
+  PetscErrorCode ierr;
+
+  ierr = mField.add_finite_element("MESH_SMOOTHER"); CHKERRQ(ierr);
+  
+  //fes definitions
+  ierr = mField.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  //
+  ierr = mField.modify_finite_element_add_field_row("MATERIAL","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MATERIAL","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MATERIAL","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  //
+  ierr = mField.modify_finite_element_add_field_row("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+  //define problems
+  ierr = mField.add_problem("COUPLED_PROBLEM"); CHKERRQ(ierr);
+  //set finite elements for problems
+  ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","MATERIAL"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","MESH_SMOOTHER"); CHKERRQ(ierr);
+
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ConfigurationalMechanics_ConstrainsProblemDefinition(moabField& mField) {
+  PetscFunctionBegin;
+
+  if(Material_FirelWall->operator[](4)) PetscFunctionReturn(0);
+  Material_FirelWall->set(4);
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -293,7 +331,7 @@ PetscErrorCode ConfigurationalMechanics_MaterialPartitionProblems(moabField& mFi
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics_ConstrainsPartitionProblems(moabField& mField) {
+PetscErrorCode ConfigurationalMechanics_ConstrainsPartitionProblems(moabField& mField,string problem) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -303,7 +341,7 @@ PetscErrorCode ConfigurationalMechanics_ConstrainsPartitionProblems(moabField& m
   ierr = mField.partition_finite_elements("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   //partition
-  ierr = mField.compose_problem("C_ALL_MATRIX","CCT_ALL_MATRIX",false,"MATERIAL_MECHANICS",true); CHKERRQ(ierr);
+  ierr = mField.compose_problem("C_ALL_MATRIX","CCT_ALL_MATRIX",false,problem,true); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("C_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("C_ALL_MATRIX"); CHKERRQ(ierr);
 
@@ -312,8 +350,8 @@ PetscErrorCode ConfigurationalMechanics_ConstrainsPartitionProblems(moabField& m
 
 PetscErrorCode ConfigurationalMechanics_SetPhysicalPositions(moabField& mField) {
   PetscFunctionBegin;
-  if(Material_FirelWall->operator[](3)) PetscFunctionReturn(0);
-  Material_FirelWall->set(3);
+  if(Material_FirelWall->operator[](5)) PetscFunctionReturn(0);
+  Material_FirelWall->set(5);
 
   ErrorCode rval;
 
@@ -335,8 +373,9 @@ PetscErrorCode ConfigurationalMechanics_SetPhysicalPositions(moabField& mField) 
 }
 PetscErrorCode ConfigurationalMechanics_SetMaterialPositions(moabField& mField) {
   PetscFunctionBegin;
-  if(Material_FirelWall->operator[](4)) PetscFunctionReturn(0);
-  Material_FirelWall->set(4);
+
+  if(Material_FirelWall->operator[](6)) PetscFunctionReturn(0);
+  Material_FirelWall->set(6);
 
   ErrorCode rval;
 
