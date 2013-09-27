@@ -66,14 +66,18 @@ int main(int argc, char *argv[]) {
 
   ierr = ConfigurationalMechanics_PhysicalProblemDefinition(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_MaterialProblemDefinition(mField); CHKERRQ(ierr);
+  ierr = ConfigurationalMechanics_CoupledProblemDefinition(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_ConstrainsProblemDefinition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
+  //add finite elements entities
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
-
+  ierr = mField.modify_problem_ref_level_add_bit("COUPLED_PROBLEM",bit_level0); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
@@ -88,21 +92,20 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition problems
-  ierr = ConfigurationalMechanics_PhysicalPartitionProblems(mField); CHKERRQ(ierr);
-  ierr = ConfigurationalMechanics_MaterialPartitionProblems(mField); CHKERRQ(ierr);
-  ierr = ConfigurationalMechanics_ConstrainsPartitionProblems(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = ConfigurationalMechanics_ConstrainsPartitionProblems(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
-  //caculate material forces
+  //solve material problem
   ierr = ConfigurationalMechanics_SetMaterialPositions(mField); CHKERRQ(ierr);
+  ierr = ConfigurationalMechanics_SolveMaterialProblem(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_CalculateMaterialForces(mField); CHKERRQ(ierr);
   ierr = ConfigurationalMechanics_ProcectForceVector(mField); CHKERRQ(ierr);
 
-  rval = moab.write_file("out_material.h5m"); CHKERR_PETSC(rval);
+  rval = moab.write_file("out_material_coupled.h5m"); CHKERR_PETSC(rval);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+    ierr = mField.problem_get_FE("MATERIAL_MECHANICS","MATERIAL",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }

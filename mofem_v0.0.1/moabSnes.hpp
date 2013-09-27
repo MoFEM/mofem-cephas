@@ -42,6 +42,12 @@ struct moabSnesCtx {
   loops_to_do_type loops_to_do_Mat;
   loops_to_do_type loops_to_do_Rhs;
 
+  typedef vector<moabField::BasicMethod*> basic_method_to_do;
+  basic_method_to_do preProcess_Mat;
+  basic_method_to_do postProcess_Mat;
+  basic_method_to_do preProcess_Rhs;
+  basic_method_to_do postProcess_Rhs;
+
   PetscLogEvent USER_EVENT_SnesRhs;
   PetscLogEvent USER_EVENT_SnesMat;
 
@@ -55,6 +61,10 @@ struct moabSnesCtx {
   const Interface& get_moab() const { return moab; }
   loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
   loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
+  basic_method_to_do& get_preProcess_to_do_Rhs() { return preProcess_Rhs; }
+  basic_method_to_do& get_postProcess_to_do_Rhs() { return postProcess_Rhs; }
+  basic_method_to_do& get_preProcess_to_do_Mat() { return preProcess_Mat; }
+  basic_method_to_do& get_postProcess_to_do_Mat() { return postProcess_Mat; }
 
   friend PetscErrorCode SnesFunc(SNES snes,Vec x,Vec f,moabSnesCtx *);
   friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ctx);
@@ -72,16 +82,34 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
   ierr = VecZeroEntries(f); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  moabSnesCtx::basic_method_to_do::iterator bit = snes_ctx->preProcess_Rhs.begin();
+  for(;bit!=snes_ctx->preProcess_Rhs.end();bit++) {
+    ierr = (*bit)->set_snes(snes); CHKERRQ(ierr);
+    (*bit)->snes_x = x;
+    (*bit)->snes_f = f;
+    ierr = (*bit)->set_snes_ctx(moabField::SnesMethod::ctx_SNESSetFunction);  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.problem_basic_method(snes_ctx->problem_name,*(*(bit)));  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(moabField::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
+  }
   moabSnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Rhs.begin();
   for(;lit!=snes_ctx->loops_to_do_Rhs.end();lit++) {
-    ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESSetFunction);
+    ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESSetFunction);  CHKERRQ(ierr);
     ierr = lit->second->set_snes(snes); CHKERRQ(ierr);
     lit->second->snes_x = x;
     lit->second->snes_f = f;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Rhs: %s\n",lit->first.c_str());
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
-    ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESNone);
+    ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
+  }
+  bit = snes_ctx->postProcess_Rhs.begin();
+  for(;bit!=snes_ctx->postProcess_Rhs.end();bit++) {
+    ierr = (*bit)->set_snes(snes); CHKERRQ(ierr);
+    (*bit)->snes_x = x;
+    (*bit)->snes_f = f;
+    ierr = (*bit)->set_snes_ctx(moabField::SnesMethod::ctx_SNESSetFunction);  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.problem_basic_method(snes_ctx->problem_name,*(*(bit)));  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(moabField::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
   }
   ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -96,6 +124,17 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ct
   moabSnesCtx* snes_ctx = (moabSnesCtx*)ctx;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
   ierr = MatZeroEntries(*B); CHKERRQ(ierr);
+  moabSnesCtx::basic_method_to_do::iterator bit = snes_ctx->preProcess_Mat.begin();
+  for(;bit!=snes_ctx->preProcess_Mat.end();bit++) {
+    ierr = (*bit)->set_snes(snes); CHKERRQ(ierr);
+    (*bit)->snes_x = x;
+    (*bit)->snes_A = A;
+    (*bit)->snes_B = B;
+    (*bit)->snes_flag = flag;
+    ierr = (*bit)->set_snes_ctx(moabField::SnesMethod::ctx_SNESSetFunction);  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.problem_basic_method(snes_ctx->problem_name,*(*(bit)));  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(moabField::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
+  }
   moabSnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Mat.begin();
   for(;lit!=snes_ctx->loops_to_do_Mat.end();lit++) {
     ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESSetJacobian);
@@ -108,6 +147,17 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ct
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
     ierr = lit->second->set_snes_ctx(moabField::SnesMethod::ctx_SNESNone);
+  }
+  bit = snes_ctx->postProcess_Mat.begin();
+  for(;bit!=snes_ctx->postProcess_Mat.end();bit++) {
+    ierr = (*bit)->set_snes(snes); CHKERRQ(ierr);
+    (*bit)->snes_x = x;
+    (*bit)->snes_A = A;
+    (*bit)->snes_B = B;
+    (*bit)->snes_flag = flag;
+    ierr = (*bit)->set_snes_ctx(moabField::SnesMethod::ctx_SNESSetFunction);  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.problem_basic_method(snes_ctx->problem_name,*(*(bit)));  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(moabField::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
   }
   ierr = MatAssemblyBegin(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

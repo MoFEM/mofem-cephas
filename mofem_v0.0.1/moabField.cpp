@@ -51,11 +51,16 @@ PetscErrorCode moabField::TSMethod::set_ts(TS _ts) {
 }
 //BasicMethod
 moabField::BasicMethod::BasicMethod():
-  moabfields(NULL),ents_moabfield(NULL),dofs_moabfield(NULL),
+  problem_ptr(NULL),moabfields(NULL),ents_moabfield(NULL),dofs_moabfield(NULL),
   finite_elements(NULL),finite_elements_moabents(NULL),fem_adjacencies(NULL) {};
-
+PetscErrorCode moabField::BasicMethod::set_problem(const MoFEMProblem *_problem_ptr) {
+  PetscFunctionBegin;
+  if(_problem_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  problem_ptr = _problem_ptr;
+  PetscFunctionReturn(0);
+}
 moabField::FEMethod::FEMethod(): BasicMethod(),
-  problem_ptr(NULL),fe_ptr(NULL),data_multiIndex(NULL),
+  fe_ptr(NULL),data_multiIndex(NULL),
   row_multiIndex(NULL),col_multiIndex(NULL) {}
 
 PetscErrorCode moabField::FEMethod::preProcess() {
@@ -71,12 +76,6 @@ PetscErrorCode moabField::FEMethod::postProcess() {
 PetscErrorCode moabField::FEMethod::operator()() {   
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class (operator)");
-  PetscFunctionReturn(0);
-}
-PetscErrorCode moabField::FEMethod::set_problem(const MoFEMProblem *_problem_ptr) {
-  PetscFunctionBegin;
-  if(_problem_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  problem_ptr = _problem_ptr;
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::FEMethod::set_fe(const NumeredMoFEMFiniteElement *_fe_ptr) {
@@ -139,7 +138,7 @@ PetscErrorCode moabField::BasicMethod::set_fes_data_multiIndex(const EntMoFEMFin
   finite_elements_moabents = _finite_elements_moabents;
   PetscFunctionReturn(0);
 }
-moabField::EntMethod::EntMethod(): BasicMethod(),problem_ptr(NULL),dof_ptr(NULL) {}
+moabField::EntMethod::EntMethod(): BasicMethod(),dof_ptr(NULL) {}
 PetscErrorCode moabField::EntMethod::preProcess() {
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
@@ -153,12 +152,6 @@ PetscErrorCode moabField::EntMethod::postProcess() {
 PetscErrorCode moabField::EntMethod::operator()() {   
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
-  PetscFunctionReturn(0);
-}
-PetscErrorCode moabField::EntMethod::set_problem(const MoFEMProblem *_problem_ptr) {
-  PetscFunctionBegin;
-  if(_problem_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  problem_ptr = _problem_ptr;
   PetscFunctionReturn(0);
 }
 PetscErrorCode moabField::EntMethod::set_dof(const NumeredDofMoFEMEntity *_dof_ptr) {

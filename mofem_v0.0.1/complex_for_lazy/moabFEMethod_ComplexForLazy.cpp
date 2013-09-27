@@ -61,7 +61,7 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(moabField& _mField,BaseDirihlet
   Khh_volumeface_data.resize(4);
   Khh_faceface_data.resize(4,4);
   Khh_edgeface_data.resize(6,4);
-  //
+  //Tangent_hh_hierachical_volume
   Khh_edgevolume_data.resize(6);
   Khh_facevolume_data.resize(4);
   //
@@ -262,7 +262,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   case MBTET: {
     int ee = 0;
     for(;ee<6;ee++) {
-	diff_edgeNinvJac[ee] = &*diffH1edgeNinvJac[ee].begin(); 
+      diff_edgeNinvJac[ee] = &*diffH1edgeNinvJac[ee].begin(); 
     }
     int ff = 0;
     for(;ff<4;ff++) {
@@ -275,62 +275,96 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     int g_dim = get_dim_gNTET();
     if(type_of_analysis&spatail_analysis) {
 	assert(12 == RowGlobSpatial[0].size());
-	KhH.resize(12,12);
 	KHh.resize(12,12);
 	Khh.resize(12,12);
 	ee = 0;
 	for(;ee<6;ee++) {
 	  assert(3*(unsigned int)NBEDGE_H1(order_edges[ee]) == RowGlobSpatial[1+ee].size());
-	  KedgeH_data[ee].resize(12,RowGlobSpatial[1+ee].size(),12);
-	  KedgeH[ee] = &*KedgeH_data[ee].data().begin();
 	  Kedgeh_data[ee].resize(RowGlobSpatial[1+ee].size(),12);
 	  Kedgeh[ee] = &*Kedgeh_data[ee].data().begin();
+	  KHedge_data[ee].resize(12,ColGlobSpatial[1+ee].size());
+	  KHedge[ee] = &*KHedge_data[ee].data().begin();
+	  Khedge_data[ee].resize(12,ColGlobSpatial[1+ee].size());
+	  Khedge[ee] = &*Khedge_data[ee].data().begin();
 	  for(int eee = 0;eee<6;eee++) {
-	    Khh_edgeedge_data(eee,ee).resize(RowGlobSpatial[1+eee].size(),RowGlobSpatial[1+ee].size());
+	    Khh_edgeedge_data(eee,ee).resize(RowGlobSpatial[1+eee].size(),ColGlobSpatial[1+ee].size());
 	    Khh_edgeedge[eee][ee] = &*Khh_edgeedge_data(eee,ee).data().begin();
 	  }
 	  for(int fff = 0;fff<4;fff++) {
-	    Khh_faceedge_data(fff,ee).resize(RowGlobSpatial[1+6+fff].size(),RowGlobSpatial[1+ee].size());
+	    Khh_faceedge_data(fff,ee).resize(RowGlobSpatial[1+6+fff].size(),ColGlobSpatial[1+ee].size());
 	    Khh_faceedge[fff][ee] = &*Khh_faceedge_data(fff,ee).data().begin();
 	  }
-	  Khedge_data[ee].resize(12,RowGlobSpatial[1+ee].size());
-	  Khedge[ee] = &*Khedge_data[ee].data().begin();
-	  KHedge[ee] = &*KHedge_data[ee].data().begin();
-	  Khh_volumeedge_data[ee].resize(RowGlobSpatial[i_volume].size(),RowGlobSpatial[1+ee].size());
+	  Khh_volumeedge_data[ee].resize(RowGlobSpatial[i_volume].size(),ColGlobSpatial[1+ee].size());
 	  Khh_volumeedge[ee] = &*Khh_volumeedge_data[ee].data().begin();
-	  Khh_edgevolume_data[ee].resize(RowGlobSpatial[1+ee].size(),RowGlobSpatial[i_volume].size());
+	  Khh_edgevolume_data[ee].resize(RowGlobSpatial[1+ee].size(),ColGlobSpatial[i_volume].size());
 	  Khh_edgevolume[ee] = &*Khh_edgevolume_data[ee].data().begin();
 	}
 	ff = 0;
 	for(;ff<4;ff++) {
 	  assert(3*(unsigned int)NBFACE_H1(order_faces[ff]) == RowGlobSpatial[1+6+ff].size());
-	  KfaceH_data[ff] = ublas::zero_matrix<double>(RowGlobSpatial[1+6+ff].size(),12);
-	  KfaceH[ff] = &*KfaceH_data[ff].data().begin();
-	  Kfaceh_data[ff] = ublas::zero_matrix<double>(RowGlobSpatial[1+6+ff].size(),12);
+	  Kfaceh_data[ff].resize(RowGlobSpatial[1+6+ff].size(),12);
 	  Kfaceh[ff] = &*Kfaceh_data[ff].data().begin();
-	  Khface_data[ff].resize(12,RowGlobSpatial[1+6+ff].size());
+	  Khface_data[ff].resize(12,ColGlobSpatial[1+6+ff].size());
 	  Khface[ff] = &*Khface_data[ff].data().begin();
+	  KHface_data[ff].resize(12,ColGlobSpatial[1+6+ff].size());
 	  KHface[ff] = &*KHface_data[ff].data().begin();
 	  for(int fff = 0;fff<4;fff++) {
-	    Khh_faceface_data(fff,ff).resize(RowGlobSpatial[1+6+fff].size(),RowGlobSpatial[1+6+ff].size());
+	    Khh_faceface_data(fff,ff).resize(RowGlobSpatial[1+6+fff].size(),ColGlobSpatial[1+6+ff].size());
 	    Khh_faceface[fff][ff] = &*Khh_faceface_data(fff,ff).data().begin();
 	  }
 	  for(int eee = 0;eee<6;eee++) {
-	    Khh_edgeface_data(eee,ff).resize(RowGlobSpatial[1+eee].size(),RowGlobSpatial[1+6+ff].size());
+	    Khh_edgeface_data(eee,ff).resize(RowGlobSpatial[1+eee].size(),ColGlobSpatial[1+6+ff].size());
 	    Khh_edgeface[eee][ff] = &*Khh_edgeface_data(eee,ff).data().begin();
 	  }
-	  //
-	  Khh_volumeface_data[ff].resize(RowGlobSpatial[i_volume].size(),RowGlobSpatial[1+6+ff].size());
+	  Khh_volumeface_data[ff].resize(RowGlobSpatial[i_volume].size(),ColGlobSpatial[1+6+ff].size());
 	  Khh_volumeface[ff] = &*Khh_volumeface_data[ff].data().begin();
-	  Khh_facevolume_data[ff].resize(RowGlobSpatial[1+6+ff].size(),RowGlobSpatial[i_volume].size());
+	  Khh_facevolume_data[ff].resize(RowGlobSpatial[1+6+ff].size(),ColGlobSpatial[i_volume].size());
 	  Khh_facevolume[ff] = &*Khh_facevolume_data[ff].data().begin();
 	}
 	assert(3*(unsigned int)NBVOLUME_H1(order_volume) == RowGlobSpatial[i_volume].size());
-	KvolumeH.resize(RowGlobSpatial[i_volume].size(),12);
-	KHvolume.resize(12,RowGlobSpatial[i_volume].size());
 	Kvolumeh.resize(RowGlobSpatial[i_volume].size(),12);
-	Khvolume.resize(12,RowGlobSpatial[i_volume].size());
-	Khh_volumevolume.resize(RowGlobSpatial[i_volume].size(),RowGlobSpatial[i_volume].size());
+	KHvolume.resize(12,ColGlobSpatial[i_volume].size());
+	Khvolume.resize(12,ColGlobSpatial[i_volume].size());
+	Khh_volumevolume.resize(RowGlobSpatial[i_volume].size(),ColGlobSpatial[i_volume].size());
+    }
+    if(type_of_analysis&material_analysis) {
+      assert(12 == RowGlobMaterial[0].size());
+      KHH.resize(12,12);
+      KhH.resize(12,12);
+      ee = 0;
+      for(;ee<6;ee++) {
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
+	eiit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(spatial_field_name,MBEDGE,ee));
+	if(eiit==data_multiIndex->get<Composite_mi_tag>().end()) {
+	  order_edges[ee] = 0;
+	} else {
+	  order_edges[ee] = eiit->get_max_order();
+	}
+	assert(3*(unsigned int)NBEDGE_H1(order_edges[ee]) == dofs_x_edge_data[ee].size());
+	KedgeH_data[ee].resize(dofs_x_edge_data[ee].size(),12);
+	KedgeH[ee] = &*KedgeH_data[ee].data().begin();
+      }
+      ff = 0;
+      for(;ff<4;ff++) {
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator fiit;
+	fiit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(spatial_field_name,MBTRI,ff));
+	if(fiit==data_multiIndex->get<Composite_mi_tag>().end()) {
+	  order_faces[ff] = 0; 
+	} else {
+	  order_faces[ff] = fiit->get_max_order();
+	}
+	assert(3*(unsigned int)NBFACE_H1(order_faces[ff]) == dofs_x_face_data[ff].size());
+	KfaceH_data[ff].resize(dofs_x_face_data[ff].size(),12);
+	KfaceH[ff] = &*KfaceH_data[ff].data().begin();
+      }
+      FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit;
+      viit = data_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(spatial_field_name,MBTET));
+      if(viit==data_multiIndex->get<Composite_mi_tag2>().end()) {
+	order_volume = 0;
+      } else {
+	order_volume = viit->get_max_order();
+      }
+      KvolumeH.resize(dofs_x_volume.size(),12);
     }
     ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
     unsigned int sub_analysis_type[3] = { spatail_analysis, material_analysis, mesh_quality_analysis };
@@ -340,7 +374,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &*Khh.data().begin(),&*KhH.data().begin(),Kedgeh,Kfaceh,&*Kvolumeh.data().begin(),g_dim,g_TET_W); CHKERRQ(ierr);
+	  &*Khh.data().begin(),&*KHh.data().begin(),Kedgeh,Kfaceh,&*Kvolumeh.data().begin(),
+	  g_dim,g_TET_W); CHKERRQ(ierr);
 	ierr = Tangent_hh_hierachical_edge(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx, 
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
@@ -359,11 +394,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	}
 	break;
 	case material_analysis: {
-	KHH.resize(12,12);
 	ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &*KHH.data().begin(),NULL,NULL,NULL,NULL,g_dim,g_TET_W); CHKERRQ(ierr);
+	  &*KHH.data().begin(),NULL,NULL,NULL,NULL,//&*KhH.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),
+	  g_dim,g_TET_W); CHKERRQ(ierr);
 	}
 	break;
 	case mesh_quality_analysis: {

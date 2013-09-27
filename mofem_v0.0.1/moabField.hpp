@@ -529,6 +529,7 @@ struct moabField {
   struct BasicMethod: public SnesMethod,TSMethod {
     BasicMethod();    
     //
+    PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_moabfields(const MoFEMField_multiIndex *_moabfields);
     PetscErrorCode set_ents_multiIndex(const MoFEMEntity_multiIndex *_ents_moabfield);
     PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
@@ -540,6 +541,7 @@ struct moabField {
     virtual PetscErrorCode operator()() = 0;
     virtual PetscErrorCode postProcess() = 0;
     //
+    const MoFEMProblem *problem_ptr;
     const MoFEMField_multiIndex *moabfields;
     const MoFEMEntity_multiIndex *ents_moabfield;
     const DofMoFEMEntity_multiIndex *dofs_moabfield;
@@ -588,13 +590,11 @@ struct moabField {
      */
     PetscErrorCode postProcess();
     //
-    PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_fe(const NumeredMoFEMFiniteElement *_fe_ptr); 
     PetscErrorCode set_data_multIndex(const FEDofMoFEMEntity_multiIndex *_data_multiIndex);
     PetscErrorCode set_row_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_row_multiIndex);
     PetscErrorCode set_col_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_col_multiIndex);
     string fe_name;
-    const MoFEMProblem *problem_ptr;
     const NumeredMoFEMFiniteElement *fe_ptr;
     const FEDofMoFEMEntity_multiIndex *data_multiIndex;
     const FENumeredDofMoFEMEntity_multiIndex *row_multiIndex;
@@ -723,11 +723,25 @@ struct moabField {
     PetscErrorCode operator()();
     PetscErrorCode postProcess();
     
-    PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_dof(const NumeredDofMoFEMEntity *_dof_ptr);
-    const MoFEMProblem *problem_ptr;
     const NumeredDofMoFEMEntity *dof_ptr;
   };
+
+  /** \brief Set data for BasicMethod 
+    *
+    * This function set data about problem, adjacencies and other MultIindices
+    * in database. This function can be used a special case when user need to
+    * do some pre- and post-processing before matrix or vector is initiated, or
+    * to assemble matrix for group of FEMethods. Is used by calsses classes
+    * moabSnes and moabTs. Look for more details there.
+    *
+    * FIXME: Here we need example
+    *
+    * \param problem_name name of the problem
+    * \param method user method derived from BasicMethod
+    *
+  **/
+  virtual PetscErrorCode problem_basic_method(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements. 
    *
