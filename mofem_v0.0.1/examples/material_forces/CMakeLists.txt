@@ -16,17 +16,21 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(physical_problem physical_problem.cpp)
-target_link_libraries(physical_problem mofem_Field ${PROJECT_LIBS})
+add_library(mofem_configurational_mechanics
+  configurational_mechanics.cpp
+)
+
+add_executable(spatial_problem spatial_problem.cpp)
+target_link_libraries(spatial_problem mofem_Field mofem_configurational_mechanics ${PROJECT_LIBS})
 
 add_executable(material_force material_force.cpp)
-target_link_libraries(material_force mofem_Field ${PROJECT_LIBS})
+target_link_libraries(material_force mofem_Field mofem_configurational_mechanics ${PROJECT_LIBS})
 
 add_executable(material_problem material_problem.cpp)
-target_link_libraries(material_problem mofem_Field ${PROJECT_LIBS})
+target_link_libraries(material_problem mofem_Field mofem_configurational_mechanics ${PROJECT_LIBS})
 
 add_executable(material_coupled material_coupled.cpp)
-target_link_libraries(material_coupled mofem_Field ${PROJECT_LIBS})
+target_link_libraries(material_coupled mofem_Field mofem_configurational_mechanics ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/chees.cub" "/" export_files_material_mechanics)
 
