@@ -1,5 +1,5 @@
 
-Block name:  ELASTIC_1
+Block name:  MAT_ELASTIC_1
 
 Block attributes
 ----------------

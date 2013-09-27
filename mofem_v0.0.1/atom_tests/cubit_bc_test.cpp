@@ -186,7 +186,47 @@ int main(int argc, char *argv[]) {
       ierr = it->print_Cubit_attributes(cout); CHKERRQ(ierr);
       ierr = it->print_Cubit_attributes(myfile); CHKERRQ(ierr);
   }
-    
+  
+        //Get block attributes and assign them as material properties/solution parameters based on the name of each block
+        //This will be eventually moved into a class outside cubit_bc_test
+        
+        //Conventions:
+        //----------------------------------------------------------------------------------------
+        //Materials are defined with block names starting with MAT_ e.g. MAT_ELASTIC_abcd,
+        //MAT_FRACTcdef etc.
+        //Solution procedures are defined with block names starting with SOL_ e.g. SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
+        //----------------------------------------------------------------------------------------
+        
+        //Declare variables for material and solution parameters
+        double YoungModulus; //Young's Modulus
+        double PoissonRatio; //Poisson's ratio
+        
+        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+            {
+                cout << endl << *it << endl;
+                
+                vector<double> attributes;
+                ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
+                
+                //Get block name
+                string name;
+                ierr = it->get_Cubit_name(name); CHKERRQ(ierr);
+                
+                //If the first 11 characters of the block name are 'MAT_ELASTIC', assign attributes as elastic material properties
+                if (name.compare(0,11,"MAT_ELASTIC")==0)
+                {
+                    YoungModulus = attributes[0];
+                    PoissonRatio = attributes[1];
+                    
+                    cout << endl << "Block " << name << " Material Properties" << endl;
+                    cout << endl << "Young's Modulus = " << YoungModulus << endl;
+                    cout << "Poisson's Ratio = " << PoissonRatio << endl << endl;
+                    //Need separate function for printing
+                }
+                //Extend for other materials and solution procedures
+                
+            }
+        
   //Close mesh_file_name.txt
   myfile.close();
 

@@ -18,5 +18,5 @@ cubit.cmd('block 1 attribute index 9 9.9')
 cubit.cmd('block 1 attribute index 10 10.1')
 
 #!Add material name and description
-cubit.cmd('block 1 name "ELASTIC_1" ')
+cubit.cmd('block 1 name "MAT_ELASTIC_1" ')
 cubit.cmd('block 1 description 'Elastic material properties' ')
