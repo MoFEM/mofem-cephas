@@ -866,6 +866,15 @@ PetscErrorCode CubitMeshSets::get_Cubit_name(string& name) const {
   }
   PetscFunctionReturn(0);
 }
+    
+PetscErrorCode CubitMeshSets::print_Cubit_name(ostream& os) const {
+    PetscFunctionBegin;
+    string name;
+    get_Cubit_name(name);
+    os << endl;
+    os << "Block name:  " << name << endl;
+    PetscFunctionReturn(0);
+}
            
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const {
     PetscFunctionBegin;
@@ -938,7 +947,7 @@ PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
     os << "----------------" << endl;
     for(unsigned int ii = 0;ii<attributes.size();ii++)
         {
-            cout << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
+            os << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
         }
     os << endl;
     PetscFunctionReturn(0);

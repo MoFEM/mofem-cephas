@@ -1,4 +1,6 @@
 
+Block name:  ELASTIC_1
+
 Block attributes
 ----------------
 attr. no: 1   value: 1.1

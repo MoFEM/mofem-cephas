@@ -1950,9 +1950,17 @@ struct CubitMeshSets {
   /**
    * \brief get name of block, sideset etc. (this is set in Cubit setting properties) 
    *
-   * \param nam
+   * \param name
    */
   PetscErrorCode get_Cubit_name(string& name) const;
+    
+  /**
+   * \brief print name of block, sideset etc. (this is set in Cubit setting properties)
+   *
+   * e.g. it->print_Cubit_name(cout), i.e. printing to standard output
+   * e.g it->print_Cubit_name(cerr), i.e. printing to standard error output
+   */
+  PetscErrorCode print_Cubit_name(ostream& os) const;
     
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
     
