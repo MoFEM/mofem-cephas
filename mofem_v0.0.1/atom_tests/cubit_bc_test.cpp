@@ -169,24 +169,22 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< BlockSets >>>>>" << endl;
   //BlockSets
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+  {
       cout << endl << *it << endl;
 
+      //Get and print block name
+      string name;
+      ierr = it->get_Cubit_name(name); CHKERRQ(ierr);
+      ierr = it->print_Cubit_name(cout); CHKERRQ(ierr);
+      ierr = it->print_Cubit_name(myfile); CHKERRQ(ierr);
+      
+      
+      //Get and print block attributes
       vector<double> attributes;
       ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
-      
-      //Print data
       ierr = it->print_Cubit_attributes(cout); CHKERRQ(ierr);
-      myfile << endl;
-      myfile << "Block attributes" << endl;
-      myfile << "----------------" << endl;
-      for(unsigned int ii = 0;ii<attributes.size();ii++)
-      {
-          myfile << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
-      }
-      myfile << endl;
-
-      if(attributes.empty()) continue;
+      ierr = it->print_Cubit_attributes(myfile); CHKERRQ(ierr);
   }
     
   //Close mesh_file_name.txt
