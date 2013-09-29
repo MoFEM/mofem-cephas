@@ -404,7 +404,7 @@ PetscErrorCode moabField_Core::map_from_mesh(int verb) {
   rval = moab.get_entities_by_type(0,MBPRISM,prisms,true);  CHKERR_PETSC(rval);
   Range::iterator pit = prisms.begin();
   for(;pit!=prisms.end();pit++) {
-    ierr = add_prism_to_adjacencies_maps_for_prisms(*pit); CHKERRQ(ierr);
+    ierr = add_prism_to_basic_ent_adjacencies(*pit); CHKERRQ(ierr);
   }
   if(verb > 2) {
     list_field();
@@ -1565,8 +1565,8 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_row[ii])!=dofs_moabfield.get<Unique_mi_tag>().end());
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_row[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       if(miit ==ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-      pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit));
-      bool success = adjacencies.modify(p.first,MoFEMAdjacencies_change_by_what(by_row));
+      pair<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(&*miit,&*fit));
+      bool success = adjacencies.modify(p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(by_row));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
     int size_col = fit->tag_col_uids_size/sizeof(UId);
@@ -1579,8 +1579,8 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_col[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
       if(miit ==ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-      pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit));
-      bool success = adjacencies.modify(p.first,MoFEMAdjacencies_change_by_what(by_col));
+      pair<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(&*miit,&*fit));
+      bool success = adjacencies.modify(p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(by_col));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
     int size_data = fit->tag_data_uids_size/sizeof(UId);
@@ -1593,8 +1593,8 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
       assert(dofs_moabfield.get<Unique_mi_tag>().find(uids_data[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       ents_by_uid::iterator miit = ents_moabfield.get<Unique_mi_tag>().find(uid);
       if(miit == ents_moabfield.get<Unique_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-      pair<MoFEMAdjacencies_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMAdjacencies(&*miit,&*fit));
-      bool success = adjacencies.modify(p.first,MoFEMAdjacencies_change_by_what(by_data));
+      pair<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator,bool> p = adjacencies.insert(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(&*miit,&*fit));
+      bool success = adjacencies.modify(p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(by_data));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
   }
@@ -1611,7 +1611,7 @@ PetscErrorCode moabField_Core::build_adjacencies(const BitRefLevel bit) {
 }
 PetscErrorCode moabField_Core::list_adjacencies() const {
   PetscFunctionBegin;
-  MoFEMAdjacencies_multiIndex::iterator miit = adjacencies.begin();
+  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator miit = adjacencies.begin();
   for(;miit!=adjacencies.end();miit++) {
     ostringstream ss;
     ss << *miit << endl;
@@ -1905,9 +1905,9 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
   for(;miit_row!=hi_miit_row;miit_row++) {
     if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->field_ptr->field_ptr->get_unique_id()) ) {
       MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->field_ptr->field_ptr);
-      typedef MoFEMAdjacencies_multiIndex::index<Composite_mi_tag>::type adj_by_ent;
-      adj_by_ent::iterator adj_miit = adjacencies.get<Composite_mi_tag>().lower_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
-      adj_by_ent::iterator hi_adj_miit = adjacencies.get<Composite_mi_tag>().upper_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
+      typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type adj_by_ent;
+      adj_by_ent::iterator adj_miit = adjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
+      adj_by_ent::iterator hi_adj_miit = adjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
       for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	if(!(adj_miit->by_other&by_row)) continue; // if it is not row if element
 	if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
@@ -1934,9 +1934,9 @@ PetscErrorCode moabField_Core::compose_problem(const string &name,const string &
   for(;miit_col!=hi_miit_col;miit_col++) {
     if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_col->field_ptr->field_ptr->get_unique_id()) ) {
       MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_col->field_ptr->field_ptr);
-      typedef MoFEMAdjacencies_multiIndex::index<Composite_mi_tag>::type adj_by_ent;
-      adj_by_ent::iterator adj_miit = adjacencies.get<Composite_mi_tag>().lower_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
-      adj_by_ent::iterator hi_adj_miit = adjacencies.get<Composite_mi_tag>().upper_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
+      typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type adj_by_ent;
+      adj_by_ent::iterator adj_miit = adjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
+      adj_by_ent::iterator hi_adj_miit = adjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
       for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	if(!(adj_miit->by_other&by_col)) continue; // if it is not row if element
 	if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
@@ -2477,12 +2477,12 @@ PetscErrorCode moabField_Core::add_verices_in_the_middel_of_edges(const EntityHa
     }
   }
   // refine edges on the other side of the prism
-  typedef AdjacencyMapForBasicMoFEMEntity_multiIndex::index<MoABEnt_mi_tag2>::type AdjacencyMapForBasicMoFEMEntity_by_adj;
-  AdjacencyMapForBasicMoFEMEntity_by_adj &adjacencies_maps_for_prisms_by_adj = adjacencies_maps_for_prisms.get<MoABEnt_mi_tag2>();
+  typedef BasicMoFEMEntityAdjacenctMap_multiIndex::index<MoABEnt_mi_tag2>::type BasicMoFEMEntityAdjacenctMap_by_adj;
+  BasicMoFEMEntityAdjacenctMap_by_adj &basic_ent_adjacencies_by_adj = basic_ent_adjacencies.get<MoABEnt_mi_tag2>();
   Range::iterator eit = edges.begin();
   for(;eit!=edges.end();eit++) {
-    AdjacencyMapForBasicMoFEMEntity_by_adj::iterator adj_miit = adjacencies_maps_for_prisms_by_adj.find(*eit);
-    if(adj_miit==adjacencies_maps_for_prisms_by_adj.end()) continue;
+    BasicMoFEMEntityAdjacenctMap_by_adj::iterator adj_miit = basic_ent_adjacencies_by_adj.find(*eit);
+    if(adj_miit==basic_ent_adjacencies_by_adj.end()) continue;
     EntityHandle prism = adj_miit->ent;
     RefMoFEMElement_multiIndex::iterator miit2 = refined_mofem_elements.get<MoABEnt_mi_tag>().find(prism);
     SideNumber_multiIndex &side_table = miit2->get_side_number_table();
@@ -2548,9 +2548,9 @@ PetscErrorCode moabField_Core::refine_TET(const EntityHandle meshset,const BitRe
   typedef RefMoFEMElement_multiIndex::index<Composite_mi_tag>::type ref_ent_by_composite;
   ref_ent_by_composite &by_composite = refined_mofem_elements.get<Composite_mi_tag>();
   // find oposite intrface nodes
-  typedef AdjacencyMapForBasicMoFEMEntity_multiIndex::index<EntType_mi_tag>::type AdjPrism_by_type;
-  AdjPrism_by_type::iterator face_prism_miit = adjacencies_maps_for_prisms.get<EntType_mi_tag>().lower_bound(MBTRI);
-  AdjPrism_by_type::iterator hi_face_prism_miit = adjacencies_maps_for_prisms.get<EntType_mi_tag>().upper_bound(MBTRI);
+  typedef BasicMoFEMEntityAdjacenctMap_multiIndex::index<EntType_mi_tag>::type AdjPrism_by_type;
+  AdjPrism_by_type::iterator face_prism_miit = basic_ent_adjacencies.get<EntType_mi_tag>().lower_bound(MBTRI);
+  AdjPrism_by_type::iterator hi_face_prism_miit = basic_ent_adjacencies.get<EntType_mi_tag>().upper_bound(MBTRI);
   map<EntityHandle,EntityHandle> nodes_face_map_for_faces_adj_to_prism_forward;
   map<EntityHandle,EntityHandle> nodes_face_map_for_faces_adj_to_prism_backward;
   for(;face_prism_miit!=hi_face_prism_miit;face_prism_miit++) {
@@ -3008,7 +3008,7 @@ PetscErrorCode moabField_Core::refine_PRISM(const EntityHandle meshset,const Bit
 	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
 	  ref_prism_bit.set(pp);
-	  ierr = add_prism_to_adjacencies_maps_for_prisms(ref_prisms[pp]); CHKERRQ(ierr);
+	  ierr = add_prism_to_basic_ent_adjacencies(ref_prisms[pp]); CHKERRQ(ierr);
 	  if(verb>2) {
 	    ostringstream ss;
 	    ss << "add prism: " << *(p_MoFEMFiniteElement.first->get_RefMoFEMElement()) << endl;
@@ -3794,7 +3794,7 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
 	    //cerr << conn[0] << " " << conn[1] << " " << conn[2] << " ::: " << new_conn[0] << " " << new_conn[1] << " " << new_conn[2] << endl;
 	    EntityHandle prism = no_handle;
 	    rval = moab.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
-	    ierr = add_prism_to_adjacencies_maps_for_prisms(prism,verb/*nb_new_conn < 3 ? 1 : 0*/); CHKERRQ(ierr);
+	    ierr = add_prism_to_basic_ent_adjacencies(prism,verb/*nb_new_conn < 3 ? 1 : 0*/); CHKERRQ(ierr);
 	    rval = moab.add_entities(meshset_for_bit_level,&prism,1); CHKERR_PETSC(rval);
 	  }
 	} break;
@@ -3872,7 +3872,7 @@ PetscErrorCode moabField_Core::get_msId_3dENTS_split_sides(
   rval = moab.delete_entities(&meshset_for_bit_level,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::add_prism_to_adjacencies_maps_for_prisms(const EntityHandle prism,int verb) {
+PetscErrorCode moabField_Core::add_prism_to_basic_ent_adjacencies(const EntityHandle prism,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   vector<EntityHandle> Ents(8,no_handle);

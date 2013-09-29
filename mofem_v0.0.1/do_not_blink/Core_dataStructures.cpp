@@ -653,6 +653,7 @@ EntMoFEMFiniteElement::EntMoFEMFiniteElement(Interface &moab,const RefMoFEMEleme
   interface_MoFEMFiniteElement<MoFEMFiniteElement>(_MoFEMFiniteElement_ptr),interface_RefMoFEMElement<RefMoFEMElement>(_ref_MoFEMFiniteElement) {
   ErrorCode rval;
   EntityHandle ent = get_ent();
+  uid = get_unique_id_calculate();
   rval = moab.tag_get_by_ptr(fe_ptr->th_DofUidRow,&ent,1,(const void **)&tag_row_uids_data,&tag_row_uids_size); 
   if(rval != MB_SUCCESS) tag_row_uids_size = 0;
   rval = moab.tag_get_by_ptr(fe_ptr->th_DofUidCol,&ent,1,(const void **)&tag_row_uids_data,&tag_col_uids_size); 
@@ -717,10 +718,10 @@ PetscErrorCode EntMoFEMFiniteElement::get_uid_side_number(
   PetscFunctionReturn(0);
 }
 
-//MoFEMAdjacencies
-MoFEMAdjacencies::MoFEMAdjacencies(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr):
+//MoFEMEntityEntMoFEMFiniteElementAdjacencyMap
+MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr):
   by_other(0),MoFEMEntity_ptr(_MoFEMEntity_ptr),EntMoFEMFiniteElement_ptr(_EntMoFEMFiniteElement_ptr) {}
-ostream& operator<<(ostream& os,const MoFEMAdjacencies& e) {
+ostream& operator<<(ostream& os,const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap& e) {
   os << "by_other " << bitset<3>(e.by_other) << " "
     << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFiniteElement_ptr->fe_ptr;
   return os;
