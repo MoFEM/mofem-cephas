@@ -98,35 +98,68 @@ PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
   rval = moab.tag_get_by_ptr(th_b,&ent,1,(const void **)&b); CHKERR(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_ComplexForLazy::GetIndices(
-  vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,
-  string &field_name) {
+PetscErrorCode FEMethod_ComplexForLazy::GetIndicesRow(
+  vector<vector<DofIdx> > &RowGlob,string &field_name) {
   PetscFunctionBegin;
   try{
   switch (fe_ent_ptr->get_ent_type()) {
     case MBTET: {
       RowGlob.resize(1+6+4+1);
-      ColGlob.resize(1+6+4+1);
       try {
       //nodes
       ierr = GetRowGlobalIndices(field_name,RowGlob[0]); CHKERRQ(ierr);
-      ierr = GetColGlobalIndices(field_name,ColGlob[0]); CHKERRQ(ierr);
       //edges
       int ee = 0;
       for(;ee<6;ee++) { //edges matrices
 	ierr = GetRowGlobalIndices(field_name,MBEDGE,RowGlob[1+ee],ee); CHKERRQ(ierr);
-	ierr = GetColGlobalIndices(field_name,MBEDGE,ColGlob[1+ee],ee); CHKERRQ(ierr);
       }
       assert(ee == 6);
       //faces
       int ff = 0;
       for(;ff<4;ff++) { //faces matrices
 	ierr = GetRowGlobalIndices(field_name,MBTRI,RowGlob[1+ee+ff],ff); CHKERRQ(ierr);
-	ierr = GetColGlobalIndices(field_name,MBTRI,ColGlob[1+ee+ff],ff); CHKERRQ(ierr);
       }
       assert(ff == 4);
       //volumes
       ierr = GetRowGlobalIndices(field_name,MBTET,RowGlob[1+ee+ff]); CHKERRQ(ierr);
+      } catch (const char* msg) {
+	SETERRQ(PETSC_COMM_SELF,1,msg);
+      } 
+    }
+    break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry.. I don't know what to do");
+  }
+  } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } 
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_ComplexForLazy::GetIndicesCol(
+  vector<vector<DofIdx> > &ColGlob,string &field_name) {
+  PetscFunctionBegin;
+  try{
+  switch (fe_ent_ptr->get_ent_type()) {
+    case MBTET: {
+      ColGlob.resize(1+6+4+1);
+      try {
+      //nodes
+      ierr = GetColGlobalIndices(field_name,ColGlob[0]); CHKERRQ(ierr);
+      //edges
+      int ee = 0;
+      for(;ee<6;ee++) { //edges matrices
+	ierr = GetColGlobalIndices(field_name,MBEDGE,ColGlob[1+ee],ee); CHKERRQ(ierr);
+      }
+      assert(ee == 6);
+      //faces
+      int ff = 0;
+      for(;ff<4;ff++) { //faces matrices
+	ierr = GetColGlobalIndices(field_name,MBTRI,ColGlob[1+ee+ff],ff); CHKERRQ(ierr);
+      }
+      assert(ff == 4);
+      //volumes
       ierr = GetColGlobalIndices(field_name,MBTET,ColGlob[1+ee+ff]); CHKERRQ(ierr);
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -141,6 +174,14 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndices(
       ss << "thorw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_ComplexForLazy::GetIndices(
+  vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,
+  string &field_name) {
+  PetscFunctionBegin;
+  ierr = GetIndicesRow(RowGlob,field_name); CHKERRQ(ierr);
+  ierr = GetIndicesCol(ColGlob,field_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetData(
@@ -397,7 +438,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,lambda,mu,ptr_matctx,
 	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &*KHH.data().begin(),NULL,NULL,NULL,NULL,//&*KhH.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),
+	  &*KHH.data().begin(),&*KhH.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),
 	  g_dim,g_TET_W); CHKERRQ(ierr);
 	}
 	break;

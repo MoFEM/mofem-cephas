@@ -25,6 +25,23 @@ namespace MoFEM {
 
 BaseDirihletBC::BaseDirihletBC() {}
 
+PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(fe_method_ptr);
+    NOT_USED(RowGlobDofs);
+    NOT_USED(DirihletBC);
+    PetscFunctionReturn(0);
+  }
+PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(fe_method_ptr);
+    NOT_USED(ColGlobDofs);
+    PetscFunctionReturn(0);
+  }
 PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndicies(
     moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
@@ -114,6 +131,85 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
       ss << endl;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
+
+    PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(fe_method_ptr,field_name,dit)) {
+      for(int ss = 0;ss<3;ss++) {
+	if(dit->get_dof_rank()!=ss) continue;
+	map<int,Range>::iterator bit = bc_map[ss].begin();
+	for(;bit!=bc_map[ss].end();bit++) {
+	  if(find(bit->second.begin(),bit->second.end(),dit->get_ent())==bit->second.end()) continue;
+	  DirihletBC.push_back(dit->get_petsc_gloabl_dof_idx());
+	  switch (dit->get_ent_type()) {
+	    case MBVERTEX: {
+	      vector<DofIdx>::iterator it = find(RowGlobDofs[0].begin(),RowGlobDofs[0].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlobDofs[0].end() ) *it = -1;
+	    }
+	    break;
+	    case MBEDGE: {
+	      vector<DofIdx>::iterator it = find(
+		RowGlobDofs[1+dit->side_number_ptr->side_number].begin(),
+		RowGlobDofs[1+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlobDofs[1+dit->side_number_ptr->side_number].end() ) *it = -1;
+	    }
+	    break;
+	    case MBTRI: {
+	      vector<DofIdx>::iterator it = find(
+		RowGlobDofs[1+6+dit->side_number_ptr->side_number].begin(),
+		RowGlobDofs[1+6+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlobDofs[1+6+dit->side_number_ptr->side_number].end() ) *it = -1;
+	    }
+	    break;
+	    default:
+	      SETERRQ(PETSC_COMM_SELF,1,"not implemnted (top tip: data inconsistency)");
+	  }
+	}
+      }
+    }
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    for(_IT_GET_FECOL_DOFS_FOR_LOOP_(fe_method_ptr,field_name,dit)) {
+      for(int ss = 0;ss<3;ss++) {
+	if(dit->get_dof_rank()!=ss) continue;
+	map<int,Range>::iterator bit = bc_map[ss].begin();
+	for(;bit!=bc_map[ss].end();bit++) {
+	  if(find(bit->second.begin(),bit->second.end(),dit->get_ent())==bit->second.end()) continue;
+	  switch (dit->get_ent_type()) {
+	    case MBVERTEX: {
+	      vector<DofIdx>::iterator it = find(ColGlobDofs[0].begin(),ColGlobDofs[0].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlobDofs[0].end() ) *it = -1;
+	    }
+	    break;
+	    case MBEDGE: {
+	      vector<DofIdx>::iterator it = find(
+		ColGlobDofs[1+dit->side_number_ptr->side_number].begin(),
+		ColGlobDofs[1+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlobDofs[1+dit->side_number_ptr->side_number].end() ) *it = -1;
+	    }
+	    break;
+	    case MBTRI: {
+	      vector<DofIdx>::iterator it = find(
+		ColGlobDofs[1+6+dit->side_number_ptr->side_number].begin(),
+		ColGlobDofs[1+6+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlobDofs[1+6+dit->side_number_ptr->side_number].end() ) *it = -1;
+	    }
+	    break;
+	    default:
+	      SETERRQ(PETSC_COMM_SELF,1,"not implemnted (top tip: data inconsistency)");
+	  }
+	}
+      }
+    }
     PetscFunctionReturn(0);
 }
 
@@ -121,27 +217,8 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndicies(
     moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
     DirihletBC.resize(0);
-    for(int ss = 0;ss<3;ss++) {
-      map<int,Range>::iterator bit = bc_map[ss].begin();
-      for(;bit!=bc_map[ss].end();bit++) {
-	Range::iterator eit = bit->second.begin();
-	for(;eit!=bit->second.end();eit++) {
-	  for(_IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(fe_method_ptr,field_name,*eit,dit)) {
-	    if(dit->get_dof_rank()!=ss) continue;
-	    // if some ranks are selected then we could apply BC in particular direction
-	    DirihletBC.push_back(dit->get_petsc_gloabl_dof_idx());
-	    for(unsigned int cc = 0;cc<ColGlobDofs.size();cc++) {
-	      vector<DofIdx>::iterator it = find(ColGlobDofs[cc].begin(),ColGlobDofs[cc].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlobDofs[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	    }
-	    for(unsigned int rr = 0;rr<RowGlobDofs.size();rr++) {
-	      vector<DofIdx>::iterator it = find(RowGlobDofs[rr].begin(),RowGlobDofs[rr].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlobDofs[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-	    }
-	  }
-	}
-      }
-    }
+    ierr = SetDirihletBC_to_ElementIndiciesRow(fe_method_ptr,RowGlobDofs,DirihletBC); CHKERRQ(ierr);
+    ierr = SetDirihletBC_to_ElementIndiciesCol(fe_method_ptr,ColGlobDofs,DirihletBC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 

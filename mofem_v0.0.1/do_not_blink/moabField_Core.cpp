@@ -165,7 +165,7 @@ BitFieldId moabField_Core::get_BitFieldId(const string& name) const {
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = moabfields.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
-  if(miit==set.end()) THROW_AT_LINE("field not in databse (top tip: check spelling)");
+  if(miit==set.end()) THROW_AT_LINE("field < "+name+" > not in databse (top tip: check spelling)");
   return miit->get_id();
 }
 string moabField_Core::get_BitFieldId_name(const BitFieldId id) const {
@@ -1018,7 +1018,7 @@ PetscErrorCode moabField_Core::modify_finite_element_add_field_row(const string 
   typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finite_elements_by_name;
   finite_elements_by_name &MoFEMFiniteElement_name_set = finite_elements.get<MoFEMFiniteElement_name_mi_tag>();
   finite_elements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
-  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,1,"this MoFEMFiniteElement is there");
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"this < %s > is nor there",MoFEMFiniteElement_name.c_str());
   try {
     bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_row_change_bit_add(get_BitFieldId(name_row)));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
@@ -1421,6 +1421,7 @@ PetscErrorCode moabField_Core::build_finite_element(const EntMoFEMFiniteElement 
       const BitRefLevel& bit_ref_ent = ref_ent_miit->get_BitRefLevel();
       if(!(bit_ref_MoFEMFiniteElement&bit_ref_ent).any()) {
 	ostringstream ss;
+	ss << "top tip: check if you seed mesh with the elements for bit ref level1" << endl;
 	ss << "inconsitency in database" << " type " << moab.type_from_handle(*eit2) << " bits FE " << bit_ref_MoFEMFiniteElement << " bits ent " << bit_ref_ent;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
@@ -3908,7 +3909,7 @@ PetscErrorCode moabField_Core::add_prism_to_basic_ent_adjacencies(const EntityHa
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField_Core::problem_basic_method(const string &problem_name,BasicMethod &method,int verb) {
+PetscErrorCode moabField_Core::problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
@@ -3928,6 +3929,25 @@ PetscErrorCode moabField_Core::problem_basic_method(const string &problem_name,B
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
   ierr = method.preProcess(); CHKERRQ(ierr);
   PetscLogEventEnd(USER_EVENT_preProcess,0,0,0,0);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode moabField_Core::problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
+  // find p_miit
+  problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
+  problems_by_name::iterator p_miit = problems_set.find(problem_name);
+  if(p_miit == problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem is not in databse %s",problem_name.c_str());
+  // finite element
+  typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
+  ierr = method.set_problem(&*p_miit); CHKERRQ(ierr);
+  ierr = method.set_moabfields(&moabfields); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&ents_moabfield); CHKERRQ(ierr);
+  ierr = method.set_dofs_multiIndex(&dofs_moabfield); CHKERRQ(ierr);
+  ierr = method.set_fes_multiIndex(&finite_elements); CHKERRQ(ierr);
+  ierr = method.set_fes_data_multiIndex(&finite_elements_moabents); CHKERRQ(ierr);
+  ierr = method.set_adjacencies(&adjacencies); CHKERRQ(ierr);
   PetscLogEventBegin(USER_EVENT_postProcess,0,0,0,0);
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscLogEventEnd(USER_EVENT_postProcess,0,0,0,0);

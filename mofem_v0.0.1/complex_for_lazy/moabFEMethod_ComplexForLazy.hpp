@@ -125,6 +125,12 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double* Fint_h_edge[6];
   double* Fint_h_face[4];
 
+  PetscErrorCode GetIndicesRow(
+    vector<vector<DofIdx> >& RowGlob,
+    string &field_name);
+  PetscErrorCode GetIndicesCol(
+    vector<vector<DofIdx> >& ColGlob,
+    string &field_name);
   PetscErrorCode GetIndices(
     vector<vector<DofIdx> >& RowGlob,
     vector<vector<DofIdx> >& ColGlob,

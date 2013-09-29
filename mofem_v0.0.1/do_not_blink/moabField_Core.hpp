@@ -220,7 +220,8 @@ struct moabField_Core: public moabField {
   PetscErrorCode add_prism_to_basic_ent_adjacencies(const EntityHandle prism,int verb = -1);
 
   //loops
-  PetscErrorCode problem_basic_method(const string &problem_name,BasicMethod &method,int verb = -1);
+  PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1);
+  PetscErrorCode problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb = -1);
   PetscErrorCode loop_finite_elements(
     const string &problem_name,const string &fe_name,FEMethod &method,
     int lower_rank,int upper_rank,int verb = -1);

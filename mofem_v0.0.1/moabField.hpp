@@ -741,7 +741,23 @@ struct moabField {
     * \param method user method derived from BasicMethod
     *
   **/
-  virtual PetscErrorCode problem_basic_method(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
+  virtual PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
+
+  /** \brief Set data for BasicMethod 
+    *
+    * This function set data about problem, adjacencies and other MultIindices
+    * in database. This function can be used a special case when user need to
+    * do some pre- and post-processing before matrix or vector is initiated, or
+    * to assemble matrix for group of FEMethods. Is used by calsses classes
+    * moabSnes and moabTs. Look for more details there.
+    *
+    * FIXME: Here we need example
+    *
+    * \param problem_name name of the problem
+    * \param method user method derived from BasicMethod
+    *
+  **/
+  virtual PetscErrorCode problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements. 
    *
