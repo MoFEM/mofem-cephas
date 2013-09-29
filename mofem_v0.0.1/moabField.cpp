@@ -126,7 +126,7 @@ PetscErrorCode moabField::BasicMethod::set_fes_multiIndex(const MoFEMFiniteEleme
   finite_elements = _finite_elements;
   PetscFunctionReturn(0);
 }
-PetscErrorCode moabField::BasicMethod::set_adjacencies(const MoFEMAdjacencies_multiIndex *_fem_adjacencies) {
+PetscErrorCode moabField::BasicMethod::set_adjacencies(const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *_fem_adjacencies) {
   PetscFunctionBegin;
   if(_fem_adjacencies == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
   fem_adjacencies = _fem_adjacencies;
