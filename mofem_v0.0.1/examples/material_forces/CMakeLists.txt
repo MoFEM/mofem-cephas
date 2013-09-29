@@ -33,6 +33,7 @@ add_executable(material_coupled material_coupled.cpp)
 target_link_libraries(material_coupled mofem_configurational_mechanics mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/chees.cub" "/" export_files_material_mechanics)
+cm_export_file("../../meshes/crack1.cub" "/" export_files_material_mechanics)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

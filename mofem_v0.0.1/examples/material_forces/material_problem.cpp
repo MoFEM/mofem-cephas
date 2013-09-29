@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition problems
+  ierr = conf_prob.ConfigurationalMechanics_SpatialPartitionProblems(mField); CHKERRQ(ierr);
   ierr = conf_prob.ConfigurationalMechanics_MaterialPartitionProblems(mField); CHKERRQ(ierr);
   ierr = conf_prob.ConfigurationalMechanics_ConstrainsPartitionProblems(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
 

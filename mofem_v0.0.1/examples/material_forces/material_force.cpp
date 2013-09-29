@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
   //ref meshset ref level 0
   BitRefLevel bit_level0;
-  bit_level0.set(0);
+  bit_level0.set(2);
 
   ierr = conf_prob.ConfigurationalMechanics_SpatialProblemDefinition(mField); CHKERRQ(ierr);
   ierr = conf_prob.ConfigurationalMechanics_MaterialProblemDefinition(mField); CHKERRQ(ierr);

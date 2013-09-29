@@ -458,6 +458,9 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 
+    vector<vector<DofIdx> > dummy1;
+    vector<DofIdx> dummy2;
+
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
@@ -467,7 +470,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData_Material(siit->ent); CHKERRQ(ierr);
 	  ierr = GetFExt_Material(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
-	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices,FaceEdgeIndices_data,FaceIndices); CHKERRQ(ierr);
+	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices_Material,dummy1,dummy2); CHKERRQ(ierr);
 	  ierr = VecSetValues(f,FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),&*FExt_Material.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 	}
       }
@@ -487,6 +490,9 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 
+    vector<vector<DofIdx> > dummy1;
+    vector<DofIdx> dummy2;
+
     switch(snes_ctx) {
       case ctx_SNESSetJacobian:
 	for(;siit!=hi_siit;siit++) {
@@ -494,7 +500,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData_Material(siit->ent); CHKERRQ(ierr);
 	  ierr = GetTangentExt_Material(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
-	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices,FaceEdgeIndices_data,FaceIndices); CHKERRQ(ierr);
+	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices_Material,dummy1,dummy2); CHKERRQ(ierr);
 	  ierr = MatSetValues(B,
 	    FaceNodeIndices.size(),&(FaceNodeIndices_Material[0]),FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),
 	    &*(KExt_HH_Material.data().begin()),ADD_VALUES); CHKERRQ(ierr);
@@ -672,6 +678,9 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
   g_SURFACE_FEMethod *gFE_SURFACE;
   C_CORNER_FEMethod *CFE_CORNER;
   g_CORNER_FEMethod *gFE_CORNER;
+  //CRACK
+  C_SURFACE_FEMethod *CFE_CRACK_SURFACE;
+  g_SURFACE_FEMethod *gFE_CRACK_SURFACE;
 
   PetscErrorCode set_local_VecCreateGhost_for_ConstrainsProblem(Vec x) {
     PetscFunctionBegin;
@@ -709,17 +718,27 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	gFE_SURFACE = new g_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.g);
 	CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.C);
 	gFE_CORNER = new g_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.g);
+	//CRACK
+	CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE",0);
+	gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE",0);
 
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
 	ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
 	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",*CFE_CRACK_SURFACE);  CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*CFE_CORNER);  CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+	/*{
+	  MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
+	  std::string wait;
+	  std::cin >> wait;
+	}*/
 
 	ierr = proj_all_ctx.InitQorP(f); CHKERRQ(ierr);
 	ierr = proj_all_ctx.InitQTKQ(); CHKERRQ(ierr);
@@ -727,11 +746,6 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	//ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
 	//ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
 
-	/*{
-	MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
-	std::string wait;
-	std::cin >> wait;
-	}*/
     }  else {
 	ierr = set_local_VecCreateGhost_for_ConstrainsProblem(x); CHKERRQ(ierr);
     }
@@ -741,6 +755,7 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
     ierr = VecGhostUpdateEnd(proj_all_ctx.g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*gFE_SURFACE);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",*gFE_CRACK_SURFACE);  CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(proj_all_ctx.g,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(proj_all_ctx.g,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);

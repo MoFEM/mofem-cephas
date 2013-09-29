@@ -956,7 +956,7 @@ PetscErrorCode moabField_Core::add_finite_element(const string &MoFEMFiniteEleme
   typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finite_elements_by_name;
   finite_elements_by_name &MoFEMFiniteElement_name_set = finite_elements.get<MoFEMFiniteElement_name_mi_tag>();
   finite_elements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
-  if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,1,"this MoFEMFiniteElement is there");
+  if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"this < %s > is there",MoFEMFiniteElement_name.c_str());
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
   //id

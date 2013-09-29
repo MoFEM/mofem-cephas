@@ -43,18 +43,27 @@ void C_SURFACE_FEMethod::run_in_constructor() {
     fill(&def_VAL[0],&def_VAL[3*9],0);
     rval = moab.tag_get_handle("MATERIAL_NORMAL",3,MB_TYPE_DOUBLE,th_material_normal,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
   }
-  
+ 
+C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,string _lambda_field_name,int _verbose): 
+    FEMethod(),moab(_moab),C(_C),lambda_field_name(_lambda_field_name) {
+    run_in_constructor();
+    rval = moab.get_entities_by_type(skin_faces_meshset,MBTRI,skin_faces,true);  CHKERR_THROW(rval);
+  }
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),C(_C) {
+    FEMethod(),moab(_moab),C(_C),lambda_field_name("LAMBDA_SURFACE") {
     run_in_constructor();
     rval = moab.get_entities_by_type(skin_faces_meshset,MBTRI,skin_faces,true);  CHKERR_THROW(rval);
   }
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),C(_C),skin_faces(_skin_faces) {
+    FEMethod(),moab(_moab),C(_C),skin_faces(_skin_faces),lambda_field_name("LAMBDA_SURFACE") {
+    run_in_constructor();
+  }
+C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Mat _C,string _lambda_field_name,int _verbose): 
+    FEMethod(),moab(_moab),C(_C),skin_faces(_skin_faces),lambda_field_name(_lambda_field_name) {
     run_in_constructor();
   }
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),C(_C) {} 
+    FEMethod(),moab(_moab),C(_C),lambda_field_name("LAMBDA_SURFACE") {} 
 
 PetscErrorCode C_SURFACE_FEMethod::Integrate() {
     PetscFunctionBegin;
@@ -95,12 +104,12 @@ PetscErrorCode C_SURFACE_FEMethod::operator()() {
       rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       for(int nn = 0;nn<num_nodes;nn++) {
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
-	dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_SURFACE",conn_face[nn]));
-	hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_SURFACE",conn_face[nn]));
+	dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	if(distance(dit,hi_dit)==0) {
 	  ent_global_row_indices[nn] = -1;
 	} else {
-	  if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_SURFACE should be 1");
+	  if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	  int global_idx = dit->get_petsc_gloabl_dof_idx();
 	  ent_global_row_indices[nn] = global_idx;
 	  int local_idx = dit->get_petsc_local_dof_idx();
@@ -134,6 +143,21 @@ PetscErrorCode C_SURFACE_FEMethod::operator()() {
       //cerr << ent_dofs_data << "\n" << coords << endl << endl;
       ent_normal_map *= siit->sense;
       ent_normal_map0 *= siit->sense;
+      /*
+      const EntityHandle* conn_tet; 
+      rval = moab.get_connectivity(fe_ptr->get_ent(),conn_tet,num_nodes,true); CHKERR_PETSC(rval);
+      ublas::vector<double> coords_tet(3*num_nodes);
+      rval = moab.get_coords(conn_tet,num_nodes,&*coords_tet.data().begin()); CHKERR_PETSC(rval);
+      for(int nn = 0; nn < num_nodes; nn++) {
+	if(find(&conn_face[0],&conn_face[3],conn_tet[nn])==(&conn_face[3])) {
+	  double diff_coord[3];
+	  cblas_dcopy(3,&coords[0],1,diff_coord,1);
+	  cblas_daxpy(3,-1,&coords_tet.data()[3*nn],1,diff_coord,1);
+	  double dot = cblas_ddot(3,diff_coord,1,&ent_normal_map0.data()[0],1);
+	  cerr << dot << endl;
+	  break;
+	}
+      }*/
       if(debug_constrains) {
 	const EntityHandle* conn_tet; 
 	int num_nodes; 
@@ -162,8 +186,16 @@ PetscErrorCode C_SURFACE_FEMethod::postProcess() {
   PetscFunctionReturn(0);
 }
 
+g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Vec _g,string _lambda_field_name,int _verbose): 
+    C_SURFACE_FEMethod(_moab,skin_faces,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
+    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+  }
 g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Vec _g,int _verbose): 
     C_SURFACE_FEMethod(_moab,skin_faces,PETSC_NULL,_verbose),g(_g) {
+    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+  }
+g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Vec _g,string _lambda_field_name,int _verbose): 
+    C_SURFACE_FEMethod(_moab,_skin_faces,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
     VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
   }
 g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Vec _g,int _verbose): 
