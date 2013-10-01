@@ -62,10 +62,37 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.ConfigurationalMechanics_SetMaterialFireWall(mField); CHKERRQ(ierr);
 
   //ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
+  ierr = mField.seed_ref_level_3D(0,1); CHKERRQ(ierr);
+  //BitRefLevel bit_level0;
+  //bit_level0.set(0);
+
+  //Interface
+  EntityHandle meshset_interface;
+  ierr = mField.get_msId_meshset(200,SideSet,meshset_interface); CHKERRQ(ierr);
+  ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
+  // stl::bitset see for more details
+  BitRefLevel bit_level_interface;
+  bit_level_interface.set(1);
+  ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,false,true); CHKERRQ(ierr);
+  EntityHandle meshset_level_interface;
+  rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
+  ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
+
+  //add refined ent to cubit meshsets
+  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
+    EntityHandle cubit_meshset = cubit_it->meshset; 
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+  }
+
+  // stl::bitset see for more details
   BitRefLevel bit_level0;
-  bit_level0.set(0);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  bit_level0.set(2);
+  EntityHandle meshset_level0;
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
   ierr = conf_prob.ConfigurationalMechanics_SpatialProblemDefinition(mField); CHKERRQ(ierr);
 

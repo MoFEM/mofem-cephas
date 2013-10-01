@@ -231,10 +231,11 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesFace
     for(;dit!=DirihletBC.end();dit++) {
       vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
       if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
+      if(!FaceEdgeIndices.empty()) {
       for(int ee = 0;ee<3;ee++) {
 	it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
 	if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
-      }
+      }}
       it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
       if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
     }

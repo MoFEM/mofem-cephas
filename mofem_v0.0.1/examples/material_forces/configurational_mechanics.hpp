@@ -29,6 +29,8 @@ struct ConfigurationalMechanics {
   Tag th_MaterialFireWall;
   typedef bitset<16> Material_FirelWall_def;
   Material_FirelWall_def *Material_FirelWall;
+
+  EntityHandle CornersNodesMeshset,SurfacesFacesMeshset,CrackSurfacesFacesMeshset;
   
   PetscErrorCode ConfigurationalMechanics_SetMaterialFireWall(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_SpatialProblemDefinition(moabField& mField); 
