@@ -218,12 +218,18 @@ int main(int argc, char *argv[]) {
                     YoungModulus = attributes[0];
                     PoissonRatio = attributes[1];
                     
+                    //!!!!!!!!!!If number of attributes < than required output error
+                    
                     cout << endl << "Block " << name << " Material Properties" << endl;
                     cout << endl << "Young's Modulus = " << YoungModulus << endl;
                     cout << "Poisson's Ratio = " << PoissonRatio << endl << endl;
                     //Need separate function for printing
                 }
                 //Extend for other materials and solution procedures
+                
+                //TEST
+                mat_elastic mydata;
+                ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
                 
             }
         

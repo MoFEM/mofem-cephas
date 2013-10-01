@@ -826,6 +826,7 @@ PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &mo
   }
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
   PetscFunctionBegin;
   bc_data.resize(tag_bc_size);
@@ -1114,5 +1115,12 @@ ostream& operator<<(ostream& os,const interface_cubit_bc_data& e) {
     os << "This sideset is associated with an interface" << "\n \n";
     return os;   
 }
+    
+    
+ostream& operator<<(ostream& os,const mat_elastic& e) {
+    os << "\n";
+    os << "XXXXXXXXXXXXX \n \n";
+}
+
 
 }

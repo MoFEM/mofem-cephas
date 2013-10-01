@@ -1548,7 +1548,51 @@ enum Cubit_BC {
   TemperatureSet = 1<<9,
   HeatfluxSet = 1<<10,
   InterfaceSet = 1<<11,
+  mat_elasticSet = 1<<12,
   LastSet
+};
+
+/*! \struct generic_attribute_data
+ *  \brief Generic attribute data structure
+ */
+struct generic_attribute_data {
+    PetscErrorCode ierr;
+    
+    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+        PetscFunctionBegin;
+        SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
+        PetscFunctionReturn(0);
+    }
+    
+};
+
+/*! \struct mat_elastic
+ *  \brief Elastic material data structure
+ */
+struct mat_elastic: public generic_attribute_data {
+    struct __attribute__ ((packed)) _data_{
+        //char name; // Material (Block) name
+        double Young; // Young's Modulus
+        double Poisson; // Poisson's ratio
+    };
+    
+    _data_ data;
+    
+    const Cubit_BC_bitset type;
+    mat_elastic(): type(mat_elasticSet) {};
+    
+    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+        PetscFunctionBegin;
+        //Fill data
+        if(attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+        memcpy(&data, &attributes[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+    
+    /*! \brief Print mat_elastic data
+     */
+    friend ostream& operator<<(ostream& os,const mat_elastic& e);
+    
 };
 
 /*! \struct generic_cubit_bc_data
@@ -1931,7 +1975,7 @@ struct CubitMeshSets {
     ierr = data.fill_data(bc_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-  
+    
   /**
    * \brief get Cubit block attributes
    *
@@ -1961,6 +2005,19 @@ struct CubitMeshSets {
    * e.g it->print_Cubit_name(cerr), i.e. printing to standard error output
    */
   PetscErrorCode print_Cubit_name(ostream& os) const;
+    
+template<class _ATTRIBUTE_TYPE_>
+PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    //    if((CubitBCType&data.type).none()) {
+    //        SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
+    //    }
+    vector<double> attributes;
+    get_Cubit_attributes(attributes);
+    ierr = data.fill_data(attributes); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
     
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
     
