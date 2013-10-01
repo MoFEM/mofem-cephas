@@ -126,10 +126,10 @@ struct moabField_Core: public moabField {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode printDisplacementSet() {
+  PetscErrorCode printCubitDisplacementSet() {
     PetscFunctionBegin;
     displacement_cubit_bc_data mydata;
-    ierr = printCubitSet<displacement_cubit_bc_data>(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
+    ierr = printCubitSet(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   

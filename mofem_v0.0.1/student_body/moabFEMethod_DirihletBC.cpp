@@ -101,18 +101,18 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
       for(int dim = 0;dim<3;dim++) {
 	Range _ents;
 	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,_ents,true); CHKERRQ(ierr);
-	ss << "dim  = " << dim << " nb. ents " << _ents.size() << endl;
+	//ss << "dim  = " << dim << " nb. ents " << _ents.size() << endl;
 	if(dim>1) {
 	  Range _edges;
 	  ierr = mField.get_moab().get_adjacencies(_ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
 	  _ents.insert(_edges.begin(),_edges.end());
-	  ss << "dim  = " << dim << " nb. edges " << _edges.size() << endl;
+	  //ss << "dim  = " << dim << " nb. edges " << _edges.size() << endl;
 	}
 	if(dim>0) {
 	  Range _nodes;
 	  rval = mField.get_moab().get_connectivity(_ents,_nodes,true); CHKERR_PETSC(rval);
 	  _ents.insert(_nodes.begin(),_nodes.end());
-	  ss << "dim  = " << dim << " nb. nodes " << _nodes.size() << endl;
+	  //ss << "dim  = " << dim << " nb. nodes " << _nodes.size() << endl;
 	}
 	if(dim>2) SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
 	if(mydata.data.flag1 == 1) {
@@ -128,8 +128,8 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
 	  (bc_map_val[2])[it->get_msId()] = mydata.data.value3;
 	}
       }
-      ss << endl;
-      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      //ss << endl;
+      //PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
 
     PetscFunctionReturn(0);

@@ -206,7 +206,7 @@ struct moabField {
     moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
     IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
 
-  virtual PetscErrorCode printDisplacementSet() = 0;
+  virtual PetscErrorCode printCubitDisplacementSet() = 0;
   virtual PetscErrorCode printCubitPressureSet() = 0;
   virtual PetscErrorCode printCubitForceSet() = 0;
 

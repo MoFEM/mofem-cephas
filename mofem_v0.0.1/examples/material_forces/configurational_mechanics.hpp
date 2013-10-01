@@ -30,17 +30,19 @@ struct ConfigurationalMechanics {
   typedef bitset<16> Material_FirelWall_def;
   Material_FirelWall_def *Material_FirelWall;
 
-  EntityHandle CornersNodesMeshset,SurfacesFacesMeshset,CrackSurfacesFacesMeshset;
+  EntityHandle CornersNodesMeshset,SurfacesFacesMeshset,CrackSurfacesFacesMeshset,CrackForntMeshset;
   
   PetscErrorCode ConfigurationalMechanics_SetMaterialFireWall(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_SpatialProblemDefinition(moabField& mField); 
   PetscErrorCode ConfigurationalMechanics_MaterialProblemDefinition(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_CoupledProblemDefinition(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_ConstrainsProblemDefinition(moabField& mField);
+  PetscErrorCode ConfigurationalMechanics_ConstrainsCrackFrontProblemDefinition(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_SpatialPartitionProblems(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_MaterialPartitionProblems(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_CoupledPartitionProblems(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_ConstrainsPartitionProblems(moabField& mField,string problem);
+  PetscErrorCode ConfigurationalMechanics_CrackFrontPartitionProblems(moabField& mField,string problem);
   PetscErrorCode ConfigurationalMechanics_SetSpatialPositions(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_SetMaterialPositions(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_SolveSpatialProblem(moabField& mField);
@@ -48,6 +50,7 @@ struct ConfigurationalMechanics {
   PetscErrorCode ConfigurationalMechanics_CalculateSpatialResidual(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_CalculateMaterialForces(moabField& mField,string problem);
   PetscErrorCode ConfigurationalMechanics_ProjectForceVector(moabField& mField,string problem);
+  PetscErrorCode ConfigurationalMechanics_GriffithForceVector(moabField& mField);
   PetscErrorCode ConfigurationalMechanics_SolveCoupledProblem(moabField& mField);
 
 };
