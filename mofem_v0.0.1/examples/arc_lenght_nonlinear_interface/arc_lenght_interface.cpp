@@ -267,9 +267,51 @@ int main(int argc, char *argv[]) {
   const double ft = 1;
   const double Gf = 1;
 
+  struct MyArcLenghtIntElemFEMethod: public ArcLenghtIntElemFEMethod {
+    Range PostProcNodes;
+    MyArcLenghtIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
+      ArcLenghtCtx *_arc_ptr): ArcLenghtIntElemFEMethod(_moab,_Aij,_F,_D,_arc_ptr) {
+
+      Range all_nodes;
+      rval = moab.get_entities_by_type(0,MBVERTEX,all_nodes,true); CHKERR_THROW(rval);
+      for(Range::iterator nit = all_nodes.begin();nit!=all_nodes.end();nit++) {
+	double coords[3];
+	rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
+	if(fabs(coords[0]-5)<1e-6) {
+	  PostProcNodes.insert(*nit);
+	}
+      }
+      PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",PostProcNodes.size());
+
+    };
+
+    PetscErrorCode potsProcessLoadPath() {
+      PetscFunctionBegin;
+      NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+      NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
+      lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
+      if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
+      Range::iterator nit = PostProcNodes.begin();
+      for(;nit!=PostProcNodes.end();nit++) {
+	NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
+	dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
+	hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+	double coords[3];
+	rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
+	for(;dit!=hi_dit;dit++) {
+	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
+	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+	  PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
+	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
   ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
-  ArcLenghtIntElemFEMethod* MyArcMethod_ptr = new ArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
-  ArcLenghtIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
+  MyArcLenghtIntElemFEMethod* MyArcMethod_ptr = new MyArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
+  MyArcLenghtIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
 
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
