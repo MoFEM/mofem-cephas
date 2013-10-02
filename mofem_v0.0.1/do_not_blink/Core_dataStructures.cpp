@@ -1117,10 +1117,12 @@ ostream& operator<<(ostream& os,const interface_cubit_bc_data& e) {
 }
     
     
-ostream& operator<<(ostream& os,const mat_elastic& e) {
-    os << "\n";
-    os << "XXXXXXXXXXXXX \n \n";
-}
+ostream& operator<<(ostream& os,const mat_elastic& e)
+    {
+        os << endl << " Material Properties" << endl;
+        os << endl << "Young's Modulus = " << e.data.Young << endl;
+        os << "Poisson's Ratio = " << e.data.Poisson << endl << endl;
+    }
 
 
 }
