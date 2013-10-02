@@ -94,10 +94,10 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
     PetscFunctionBegin;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
       ostringstream ss;
-      ss << *it << endl;
+      //ss << *it << endl;
       displacement_cubit_bc_data mydata;
       ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-      ss << mydata;
+      //ss << mydata;
       for(int dim = 0;dim<3;dim++) {
 	Range _ents;
 	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,_ents,true); CHKERRQ(ierr);

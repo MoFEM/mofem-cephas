@@ -108,6 +108,45 @@ struct moabField_Core: public moabField {
     return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(CubitBCType); 
   }
 
+  template<class _CUBIT_BC_DATA_TYPE_>
+  PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) {
+    PetscFunctionBegin;
+    try {
+      moabField& this_mField = *this;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,type,it)) {
+	ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+	ostringstream ss;
+	ss << *it << endl;
+	ss << data;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
+    } catch (const char* msg) {
+      SETERRQ(PETSC_COMM_SELF,1,msg);
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode printDisplacementSet() {
+    PetscFunctionBegin;
+    displacement_cubit_bc_data mydata;
+    ierr = printCubitSet<displacement_cubit_bc_data>(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  
+  PetscErrorCode printCubitPressureSet() {
+    PetscFunctionBegin;
+    pressure_cubit_bc_data mydata;
+    ierr = printCubitSet(mydata,SideSet|mydata.type.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode printCubitForceSet() {
+    PetscFunctionBegin;
+    force_cubit_bc_data mydata;
+    ierr = printCubitSet(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   //refine
   PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit);
   PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit);
