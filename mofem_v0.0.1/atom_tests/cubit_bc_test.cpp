@@ -188,7 +188,6 @@ int main(int argc, char *argv[]) {
   }
   
         //Get block attributes and assign them as material properties/solution parameters based on the name of each block
-        //This will be eventually moved into a class outside cubit_bc_test
         
         //Conventions:
         //----------------------------------------------------------------------------------------
@@ -196,10 +195,6 @@ int main(int argc, char *argv[]) {
         //MAT_FRACTcdef etc.
         //Solution procedures are defined with block names starting with SOL_ e.g. SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
         //----------------------------------------------------------------------------------------
-        
-        //Declare variables for material and solution parameters
-//        double YoungModulus; //Young's Modulus
-//        double PoissonRatio; //Poisson's ratio
         
         for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
             {
