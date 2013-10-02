@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
                 {
                     
                 }
-                //For now keep the following line commented not to affect previous atom tests
+                //For now keep the following line commented not to affect other atom tests
                 //else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
             }
         
