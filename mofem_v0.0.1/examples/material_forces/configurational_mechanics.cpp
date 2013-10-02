@@ -26,6 +26,7 @@
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 #include "moabFEMethod_DriverComplexForLazy.hpp"
+#include "moabFEMethod_ComplexConstArea.hpp"
 
 using namespace MoFEM;
 
@@ -383,6 +384,7 @@ PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_ConstrainsProb
     Range SurfacesTets;
     Interface& moab = mField.get_moab();
     rval = moab.get_adjacencies(SurfacesFaces,3,false,SurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
+    SurfacesTets = SurfacesTets.subset_by_type(MBTET);
     Range CrackSurfacesTets;
     rval = moab.get_adjacencies(CrackSurfacesFaces,3,false,CrackSurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
     CrackSurfacesTets = CrackSurfacesTets.subset_by_type(MBTET);
@@ -398,6 +400,7 @@ PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_ConstrainsProb
       //add surface elements
       Range CornersTets;
       rval = moab.get_adjacencies(CornersNodes,3,false,CornersTets,Interface::UNION); CHKERR_PETSC(rval);
+      CornersTets = CornersTets.subset_by_type(MBTET);
       EntityHandle CornersTetsMeshset;
       rval = moab.create_meshset(MESHSET_SET,CornersTetsMeshset); CHKERR_PETSC(rval);	
       rval = moab.add_entities(CornersTetsMeshset,CornersTets); CHKERR_PETSC(rval);
@@ -471,6 +474,71 @@ PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_ConstrainsProb
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_ConstrainsCrackFrontProblemDefinition(moabField& mField) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+  ErrorCode rval;
+
+  //Fields
+  ierr = mField.add_field("LAMBDA_CRACKFRONT_AREA",H1,1); CHKERRQ(ierr);
+
+  //FE
+  ierr = mField.add_finite_element("C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+
+  ierr = mField.modify_finite_element_add_field_row("C_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("C_CRACKFRONT_AREA_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("C_CRACKFRONT_AREA_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("C_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
+
+  ierr = mField.modify_finite_element_add_field_row("CTC_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("CTC_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CTC_CRACKFRONT_AREA_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CTC_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
+
+  //Problem
+  ierr = mField.add_problem("C_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.add_problem("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("CTC_CRACKFRONT_MATRIX","CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+
+  //add tets
+  {
+    Range CrackSurfacesFaces,CrackFrontEdges;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,CrackFrontEdges,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Crack SideSet 200 = %d\n",CrackSurfacesFaces.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Crack SideSet 201 = %d\n",CrackFrontEdges.size()); CHKERRQ(ierr);
+    Range CrackFrontNodes;
+    rval = mField.get_moab().get_connectivity(CrackFrontEdges,CrackFrontNodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().create_meshset(MESHSET_SET,CrackForntMeshset); CHKERR_PETSC(rval);
+    rval = mField.get_moab().add_entities(CrackForntMeshset,CrackFrontNodes); CHKERR_PETSC(rval);
+    Range CrackSurfacesEdgeFaces;
+    rval = mField.get_moab().get_adjacencies(CrackFrontNodes,2,false,CrackSurfacesEdgeFaces,Interface::UNION); CHKERR_PETSC(rval);
+    CrackSurfacesEdgeFaces = CrackSurfacesEdgeFaces.subset_by_type(MBTRI);
+    CrackSurfacesEdgeFaces = intersect(CrackSurfacesEdgeFaces,CrackSurfacesFaces);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of CrackEdgeFaces = %d\n",CrackSurfacesFaces.size()); CHKERRQ(ierr);
+    Range FrontSurfacesTets;   
+    rval = mField.get_moab().get_adjacencies(CrackSurfacesEdgeFaces,3,false,FrontSurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
+    FrontSurfacesTets = FrontSurfacesTets.subset_by_type(MBTET);
+    EntityHandle SurfacesTetsMeshset;
+    rval = mField.get_moab().create_meshset(MESHSET_SET,SurfacesTetsMeshset); CHKERR_PETSC(rval);	
+    rval = mField.get_moab().add_entities(SurfacesTetsMeshset,FrontSurfacesTets); CHKERR_PETSC(rval);
+    //rval = mField.get_moab().write_file("tets.vtk","VTK","",&SurfacesTetsMeshset,1); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    rval = mField.get_moab().delete_entities(&SurfacesTetsMeshset,1); CHKERR_PETSC(rval);
+  }
+
+  //add entitities (by tets) to the field
+  ierr = mField.add_ents_to_field_by_VERTICEs(CrackForntMeshset,"LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
+
+  //NOTE: always order should be 1
+  ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_CRACKFRONT_AREA",1); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_SpatialPartitionProblems(moabField& mField) {
   PetscFunctionBegin;
@@ -526,6 +594,24 @@ PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_ConstrainsPart
   ierr = mField.partition_ghost_dofs("C_ALL_MATRIX"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
+}
+
+PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_CrackFrontPartitionProblems(moabField& mField,string problem) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+
+  //partition
+  ierr = mField.partition_problem("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
+  //partition
+  ierr = mField.compose_problem("C_CRACKFRONT_MATRIX","CTC_CRACKFRONT_MATRIX",false,problem,true); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("C_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("C_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+
 }
 
 PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_SetSpatialPositions(moabField& mField) {
@@ -688,12 +774,12 @@ PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_ProjectForceVe
   ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  {
+  /*{
     //Matrix View
     MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
     std::string wait;
     std::cin >> wait;
-  }
+  }*/
   
   Vec F_Material;
   ierr = mField.VecCreateGhost(problem,Col,&F_Material); CHKERRQ(ierr);
@@ -725,6 +811,38 @@ PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_ProjectForceVe
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_GriffithForceVector(moabField& mField) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+
+  Mat C;
+  ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C); CHKERRQ(ierr);
+
+  Range CrackSurfacesFaces;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
+
+  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField.get_moab(),CrackSurfacesFaces,C,"LAMBDA_CRACKFRONT_AREA");
+
+  ierr = MatZeroEntries(C); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  {
+    //Matrix View
+    MatView(C,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+    std::string wait;
+    std::cin >> wait;
+  }
+
+ 
+  ierr = MatDestroy(&C); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_SolveMaterialProblem(moabField& mField) {
   PetscFunctionBegin;
@@ -872,7 +990,6 @@ PetscErrorCode ConfigurationalMechanics::ConfigurationalMechanics_CalculateMater
   //for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
     //cerr << *dof << endl;
   //}
-
 
   //detroy matrices
   ierr = VecDestroy(&F_Material); CHKERRQ(ierr);

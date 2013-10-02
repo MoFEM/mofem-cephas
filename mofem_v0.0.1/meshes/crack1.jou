@@ -32,6 +32,9 @@ create Displacement  on vertex 3  dof 3 fix 0
 create pressure  on surface 5  magnitude -1 bottom
 create pressure  on surface 3  magnitude -1 bottom  
 
+#create force  on surface 3  vector 0 -1 0 0 0 0 
+#create force  on surface 5  vector 0 1 0 0 0 0 
+
 volume all scheme Tetmesh
 volume all size auto factor 7
 mesh volume 4 

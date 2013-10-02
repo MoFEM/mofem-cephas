@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
-  ierr = mField.printDisplacementSet(); CHKERRQ(ierr);
+  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
   ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
 
   //create matrices

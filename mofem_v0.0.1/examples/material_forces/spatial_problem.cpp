@@ -57,6 +57,9 @@ int main(int argc, char *argv[]) {
   moabField_Core core(moab);
   moabField& mField = core;
 
+  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
+  ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
+
   ConfigurationalMechanics conf_prob;
 
   ierr = conf_prob.ConfigurationalMechanics_SetMaterialFireWall(mField); CHKERRQ(ierr);
@@ -117,7 +120,9 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.ConfigurationalMechanics_SetSpatialPositions(mField); CHKERRQ(ierr);
   ierr = conf_prob.ConfigurationalMechanics_SolveSpatialProblem(mField); CHKERRQ(ierr);
 
-  rval = moab.write_file("out_spatial.h5m"); CHKERR_PETSC(rval);
+  if(pcomm->rank()==0) {
+    rval = moab.write_file("out_spatial.h5m"); CHKERR_PETSC(rval);
+  }
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
