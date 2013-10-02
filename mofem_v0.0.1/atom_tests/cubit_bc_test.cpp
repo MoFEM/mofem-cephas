@@ -198,35 +198,32 @@ int main(int argc, char *argv[]) {
         //----------------------------------------------------------------------------------------
         
         //Declare variables for material and solution parameters
-        double YoungModulus; //Young's Modulus
-        double PoissonRatio; //Poisson's ratio
+//        double YoungModulus; //Young's Modulus
+//        double PoissonRatio; //Poisson's ratio
         
         for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
             {
                 cout << endl << *it << endl;
                 
-                vector<double> attributes;
-                ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
-                
                 //Get block name
                 string name;
                 ierr = it->get_Cubit_name(name); CHKERRQ(ierr);
-                
-                //If the first 11 characters of the block name are 'MAT_ELASTIC', assign attributes as elastic material properties
+
+                //Elastic material
                 if (name.compare(0,11,"MAT_ELASTIC")==0)
                 {
-                    YoungModulus = attributes[0];
-                    PoissonRatio = attributes[1];
-                    
-                    cout << endl << "Block " << name << " Material Properties" << endl;
-                    cout << endl << "Young's Modulus = " << YoungModulus << endl;
-                    cout << "Poisson's Ratio = " << PoissonRatio << endl << endl;
+                    mat_elastic mydata;
+                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+                    //Print data
+                    cout << mydata;
+                    myfile << mydata;
                 }
-                
-                //TEST
-                mat_elastic mydata;
-                ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-                
+                else if (name.compare(0,11,"MAT_NLELASTIC")==0)
+                {
+                    
+                }
+                //For now keep the following line commented not to affect previous atom tests
+                //else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
             }
         
   //Close mesh_file_name.txt
