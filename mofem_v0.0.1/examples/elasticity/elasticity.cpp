@@ -150,7 +150,6 @@ int main(int argc, char *argv[]) {
 
   //print bcs
   ierr = mField.printDisplacementSet(); CHKERRQ(ierr);
-  ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
   ierr = mField.printCubitForceSet(); CHKERRQ(ierr);
 
   //create matrices
