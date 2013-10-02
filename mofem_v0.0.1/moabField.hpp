@@ -206,6 +206,10 @@ struct moabField {
     moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
     IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
 
+  virtual PetscErrorCode printDisplacementSet() = 0;
+  virtual PetscErrorCode printCubitPressureSet() = 0;
+  virtual PetscErrorCode printCubitForceSet() = 0;
+
   /**
   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
   * 
@@ -229,7 +233,6 @@ struct moabField {
   * ent4[0,1,0,0,0,0,0], ent5[0,1,0,0,0,0,0] <br>
   * 
   */
-
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit) = 0;
 
   /** brief seed ref level by MESHSET that contains entities other than volumes
