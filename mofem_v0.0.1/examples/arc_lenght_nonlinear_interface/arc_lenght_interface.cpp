@@ -96,8 +96,8 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   //Create MoFEM (Joseph) database
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   BitRefLevel bit_level0;
   bit_level0.set(1);
@@ -351,15 +351,15 @@ int main(int argc, char *argv[]) {
   ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
 
   //Rhs
-  moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
-  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+  SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
   //Mat
-  moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
-  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+  SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;

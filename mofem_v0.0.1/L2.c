@@ -26,7 +26,7 @@
 
 PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM) {
   PetscFunctionBegin;
-  int P = NBSURFACE_L2(p);
+  int P = NBFACE_L2(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL01[2],diff_ksiL20[2];
   int dd = 0;

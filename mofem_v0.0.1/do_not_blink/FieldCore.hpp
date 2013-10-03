@@ -1,5 +1,5 @@
-/** \file moabField_Core.hpp
- * \brief Core moabField class for user interface
+/** \file FieldCore.hpp
+ * \brief Core FieldInterface class for user interface
  * 
  * Low level data structures not used directly by user
  *
@@ -21,16 +21,16 @@
 #ifndef __MOABFIELD_CORE_HPP__
 #define __MOABFIELD_CORE_HPP__
 
-#include "moabField.hpp"
-#include "Core_dataStructures.hpp"
+#include "FieldInterface.hpp"
+#include "CoreDataStructures.hpp"
 
 namespace MoFEM {
 
-/** \brief Core moabField class
+/** \brief Core FieldInterface class
  *
  * This class is not used directly by the user
  */
-struct moabField_Core: public moabField {
+struct FieldCore: public FieldInterface {
   ErrorCode rval;
   PetscErrorCode ierr;
   //Data and low level methods 
@@ -84,7 +84,7 @@ struct moabField_Core: public moabField {
   Interface& get_moab();
 
   //check consistency
-  PetscErrorCode check_NumbetOfEnts_in_ents_moabfield(const string& name);
+  PetscErrorCode check_number_of_ents_in_ents_moabfield(const string& name);
 
   //cubit meshsets
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, const int dimension,Range &entities,const bool recursive = false);
@@ -119,7 +119,7 @@ struct moabField_Core: public moabField {
   PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) {
     PetscFunctionBegin;
     try {
-      moabField& this_mField = *this;
+      FieldInterface& this_mField = *this;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,type,it)) {
 	ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
 	ostringstream ss;
@@ -173,6 +173,8 @@ struct moabField_Core: public moabField {
   PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
@@ -229,8 +231,8 @@ struct moabField_Core: public moabField {
   PetscErrorCode list_adjacencies() const;
 
   //problem building
+  PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
-  PetscErrorCode partition_problem_all_dofs_on_proc(const string &name,int proc,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
@@ -275,7 +277,7 @@ struct moabField_Core: public moabField {
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
 
   //get multi_index form database
-  PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr);
+  PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr);
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finite_elements_ptr);
 
@@ -290,8 +292,8 @@ struct moabField_Core: public moabField {
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
 
   //constructor
-  moabField_Core(Interface& _moab,int _verbose = 1);
-  ~moabField_Core();
+  FieldCore(Interface& _moab,int _verbose = 1);
+  ~FieldCore();
 
   //Templates
   template<typename Tag> 

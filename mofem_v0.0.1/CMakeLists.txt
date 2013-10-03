@@ -93,9 +93,9 @@ include_directories("${PROJECT_SOURCE_DIR}/third_party")
 add_library(mofem_Field 
   third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
-  do_not_blink/Core_dataStructures.cpp
-  do_not_blink/Core_moabMeshMBTETRefine.cpp
-  do_not_blink/moabField_Core.cpp
+  do_not_blink/CoreDataStructures.cpp
+  do_not_blink/TETRefine.cpp
+  do_not_blink/FieldCore.cpp
   complex_for_lazy/complex_for_lazy.c
   complex_for_lazy/moabFEMethod_ComplexForLazy.cpp
   student_body/moabFEMethod_LowLevelStudent.cpp
@@ -103,7 +103,7 @@ add_library(mofem_Field
   student_body/moabFEMethod_DirihletBC.cpp
   student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
   student_body/moabFEMethod_SurfaceConstrains.cpp
-  moabField.cpp
+  FieldInterface.cpp
   FEM.c
   H1.c
   L2.c

@@ -20,8 +20,8 @@
 #ifndef __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 #define __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
 
 using namespace MoFEM;
@@ -83,8 +83,8 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
 
       //
-      moabField_Core core_ref(moab_ref);
-      moabField& mField_ref = core_ref;
+      FieldCore core_ref(moab_ref);
+      FieldInterface& mField_ref = core_ref;
       ierr = mField_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
       for(int ll = 0;ll<max_level;ll++) {

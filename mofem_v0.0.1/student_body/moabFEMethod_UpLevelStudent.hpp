@@ -20,8 +20,8 @@
 #ifndef __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 #define __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 
-#include "Core_dataStructures.hpp"
-#include "moabField.hpp"
+#include "CoreDataStructures.hpp"
+#include "FieldInterface.hpp"
 #include "moabFEMethod_LowLevelStudent.hpp"
 #include "moabFEMethod_DirihletBC.hpp"
 

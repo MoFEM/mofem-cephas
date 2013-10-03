@@ -1,5 +1,5 @@
 /** \file FEM.h
- * \brief Core moabField class for user interface
+ * \brief Core FieldInterface class for user interface
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  * MoFEM is free software: you can redistribute it and/or modify it under
