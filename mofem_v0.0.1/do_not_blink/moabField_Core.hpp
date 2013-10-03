@@ -107,6 +107,13 @@ struct moabField_Core: public moabField {
   moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(CubitBCType); 
   }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) { 
+    return cubit_meshsets.get<CubitMeshSets_name>().lower_bound(name); 
+  }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) { 
+    return cubit_meshsets.get<CubitMeshSets_name>().upper_bound(name); 
+  }
+
 
   template<class _CUBIT_BC_DATA_TYPE_>
   PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) {
