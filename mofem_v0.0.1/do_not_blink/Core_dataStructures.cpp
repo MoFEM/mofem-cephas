@@ -796,14 +796,15 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       if(tag_block_header_data[9]>0) CubitBCType |= MaterialSet;
     }
     if(*tit == block_attribs) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR(rval);CHKERR_THROW(rval);
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR(rval); CHKERR_THROW(rval);
       //for(int ii = 0;ii<tag_block_attributes_size;ii++) {
 	//cerr << "RRRRR " << tag_block_attributes[ii] << endl;
       //}
     }
     if(*tit == entityNameTag) {
-      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR_THROW(rval);
-      ierr = get_type_from_Cubit_name(type);  CHKERRQ(ierr);
+        rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR(rval); CHKERR_THROW(rval);
+      PetscErrorCode ierr;
+      ierr = get_type_from_Cubit_name(CubitBCType); if(ierr>0) throw("unrecognised Cubit name type");
     }
   }
 }
@@ -959,15 +960,15 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
     PetscFunctionBegin;
     
     //See Cubit_BC_bitset in common.hpp
-    if (name.compare(0,11,"MAT_ELASTIC") ==0)
+    if (name.compare(0,11,"MAT_ELASTIC") == 0)
         type |= Mat_elasticSet;
-    else if (name.compare(0,11,"MAT_NLELASTIC") ==0)
+    //else if (name.compare(0,11,"MAT_NLELASTIC") == 0)
         //type |= XXXSet;
         //To be extended as appropriate
     //I suggest not using the following error check so that we do not restrict
     //the use of Cubit blocks to materials and solution procedures:
     
-        //else SETERRQ(PETSC_COMM_SELF,1,"this block type is unknown");
+    else SETERRQ(PETSC_COMM_SELF,1,"this block type is unknown");
     
     PetscFunctionReturn(0);
 }
