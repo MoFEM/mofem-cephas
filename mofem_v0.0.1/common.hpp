@@ -2002,9 +2002,25 @@ struct CubitMeshSets {
   PetscErrorCode print_Cubit_attributes(ostream& os) const;
 
   /**
-   * \brief get name of block, sideset etc. (this is set in Cubit setting properties) 
+   * \brief get name of block, sideset etc. (this is set in Cubit block properties)
    *
    * \param name
+   *
+   * Block Name Conventions:
+   * -----------------------
+   * Materials are defined with block names starting with MAT_
+   * e.g. MAT_ELASTIC_abcd, MAT_FRACTcdef etc.
+   * Solution procedures are defined with block names starting with SOL_ e.g.
+   * SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
+   *
+   * List of materials/solution procedures
+   * ---------------------------------------------------------------------------
+   * Block name /  Number of attributes  / (1) Attribute 1, (2) Attribute 2 etc.
+   * ---------------------------------------------------------------------------
+   *
+   * MAT_ELASTIC / 2 / (1) Young's  Modulus, (2) Poisson's ratio
+   *
+   * To be extended as appropriate
    */
   PetscErrorCode get_Cubit_name(string& name) const;
     
