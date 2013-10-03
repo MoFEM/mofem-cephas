@@ -797,13 +797,15 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       if(tag_block_header_data[9]>0) CubitBCType |= MaterialSet;
     }
     if(*tit == block_attribs) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR(rval);CHKERR_THROW(rval);
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR(rval); CHKERR_THROW(rval);
       //for(int ii = 0;ii<tag_block_attributes_size;ii++) {
 	//cerr << "RRRRR " << tag_block_attributes[ii] << endl;
       //}
     }
     if(*tit == entityNameTag) {
-      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR_THROW(rval);
+        rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR(rval); CHKERR_THROW(rval);
+      PetscErrorCode ierr;
+      ierr = get_type_from_Cubit_name(CubitBCType); if(ierr>0) throw("unrecognised Cubit name type");
     }
   }
 }
@@ -827,6 +829,7 @@ PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &mo
   }
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
   PetscFunctionBegin;
   bc_data.resize(tag_bc_size);
@@ -951,6 +954,29 @@ PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
             os << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
         }
     os << endl;
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_BC_bitset &type) const {
+    PetscFunctionBegin;
+    
+    //See Cubit_BC_bitset in common.hpp
+    if (name.compare(0,11,"MAT_ELASTIC") == 0) {
+        type |= Mat_ElasticSet; }
+    
+        //To be extended as appropriate
+    
+    else { type |= DefaultCubitName; }
+        
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(Cubit_BC_bitset &type) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    string name;
+    ierr = get_Cubit_name(name); CHKERRQ(ierr);
+    ierr = get_type_from_Cubit_name(name,type); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
     
@@ -1115,5 +1141,13 @@ ostream& operator<<(ostream& os,const interface_cubit_bc_data& e) {
     os << "This sideset is associated with an interface" << "\n \n";
     return os;   
 }
+        
+ostream& operator<<(ostream& os,const mat_elastic& e)
+    {
+        os << endl << "Material Properties" << endl;
+        os << "-------------------" << endl;
+        os << "Young's Modulus = " << e.data.Young << endl;
+        os << "Poisson's Ratio = " << e.data.Poisson << endl << endl;
+    }
 
 }

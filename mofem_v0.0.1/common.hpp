@@ -1533,7 +1533,52 @@ enum Cubit_BC {
   TemperatureSet = 1<<9,
   HeatfluxSet = 1<<10,
   InterfaceSet = 1<<11,
+  DefaultCubitName = 1<< 12,
+  Mat_ElasticSet = 1<<13,
   LastSet
+};
+
+/*! \struct generic_attribute_data
+ *  \brief Generic attribute data structure
+ */
+struct generic_attribute_data {
+    PetscErrorCode ierr;
+    
+    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+        PetscFunctionBegin;
+        SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
+        PetscFunctionReturn(0);
+    }
+    
+};
+
+/*! \struct mat_elastic
+ *  \brief Elastic material data structure
+ */
+struct mat_elastic: public generic_attribute_data {
+    struct __attribute__ ((packed)) _data_{
+        //char name; // Material (Block) name
+        double Young; // Young's Modulus
+        double Poisson; // Poisson's ratio
+    };
+    
+    _data_ data;
+    
+    const Cubit_BC_bitset type;
+    mat_elastic(): type(Mat_ElasticSet) {};
+    
+    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+        PetscFunctionBegin;
+        //Fill data
+        if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+        memcpy(&data, &attributes[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+    
+    /*! \brief Print mat_elastic data
+     */
+    friend ostream& operator<<(ostream& os,const mat_elastic& e);
+    
 };
 
 /*! \struct generic_cubit_bc_data
@@ -1916,7 +1961,17 @@ struct CubitMeshSets {
     ierr = data.fill_data(bc_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-  
+
+  /**
+   *  \brief Function that returns the Cubit_BC_bitset type of the block name, sideset name etc.
+   */
+  PetscErrorCode get_type_from_Cubit_name(const string &name,Cubit_BC_bitset &type) const;
+
+  /**
+   *  \brief Function that returns the Cubit_BC_bitset type of the block name, sideset name etc.
+   */
+  PetscErrorCode get_type_from_Cubit_name(Cubit_BC_bitset &type) const;
+    
   /**
    * \brief get Cubit block attributes
    *
@@ -1933,9 +1988,25 @@ struct CubitMeshSets {
   PetscErrorCode print_Cubit_attributes(ostream& os) const;
 
   /**
-   * \brief get name of block, sideset etc. (this is set in Cubit setting properties) 
+   * \brief get name of block, sideset etc. (this is set in Cubit block properties)
    *
    * \param name
+   *
+   * Block Name Conventions:
+   * -----------------------
+   * Materials are defined with block names starting with MAT_
+   * e.g. MAT_ELASTIC_abcd, MAT_FRACTcdef etc.
+   * Solution procedures are defined with block names starting with SOL_ e.g.
+   * SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
+   *
+   * List of materials/solution procedures
+   * ---------------------------------------------------------------------------
+   * Block name /  Number of attributes  / (1) Attribute 1, (2) Attribute 2 etc.
+   * ---------------------------------------------------------------------------
+   *
+   * MAT_ELASTIC / 2 / (1) Young's  Modulus, (2) Poisson's ratio
+   *
+   * To be extended as appropriate
    */
   PetscErrorCode get_Cubit_name(string& name) const;
     
@@ -1946,6 +2017,19 @@ struct CubitMeshSets {
    * e.g it->print_Cubit_name(cerr), i.e. printing to standard error output
    */
   PetscErrorCode print_Cubit_name(ostream& os) const;
+    
+template<class _ATTRIBUTE_TYPE_>
+PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    if((CubitBCType&data.type).none()) {
+        SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
+    }
+    vector<double> attributes;
+    get_Cubit_attributes(attributes);
+    ierr = data.fill_data(attributes); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
     
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
     

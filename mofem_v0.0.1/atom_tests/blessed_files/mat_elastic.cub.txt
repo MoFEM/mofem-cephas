@@ -1,0 +1,14 @@
+
+Block name:  MAT_ELASTIC_1
+
+Block attributes
+----------------
+attr. no: 1   value: 1000
+attr. no: 2   value: 0.2
+
+
+Material Properties
+-------------------
+Young's Modulus = 1000
+Poisson's Ratio = 0.2
+
