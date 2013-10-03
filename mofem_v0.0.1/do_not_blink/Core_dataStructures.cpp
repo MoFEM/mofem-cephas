@@ -960,16 +960,13 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
     PetscFunctionBegin;
     
     //See Cubit_BC_bitset in common.hpp
-    if (name.compare(0,11,"MAT_ELASTIC") == 0)
-        type |= Mat_elasticSet;
-    //else if (name.compare(0,11,"MAT_NLELASTIC") == 0)
-        //type |= XXXSet;
+    if (name.compare(0,11,"MAT_ELASTIC") == 0) {
+        type |= Mat_ElasticSet; }
+    
         //To be extended as appropriate
-    //I suggest not using the following error check so that we do not restrict
-    //the use of Cubit blocks to materials and solution procedures:
     
-    else SETERRQ(PETSC_COMM_SELF,1,"this block type is unknown");
-    
+    else { type |= DefaultCubitName; }
+        
     PetscFunctionReturn(0);
 }
 
