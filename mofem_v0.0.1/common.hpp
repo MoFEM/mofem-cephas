@@ -1977,14 +1977,14 @@ struct CubitMeshSets {
   }
 
   /**
-   *  \brief Function that returns the Cubit_BC_bitset type of the block name
+   *  \brief Function that returns the Cubit_BC_bitset type of the block name, sideset name etc.
    */
-  PetscErrorCode get_type_from_block_name(const string &name,Cubit_BC_bitset &type) const;
+  PetscErrorCode get_type_from_Cubit_name(const string &name,Cubit_BC_bitset &type) const;
 
   /**
-   *  \brief Function that returns the Cubit_BC_bitset type of the block name
+   *  \brief Function that returns the Cubit_BC_bitset type of the block name, sideset name etc.
    */
-  PetscErrorCode get_type_from_block_name(Cubit_BC_bitset &type) const;
+  PetscErrorCode get_type_from_Cubit_name(Cubit_BC_bitset &type) const;
     
   /**
    * \brief get Cubit block attributes

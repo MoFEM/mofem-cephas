@@ -954,7 +954,7 @@ PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_type_from_block_name(const string &name,Cubit_BC_bitset &type) const {
+PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_BC_bitset &type) const {
     PetscFunctionBegin;
     
     //See Cubit_BC_bitset in common.hpp
@@ -971,12 +971,12 @@ PetscErrorCode CubitMeshSets::get_type_from_block_name(const string &name,Cubit_
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_type_from_block_name(Cubit_BC_bitset &type) const {
+PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(Cubit_BC_bitset &type) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     string name;
     ierr = get_Cubit_name(name); CHKERRQ(ierr);
-    ierr = get_type_from_block_name(name,type); CHKERRQ(ierr);
+    ierr = get_type_from_Cubit_name(name,type); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
     
