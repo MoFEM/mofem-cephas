@@ -803,6 +803,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
     }
     if(*tit == entityNameTag) {
       rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR_THROW(rval);
+      ierr = get_type_from_Cubit_name(type);  CHKERRQ(ierr);
     }
   }
 }
