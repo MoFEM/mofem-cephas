@@ -953,6 +953,32 @@ PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
     os << endl;
     PetscFunctionReturn(0);
 }
+
+PetscErrorCode CubitMeshSets::get_type_from_block_name(const string &name,Cubit_BC_bitset &type) const {
+    PetscFunctionBegin;
+    
+    //See Cubit_BC_bitset in common.hpp
+    if (name.compare(0,11,"MAT_ELASTIC") ==0)
+        type |= Mat_elasticSet;
+    else if (name.compare(0,11,"MAT_NLELASTIC") ==0)
+        //type |= XXXSet;
+        //To be extended as appropriate
+    //I suggest not using the following error check so that we do not restrict
+    //the use of Cubit blocks to materials and solution procedures:
+    
+        //else SETERRQ(PETSC_COMM_SELF,1,"this block type is unknown");
+    
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode CubitMeshSets::get_type_from_block_name(Cubit_BC_bitset &type) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    string name;
+    ierr = get_Cubit_name(name); CHKERRQ(ierr);
+    ierr = get_type_from_block_name(name,type); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
     
 ostream& operator<<(ostream& os,const CubitMeshSets& e) {
   os << "meshset " << e.meshset << " type " << e.CubitBCType;

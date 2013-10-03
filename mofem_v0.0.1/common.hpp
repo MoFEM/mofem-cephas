@@ -1548,7 +1548,7 @@ enum Cubit_BC {
   TemperatureSet = 1<<9,
   HeatfluxSet = 1<<10,
   InterfaceSet = 1<<11,
-  mat_elasticSet = 1<<12,
+  Mat_elasticSet = 1<<12,
   LastSet
 };
 
@@ -1579,7 +1579,7 @@ struct mat_elastic: public generic_attribute_data {
     _data_ data;
     
     const Cubit_BC_bitset type;
-    mat_elastic(): type(mat_elasticSet) {};
+    mat_elastic(): type(Mat_elasticSet) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
         PetscFunctionBegin;
