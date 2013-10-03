@@ -1975,6 +1975,16 @@ struct CubitMeshSets {
     ierr = data.fill_data(bc_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
+
+  /**
+   *  \brief Function that returns the Cubit_BC_bitset type of the block name
+   */
+  PetscErrorCode get_type_from_block_name(const string &name,Cubit_BC_bitset &type) const;
+
+  /**
+   *  \brief Function that returns the Cubit_BC_bitset type of the block name
+   */
+  PetscErrorCode get_type_from_block_name(Cubit_BC_bitset &type) const;
     
   /**
    * \brief get Cubit block attributes
