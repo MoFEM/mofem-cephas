@@ -2037,9 +2037,9 @@ template<class _ATTRIBUTE_TYPE_>
 PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    //    if((CubitBCType&data.type).none()) {
-    //        SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
-    //    }
+    if((CubitBCType&data.type).none()) {
+        SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
+    }
     vector<double> attributes;
     get_Cubit_attributes(attributes);
     ierr = data.fill_data(attributes); CHKERRQ(ierr);
