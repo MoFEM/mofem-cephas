@@ -1147,6 +1147,7 @@ ostream& operator<<(ostream& os,const mat_elastic& e)
         os << "-------------------" << endl;
         os << "Young's Modulus = " << e.data.Young << endl;
         os << "Poisson's Ratio = " << e.data.Poisson << endl << endl;
+        return os;
     }
 
 }
