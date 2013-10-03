@@ -174,8 +174,6 @@ int main(int argc, char *argv[]) {
       cout << endl << *it << endl;
 
       //Get and print block name
-      string name;
-      ierr = it->get_Cubit_name(name); CHKERRQ(ierr);
       ierr = it->print_Cubit_name(cout); CHKERRQ(ierr);
       ierr = it->print_Cubit_name(myfile); CHKERRQ(ierr);
       
@@ -201,8 +199,7 @@ int main(int argc, char *argv[]) {
                 cout << endl << *it << endl;
                 
                 //Get block name
-                string name;
-                ierr = it->get_Cubit_name(name); CHKERRQ(ierr);
+                string name = it->get_Cubit_name();
 
                 //Elastic material
                 if (name.compare(0,11,"MAT_ELASTIC")==0)

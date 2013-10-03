@@ -257,6 +257,7 @@ struct hashbit
 struct CubitMeshSets_mi_tag {};
 struct CubitMeshSets_mask_meshset_mi_tag {};
 struct CubitMeshSets_bc_data_mi_tag {};
+struct CubitMeshSets_name {};
 struct BitFieldId_mi_tag {};
 struct Unique_mi_tag {};
 struct MoABEnt_mi_tag {};
@@ -1990,8 +1991,6 @@ struct CubitMeshSets {
   /**
    * \brief get name of block, sideset etc. (this is set in Cubit block properties)
    *
-   * \param name
-   *
    * Block Name Conventions:
    * -----------------------
    * Materials are defined with block names starting with MAT_
@@ -2008,7 +2007,8 @@ struct CubitMeshSets {
    *
    * To be extended as appropriate
    */
-  PetscErrorCode get_Cubit_name(string& name) const;
+   string get_Cubit_name() const;
+
     
   /**
    * \brief print name of block, sideset etc. (this is set in Cubit setting properties)
@@ -2047,6 +2047,8 @@ PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
       tag<CubitMeshSets_mask_meshset_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_mask_meshset_types_ulong> >,
  * \param ordered_non_unique<
       tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_bc_data_types_ulong> >,
+ * \param ordered_non_unique<
+      tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_Cubit_name> >,
  *
  * \param    hashed_unique<
       tag<Composite_mi_tag>,       
@@ -2067,6 +2069,8 @@ typedef multi_index_container<
       tag<CubitMeshSets_mask_meshset_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_mask_meshset_types_ulong> >,
     ordered_non_unique<
       tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_bc_data_types_ulong> >,
+    ordered_non_unique<
+      tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_Cubit_name> >,
     hashed_unique<
       tag<Composite_mi_tag>,       
       composite_key<

@@ -206,6 +206,14 @@ struct moabField {
     moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
     IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
 
+
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) = 0;
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) = 0;
+
+  #define _IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MFIELD.get_CubitMeshSets_byName_begin(NAME); \
+    IT!=MFIELD.get_CubitMeshSets_byName_end(NAME); IT++
+
   virtual PetscErrorCode printCubitDisplacementSet() = 0;
   virtual PetscErrorCode printCubitPressureSet() = 0;
   virtual PetscErrorCode printCubitForceSet() = 0;
