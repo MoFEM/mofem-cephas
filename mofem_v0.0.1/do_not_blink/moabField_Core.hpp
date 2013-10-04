@@ -63,12 +63,11 @@ struct moabField_Core: public moabField {
   //finite element
   MoFEMFiniteElement_multiIndex finite_elements;
   EntMoFEMFiniteElement_multiIndex finite_elements_moabents;
-  //finite elemts and dofs
-  MoFEMAdjacencies_multiIndex adjacencies;
+  //adjacencies
+  BasicMoFEMEntityAdjacenctMap_multiIndex basic_ent_adjacencies;
+  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex adjacencies;
   //problems
   MoFEMProblem_multiIndex problems;
-  //prism 
-  AdjacencyMapForBasicMoFEMEntity_multiIndex adjacencies_maps_for_prisms;
   //cubit
   moabCubitMeshSet_multiIndex cubit_meshsets;
 
@@ -107,6 +106,52 @@ struct moabField_Core: public moabField {
   }
   moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(CubitBCType); 
+  }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) { 
+    return cubit_meshsets.get<CubitMeshSets_name>().lower_bound(name); 
+  }
+  moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) { 
+    return cubit_meshsets.get<CubitMeshSets_name>().upper_bound(name); 
+  }
+
+
+  template<class _CUBIT_BC_DATA_TYPE_>
+  PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) {
+    PetscFunctionBegin;
+    try {
+      moabField& this_mField = *this;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,type,it)) {
+	ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+	ostringstream ss;
+	ss << *it << endl;
+	ss << data;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
+    } catch (const char* msg) {
+      SETERRQ(PETSC_COMM_SELF,1,msg);
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode printCubitDisplacementSet() {
+    PetscFunctionBegin;
+    displacement_cubit_bc_data mydata;
+    ierr = printCubitSet(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  
+  PetscErrorCode printCubitPressureSet() {
+    PetscFunctionBegin;
+    pressure_cubit_bc_data mydata;
+    ierr = printCubitSet(mydata,SideSet|mydata.type.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode printCubitForceSet() {
+    PetscFunctionBegin;
+    force_cubit_bc_data mydata;
+    ierr = printCubitSet(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
   }
 
   //refine
@@ -218,9 +263,11 @@ struct moabField_Core: public moabField {
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
-  PetscErrorCode add_prism_to_adjacencies_maps_for_prisms(const EntityHandle prism,int verb = -1);
+  PetscErrorCode add_prism_to_basic_ent_adjacencies(const EntityHandle prism,int verb = -1);
 
   //loops
+  PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1);
+  PetscErrorCode problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb = -1);
   PetscErrorCode loop_finite_elements(
     const string &problem_name,const string &fe_name,FEMethod &method,
     int lower_rank,int upper_rank,int verb = -1);
@@ -254,7 +301,7 @@ struct moabField_Core: public moabField {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
     typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofMoFEMEntitys_by_unique_id;
-    typedef MoFEMAdjacencies_multiIndex::index<Composite_mi_tag>::type adj_by_ent;
+    typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type adj_by_ent;
     //find p_miit
     typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type problems_by_name;
     problems_by_name &problems_set = problems.get<MoFEMProblem_mi_tag>();
@@ -289,8 +336,8 @@ struct moabField_Core: public moabField {
       if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->field_ptr->field_ptr->get_unique_id()) ) {
 	// get field ptr
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->field_ptr->field_ptr);
-	adj_by_ent::iterator adj_miit = adjacencies.get<Composite_mi_tag>().lower_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
-	adj_by_ent::iterator hi_adj_miit = adjacencies.get<Composite_mi_tag>().upper_bound(boost::make_tuple(MoFEMEntity_ptr->get_meshset(),MoFEMEntity_ptr->get_ent()));
+	adj_by_ent::iterator adj_miit = adjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
+	adj_by_ent::iterator hi_adj_miit = adjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	dofs_vec.resize(0);
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row if element

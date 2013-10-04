@@ -293,10 +293,10 @@ struct NumeredMoFEMFiniteElement_change_part {
   }
 };
 
-struct MoFEMAdjacencies_change_by_what {
+struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what {
   by_what by;
-  MoFEMAdjacencies_change_by_what(const by_what _by): by(_by) {}
-  void operator()(MoFEMAdjacencies &e) { e.by_other |= by; }
+  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(const by_what _by): by(_by) {}
+  void operator()(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap &e) { e.by_other |= by; }
 };
 
 /// \brief add ref level to problem

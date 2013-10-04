@@ -169,26 +169,55 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< BlockSets >>>>>" << endl;
   //BlockSets
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+  {
       cout << endl << *it << endl;
 
+      //Get and print block name
+      ierr = it->print_Cubit_name(cout); CHKERRQ(ierr);
+      ierr = it->print_Cubit_name(myfile); CHKERRQ(ierr);
+      
+      
+      //Get and print block attributes
       vector<double> attributes;
       ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
-      
-      //Print data
       ierr = it->print_Cubit_attributes(cout); CHKERRQ(ierr);
-      myfile << endl;
-      myfile << "Block attributes" << endl;
-      myfile << "----------------" << endl;
-      for(unsigned int ii = 0;ii<attributes.size();ii++)
-      {
-          myfile << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
-      }
-      myfile << endl;
-
-      if(attributes.empty()) continue;
+      ierr = it->print_Cubit_attributes(myfile); CHKERRQ(ierr);
   }
-    
+  
+        //Get block attributes and assign them as material properties/solution parameters based on the name of each block
+        
+        //Conventions:
+        //----------------------------------------------------------------------------------------
+        //Materials are defined with block names starting with MAT_ e.g. MAT_ELASTIC_abcd,
+        //MAT_FRACTcdef etc.
+        //Solution procedures are defined with block names starting with SOL_ e.g. SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
+        //----------------------------------------------------------------------------------------
+        
+        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+            {
+                cout << endl << *it << endl;
+                
+                //Get block name
+                string name = it->get_Cubit_name();
+
+                //Elastic material
+                if (name.compare(0,11,"MAT_ELASTIC")==0)
+                {
+                    mat_elastic mydata;
+                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+                    //Print data
+                    cout << mydata;
+                    myfile << mydata;
+                }
+                else if (name.compare(0,11,"MAT_NLELASTIC")==0)
+                {
+                    
+                }
+                //For now keep the following line commented not to affect other atom tests
+                //else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
+            }
+        
   //Close mesh_file_name.txt
   myfile.close();
 

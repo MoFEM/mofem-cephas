@@ -303,7 +303,8 @@ void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLP
       tmp3[jj].i = 0; }
     cblas_zgemv(CblasRowMajor,Trans,3,3,&tmp1,invJac,3,tmp3,1,&tmp2,&diffNinvJac[ii*3],1); }
 }
-void ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__CLPK_doublecomplex *xnormal) {
+PetscErrorCode ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__CLPK_doublecomplex *xnormal) {
+  PetscFunctionBegin;
   double complex diffX_x,diffX_y,diffX_z;
   double complex diffY_x,diffY_y,diffY_z;
   diffX_x = diffX_y = diffX_z = 0.;
@@ -327,6 +328,7 @@ void ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__
   tmp = diffX_x*diffY_y - diffX_y*diffY_x;
   xnormal[2].r = creal(tmp);
   xnormal[2].i = cimag(tmp);
+  PetscFunctionReturn(0);
 }
 PetscErrorCode MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA) {
   PetscFunctionBegin;
@@ -376,6 +378,27 @@ PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_double
     det = - det;
   (*det_xF).r = creal(det);
   (*det_xF).i = cimag(det);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Spin(double *spinOmega,double *vecOmega) {
+  PetscFunctionBegin;
+  spinOmega[0*3+1] = -vecOmega[2];
+  spinOmega[0*3+2] = +vecOmega[1];
+  spinOmega[1*3+0] = +vecOmega[2];
+  spinOmega[1*3+2] = -vecOmega[0];
+  spinOmega[2*3+0] = -vecOmega[1];
+  spinOmega[2*3+1] = +vecOmega[0]; 
+  PetscFunctionReturn(0);
+}
+PetscErrorCode make_complex_matrix(double *reA,double *imA,__CLPK_doublecomplex *xA) {
+  PetscFunctionBegin;
+  int ii = 0,jj;
+  for(;ii<3;ii++) {
+    for(jj=0;jj<3;jj++) {
+      xA[3*ii+jj].r = reA[3*ii+jj];
+      xA[3*ii+jj].i = imA[3*ii+jj];
+    }
+  }
   PetscFunctionReturn(0);
 }
 

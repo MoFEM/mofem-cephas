@@ -1,0 +1,46 @@
+reset
+ 
+brick x 1 y 1 z 0.1
+
+create Cylinder height 0.1 major radius 0.25 minor radius 0.2 
+webcut volume 2 with plane yplane imprint merge
+
+chop volume 1 with volume 2
+chop volume 5 with volume 3
+
+Imprint  All
+Merge All
+
+Sideset 100  curve all 
+sideset 100 curve 40 31 32 39   remove
+sideset 100 curve 27 29 28 30 remove
+nodeset 101 vertex all 
+nodeset 101 vertex 17 18 19 20 remove
+Sideset 102  surface all
+sideset 102 surface 16 12 remove
+sideset 102 surface 18 remove
+
+Sideset 200  surface 18
+Sideset 201  curve 27 29
+#27 29 
+#28 30
+
+create Displacement  on vertex 4  dof 1 dof 2 dof 3 fix 0
+create Displacement  on vertex 1  dof 2 dof 3 fix 0 
+create Displacement  on vertex 3  dof 3 fix 0 
+
+create pressure  on surface 5  magnitude -1 bottom
+create pressure  on surface 3  magnitude -1 bottom  
+
+#create force  on surface 3  vector 0 -1 0 0 0 0 
+#create force  on surface 5  vector 0 1 0 0 0 0 
+
+volume all scheme Tetmesh
+volume all size auto factor 7
+mesh volume 4 
+mesh volume 6
+mesh volume 7
+
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/crack1.cub" overwrite
+
+

@@ -57,26 +57,52 @@ int main(int argc, char *argv[]) {
   moabField_Core core(moab);
   moabField& mField = core;
 
+  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
+  ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
+
   ConfigurationalMechanics conf_prob;
 
   ierr = conf_prob.ConfigurationalMechanics_SetMaterialFireWall(mField); CHKERRQ(ierr);
 
   //ref meshset ref level 0
+  ierr = mField.seed_ref_level_3D(0,1); CHKERRQ(ierr);
+  //BitRefLevel bit_level0;
+  //bit_level0.set(0);
+
+  //Interface
+  EntityHandle meshset_interface;
+  ierr = mField.get_msId_meshset(200,SideSet,meshset_interface); CHKERRQ(ierr);
+  ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
+  // stl::bitset see for more details
+  BitRefLevel bit_level_interface;
+  bit_level_interface.set(1);
+  ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,false,true); CHKERRQ(ierr);
+  EntityHandle meshset_level_interface;
+  rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
+  ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
+
+  //add refined ent to cubit meshsets
+  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
+    EntityHandle cubit_meshset = cubit_it->meshset; 
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+  }
+
+  // stl::bitset see for more details
   BitRefLevel bit_level0;
-  bit_level0.set(0);
+  bit_level0.set(2);
+  EntityHandle meshset_level0;
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
 
   ierr = conf_prob.ConfigurationalMechanics_SpatialProblemDefinition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_MaterialProblemDefinition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_ConstrainsProblemDefinition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
-
-  //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -89,22 +115,19 @@ int main(int argc, char *argv[]) {
 
   //partition problems
   ierr = conf_prob.ConfigurationalMechanics_SpatialPartitionProblems(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_MaterialPartitionProblems(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_ConstrainsPartitionProblems(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
 
-  //solve material problem
-  ierr = conf_prob.ConfigurationalMechanics_SetMaterialPositions(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_SolveMaterialProblem(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_CalculateSpatialResidual(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_CalculateMaterialForces(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_ProjectForceVector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  //solve problem
+  ierr = conf_prob.ConfigurationalMechanics_SetSpatialPositions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.ConfigurationalMechanics_SolveSpatialProblem(mField); CHKERRQ(ierr);
 
-  rval = moab.write_file("out_material_problem.h5m"); CHKERR_PETSC(rval);
+  if(pcomm->rank()==0) {
+    rval = moab.write_file("out_spatial.h5m"); CHKERR_PETSC(rval);
+  }
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("MATERIAL_MECHANICS","MATERIAL",out_meshset); CHKERRQ(ierr);
+    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
@@ -119,3 +142,7 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+
+
+
+

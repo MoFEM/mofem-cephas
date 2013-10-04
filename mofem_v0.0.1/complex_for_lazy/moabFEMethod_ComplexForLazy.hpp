@@ -87,12 +87,12 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double *diff_volumeNinvJac;
 
   //Tangent_HH_hierachical
-  ublas::matrix<double> KHH,KHh,KvolumeH;
+  ublas::matrix<double> KHH,KhH,KvolumeH;
   vector<ublas::matrix<double> > KedgeH_data,KfaceH_data;
   double* KedgeH[6];
   double* KfaceH[4];
   //Tangent_hh_hierachical
-  ublas::matrix<double> Khh,KhH,Kvolumeh;
+  ublas::matrix<double> Khh,KHh,Kvolumeh;
   vector<ublas::matrix<double> > Kedgeh_data,Kfaceh_data;
   double* Kedgeh[6];
   double* Kfaceh[4];
@@ -125,6 +125,12 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double* Fint_h_edge[6];
   double* Fint_h_face[4];
 
+  PetscErrorCode GetIndicesRow(
+    vector<vector<DofIdx> >& RowGlob,
+    string &field_name);
+  PetscErrorCode GetIndicesCol(
+    vector<vector<DofIdx> >& ColGlob,
+    string &field_name);
   PetscErrorCode GetIndices(
     vector<vector<DofIdx> >& RowGlob,
     vector<vector<DofIdx> >& ColGlob,

@@ -51,7 +51,7 @@ namespace MoFEM {
  * 
  * This class is used by user to: <br>
  *  (*) creat approximation fields,  <br>
- *  (*) define elenets, <br>
+ *  (*) define elements, <br>
  *  (*) define problems, <br>
  *  (*) manage refined meshses
  */
@@ -68,17 +68,18 @@ struct moabField {
   /** 
     * \brief get entities form CUBIT/meshset 
     *
-    * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT
+    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
-    * \param entities form meshset
-    * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
+    * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 - Volume(tetrahedral))
+    * \param Range containing the retreived entities
+    * \param recursive If true, meshsets containing meshsets are queried recursively. Returns the contents of meshsets, but not the meshsets themselves if true.
     */
   virtual PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false) = 0;
 
   /** 
-    * \brief get entities form CUBIT/meshset 
+    * \brief get all entities types from CUBIT/meshset 
     *
-    * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT
+    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
     * \param entities form meshset
     * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
@@ -86,16 +87,16 @@ struct moabField {
   virtual PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, Range &entities,const bool recursive = false) = 0;
 
   /** 
-    * \brief get meshset form CUBIT Id and CUBIT type
+    * \brief get meshset from CUBIT Id and CUBIT type
     *
-    * \param msId id of the BlockSet/SideSet/BlockSet: form CUBIT
+    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
-    * \param meshset 
+    * \param meshset where to store the retreived entities
     */
   virtual PetscErrorCode get_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) = 0;
 
   /** 
-    * \brief get all CUBIT meshset by CUBIT type
+    * \brief get all CUBIT meshsets by CUBIT type
     *
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more). 
     * \param meshsets is range of meshsets
@@ -105,7 +106,7 @@ struct moabField {
    /** 
     * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BYFOR_LOOP_(mFiled,it) {
+    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it) {
     * 	...
     * }
     *
@@ -115,12 +116,19 @@ struct moabField {
    /** 
     * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BYFOR_LOOP_(mFiled,it) {
+    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it) {
     * 	...
     * }
     *
     */
   virtual moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() = 0;
+    
+    /**
+     * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
+     *
+     * \param mField moFEM Field
+     * \param iterator 
+     */
 
   #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,IT) \
     moabCubitMeshSet_multiIndex::iterator IT = MFIELD.get_CubitMeshSets_begin(); IT!=MFIELD.get_CubitMeshSets_end(); IT++
@@ -128,7 +136,7 @@ struct moabField {
   /** 
     * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mFiled,NodeSet|DisplacementSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it) {
     * 	...
     * }
     *
@@ -139,22 +147,30 @@ struct moabField {
   /** 
     * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mFiled,NodeSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet,it) {
     * 	...
     * }
     *
     * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
     */
   virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) = 0;
+    
+    /**
+    * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
+    *
+    * \param mField moFEM Field
+    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+    * \param iterator 
+    */
 
   #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
     moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_begin(CUBITBCTYPE); \
     IT!=MFIELD.get_CubitMeshSets_end(CUBITBCTYPE); IT++
 
   /** 
-    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mFiled,NodeSet|DisplacementSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it) {
     * 	...
     * }
     *
@@ -163,63 +179,143 @@ struct moabField {
   virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) = 0;
 
   /** 
-    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mFiled,NodeSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it) {
     * 	...
     * }
     *
     * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
     */
   virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) = 0;
+    
+    /**
+     * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
+     *
+     * \param mField moFEM Field
+     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+     * \param iterator 
+     *
+     * Example: \code
+       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it) {
+      	...
+     * } \endcode
+     */
 
   #define _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
     moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
     IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
 
 
-  /// seed ref level by 3D ents in the meshset and its adjacencies (only TETs adjencies)
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) = 0;
+  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) = 0;
+
+  #define _IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MFIELD.get_CubitMeshSets_byName_begin(NAME); \
+    IT!=MFIELD.get_CubitMeshSets_byName_end(NAME); IT++
+
+  virtual PetscErrorCode printCubitDisplacementSet() = 0;
+  virtual PetscErrorCode printCubitPressureSet() = 0;
+  virtual PetscErrorCode printCubitForceSet() = 0;
+
+  /**
+  * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+  * 
+  * \param EntityHandle MeshSet
+  * \param BitRefLevel bitLevel
+  *
+  * \brief Example:\code
+  EntityHandle meshset1; //contains ent1,ent2,ent3
+  BitRefLevel myLevel0;
+  myLevel0.set(0);
+  seed_ref_level_3D(meshset1,myLevel0); 
+  //refine meshset1 into meshset2 and get new ents which are ent4, ent5
+  EntityHandle meshset2; //contains ent1,ent2,ent3,ent4,ent5
+  BitRefLevel myLevel1;
+  myLevel1.set(1);
+  seed_ref_level_3D(meshset2,myLevel1);  \endcode
+   
+  * So entities 1,2,3 would be assigned to bit level 0 and 1 <br>
+  * ent1[1,1,0,0,0,0,0], ent2[1,1,0,0,0,0,0], ent3[1,1,0,0,0,0,0], <br> 
+  * and entities 4 and 5 are assigned to bit level 1 only <br>
+  * ent4[0,1,0,0,0,0,0], ent5[0,1,0,0,0,0,0] <br>
+  * 
+  */
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit) = 0;
 
-  /// seed ref level by MESHSET
+  /** brief seed ref level by MESHSET that contains entities other than volumes
+   * 
+   * \param EntityHandle MeshSet
+   * \param BitRefLevel bitLevel
+   */
   virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit) = 0;
 
   /**
-   * \brief make vetices in the middle of edges in meshset and add them to refinment levels defined by bit
+   * \brief make vertices in the middle of edges in meshset and add them to refinment levels defined by bit
    *
-   * Takes entities form meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
-   * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies. 
+   * Takes entities fromm meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
+   * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
+   *
+   * \param EntityHandle meshset
+   * \param BitRefLevel bitLevel
+   * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
    */
+    
   virtual PetscErrorCode add_verices_in_the_middel_of_edges(
     const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1) = 0;
 
-  /// refine TET in the meshset
+  /**\brief refine TET in the meshset
+   *
+   * \param EntityHandle meshset
+   * \param BitRefLevel bitLevel
+   * \param If TRUE, interface elements would be refined too
+   */
   virtual PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = true) = 0;
 
-  /// refine PRISM in the meshset
+  /**\brief refine PRISM in the meshset
+   *
+   * \param EntityHandle meshset
+   * \param BitRefLevel bitLevel
+   */
+
   virtual PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
-  /// refinem meshset, i.e. add child of refined entities to meshset
+  /**\brief refinem meshset, i.e. add child of refined entities to meshset
+   *
+   * \param EntityHandle meshset where to save the child refined entities
+   * \param BitRefLevel bitLevel
+   * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
+   */
+    
   virtual PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,
     const bool recursive = false,int verb = -1) = 0;
 
-  /// add FEs form ref level given by bit to meshset
+  /**\brief add FEs entities (Tets/Prisms) from ref level given by bit to meshset
+   *
+   * \param BitRefLevel bitLevel
+   * \param EntityHandle meshset
+   */
+    
   virtual PetscErrorCode refine_get_finite_elements(const BitRefLevel &bit,const EntityHandle meshset) = 0;
 
-  /// add ents form ref level given by bit to meshset
+  /**\brief add all ents from ref level given by bit to meshset
+   *
+   * \param BitRefLevel bitLevel
+   * \param EntityHandle meshset   
+   */
   virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const EntityHandle meshset) = 0;
 
-  /** \brief Get childed entities form meshste containing parent entities 
+  /** \brief Get childed entities form meshset containing parent entities 
     * 
-    * Serch for refained entities of given type whose paren are entities in the
+    * Search for refined entities of given type whose parent are entities in the
     * parent meshset. It can be used for example to transfer information about
     * boundary conditions to refined mesh or splited mesh by interface
     * elements. It is used by function refine_MESHSET, to update MESHSET finite elements.
     * 
-    * \param paren meshset
+    * \param parent meshset
     * \param child_bit refinment level
     * \param type of refined entity
-    * \param child_type meshset where child entities are stored
+    * \param child_type meshset where child entities are stored (if the child meshset is set to be the parent meshset, the parent would be updated with the refined entities)
     * \param recursive if true parent meshset is searched recurively
     *
    **/
@@ -228,19 +324,19 @@ struct moabField {
     const bool recursive = false, int verb = -1) = 0;
 
   /** 
-    * \brief add appeoximation field
+    * \brief add approximation field
     *
     * \param name of the field
     * \param space approximation space (H1, Hdiv, Hcurl, L2 and NoField (dofs adjacent to meshset) 
-    * \prama rank of the field, f.e. temeraure has rank 1, displacement in 3d has rank 3
+    * \prama rank of the field, f.e. temperature has rank 1, displacement in 3d has rank 3
     */
   virtual PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1) = 0;
 
   /** 
-    * \brief set field entities on veryices
+    * \brief set field entities on vertices
     *
     * The lower dimension entities are added depending on the space type
-    * \param meshet contains set tetrahedrals
+    * \param meshset contains set vertices
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
@@ -249,7 +345,7 @@ struct moabField {
     * \brief set field entities form adjacencies of triangles
     *
     * The lower dimension entities are added depending on the space type
-    * \param meshet contains set tetrahedrals
+    * \param meshset contains set triangles
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
@@ -258,15 +354,15 @@ struct moabField {
     * \brief set field entities from adjacencies of tetrahedrals
     *
     * The lower dimension entities are added depending on the space type
-    * \param meshet contains set tetrahedrals
+    * \param meshset contains set tetrahedrals
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /**
-    * \brief Set order of the entities in the field
+    * \brief Set order approximation of the entities in the field
     *
-    * \param meshset containg set of the entities
+    * \param meshset containing set of the entities (use 0 for all the entities in the meshset)
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order 
     */
@@ -275,34 +371,82 @@ struct moabField {
   /// \brief list entities in the field
   virtual PetscErrorCode list_field() const = 0;
 
-  /// \brief get field meshset
+  /** \brief create field meshset
+   *
+   * \param name of Field
+   * Example:\code
+   EntityHandle disp_files_meshset = mField.get_field_meshset("DISPLACEMENT");
+   * \endcode
+   */
+    
   virtual EntityHandle get_field_meshset(const string& name) const = 0;
 
   /**
     * \brief add finite element
-    * \param name finite elenent name
+    * \param name finite element name
+    *
+    * Example \code
+      ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
+      ierr = mField.add_finite_element("PLASTIC"); CHKERRQ(ierr);
+   \endcode
     */
   virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name) = 0;
 
-  /// \brief set field data which element use
+  /** \brief set field data which finite element use
+   *
+   * \param name finite element name
+   * \param name field name
+   *
+   * This function will set memory in the form of a vector
+   */
   virtual PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
 
-  /// \brief set field row
+    /** \brief set field row which finite element use
+     *
+     * \param name finite element name
+     * \param name field name
+     */
+    
   virtual PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
-  /// \brief set field col
-  virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+    /** \brief set field col which finite element use
+     *
+     * \param name finite element name
+     * \param name field name
+     */
+    
+    virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
-  /// add TET elements form meshset to finite element database given by name 
+  /** \brief add TET entities fromm meshset to finite element database given by name
+   *
+   * \param meshset contains tetrahedrals
+   * \param name Finite Element name
+   * \param recursive if true parent meshset is searched recursively
+   */
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
 
-  /// add TET elements from given refinment level to finite element database given by name 
+  /** \brief add TET elements from given refinment level to finite element database given by name 
+   *
+   * \param BitRefLevel BitLevel
+   * \param name Finite Element name
+   */
+
   virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) = 0;
 
-  /// add MESHSET element to finite element database given by name 
+  /** \brief add MESHSET element to finite element database given by name 
+   *
+   * \param meshset contains all entities that could be used for finite element
+   * \param name Finite Element name
+   */
+    
   virtual PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name) = 0;
-
-  /// add MESHSETs contained in meshset to finite element database given by name 
+    
+    /** \brief add MESHSETs contained in meshset to finite element database given by name 
+     *
+     * \param meshset contains all meshsets with entities that could be used for finite element
+     * \param name Finite Element name
+     */
+    
   virtual PetscErrorCode add_ents_to_finite_element_by_MESHSETs(const EntityHandle meshset,const string& name) = 0;
 
   /// list finite elements in database
@@ -311,34 +455,63 @@ struct moabField {
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
 
-  /// add problem
+  /// add Finite Element Problem
   virtual PetscErrorCode add_problem(const string& name) = 0;
 
-  /// \brief add finite element to problem
+  /* \brief add finite element to problem, this add entities assigned to finite element to a particular problem
+   *
+   * \param name Problem name
+   * \param name Finite Element name
+   */
+    
   virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
 
-  /// \brief add ref level to problem
+  /** \brief add ref level to problem
+    *
+   * if same finite element is solved using different level of refinements, than the level of refinement has to be specificied to problem in query
+   *
+   * \param name Problem name
+   * \param BitRefLevel bitLevel
+   * Example: \code
+   ierr = mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC"); CHKERRQ(ierr);
+   ierr = mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC"); CHKERRQ(ierr);
+   
+   ierr = mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1); CHKERRQ(ierr);
+   ierr = mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2); CHKERRQ(ierr);
+   *\endcode
+   * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
+    */
+    
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /// list problems
   virtual PetscErrorCode list_problem() const = 0;
 
-  /// build fields
+  /** build fields
+   */
   virtual PetscErrorCode build_fields(int verb = -1) = 0;
 
-  /// build finite elements
+  /** build finite elements
+    */
   virtual PetscErrorCode build_finite_elements(int verb = -1) = 0;
 
   /**
     * \brief build ajacencies 
     * \param bit adjacencies for refine level
+    * This function will get information of adjacent finite elements and fields of all entities
+    * If this is not perfomed, partitioning the problem is not possible
     */
   virtual PetscErrorCode build_adjacencies(const BitRefLevel bit) = 0;
 
-  /// \brief build proble data structures
+  /** \brief build problem data structures
+   */
+    
   virtual PetscErrorCode build_problems(int verb = -1) = 0;
 
-  /// partition problem dofs
+  /** \brief partition problem dofs
+   *
+   * \param name problem name
+   */
   virtual PetscErrorCode partition_problem(const string &name,int verb = -1) = 0;
 
   /**
@@ -362,26 +535,42 @@ struct moabField {
     */
   virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1) = 0;
 
-  /// determine ghost nodes
+  /** \brief determine ghost nodes
+   *
+   * \param name problem name 
+   */
+   
   virtual PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1) = 0;
 
-  /// partition finite elements
+  /** \brief partition finite elements
+   *
+   * Function which partition finite elements based on dofs partitioning.<br>
+   * In addition it sets information about local row and cols dofs at given element on partition. 
+   *
+   * \param name problem name 
+   * \param do_skip if true, MultiIndices are set for finite element only on entities own by given partition
+   */
   virtual PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1) = 0;
 
-  /// erase inactive dofs form field
+  /// erase inactive dofs from field
   virtual PetscErrorCode erase_inactive_dofs_moabfield() = 0;
 
   /**
     * \brief add finite elements to the meshset
     *
-    * Add finite elements to de meshset. 
+    * Add finite elements to do meshset. 
     * \param name is problem name
     * \param fe_name
     * \param meshset
     */
   virtual PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset) = 0;
 
-  /// create ghost vector for problem
+  /** \brief create ghost vector for problem
+   *
+   * \param name problem name
+   * \param RowColData specify what data is taken from Row, Col or Data
+   * \param Vec the vector where data is stored
+   */
   virtual PetscErrorCode VecCreateGhost(const string &name,RowColData rc,Vec *V) = 0;
 
   /**
@@ -409,9 +598,8 @@ struct moabField {
     */
   virtual PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
 
-
   /** 
-    * \brief set values of vector form/to meshdatabase
+    * \brief set values of vector from/to meshdatabase
     *
     * \param name of the problem
     * \param RowColData for row or column:e (i.e. Row,Col)
@@ -419,7 +607,7 @@ struct moabField {
     * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
     * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
     * 
-    * SCATTER_REVERSE set data to field entities form V vector.
+    * SCATTER_REVERSE set data to field entities from V vector.
     *
     * SCATTER_FORWARD set vector V from data field entities
     *
@@ -427,7 +615,7 @@ struct moabField {
   virtual PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
   /** 
-    * \brief set values of vector form/to meshdatabase
+    * \brief set values of vector from/to meshdatabase
     *
     * \param name of the problem
     * \param RowColData for row or column (i.e. Row,Col)
@@ -456,15 +644,17 @@ struct moabField {
   virtual PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
-
-
-  //topoltgy
-  /// create two cheldren meshsets in the meshset contaning terahedrals on two sides of faces
+  //topologity
+  /** \brief create two children meshsets in the meshset containing terahedrals on two sides of faces
+   *
+   * \param msId Id of meshset 
+   * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+   * \param recursive if true parent meshset is searched recursively
+   */
   virtual PetscErrorCode get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,
     const bool recursive = false,int verb = -1) = 0;
 
-  /** 
-   * \brief create two cheldren meshsets in the meshset contaning terahedrals on two sides of faces
+  /** \brief create two children meshsets in the meshset conta9ning terahedrals on two sides of faces
    *
    * Get tets adj to faces. Take skin form tets and get edges from that skin. Take skin form triangles (the face).
    * Subtrac skin faces edges form skin edges in order to get eges on the boundary of the face which is in the
@@ -476,9 +666,15 @@ struct moabField {
   virtual PetscErrorCode get_msId_3dENTS_sides(const EntityHandle SideSet,const bool recursive = false,int verb = -1) = 0;
 
   /**
-   * \brif split nodes and other entities of tetrahedrals in children sets and add prism elements
+   * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
    * 
    * The all new entities (prisms, tets) are added to refinment level given by bit
+   * \param meshset meshset to get entities from
+   * \param BitRefLevel new level where refinement would be stored
+   * \param msId meshset ID imported from cubit 
+   * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+   * \param add_intefece_entities meshset which contain the interface
+   * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
@@ -486,7 +682,7 @@ struct moabField {
     const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
   /**
-   * \brif split nodes and other entities of tetrahedrals in children sets and add prism elements
+   * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
    * 
    * The all new entities (prisms, tets) are added to refinment level given by bit
    */
@@ -529,23 +725,25 @@ struct moabField {
   struct BasicMethod: public SnesMethod,TSMethod {
     BasicMethod();    
     //
+    PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_moabfields(const MoFEMField_multiIndex *_moabfields);
     PetscErrorCode set_ents_multiIndex(const MoFEMEntity_multiIndex *_ents_moabfield);
     PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
     PetscErrorCode set_fes_multiIndex(const MoFEMFiniteElement_multiIndex *_finite_elements);
     PetscErrorCode set_fes_data_multiIndex(const EntMoFEMFiniteElement_multiIndex *_finite_elements_moabents);
-    PetscErrorCode set_adjacencies(const MoFEMAdjacencies_multiIndex *_fem_adjacencies);
+    PetscErrorCode set_adjacencies(const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *_fem_adjacencies);
     //
     virtual PetscErrorCode preProcess() = 0;
     virtual PetscErrorCode operator()() = 0;
     virtual PetscErrorCode postProcess() = 0;
     //
+    const MoFEMProblem *problem_ptr;
     const MoFEMField_multiIndex *moabfields;
     const MoFEMEntity_multiIndex *ents_moabfield;
     const DofMoFEMEntity_multiIndex *dofs_moabfield;
     const MoFEMFiniteElement_multiIndex *finite_elements;
     const EntMoFEMFiniteElement_multiIndex *finite_elements_moabents;
-    const MoFEMAdjacencies_multiIndex *fem_adjacencies;
+    const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *fem_adjacencies;
   };
 
   /**
@@ -558,7 +756,7 @@ struct moabField {
 
     /** \brief function is run at the beginig of looop
      *
-     * It is used to zeroing matrices and vectors, clalualtion of shape
+     * It is used to zeroing matrices and vectors, calculation of shape
      * functions on reference element, preporocessing boundary conditions, etc.
      */
     PetscErrorCode preProcess();
@@ -572,29 +770,27 @@ struct moabField {
 
     /** \brief function is run at the end of looop
      *
-     * It is used to assembly matrices and vectors, calulating global varibles,
+     * It is used to assembly matrices and vectors, calulating global variables,
      * f.e. total internal energy, ect.
      * 
      * Iterating over dofs:
-     * Example1 iteratong over dofs in row by name of the field
+     * Example1 iterating over dofs in row by name of the field
      * for(_IT_GET_FEROW_DOFS_FOR_LOOP_("DISPLACEMENT")) { ... } 
      * 
-     * Example2 iteratong over dofs in row by name of the field and type of the entity
+     * Example2 iterating over dofs in row by name of the field and type of the entity
      * for(_IT_GET_FEROW_DOFS_FOR_LOOP_("DISPLACEMENT",MBVERTEX)) { ... } 
      * 
-     * Example2 iteratong over dofs in row by name of the field, type of the entity and side number
+     * Example2 iterating over dofs in row by name of the field, type of the entity and side number
      * for(_IT_GET_FEROW_DOFS_FOR_LOOP_("DISPLACEMENT",MBEDGE,0)) { ... }
      * 
      */
     PetscErrorCode postProcess();
     //
-    PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_fe(const NumeredMoFEMFiniteElement *_fe_ptr); 
     PetscErrorCode set_data_multIndex(const FEDofMoFEMEntity_multiIndex *_data_multiIndex);
     PetscErrorCode set_row_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_row_multiIndex);
     PetscErrorCode set_col_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_col_multiIndex);
     string fe_name;
-    const MoFEMProblem *problem_ptr;
     const NumeredMoFEMFiniteElement *fe_ptr;
     const FEDofMoFEMEntity_multiIndex *data_multiIndex;
     const FENumeredDofMoFEMEntity_multiIndex *row_multiIndex;
@@ -611,15 +807,27 @@ struct moabField {
       return index.upper_bound(boost::make_tuple(field_name,type,side_number));
     } 
 
+      /** \brief loop over all dofs which are on a particular FE row, field, entity type and canonical side number
+       *
+       * \param FE finite elements
+       * \param Name field name
+       * \param Type moab entity type (MBVERTEX, MBEDGE etc)
+       * \param Side side canonical number
+       * \param IT the interator in use
+       */
     #define _IT_GET_FEROW_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->row_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->row_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
 
+    ///loop over all dofs which are on a particular FE column, field, entity type and canonical side number
+
     #define _IT_GET_FECOL_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->col_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->col_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
+
+      ///loop over all dofs which are on a particular FE data, field, entity type and canonical side number
 
     #define _IT_GET_FEDATA_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
@@ -635,14 +843,17 @@ struct moabField {
       return index.upper_bound(boost::make_tuple(field_name,type));
     } 
 
+      ///loop over all dofs which are on a particular FE row, field and entity type
     #define _IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->row_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->row_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
+      ///loop over all dofs which are on a particular FE column, field and entity type
     #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->col_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->col_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
+      ///loop over all dofs which are on a particular FE data, field and entity type
     #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->data_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
@@ -656,15 +867,17 @@ struct moabField {
     typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name) const {
       return index.upper_bound(field_name);
     } 
-
+      ///loop over all dofs which are on a particular FE row and field
     #define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->row_multiIndex->get<FieldName_mi_tag>(),NAME); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->row_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
+      ///loop over all dofs which are on a particular FE column and field
     #define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->col_multiIndex->get<FieldName_mi_tag>(),NAME); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->col_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
+      ///loop over all dofs which are on a particular FE data and field
     #define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->data_multiIndex->get<FieldName_mi_tag>(),NAME); \
@@ -678,15 +891,17 @@ struct moabField {
     typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const EntityHandle ent) const {
       return index.upper_bound(ent);
     } 
-
-    #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
+      ///loop over all dofs which are on a particular FE row and given element entity (handle from moab)
+                #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
+      ///loop over all dofs which are on a particular FE column and given element entity (handle from moab)
     #define _IT_GET_FECOL_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->col_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->col_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
+      ///loop over all dofs which are on a particular FE data and given element entity (handle from moab)
     #define _IT_GET_FEDATA_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
     FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->data_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
@@ -700,15 +915,17 @@ struct moabField {
     typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name,const EntityHandle ent) const {
       return index.upper_bound(boost::make_tuple(field_name,ent));
     } 
-
+      ///loop over all dofs which are on a particular FE row, field and given element entity (handle from moab)
     #define _IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->row_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->row_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); IT++
+      ///loop over all dofs which are on a particular FE column, field and given element entity (handle from moab)
     #define _IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->col_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->col_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); IT++
+      ///loop over all dofs which are on a particular FE data, field and given element entity (handle from moab)
     #define _IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->data_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); \
@@ -723,15 +940,45 @@ struct moabField {
     PetscErrorCode operator()();
     PetscErrorCode postProcess();
     
-    PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_dof(const NumeredDofMoFEMEntity *_dof_ptr);
-    const MoFEMProblem *problem_ptr;
     const NumeredDofMoFEMEntity *dof_ptr;
   };
 
+  /** \brief Set data for BasicMethod 
+    *
+    * This function set data about problem, adjacencies and other MultIindices
+    * in database. This function can be used a special case when user need to
+    * do some pre- and post-processing before matrix or vector is initiated, or
+    * to assemble matrix for group of FEMethods. Is used by calsses classes
+    * moabSnes and moabTs. Look for more details there.
+    *
+    * FIXME: Here we need example
+    *
+    * \param problem_name name of the problem
+    * \param method user method derived from BasicMethod
+    *
+  **/
+  virtual PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
+
+  /** \brief Set data for BasicMethod 
+    *
+    * This function set data about problem, adjacencies and other MultIindices
+    * in database. This function can be used a special case when user need to
+    * do some pre- and post-processing before matrix or vector is initiated, or
+    * to assemble matrix for group of FEMethods. Is used by calsses classes
+    * moabSnes and moabTs. Look for more details there.
+    *
+    * FIXME: Here we need example
+    *
+    * \param problem_name name of the problem
+    * \param method user method derived from BasicMethod
+    *
+  **/
+  virtual PetscErrorCode problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
+
   /** \brief Make a loop over finite elements. 
    *
-   * Thsis function is like swiss knife, is can be used to post-processing or matrix
+   * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
    * problem. The particular methods exectuted on each element are given by
    * class derived form moabField::FEMethod. At beginig of each loop user definded
@@ -750,7 +997,7 @@ struct moabField {
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
    *
-   * Thsis function is like swiss knife, is can be used to post-processing or matrix
+   * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
    * problem. The particular methods exectuted on each element are given by
    * class derived form moabField::FEMethod. At beginig of each loop user definded
@@ -758,7 +1005,7 @@ struct moabField {
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().
    *
-   * For more details pleas look to examples.
+   * For more details please look to examples.
    *
    * \param problem_name fe_name \param method is class derived form
    * moabField::FEMethod
@@ -804,6 +1051,7 @@ struct moabField {
     */
   virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_moabfield_by_name_end(const string &field_name) = 0;
 
+    ///loop over all dofs from a moFEM field and particular field
   #define _IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_moabfield_by_name_begin(NAME); \
       IT != MFIELD.get_dofs_moabfield_by_name_end(NAME); IT++
@@ -835,6 +1083,7 @@ struct moabField {
     */
   virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
 
+    ///loop over all finite elements from a moFEM field and FE
   #define _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
       IT != MFIELD.get_fes_moabfield_by_name_end(NAME); IT++

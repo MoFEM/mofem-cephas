@@ -25,6 +25,23 @@ namespace MoFEM {
 
 BaseDirihletBC::BaseDirihletBC() {}
 
+PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(fe_method_ptr);
+    NOT_USED(RowGlobDofs);
+    NOT_USED(DirihletBC);
+    PetscFunctionReturn(0);
+  }
+PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(fe_method_ptr);
+    NOT_USED(ColGlobDofs);
+    PetscFunctionReturn(0);
+  }
 PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndicies(
     moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
@@ -77,25 +94,25 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
     PetscFunctionBegin;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
       ostringstream ss;
-      ss << *it << endl;
+      //ss << *it << endl;
       displacement_cubit_bc_data mydata;
       ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-      ss << mydata;
+      //ss << mydata;
       for(int dim = 0;dim<3;dim++) {
 	Range _ents;
 	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,_ents,true); CHKERRQ(ierr);
-	ss << "dim  = " << dim << " nb. ents " << _ents.size() << endl;
+	//ss << "dim  = " << dim << " nb. ents " << _ents.size() << endl;
 	if(dim>1) {
 	  Range _edges;
 	  ierr = mField.get_moab().get_adjacencies(_ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
 	  _ents.insert(_edges.begin(),_edges.end());
-	  ss << "dim  = " << dim << " nb. edges " << _edges.size() << endl;
+	  //ss << "dim  = " << dim << " nb. edges " << _edges.size() << endl;
 	}
 	if(dim>0) {
 	  Range _nodes;
 	  rval = mField.get_moab().get_connectivity(_ents,_nodes,true); CHKERR_PETSC(rval);
 	  _ents.insert(_nodes.begin(),_nodes.end());
-	  ss << "dim  = " << dim << " nb. nodes " << _nodes.size() << endl;
+	  //ss << "dim  = " << dim << " nb. nodes " << _nodes.size() << endl;
 	}
 	if(dim>2) SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
 	if(mydata.data.flag1 == 1) {
@@ -111,8 +128,87 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
 	  (bc_map_val[2])[it->get_msId()] = mydata.data.value3;
 	}
       }
-      ss << endl;
-      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      //ss << endl;
+      //PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }
+
+    PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(fe_method_ptr,field_name,dit)) {
+      for(int ss = 0;ss<3;ss++) {
+	if(dit->get_dof_rank()!=ss) continue;
+	map<int,Range>::iterator bit = bc_map[ss].begin();
+	for(;bit!=bc_map[ss].end();bit++) {
+	  if(find(bit->second.begin(),bit->second.end(),dit->get_ent())==bit->second.end()) continue;
+	  DirihletBC.push_back(dit->get_petsc_gloabl_dof_idx());
+	  switch (dit->get_ent_type()) {
+	    case MBVERTEX: {
+	      vector<DofIdx>::iterator it = find(RowGlobDofs[0].begin(),RowGlobDofs[0].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlobDofs[0].end() ) *it = -1;
+	    }
+	    break;
+	    case MBEDGE: {
+	      vector<DofIdx>::iterator it = find(
+		RowGlobDofs[1+dit->side_number_ptr->side_number].begin(),
+		RowGlobDofs[1+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlobDofs[1+dit->side_number_ptr->side_number].end() ) *it = -1;
+	    }
+	    break;
+	    case MBTRI: {
+	      vector<DofIdx>::iterator it = find(
+		RowGlobDofs[1+6+dit->side_number_ptr->side_number].begin(),
+		RowGlobDofs[1+6+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlobDofs[1+6+dit->side_number_ptr->side_number].end() ) *it = -1;
+	    }
+	    break;
+	    default:
+	      SETERRQ(PETSC_COMM_SELF,1,"not implemnted (top tip: data inconsistency)");
+	  }
+	}
+      }
+    }
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    for(_IT_GET_FECOL_DOFS_FOR_LOOP_(fe_method_ptr,field_name,dit)) {
+      for(int ss = 0;ss<3;ss++) {
+	if(dit->get_dof_rank()!=ss) continue;
+	map<int,Range>::iterator bit = bc_map[ss].begin();
+	for(;bit!=bc_map[ss].end();bit++) {
+	  if(find(bit->second.begin(),bit->second.end(),dit->get_ent())==bit->second.end()) continue;
+	  switch (dit->get_ent_type()) {
+	    case MBVERTEX: {
+	      vector<DofIdx>::iterator it = find(ColGlobDofs[0].begin(),ColGlobDofs[0].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlobDofs[0].end() ) *it = -1;
+	    }
+	    break;
+	    case MBEDGE: {
+	      vector<DofIdx>::iterator it = find(
+		ColGlobDofs[1+dit->side_number_ptr->side_number].begin(),
+		ColGlobDofs[1+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlobDofs[1+dit->side_number_ptr->side_number].end() ) *it = -1;
+	    }
+	    break;
+	    case MBTRI: {
+	      vector<DofIdx>::iterator it = find(
+		ColGlobDofs[1+6+dit->side_number_ptr->side_number].begin(),
+		ColGlobDofs[1+6+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlobDofs[1+6+dit->side_number_ptr->side_number].end() ) *it = -1;
+	    }
+	    break;
+	    default:
+	      SETERRQ(PETSC_COMM_SELF,1,"not implemnted (top tip: data inconsistency)");
+	  }
+	}
+      }
     }
     PetscFunctionReturn(0);
 }
@@ -121,27 +217,8 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndicies(
     moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
     DirihletBC.resize(0);
-    for(int ss = 0;ss<3;ss++) {
-      map<int,Range>::iterator bit = bc_map[ss].begin();
-      for(;bit!=bc_map[ss].end();bit++) {
-	Range::iterator eit = bit->second.begin();
-	for(;eit!=bit->second.end();eit++) {
-	  for(_IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(fe_method_ptr,field_name,*eit,dit)) {
-	    if(dit->get_dof_rank()!=ss) continue;
-	    // if some ranks are selected then we could apply BC in particular direction
-	    DirihletBC.push_back(dit->get_petsc_gloabl_dof_idx());
-	    for(unsigned int cc = 0;cc<ColGlobDofs.size();cc++) {
-	      vector<DofIdx>::iterator it = find(ColGlobDofs[cc].begin(),ColGlobDofs[cc].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlobDofs[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	    }
-	    for(unsigned int rr = 0;rr<RowGlobDofs.size();rr++) {
-	      vector<DofIdx>::iterator it = find(RowGlobDofs[rr].begin(),RowGlobDofs[rr].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlobDofs[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-	    }
-	  }
-	}
-      }
-    }
+    ierr = SetDirihletBC_to_ElementIndiciesRow(fe_method_ptr,RowGlobDofs,DirihletBC); CHKERRQ(ierr);
+    ierr = SetDirihletBC_to_ElementIndiciesCol(fe_method_ptr,ColGlobDofs,DirihletBC); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 
@@ -154,10 +231,11 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesFace
     for(;dit!=DirihletBC.end();dit++) {
       vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
       if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
+      if(!FaceEdgeIndices.empty()) {
       for(int ee = 0;ee<3;ee++) {
 	it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
 	if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
-      }
+      }}
       it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
       if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
     }

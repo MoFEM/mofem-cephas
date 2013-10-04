@@ -83,9 +83,13 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:
@@ -454,6 +458,9 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 
+    vector<vector<DofIdx> > dummy1;
+    vector<DofIdx> dummy2;
+
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
@@ -463,7 +470,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData_Material(siit->ent); CHKERRQ(ierr);
 	  ierr = GetFExt_Material(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
-	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices,FaceEdgeIndices_data,FaceIndices); CHKERRQ(ierr);
+	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices_Material,dummy1,dummy2); CHKERRQ(ierr);
 	  ierr = VecSetValues(f,FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),&*FExt_Material.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 	}
       }
@@ -483,6 +490,9 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 
+    vector<vector<DofIdx> > dummy1;
+    vector<DofIdx> dummy2;
+
     switch(snes_ctx) {
       case ctx_SNESSetJacobian:
 	for(;siit!=hi_siit;siit++) {
@@ -490,7 +500,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData_Material(siit->ent); CHKERRQ(ierr);
 	  ierr = GetTangentExt_Material(siit->ent,t,NULL,NULL); CHKERRQ(ierr);
-	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices,FaceEdgeIndices_data,FaceIndices); CHKERRQ(ierr);
+	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(DirihletBC,FaceNodeIndices_Material,dummy1,dummy2); CHKERRQ(ierr);
 	  ierr = MatSetValues(B,
 	    FaceNodeIndices.size(),&(FaceNodeIndices_Material[0]),FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),
 	    &*(KExt_HH_Material.data().begin()),ADD_VALUES); CHKERRQ(ierr);
@@ -514,7 +524,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
       dofs_x_volume,dofs_x,
       spatial_field_name); CHKERRQ(ierr);
 
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
@@ -546,7 +556,6 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
       switch(snes_ctx) {
 	case ctx_SNESSetFunction: { 
 	  ierr = CaluclateMaterialFext(snes_f,t,NeumannSideSet) ; CHKERRQ(ierr);
-
 	}
 	break;
 	case ctx_SNESSetJacobian:
@@ -558,6 +567,88 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 
     }
 
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = operator()(snes_B); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComplexForLazy_Material {
+
+  FEMethod_DriverComplexForLazy_MeshSmoothing(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,0,0,_verbose) {
+      type_of_analysis = mesh_quality_analysis;
+
+      g_NTET.resize(4*1);
+      ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
+      g_TET_W = G_TET_W1;
+
+    }
+
+  virtual PetscErrorCode CalculateMeshSmoothingTangent(Mat B) {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetJacobian:
+	ierr = GetTangent(); CHKERRQ(ierr);
+	ierr = MatSetValues(B,
+	  RowGlobMaterial[i_nodes].size(),&*(RowGlobMaterial[i_nodes].begin()),
+	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode CalculateMeshSmoothingFint(Vec f) {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+        ierr = GetFint(); CHKERRQ(ierr);
+	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
+	//cerr << "Fint_h " << Fint_h << endl;
+	ierr = VecSetValues(f,RowGlobMaterial[i_nodes].size(),&(RowGlobMaterial[i_nodes][0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+
+  PetscErrorCode operator()(Mat *B) {
+    PetscFunctionBegin;
+
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesMaterial(); CHKERRQ(ierr);
+
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
+  
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction:  
+	ierr = CalculateMeshSmoothingFint(snes_f); CHKERRQ(ierr);
+      break;
+      case ctx_SNESSetJacobian:
+	ierr = CalculateMeshSmoothingTangent(*B); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
 
     PetscFunctionReturn(0);
   }
@@ -587,6 +678,9 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
   g_SURFACE_FEMethod *gFE_SURFACE;
   C_CORNER_FEMethod *CFE_CORNER;
   g_CORNER_FEMethod *gFE_CORNER;
+  //CRACK
+  C_SURFACE_FEMethod *CFE_CRACK_SURFACE;
+  g_SURFACE_FEMethod *gFE_CRACK_SURFACE;
 
   PetscErrorCode set_local_VecCreateGhost_for_ConstrainsProblem(Vec x) {
     PetscFunctionBegin;
@@ -624,17 +718,27 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	gFE_SURFACE = new g_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.g);
 	CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.C);
 	gFE_CORNER = new g_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.g);
+	//CRACK
+	CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE",0);
+	gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE",0);
 
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
 	ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
 	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",*CFE_CRACK_SURFACE);  CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*CFE_CORNER);  CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+	/*{
+	  MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
+	  std::string wait;
+	  std::cin >> wait;
+	}*/
 
 	ierr = proj_all_ctx.InitQorP(f); CHKERRQ(ierr);
 	ierr = proj_all_ctx.InitQTKQ(); CHKERRQ(ierr);
@@ -642,11 +746,6 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	//ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
 	//ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
 
-	/*{
-	MatView(proj_all_ctx.C,PETSC_VIEWER_DRAW_WORLD);
-	std::string wait;
-	std::cin >> wait;
-	}*/
     }  else {
 	ierr = set_local_VecCreateGhost_for_ConstrainsProblem(x); CHKERRQ(ierr);
     }
@@ -656,6 +755,7 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
     ierr = VecGhostUpdateEnd(proj_all_ctx.g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*gFE_SURFACE);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",*gFE_CRACK_SURFACE);  CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(proj_all_ctx.g,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(proj_all_ctx.g,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
@@ -738,53 +838,8 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
   PetscErrorCode _postProcess_ctx_SNESSetJacobian(Mat B) {
     PetscFunctionBegin;
-
-	ierr = MatCopy(proj_all_ctx.K,B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-	ierr = MatAXPY(B,alpha,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-
-    PetscFunctionReturn(0);
-  }
-
-};
-
-struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComplexForLazy_Material {
-
-  FEMethod_DriverComplexForLazy_MeshSmoothing(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,0,0,_verbose) {
-      type_of_analysis = mesh_quality_analysis;
-
-      g_NTET.resize(4*1);
-      ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
-      g_TET_W = G_TET_W1;
-
-    }
-
-  PetscErrorCode operator()(Mat *B) {
-    PetscFunctionBegin;
-
-    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
-    ierr = GetIndicesMaterial(); CHKERRQ(ierr);
-
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
-  
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
-	ierr = CalculateMaterialFint(snes_f); CHKERRQ(ierr);
-      break;
-      case ctx_SNESSetJacobian:
-	ierr = CalculateMaterialTangent(*B); CHKERRQ(ierr);
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    ierr = operator()(snes_B); CHKERRQ(ierr);
+    ierr = MatCopy(proj_all_ctx.K,B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+    ierr = MatAXPY(B,alpha,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -802,6 +857,8 @@ struct FEMethod_DriverComplexForLazy_MaterialProjected: public  FEMethod_DriverC
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
+    ierr = FEMethod_DriverComplexForLazy_Material::preProcess(); CHKERRQ(ierr);
+
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = _preProcess_ctx_SNESSetFunction(snes_x,snes_f); CHKERRQ(ierr);
@@ -811,8 +868,6 @@ struct FEMethod_DriverComplexForLazy_MaterialProjected: public  FEMethod_DriverC
       default:
 	break;
     }
-
-    ierr = FEMethod_DriverComplexForLazy_Material::preProcess(); CHKERRQ(ierr);
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
@@ -872,6 +927,8 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
+    ierr = FEMethod_DriverComplexForLazy_MeshSmoothing::preProcess(); CHKERRQ(ierr);
+
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = _preProcess_ctx_SNESSetFunction(snes_x,snes_f); CHKERRQ(ierr);
@@ -881,8 +938,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
       default:
 	break;
     }
-
-    ierr = FEMethod_DriverComplexForLazy_MeshSmoothing::preProcess(); CHKERRQ(ierr);
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
@@ -898,27 +953,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 
     PetscFunctionReturn(0);
   }
-
-  PetscErrorCode CalculateMaterialTangent(Mat B) {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction:
-      case ctx_SNESSetJacobian:
-	ierr = GetTangent(); CHKERRQ(ierr);
-	ierr = MatSetValues(B,
-	  RowGlobMaterial[i_nodes].size(),&*(RowGlobMaterial[i_nodes].begin()),
-	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
-	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
@@ -940,6 +974,389 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = _postProcess_ctx_SNESSetJacobian(*snes_B); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverComplexForLazy_Spatial {
+
+  matPROJ_ctx& proj_all_ctx;
+  FEMethod_DriverComplexForLazy_CoupledSpatial(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),
+    proj_all_ctx(_proj_all_ctx) {}
+
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode CalculateSpatialCoupledTangent(Mat B) {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetJacobian:
+	ierr = MatSetValues(B,
+	  RowGlobMaterial[i_nodes].size(),&*(RowGlobMaterial[i_nodes].begin()),
+	  ColGlobSpatial[i_nodes].size(),&*(ColGlobSpatial[i_nodes].begin()),
+	  &*(KHh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	for(int ee = 0;ee<6;ee++) {
+	  ierr = MatSetValues(B,
+	    RowGlobMaterial[i_nodes].size(),&*(RowGlobMaterial[i_nodes].begin()),
+	    ColGlobSpatial[1+ee].size(),&*(ColGlobSpatial[1+ee].begin()),
+	    &*(KHedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	for(int ff = 0;ff<4;ff++) {
+	  ierr = MatSetValues(B,
+	    RowGlobMaterial[i_nodes].size(),&*(RowGlobMaterial[i_nodes].begin()),
+	    ColGlobSpatial[1+6+ff].size(),&*(ColGlobSpatial[1+6+ff].begin()),
+	    &*(KHface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	ierr = MatSetValues(B,
+	  RowGlobMaterial[i_nodes].size(),&*(RowGlobMaterial[i_nodes].begin()),
+	  ColGlobSpatial[i_volume].size(),&*(ColGlobSpatial[i_volume].begin()),
+	  &*(KHvolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian:
+	ierr = CalculateSpatialTangent(proj_all_ctx.K); CHKERRQ(ierr);
+	ierr = GetIndicesRow(RowGlobMaterial,material_field_name); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesRow(this,RowGlobMaterial,DirihletBC); CHKERRQ(ierr);
+	ierr = CalculateSpatialCoupledTangent(proj_all_ctx.K); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+
+      pressure_cubit_bc_data mydata;
+      ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+
+      double t_val_ = *(this->t_val)*mydata.data.value1;
+      double t[] = { 0,0,-t_val_, 0,0,-t_val_, 0,0,-t_val_ };
+
+      Range NeumannSideSet;
+      ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
+
+      switch(snes_ctx) {
+	case ctx_SNESSetFunction: { 
+	  ierr = CaluclateSpatialFext(snes_f,t,NeumannSideSet); CHKERRQ(ierr);
+	}
+	break;
+	case ctx_SNESSetJacobian:
+	  ierr = CalculateSpatialTangentExt(proj_all_ctx.K,t,NeumannSideSet); CHKERRQ(ierr);
+	  break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+
+};
+
+struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComplexForLazy_Material {
+
+  matPROJ_ctx& proj_all_ctx;
+  FEMethod_DriverComplexForLazy_CoupledMaterial(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),
+    proj_all_ctx(_proj_all_ctx) {}
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode CalculateMaterialCoupledTangent(Mat B) {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetJacobian:
+	ierr = MatSetValues(B,
+	  RowGlobSpatial[i_nodes].size(),&*(RowGlobSpatial[i_nodes].begin()),
+	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+	  &*(KhH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	for(int ee = 0;ee<6;ee++) {
+	  ierr = MatSetValues(B,
+	    RowGlobSpatial[i_nodes].size(),&*(RowGlobSpatial[i_nodes].begin()),
+	    ColGlobMaterial[1+ee].size(),&*(ColGlobMaterial[1+ee].begin()),
+	    &*(KedgeH_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	for(int ff = 0;ff<4;ff++) {
+	  ierr = MatSetValues(B,
+	    RowGlobSpatial[i_nodes].size(),&*(RowGlobSpatial[i_nodes].begin()),
+	    ColGlobMaterial[1+6+ff].size(),&*(ColGlobMaterial[1+6+ff].begin()),
+	    &*(KfaceH_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	ierr = MatSetValues(B,
+	  RowGlobSpatial[i_nodes].size(),&*(RowGlobSpatial[i_nodes].begin()),
+	  ColGlobMaterial[i_volume].size(),&*(ColGlobMaterial[i_volume].begin()),
+	  &*(KvolumeH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = FEMethod_DriverComplexForLazy_Material::operator()(&(proj_all_ctx.K)); CHKERRQ(ierr);
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction:  
+      break;
+      case ctx_SNESSetJacobian:
+	ierr = GetIndicesRow(RowGlobSpatial,spatial_field_name); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesRow(this,RowGlobSpatial,DirihletBC); CHKERRQ(ierr);
+	ierr = CalculateMaterialCoupledTangent(proj_all_ctx.K); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct FEMethod_DriverComplexForLazy_CoupledMeshSmoother: public FEMethod_DriverComplexForLazy_MeshSmoothing {
+
+  matPROJ_ctx& proj_all_ctx;
+  FEMethod_DriverComplexForLazy_CoupledMeshSmoother(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_verbose),
+    proj_all_ctx(_proj_all_ctx) {}
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = FEMethod_DriverComplexForLazy_MeshSmoothing::operator()(&(proj_all_ctx.K)); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct FEMethod_DriverComplexForLazy_CoupledProjected: public  FEMethod_DriverComplexForLazy_Projected {
+
+  FEMethod_DriverComplexForLazy_CoupledProjected(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,string _problem_name,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    FEMethod_DriverComplexForLazy_Projected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_problem_name) {} 
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = _preProcess_ctx_SNESSetFunction(snes_x,snes_f); CHKERRQ(ierr);
+      } break;
+      case ctx_SNESSetJacobian: {
+      } break;
+      default:
+	break;
+    }
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian:
+	ierr = MatZeroEntries(proj_all_ctx.K); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = _postProcess_ctx_SNESSetFunction(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian:
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = _postProcess_ctx_SNESSetJacobian(*snes_B); CHKERRQ(ierr);

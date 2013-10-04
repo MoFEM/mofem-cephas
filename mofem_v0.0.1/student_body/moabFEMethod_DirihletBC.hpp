@@ -40,24 +40,25 @@ struct BaseDirihletBC {
 
   BaseDirihletBC();
 
+
+  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC);
+  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
   virtual PetscErrorCode SetDirihletBC_to_ElementIndicies(
     moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
-
   virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
     vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs);
-
   virtual PetscErrorCode SetDirihletBC_to_FieldData(moabField::FEMethod *fe_method_ptr,Vec D);
-
   virtual PetscErrorCode SetDirihletBC_to_MatrixDiagonal(moabField::FEMethod *fe_method_ptr,Mat Aij);
-
   virtual PetscErrorCode SetDirihletBC_to_RHS(moabField::FEMethod *fe_method_ptr,Vec F);
 
 };
 
 struct CubitDisplacementDirihletBC: public BaseDirihletBC {
   moabField& mField;
-  const string problem_name;  
-  const string field_name;
+  string problem_name;  
+  string field_name;
 
   CubitDisplacementDirihletBC(moabField& _mField,const string _problem_name,const string _field_name); 
 
@@ -69,16 +70,16 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
 
   PetscErrorCode Init();
 
+  PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC);
+  PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
+    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
   PetscErrorCode SetDirihletBC_to_ElementIndicies(
     moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
-
   PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
     vector<DofIdx>& DirihletBC,vector<DofIdx> &FaceNodeIndices, vector<vector<DofIdx> > &FaceEdgeIndices, vector<DofIdx> &FaceIndices);
-
   PetscErrorCode SetDirihletBC_to_MatrixDiagonal(moabField::FEMethod *fe_method_ptr,Mat Aij);
-
   PetscErrorCode SetDirihletBC_to_RHS(moabField::FEMethod *fe_method_ptr,Vec F);
-
   PetscErrorCode SetDirihletBC_to_FieldData(moabField::FEMethod *fe_method_ptr,Vec D);
 
 };
