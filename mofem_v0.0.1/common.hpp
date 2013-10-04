@@ -1534,7 +1534,7 @@ enum Cubit_BC {
   TemperatureSet = 1<<9,
   HeatfluxSet = 1<<10,
   InterfaceSet = 1<<11,
-  DefaultCubitName = 1<< 12,
+  UnknownCubitName = 1<< 12,
   Mat_ElasticSet = 1<<13,
   LastSet
 };

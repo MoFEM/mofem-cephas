@@ -965,7 +965,7 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
     
         //To be extended as appropriate
     
-    else { type |= DefaultCubitName; }
+    else { type |= UnknownCubitName; }
         
     PetscFunctionReturn(0);
 }
