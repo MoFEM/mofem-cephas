@@ -1785,7 +1785,7 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
   nb_col_local_dofs = 0;
   DofIdx &nb_col_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_col);
   nb_col_ghost_dofs = 0;
-  for(int part = 0;part<pcomm->size();part++) {
+  for(unsigned int part = 0;part<pcomm->size();part++) {
     DofIdx nb_dofs_row = dofs_row_by_idx.size();
     assert(p_miit->get_nb_dofs_row()==nb_dofs_row);
     DofIdx nb_dofs_row_on_proc = (DofIdx)ceil(nb_dofs_row/pcomm->size());

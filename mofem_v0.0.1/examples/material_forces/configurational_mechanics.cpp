@@ -806,7 +806,7 @@ PetscErrorCode ConfigurationalMechanics::project_force_vector(FieldInterface& mF
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-  ErrorCode rval;
+  //ErrorCode rval;
 
   Vec F_Material;
   ierr = mField.VecCreateGhost(problem,Row,&F_Material); CHKERRQ(ierr);

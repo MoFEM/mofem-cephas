@@ -21,8 +21,6 @@
 
 namespace MoFEM {
 
-static int debug = 1;
-
 PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
     PetscFunctionBegin;
     if(initQorP) {
@@ -35,7 +33,7 @@ PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
       ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
       ierr = KSPSetUp(ksp); CHKERRQ(ierr);
-      if(!debug) ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
+      ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
       ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
       ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
       ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
