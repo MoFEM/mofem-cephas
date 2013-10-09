@@ -709,10 +709,10 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_uid_view(
 }
 PetscErrorCode EntMoFEMFiniteElement::get_uid_side_number(
   Interface &moab,const UId _ent_uid_,
-  const DofMoFEMEntity_multiIndex &dofs_moabfield,
+  const DofMoFEMEntity_multiIndex &dofsMoabField,
   int &side_number, int &sense, int &offset) const { 
   PetscFunctionBegin;
-  EntityHandle child = dofs_moabfield.get<Unique_mi_tag>().find(_ent_uid_)->get_ent();
+  EntityHandle child = dofsMoabField.get<Unique_mi_tag>().find(_ent_uid_)->get_ent();
   PetscErrorCode ierr;
   ierr = moab.side_number(get_ent(),child,side_number,sense,offset); CHKERRQ(ierr);
   PetscFunctionReturn(0);

@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   }
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   //ref level 1
   BitRefLevel bit_level1;
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle meshset_level1;
   rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level1,meshset_level1); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level1,BitRefLevel().set(),meshset_level1); CHKERRQ(ierr);
 
   //add fields
   ierr = mField.add_field("H1FIELD",H1,1); CHKERRQ(ierr);
@@ -393,7 +393,7 @@ int main(int argc, char *argv[]) {
     Tag th_val;
     double def_VAL = 0;
     rval = moab.tag_get_handle("H1FIELD_VAL",1,MB_TYPE_DOUBLE,th_val,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
-    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"PROBLEM_APPROXIMATION",dof_ptr)) {
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"PROBLEM_APPROXIMATION",dof_ptr)) {
       if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
       EntityHandle ent = dof_ptr->get_ent();
       double fval = dof_ptr->get_FieldData();

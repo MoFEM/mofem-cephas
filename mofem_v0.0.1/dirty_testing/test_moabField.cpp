@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   }
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   //ref level 1
   BitRefLevel bit_level1;
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle meshset_level1;
   rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level1,meshset_level1); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level1,BitRefLevel().set(),meshset_level1); CHKERRQ(ierr);
 
   //add fields
   ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);

@@ -1198,7 +1198,7 @@ struct MoFEMProblem {
   BitRefLevel* tag_BitRefLevel;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_rows;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_cols;
-  NumeredMoFEMFiniteElement_multiIndex numered_finite_elements;
+  NumeredMoFEMFiniteElement_multiIndex numeredFiniteElements;
 
   /**
     * use with loops to iterate problem fes 
@@ -1213,11 +1213,11 @@ struct MoFEMProblem {
     IT!=MOFEMPROBLEM->get_numered_fes_begin(NAME); IT++
 
   NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_numered_fes_begin(string fe_name) const { 
-    return numered_finite_elements.get<MoFEMFiniteElement_name_mi_tag>().lower_bound(fe_name);
+    return numeredFiniteElements.get<MoFEMFiniteElement_name_mi_tag>().lower_bound(fe_name);
   }
 
   NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_numered_fes_end(string fe_name) const { 
-    return numered_finite_elements.get<MoFEMFiniteElement_name_mi_tag>().upper_bound(fe_name);
+    return numeredFiniteElements.get<MoFEMFiniteElement_name_mi_tag>().upper_bound(fe_name);
   }
 
   /**
@@ -1233,11 +1233,11 @@ struct MoFEMProblem {
     IT!=MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); IT++
 
   NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const { 
-    return numered_finite_elements.get<Composite_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
+    return numeredFiniteElements.get<Composite_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
   }
 
   NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const { 
-    return numered_finite_elements.get<Composite_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
+    return numeredFiniteElements.get<Composite_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
   }
 
   /**

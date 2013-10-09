@@ -102,7 +102,7 @@ PetscErrorCode FieldInterface::FEMethod::set_col_multIndex(const FENumeredDofMoF
   col_multiIndex = _col_multiIndex;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::BasicMethod::set_moabfields(const MoFEMField_multiIndex *_moabfields) {
+PetscErrorCode FieldInterface::BasicMethod::set_fields(const MoFEMField_multiIndex *_moabfields) {
   PetscFunctionBegin;
   if(_moabfields == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
   moabfields = _moabfields;

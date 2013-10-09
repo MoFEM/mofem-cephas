@@ -66,8 +66,6 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   ublas::vector<double,ublas::bounded_array<double,9> > dofs_X;
   ublas::vector<double,ublas::bounded_array<double,3> > Lambda;
 
-  map<DofIdx,Vec> mapVec;
-
   PetscErrorCode getData(SideNumber_multiIndex::nth_index<1>::type::iterator siit) {
     PetscFunctionBegin;
     try {

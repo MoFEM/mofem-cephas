@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
   EntityHandle meshset_level_interface;
   rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level_interface,BitRefLevel().set(),meshset_level_interface); CHKERRQ(ierr);
 
   //add refined ent to cubit meshsets
   for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /*BitRefLevel bit_level1;
   bit_level1.set(2);
@@ -251,6 +251,9 @@ int main(int argc, char *argv[]) {
   //print bcs
   ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
   ierr = mField.printCubitForceSet(); CHKERRQ(ierr);
+  //print block sets with materials
+  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+
 
   //create matrices
   Vec D,F;
