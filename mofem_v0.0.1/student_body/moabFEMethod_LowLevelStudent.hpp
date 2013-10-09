@@ -22,8 +22,8 @@
 #ifndef __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
 #define __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
 
-#include "moabField.hpp"
-#include "Core_dataStructures.hpp"
+#include "FieldInterface.hpp"
+#include "CoreDataStructures.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -39,7 +39,7 @@ namespace MoFEM {
  * This class give user some data structures and methods on those that
  * structures which could be useful.
 */
-struct FEMethod_LowLevelStudent: public moabField::FEMethod {
+struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
   Interface& moab;
 
   //

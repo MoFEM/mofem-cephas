@@ -1,4 +1,4 @@
-/** \file moabField.hpp
+/** \file FieldInterface.hpp
  * \brief Myltindex containes, data structures and other low-level functions 
 */
 
@@ -55,7 +55,7 @@ namespace MoFEM {
  *  (*) define problems, <br>
  *  (*) manage refined meshses
  */
-struct moabField {
+struct FieldInterface {
   /// get moab interface
   virtual Interface& get_moab() = 0; 
 
@@ -63,7 +63,7 @@ struct moabField {
     * \brief check data consistency in ents_moabfield
     *
     */
-  virtual PetscErrorCode check_NumbetOfEnts_in_ents_moabfield(const string& name) = 0;
+  virtual PetscErrorCode check_number_of_ents_in_ents_moabfield(const string& name) = 0;
 
   /** 
     * \brief get entities form CUBIT/meshset 
@@ -342,6 +342,15 @@ struct moabField {
   virtual PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /** 
+    * \brief set field entities form adjacencies of edges
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshset contains set triangles
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
+
+  /** 
     * \brief set field entities form adjacencies of triangles
     *
     * The lower dimension entities are added depending on the space type
@@ -507,6 +516,13 @@ struct moabField {
    */
     
   virtual PetscErrorCode build_problems(int verb = -1) = 0;
+
+  /** \brief partition problem dofs
+   *
+   * \param name problem name
+   */
+  virtual PetscErrorCode simple_partition_problem(const string &name,int verb = -1) = 0;
+
 
   /** \brief partition problem dofs
    *
@@ -950,7 +966,7 @@ struct moabField {
     * in database. This function can be used a special case when user need to
     * do some pre- and post-processing before matrix or vector is initiated, or
     * to assemble matrix for group of FEMethods. Is used by calsses classes
-    * moabSnes and moabTs. Look for more details there.
+    * SnesCtx and TsCtx. Look for more details there.
     *
     * FIXME: Here we need example
     *
@@ -966,7 +982,7 @@ struct moabField {
     * in database. This function can be used a special case when user need to
     * do some pre- and post-processing before matrix or vector is initiated, or
     * to assemble matrix for group of FEMethods. Is used by calsses classes
-    * moabSnes and moabTs. Look for more details there.
+    * SnesCtx and TsCtx. Look for more details there.
     *
     * FIXME: Here we need example
     *
@@ -981,7 +997,7 @@ struct moabField {
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
    * problem. The particular methods exectuted on each element are given by
-   * class derived form moabField::FEMethod. At beginig of each loop user definded
+   * class derived form FieldInterface::FEMethod. At beginig of each loop user definded
    * function (method)  preProcess() is called, for each element operator() is
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().
@@ -991,7 +1007,7 @@ struct moabField {
    * For more details pleas look to examples.
    *
    * \param problem_name fe_name \param method is class derived form
-   * moabField::FEMethod
+   * FieldInterface::FEMethod
   **/ 
   virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
 
@@ -1000,7 +1016,7 @@ struct moabField {
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
    * problem. The particular methods exectuted on each element are given by
-   * class derived form moabField::FEMethod. At beginig of each loop user definded
+   * class derived form FieldInterface::FEMethod. At beginig of each loop user definded
    * function (method)  preProcess() is called, for each element operator() is
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().
@@ -1008,7 +1024,7 @@ struct moabField {
    * For more details please look to examples.
    *
    * \param problem_name fe_name \param method is class derived form
-   * moabField::FEMethod
+   * FieldInterface::FEMethod
   **/ 
   virtual PetscErrorCode loop_finite_elements(
     const string &problem_name,const string &fe_name,FEMethod &method,
@@ -1022,7 +1038,7 @@ struct moabField {
   /** \brief Get problem database (datastructure) 
     *
     */
-  virtual PetscErrorCode get_problems_database(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
+  virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
   /** \brief Get dofs multi index
     *

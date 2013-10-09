@@ -21,6 +21,8 @@
 
 namespace MoFEM {
 
+static int debug = 1;
+
 PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
     PetscFunctionBegin;
     if(initQorP) {
@@ -33,7 +35,7 @@ PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
       ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
       ierr = KSPSetUp(ksp); CHKERRQ(ierr);
-      ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
+      if(!debug) ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
       ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
       ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
       ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
@@ -179,6 +181,22 @@ PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f) {
   ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projR,0,0,0,0);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode matRT_mult_shell(Mat RT,Vec x,Vec f) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  void *void_ctx;
+  ierr = MatShellGetContext(RT,&void_ctx); CHKERRQ(ierr);
+  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
+  PetscLogEventBegin(ctx->USER_EVENT_projRT,0,0,0,0);
+  ierr = ctx->InitQorP(x); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
+  ierr = KSPSolve(ctx->ksp,ctx->Cx,f); CHKERRQ(ierr);
+  PetscLogEventEnd(ctx->USER_EVENT_projRT,0,0,0,0);
   PetscFunctionReturn(0);
 }
 

@@ -1,5 +1,5 @@
-/** \file moabField_Core.hpp
- * \brief Core moabField::FEMethod class for user interface
+/** \file FieldCore.hpp
+ * \brief Core FieldInterface::FEMethod class for user interface
  * 
  * Low level data structures not used directly by user
  *
@@ -21,8 +21,8 @@
 #ifndef __MOABFEMETHOD_COMPLEXFORLAZY_HPP__
 #define __MOABFEMETHOD_COMPLEXFORLAZY_HPP__
 
-#include "moabField.hpp"
-#include "Core_dataStructures.hpp"
+#include "FieldInterface.hpp"
+#include "CoreDataStructures.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
@@ -35,8 +35,8 @@ namespace MoFEM {
 
 struct FEMethod_ComplexForLazy_Data: public FEMethod_UpLevelStudent {
 
-  moabField& mField;
-  FEMethod_ComplexForLazy_Data(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+  FieldInterface& mField;
+  FEMethod_ComplexForLazy_Data(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
     FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_bc_method_ptr,_verbose),mField(_mField) {}
 
 };
@@ -69,7 +69,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
 
   string spatial_field_name;
   string material_field_name;
-  FEMethod_ComplexForLazy(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
+  FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
     analysis _type,double _lambda,double _mu,int _verbose = 0);
 
   int g_TRI_dim;

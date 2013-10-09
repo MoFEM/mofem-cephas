@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
 
 using namespace MoFEM;
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   Range CubitSideSets_meshsets;
   ierr = mField.get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
@@ -203,8 +203,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
   //ierr = mField.set_field_order(0,MBPRISM,"DAMAGE_INTERFACE",1); CHKERRQ(ierr);
 
-  moabField_Core core2(moab);
-  moabField& mField2 = core2;
+  FieldCore core2(moab);
+  FieldInterface& mField2 = core2;
 
   //build fields
   ierr = mField2.build_fields(); CHKERRQ(ierr);

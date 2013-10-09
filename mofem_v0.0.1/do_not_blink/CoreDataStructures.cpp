@@ -1,4 +1,4 @@
-/** \file Core_dataStructures.cpp
+/** \file CoreDataStructures.cpp
  * \brief Myltindex containes, data structures and other low-level functions 
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
@@ -22,7 +22,7 @@
 */
 
 
-#include <Core_dataStructures.hpp>
+#include <CoreDataStructures.hpp>
 
 namespace MoFEM {
 

@@ -20,13 +20,13 @@
 #ifndef __POSTPROCVERTEXMETHOD_HPP__
 #define __POSTPROCVERTEXMETHOD_HPP__
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 
 using namespace MoFEM;
 
 // Write Displacements DOFS on Vertices
-struct PostProcVertexMethod: public moabField::EntMethod {
+struct PostProcVertexMethod: public FieldInterface::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
     Interface& moab;
@@ -38,13 +38,6 @@ struct PostProcVertexMethod: public moabField::EntMethod {
     PostProcVertexMethod(Interface& _moab,
       string _field_name = "DISPLACEMENT",Vec _V = PETSC_NULL,string _tag_name = "__NotSet__"): 
       EntMethod(),moab(_moab),field_name(_field_name),V(_V),tag_name(_tag_name) {
-      double def_VAL[3] = {0,0,0};
-      // create TAG
-      if(tag_name == "__NotSet__") {
-	tag_name = field_name+"_VAL";
-      }
-      rval = moab.tag_get_handle(tag_name.c_str(),3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
-
     }
 
     vector<double> vals;
@@ -57,8 +50,22 @@ struct PostProcVertexMethod: public moabField::EntMethod {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscPrintf(PETSC_COMM_WORLD,"Start postporcess\n");
-      rval = moab.get_entities_by_type(0,MBVERTEX,nodes); CHKERR_PETSC(rval);
-      vals.resize(nodes.size()*3);
+
+      MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it = moabfields->get<FieldName_mi_tag>().find(field_name);
+      if(field_it==moabfields->get<FieldName_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"field < %s > not found (top tip: check spelling)",field_name.c_str());
+
+      double def_VAL[field_it->get_max_rank()];
+      bzero(def_VAL,field_it->get_max_rank()*sizeof(double));
+      // create TAG
+      if(tag_name == "__NotSet__") {
+	tag_name = field_name+"_VAL";
+      }
+      rval = moab.tag_get_handle(tag_name.c_str(),field_it->get_max_rank(),MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); 
+      if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
+      CHKERR(rval);
+
+      rval = moab.get_entities_by_type(field_it->get_meshset(),MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+      vals.resize(nodes.size()*field_it->get_max_rank());
       if(V!=PETSC_NULL) {
 	ierr = VecScatterCreateToAll(V,&ctx,&V_glob); CHKERRQ(ierr);
 	ierr = VecScatterBegin(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -88,7 +95,7 @@ struct PostProcVertexMethod: public moabField::EntMethod {
       Range::iterator nit = find(nodes.begin(),nodes.end(),ent);
       if(nit==nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       unsigned int pos = std::distance(nodes.begin(),nit);
-      pos = 3*pos+dof_rank;
+      pos = dof_ptr->get_max_rank()*pos+dof_rank;
       if(pos>vals.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       vals[pos] = fval;
       //cerr << pos << " --> " << fval << " ent " << ent << endl;

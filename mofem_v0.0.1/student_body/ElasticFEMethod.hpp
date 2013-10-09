@@ -26,16 +26,16 @@ namespace MoFEM {
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
-    moabField& mField;
+    FieldInterface& mField;
     Mat Aij;
     Vec Data,F;
 
     ElasticFEMethod(
-      moabField& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
+      FieldInterface& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
       Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL) {};
 
     ElasticFEMethod(
-      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
       double _lambda,double _mu): 
       FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
       Aij(_Aij),Data(_D),F(_F),

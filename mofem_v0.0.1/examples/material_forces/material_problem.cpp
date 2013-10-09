@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "configurational_mechanics.hpp"
-#include "moabField_Core.hpp"
+#include "FieldCore.hpp"
 
 using namespace MoFEM;
 
@@ -54,20 +54,20 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   ConfigurationalMechanics conf_prob;
 
-  ierr = conf_prob.ConfigurationalMechanics_SetMaterialFireWall(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   BitRefLevel bit_level0;
   bit_level0.set(0);
 
-  ierr = conf_prob.ConfigurationalMechanics_SpatialProblemDefinition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_MaterialProblemDefinition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_ConstrainsProblemDefinition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
@@ -88,16 +88,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition problems
-  ierr = conf_prob.ConfigurationalMechanics_SpatialPartitionProblems(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_MaterialPartitionProblems(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_ConstrainsPartitionProblems(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.spatialPartitionProblems(mField); CHKERRQ(ierr);
+  ierr = conf_prob.material_partition_problems(mField); CHKERRQ(ierr);
+  ierr = conf_prob.constrains_partition_problems(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
 
   //solve material problem
-  ierr = conf_prob.ConfigurationalMechanics_SetMaterialPositions(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_SolveMaterialProblem(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_CalculateSpatialResidual(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_CalculateMaterialForces(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_ProjectForceVector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.solve_material_problem(mField); CHKERRQ(ierr);
+  ierr = conf_prob.calculate_spatial_residual(mField); CHKERRQ(ierr);
+  ierr = conf_prob.calculate_material_forces(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
 
   rval = moab.write_file("out_material_problem.h5m"); CHKERR_PETSC(rval);
 

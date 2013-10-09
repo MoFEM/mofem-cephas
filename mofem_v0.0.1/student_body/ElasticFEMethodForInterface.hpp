@@ -22,8 +22,8 @@
 #define __ELASTICFEMETHODFORINTERFACE_HPP__
 
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
@@ -44,13 +44,13 @@ struct InterfaceFEMethod: public ElasticFEMethod {
   vector<ublas::vector<FieldData> > DispData;
 
   InterfaceFEMethod(
-      moabField& _mField,double _YoungModulus): 
+      FieldInterface& _mField,double _YoungModulus): 
       ElasticFEMethod(_mField),YoungModulus(_YoungModulus) {
       DispData.resize(1+6+2);
     };
 
   InterfaceFEMethod(
-      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _YoungModulus): 
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _YoungModulus): 
 	ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0),YoungModulus(_YoungModulus) {
     DispData.resize(1+6+2);
     };
@@ -261,7 +261,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 
 struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
   
-    PostProcCohesiveForces(moabField& _mField,double _YoungModulus): 
+    PostProcCohesiveForces(FieldInterface& _mField,double _YoungModulus): 
       InterfaceFEMethod(_mField,_YoungModulus), PostProcOnRefMesh_Base() {
       pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     };
@@ -311,8 +311,8 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
       rval = moab_ref.get_adjacencies(&nodes[3],3,2,true,ref_faces,Interface::UNION); CHKERR_PETSC(rval);
   
       //
-      moabField_Core core_ref(moab_ref);
-      moabField& mField_ref = core_ref;
+      FieldCore core_ref(moab_ref);
+      FieldInterface& mField_ref = core_ref;
       ierr = mField_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
       for(int ll = 0;ll<max_level;ll++) {
