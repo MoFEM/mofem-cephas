@@ -63,7 +63,7 @@ struct FieldInterface {
     * \brief check data consistency in ents_moabfield
     *
     */
-  virtual PetscErrorCode check_number_of_ents_in_ents_moabfield(const string& name) = 0;
+  virtual PetscErrorCode check_number_of_ents_in_ents_field(const string& name) = 0;
 
   /** 
     * \brief get entities form CUBIT/meshset 
@@ -217,6 +217,7 @@ struct FieldInterface {
   virtual PetscErrorCode printCubitDisplacementSet() = 0;
   virtual PetscErrorCode printCubitPressureSet() = 0;
   virtual PetscErrorCode printCubitForceSet() = 0;
+  virtual PetscErrorCode printCubitMaterials() = 0;
 
   /**
   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
@@ -260,9 +261,20 @@ struct FieldInterface {
    * \param BitRefLevel bitLevel
    * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
    */
-    
   virtual PetscErrorCode add_verices_in_the_middel_of_edges(
     const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1) = 0;
+
+  /**
+   * \brief make vertices in the middle of edges in meshset and add them to refinment levels defined by bit
+   *
+   * Takes entities fromm meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
+   * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
+   *
+   * \param Range consisting edges for refine 
+   * \param BitRefLevel bitLevel
+   * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
+   */
+  virtual PetscErrorCode add_verices_in_the_middel_of_edges(const Range &edges,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**\brief refine TET in the meshset
    *
@@ -271,6 +283,15 @@ struct FieldInterface {
    * \param If TRUE, interface elements would be refined too
    */
   virtual PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = true) = 0;
+
+  /**\brief refine TET in the meshset
+   *
+   * \param Range of tets to refine
+   * \param BitRefLevel bitLevel
+   * \param If TRUE, interface elements would be refined too
+   */
+  virtual PetscErrorCode refine_TET(const Range &tets,const BitRefLevel &bit,const bool respect_interface = true) = 0;
+
 
   /**\brief refine PRISM in the meshset
    *
@@ -295,15 +316,27 @@ struct FieldInterface {
    * \param BitRefLevel bitLevel
    * \param EntityHandle meshset
    */
-    
   virtual PetscErrorCode refine_get_finite_elements(const BitRefLevel &bit,const EntityHandle meshset) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
    *
    * \param BitRefLevel bitLevel
+   * \param BitRefLevel mask
    * \param EntityHandle meshset   
+   *
    */
-  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const EntityHandle meshset) = 0;
+  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
+
+  /**\brief add all ents from ref level given by bit to meshset
+   *
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel mask
+   * \param Range   
+   *
+   *
+   */
+  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
+
 
   /** \brief Get childed entities form meshset containing parent entities 
     * 
@@ -375,7 +408,7 @@ struct FieldInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order 
     */
-  virtual PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order) = 0;
+  virtual PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1) = 0;
 
   /// \brief list entities in the field
   virtual PetscErrorCode list_field() const = 0;
@@ -568,9 +601,6 @@ struct FieldInterface {
    */
   virtual PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1) = 0;
 
-  /// erase inactive dofs from field
-  virtual PetscErrorCode erase_inactive_dofs_moabfield() = 0;
-
   /**
     * \brief add finite elements to the meshset
     *
@@ -742,7 +772,7 @@ struct FieldInterface {
     BasicMethod();    
     //
     PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
-    PetscErrorCode set_moabfields(const MoFEMField_multiIndex *_moabfields);
+    PetscErrorCode set_fields(const MoFEMField_multiIndex *_moabfields);
     PetscErrorCode set_ents_multiIndex(const MoFEMEntity_multiIndex *_ents_moabfield);
     PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
     PetscErrorCode set_fes_multiIndex(const MoFEMFiniteElement_multiIndex *_finite_elements);
@@ -1043,34 +1073,61 @@ struct FieldInterface {
   /** \brief Get dofs multi index
     *
     */
-  virtual PetscErrorCode get_dofs_moabfield(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr) = 0;
+  virtual PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr) = 0;
 
   /** 
-    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    * \brief get begin iterator of filed ents of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
     *
-    * for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
     * }
     *
     * \param field_name  
     */
-  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_moabfield_by_name_begin(const string &field_name) = 0;
+  virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const string &field_name) = 0;
 
   /** 
-    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
     *
-    * for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
     * }
     *
     * \param field_name  
     */
-  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_moabfield_by_name_end(const string &field_name) = 0;
+  virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const string &field_name) = 0;
+
+  ///loop over all dofs from a moFEM field and particular field
+  #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
+      IT != MFIELD.get_ent_moabfield_by_name_end(NAME); IT++
+
+  /** 
+    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    *
+    * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * 	...
+    * }
+    *
+    * \param field_name  
+    */
+  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name) = 0;
+
+  /** 
+    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    *
+    * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * 	...
+    * }
+    *
+    * \param field_name  
+    */
+  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) = 0;
 
     ///loop over all dofs from a moFEM field and particular field
-  #define _IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_moabfield_by_name_begin(NAME); \
-      IT != MFIELD.get_dofs_moabfield_by_name_end(NAME); IT++
+  #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
+      IT != MFIELD.get_dofs_by_name_end(NAME); IT++
 
   /** \brief Get finite elements multi index
     *
@@ -1078,9 +1135,9 @@ struct FieldInterface {
   virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finite_elements_ptr) = 0;
 
   /** 
-    * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
     *
-    * for(_IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
     * }
     *
@@ -1089,9 +1146,9 @@ struct FieldInterface {
   virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name) = 0;
 
   /** 
-    * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
     *
-    * for(_IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
+    * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
     * }
     *
@@ -1100,7 +1157,7 @@ struct FieldInterface {
   virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
 
     ///loop over all finite elements from a moFEM field and FE
-  #define _IT_GET_FES_MOABFIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+  #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
       IT != MFIELD.get_fes_moabfield_by_name_end(NAME); IT++
 

@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
     ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-    ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
@@ -182,6 +182,8 @@ int main(int argc, char *argv[]) {
   //print bcs
   ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
   ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
+  //print block sets with materials
+  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
 
   //create matrices
   Vec F;
@@ -203,7 +205,7 @@ int main(int argc, char *argv[]) {
   if(step==1) {
     EntityHandle node = 0;
     double coords[3];
-    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
       if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
       EntityHandle ent = dof_ptr->get_ent();
       int dof_rank = dof_ptr->get_dof_rank();

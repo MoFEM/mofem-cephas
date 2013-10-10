@@ -338,12 +338,12 @@ void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFE
 
 template <typename T,typename V>
 PetscErrorCode get_MoFEMFiniteElement_dof_uid_view(
-  const T &dofs_moabfield,V &dofs_view,
+  const T &dofsMoabField,V &dofs_view,
   const int operation_type,const void* tag_data,const int tag_size) {
   PetscFunctionBegin;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type dofs_by_uid;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type::value_type value_type;
-  const dofs_by_uid &dofs = dofs_moabfield.get<Unique_mi_tag>();
+  const dofs_by_uid &dofs = dofsMoabField.get<Unique_mi_tag>();
   const UId *uids = (UId*)tag_data;
   int size = tag_size/sizeof(UId);
   vector<const value_type*> vec;

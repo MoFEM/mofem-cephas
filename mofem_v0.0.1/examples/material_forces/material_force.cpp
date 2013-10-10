@@ -62,8 +62,14 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
   //ref meshset ref level 0
-  BitRefLevel bit_level0;
-  bit_level0.set(2);
+  Tag th_my_ref_level;
+  BitRefLevel def_bit_level = 0;
+  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
+    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  BitRefLevel *ptr_bit_level0;
+  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+  BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);

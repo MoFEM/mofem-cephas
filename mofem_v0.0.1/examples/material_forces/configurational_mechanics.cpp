@@ -165,7 +165,6 @@ PetscErrorCode ConfigurationalMechanics::spatial_problem_definition(FieldInterfa
   ierr = mField.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
 
-
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   //set finite elements for problems
@@ -185,6 +184,47 @@ PetscErrorCode ConfigurationalMechanics::spatial_problem_definition(FieldInterfa
   ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+
+  PetscInt nb_ref_levels;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ref",&nb_ref_levels,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    nb_ref_levels = 0;
+  }
+
+  ErrorCode rval;
+  EntityHandle meshset_level;
+  rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
+
+  for(int ll = 2;ll<nb_ref_levels+2;ll++) {
+
+    rval = mField.get_moab().clear_meshset(&meshset_level,1); CHKERR(rval);
+
+    BitRefLevel bit_level;
+    bit_level.set(ll);
+    for(int lll = ll+1;lll<nb_ref_levels+2;lll++) {
+      bit_level.set(lll);
+    }
+
+    ierr = mField.refine_get_ents(bit_level,bit_level,meshset_level); CHKERRQ(ierr);
+  
+    int ref_order = order > ll ? order : ll;
+    ref_order = ref_order > 5 ? 5 : ref_order;
+
+    ierr = mField.set_field_order(meshset_level,MBTET,"SPATIAL_POSITION",ref_order,2); CHKERRQ(ierr);
+    ierr = mField.set_field_order(meshset_level,MBTRI,"SPATIAL_POSITION",ref_order,0); CHKERRQ(ierr);
+    ierr = mField.set_field_order(meshset_level,MBEDGE,"SPATIAL_POSITION",ref_order,0); CHKERRQ(ierr);
+
+  }
+  rval = mField.get_moab().delete_entities(&meshset_level,1); CHKERR(rval);
+
+  Tag th_order;
+  const int def_order = -1;
+  rval = mField.get_moab().tag_get_handle("ORDER",1,MB_TYPE_INTEGER,th_order,MB_TAG_CREAT|MB_TAG_SPARSE,&def_order); CHKERR_THROW(rval);
+  for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dit)) {
+    EntityHandle ent = dit->get_ent();
+    int order = dit->get_max_order();
+    rval = mField.get_moab().tag_set_data(th_order,&ent,1,&order); CHKERR(rval);
+  }
 
   PetscFunctionReturn(0);
 }
@@ -641,7 +681,7 @@ PetscErrorCode ConfigurationalMechanics::set_spatial_positions(FieldInterface& m
 
   EntityHandle node = 0;
   double coords[3];
-  for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
       if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
       EntityHandle ent = dof_ptr->get_ent();
       int dof_rank = dof_ptr->get_dof_rank();
@@ -665,7 +705,7 @@ PetscErrorCode ConfigurationalMechanics::set_material_positions(FieldInterface& 
 
   EntityHandle node = 0;
   double coords[3];
-  for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"MESH_NODE_POSITIONS",dof_ptr)) {
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"MESH_NODE_POSITIONS",dof_ptr)) {
     if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
     EntityHandle ent = dof_ptr->get_ent();
     int dof_rank = dof_ptr->get_dof_rank();
@@ -810,7 +850,7 @@ PetscErrorCode ConfigurationalMechanics::project_force_vector(FieldInterface& mF
 
   Vec F_Material;
   ierr = mField.VecCreateGhost(problem,Row,&F_Material); CHKERRQ(ierr);
-  /*for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
+  /*for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
     cerr << *dof << endl;
   }*/
   ierr = mField.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -1126,7 +1166,7 @@ PetscErrorCode ConfigurationalMechanics::calculate_material_forces(FieldInterfac
 
   //Fields
   ierr = mField.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  //for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
+  //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
     //cerr << *dof << endl;
   //}
 
