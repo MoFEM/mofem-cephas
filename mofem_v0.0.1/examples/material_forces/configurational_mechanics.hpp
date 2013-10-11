@@ -20,7 +20,8 @@
 #ifndef __CONFIGURATIONAL_MECHANICS_HPP__
 #define __CONFIGURATIONAL_MECHANICS_HPP__
 
-#include "moabField.hpp"
+#include "FieldInterface.hpp"
+#include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 
 using namespace MoFEM;
 
@@ -28,30 +29,44 @@ struct ConfigurationalMechanics {
  
   Tag th_MaterialFireWall;
   typedef bitset<16> Material_FirelWall_def;
-  Material_FirelWall_def *Material_FirelWall;
+  Material_FirelWall_def *material_FirelWall;
 
-  EntityHandle CornersNodesMeshset,SurfacesFacesMeshset,CrackSurfacesFacesMeshset,CrackForntMeshset;
+  enum FirWall {
+    FW_spatial_problem_definition = 0,
+    FW_material_problem_definition,
+    FW_coupled_problem_definition,
+    FW_constrains_problem_definition,
+    FW_constrains_crack_front_problem_definition,
+    FW_set_spatial_positions,
+    FW_set_material_positions
+  };
+
+  EntityHandle cornersNodesMeshset,surfacesFacesMeshset,cracksurfacesFacesMeshset,crackForntMeshset;
+  matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
   
-  PetscErrorCode ConfigurationalMechanics_SetMaterialFireWall(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_SpatialProblemDefinition(moabField& mField); 
-  PetscErrorCode ConfigurationalMechanics_MaterialProblemDefinition(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_CoupledProblemDefinition(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_ConstrainsProblemDefinition(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_ConstrainsCrackFrontProblemDefinition(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_SpatialPartitionProblems(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_MaterialPartitionProblems(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_CoupledPartitionProblems(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_ConstrainsPartitionProblems(moabField& mField,string problem);
-  PetscErrorCode ConfigurationalMechanics_CrackFrontPartitionProblems(moabField& mField,string problem);
-  PetscErrorCode ConfigurationalMechanics_SetSpatialPositions(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_SetMaterialPositions(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_SolveSpatialProblem(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_SolveMaterialProblem(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_CalculateSpatialResidual(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_CalculateMaterialForces(moabField& mField,string problem);
-  PetscErrorCode ConfigurationalMechanics_ProjectForceVector(moabField& mField,string problem);
-  PetscErrorCode ConfigurationalMechanics_GriffithForceVector(moabField& mField);
-  PetscErrorCode ConfigurationalMechanics_SolveCoupledProblem(moabField& mField);
+  PetscErrorCode set_material_fire_wall(FieldInterface& mField);
+  PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
+  PetscErrorCode material_problem_definition(FieldInterface& mField);
+  PetscErrorCode coupled_problem_definition(FieldInterface& mField);
+  PetscErrorCode constrains_problem_definition(FieldInterface& mField);
+  PetscErrorCode constrains_crack_front_problem_definition(FieldInterface& mField);
+  PetscErrorCode spatialPartitionProblems(FieldInterface& mField);
+  PetscErrorCode material_partition_problems(FieldInterface& mField);
+  PetscErrorCode coupled_partition_problems(FieldInterface& mField);
+  PetscErrorCode constrains_partition_problems(FieldInterface& mField,string problem);
+  PetscErrorCode crackfront_partition_problems(FieldInterface& mField,string problem);
+  PetscErrorCode set_spatial_positions(FieldInterface& mField);
+  PetscErrorCode set_material_positions(FieldInterface& mField);
+  PetscErrorCode solve_spatial_problem(FieldInterface& mField);
+  PetscErrorCode solve_material_problem(FieldInterface& mField);
+  PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
+  PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem);
+  PetscErrorCode surface_projection_data(FieldInterface& mField,string problem);
+  PetscErrorCode project_force_vector(FieldInterface& mField,string problem);
+  PetscErrorCode front_projection_data(FieldInterface& mField,string problem);
+  PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
+  PetscErrorCode griffith_g(FieldInterface& mField,string problem);
+  PetscErrorCode solve_coupled_problem(FieldInterface& mField);
 
 };
 

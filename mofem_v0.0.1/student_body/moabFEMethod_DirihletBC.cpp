@@ -26,7 +26,7 @@ namespace MoFEM {
 BaseDirihletBC::BaseDirihletBC() {}
 
 PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
-    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
+    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
     NOT_USED(fe_method_ptr);
@@ -35,7 +35,7 @@ PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
     PetscFunctionReturn(0);
   }
 PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
-    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
     NOT_USED(fe_method_ptr);
@@ -43,7 +43,7 @@ PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
     PetscFunctionReturn(0);
   }
 PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndicies(
-    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
     NOT_USED(fe_method_ptr);
@@ -64,14 +64,14 @@ PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesFace(
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_FieldData(moabField::FEMethod *fe_method_ptr,Vec D) {
+PetscErrorCode BaseDirihletBC::SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
     NOT_USED(fe_method_ptr);
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_MatrixDiagonal(moabField::FEMethod *fe_method_ptr,Mat Aij) {
+PetscErrorCode BaseDirihletBC::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
     NOT_USED(fe_method_ptr);
@@ -79,7 +79,7 @@ PetscErrorCode BaseDirihletBC::SetDirihletBC_to_MatrixDiagonal(moabField::FEMeth
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_RHS(moabField::FEMethod *fe_method_ptr,Vec F) {
+PetscErrorCode BaseDirihletBC::SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
     NOT_USED(fe_method_ptr);
@@ -87,7 +87,7 @@ PetscErrorCode BaseDirihletBC::SetDirihletBC_to_RHS(moabField::FEMethod *fe_meth
     PetscFunctionReturn(0);
   }
 
-CubitDisplacementDirihletBC::CubitDisplacementDirihletBC(moabField& _mField,const string _problem_name,const string _field_name): 
+CubitDisplacementDirihletBC::CubitDisplacementDirihletBC(FieldInterface& _mField,const string _problem_name,const string _field_name): 
     mField(_mField),problem_name(_problem_name),field_name(_field_name) {};
 
 PetscErrorCode CubitDisplacementDirihletBC::Init() {
@@ -137,7 +137,7 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
 
 
 PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
-    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
+    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
     for(_IT_GET_FEROW_DOFS_FOR_LOOP_(fe_method_ptr,field_name,dit)) {
       for(int ss = 0;ss<3;ss++) {
@@ -176,7 +176,7 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
 }
 
 PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
-    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
     for(_IT_GET_FECOL_DOFS_FOR_LOOP_(fe_method_ptr,field_name,dit)) {
       for(int ss = 0;ss<3;ss++) {
@@ -214,7 +214,7 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
 }
 
 PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndicies(
-    moabField::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
     PetscFunctionBegin;
     DirihletBC.resize(0);
     ierr = SetDirihletBC_to_ElementIndiciesRow(fe_method_ptr,RowGlobDofs,DirihletBC); CHKERRQ(ierr);
@@ -242,7 +242,7 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesFace
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_MatrixDiagonal(moabField::FEMethod *fe_method_ptr,Mat Aij) {
+PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
     PetscFunctionBegin;
 
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -263,7 +263,7 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_MatrixDiagonal(moab
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_RHS(moabField::FEMethod *fe_method_ptr,Vec F) {
+PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
 
@@ -287,7 +287,7 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_RHS(moabField::FEMe
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_FieldData(moabField::FEMethod *fe_method_ptr,Vec D) {
+PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D) {
     PetscFunctionBegin;
 
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);

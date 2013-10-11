@@ -1,4 +1,4 @@
-/** \file Core_dataStructures.cpp
+/** \file CoreDataStructures.cpp
  * \brief Myltindex containes, data structures and other low-level functions 
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
@@ -22,7 +22,7 @@
 */
 
 
-#include <Core_dataStructures.hpp>
+#include <CoreDataStructures.hpp>
 
 namespace MoFEM {
 
@@ -709,10 +709,10 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_uid_view(
 }
 PetscErrorCode EntMoFEMFiniteElement::get_uid_side_number(
   Interface &moab,const UId _ent_uid_,
-  const DofMoFEMEntity_multiIndex &dofs_moabfield,
+  const DofMoFEMEntity_multiIndex &dofsMoabField,
   int &side_number, int &sense, int &offset) const { 
   PetscFunctionBegin;
-  EntityHandle child = dofs_moabfield.get<Unique_mi_tag>().find(_ent_uid_)->get_ent();
+  EntityHandle child = dofsMoabField.get<Unique_mi_tag>().find(_ent_uid_)->get_ent();
   PetscErrorCode ierr;
   ierr = moab.side_number(get_ent(),child,side_number,sense,offset); CHKERRQ(ierr);
   PetscFunctionReturn(0);

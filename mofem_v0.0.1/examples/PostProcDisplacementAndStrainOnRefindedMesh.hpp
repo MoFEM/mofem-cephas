@@ -20,8 +20,8 @@
 #ifndef __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 #define __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
 
 using namespace MoFEM;
@@ -83,19 +83,19 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
 
       //
-      moabField_Core core_ref(moab_ref);
-      moabField& mField_ref = core_ref;
+      FieldCore core_ref(moab_ref);
+      FieldInterface& mField_ref = core_ref;
       ierr = mField_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
       for(int ll = 0;ll<max_level;ll++) {
 	PetscPrintf(PETSC_COMM_WORLD,"Refine Level %d\n",ll);
 	rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[ll]); CHKERR_PETSC(rval);
-	ierr = mField_ref.refine_get_ents(BitRefLevel().set(ll),meshset_level[ll]); CHKERRQ(ierr);
+	ierr = mField_ref.refine_get_ents(BitRefLevel().set(ll),BitRefLevel().set(),meshset_level[ll]); CHKERRQ(ierr);
 	ierr = mField_ref.add_verices_in_the_middel_of_edges(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
 	ierr = mField_ref.refine_TET(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
       }
       rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[max_level]); CHKERR_PETSC(rval);
-      ierr = mField_ref.refine_get_ents(BitRefLevel().set(max_level),meshset_level[max_level]); CHKERRQ(ierr);
+      ierr = mField_ref.refine_get_ents(BitRefLevel().set(max_level),BitRefLevel().set(),meshset_level[max_level]); CHKERRQ(ierr);
 
       std::vector<double> ref_coords;
       rval = moab_ref.get_vertex_coordinates(ref_coords); CHKERR_PETSC(rval);

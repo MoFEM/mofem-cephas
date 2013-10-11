@@ -19,7 +19,7 @@
 
 //A scheme for Edge-based Adaptive Tetrahedral Subdivision; Delft Ruprecht
 
-#include "Core_dataStructures.hpp"
+#include "CoreDataStructures.hpp"
 
 namespace MoFEM {
 

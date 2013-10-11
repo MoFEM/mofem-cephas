@@ -21,14 +21,14 @@
 #ifndef __MOABFEMETHOD_DRIVERCOMPLEXFORLAZY_HPP__
 #define __MOABFEMETHOD_DRIVERCOMPLEXFORLAZY_HPP__
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
 #include "moabFEMethod_DirihletBC.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
-#include "moabSnes.hpp"
+#include "SnesCtx.hpp"
 #include "moabFEMethod_ComplexForLazy.hpp"
 
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
@@ -42,7 +42,7 @@ namespace MoFEM {
 
 struct DirihletBCMethod_DriverComplexForLazy: public CubitDisplacementDirihletBC {
 
-  DirihletBCMethod_DriverComplexForLazy(moabField& _mField,const string _problem_name,const string _field_name): 
+  DirihletBCMethod_DriverComplexForLazy(FieldInterface& _mField,const string _problem_name,const string _field_name): 
     CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
 
 };
@@ -57,7 +57,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   }
 
   Tag th_t_val;
-  FEMethod_DriverComplexForLazy_Spatial(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+  FEMethod_DriverComplexForLazy_Spatial(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
   FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
   FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { 
     double def_t_val = 0;
@@ -407,7 +407,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
 struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForLazy_Spatial {
 
-  FEMethod_DriverComplexForLazy_Material(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+  FEMethod_DriverComplexForLazy_Material(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
       type_of_analysis = material_analysis;
@@ -581,7 +581,7 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 
 struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComplexForLazy_Material {
 
-  FEMethod_DriverComplexForLazy_MeshSmoothing(moabField& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+  FEMethod_DriverComplexForLazy_MeshSmoothing(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,0,0,_verbose) {
       type_of_analysis = mesh_quality_analysis;
@@ -669,7 +669,7 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
   string problem_name;
 
-  FEMethod_DriverComplexForLazy_Projected(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,string _problem_name): 
+  FEMethod_DriverComplexForLazy_Projected(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,string _problem_name): 
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr), 
     proj_all_ctx(_proj_all_ctx),init(true),problem_name(_problem_name) {};
 
@@ -847,7 +847,7 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
 struct FEMethod_DriverComplexForLazy_MaterialProjected: public  FEMethod_DriverComplexForLazy_Material,FEMethod_DriverComplexForLazy_Projected {
 
-  FEMethod_DriverComplexForLazy_MaterialProjected(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+  FEMethod_DriverComplexForLazy_MaterialProjected(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),
     FEMethod_DriverComplexForLazy_Projected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,"MATERIAL_MECHANICS") {
@@ -919,7 +919,7 @@ struct FEMethod_DriverComplexForLazy_MaterialProjected: public  FEMethod_DriverC
 
 struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_DriverComplexForLazy_MeshSmoothing,FEMethod_DriverComplexForLazy_Projected {
 
-  FEMethod_DriverComplexForLazy_MeshSmoothingProjected(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+  FEMethod_DriverComplexForLazy_MeshSmoothingProjected(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_verbose),
     FEMethod_DriverComplexForLazy_Projected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,"MESH_SMOOTHING") {}
@@ -990,7 +990,7 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
 struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverComplexForLazy_Spatial {
 
   matPROJ_ctx& proj_all_ctx;
-  FEMethod_DriverComplexForLazy_CoupledSpatial(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+  FEMethod_DriverComplexForLazy_CoupledSpatial(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),
     proj_all_ctx(_proj_all_ctx) {}
@@ -1136,7 +1136,7 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
 struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComplexForLazy_Material {
 
   matPROJ_ctx& proj_all_ctx;
-  FEMethod_DriverComplexForLazy_CoupledMaterial(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+  FEMethod_DriverComplexForLazy_CoupledMaterial(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),
     proj_all_ctx(_proj_all_ctx) {}
@@ -1248,7 +1248,7 @@ struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComp
 struct FEMethod_DriverComplexForLazy_CoupledMeshSmoother: public FEMethod_DriverComplexForLazy_MeshSmoothing {
 
   matPROJ_ctx& proj_all_ctx;
-  FEMethod_DriverComplexForLazy_CoupledMeshSmoother(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+  FEMethod_DriverComplexForLazy_CoupledMeshSmoother(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_verbose),
     proj_all_ctx(_proj_all_ctx) {}
@@ -1311,7 +1311,7 @@ struct FEMethod_DriverComplexForLazy_CoupledMeshSmoother: public FEMethod_Driver
 
 struct FEMethod_DriverComplexForLazy_CoupledProjected: public  FEMethod_DriverComplexForLazy_Projected {
 
-  FEMethod_DriverComplexForLazy_CoupledProjected(moabField& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,string _problem_name,int _verbose = 0):
+  FEMethod_DriverComplexForLazy_CoupledProjected(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,string _problem_name,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     FEMethod_DriverComplexForLazy_Projected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_problem_name) {} 
 

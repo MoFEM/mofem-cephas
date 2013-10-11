@@ -182,6 +182,22 @@ PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode matRT_mult_shell(Mat RT,Vec x,Vec f) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  void *void_ctx;
+  ierr = MatShellGetContext(RT,&void_ctx); CHKERRQ(ierr);
+  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
+  PetscLogEventBegin(ctx->USER_EVENT_projRT,0,0,0,0);
+  ierr = ctx->InitQorP(x); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
+  ierr = KSPSolve(ctx->ksp,ctx->Cx,f); CHKERRQ(ierr);
+  PetscLogEventEnd(ctx->USER_EVENT_projRT,0,0,0,0);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;

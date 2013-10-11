@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "configurational_mechanics.hpp"
-#include "moabField_Core.hpp"
+#include "FieldCore.hpp"
 
 using namespace MoFEM;
 
@@ -42,6 +42,13 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
+
+  PetscInt nb_ref_levels;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ref",&nb_ref_levels,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    nb_ref_levels = 0;
+  }
+
  
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
@@ -54,15 +61,16 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
   ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
+  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
 
   ConfigurationalMechanics conf_prob;
 
-  ierr = conf_prob.ConfigurationalMechanics_SetMaterialFireWall(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,1); CHKERRQ(ierr);
@@ -77,9 +85,6 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level_interface;
   bit_level_interface.set(1);
   ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,false,true); CHKERRQ(ierr);
-  EntityHandle meshset_level_interface;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
 
   //add refined ent to cubit meshsets
   for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
@@ -87,17 +92,50 @@ int main(int argc, char *argv[]) {
     ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
     ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
     ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTET,true); CHKERRQ(ierr);
   }
 
-  // stl::bitset see for more details
-  BitRefLevel bit_level0;
-  bit_level0.set(2);
+  BitRefLevel last_ref = bit_level_interface;
+  for(int ll = 2;ll<nb_ref_levels+2;ll++) {
+    Range crack_edges,crack_nodes,edge_tets,level_tets,edges_to_refine;
+
+    ierr = mField.refine_get_ents(last_ref,BitRefLevel().set(),level_tets); CHKERRQ(ierr);
+
+    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_edges,true); CHKERRQ(ierr);
+    rval = moab.get_connectivity(crack_edges,crack_nodes,true); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(crack_nodes,3,false,edge_tets,Interface::UNION); CHKERR_PETSC(rval);
+    edge_tets = intersect(level_tets.subset_by_type(MBTET),edge_tets);
+    rval = moab.get_adjacencies(edge_tets,1,false,edges_to_refine,Interface::UNION); CHKERR_PETSC(rval);
+
+    last_ref = BitRefLevel().set(ll);
+    ierr = mField.add_verices_in_the_middel_of_edges(edges_to_refine,last_ref,2); CHKERRQ(ierr);
+    ierr = mField.refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
+
+    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
+      EntityHandle cubit_meshset = cubit_it->meshset; 
+      ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+      ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+      ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
+    }
+
+  }
+
+  Tag th_my_ref_level;
+  BitRefLevel def_bit_level = 0;
+  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
+    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  BitRefLevel *ptr_bit_level0;
+  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+
+  BitRefLevel& bit_level0 = *ptr_bit_level0;
+  bit_level0 = last_ref;
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
-  ierr = conf_prob.ConfigurationalMechanics_SpatialProblemDefinition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
@@ -114,11 +152,13 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition problems
-  ierr = conf_prob.ConfigurationalMechanics_SpatialPartitionProblems(mField); CHKERRQ(ierr);
+  ierr = conf_prob.spatialPartitionProblems(mField); CHKERRQ(ierr);
 
   //solve problem
-  ierr = conf_prob.ConfigurationalMechanics_SetSpatialPositions(mField); CHKERRQ(ierr);
-  ierr = conf_prob.ConfigurationalMechanics_SolveSpatialProblem(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.solve_spatial_problem(mField); CHKERRQ(ierr);
+
+
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_spatial.h5m"); CHKERR_PETSC(rval);

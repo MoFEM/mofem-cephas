@@ -18,21 +18,21 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 #include <petscksp.h>
 
-#include "moabSnes.hpp"
+#include "SnesCtx.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
-#include "moabSnes.hpp"
+#include "SnesCtx.hpp"
 #include "moabFEMethod_ComplexForLazy.hpp"
 #include "moabFEMethod_DriverComplexForLazy.hpp"
 
@@ -55,7 +55,7 @@ struct ArcLenghtCtx_DataOnMesh {
 
   Interface &moab;
   const void* tag_data_dlambda[1];
-  ArcLenghtCtx_DataOnMesh(moabField &mField): moab(mField.get_moab()) {
+  ArcLenghtCtx_DataOnMesh(FieldInterface &mField): moab(mField.get_moab()) {
     Tag th_dlambda;
     double def_dlambda = 0;
     rval = moab.tag_get_handle("_DLAMBDA",1,MB_TYPE_DOUBLE,th_dlambda,MB_TAG_CREAT|MB_TAG_MESH,&def_dlambda);  
@@ -97,7 +97,7 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
 
   double diag,dx2,F_lambda2,res_lambda,;
   Vec F_lambda,db,x_lambda,y_residual,x0,dx;
-  ArcLenghtCtx(moabField &mField,const string &problem_name): ArcLenghtCtx_DataOnMesh(mField), dlambda(*(double *)tag_data_dlambda[0]) {
+  ArcLenghtCtx(FieldInterface &mField,const string &problem_name): ArcLenghtCtx_DataOnMesh(mField), dlambda(*(double *)tag_data_dlambda[0]) {
 
     mField.VecCreateGhost(problem_name,Row,&F_lambda);
     VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
@@ -121,14 +121,14 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
 
 };
 
-struct ArcLenghtSnesCtx: public moabSnesCtx {
+struct ArcLenghtSnesCtx: public SnesCtx {
 
   ErrorCode rval;
   PetscErrorCode ierr;
 
   ArcLenghtCtx* arc_ptr;
-  ArcLenghtSnesCtx(moabField &_mField,const string &_problem_name,ArcLenghtCtx* _arc_ptr):
-    moabSnesCtx(_mField,_problem_name),arc_ptr(_arc_ptr) {}
+  ArcLenghtSnesCtx(FieldInterface &_mField,const string &_problem_name,ArcLenghtCtx* _arc_ptr):
+    SnesCtx(_mField,_problem_name),arc_ptr(_arc_ptr) {}
 
 };
 
@@ -139,15 +139,15 @@ struct MatShellCtx {
 
 
   double scale_lambda;
-  moabField& mField;
+  FieldInterface& mField;
 
   Mat Aij;
   ArcLenghtCtx* arc_ptr;
-  MatShellCtx(moabField& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr): scale_lambda(1),mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr) {};
+  MatShellCtx(FieldInterface& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr): scale_lambda(1),mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr) {};
   PetscErrorCode set_lambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
     PetscFunctionBegin;
     const MoFEMProblem *problem_ptr;
-    ierr = mField.get_problems_database("ELASTIC_MECHANICS",&problem_ptr); CHKERRQ(ierr);
+    ierr = mField.get_problem("ELASTIC_MECHANICS",&problem_ptr); CHKERRQ(ierr);
     //get problem dofs
     NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
     NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit;
