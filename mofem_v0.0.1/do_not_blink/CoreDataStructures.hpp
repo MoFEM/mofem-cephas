@@ -373,7 +373,7 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent);
 /**
  * \briMoFEMFiniteElement gives connectivity if all the edges are refined
  *
- * \param moab intefcae
+ * \param moab interface
  * \param conn refined tet connectivity
  * \param edge_new_nodes new nodes by edges
  * \param new_tets_conn return new egdge coonectivity
@@ -382,51 +382,51 @@ void tet_type_6(Interface& moab,const EntityHandle *conn,const EntityHandle *edg
 /**
  * \briMoFEMFiniteElement gives connectivity if 5 out of 6 egses are refined
  *
- * \param moab intefcae
+ * \param moab interface
  * \param conn refined tet connectivity
  * \param edge_new_nodes new nodes by edges
  * \param new_tets_conn return new egdge coonectivity
- * \return sub refinment type
+ * \return sub refinement type
  */
 int tet_type_5(Interface& moab,const EntityHandle *conn,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
 * \briMoFEMFiniteElement gives connectivity if 4 out of 6 egses are refined
 *
-* \param moab intefcae
+* \param moab interface
 * \param conn refined tet connectivity
 * \param edge_new_nodes new nodes by edges
 * \param new_tets_conn return new egdge coonectivity
-* \return sub refinment type
+* \return sub refinement type
 */
 int tet_type_4(const EntityHandle *conn,const int *split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
 * \briMoFEMFiniteElement gives connectivity if 3 out of 6 egses are refined
 *
-* \param moab intefcae
+* \param moab interface
 * \param conn refined tet connectivity
 * \param edge_new_nodes new nodes by edges
 * \param new_tets_conn return new egdge coonectivity
-* \return sub refinment type
+* \return sub refinement type
 */
 int tet_type_3(const EntityHandle *conn,const int *split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
 * \briMoFEMFiniteElement gives connectivity if 2 out of 6 egses are refined
 *
-* \param moab intefcae
+* \param moab interface
 * \param conn refined tet connectivity
 * \param edge_new_nodes new nodes by edges
 * \param new_tets_conn return new egdge coonectivity
-* \return sub refinment type
+* \return sub refinement type
 */
 int tet_type_2(const EntityHandle *conn,const int *split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
 * \briMoFEMFiniteElement gives connectivity if 1 out of 6 egses are refined
 *
-* \param moab intefcae
+* \param moab interface
 * \param conn refined tet connectivity
 * \param edge_new_nodes new nodes by edges
 * \param new_tets_conn return new egdge coonectivity
-* \return sub refinment type
+* \return sub refinement type
 */
 void tet_type_1(const EntityHandle *conn,const int split_edge,const EntityHandle edge_new_node,EntityHandle *new_tets_conn);
 

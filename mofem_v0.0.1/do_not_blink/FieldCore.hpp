@@ -158,16 +158,24 @@ struct FieldCore: public FieldInterface {
     PetscFunctionBegin;
     FieldInterface& this_mField = *this;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BlockSet|Mat_ElasticSet,it)) {
-      mat_elastic data;
+      Mat_Elastic data;
       ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
       ostringstream ss;
       ss << *it << endl;
       ss << data;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BlockSet|Mat_TransIsoSet,it)) {
+        Mat_TransIso data;
+        ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
+        ostringstream ss;
+        ss << *it << endl;
+        ss << data;
+        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }
+
     PetscFunctionReturn(0);
   }
-
 
   //refine
   PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit);
