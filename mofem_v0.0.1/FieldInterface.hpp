@@ -363,7 +363,7 @@ struct FieldInterface {
     * \param space approximation space (H1, Hdiv, Hcurl, L2 and NoField (dofs adjacent to meshset) 
     * \prama rank of the field, f.e. temperature has rank 1, displacement in 3d has rank 3
     */
-  virtual PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1) = 0;
+  virtual PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
 
   /** 
     * \brief set field entities on vertices
@@ -432,7 +432,7 @@ struct FieldInterface {
       ierr = mField.add_finite_element("PLASTIC"); CHKERRQ(ierr);
    \endcode
     */
-  virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name) = 0;
+  virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL) = 0;
 
   /** \brief set field data which finite element use
    *
@@ -442,22 +442,32 @@ struct FieldInterface {
    * This function will set memory in the form of a vector
    */
   virtual PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
+  virtual PetscErrorCode modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
 
     /** \brief set field row which finite element use
      *
      * \param name finite element name
      * \param name field name
      */
-    
   virtual PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+
 
     /** \brief set field col which finite element use
      *
      * \param name finite element name
      * \param name field name
-     */
-    
-    virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+     */  
+  virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+
+  /** \brief add TET entities fromm meshset to finite element database given by name
+   *
+   * \param range contains tetrahedrals
+   * \param name Finite Element name
+   * \param recursive if true parent meshset is searched recursively
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const string &name) = 0;
 
   /** \brief add TET entities fromm meshset to finite element database given by name
    *
@@ -472,7 +482,6 @@ struct FieldInterface {
    * \param BitRefLevel BitLevel
    * \param name Finite Element name
    */
-
   virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type,int verb = -1) = 0;
 
   /** \brief add MESHSET element to finite element database given by name 
@@ -480,7 +489,6 @@ struct FieldInterface {
    * \param meshset contains all entities that could be used for finite element
    * \param name Finite Element name
    */
-    
   virtual PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name) = 0;
     
     /** \brief add MESHSETs contained in meshset to finite element database given by name 
@@ -488,7 +496,6 @@ struct FieldInterface {
      * \param meshset contains all meshsets with entities that could be used for finite element
      * \param name Finite Element name
      */
-    
   virtual PetscErrorCode add_ents_to_finite_element_by_MESHSETs(const EntityHandle meshset,const string& name) = 0;
 
   /// list finite elements in database
@@ -938,8 +945,8 @@ struct FieldInterface {
       return index.upper_bound(ent);
     } 
       ///loop over all dofs which are on a particular FE row and given element entity (handle from moab)
-                #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
-    FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
+    #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
+      FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
       ///loop over all dofs which are on a particular FE column and given element entity (handle from moab)

@@ -627,6 +627,16 @@ void MoFEMFiniteElement_row_change_bit_add::operator()(MoFEMFiniteElement &MoFEM
 void EntMoFEMFiniteElement_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
   *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_data)) |= f_id_data;
 }
+void MoFEMFiniteElement_col_change_bit_off::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
+  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_col_data)) &= f_id_col.flip();
+}
+void MoFEMFiniteElement_row_change_bit_off::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
+  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_row_data)) &= f_id_row.flip();
+}
+void EntMoFEMFiniteElement_change_bit_off::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
+  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_data)) &= f_id_data.flip();
+}
+
 static void EntMoFEMFiniteElement_dofs_change(
   Interface &moab,const DofMoFEMEntity_multiIndex_uid_view &uids_view,const EntityHandle ent,const Tag th_DofUid,
   const void** tag_uids_data,int *tag_uids_size) {

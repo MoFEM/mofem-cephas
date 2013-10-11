@@ -155,8 +155,6 @@
   throw str.c_str(); \
 }
 
-
-
 //set that with care, it turns off check for ublas
 //#define BOOST_UBLAS_NDEBUG
 
@@ -181,11 +179,11 @@ typedef int EntPart;
 //typedef uint128_t UId;
 typedef checked_uint128_t UId;
 typedef bitset<6> BitRefEdges;
-typedef bitset<16/*max number of refinments*/> BitRefLevel;
-typedef bitset<16/*max number of fields*/> BitFieldId;
+typedef bitset<32/*max number of refinments*/> BitRefLevel;
+typedef bitset<32/*max number of fields*/> BitFieldId;
 typedef PetscScalar FieldData;
-typedef bitset<16/*max number of finite elements*/> BitFEId;
-typedef bitset<16/*max number of problems*/> BitProblemId;
+typedef bitset<32/*max number of finite elements*/> BitFEId;
+typedef bitset<32/*max number of problems*/> BitProblemId;
 typedef short ApproximationOrder;
 typedef short ApproximationRank;
 
@@ -199,6 +197,11 @@ enum FieldSpace {
   L2,		///< field with C-1 continuity
   LastSpace 	///< FieldSpace in [ 0, LastSpace )
 }; 
+
+enum MoFEMTypes {
+  MF_ZERO = 0,
+  MF_EXCL = 1<<0
+};
 
 /// \brief RowColData
 enum RowColData {

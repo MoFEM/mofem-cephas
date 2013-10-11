@@ -218,6 +218,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_finite_element("C_CORNER_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("CTC_CORNER_ELEM"); CHKERRQ(ierr);
 
+  ierr = mField.add_finite_element("CandCT_SURFACE_ELEM"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("CandCT_CORNER_ELEM"); CHKERRQ(ierr);
+
+
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -241,10 +245,25 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_col("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
 
+  ierr = mField.modify_finite_element_add_field_row("CandCT_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("CandCT_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("CandCT_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("CandCT_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CandCT_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CandCT_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
+
+  ierr = mField.modify_finite_element_add_field_row("CandCT_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("CandCT_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("CandCT_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("CandCT_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CandCT_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CandCT_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
+
   //define problems
   ierr = mField.add_problem("MESH_SMOOTHING"); CHKERRQ(ierr);
   ierr = mField.add_problem("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.add_problem("C_ALL_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.add_problem("MESH_SMOOTHING_LAGRANGE"); CHKERRQ(ierr);
 
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING","MESH_SMOOTHER"); CHKERRQ(ierr);
@@ -253,10 +272,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_CORNER_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_SURFACE_ELEM"); CHKERRQ(ierr);
 
+  ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING_LAGRANGE","MESH_SMOOTHER"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING_LAGRANGE","CandCT_CORNER_ELEM"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING_LAGRANGE","CandCT_SURFACE_ELEM"); CHKERRQ(ierr);
+
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("MESH_SMOOTHING",problem_level); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",problem_level); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("C_ALL_MATRIX",problem_level); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("MESH_SMOOTHING_LAGRANGE",problem_level); CHKERRQ(ierr);
 
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -306,6 +330,7 @@ int main(int argc, char *argv[]) {
       rval = moab.add_entities(CornersTetsMeshset,CornersTets); CHKERR_PETSC(rval);
       CornersTets = intersect(CornersTets,SurfacesTets);
       ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"C_CORNER_ELEM"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"CandCT_CORNER_ELEM"); CHKERRQ(ierr);
       ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
       rval = moab.delete_entities(&CornersTetsMeshset,1); CHKERR_PETSC(rval);
     }
@@ -324,6 +349,7 @@ int main(int argc, char *argv[]) {
       rval = moab.create_meshset(MESHSET_SET,SurfacesTetsMeshset); CHKERR_PETSC(rval);	
       rval = moab.add_entities(SurfacesTetsMeshset,SurfacesTets); CHKERR_PETSC(rval);
       ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"C_SURFACE_ELEM"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"CandCT_SURFACE_ELEM"); CHKERRQ(ierr);
       ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
       rval = moab.delete_entities(&SurfacesTetsMeshset,1); CHKERR_PETSC(rval);
     }
@@ -447,6 +473,8 @@ int main(int argc, char *argv[]) {
     "MESH_SMOOTHING","MESH_NODE_POSITIONS","RESIDUAL",Row,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_residual(moab,"MESH_NODE_POSITIONS",F,"RESIDUAL");
   ierr = mField.loop_dofs("MESH_SMOOTHING","MESH_NODE_POSITIONS",Row,ent_method_residual); CHKERRQ(ierr);
+
+  rval = moab.write_file("smoothed.h5m"); CHKERR_PETSC(rval);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
