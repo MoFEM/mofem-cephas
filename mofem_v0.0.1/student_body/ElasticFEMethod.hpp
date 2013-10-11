@@ -115,7 +115,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       EntityHandle ent = fe_ptr->get_ent();
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 
-	mat_elastic mydata;
+	Mat_Elastic mydata;
 	ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
 
 	Range meshsets;

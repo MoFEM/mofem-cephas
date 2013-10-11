@@ -544,7 +544,6 @@ void DofMoFEMEntity_active_change::operator()(DofMoFEMEntity &_dof_) {
   assert((_dof_.get_dof_order()<=_dof_.get_max_order()));
 }
 
-
 //numered dof
 NumeredDofMoFEMEntity::NumeredDofMoFEMEntity(const DofIdx idx,const DofMoFEMEntity* _DofMoFEMEntity_ptr): 
     interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr),
@@ -962,10 +961,12 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
     //See Cubit_BC_bitset in common.hpp
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
         type |= Mat_ElasticSet; }
+    else if (name.compare(0,12,"MAT_TRANSISO") == 0) {
+        type |= Mat_TransIsoSet; }
     
         //To be extended as appropriate
     
-    else { type |= DefaultCubitName; }
+    else { type |= UnknownCubitName; }
         
     PetscFunctionReturn(0);
 }
@@ -1138,13 +1139,25 @@ ostream& operator<<(ostream& os,const interface_cubit_bc_data& e) {
     return os;   
 }
         
-ostream& operator<<(ostream& os,const mat_elastic& e)
+ostream& operator<<(ostream& os,const Mat_Elastic& e)
     {
         os << endl << "Material Properties" << endl;
         os << "-------------------" << endl;
-        os << "Young's Modulus = " << e.data.Young << endl;
-        os << "Poisson's Ratio = " << e.data.Poisson << endl << endl;
+        os << "Young's modulus = " << e.data.Young << endl;
+        os << "Poisson's ratio = " << e.data.Poisson << endl << endl;
         return os;
     }
 
+ostream& operator<<(ostream& os,const Mat_TransIso& e)
+{
+    os << endl << "Material Properties" << endl;
+    os << "-------------------" << endl;
+    os << "Young's modulus in xy plane (Ep)     = " << e.data.Youngp << endl;
+    os << "Young's modulus in z-direction (Ez)  = " << e.data.Youngz << endl;
+    os << "Poisson's ratio in xy plane (vp)     = " << e.data.Poissonp << endl;
+    os << "Poisson's ratio in z-direction (vpz) = " << e.data.Poissonpz << endl;
+    os << "Shear modulus in z-direction (Gzp)   = " << e.data.Shearzp << endl << endl;
+    return os;
+}
+    
 }

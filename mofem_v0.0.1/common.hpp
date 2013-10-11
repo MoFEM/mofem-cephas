@@ -1573,8 +1573,9 @@ enum Cubit_BC {
   TemperatureSet = 1<<9,
   HeatfluxSet = 1<<10,
   InterfaceSet = 1<<11,
-  DefaultCubitName = 1<< 12,
+  UnknownCubitName = 1<< 12,
   Mat_ElasticSet = 1<<13,
+  Mat_TransIsoSet = 1<<14,
   LastSet
 };
 
@@ -1592,20 +1593,19 @@ struct generic_attribute_data {
     
 };
 
-/*! \struct mat_elastic
+/*! \struct Mat_Elastic
  *  \brief Elastic material data structure
  */
-struct mat_elastic: public generic_attribute_data {
+struct Mat_Elastic: public generic_attribute_data {
     struct __attribute__ ((packed)) _data_{
-        //char name; // Material (Block) name
-        double Young; // Young's Modulus
+        double Young; // Young's modulus
         double Poisson; // Poisson's ratio
     };
     
     _data_ data;
     
     const Cubit_BC_bitset type;
-    mat_elastic(): type(Mat_ElasticSet) {};
+    Mat_Elastic(): type(Mat_ElasticSet) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
         PetscFunctionBegin;
@@ -1615,9 +1615,40 @@ struct mat_elastic: public generic_attribute_data {
         PetscFunctionReturn(0);
     }
     
-    /*! \brief Print mat_elastic data
+    /*! \brief Print Mat_Elastic data
      */
-    friend ostream& operator<<(ostream& os,const mat_elastic& e);
+    friend ostream& operator<<(ostream& os,const Mat_Elastic& e);
+    
+};
+    
+/*! \struct Mat_TransIso
+ *  \brief Transverse Isotropic material data structure
+ */
+struct Mat_TransIso: public generic_attribute_data {
+    struct __attribute__ ((packed)) _data_{
+        double Youngp; // Young's modulus in xy plane (Ep)
+        double Youngz; // Young's modulus in z-direction (Ez)
+        double Poissonp; // Poisson's ratio in xy plane (vp)
+        double Poissonpz; // Poisson's ratio in z-direction (vpz)
+        double Shearzp; // Shear modulus in z-direction (Gzp)
+     };
+    
+    _data_ data;
+    
+    const Cubit_BC_bitset type;
+    Mat_TransIso(): type(Mat_TransIsoSet) {};
+    
+    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+        PetscFunctionBegin;
+        //Fill data
+        if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+        memcpy(&data, &attributes[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+    
+    /*! \brief Print Mat_TransIso data
+     */
+    friend ostream& operator<<(ostream& os,const Mat_TransIso& e);
     
 };
 
@@ -1895,32 +1926,32 @@ struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
-    /*! \struct interface_cubit_bc_data
-     *  \brief Definition of the interface (cfd_bc) data structure
+/*! \struct interface_cubit_bc_data
+ *  \brief Definition of the interface (cfd_bc) data structure
+ */
+struct interface_cubit_bc_data: public generic_cubit_bc_data {
+    struct __attribute__ ((packed)) _data_{
+        char name[6]; // 6 characters for "cfd_bc"
+        char pre1; // This is always zero
+        char pre2; // 6
+    };
+    
+    _data_ data;
+    const Cubit_BC_bitset type;
+    interface_cubit_bc_data(): type(InterfaceSet) {};
+    
+    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+        PetscFunctionBegin;
+        //Fill data
+        if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        memcpy(&data, &bc_data[0], sizeof(data));
+        PetscFunctionReturn(0);
+    }
+    
+    /*! \brief Print interface bc data
      */
-    struct interface_cubit_bc_data: public generic_cubit_bc_data {
-        struct __attribute__ ((packed)) _data_{
-            char name[6]; // 6 characters for "cfd_bc"
-            char pre1; // This is always zero
-            char pre2; // 6
-        };
-        
-        _data_ data;
-        const Cubit_BC_bitset type;
-        interface_cubit_bc_data(): type(InterfaceSet) {};
-        
-        virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
-            PetscFunctionBegin;
-            //Fill data
-            if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-            memcpy(&data, &bc_data[0], sizeof(data));
-            PetscFunctionReturn(0);
-        }
-        
-        /*! \brief Print interface bc data
-         */
-        friend ostream& operator<<(ostream& os,const interface_cubit_bc_data& e);
-        
+    friend ostream& operator<<(ostream& os,const interface_cubit_bc_data& e);
+
 };
     
 /** 
@@ -2042,13 +2073,19 @@ struct CubitMeshSets {
    * Block name /  Number of attributes  / (1) Attribute 1, (2) Attribute 2 etc.
    * ---------------------------------------------------------------------------
    *
-   * MAT_ELASTIC / 2 / (1) Young's  Modulus, (2) Poisson's ratio
+   * MAT_ELASTIC / 2 /  (1) Young's  modulus
+   *                    (2) Poisson's ratio
+   *
+   * MAT_TRANSISO / 5 / (1) Young's modulus in xy plane (Ep)
+   *                    (2) Young's modulus in z-direction (Ez)
+   *                    (3) Poisson's ratio in xy plane (vp)
+   *                    (4) Poisson's ratio in z-direction (vpz)
+   *                    (5) Shear modulus in z-direction (Gzp)
    *
    * To be extended as appropriate
    */
    string get_Cubit_name() const;
 
-    
   /**
    * \brief print name of block, sideset etc. (this is set in Cubit setting properties)
    *
