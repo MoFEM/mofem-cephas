@@ -20,7 +20,7 @@
 #ifndef __MOABSURFACECONSTRAINS_HPP__
 #define __MOABSURFACECONSTRAINS_HPP__
 
-#include "moabField.hpp"
+#include "FieldInterface.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -30,7 +30,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-struct C_SURFACE_FEMethod:public moabField::FEMethod {
+struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
   Interface& moab;
@@ -82,7 +82,7 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
 
 };
 
-struct C_CORNER_FEMethod:public moabField::FEMethod {
+struct C_CORNER_FEMethod:public FieldInterface::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
   Interface& moab;

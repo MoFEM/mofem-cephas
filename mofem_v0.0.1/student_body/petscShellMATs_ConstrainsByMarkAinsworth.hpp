@@ -20,8 +20,8 @@
 #ifndef __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
 #define __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 
 namespace MoFEM {
 
@@ -30,7 +30,7 @@ namespace MoFEM {
   *
   */
 struct matPROJ_ctx {
-  moabField& mField;
+  FieldInterface& mField;
   KSP ksp,ksp_self;
   Vec _x_;
   VecScatter scatter;
@@ -44,14 +44,20 @@ struct matPROJ_ctx {
   PetscLogEvent USER_EVENT_projQ;
   PetscLogEvent USER_EVENT_projP;
   PetscLogEvent USER_EVENT_projR;
+  PetscLogEvent USER_EVENT_projRT;
   PetscLogEvent USER_EVENT_projCTC_QTKQ;
-  matPROJ_ctx(moabField& _mField,string _x_problem,string _y_problem): 
-    mField(_mField),x_problem(_x_problem),y_problem(_y_problem),
+  matPROJ_ctx(FieldInterface& _mField,string _x_problem,string _y_problem): 
+    mField(_mField),
+    CT(PETSC_NULL),CCT(PETSC_NULL),CTC(PETSC_NULL),
+    Cx(PETSC_NULL),CCTm1_Cx(PETSC_NULL),CT_CCTm1_Cx(PETSC_NULL),CTCx(PETSC_NULL),
+    Qx(PETSC_NULL),KQx(PETSC_NULL),
+    x_problem(_x_problem),y_problem(_y_problem),
     initQorP(true),initQTKQ(true),debug(true) {
     PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
     PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
     PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
     PetscLogEventRegister("ProjectionR",0,&USER_EVENT_projR);
+    PetscLogEventRegister("ProjectionRT",0,&USER_EVENT_projRT);
     PetscLogEventRegister("ProjectionCTC_QTKQ",0,&USER_EVENT_projCTC_QTKQ);
   }
 
@@ -72,6 +78,7 @@ struct matPROJ_ctx {
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
   friend PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f);
   friend PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f);
+  friend PetscErrorCode matRT_mult_shell(Mat R,Vec x,Vec f);
   friend PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f);
 
 };
@@ -79,6 +86,7 @@ struct matPROJ_ctx {
 PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
 PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f);
 PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f);
+PetscErrorCode matRT_mult_shell(Mat RT,Vec x,Vec f);
 PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f);
 
 }

@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 
 using namespace MoFEM;
 
@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Create MoFEM (Joseph) database
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
     
     //Open mesh_file_name.txt for writing
     ofstream myfile;
@@ -202,20 +202,24 @@ int main(int argc, char *argv[]) {
                 string name = it->get_Cubit_name();
 
                 //Elastic material
-                if (name.compare(0,11,"MAT_ELASTIC")==0)
+                if (name.compare(0,11,"MAT_ELASTIC") == 0)
                 {
-                    mat_elastic mydata;
+                    Mat_Elastic mydata;
                     ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
                     //Print data
                     cout << mydata;
                     myfile << mydata;
                 }
-                else if (name.compare(0,11,"MAT_NLELASTIC")==0)
+                else if (name.compare(0,12,"MAT_TRANSISO") == 0)
                 {
-                    
+                    Mat_TransIso mydata;
+                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+                    //Print data
+                    cout << mydata;
+                    myfile << mydata;
                 }
-                //For now keep the following line commented not to affect other atom tests
-                //else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
+
+                else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
             }
         
   //Close mesh_file_name.txt

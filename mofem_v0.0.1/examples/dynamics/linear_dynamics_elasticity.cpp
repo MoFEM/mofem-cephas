@@ -82,8 +82,8 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   //Create MoFEM (Joseph) database
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
@@ -199,6 +199,8 @@ int main(int argc, char *argv[]) {
   //print bcs
   ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
   ierr = mField.printCubitForceSet(); CHKERRQ(ierr);
+  //print block sets with materials
+  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
 
   //create matrices
   Vec D,F;
@@ -208,7 +210,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   //TS
-  moabTsCtx TsCtx(mField,"ELASTIC_MECHANICS");
+  TsCtx TsCtx(mField,"ELASTIC_MECHANICS");
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;
@@ -220,21 +222,21 @@ int main(int argc, char *argv[]) {
 
   DynamicElasticFEMethod MyFE(moab,&myDirihletBC,mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,&mybc);
 
-  moabTsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
-  loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("MASS",&MyFE));
-  loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
-  loops_to_do_Rhs.push_back(moabTsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
-  moabTsCtx::loops_to_do_type& loops_to_do_Mat = TsCtx.get_loops_to_do_IJacobian();
-  loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("MASS",&MyFE));
-  loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
-  loops_to_do_Mat.push_back(moabTsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
+  TsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
+  TsCtx::loops_to_do_type& loops_to_do_Mat = TsCtx.get_loops_to_do_IJacobian();
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
 
   //Monitor
-  moabTsCtx::loops_to_do_type& loops_to_do_Monitor = TsCtx.get_loops_to_do_Monitor();
-  loops_to_do_Monitor.push_back(moabTsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Monitor.push_back(moabTsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
+  TsCtx::loops_to_do_type& loops_to_do_Monitor = TsCtx.get_loops_to_do_Monitor();
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
 
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);

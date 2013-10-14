@@ -1,4 +1,4 @@
-/** \file Core_dataStructures.hpp
+/** \file CoreDataStructures.hpp
  * \brief Myltindex containes, data structures and other low-level functions 
  * 
  * Low level data structures not used directly by user
@@ -36,11 +36,9 @@ const int prism_edges_conn[6][2] = { {0,1},{1,2},{2,0}, {3,4}, {4,5}, {5,3} };
 inline int fNBENTITYSET_nofield(int P) { (void)P; return 1; }
 //
 inline int fNBVERTEX_L2(int P) { (void)P; return 0; }
-inline int fNBEDGE_L2(int P) { (void)P; return 0; }
-inline int fNBFACE_L2(int P) { (void)P; return 0; }
 inline int fNBVOLUME_L2(int P) { return NBVOLUME_L2(P); }
-//2D
-inline int fNBSURFACE_L2(int P) { return NBSURFACE_L2(P); }
+inline int fNBFACE_L2(int P) { return NBFACE_L2(P); }
+inline int fNBEDGE_L2(int P) { return NBEDGE_L2(P); }
 
 //
 /// number of approx. functions for H1 space on vertex
@@ -340,12 +338,12 @@ void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFE
 
 template <typename T,typename V>
 PetscErrorCode get_MoFEMFiniteElement_dof_uid_view(
-  const T &dofs_moabfield,V &dofs_view,
+  const T &dofsMoabField,V &dofs_view,
   const int operation_type,const void* tag_data,const int tag_size) {
   PetscFunctionBegin;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type dofs_by_uid;
   typedef typename boost::multi_index::index<T,Unique_mi_tag>::type::value_type value_type;
-  const dofs_by_uid &dofs = dofs_moabfield.get<Unique_mi_tag>();
+  const dofs_by_uid &dofs = dofsMoabField.get<Unique_mi_tag>();
   const UId *uids = (UId*)tag_data;
   int size = tag_size/sizeof(UId);
   vector<const value_type*> vec;
@@ -375,7 +373,7 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent);
 /**
  * \briMoFEMFiniteElement gives connectivity if all the edges are refined
  *
- * \param moab intefcae
+ * \param moab interface
  * \param conn refined tet connectivity
  * \param edge_new_nodes new nodes by edges
  * \param new_tets_conn return new egdge coonectivity
@@ -384,51 +382,51 @@ void tet_type_6(Interface& moab,const EntityHandle *conn,const EntityHandle *edg
 /**
  * \briMoFEMFiniteElement gives connectivity if 5 out of 6 egses are refined
  *
- * \param moab intefcae
+ * \param moab interface
  * \param conn refined tet connectivity
  * \param edge_new_nodes new nodes by edges
  * \param new_tets_conn return new egdge coonectivity
- * \return sub refinment type
+ * \return sub refinement type
  */
 int tet_type_5(Interface& moab,const EntityHandle *conn,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
 * \briMoFEMFiniteElement gives connectivity if 4 out of 6 egses are refined
 *
-* \param moab intefcae
+* \param moab interface
 * \param conn refined tet connectivity
 * \param edge_new_nodes new nodes by edges
 * \param new_tets_conn return new egdge coonectivity
-* \return sub refinment type
+* \return sub refinement type
 */
 int tet_type_4(const EntityHandle *conn,const int *split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
 * \briMoFEMFiniteElement gives connectivity if 3 out of 6 egses are refined
 *
-* \param moab intefcae
+* \param moab interface
 * \param conn refined tet connectivity
 * \param edge_new_nodes new nodes by edges
 * \param new_tets_conn return new egdge coonectivity
-* \return sub refinment type
+* \return sub refinement type
 */
 int tet_type_3(const EntityHandle *conn,const int *split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
 * \briMoFEMFiniteElement gives connectivity if 2 out of 6 egses are refined
 *
-* \param moab intefcae
+* \param moab interface
 * \param conn refined tet connectivity
 * \param edge_new_nodes new nodes by edges
 * \param new_tets_conn return new egdge coonectivity
-* \return sub refinment type
+* \return sub refinement type
 */
 int tet_type_2(const EntityHandle *conn,const int *split_edges,const EntityHandle *edge_new_nodes,EntityHandle *new_tets_conn);
 /**
 * \briMoFEMFiniteElement gives connectivity if 1 out of 6 egses are refined
 *
-* \param moab intefcae
+* \param moab interface
 * \param conn refined tet connectivity
 * \param edge_new_nodes new nodes by edges
 * \param new_tets_conn return new egdge coonectivity
-* \return sub refinment type
+* \return sub refinement type
 */
 void tet_type_1(const EntityHandle *conn,const int split_edge,const EntityHandle edge_new_node,EntityHandle *new_tets_conn);
 

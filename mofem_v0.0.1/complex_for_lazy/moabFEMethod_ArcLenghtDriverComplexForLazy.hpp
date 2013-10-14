@@ -20,21 +20,21 @@
 #ifndef __ARC_LENGHT_NONLINEAR_ELASTICITY_HPP__
 #define __ARC_LENGHT_NONLINEAR_ELASTICITY_HPP__
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 #include <petscksp.h>
 
-#include "moabSnes.hpp"
+#include "SnesCtx.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
 #include "moabFEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
-#include "moabSnes.hpp"
+#include "SnesCtx.hpp"
 #include "moabFEMethod_ComplexForLazy.hpp"
 #include "moabFEMethod_DriverComplexForLazy.hpp"
 
@@ -62,7 +62,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   Range& NodeSet1;
 
   MyElasticFEMethod(
-      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
       ArcLenghtCtx *_arc_ptr,Range &_NodeSet1,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_ptr,_lambda,_mu,_verbose), 
@@ -212,7 +212,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
 };
 
-struct ArcLenghtElemFEMethod: public moabField::FEMethod {
+struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
   Interface& moab;
 
   ArcLenghtCtx* arc_ptr;

@@ -26,16 +26,16 @@ namespace MoFEM {
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
-    moabField& mField;
+    FieldInterface& mField;
     Mat Aij;
     Vec Data,F;
 
     ElasticFEMethod(
-      moabField& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
+      FieldInterface& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
       Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL) {};
 
     ElasticFEMethod(
-      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
       double _lambda,double _mu): 
       FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
       Aij(_Aij),Data(_D),F(_F),
@@ -94,6 +94,45 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     vector<double> g_NTET,g_NTRI;
     const double* G_W_TET;
     const double* G_W_TRI;
+
+    virtual PetscErrorCode calulateD(double _lambda,double _mu) {
+      PetscFunctionBegin;
+
+      D = _lambda*D_lambda + _mu*D_mu;
+      //cerr << D_lambda << endl;
+      //cerr << D_mu << endl;
+      //cerr << D << endl;
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
+      PetscFunctionBegin;
+
+      *_lambda = lambda;
+      *_mu = mu;
+
+      EntityHandle ent = fe_ptr->get_ent();
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+
+	Mat_Elastic mydata;
+	ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+
+	Range meshsets;
+	rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+	for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+	  if( moab.contains_entities(*mit,&ent,1) ) {
+	    *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
+	    *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+	    break;
+	  }
+	}
+
+      }
+
+      PetscFunctionReturn(0);
+    }
+
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -106,6 +145,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       g_NTRI.resize(3*13);
       ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
       G_W_TRI = G_TRI_W13;
+
       // See FEAP - - A Finite Element Analysis Program
       D_lambda.resize(6,6);
       D_lambda.clear();
@@ -119,10 +159,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       for(int rr = 0;rr<6;rr++) {
 	D_mu(rr,rr) = rr<3 ? 2 : 1;
       }
-      D = lambda*D_lambda + mu*D_mu;
-      //cerr << D_lambda << endl;
-      //cerr << D_mu << endl;
-      //cerr << D << endl;
 
       ierr = VecZeroEntries(Data); CHKERRQ(ierr);
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
@@ -364,6 +400,11 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     ublas::matrix<FieldData> BD;
     virtual PetscErrorCode Stiffness() {
       PetscFunctionBegin;
+
+      double _lambda,_mu;
+      ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
+      ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
@@ -441,6 +482,11 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     vector<ublas::vector<FieldData> > f_int;
     virtual PetscErrorCode Fint() {
       PetscFunctionBegin;
+
+      double _lambda,_mu;
+      ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
+      ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+
       //Gradient at Gauss points; 
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
       ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
