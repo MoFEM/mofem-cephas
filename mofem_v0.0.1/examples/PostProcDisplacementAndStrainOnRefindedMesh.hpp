@@ -323,10 +323,10 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
   // cerr << "eigen_values "<< eigen_values << endl;
 
   //Calculate principal stress vectors
-  // ublas::vector< FieldData > prin_stress_vect = prod(eigen_vectors, eigen_values);
+  //ublas::vector< FieldData > prin_stress_vect = prod(eigen_values,eigen_vectors);
   ublas::vector< FieldData > prin_stress_vect = eigen_values;
 
-  rval = moab_post_proc.tag_set_data(th_prin_stress_vect,&mit->second,1,&(eigen_values.data()[0])); CHKERR_PETSC(rval);
+  rval = moab_post_proc.tag_set_data(th_prin_stress_vect,&mit->second,1,&(prin_stress_vect.data()[0])); CHKERR_PETSC(rval);
 
       }
 
