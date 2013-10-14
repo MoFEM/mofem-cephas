@@ -270,7 +270,7 @@ struct StrainTransformation {
 
 struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
     
-    double nu_p, nu_pz, E_p, E_z, G_zp;
+    double E_p, E_z, nu_p, nu_pz, G_zp;
     
     TranIsotropicElasticFEMethod(
                                  FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
@@ -379,7 +379,7 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
 
 struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
     
-    double nu_p, nu_pz, E_p, E_z, G_zp;
+    double E_p, E_z, nu_p, nu_pz, G_zp;
     Tag th_fibre_orientation;
     
     TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
