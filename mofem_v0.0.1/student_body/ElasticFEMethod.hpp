@@ -95,7 +95,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     const double* G_W_TET;
     const double* G_W_TRI;
 
-    PetscErrorCode calulateD(double _lambda,double _mu) {
+    virtual PetscErrorCode calulateD(double _lambda,double _mu) {
       PetscFunctionBegin;
 
       D = _lambda*D_lambda + _mu*D_mu;
