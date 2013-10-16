@@ -242,7 +242,7 @@ struct FieldInterface {
   * ent4[0,1,0,0,0,0,0], ent5[0,1,0,0,0,0,0] <br>
   * 
   */
-  virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit) = 0;
+  virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /** brief seed ref level by MESHSET that contains entities other than volumes
    * 
@@ -473,7 +473,7 @@ struct FieldInterface {
    * \param name Finite Element name
    */
 
-  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type,int verb = -1) = 0;
 
   /** \brief add MESHSET element to finite element database given by name 
    *

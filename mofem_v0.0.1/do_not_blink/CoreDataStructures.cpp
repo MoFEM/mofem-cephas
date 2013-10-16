@@ -755,7 +755,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   rval = moab.tag_get_handle("BLOCK_HEADER",bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle("Block_Attributes",block_attribs); CHKERR(rval); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR(rval);CHKERR_THROW(rval);
 
   vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {

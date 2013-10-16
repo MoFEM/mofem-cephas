@@ -22,6 +22,9 @@ target_link_libraries(cubit_bc_test mofem_Field ${PROJECT_LIBS})
 add_executable(elasticity_atom_test elasticity_atom_test.cpp)
 target_link_libraries(elasticity_atom_test mofem_Field ${PROJECT_LIBS})
 
+add_executable(l2_approximation l2_approximation.cpp)
+target_link_libraries(l2_approximation mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" "/" export_atom_tests)
@@ -83,6 +86,9 @@ add_test(elasticity_atom_test_01Y_compare ${CMAKE_COMMAND} -E compare_files ${CM
 
 add_test(elasticity_atom_test_01Z ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/elasticity_atom_test -my_file elasticity_atom_test_01Z.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary -my_order 5)
 add_test(elasticity_atom_test_01Z_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/elasticity_atom_test_01Z.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/elasticity_atom_test_01Z.cub.txt)
+
+add_test(l2_approximation ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/l2_approximation -my_file elasticity_atom_test_01X.cub)
+add_test(l2_approximation_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/l2_approximation.txt ${CMAKE_BINARY_DIR}/atom_tests/l2_approximation.txt)
 
 
 
