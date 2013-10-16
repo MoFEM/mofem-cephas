@@ -1,5 +1,5 @@
-/** \file common.hpp
- * \brief Myltindex containes, data structures and other low-level functions 
+/** \file BCMultiIndices.hpp
+ * \brief Multi-index containers, data structures and other low-level functions
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *
@@ -73,6 +73,14 @@ struct Mat_Elastic: public generic_attribute_data {
     struct __attribute__ ((packed)) _data_{
         double Young; // Young's modulus
         double Poisson; // Poisson's ratio
+        double User1; // User attribute 1
+        double User2; // User attribute 2
+        double User3; // User attribute 3
+        double User4; // User attribute 4
+        double User5; // User attribute 5
+        double User6; // User attribute 6
+        double User7; // User attribute 7
+        double User8; // User attribute 8
     };
     
     _data_ data;
@@ -548,6 +556,9 @@ struct CubitMeshSets {
    *
    * MAT_ELASTIC / 2 /  (1) Young's  modulus
    *                    (2) Poisson's ratio
+   *                    (3) User attribute 1
+   *                    ...
+   *                    (10) User attribute 8
    *
    * MAT_TRANSISO / 5 / (1) Young's modulus in xy plane (Ep)
    *                    (2) Young's modulus in z-direction (Ez)
