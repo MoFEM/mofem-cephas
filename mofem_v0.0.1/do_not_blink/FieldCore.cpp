@@ -142,8 +142,11 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
     bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]); CHKERR_THROW(rval); 
   Tag block_attribs;
   int def_Block_Attributes_lenght = 0;
-  rval= moab.tag_get_handle("Block_Attributes",def_Block_Attributes_lenght,MB_TYPE_DOUBLE,
+  rval = moab.tag_get_handle("Block_Attributes",def_Block_Attributes_lenght,MB_TYPE_DOUBLE,
     block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval); 
+  Tag entity_name_tag;
+  rval = moab.tag_get_handle(
+    NAME_TAG_NAME,NAME_TAG_SIZE,MB_TYPE_OPAQUE,entity_name_tag,MB_TAG_SPARSE|MB_TAG_CREAT); CHKERR_THROW(rval);
   // For VTK files
   int def_elem_type = MBMAXTYPE;
   rval = moab.tag_get_handle("ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type); CHKERR_THROW(rval); 
@@ -1230,8 +1233,9 @@ PetscErrorCode FieldCore::add_ents_to_finite_element_by_TETs(const EntityHandle 
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type) {
+PetscErrorCode FieldCore::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type,int verb) {
   PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
   *build_MoFEM &= 1<<0;
   const BitFEId id = get_BitFEId(name);
   const EntityHandle idm = get_meshset_by_BitFEId(id);
@@ -1239,6 +1243,9 @@ PetscErrorCode FieldCore::add_ents_to_finite_element_EntType_by_bit_ref(const Bi
   refMoabFE_by_type &ref_MoFEMFiniteElement = refinedMofemElements.get<EntType_mi_tag>();
   refMoabFE_by_type::iterator miit = ref_MoFEMFiniteElement.lower_bound(type);
   refMoabFE_by_type::iterator hi_miit = ref_MoFEMFiniteElement.upper_bound(type);
+  if(verb > 1) {
+    PetscPrintf(PETSC_COMM_WORLD,"nb. ref elements in database %d\n",distance(miit,hi_miit));
+  }
   int nb_add_FEs = 0;
   for(;miit!=hi_miit;miit++) {
     if((miit->get_BitRefLevel()&bit_ref)!=bit_ref) continue;
@@ -1246,7 +1253,7 @@ PetscErrorCode FieldCore::add_ents_to_finite_element_EntType_by_bit_ref(const Bi
     rval = moab.add_entities(idm,&ent,1); CHKERR_PETSC(rval);
     nb_add_FEs++;
   }
-  {
+  if(verb > 0) {
     ostringstream ss;
     ss << "Add Nb. FEs " << nb_add_FEs << " form BitRef " << bit_ref << endl;
     PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
@@ -1832,6 +1839,7 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     PetscSynchronizedFlush(PETSC_COMM_WORLD); 
   }
+  *build_MoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
@@ -2476,8 +2484,9 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
   *build_MoFEM |= 1<<5;  
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit) {
+PetscErrorCode FieldCore::seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
   PetscFunctionBegin; 
+  if(verb==-1) verb = verbose;
   try {
     Range ents3d;
     rval = moab.get_entities_by_type(meshset,MBTET,ents3d,false); CHKERR_PETSC(rval);
@@ -2485,6 +2494,9 @@ PetscErrorCode FieldCore::seed_ref_level_3D(const EntityHandle meshset,const Bit
     rval = moab.get_adjacencies(ents3d,2,true,ents,Interface::UNION); CHKERR_PETSC(rval);
     rval = moab.get_adjacencies(ents3d,1,true,ents,Interface::UNION); CHKERR_PETSC(rval);
     rval = moab.get_entities_by_type(meshset,MBPRISM,ents3d,false); CHKERR_PETSC(rval);
+    if(verb > 1) {
+      PetscPrintf(PETSC_COMM_WORLD,"nb. 3d entities for seed %d\n",ents3d.size());
+    }
     Range::iterator tit = ents3d.begin();
     for(;tit!=ents3d.end();tit++) {
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedMofemEntities.insert(RefMoFEMEntity(moab,*tit));
