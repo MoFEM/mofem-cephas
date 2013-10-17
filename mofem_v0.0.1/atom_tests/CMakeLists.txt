@@ -25,6 +25,9 @@ target_link_libraries(elasticity_atom_test mofem_Field ${PROJECT_LIBS})
 add_executable(l2_approximation l2_approximation.cpp)
 target_link_libraries(l2_approximation mofem_Field ${PROJECT_LIBS})
 
+add_executable(trans_isotropic_test trans_isotropic_test.cpp)
+target_link_libraries(trans_isotropic_test mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" "/" export_atom_tests)

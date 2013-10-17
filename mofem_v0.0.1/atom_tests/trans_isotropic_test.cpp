@@ -774,7 +774,11 @@ int main(int argc, char *argv[]) {
             YoungModulusZ=mydata.data.Youngz;
             PoissonRatioP=mydata.data.Poissonp;
             PoissonRatioPZ=mydata.data.Poissonpz;
-            ShearModulusZP=mydata.data.Shearzp;
+            if (mydata.data.Shearzp!=0) {
+                ShearModulusZP=mydata.data.Shearzp;
+            }else{
+                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
+            
         }
         
         else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
