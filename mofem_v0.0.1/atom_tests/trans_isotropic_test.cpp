@@ -30,6 +30,22 @@
 
 using namespace MoFEM;
 
+#define RND_EPS 1e-6
+double roundn(double n) {
+    
+    //break n into fractional part (fract) and integral part (intp)
+    double fract, intp;
+    fract = modf(n,&intp);
+    
+    // case where n approximates zero, set n to "positive" zero
+    if (abs(intp)==0) {
+        if(abs(fract)<=RND_EPS) {
+            n=0.000;
+        }
+    }
+    
+    return n;
+}
 
 struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
     
