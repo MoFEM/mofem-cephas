@@ -522,7 +522,13 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
 //moab dof
 DofMoFEMEntity::DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const ApproximationOrder _dof_order,const ApproximationRank _dof_rank,const DofIdx _dof): 
     interface_MoFEMEntity<MoFEMEntity>(_MoFEMEntity_ptr), dof(_dof),active(false) {
-  assert(field_ptr->tag_dof_order_data!=NULL);
+  if(field_ptr->tag_dof_order_data==NULL) {
+    ostringstream ss;
+    ss << "at " << __LINE__ << " in " << __FILE__;
+    ss << " field_ptr->tag_dof_order_data==NULL";
+    ss << " (top tip: check if order set to vertices is 1)";
+    throw(ss.str().c_str());
+  }
   assert(field_ptr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = _dof_order;
   ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof] = _dof_rank;

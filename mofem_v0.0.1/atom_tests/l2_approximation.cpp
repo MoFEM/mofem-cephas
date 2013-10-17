@@ -19,7 +19,7 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -109,11 +109,11 @@ int main(int argc, char *argv[]) {
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELEM_L2_SCALAR",MBTET); CHKERRQ(ierr);
 
-  //set level
+  //set problem level
   ierr = mField.modify_problem_ref_level_add_bit("PROBLEM_SCALAR_L2",bit_level0); CHKERRQ(ierr);
 
   //Only for testing create independet MoFEM interface which works on the same mesh (MOAB) database
-  //FieldCore core2(moab);
+  FieldCore core2(moab);
   FieldInterface& mField2 = core;
 
   //build fields

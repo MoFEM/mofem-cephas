@@ -22,7 +22,7 @@
 
 #include "CoreDataStructures.hpp"
 #include "FieldInterface.hpp"
-#include "moabFEMethod_LowLevelStudent.hpp"
+#include "FEMethod_LowLevelStudent.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -39,7 +39,6 @@ namespace MoFEM {
 struct BaseDirihletBC {
 
   BaseDirihletBC();
-
 
   virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
     FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC);

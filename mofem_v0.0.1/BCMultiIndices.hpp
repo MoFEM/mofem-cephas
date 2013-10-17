@@ -31,7 +31,7 @@ namespace MoFEM {
  * bc & material meshsets
  *
  */
-typedef bitset<16> Cubit_BC_bitset;
+typedef bitset<32> Cubit_BC_bitset;
 enum Cubit_BC {
   UnknownSet = 0,
   NodeSet = 1<<0,
