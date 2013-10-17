@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabFEMethod_ArcLenghtDriverComplexForLazy.hpp"
+#include "FEMethod_ArcLenghtDriverComplexForLazy.hpp"
 
 static char help[] = "\
 -my_file mesh file name\n\

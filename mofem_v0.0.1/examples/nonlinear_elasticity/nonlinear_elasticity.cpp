@@ -25,7 +25,7 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-#include "moabFEMethod_DriverComplexForLazy.hpp"
+#include "FEMethod_DriverComplexForLazy.hpp"
 
 using namespace MoFEM;
 

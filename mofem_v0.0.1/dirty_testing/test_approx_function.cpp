@@ -19,7 +19,7 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
