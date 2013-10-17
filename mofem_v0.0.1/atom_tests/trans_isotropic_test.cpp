@@ -64,6 +64,31 @@ struct TransverseIsotropicStiffnessMatrix {
     };
 };
 
+struct TransverseIsotropicComplianceMatrix {
+    
+    double nu_p, nu_pz, E_p, E_z, G_zp;
+    
+    ublas::symmetric_matrix<FieldData,ublas::upper> ComplianceMatrix;
+    
+    TransverseIsotropicComplianceMatrix(double nu_p, double nu_pz, double E_p, double E_z, double G_zp){
+        
+        double nu_zp = (nu_pz*E_z)/E_p;
+        double Gp = E_p/(2*(1+nu_p));
+        
+        ComplianceMatrix.resize(6);
+        ComplianceMatrix.clear();
+        ComplianceMatrix(0,0)=ComplianceMatrix(1,1)=1/E_p;
+        ComplianceMatrix(2,2)=1/E_z;
+        
+        ComplianceMatrix(0,1)=ComplianceMatrix(1,0)=-nu_p/E_p;
+        ComplianceMatrix(0,2)=ComplianceMatrix(2,0)=-nu_zp/E_z;
+        ComplianceMatrix(1,2)=ComplianceMatrix(2,1)=-nu_pz/E_z;
+        
+        ComplianceMatrix(3,3)=1/Gp;
+        ComplianceMatrix(4,4)=ComplianceMatrix(5,5)=1/G_zp;
+    };
+};
+
 /** 
  * \brief Function to Calculate Isotropic Stiffness Matrix
  *
@@ -377,24 +402,54 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
     
 };
 
+#define RND_EPS 1e-6
+double roundn(double n) {
+    
+    //break n into fractional part (fract) and integral part (intp)
+    double fract, intp;
+    fract = modf(n,&intp);
+    
+    // case where n approximates zero, set n to "positive" zero
+    if (abs(intp)==0) {
+        if(abs(fract)<=RND_EPS) {
+            n=0.000;
+        }
+    }
+    
+    return n;
+}
+
 struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
     
     double E_p, E_z, nu_p, nu_pz, G_zp;
     Tag th_fibre_orientation;
-    
+    ofstream myfile;
+
     TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
     PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
 
         double def_VAL2[3] = {0,0,0};
         rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
         
+        myfile.open("transIso_Mat_Blessed_File.txt");
+        myfile<<"Blessed File for Testing Transversely Isotropic Material Implimentation on moFEM "<<endl;
+        myfile<<"-------------------------------------------------------------------------------- "<<endl<<endl;
+        myfile<<"Analytical Solution was computed using and equivalent rotated Compliance Stiffness Matrix multiplied by the applied stress tensor (0,0,1,0,0,0)"<<endl<<endl;
+        myfile<<"    \t\t\tXX \tYY \tZZ \tXY \tXZ \tYZ"<<endl;
+        
     };
+    
+    ~TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh() {
+        myfile.close();
+    }
     
     PetscErrorCode operator()() {
         PetscFunctionBegin;
         
         ierr = do_operator(); CHKERRQ(ierr);
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+        
+        EntityHandle fe_handle = fe_ptr->get_ent();
         
         ///Get Stiffness Matrix
         ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
@@ -405,10 +460,19 @@ struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressO
 //        IsotropicStiffnessMatrix IsoMat(lambda, mu);
 //        StiffnessMatrix=IsoMat.StiffnessMatrix;
         
+        ///Get Compliance Matrix
+        ublas::symmetric_matrix<FieldData,ublas::upper> ComplianceMatrix;
+        ComplianceMatrix.resize(6);
+        ComplianceMatrix.clear();
+        TransverseIsotropicComplianceMatrix TranIsoComMat(nu_p, nu_pz, E_p, E_z, G_zp);
+        ComplianceMatrix=TranIsoComMat.ComplianceMatrix;
+        
+        ///Rotating the Stiffness matrix according a set of axes of rotations and their respective angle
+        
         ///Insert Axes and Angles of Rotation
         int noOfRotations = 1; //Number of Rotations
-        double AxVector[3*noOfRotations];
-        AxVector[0]=1; AxVector[1]=0; AxVector[2]=0; //First Rotational Axis
+        double AxVector[3*noOfRotations]; //First Rotational Axis
+        AxVector[0]=1; AxVector[1]=0; AxVector[2]=0; //First Rotational Axis 
 //        AxVector[3]=1; AxVector[4]=0; AxVector[5]=0; //Second Rotational Axis
         double AxAngle[noOfRotations];
         AxAngle[0] = -0.25*M_PI; //First Rotational Angle
@@ -417,8 +481,11 @@ struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressO
         for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
         
         ublas::matrix<double> DummyMatrix,DummyMatrix2; 
+        ublas::matrix<double> DummyMatrixCom,DummyMatrixCom2; 
         DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
+        DummyMatrixCom = ublas::zero_matrix<FieldData>(6,6); 
         DummyMatrix = StiffnessMatrix;
+        DummyMatrixCom = ComplianceMatrix;
         
         ///Rotating Stiffness over a number of axis/angle rotations
         for (int aa=0; aa<noOfRotations; aa++) {
@@ -439,12 +506,41 @@ struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressO
             DummyMatrix2 = prod(TrpMatrixStress,dummyA);
             DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
             DummyMatrix = DummyMatrix2;
+            
+            StressTransformation invStressRotMat(&AxVector[3*aa], negAxAngle[aa]);
+            StrainTransformation StrainRotMat(&AxVector[3*aa], AxAngle[aa]);
+            
+            ublas::matrix<double> TrpMatrixInvStress; 
+            TrpMatrixInvStress = ublas::zero_matrix<FieldData>(6,6);
+            TrpMatrixInvStress=invStressRotMat.StressRotMat;
+            
+            ublas::matrix<double> TrpMatrixStrain; 
+            TrpMatrixStrain = ublas::zero_matrix<FieldData>(6,6); 
+            TrpMatrixStrain=StrainRotMat.StrainRotMat;
+            
+            DummyMatrixCom2 = ublas::zero_matrix<FieldData>(6,6); 
+            ublas::matrix< FieldData > dummyComA = prod( DummyMatrixCom , TrpMatrixInvStress );
+            DummyMatrixCom2 = prod(TrpMatrixStrain,dummyComA);
+            DummyMatrixCom = ublas::zero_matrix<FieldData>(6,6); 
+            DummyMatrixCom = DummyMatrixCom2;
+            
         }
         
         D.resize(6,6);
         D.clear();
         D = DummyMatrix;
-
+        
+        //Analytical Solution
+        ublas::vector<FieldData> AppliedStress(6);
+        AppliedStress.clear();
+        AppliedStress[2]=1.0;
+//        cout<<D<<endl;
+//        cout<<"Applied Stress: "<<AppliedStress<<endl;
+        ublas::vector<FieldData> ResultStrain=prod(DummyMatrixCom,AppliedStress);
+//        cout<<"Result Strain: "<<ResultStrain<<endl<<endl;
+        myfile<<"Analytical Strain: \t"<<boost::format("%.3lf") % roundn( ResultStrain[0] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[1] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[2] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[3] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[4] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[5] )<<endl;
+        myfile<<"Analytical Stress: \t"<<boost::format("%.3lf") % roundn( AppliedStress[0] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[1] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[2] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[3] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[4] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[5] )<<endl;
+        myfile<<endl;
         
         int gg=0;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -452,13 +548,15 @@ struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressO
         vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
         map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
         
+        double tetStrain[6], tetStress[6];
+        
         for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
             
             ///Compute Strains and save them on TAG
             ublas::matrix< FieldData > GradU = *viit;
             ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
             rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
-                        
+            
             ublas::matrix<double> AARotMatrix; 
             AARotMatrix = ublas::identity_matrix<FieldData>(3); 
             
@@ -502,11 +600,20 @@ struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressO
             
             rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);  
             
+            tetStrain[0]=Strain(0,0); tetStrain[1]=Strain(1,1); tetStrain[2]=Strain(2,2);
+            tetStrain[3]=Strain(0,1); tetStrain[4]=Strain(0,2); tetStrain[5]=Strain(1,2);
+            tetStress[0]=Stress(0,0); tetStress[1]=Stress(1,1); tetStress[2]=Stress(2,2);
+            tetStress[3]=Stress(0,1); tetStress[4]=Stress(0,2); tetStress[5]=Stress(1,2);
         }
+        
+        myfile<<"Numerical Strain: "<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[0] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[1] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[2] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[3] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[4] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[5] )<<endl;
+        myfile<<"Numerical Stress: "<<"\t"<<boost::format("%.3lf") % roundn( tetStress[0] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[1] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[2] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[3] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[4] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[5] )<<endl;
+        myfile<<endl;
         
         ierr = OpStudentEnd(); CHKERRQ(ierr);
         PetscFunctionReturn(0); 
     }
+
 };
 
 ErrorCode rval;
@@ -547,6 +654,10 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   FieldCore core(moab);
   FieldInterface& mField = core;
+    
+    //Open mesh_file_name.txt for writing
+//    ofstream myfile;
+//    myfile.open ((string(mesh_file_name)+".txt").c_str());
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -640,7 +751,12 @@ int main(int argc, char *argv[]) {
     CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
     ierr = myDirihletBC.Init(); CHKERRQ(ierr);
     
-    vector<double> attributes;
+//    vector<double> attributes;
+    double YoungModulusP;
+    double PoissonRatioP;
+    double YoungModulusZ;
+    double PoissonRatioPZ;
+    double ShearModulusZP;
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
     {
@@ -654,23 +770,17 @@ int main(int argc, char *argv[]) {
             Mat_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             cout << mydata;
+            YoungModulusP=mydata.data.Youngp;
+            YoungModulusZ=mydata.data.Youngz;
+            PoissonRatioP=mydata.data.Poissonp;
+            PoissonRatioPZ=mydata.data.Poissonpz;
+            ShearModulusZP=mydata.data.Shearzp;
         }
         
         else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
-        
-        ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
-        
-        if (attributes[4] == 0) { //ShearModulusZP = YoungModulusZ/(2*(1+PoissonRatioPZ));
-            attributes[4] = attributes[1]/(2*(1+attributes[3]));
-        }
     }
     
   //Assemble F and Aij
-  const double YoungModulusP    = attributes[0];
-  const double PoissonRatioP    = attributes[2];
-  const double YoungModulusZ    = attributes[1];
-  const double PoissonRatioPZ   = attributes[3];
-  const double ShearModulusZP   = attributes[4];
     
   TranIsotropicElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
 

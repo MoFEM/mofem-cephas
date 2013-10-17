@@ -1,0 +1,13 @@
+#example how to run
+
+/opt/build_for_gcc-mp-4.4/local/bin/mpirun -np 1 ./new_wire_clamped_interface -my_file new_clamped_wire.cub -my_order 1 -my_out "out.vtk" -my_post_out "out_post_proc.vtk" -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor
+
+on server
+
+/opt/openmpi-1.6.3/bin/mpirun ./new_wire_clamped_interface -my_file new_clamped_wire.cub -my_order 1 -my_out "out.vtk" -my_post_out "out_post_proc.vtk" -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor
+
+#Output
+
+out.vtk - computational mesh
+out_post_proc.vtk - refinded mesh of TETs for prostrocesing
+out_post_proc_prisms.vtk - refinded mesh of PRISMs for prostrocesing

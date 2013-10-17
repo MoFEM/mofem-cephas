@@ -16,13 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(trans_isotropic_test trans_isotropic_test.cpp)
-target_link_libraries(trans_isotropic_test mofem_Field ${PROJECT_LIBS})
+add_executable(new_wire_clamped_interface new_interface_fibre.cpp)
+target_link_libraries(new_wire_clamped_interface mofem_Field ${PROJECT_LIBS})
+
+#cm_export_file("../../meshes/PeelTest.cub" "/" export_files_interface)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
-
 file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/trans_isotropic_cube.cub
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/new_clamped_wire.cub
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

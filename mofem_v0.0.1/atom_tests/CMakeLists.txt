@@ -22,6 +22,9 @@ target_link_libraries(cubit_bc_test mofem_Field ${PROJECT_LIBS})
 add_executable(elasticity_atom_test elasticity_atom_test.cpp)
 target_link_libraries(elasticity_atom_test mofem_Field ${PROJECT_LIBS})
 
+add_executable(trans_isotropic_test trans_isotropic_test.cpp)
+target_link_libraries(trans_isotropic_test mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" "/" export_atom_tests)
@@ -37,6 +40,7 @@ cm_export_file("../meshes/mat_transiso.cub" "/" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01X.cub" "/" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01Y.cub" "/" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01Z.cub" "/" export_atom_tests)
+cm_export_file("../meshes/trans_isotropic_cube.cub" "/" export_atom_tests)
 
 add_test(cubit_bc_test_disp01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
@@ -73,6 +77,10 @@ add_test(cubit_bc_test_mat_elastic_compare ${CMAKE_COMMAND} -E compare_files ${C
 
 add_test(cubit_bc_test_mat_transiso ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_transiso.cub)
 add_test(cubit_bc_test_mat_transiso_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_transiso.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/mat_transiso.cub.txt)
+
+#Transversely Isotropic atom test
+add_test(traniso_mat_test ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/trans_isotropic_test -my_file trans_isotropic_cube.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor)
+add_test(traniso_mat_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/trans_isotropic_cube.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/trans_isotropic_cube.cub.txt)
 
 #Elasticity atom tests
 add_test(elasticity_atom_test_01X ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/elasticity_atom_test -my_file elasticity_atom_test_01X.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary -my_order 5)
