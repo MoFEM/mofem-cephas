@@ -1,7 +1,7 @@
- Blessed File for Testing Transversely Isotropic Material Implimentation on moFEM 
- -------------------------------------------------------------------------------- 
+Blessed File for Testing Transversely Isotropic Material Implimentation on moFEM 
+-------------------------------------------------------------------------------- 
 
- Analytical Solution was computed using and equivalent rotated Compliance Stiffness Matrix multiplied by the applied stress tensor (0,0,1,0,0,0)
+Analytical Solution was computed using and equivalent rotated Compliance Stiffness Matrix multiplied by the applied stress tensor (0,0,1,0,0,0)
 
     			XX 	YY 	ZZ 	XY 	XZ 	YZ
 Analytical Strain: 	-0.175	0.175	0.675	0.000	0.000	0.000

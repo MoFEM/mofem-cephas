@@ -23,7 +23,7 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
-#include "ElasticFEMethod.hpp"
+#include "ElasticFEMethodTransIso.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
