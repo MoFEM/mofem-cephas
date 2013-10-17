@@ -755,7 +755,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   rval = moab.tag_get_handle("BLOCK_HEADER",bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle("Block_Attributes",block_attribs); CHKERR(rval); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR(rval);CHKERR_THROW(rval);
 
   vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {
@@ -1143,8 +1143,16 @@ ostream& operator<<(ostream& os,const Mat_Elastic& e)
     {
         os << endl << "Material Properties" << endl;
         os << "-------------------" << endl;
-        os << "Young's modulus = " << e.data.Young << endl;
-        os << "Poisson's ratio = " << e.data.Poisson << endl << endl;
+        os << "Young's modulus  = " << e.data.Young << endl;
+        os << "Poisson's ratio  = " << e.data.Poisson << endl;
+        os << "User attribute 1 = " << e.data.User1 << endl;
+        os << "User attribute 2 = " << e.data.User2 << endl;
+        os << "User attribute 3 = " << e.data.User3 << endl;
+        os << "User attribute 4 = " << e.data.User4 << endl;
+        os << "User attribute 5 = " << e.data.User5 << endl;
+        os << "User attribute 6 = " << e.data.User6 << endl;
+        os << "User attribute 7 = " << e.data.User7 << endl;
+        os << "User attribute 8 = " << e.data.User8 << endl << endl;
         return os;
     }
 
