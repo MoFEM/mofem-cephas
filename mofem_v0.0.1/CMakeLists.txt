@@ -97,12 +97,12 @@ add_library(mofem_Field
   do_not_blink/TETRefine.cpp
   do_not_blink/FieldCore.cpp
   complex_for_lazy/complex_for_lazy.c
-  complex_for_lazy/moabFEMethod_ComplexForLazy.cpp
-  student_body/moabFEMethod_LowLevelStudent.cpp
-  student_body/moabFEMethod_UpLevelStudent.cpp
-  student_body/moabFEMethod_DirihletBC.cpp
+  complex_for_lazy/FEMethod_ComplexForLazy.cpp
+  student_body/FEMethod_LowLevelStudent.cpp
+  student_body/FEMethod_UpLevelStudent.cpp
+  student_body/DirihletBC.cpp
   student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
-  student_body/moabFEMethod_SurfaceConstrains.cpp
+  student_body/FEMethod_SurfaceConstrains.cpp
   FieldInterface.cpp
   FEM.c
   H1.c

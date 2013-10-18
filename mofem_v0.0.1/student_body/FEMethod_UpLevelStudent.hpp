@@ -22,8 +22,8 @@
 
 #include "CoreDataStructures.hpp"
 #include "FieldInterface.hpp"
-#include "moabFEMethod_LowLevelStudent.hpp"
-#include "moabFEMethod_DirihletBC.hpp"
+#include "FEMethod_LowLevelStudent.hpp"
+#include "DirihletBC.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
