@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -41,11 +41,11 @@ namespace MoFEM {
 
 struct ArcElasticFEMethod: public ElasticFEMethod {
 
-  ArcElasticFEMethod(moabField& _mField): ElasticFEMethod(_mField) {};
+  ArcElasticFEMethod(FieldInterface& _mField): ElasticFEMethod(_mField) {};
 
   ArcLenghtCtx *arc_ptr;
   ArcElasticFEMethod(
-      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
       double _lambda,double _mu,ArcLenghtCtx *_arc_ptr): 
       ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu),arc_ptr(_arc_ptr) {};
 
@@ -174,7 +174,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   interface_materials_context int_mat_ctx;
 
   ArcInterfaceFEMethod(
-      moabField& _mField,double _YoungModulus): 
+      FieldInterface& _mField,double _YoungModulus): 
       InterfaceFEMethod(_mField,_YoungModulus),int_mat_ctx(ctx_IntLinearSoftening) {};
 
   double h,beta,ft,Gf,E0,g0,kappa1;
@@ -184,7 +184,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
   Vec D;
   ArcInterfaceFEMethod(
-      moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
       double _YoungModulus,double _h,double _beta,double _ft,double _Gf,interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
       InterfaceFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_YoungModulus),int_mat_ctx(_int_mat_ctx),
       h(_h),beta(_beta),ft(_ft),Gf(_Gf),D(_D) {
@@ -536,7 +536,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
 };
 
-struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
+struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
   Interface& moab;
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -545,7 +545,7 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
   Vec F,D;
   ArcLenghtCtx* arc_ptr;
   Vec GhostDiag,GhostLambdaInt;
-  Range Faces3,Faces4,PostProcNodes;
+  Range Faces3,Faces4;
   Range Edges3,Edges4;
   Range Nodes3,Nodes4;
 
@@ -579,44 +579,11 @@ struct ArcLenghtIntElemFEMethod: public moabField::FEMethod {
     Faces4.insert(Edges4.begin(),Edges4.end());
     Faces4.insert(Nodes4.begin(),Nodes4.end());
  
-    Range all_nodes;
-    rval = moab.get_entities_by_type(0,MBVERTEX,all_nodes,true); CHKERR_THROW(rval);
-    for(Range::iterator nit = all_nodes.begin();nit!=all_nodes.end();nit++) {
-      double coords[3];
-      rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
-      if(fabs(coords[0]-5)<1e-6) {
-	PostProcNodes.insert(*nit);
-      }
-    }
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",PostProcNodes.size());
-
     
   }
   ~ArcLenghtIntElemFEMethod() {
     VecDestroy(&GhostDiag);
     VecDestroy(&GhostLambdaInt);
-  }
-
-  virtual PetscErrorCode potsProcessLoadPath() {
-    PetscFunctionBegin;
-    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
-    lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
-    if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
-    Range::iterator nit = PostProcNodes.begin();
-    for(;nit!=PostProcNodes.end();nit++) {
-      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
-      dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
-      hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
-      double coords[3];
-      rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
-      for(;dit!=hi_dit;dit++) {
-	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
-	PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
-      	PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
-      }
-    }
-    PetscFunctionReturn(0);
   }
 
 

@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -71,8 +71,8 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   Range CubitSideSets_meshsets;
   ierr = mField.get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   }
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   //ref level 1
   BitRefLevel bit_level1;
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle meshset_level1;
   rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level1,meshset_level1); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level1,BitRefLevel().set(),meshset_level1); CHKERRQ(ierr);
 
   //add fields
   ierr = mField.add_field("H1FIELD",H1,1); CHKERRQ(ierr);
@@ -144,8 +144,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBVERTEX,"H1FIELD",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTET,"H1FIELD_L2",3); CHKERRQ(ierr);
 
-  moabField_Core core2(moab);
-  moabField& mField2 = core2;
+  FieldCore core2(moab);
+  FieldInterface& mField2 = core2;
 
   //build fields
   ierr = mField2.build_fields(); CHKERRQ(ierr);
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
 
   ierr = mField2.set_global_VecCreateGhost("PROBLEM_APPROXIMATION",Col,solution,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  /*struct MyEntMethod: public moabField::EntMethod {
+  /*struct MyEntMethod: public FieldInterface::EntMethod {
     ErrorCode rval;
     PetscErrorCode ierr;
     Interface& moab;
@@ -393,7 +393,7 @@ int main(int argc, char *argv[]) {
     Tag th_val;
     double def_VAL = 0;
     rval = moab.tag_get_handle("H1FIELD_VAL",1,MB_TYPE_DOUBLE,th_val,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
-    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"PROBLEM_APPROXIMATION",dof_ptr)) {
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"PROBLEM_APPROXIMATION",dof_ptr)) {
       if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
       EntityHandle ent = dof_ptr->get_ent();
       double fval = dof_ptr->get_FieldData();

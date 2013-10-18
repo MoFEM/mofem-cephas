@@ -28,6 +28,5 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_elasticity
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_lenght_nonlinear_interface")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mesh_smoothing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/material_forces")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/potential_flow")
 
-#add_subdirectory("${PROJECT_SOURCE_DIR}/examples/simple_hooke_material_forces")
-#add_subdirectory("${PROJECT_SOURCE_DIR}/examples/rope")

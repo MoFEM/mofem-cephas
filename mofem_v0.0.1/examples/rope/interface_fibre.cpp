@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -241,7 +241,7 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
     double nu_p, nu_pz, E_p, E_z, G_zp;
         
     TranIsotropicElasticFEMethod(
-                                 moabField& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
+                                 FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
                                  double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp): 
     ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp) {};
     
@@ -459,8 +459,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     
     //Create MoFEM (Joseph) database
-    moabField_Core core(moab);
-    moabField& mField = core;
+    FieldCore core(moab);
+    FieldInterface& mField = core;
     
     //ref meshset ref level 0
     ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -598,7 +598,7 @@ int main(int argc, char *argv[]) {
 
     
     struct MyElasticFEMethod: public ElasticFEMethod {
-        MyElasticFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_ptr,
+        MyElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
                           Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
         ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
         

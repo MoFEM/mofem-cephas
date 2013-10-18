@@ -17,9 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
-
 #include "configurational_mechanics.hpp"
+#include "FieldCore.hpp"
 
 using namespace MoFEM;
 
@@ -55,18 +54,27 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
-  ierr = ConfigurationalMechanics_SetMaterialFireWall(mField); CHKERRQ(ierr);
+  ConfigurationalMechanics conf_prob;
+
+  ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
   //ref meshset ref level 0
-  BitRefLevel bit_level0;
-  bit_level0.set(0);
+  Tag th_my_ref_level;
+  BitRefLevel def_bit_level = 0;
+  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
+    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  BitRefLevel *ptr_bit_level0;
+  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+  BitRefLevel& bit_level0 = *ptr_bit_level0;
 
-  ierr = ConfigurationalMechanics_PhysicalProblemDefinition(mField); CHKERRQ(ierr);
-  ierr = ConfigurationalMechanics_MaterialProblemDefinition(mField); CHKERRQ(ierr);
-  ierr = ConfigurationalMechanics_ConstrainsProblemDefinition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.constrains_crack_front_problem_definition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
@@ -77,6 +85,8 @@ int main(int argc, char *argv[]) {
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("C_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("CTC_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -88,16 +98,23 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition problems
-  ierr = ConfigurationalMechanics_PhysicalPartitionProblems(mField); CHKERRQ(ierr);
-  ierr = ConfigurationalMechanics_MaterialPartitionProblems(mField); CHKERRQ(ierr);
-  ierr = ConfigurationalMechanics_ConstrainsPartitionProblems(mField); CHKERRQ(ierr);
+  ierr = conf_prob.spatialPartitionProblems(mField); CHKERRQ(ierr);
+  ierr = conf_prob.material_partition_problems(mField); CHKERRQ(ierr);
+  ierr = conf_prob.constrains_partition_problems(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.crackfront_partition_problems(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
 
   //caculate material forces
-  ierr = ConfigurationalMechanics_SetMaterialPositions(mField); CHKERRQ(ierr);
-  ierr = ConfigurationalMechanics_CalculateMaterialForces(mField); CHKERRQ(ierr);
-  ierr = ConfigurationalMechanics_ProcectForceVector(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.calculate_material_forces(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.griffith_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.griffith_g(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
 
-  rval = moab.write_file("out_material.h5m"); CHKERR_PETSC(rval);
+  if(pcomm->rank()==0) {
+    rval = moab.write_file("out_material.h5m"); CHKERR_PETSC(rval);
+  }
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
