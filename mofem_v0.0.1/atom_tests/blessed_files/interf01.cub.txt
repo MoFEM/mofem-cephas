@@ -1,5 +1,5 @@
 
-I n t e r f a c e (cfd_bc) 
+CFD BC 
  
-This sideset is associated with an interface
+This sideset is associated with a cfd bc
  

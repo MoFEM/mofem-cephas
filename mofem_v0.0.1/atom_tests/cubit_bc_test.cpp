@@ -154,16 +154,16 @@ int main(int argc, char *argv[]) {
           myfile << mydata;
       }
       
-      //Interface
+      //cfd_bc
       else if (strcmp (&bc_data[0],"cfd_bc") == 0)
       {
-          interface_cubit_bc_data mydata;
+          cfd_cubit_bc_data mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
           myfile << mydata;
       }
-          
+      
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 

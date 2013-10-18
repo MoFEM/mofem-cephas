@@ -1138,10 +1138,10 @@ ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
     return os;   
 }
 
-ostream& operator<<(ostream& os,const interface_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const cfd_cubit_bc_data& e) {
     os << "\n";
-    os << "I n t e r f a c e (cfd_bc) \n \n";
-    os << "This sideset is associated with an interface" << "\n \n";
+    os << "CFD BC \n \n";
+    os << "This sideset is associated with a cfd bc" << "\n \n";
     return os;   
 }
         

@@ -413,19 +413,19 @@ struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
-/*! \struct interface_cubit_bc_data
- *  \brief Definition of the interface (cfd_bc) data structure
+/*! \struct cfd_cubit_bc_data
+ *  \brief Definition of the cfd_bc data structure
  */
-struct interface_cubit_bc_data: public generic_cubit_bc_data {
+struct cfd_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
         char name[6]; // 6 characters for "cfd_bc"
-        char pre1; // This is always zero
-        char pre2; // 6
+        char zero; // This is always zero
+        char type; // This is the type of cfd_bc
     };
     
     _data_ data;
     const Cubit_BC_bitset type;
-    interface_cubit_bc_data(): type(InterfaceSet) {};
+    cfd_cubit_bc_data(): type(InterfaceSet) {};
     
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -435,9 +435,9 @@ struct interface_cubit_bc_data: public generic_cubit_bc_data {
         PetscFunctionReturn(0);
     }
     
-    /*! \brief Print interface bc data
+    /*! \brief Print cfd_bc data
      */
-    friend ostream& operator<<(ostream& os,const interface_cubit_bc_data& e);
+    friend ostream& operator<<(ostream& os,const cfd_cubit_bc_data& e);
 
 };
     
