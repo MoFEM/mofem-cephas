@@ -1,2 +1,17 @@
-delete sideset 13
-Sideset 13 surface 39 40 41 88 97 100 43 46 85 94 103 50 82 91 106
+block 1 attribute count 2
+#Young's modulus of Steel Clamps (E)
+block 1 attribute index 1 200000 
+#Poisson's ration (nu)
+block 1 attribute index 2 0.3
+
+block 2 attribute count 5
+#Young's modulus in xy plane (Ep)
+block 2 attribute index 1 135000
+#Young's modulus in z-direction (Ez)
+block 2 attribute index 2 135000
+#Poisson's ratio in xy plane (vp)
+block 2 attribute index 3 0.2
+#Poisson's ratio in z-direction (vpz)
+block 2 attribute index 4 0.15
+#Shear modulus in z-direction (Gzp)
+block 2 attribute index 5 0
