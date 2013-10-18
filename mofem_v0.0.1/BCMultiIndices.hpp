@@ -86,7 +86,7 @@ struct Mat_Elastic: public generic_attribute_data {
     _data_ data;
     
     const Cubit_BC_bitset type;
-    const int min_number_of_atributes;
+    const unsigned int min_number_of_atributes;
     Mat_Elastic(): type(Mat_ElasticSet),min_number_of_atributes(2) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
