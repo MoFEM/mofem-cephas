@@ -159,11 +159,38 @@ int main(int argc, char *argv[]) {
       {
           cfd_cubit_bc_data mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-          //Print data
-          cout << mydata;
-          myfile << mydata;
+          
+          cout << endl << "Dec value : ";
+          
+          printf("%i \n", mydata.data.type);
+          cout << endl;
+          
+          //Interface bc (Hex:6 Dec:6)
+          if (mydata.data.type == 6) {
+              //Print data
+              cout << endl << "Interface BC" << endl;
+              myfile << endl << "Interface BC" << endl;
+              cout << mydata;
+              myfile << mydata;
+          }
+          //Pressure inlet (Hex:f Dec:15)
+          else if (mydata.data.type == 15) {
+              //Print data
+              cout << endl << "Pressure Inlet" << endl;
+              myfile << endl << "Pressure Inlet" << endl;
+              cout << mydata;
+              myfile << mydata;
+          }
+          //Pressure outlet (Hex:10 Dec:16)
+          else if (mydata.data.type == 16) {
+              //Print data
+              cout << endl << "Pressure Outlet" << endl;
+              myfile << endl << "Pressure Outlet" << endl;
+              cout << mydata;
+              myfile << mydata;
+          }
       }
-      
+
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 
