@@ -40,7 +40,7 @@ cm_export_file("../meshes/bcoverlap01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/interf01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/mat_elastic.cub" "/" export_atom_tests)
 cm_export_file("../meshes/mat_transiso.cub" "/" export_atom_tests)
-cm_export_file("../meshes/inlet_outlet01.cub" "/" export_atom_tests)
+cm_export_file("../meshes/inlet_outlet.cub" "/" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01X.cub" "/" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01Y.cub" "/" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01Z.cub" "/" export_atom_tests)
@@ -81,6 +81,9 @@ add_test(cubit_bc_test_mat_elastic_compare ${CMAKE_COMMAND} -E compare_files ${C
 
 add_test(cubit_bc_test_mat_transiso ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_transiso.cub)
 add_test(cubit_bc_test_mat_transiso_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_transiso.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/mat_transiso.cub.txt)
+
+add_test(cubit_bc_test_inlet_outlet ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file inlet_outlet.cub)
+add_test(cubit_bc_test_inlet_outlet_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/inlet_outlet.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/inlet_outlet.cub.txt)
 
 #Elasticity atom tests
 add_test(elasticity_atom_test_01X ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/elasticity_atom_test -my_file elasticity_atom_test_01X.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary -my_order 5)
