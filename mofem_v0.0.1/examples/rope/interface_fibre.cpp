@@ -19,7 +19,7 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -30,398 +30,6 @@
 #include "ElasticFEMethodForInterface.hpp"
 
 using namespace MoFEM;
-
-/** 
-* \brief Function to Calculate Transverse Isotropic Stiffness Matrix
-* this is similiar to Orthotropic Stiffness Matrix but material parameters in x and y are identical
-* hence it is used for modelling of fibre and wood
-*
-*\param E_p Young's Modulus in x and y direction
-*\param nu_p Poisson's Ratio in x-y plane
-*\param E_z Young's Modulus in z-direction (direction of fibre)
-*\param n_pz Poisson's Ratio in z-direction
-*\param G_zp Shear Modulus in z-direction
-*/
-struct TransverseIsotropicStiffnessMatrix {
-    
-    double nu_p, nu_pz, E_p, E_z, G_zp;
-    
-    ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
-    
-    TransverseIsotropicStiffnessMatrix(double nu_p, double nu_pz, double E_p, double E_z, double G_zp){
-        
-        const double nu_zp=(nu_pz*E_z)/E_p;
-        const double delta=((1+nu_p)*(1-nu_p-2*nu_pz*(nu_pz*E_z/E_p)))/(E_p*E_p*E_z);
-        
-        StiffnessMatrix.resize(6);
-        StiffnessMatrix.clear();
-        StiffnessMatrix(0,0)=StiffnessMatrix(1,1)=(1-nu_pz*nu_zp)/(E_p*E_z*delta);
-        StiffnessMatrix(2,2)=(1-nu_p*nu_p)/(E_p*E_p*delta);
-        
-        StiffnessMatrix(0,1)=StiffnessMatrix(1,0)=(nu_p+nu_zp*nu_pz)/(E_p*E_z*delta);
-        StiffnessMatrix(0,2)=StiffnessMatrix(2,0)=StiffnessMatrix(1,2)=StiffnessMatrix(2,1)=(nu_zp+nu_p*nu_zp)/(E_p*E_z*delta);
-        
-        StiffnessMatrix(4,4)=E_p/(2*(1+nu_p));
-        StiffnessMatrix(5,5)=StiffnessMatrix(3,3)=G_zp;
-    };
-};
-
-/** 
- * \brief Function to Calculate Isotropic Stiffness Matrix
- *
- *\param lambda is the Lame's first parameter, computed using LAMBDA(Young's Modulus,Poisson's Ratio)
- *\param mu is computed using MU(Young's Modulus,Poisson's Ratio)
- */
-struct IsotropicStiffnessMatrix {
-    
-    double lambda, mu;
-    
-    ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
-    
-    IsotropicStiffnessMatrix(double lambda, double mu){
-        
-        ublas::symmetric_matrix<FieldData,ublas::upper> D_lambda,D_mu;
-        
-        D_lambda.resize(6);
-        D_lambda.clear();
-        for(int rr = 0;rr<3;rr++) {
-            for(int cc = 0;cc<3;cc++) {
-                D_lambda(rr,cc) = 1;
-            }
-        }
-        D_mu.resize(6);
-        D_mu.clear();
-        for(int rr = 0;rr<6;rr++) {
-            D_mu(rr,rr) = rr<3 ? 2 : 1;
-        }
-        StiffnessMatrix.resize(6);
-        StiffnessMatrix.clear();
-        StiffnessMatrix = ublas::zero_matrix<FieldData>(6,6);
-        StiffnessMatrix = lambda*D_lambda + mu*D_mu;
-    };
-};
-
-/** 
- * \brief Function to Calculate the Rotation Matrix at every gauss point 
- * to rotate the Transverse Isotroptic Stiffness Matrix in the direction of the fibre
- * z-direction of the stiffness matrix would be orientated along the fibre
- * This transformation depends on the geometry and hence, in the case
- * the pitch size of a 3 strand wire was specified, while the wire was oriented along the z-direction
- 
- *\param coordinateX is the x-coordinate of the gauss point at which the rotational matrix is constructed
- *\param coordinateZ is the y-coordinate of the gauss point at which the rotational matrix is constructed
- */
-struct RotationMatrixForTransverseIsotropy {
-    
-    double coordinatesX, coordinatesY;
-    
-    ublas::matrix<double> TrpMatrix,Rotational_Matrix; 
-    
-    RotationMatrixForTransverseIsotropy(double coordinatesX, double coordinatesY){
-                
-        //setting vectors of rotation and angle (axis-angle rotation)
-        double AxVector1[3]={0,1,0};
-        double norm_AxVector1 = 1.0;
-        double AxAngle1 = 0.5*M_PI;
-        
-        double AxVector2[3]={coordinatesX,coordinatesY,0};
-        double norm_AxVector2 = sqrt(pow(AxVector2[0],2) + pow(AxVector2[1],2) + pow(AxVector2[2],2)); 
-        const double pitch = 150;
-        double radius = sqrt(pow(coordinatesX,2)+pow(coordinatesY,2));
-        double AxAngle2 = -atan(pitch/(2*M_PI*radius)); //Angle of helix
-        
-        double AxVector3[3]={0,0,1};
-        double norm_AxVector3 = sqrt(pow(AxVector3[0],2) + pow(AxVector3[1],2) + pow(AxVector3[2],2));
-        double AxAngle3 = -acos(coordinatesY/sqrt(pow(coordinatesX,2)+pow(coordinatesY,2)));
-        if (coordinatesX<0) {
-            AxAngle3=-AxAngle3;
-        }else{}
-        
-        //Rotational Matrices
-        ublas::matrix<double> RotationC; //Rotate about z-axis by 90 degrees
-        RotationC = ublas::zero_matrix<FieldData>(3,3);
-        ublas::matrix<double> RotationD; //Rotate about z-axis by the angle between [0,1,0] and [coordX,coordY,0]
-        RotationD = ublas::zero_matrix<FieldData>(3,3);
-        ublas::matrix<double> RotationE; //Rotate about [coordX,coordY,0] by angle of helix
-        RotationE = ublas::zero_matrix<FieldData>(3,3);
-        
-        RotationC(0,0) = 1-((1-cos(AxAngle1))*(pow(AxVector1[1],2)+pow(AxVector1[2],2))/pow(norm_AxVector1,2)); 
-        RotationC(1,1) = 1-((1-cos(AxAngle1))*(pow(AxVector1[0],2)+pow(AxVector1[2],2))/pow(norm_AxVector1,2)); 
-        RotationC(2,2) = 1-((1-cos(AxAngle1))*(pow(AxVector1[0],2)+pow(AxVector1[1],2))/pow(norm_AxVector1,2)); 
-        
-        RotationC(0,1) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[1]-norm_AxVector1*AxVector1[2]*sin(AxAngle1))/pow(norm_AxVector1,2);
-        RotationC(1,0) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[1]+norm_AxVector1*AxVector1[2]*sin(AxAngle1))/pow(norm_AxVector1,2);
-        
-        RotationC(0,2) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[2]+norm_AxVector1*AxVector1[1]*sin(AxAngle1))/pow(norm_AxVector1,2);
-        RotationC(2,0) = ((1-cos(AxAngle1))*AxVector1[0]*AxVector1[2]-norm_AxVector1*AxVector1[1]*sin(AxAngle1))/pow(norm_AxVector1,2);
-        
-        RotationC(1,2) = ((1-cos(AxAngle1))*AxVector1[1]*AxVector1[2]-norm_AxVector1*AxVector1[0]*sin(AxAngle1))/pow(norm_AxVector1,2);
-        RotationC(2,1) = ((1-cos(AxAngle1))*AxVector1[1]*AxVector1[2]+norm_AxVector1*AxVector1[0]*sin(AxAngle1))/pow(norm_AxVector1,2); 
-        
-        RotationD(0,0) = 1-((1-cos(AxAngle2))*(pow(AxVector2[1],2)+pow(AxVector2[2],2))/pow(norm_AxVector2,2)); 
-        RotationD(1,1) = 1-((1-cos(AxAngle2))*(pow(AxVector2[0],2)+pow(AxVector2[2],2))/pow(norm_AxVector2,2)); 
-        RotationD(2,2) = 1-((1-cos(AxAngle2))*(pow(AxVector2[0],2)+pow(AxVector2[1],2))/pow(norm_AxVector2,2)); 
-        
-        RotationD(0,1) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[1]-norm_AxVector2*AxVector2[2]*sin(AxAngle2))/pow(norm_AxVector2,2);
-        RotationD(1,0) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[1]+norm_AxVector2*AxVector2[2]*sin(AxAngle2))/pow(norm_AxVector2,2);
-        
-        RotationD(0,2) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[2]+norm_AxVector2*AxVector2[1]*sin(AxAngle2))/pow(norm_AxVector2,2);
-        RotationD(2,0) = ((1-cos(AxAngle2))*AxVector2[0]*AxVector2[2]-norm_AxVector2*AxVector2[1]*sin(AxAngle2))/pow(norm_AxVector2,2);
-        
-        RotationD(1,2) = ((1-cos(AxAngle2))*AxVector2[1]*AxVector2[2]-norm_AxVector2*AxVector2[0]*sin(AxAngle2))/pow(norm_AxVector2,2);
-        RotationD(2,1) = ((1-cos(AxAngle2))*AxVector2[1]*AxVector2[2]+norm_AxVector2*AxVector2[0]*sin(AxAngle2))/pow(norm_AxVector2,2); 
-        
-        RotationE(0,0) = 1-((1-cos(AxAngle3))*(pow(AxVector3[1],2)+pow(AxVector3[2],2))/pow(norm_AxVector3,2)); 
-        RotationE(1,1) = 1-((1-cos(AxAngle3))*(pow(AxVector3[0],2)+pow(AxVector3[2],2))/pow(norm_AxVector3,2)); 
-        RotationE(2,2) = 1-((1-cos(AxAngle3))*(pow(AxVector3[0],2)+pow(AxVector3[1],2))/pow(norm_AxVector3,2)); 
-        
-        RotationE(0,1) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[1]-norm_AxVector3*AxVector3[2]*sin(AxAngle3))/pow(norm_AxVector3,2);
-        RotationE(1,0) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[1]+norm_AxVector3*AxVector3[2]*sin(AxAngle3))/pow(norm_AxVector3,2);
-        
-        RotationE(0,2) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[2]+norm_AxVector3*AxVector3[1]*sin(AxAngle3))/pow(norm_AxVector3,2);
-        RotationE(2,0) = ((1-cos(AxAngle3))*AxVector3[0]*AxVector3[2]-norm_AxVector3*AxVector3[1]*sin(AxAngle3))/pow(norm_AxVector3,2);
-        
-        RotationE(1,2) = ((1-cos(AxAngle3))*AxVector3[1]*AxVector3[2]-norm_AxVector3*AxVector3[0]*sin(AxAngle3))/pow(norm_AxVector3,2);
-        RotationE(2,1) = ((1-cos(AxAngle3))*AxVector3[1]*AxVector3[2]+norm_AxVector3*AxVector3[0]*sin(AxAngle3))/pow(norm_AxVector3,2); 
-        
-        //Combine Rotational Matrices to rotate the stiffness matrix
-        ublas::matrix<double> Rotational_Matrix1 = prod(RotationE,RotationC);
-        Rotational_Matrix = ublas::zero_matrix<FieldData>(3,3);
-        Rotational_Matrix = prod(RotationD,Rotational_Matrix1);            
-        
-        TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
-        
-        TrpMatrix(0, 0) = Rotational_Matrix(0,0) * Rotational_Matrix(0,0);
-        TrpMatrix(0, 1) = Rotational_Matrix(1,0) * Rotational_Matrix(1,0);
-        TrpMatrix(0, 2) = Rotational_Matrix(2,0) * Rotational_Matrix(2,0);
-        TrpMatrix(0, 3) = Rotational_Matrix(1,0) * Rotational_Matrix(2,0);
-        TrpMatrix(0, 4) = Rotational_Matrix(0,0) * Rotational_Matrix(2,0);
-        TrpMatrix(0, 5) = Rotational_Matrix(0,0) * Rotational_Matrix(1,0);
-        
-        TrpMatrix(1, 0) = Rotational_Matrix(0,1) * Rotational_Matrix(0,1);
-        TrpMatrix(1, 1) = Rotational_Matrix(1,1) * Rotational_Matrix(1,1);
-        TrpMatrix(1, 2) = Rotational_Matrix(2,1) * Rotational_Matrix(2,1);
-        TrpMatrix(1, 3) = Rotational_Matrix(1,1) * Rotational_Matrix(2,1);
-        TrpMatrix(1, 4) = Rotational_Matrix(0,1) * Rotational_Matrix(2,1);
-        TrpMatrix(1, 5) = Rotational_Matrix(0,1) * Rotational_Matrix(1,1);
-        
-        TrpMatrix(2, 0) = Rotational_Matrix(0,2) * Rotational_Matrix(0,2);
-        TrpMatrix(2, 1) = Rotational_Matrix(1,2) * Rotational_Matrix(1,2);
-        TrpMatrix(2, 2) = Rotational_Matrix(2,2) * Rotational_Matrix(2,2);
-        TrpMatrix(2, 3) = Rotational_Matrix(1,2) * Rotational_Matrix(2,2);
-        TrpMatrix(2, 4) = Rotational_Matrix(0,2) * Rotational_Matrix(2,2);
-        TrpMatrix(2, 5) = Rotational_Matrix(0,2) * Rotational_Matrix(1,2);
-        
-        TrpMatrix(3, 0) = 2.0 * Rotational_Matrix(0,1) * Rotational_Matrix(0,2);
-        TrpMatrix(3, 1) = 2.0 * Rotational_Matrix(1,1) * Rotational_Matrix(1,2);
-        TrpMatrix(3, 2) = 2.0 * Rotational_Matrix(2,1) * Rotational_Matrix(2,2);
-        TrpMatrix(3, 3) = ( Rotational_Matrix(1,1) * Rotational_Matrix(2,2) + Rotational_Matrix(2,1) * Rotational_Matrix(1,2) );
-        TrpMatrix(3, 4) = ( Rotational_Matrix(0,1) * Rotational_Matrix(2,2) + Rotational_Matrix(2,1) * Rotational_Matrix(0,2) );
-        TrpMatrix(3, 5) = ( Rotational_Matrix(0,1) * Rotational_Matrix(1,2) + Rotational_Matrix(1,1) * Rotational_Matrix(0,2) );
-        
-        TrpMatrix(4, 0) = 2.0 * Rotational_Matrix(0,0) * Rotational_Matrix(0,2);
-        TrpMatrix(4, 1) = 2.0 * Rotational_Matrix(1,0) * Rotational_Matrix(1,2);
-        TrpMatrix(4, 2) = 2.0 * Rotational_Matrix(2,0) * Rotational_Matrix(2,2);
-        TrpMatrix(4, 3) = ( Rotational_Matrix(1,0) * Rotational_Matrix(2,2) + Rotational_Matrix(2,0) * Rotational_Matrix(1,2) );
-        TrpMatrix(4, 4) = ( Rotational_Matrix(0,0) * Rotational_Matrix(2,2) + Rotational_Matrix(2,0) * Rotational_Matrix(0,2) );
-        TrpMatrix(4, 5) = ( Rotational_Matrix(0,0) * Rotational_Matrix(1,2) + Rotational_Matrix(1,0) * Rotational_Matrix(0,2) );
-        
-        TrpMatrix(5, 0) = 2.0 * Rotational_Matrix(0,0) * Rotational_Matrix(0,1);
-        TrpMatrix(5, 1) = 2.0 * Rotational_Matrix(1,0) * Rotational_Matrix(1,1);
-        TrpMatrix(5, 2) = 2.0 * Rotational_Matrix(2,0) * Rotational_Matrix(2,1);
-        TrpMatrix(5, 3) = ( Rotational_Matrix(1,0) * Rotational_Matrix(2,1) + Rotational_Matrix(2,0) * Rotational_Matrix(1,1) );
-        TrpMatrix(5, 4) = ( Rotational_Matrix(0,0) * Rotational_Matrix(2,1) + Rotational_Matrix(2,0) * Rotational_Matrix(0,1) );
-        TrpMatrix(5, 5) = ( Rotational_Matrix(0,0) * Rotational_Matrix(1,1) + Rotational_Matrix(1,0) * Rotational_Matrix(0,1) );
-        
-    };
-};
-
-struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
-    
-    double nu_p, nu_pz, E_p, E_z, G_zp;
-        
-    TranIsotropicElasticFEMethod(
-                                 FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
-                                 double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp): 
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp) {};
-    
-    vector< ublas::symmetric_matrix<FieldData,ublas::upper> > D_At_GaussPoint;
-    
-    PetscErrorCode Fint(Vec F_int) {
-        PetscFunctionBegin;
-        ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
-        for(int rr = 0;rr<row_mat;rr++) {
-            if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-            if(RowGlob[rr].size()==0) continue;
-            f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
-            ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-        }
-        PetscFunctionReturn(0);
-    }
-    
-    PetscErrorCode Stiffness() {
-        PetscFunctionBegin;
-        K.resize(row_mat,col_mat);
-        int g_dim = g_NTET.size()/4;
-        ublas::matrix<FieldData> BTD;
-        for(int rr = 0;rr<row_mat;rr++) {
-            for(int gg = 0;gg<g_dim;gg++) {
-                ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-                double w = V*G_W_TET[gg];
-                BTD.resize(row_Mat.size2(),6);
-                ublas::noalias(BTD) = prod( trans(row_Mat), w*D_At_GaussPoint[gg] );
-                for(int cc = rr;cc<col_mat;cc++) {
-                    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
-                    if(gg == 0) {
-                        K(rr,cc).resize(BTD.size1(),col_Mat.size2());
-                        ublas::noalias(K(rr,cc)) = prod(BTD , col_Mat ); // int BT*D*B
-                    } else {
-                        ublas::noalias(K(rr,cc)) += prod(BTD , col_Mat ); // int BT*D*B
-                    }
-                }
-            }
-        }
-        PetscFunctionReturn(0);
-    }
-    
-    PetscErrorCode operator()() {
-        PetscFunctionBegin;
-        ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-        ierr = GetMatrices(); CHKERRQ(ierr);
-        //Dirihlet Boundary Condition
-        ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
-        
-        D_At_GaussPoint.resize(coords_at_Gauss_nodes.size());
-
-        for(int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
-            
-            ///Get the Axis and Angles according to the position of gauss point
-            double coordinates[3]={(coords_at_Gauss_nodes[gg]).data()[0],(coords_at_Gauss_nodes[gg]).data()[1],(coords_at_Gauss_nodes[gg]).data()[2]};
-            
-            ///Get Rotation matrix according to coordinate of Gauss Point
-            ublas::matrix<double> TrpMatrix; 
-            TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
-            RotationMatrixForTransverseIsotropy RotMat(coordinates[0],coordinates[1]);
-            TrpMatrix=RotMat.TrpMatrix;
-
-            ///Get Stiffness Matrix
-            ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
-            StiffnessMatrix.resize(6);
-            StiffnessMatrix.clear();
-            TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
-            StiffnessMatrix=TranIsoMat.StiffnessMatrix;
-//            IsotropicStiffnessMatrix IsoMat(lambda, mu);
-//            StiffnessMatrix=IsoMat.StiffnessMatrix;
-            
-            ///Rotating the Stiffness matrix according to the fibre direction
-            D_At_GaussPoint[gg].resize(6);
-            D_At_GaussPoint[gg].clear();
-            ublas::matrix< FieldData > dummy2 = prod( StiffnessMatrix , TrpMatrix );
-            D_At_GaussPoint[gg] = prod( trans(TrpMatrix) , dummy2 );
-        }
-        
-        //Assembly Aij and F
-        ierr = RhsAndLhs(); CHKERRQ(ierr);
-       
-        //Neumann Boundary Conditions
-        ierr = NeumannBC(F); CHKERRQ(ierr);
-        
-        ierr = OpStudentEnd(); CHKERRQ(ierr);
-        
-        PetscFunctionReturn(0); }
-    
-};
-
-struct TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
-    
-    double nu_p, nu_pz, E_p, E_z, G_zp;
-    Tag th_fibre_orientation;
-    
-    TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
-        
-        double def_VAL2[3] = {0,0,0};
-        rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
-    }
-    
-    PetscErrorCode operator()() {
-        PetscFunctionBegin;
-        
-        ierr = do_operator(); CHKERRQ(ierr);
-        ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-        
-        int gg=0;
-        vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-        ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
-        vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
-        map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
-        
-        for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
-            
-            ///Compute Strains and save them on TAG
-            ublas::matrix< FieldData > GradU = *viit;
-            ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
-            rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
-            
-            ///Get the Axis and Angles according to the position of gauss point
-            double coordinates[3]={(coords_at_Gauss_nodes[gg]).data()[0],(coords_at_Gauss_nodes[gg]).data()[1],(coords_at_Gauss_nodes[gg]).data()[2]};
-            
-            ///Get Rotation matrix according to coordinate of Gauss Point
-            ublas::matrix<double> TrpMatrix,Rotational_Matrix;
-            TrpMatrix = ublas::zero_matrix<FieldData>(6,6);
-            Rotational_Matrix = ublas::zero_matrix<FieldData>(3,3);
-            RotationMatrixForTransverseIsotropy RotMat(coordinates[0],coordinates[1]);
-            
-            TrpMatrix=RotMat.TrpMatrix;
-            Rotational_Matrix=RotMat.Rotational_Matrix;
-            
-            ///Rotate AxisYVector[0,1,0] to the direction of the fibre and save in TAG
-            ublas::vector<FieldData> AxisYVector(3);
-            AxisYVector[0]=0; AxisYVector[1]=0;AxisYVector[2]=1;
-            ublas::vector<FieldData> Fibre = prod(Rotational_Matrix,AxisYVector);
-            
-            rval = moab_post_proc.tag_set_data(th_fibre_orientation,&mit->second,1,&Fibre[0]); CHKERR_PETSC(rval);
-            
-            ///Get Stiffness Matrix
-            ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
-            StiffnessMatrix.resize(6);
-            StiffnessMatrix.clear();
-            TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
-            StiffnessMatrix=TranIsoMat.StiffnessMatrix;            
-//            IsotropicStiffnessMatrix IsoMat(lambda, mu);
-//            StiffnessMatrix=IsoMat.StiffnessMatrix;
-            
-            ///Rotating the Stiffness matrix according to the fibre direction
-            D.resize(6,6);
-            D.clear();
-            ublas::matrix< FieldData > dummy2 = prod( StiffnessMatrix , TrpMatrix );
-            D=prod( trans(TrpMatrix) , dummy2 );
-            
-            ///calculate stress and save it into tag
-            ublas::vector<FieldData> Strain_VectorNotation(6);
-            Strain_VectorNotation[0] = Strain(0,0);
-            Strain_VectorNotation[1] = Strain(1,1);
-            Strain_VectorNotation[2] = Strain(2,2);
-            Strain_VectorNotation[3] = 2*Strain(0,1);
-            Strain_VectorNotation[4] = 2*Strain(1,2);
-            Strain_VectorNotation[5] = 2*Strain(2,0);
-            ublas::vector< FieldData > Stress_VectorNotation = prod( D, Strain_VectorNotation );
-            ublas::matrix< FieldData > Stress = ublas::zero_matrix<FieldData>(3,3);
-            Stress(0,0) = Stress_VectorNotation[0];
-            Stress(1,1) = Stress_VectorNotation[1];
-            Stress(2,2) = Stress_VectorNotation[2];
-            Stress(0,1) = Stress(1,0) = Stress_VectorNotation[3];
-            Stress(1,2) = Stress(2,1) = Stress_VectorNotation[4];
-            Stress(2,0) = Stress(0,2) = Stress_VectorNotation[5];
-            
-            rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);   
-            
-        }
-        
-        ierr = OpStudentEnd(); CHKERRQ(ierr);
-        PetscFunctionReturn(0); 
-    }
-};
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -466,12 +74,9 @@ int main(int argc, char *argv[]) {
     ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
     
     //Interface
-    EntityHandle meshset_interface;
-    ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
+//    EntityHandle meshset_interface;
+//    ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
 
-//    if(pcomm->rank()==0) {
-//        rval = moab.write_file("refinedMesh.vtk","VTK","",&meshset_interface,1); CHKERR_PETSC(rval);
-//    }
     ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
     
     // stl::bitset see formore details
@@ -535,6 +140,9 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_col("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     
+    ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","POTENTIAL_FIELD"); CHKERRQ(ierr);
+
+    
     //define problems
     ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     
@@ -596,7 +204,6 @@ int main(int argc, char *argv[]) {
     Mat Aij;
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-    
     struct MyElasticFEMethod: public ElasticFEMethod {
         MyElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
                           Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
@@ -619,18 +226,59 @@ int main(int argc, char *argv[]) {
     CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
     ierr = myDirihletBC.Init(); CHKERRQ(ierr);
     
+    Tag th_phi;
+    double def_val = 0;
+    rval = moab.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
+    
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"POTENTIAL_FIELD",dof_ptr)) {
+        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+        EntityHandle ent = dof_ptr->get_ent();
+        double &fval = dof_ptr->get_FieldData();
+        double phi;
+        rval = moab.tag_get_data(th_phi,&ent,1,&phi); CHKERR_PETSC(rval);  
+        fval = phi;
+    }
+    
     //Assemble F and Aij
-    const double YoungModulusP = 1.0;
-    const double PoissonRatioP = 0.2;
-    const double YoungModulusZ = 1.0;
-    const double PoissonRatioPZ = 0.2;
-    const double ShearModulusZP = 100;
+    //    vector<double> attributes;
+    double YoungModulusP;
+    double PoissonRatioP;
+    double YoungModulusZ;
+    double PoissonRatioPZ;
+    double ShearModulusZP;
+    
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+    {
+        cout << endl << *it << endl;
+        
+        //Get block name
+        string name = it->get_Cubit_name();
+        
+        if (name.compare(0,12,"MAT_TRANSISO") == 0)
+        {
+            Mat_TransIso mydata;
+            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+            cout << mydata;
+            YoungModulusP=mydata.data.Youngp;
+            YoungModulusZ=mydata.data.Youngz;
+            PoissonRatioP=mydata.data.Poissonp;
+            PoissonRatioPZ=mydata.data.Poissonpz;
+            if (mydata.data.Shearzp!=0) {
+                ShearModulusZP=mydata.data.Shearzp;
+            }else{
+                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
+            
+        }
+    }
+    
     const double YoungModulus = 1;
     const double PoissonRatio = 0.3;
     const double alpha = 0.05;
     
 //    MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
     TranIsotropicElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+    //    TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+
     InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
     
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -688,6 +336,8 @@ int main(int argc, char *argv[]) {
     
     //  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
     TranIsotropicPostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+    //  TranIso_PostProc_FibreDirRot_OnRefMesh fe_fibre_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+    
     //  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
     

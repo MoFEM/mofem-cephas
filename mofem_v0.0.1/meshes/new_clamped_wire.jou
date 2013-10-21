@@ -15,3 +15,26 @@ block 2 attribute index 3 0.2
 block 2 attribute index 4 0.15
 #Shear modulus in z-direction (Gzp)
 block 2 attribute index 5 0
+
+set duplicate block elements on
+block 3 volume 1 
+block 4 volume 2
+block 5 volume 3 
+block 3 name "PotentialFlow" 
+block 4 name "PotentialFlow1" 
+block 5 name "PotentialFlow2" 
+
+create pressure on surface 37 magnitude 1
+create pressure on surface 5 magnitude -1
+nodeset 1 vertex 51 
+nodeset 1 name 'ZeroPressure'
+
+create pressure on surface 42 magnitude 1
+create pressure on surface 11 magnitude -1
+nodeset 2 vertex 51 
+nodeset 2 name 'ZeroPressure1'
+
+create pressure on surface 47 magnitude 1
+create pressure on surface 17 magnitude -1
+nodeset 3 vertex 54 
+nodeset 3 name 'ZeroPressure2'

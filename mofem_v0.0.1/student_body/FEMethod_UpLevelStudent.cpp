@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "FEM.h"
 
 namespace MoFEM {
@@ -543,7 +543,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowDiffNMatrix(const string &fie
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
   N_Matrix_Type::iterator miit = row_diffN_Matrix_nodes.find(fiit->get_MoFEMField_ptr());
-  if(miit == row_N_Matrix_nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  if(miit == row_diffN_Matrix_nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   diffNMatrix = miit->second;
   PetscFunctionReturn(0);
 }
@@ -563,12 +563,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowDiffNMatrix(const string &fie
       switch(type) {
 	case MBEDGE: {
 	  N_Matrix_EntType::iterator miit = row_diffN_Matrix_edges.find(eiit->get_MoFEMEntity_ptr());
-	  if(miit == row_N_Matrix_edges.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
+	  if(miit == row_diffN_Matrix_edges.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
 	  diffNMatrix = miit->second;
 	} break;
 	case MBTRI: {
 	  N_Matrix_EntType::iterator miit = row_diffN_Matrix_faces.find(eiit->get_MoFEMEntity_ptr());
-	  if(miit == row_N_Matrix_faces.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
+	  if(miit == row_diffN_Matrix_faces.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
 	  diffNMatrix = miit->second;
 	} break;
 	default:
@@ -695,7 +695,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowFaceNMatrix(
     N_Matrix_nodes,N_Matrix_edges,N_Matrix_faces,
     type,edge_handle); CHKERRQ(ierr);
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
-  if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
+  if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"no < %s > field",field_name.c_str());
   switch (type) {
     case MBVERTEX: {
       N_Matrix_Type::iterator miit = N_Matrix_nodes.find(fiit->get_MoFEMField_ptr());

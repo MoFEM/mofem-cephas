@@ -22,7 +22,7 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 
 using namespace MoFEM;
 

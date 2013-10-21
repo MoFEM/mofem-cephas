@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/rope/potential_flow")
+
 add_executable(wire_interface interface_fibre.cpp)
 target_link_libraries(wire_interface mofem_Field ${PROJECT_LIBS})
 
