@@ -86,13 +86,19 @@ struct Mat_Elastic: public generic_attribute_data {
     _data_ data;
     
     const Cubit_BC_bitset type;
-    Mat_Elastic(): type(Mat_ElasticSet) {};
+    const unsigned int min_number_of_atributes;
+    Mat_Elastic(): type(Mat_ElasticSet),min_number_of_atributes(2) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
         PetscFunctionBegin;
-        //Fill data
-        if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
-        memcpy(&data, &attributes[0], sizeof(data));
+        if(attributes.size()<min_number_of_atributes) {
+	  SETERRQ(PETSC_COMM_SELF,1,"Young modulus and/or Poisson ratio is not defined. (top tip: check number of ELASTIC block atributes)");
+	}
+        if(8*attributes.size()>sizeof(data)) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+	}
+	bzero(&data,sizeof(data));
+        memcpy(&data, &attributes[0],8*attributes.size());
         PetscFunctionReturn(0);
     }
     
