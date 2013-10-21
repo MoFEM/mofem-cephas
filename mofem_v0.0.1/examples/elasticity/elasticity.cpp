@@ -186,8 +186,8 @@ int main(int argc, char *argv[]) {
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   //Assemble F and Aij
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.499;
+  const double YoungModulus = 1000000;
+  const double PoissonRatio = 0.0;
   MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
