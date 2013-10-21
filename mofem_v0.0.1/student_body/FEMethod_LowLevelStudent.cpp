@@ -1445,7 +1445,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
   }
-  int side_number = side->side_number;
+  unsigned int side_number = side->side_number;
   // nodes
   if((type == MBVERTEX)||(type == MBMAXTYPE)) {
     Indices_Type::iterator nit = nodesGlobIndices.begin();
