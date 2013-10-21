@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-#include "moabFEMethod_LowLevelStudent.hpp"
+#include "FEMethod_LowLevelStudent.hpp"
 #include "FEM.h"
 
 namespace MoFEM {
@@ -1452,6 +1452,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
     for(;nit!=nodesGlobIndices.end();nit++) {
       const MoFEMField* field_ptr = nit->first;
       if(field_ptr->get_name()!=field_name) continue;
+      if(gNTRIonElem.size()<side_number) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency, (top tip: have you calles ShapeFunctions_TRI(siit->ent,g_NTRI)");
       vector<double>& gNTRIonELEM = gNTRIonElem[side_number];
       if(nb_Ns*g_dim != gNTRIonELEM.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       vector< ublas::matrix<FieldData> > &data = N_Matrix_nodes[field_ptr];

@@ -30,13 +30,13 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
 #include "SnesCtx.hpp"
-#include "moabFEMethod_ComplexForLazy.hpp"
-#include "moabFEMethod_DriverComplexForLazy.hpp"
+#include "FEMethod_ComplexForLazy.hpp"
+#include "FEMethod_DriverComplexForLazy.hpp"
 
 #include "complex_for_lazy.h"
 

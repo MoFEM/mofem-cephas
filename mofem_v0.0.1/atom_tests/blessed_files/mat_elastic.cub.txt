@@ -5,10 +5,26 @@ Block attributes
 ----------------
 attr. no: 1   value: 1000
 attr. no: 2   value: 0.2
+attr. no: 3   value: 1
+attr. no: 4   value: 1
+attr. no: 5   value: 1
+attr. no: 6   value: 1
+attr. no: 7   value: 1
+attr. no: 8   value: 1
+attr. no: 9   value: 1
+attr. no: 10   value: 1
 
 
 Material Properties
 -------------------
-Young's modulus = 1000
-Poisson's ratio = 0.2
+Young's modulus  = 1000
+Poisson's ratio  = 0.2
+User attribute 1 = 1
+User attribute 2 = 1
+User attribute 3 = 1
+User attribute 4 = 1
+User attribute 5 = 1
+User attribute 6 = 1
+User attribute 7 = 1
+User attribute 8 = 1
 

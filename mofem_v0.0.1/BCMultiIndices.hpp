@@ -1,5 +1,5 @@
-/** \file common.hpp
- * \brief Myltindex containes, data structures and other low-level functions 
+/** \file BCMultiIndices.hpp
+ * \brief Multi-index containers, data structures and other low-level functions
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *
@@ -31,7 +31,7 @@ namespace MoFEM {
  * bc & material meshsets
  *
  */
-typedef bitset<16> Cubit_BC_bitset;
+typedef bitset<32> Cubit_BC_bitset;
 enum Cubit_BC {
   UnknownSet = 0,
   NodeSet = 1<<0,
@@ -73,18 +73,32 @@ struct Mat_Elastic: public generic_attribute_data {
     struct __attribute__ ((packed)) _data_{
         double Young; // Young's modulus
         double Poisson; // Poisson's ratio
+        double User1; // User attribute 1
+        double User2; // User attribute 2
+        double User3; // User attribute 3
+        double User4; // User attribute 4
+        double User5; // User attribute 5
+        double User6; // User attribute 6
+        double User7; // User attribute 7
+        double User8; // User attribute 8
     };
     
     _data_ data;
     
     const Cubit_BC_bitset type;
-    Mat_Elastic(): type(Mat_ElasticSet) {};
+    const int min_number_of_atributes;
+    Mat_Elastic(): type(Mat_ElasticSet),min_number_of_atributes(2) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
         PetscFunctionBegin;
-        //Fill data
-        if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
-        memcpy(&data, &attributes[0], sizeof(data));
+        if(attributes.size()<min_number_of_atributes) {
+	  SETERRQ(PETSC_COMM_SELF,1,"Young modulus and/or Poisson ratio is not defined. (top tip: check number of ELASTIC block atributes)");
+	}
+        if(8*attributes.size()>sizeof(data)) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+	}
+	bzero(&data,sizeof(data));
+        memcpy(&data, &attributes[0],8*attributes.size());
         PetscFunctionReturn(0);
     }
     
@@ -548,6 +562,9 @@ struct CubitMeshSets {
    *
    * MAT_ELASTIC / 2 /  (1) Young's  modulus
    *                    (2) Poisson's ratio
+   *                    (3) User attribute 1
+   *                    ...
+   *                    (10) User attribute 8
    *
    * MAT_TRANSISO / 5 / (1) Young's modulus in xy plane (Ep)
    *                    (2) Young's modulus in z-direction (Ez)

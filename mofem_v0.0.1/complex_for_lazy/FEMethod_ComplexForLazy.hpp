@@ -23,7 +23,7 @@
 
 #include "FieldInterface.hpp"
 #include "CoreDataStructures.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>

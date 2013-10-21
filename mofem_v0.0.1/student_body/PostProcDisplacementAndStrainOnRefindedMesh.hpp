@@ -22,7 +22,7 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 
 using namespace MoFEM;
 
@@ -35,13 +35,15 @@ struct PostProcOnRefMesh_Base {
     Interface& moab_ref;
     Core mb_instance_ref;
 
-    const int max_level;
+    int max_level;
     vector<EntityHandle> meshset_level;
     bool init_ref;
 
     PostProcOnRefMesh_Base(): 
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
-      max_level(1),init_ref(false) {
+      max_level(0),init_ref(false) {
+      PetscBool flg = PETSC_TRUE;
+      PetscOptionsGetInt(PETSC_NULL,"-my_max_pot_proc_ref_level",&max_level,&flg);
       meshset_level.resize(max_level+1);
     }
 };

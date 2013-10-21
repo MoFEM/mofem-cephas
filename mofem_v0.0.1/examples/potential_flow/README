@@ -6,5 +6,5 @@ Check before run
 
 Example run
 ===========
-mprirun -np 4 ./elasticity_candy1 -my_file medium3helix.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor-- /opt/local/lib/libmpi_f90.dylib
 
+mpirun -np 4 ./potential_flow -my_file pipe.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 5

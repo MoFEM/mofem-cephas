@@ -16,13 +16,18 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(trans_isotropic_test trans_isotropic_test.cpp)
-target_link_libraries(trans_isotropic_test mofem_Field ${PROJECT_LIBS})
+add_executable(potential_flow potential_flow.cpp)
+target_link_libraries(potential_flow mofem_Field ${PROJECT_LIBS})
+
+cm_export_file("../../meshes/pipe.cub" "/" export_potential_flow)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/trans_isotropic_cube.cub
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
+#testing
+add_test(SimplePotentialFlowTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/potential_flow
+  -my_file pipe.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 5 -log_summary)
+
+

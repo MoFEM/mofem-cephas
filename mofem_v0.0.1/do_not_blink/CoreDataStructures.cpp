@@ -522,7 +522,13 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
 //moab dof
 DofMoFEMEntity::DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const ApproximationOrder _dof_order,const ApproximationRank _dof_rank,const DofIdx _dof): 
     interface_MoFEMEntity<MoFEMEntity>(_MoFEMEntity_ptr), dof(_dof),active(false) {
-  assert(field_ptr->tag_dof_order_data!=NULL);
+  if(field_ptr->tag_dof_order_data==NULL) {
+    ostringstream ss;
+    ss << "at " << __LINE__ << " in " << __FILE__;
+    ss << " field_ptr->tag_dof_order_data==NULL";
+    ss << " (top tip: check if order set to vertices is 1)";
+    throw(ss.str().c_str());
+  }
   assert(field_ptr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = _dof_order;
   ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof] = _dof_rank;
@@ -755,7 +761,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   rval = moab.tag_get_handle("BLOCK_HEADER",bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle("Block_Attributes",block_attribs); CHKERR(rval); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR(rval);CHKERR_THROW(rval);
 
   vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {
@@ -1143,8 +1149,16 @@ ostream& operator<<(ostream& os,const Mat_Elastic& e)
     {
         os << endl << "Material Properties" << endl;
         os << "-------------------" << endl;
-        os << "Young's modulus = " << e.data.Young << endl;
-        os << "Poisson's ratio = " << e.data.Poisson << endl << endl;
+        os << "Young's modulus  = " << e.data.Young << endl;
+        os << "Poisson's ratio  = " << e.data.Poisson << endl;
+        os << "User attribute 1 = " << e.data.User1 << endl;
+        os << "User attribute 2 = " << e.data.User2 << endl;
+        os << "User attribute 3 = " << e.data.User3 << endl;
+        os << "User attribute 4 = " << e.data.User4 << endl;
+        os << "User attribute 5 = " << e.data.User5 << endl;
+        os << "User attribute 6 = " << e.data.User6 << endl;
+        os << "User attribute 7 = " << e.data.User7 << endl;
+        os << "User attribute 8 = " << e.data.User8 << endl << endl;
         return os;
     }
 
