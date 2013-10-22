@@ -83,6 +83,9 @@ add_test(cubit_bc_test_mat_elastic_compare ${CMAKE_COMMAND} -E compare_files ${C
 add_test(cubit_bc_test_mat_transiso ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_transiso.cub)
 add_test(cubit_bc_test_mat_transiso_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_transiso.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/mat_transiso.cub.txt)
 
+add_test(cubit_bc_test_mat_interf ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_interf.cub)
+add_test(cubit_bc_test_mat_interf_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_interf.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/mat_interf.cub.txt)
+
 add_test(cubit_bc_test_inlet_outlet ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file inlet_outlet.cub)
 add_test(cubit_bc_test_inlet_outlet_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/inlet_outlet.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/inlet_outlet.cub.txt)
 

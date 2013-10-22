@@ -1,0 +1,17 @@
+
+Interface
+
+CFD BC 
+ 
+
+Block name:  MAT_INTERF_atom_test
+
+Block attributes
+----------------
+attr. no: 1   value: 0.555
+
+
+Material Properties
+-------------------
+Elastic modulus multiplier = 0.555
+
