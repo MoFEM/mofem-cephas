@@ -49,6 +49,7 @@ enum Cubit_BC {
   UnknownCubitName = 1<< 12,
   Mat_ElasticSet = 1<<13,
   Mat_TransIsoSet = 1<<14,
+  Mat_InterfSet = 1 <<15,
   LastSet
 };
 
@@ -139,6 +140,33 @@ struct Mat_TransIso: public generic_attribute_data {
     
 };
 
+    /*! \struct Mat_Interf
+     *  \brief Linear interface data structure
+     */
+    struct Mat_Interf: public generic_attribute_data {
+        struct __attribute__ ((packed)) _data_{
+            double fact; // Elastic modulus multiplier
+        };
+        
+        _data_ data;
+        
+        const Cubit_BC_bitset type;
+        Mat_Interf(): type(Mat_InterfSet) {};
+        
+        virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+            PetscFunctionBegin;
+            //Fill data
+            if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+            memcpy(&data, &attributes[0], sizeof(data));
+            PetscFunctionReturn(0);
+        }
+        
+        /*! \brief Print Mat_Interf data
+         */
+        friend ostream& operator<<(ostream& os,const Mat_Interf& e);
+        
+    };
+    
 /*! \struct generic_cubit_bc_data
  *  \brief Generic bc data structure
  */
@@ -560,7 +588,7 @@ struct CubitMeshSets {
    * Block name /  Number of attributes  / (1) Attribute 1, (2) Attribute 2 etc.
    * ---------------------------------------------------------------------------
    *
-   * MAT_ELASTIC / 2 /  (1) Young's  modulus
+   * MAT_ELASTIC / 10 /  (1) Young's  modulus
    *                    (2) Poisson's ratio
    *                    (3) User attribute 1
    *                    ...
@@ -571,6 +599,8 @@ struct CubitMeshSets {
    *                    (3) Poisson's ratio in xy plane (vp)
    *                    (4) Poisson's ratio in z-direction (vpz)
    *                    (5) Shear modulus in z-direction (Gzp)
+   *
+   * MAT_INTERF / 1 /   (1) Elastic modulus multiplier
    *
    * To be extended as appropriate
    */
@@ -624,6 +654,7 @@ PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
 	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
  *
  */
+    
 typedef multi_index_container<
   CubitMeshSets,
   indexed_by<
