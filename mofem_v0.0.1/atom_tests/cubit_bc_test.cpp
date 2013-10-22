@@ -240,6 +240,14 @@ int main(int argc, char *argv[]) {
                     cout << mydata;
                     myfile << mydata;
                 }
+                else if (name.compare(0,10,"MAT_INTERF") == 0)
+                {
+                    Mat_Interf mydata;
+                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+                    //Print data
+                    cout << mydata;
+                    myfile << mydata;
+                }
 
                 else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
             }
