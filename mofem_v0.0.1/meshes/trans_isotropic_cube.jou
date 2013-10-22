@@ -1,9 +1,10 @@
 reset
 brick x 100 y 100 z 100
+volume 1 sizing function type skeleton scale 10 time_accuracy_level 2 
 volume 1 sizing function type skeleton 
 volume 1 scheme Tetmesh
 mesh volume 1
-set duplicate block elements off
+set duplicate block elements on
 block 1 volume 1  
 block 1 attribute count 2
 
@@ -29,7 +30,19 @@ create displacement on vertex 7 dof 1 dof 2 dof 3 fix 0
 #!Force
 create force  on surface 1  force value 1 direction   z
 
+block 2 volume 1
+
+create pressure on surface 3 magnitude 1
+create pressure on surface 5 magnitude -1
+nodeset 6 vertex 1 
+nodeset 6 name 'ZeroPressure'
+
+
 #!Add material name and description
 block 1 name "MAT_TRANSISO_1" 
+block 2 name "PotentialFlow" 
+
 block 1 description 'Transverse Isotropic material properties' 
 save as "/Users/mikecortis1/Documents/PhD/moFEM/mofem_v0.0.1/meshes/trans_isotropic_cube.cub" overwrite
+
+

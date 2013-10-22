@@ -1,2 +1,48 @@
-delete sideset 13
-Sideset 13 surface 39 40 41 88 97 100 43 46 85 94 103 50 82 91 106
+block 1 name "MAT_ELASTIC_1" 
+
+block 1 attribute count 2
+#Young's modulus of Steel Clamps (E)
+block 1 attribute index 1 200000 
+#Poisson's ration (nu)
+block 1 attribute index 2 0.3
+
+block 2 name "MAT_TRANSISO_1" 
+
+block 2 attribute count 5
+#Young's modulus in xy plane (Ep)
+block 2 attribute index 1 135000
+#Young's modulus in z-direction (Ez)
+block 2 attribute index 2 135000
+#Poisson's ratio in xy plane (vp)
+block 2 attribute index 3 0.2
+#Poisson's ratio in z-direction (vpz)
+block 2 attribute index 4 0.15
+#Shear modulus in z-direction (Gzp)
+block 2 attribute index 5 0
+
+set duplicate block elements on
+block 3 volume 1 
+block 4 volume 2
+block 5 volume 3 
+block 3 name "PotentialFlow" 
+block 4 name "PotentialFlow1" 
+block 5 name "PotentialFlow2" 
+
+create pressure on surface 37 magnitude 1
+create pressure on surface 5 magnitude -1
+nodeset 1 vertex 51 
+nodeset 1 name 'ZeroPressure'
+
+create pressure on surface 42 magnitude 1
+create pressure on surface 11 magnitude -1
+nodeset 2 vertex 51 
+nodeset 2 name 'ZeroPressure1'
+
+create pressure on surface 47 magnitude 1
+create pressure on surface 17 magnitude -1
+nodeset 3 vertex 54 
+nodeset 3 name 'ZeroPressure2'
+
+#Applying BC
+create displacement on surface 90 dof 1 dof 2 dof 3 fix
+create force on surface 99 vector 0 0 1 0 0 0

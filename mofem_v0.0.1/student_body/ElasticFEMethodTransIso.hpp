@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Michel Cortis
+/* Copyright (C) 2013, Michel Cortis <mikecortis at gmail.com>
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -22,6 +22,7 @@
 
 #include <boost/numeric/ublas/symmetric.hpp>
 #include "ElasticFEMethod.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 namespace MoFEM {
 
@@ -222,7 +223,7 @@ struct StressTransformation {
 };
 
 /** 
- * \brief Function to Calculate Strain Transformation Matrix
+ * \brief Function to Calculate Strain Transformation Matrix<br>
  * This function computes the strain transformation Matrix at a give axis and angle of rotation <br>
  * One can also output the axis/angle rotational Matrix
  *
@@ -288,18 +289,33 @@ struct StrainTransformation {
         
     };  
 };
-
-struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
     
+/** 
+* \brief Function to build up the Transverse Isotropic Stiffness Matrix and rotated when necessary
+*
+* \param E_p Young's Modulus xy plane
+* \param E_z Young's Modulus z-axis
+* \param nu_p Poisson's Ratio xy plane
+* \param nu_pz Poisson's Ration z-axis
+* \param G_zp Shear Modulus z-direction
+* \param noAA Number of Axis-Angle Rotations (Could be 0 for no rotation)
+* \param AxVector An array containing all the axes of rotation ( ex: AxVector[6] = {(1st Axis) 1,0,0 , (2nd Axis) 0,1,0} )
+* \param AxAngle An array containg all the angles of rotation ( ex: AxAngle[2] = {(1st Angle) 0.5*M_PI, (2nd Angle) 0.25*M_PI} )
+*/
+    
+struct TranIsotropicAxisAngleRotElasticFEMethod: public ElasticFEMethod {
+          
     double E_p, E_z, nu_p, nu_pz, G_zp;
+    int noAA;
+    double *AxVector, *AxAngle;
     
-    TranIsotropicElasticFEMethod(
-                                 FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
-                                 double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp): 
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp)  {
-        
+    TranIsotropicAxisAngleRotElasticFEMethod(
+                                     FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
+                                     double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, int _noAA, double *_AxVector, double *_AxAngle): 
+    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle)  {
+            
     };
-    
+        
     PetscErrorCode preProcess() {
         PetscFunctionBegin;
         ierr = ElasticFEMethod::preProcess();  CHKERRQ(ierr);
@@ -308,8 +324,8 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
         ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
         
         PetscFunctionReturn(0);
-    }
-    
+        }
+        
     PetscErrorCode Fint(Vec F_int) {
         PetscFunctionBegin;
         ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
@@ -321,46 +337,365 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
         }
         PetscFunctionReturn(0);
     }
-    
+        
     PetscErrorCode calulateD(double _lambda,double _mu) {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
-    
+        
     PetscErrorCode operator()() {
         PetscFunctionBegin;
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
         ierr = GetMatrices(); CHKERRQ(ierr);
-        
+            
         //Dirihlet Boundary Condition
         ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
-        
+            
         ///Get Stiffness Matrix
         ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
         StiffnessMatrix.resize(6);
         StiffnessMatrix.clear();
         TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
         StiffnessMatrix=TranIsoMat.StiffnessMatrix;
-        //        IsotropicStiffnessMatrix IsoMat(lambda, mu);
-        //        StiffnessMatrix=IsoMat.StiffnessMatrix;
-        
+//        IsotropicStiffnessMatrix IsoMat(lambda, mu);
+//        StiffnessMatrix=IsoMat.StiffnessMatrix;
+            
         ///Rotating the Stiffness matrix according a set of axes of rotations and their respective angle
-        
-        ///Insert Axes and Angles of Rotation
-        int noOfRotations = 1; //Number of Rotations
-        double AxVector[3*noOfRotations]; //First Rotational Axis
-        AxVector[0]=1; AxVector[1]=0; AxVector[2]=0; //First Rotational Axis 
-        //        AxVector[3]=1; AxVector[4]=0; AxVector[5]=0; //Second Rotational Axis
-        double AxAngle[noOfRotations];
-        AxAngle[0] = -0.25*M_PI; //First Rotational Angle
-        //        AxAngle[1] = -0.25*M_PI; //Second Rotational Angle
+            
+        int noOfRotations = noAA; //Number of Rotations
         double negAxAngle[noOfRotations];
         for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
-        
+            
         ublas::matrix<double> DummyMatrix,DummyMatrix2; 
         DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
         DummyMatrix = StiffnessMatrix;
+            
+        ///Rotating Stiffness over a number of axis/angle rotations
+        for (int aa=0; aa<noOfRotations; aa++) {
+                
+            StressTransformation StressRotMat(&AxVector[3*aa], AxAngle[aa]);
+            StrainTransformation invStrainRotMat(&AxVector[3*aa], negAxAngle[aa]);
+                
+            ublas::matrix<double> TrpMatrixStress; 
+            TrpMatrixStress = ublas::zero_matrix<FieldData>(6,6);
+            TrpMatrixStress=StressRotMat.StressRotMat;
+                
+            ublas::matrix<double> TrpMatrixInvStrain; 
+            TrpMatrixInvStrain = ublas::zero_matrix<FieldData>(6,6); 
+            TrpMatrixInvStrain=invStrainRotMat.StrainRotMat;
+                
+            DummyMatrix2 = ublas::zero_matrix<FieldData>(6,6); 
+            ublas::matrix< FieldData > dummyA = prod( DummyMatrix , TrpMatrixInvStrain );
+            DummyMatrix2 = prod(TrpMatrixStress,dummyA);
+            DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
+            DummyMatrix = DummyMatrix2;
+        }
+            
+        D.resize(6,6);
+        D.clear();
+        D = DummyMatrix;
+            
+        //Assembly Aij and F
+        ierr = RhsAndLhs(); CHKERRQ(ierr);
         
+        //Neumann Boundary Conditions
+        ierr = NeumannBC(F); CHKERRQ(ierr);
+            
+        ierr = OpStudentEnd(); CHKERRQ(ierr);
+            
+        PetscFunctionReturn(0); }
+        
+};
+
+/** 
+* \brief Function to build up the Transverse Isotropic Stiffness Matrix and rotate it according to the fibre direction.<br>
+* This class, same as \ref<TranIsotropicAxisAngleRotElasticFEMethod>TranIsotropicAxisAngleRotElasticFEMethod 
+* but will rotate the stiffness matrix using fibre direction which are computed from phi (that are computed for simplest potential flow problem). <br>
+* A fibre direction would be computed for every gauss point and hence, stiffness matrix is rotated at every gauss point. <br>
+*
+* \param E_p Young's Modulus xy plane
+* \param E_z Young's Modulus z-axis
+* \param nu_p Poisson's Ratio xy plane
+* \param nu_pz Poisson's Ration z-axis
+* \param G_zp Shear Modulus z-direction
+*/
+    
+struct TranIsotropicFibreDirRotElasticFEMethod: public ElasticFEMethod {
+        
+    double E_p, E_z, nu_p, nu_pz, G_zp;
+    Tag th_fibre_dir;
+    
+    TranIsotropicFibreDirRotElasticFEMethod(
+                                            FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
+                                            double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp): 
+    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp)  {
+            
+        double def_VAL2[3] = {0,0,0};
+        rval = moab.tag_get_handle( "POT_FLOW_FIBRE_DIR",3,MB_TYPE_DOUBLE,th_fibre_dir,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
+    };
+        
+    vector< ublas::matrix<FieldData> > D_At_GaussPoint;
+    
+    PetscErrorCode preProcess() {
+        PetscFunctionBegin;
+        ierr = ElasticFEMethod::preProcess();  CHKERRQ(ierr);
+        PetscSynchronizedFlush(PETSC_COMM_WORLD);
+        ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+            
+        PetscFunctionReturn(0);
+    }
+    
+    PetscErrorCode calulateD(double _lambda,double _mu) {
+        PetscFunctionBegin;
+        PetscFunctionReturn(0);
+    }
+    
+    PetscErrorCode Fint() {
+        PetscFunctionBegin;
+        
+        double _lambda,_mu;
+        ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
+        ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+
+        //Gradient at Gauss points; 
+        vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+        ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+        unsigned int g_dim = g_NTET.size()/4;
+        assert(GradU_at_GaussPt.size() == g_dim);
+        NOT_USED(g_dim);
+        vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+        int gg = 0;
+        for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
+            ublas::matrix< FieldData > GradU = *viit;
+            ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+            ublas::vector< FieldData > VoightStrain(6);
+            VoightStrain[0] = Strain(0,0);
+            VoightStrain[1] = Strain(1,1);
+            VoightStrain[2] = Strain(2,2);
+            VoightStrain[3] = 2*Strain(0,1);
+            VoightStrain[4] = 2*Strain(1,2);
+            VoightStrain[5] = 2*Strain(2,0);
+            double w = V*G_W_TET[gg];
+            ublas::vector<FieldData> VoightStress = prod(w*D_At_GaussPoint[gg],VoightStrain);
+            //BT * VoigtStress
+            for(int rr = 0;rr<row_mat;rr++) {
+                f_int.resize(row_mat);
+                ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
+                if(gg == 0) {
+                    f_int[rr] = prod( trans(B), VoightStress );
+                } else {
+                    f_int[rr] += prod( trans(B), VoightStress );
+                }
+            }
+        }
+        
+        PetscFunctionReturn(0);
+    }
+        
+    PetscErrorCode Fint(Vec F_int) {
+        PetscFunctionBegin;
+        ierr = TranIsotropicFibreDirRotElasticFEMethod::Fint(); CHKERRQ(ierr);
+        for(int rr = 0;rr<row_mat;rr++) {
+            if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+            if(RowGlob[rr].size()==0) continue;
+            f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+            ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+
+        }
+        PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode Stiffness() {
+        PetscFunctionBegin;
+        
+        double _lambda,_mu;
+        ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
+        ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+        
+        K.resize(row_mat,col_mat);
+        int g_dim = g_NTET.size()/4;
+        for(int rr = 0;rr<row_mat;rr++) {
+            for(int gg = 0;gg<g_dim;gg++) {
+                ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
+                double w = V*G_W_TET[gg];
+                BD.resize(6,row_Mat.size2());
+                //ublas::noalias(BD) = prod( w*D,row_Mat );
+                cblas_dsymm(CblasRowMajor,CblasLeft,CblasUpper,
+                            BD.size1(),BD.size2(),
+                            w,&*D_At_GaussPoint[gg].data().begin(),D_At_GaussPoint[gg].size2(),
+                            &*row_Mat.data().begin(),row_Mat.size2(),
+                            0.,&*BD.data().begin(),BD.size2());
+                for(int cc = rr;cc<col_mat;cc++) {
+                    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
+                    if(gg == 0) {
+                        K(rr,cc).resize(BD.size2(),col_Mat.size2());
+                        //ublas::noalias(K(rr,cc)) = prod(trans(BD) , col_Mat ); // int BT*D*B
+                        cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
+                                    BD.size2(),col_Mat.size2(),BD.size1(),
+                                    1.,&*BD.data().begin(),BD.size2(),
+                                    &*col_Mat.data().begin(),col_Mat.size2(),
+                                    0.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
+                    } else {
+                        //ublas::noalias(K(rr,cc)) += prod(trans(BTD) , col_Mat ); // int BT*D*B
+                        cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
+                                    BD.size2(),col_Mat.size2(),BD.size1(),
+                                    1.,&*BD.data().begin(),BD.size2(),
+                                    &*col_Mat.data().begin(),col_Mat.size2(),
+                                    1.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
+                    }
+                }
+            }
+        }
+        PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode ComputeFibreDirection(double *fibreVector) {
+        PetscFunctionBegin;
+        ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+        
+        EntityHandle fe_handle = fe_ptr->get_ent();
+        
+        Range tetNodes;
+        rval = moab.get_connectivity(&fe_handle,1,tetNodes); CHKERR_THROW(rval);
+        
+        vector< ublas::matrix< FieldData > > phi;
+        ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",phi); CHKERRQ(ierr);  
+        for (int ii=0; ii<3; ii++) fibreVector[ii] = -phi[0](0,ii)/sqrt(pow(phi[0](0,0),2)+pow(phi[0](0,1),2)+pow(phi[0](0,2),2));
+        
+        for(Range::iterator niit1 = tetNodes.begin();niit1!=tetNodes.end();niit1++){
+            rval = moab.tag_set_data(th_fibre_dir,&*niit1,1,&fibreVector[0]); CHKERR_PETSC(rval);  
+        }
+        
+        ierr = OpStudentEnd(); CHKERRQ(ierr);
+        PetscFunctionReturn(0); 
+    }  
+    
+    PetscErrorCode operator()() {
+        PetscFunctionBegin;
+        ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+        ierr = GetMatrices(); CHKERRQ(ierr);
+
+        //Dirihlet Boundary Condition
+        ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+            
+        ///Get Stiffness Matrix
+        ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
+        StiffnessMatrix.resize(6);
+        StiffnessMatrix.clear();
+        TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
+        StiffnessMatrix=TranIsoMat.StiffnessMatrix;
+//        IsotropicStiffnessMatrix IsoMat(lambda, mu);
+//        StiffnessMatrix=IsoMat.StiffnessMatrix;
+            
+        ///Rotating the Stiffness matrix according a set of axes of rotations and their respective angle
+                   
+        D_At_GaussPoint.resize(coords_at_Gauss_nodes.size());
+        
+        for(int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
+            
+            double fVec[3];
+        ierr = ComputeFibreDirection(&fVec[0]); CHKERRQ(ierr);
+            
+            int noOfRotations = 1; //Number of Rotations
+
+            double zVec[3]={0.0,0.0,1.0};
+            double AxVector[3]={fVec[1]*zVec[2]-fVec[2]*zVec[1] , fVec[2]*zVec[0]-fVec[0]*zVec[2] , fVec[0]*zVec[1]-fVec[1]*zVec[0]};
+            double AxAngle[1]= {asin((sqrt(pow(AxVector[0],2)+pow(AxVector[1],2)+pow(AxVector[2],2)))/(sqrt(pow(fVec[0],2)+pow(fVec[1],2)+pow(fVec[2],2)))*(sqrt(pow(zVec[0],2)+pow(zVec[1],2)+pow(zVec[2],2))))};
+                        
+            double negAxAngle[noOfRotations];
+            for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
+            
+            ublas::matrix<double> DummyMatrix,DummyMatrix2; 
+            DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
+            DummyMatrix = StiffnessMatrix;
+            
+            ///Rotating Stiffness over a number of axis/angle rotations
+            for (int aa=0; aa<noOfRotations; aa++) {
+                
+                StressTransformation StressRotMat(&AxVector[3*aa], AxAngle[aa]);
+                StrainTransformation invStrainRotMat(&AxVector[3*aa], negAxAngle[aa]);
+            
+                ublas::matrix<double> TrpMatrixStress; 
+                TrpMatrixStress = ublas::zero_matrix<FieldData>(6,6);
+                TrpMatrixStress=StressRotMat.StressRotMat;
+                
+                ublas::matrix<double> TrpMatrixInvStrain; 
+                TrpMatrixInvStrain = ublas::zero_matrix<FieldData>(6,6); 
+                TrpMatrixInvStrain=invStrainRotMat.StrainRotMat;
+                
+                DummyMatrix2 = ublas::zero_matrix<FieldData>(6,6); 
+                ublas::matrix< FieldData > dummyA = prod( DummyMatrix , TrpMatrixInvStrain );
+                DummyMatrix2 = prod(TrpMatrixStress,dummyA);
+                DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
+                DummyMatrix = DummyMatrix2;
+            }
+            
+            D_At_GaussPoint[gg].resize(6,6);
+            D_At_GaussPoint[gg].clear();
+            D_At_GaussPoint[gg] = DummyMatrix;
+        }
+        
+        //Assembly Aij and F
+        ierr = RhsAndLhs(); CHKERRQ(ierr);
+            
+        //Neumann Boundary Conditions
+        ierr = NeumannBC(F); CHKERRQ(ierr);
+        
+        ierr = OpStudentEnd(); CHKERRQ(ierr);
+        
+        PetscFunctionReturn(0); }
+        
+};
+
+/**
+* \brief PostProcessing Functions which computes the Strains and Elastic Linear Stresses for Transverse Isotropic Material and rotated when necessary
+*
+* Look at \ref<TranIsotropicAxisAngleRotElasticFEMethod>TranIsotropicAxisAngleRotElasticFEMethod Function for parameters
+*/
+    
+struct TranIso_PostProc_AxisAngle_OnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
+        
+    double E_p, E_z, nu_p, nu_pz, G_zp;
+    int noAA;
+    double *AxVector, *AxAngle;
+    Tag th_fibre_orientation;
+        
+    TranIso_PostProc_AxisAngle_OnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp, int _noAA, double *_AxVector, double *_AxAngle):
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle) {
+            
+        double def_VAL2[3] = {0,0,0};
+        rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
+            
+    };
+        
+    PetscErrorCode operator()() {
+        PetscFunctionBegin;
+            
+        ierr = do_operator(); CHKERRQ(ierr);
+        ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+            
+        EntityHandle fe_handle = fe_ptr->get_ent();
+            
+        ///Get Stiffness Matrix
+        ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
+        StiffnessMatrix.resize(6);
+        StiffnessMatrix.clear();
+        TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
+        StiffnessMatrix=TranIsoMat.StiffnessMatrix;
+//        IsotropicStiffnessMatrix IsoMat(lambda, mu);
+//        StiffnessMatrix=IsoMat.StiffnessMatrix;
+            
+        ///Rotating the Stiffness matrix according a set of axes of rotations and their respective angle
+            
+        int noOfRotations = noAA; //Number of Rotations
+        double negAxAngle[noOfRotations];
+        for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
+            
+        ublas::matrix<double> DummyMatrix,DummyMatrix2; 
+        DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
+        DummyMatrix = StiffnessMatrix;
+            
         ///Rotating Stiffness over a number of axis/angle rotations
         for (int aa=0; aa<noOfRotations; aa++) {
             
@@ -370,7 +705,7 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
             ublas::matrix<double> TrpMatrixStress; 
             TrpMatrixStress = ublas::zero_matrix<FieldData>(6,6);
             TrpMatrixStress=StressRotMat.StressRotMat;
-            
+                
             ublas::matrix<double> TrpMatrixInvStrain; 
             TrpMatrixInvStrain = ublas::zero_matrix<FieldData>(6,6); 
             TrpMatrixInvStrain=invStrainRotMat.StrainRotMat;
@@ -379,24 +714,232 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
             ublas::matrix< FieldData > dummyA = prod( DummyMatrix , TrpMatrixInvStrain );
             DummyMatrix2 = prod(TrpMatrixStress,dummyA);
             DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
-            DummyMatrix = DummyMatrix2;
+            DummyMatrix = DummyMatrix2;                
         }
         
         D.resize(6,6);
         D.clear();
         D = DummyMatrix;
-        
-        //Assembly Aij and F
-        ierr = RhsAndLhs(); CHKERRQ(ierr);
-        
-        //Neumann Boundary Conditions
-        ierr = NeumannBC(F); CHKERRQ(ierr);
-        
+            
+        int gg=0;
+        vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+        ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
+        vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+        map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+                        
+        for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
+            
+            ///Compute Strains and save them on TAG
+            ublas::matrix< FieldData > GradU = *viit;
+            ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+            rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
+                
+            ublas::matrix<double> AARotMatrix; 
+            AARotMatrix = ublas::identity_matrix<FieldData>(3); 
+                
+            for (int aa=0; aa<noOfRotations; aa++) {
+                    
+                AxisAngleRotationalMatrix RotMatrix(&AxVector[3*aa], AxAngle[aa]);
+                    
+                ublas::matrix<double> rotationalMat; 
+                rotationalMat = ublas::zero_matrix<FieldData>(3,3);
+                rotationalMat=RotMatrix.AARotMat;
+                    
+                ublas::matrix<double> AARotMatrix1; 
+                AARotMatrix1 = prod(rotationalMat,AARotMatrix);
+                AARotMatrix = ublas::zero_matrix<FieldData>(3,3);
+                AARotMatrix = AARotMatrix1;
+            }
+                
+                ///Rotate AxisYVector[0,1,0] to the direction of the fibre and save in TAG
+                ublas::vector<FieldData> AxisYVector(3);
+                AxisYVector[0]=0; AxisYVector[1]=0;AxisYVector[2]=1;
+                ublas::vector<FieldData> Fibre = prod(AARotMatrix,AxisYVector);
+                
+                rval = moab_post_proc.tag_set_data(th_fibre_orientation,&mit->second,1,&Fibre[0]); CHKERR_PETSC(rval);
+                
+                ///calculate stress and save it into tag
+                ublas::vector<FieldData> Strain_VectorNotation(6);
+                Strain_VectorNotation[0] = Strain(0,0);
+                Strain_VectorNotation[1] = Strain(1,1);
+                Strain_VectorNotation[2] = Strain(2,2);
+                Strain_VectorNotation[3] = 2*Strain(0,1);
+                Strain_VectorNotation[4] = 2*Strain(1,2);
+                Strain_VectorNotation[5] = 2*Strain(2,0);
+                ublas::vector< FieldData > Stress_VectorNotation = prod( D, Strain_VectorNotation );
+                ublas::matrix< FieldData > Stress = ublas::zero_matrix<FieldData>(3,3);
+                Stress(0,0) = Stress_VectorNotation[0];
+                Stress(1,1) = Stress_VectorNotation[1];
+                Stress(2,2) = Stress_VectorNotation[2];
+                Stress(0,1) = Stress(1,0) = Stress_VectorNotation[3];
+                Stress(1,2) = Stress(2,1) = Stress_VectorNotation[4];
+                Stress(2,0) = Stress(0,2) = Stress_VectorNotation[5];
+                
+                rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);  
+        }
+            
         ierr = OpStudentEnd(); CHKERRQ(ierr);
+        PetscFunctionReturn(0); 
+    }
         
-        PetscFunctionReturn(0); }
-    
 };
+
+/**
+* \brief PostProcessing Functions which computes the Strains and Elastic Linear Stresses for rotated Transverse Isotropic Material <br> 
+* Using direction computed in potential flow problem
+*
+* Look at \ref<TranIsotropicAxisAngleRotElasticFEMethod>TranIsotropicAxisAngleRotElasticFEMethod Function for parameters
+*/
+    
+struct TranIso_PostProc_FibreDirRot_OnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
+        
+    double E_p, E_z, nu_p, nu_pz, G_zp;
+    Tag th_fibre_orientation;
+        
+    TranIso_PostProc_FibreDirRot_OnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
+            
+        double def_VAL2[3] = {0,0,0};
+        rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
+            
+    };
+       
+    PetscErrorCode ComputeGradient(double *fibreVector) {
+        PetscFunctionBegin;
+        ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+        
+        EntityHandle fe_handle = fe_ptr->get_ent();
+        
+        vector< ublas::matrix< FieldData > > phi;
+        ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",phi); CHKERRQ(ierr);  
+        for (int ii=0; ii<3; ii++) fibreVector[ii] = phi[0](0,ii);
+
+        ierr = OpStudentEnd(); CHKERRQ(ierr);
+        PetscFunctionReturn(0); 
+    }  
+    
+    PetscErrorCode operator()() {
+        PetscFunctionBegin;
+            
+        ierr = do_operator(); CHKERRQ(ierr);
+        ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+            
+        EntityHandle fe_handle = fe_ptr->get_ent();
+            
+        ///Get Stiffness Matrix
+        ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
+        StiffnessMatrix.resize(6);
+        StiffnessMatrix.clear();
+        TransverseIsotropicStiffnessMatrix TranIsoMat(nu_p, nu_pz, E_p, E_z, G_zp);
+        StiffnessMatrix=TranIsoMat.StiffnessMatrix;
+//        IsotropicStiffnessMatrix IsoMat(lambda, mu);
+//        StiffnessMatrix=IsoMat.StiffnessMatrix;
+            
+        int gg=0;
+        vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+        ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
+        vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+        map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+            
+        for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
+            
+            double fVec[3];
+            ierr = ComputeGradient(&fVec[0]); CHKERRQ(ierr);
+            
+            double zVec[3]={0.0,0.0,1.0};
+            double AxVector[3]={fVec[1]*zVec[2]-fVec[2]*zVec[1] , fVec[2]*zVec[0]-fVec[0]*zVec[2] , fVec[0]*zVec[1]-fVec[1]*zVec[0]};
+            double AxAngle[1]= {asin((sqrt(pow(AxVector[0],2)+pow(AxVector[1],2)+pow(AxVector[2],2)))/(sqrt(pow(fVec[0],2)+pow(fVec[1],2)+pow(fVec[2],2)))*(sqrt(pow(zVec[0],2)+pow(zVec[1],2)+pow(zVec[2],2))))};
+            
+            ///Rotating the Stiffness matrix according a set of axes of rotations and their respective angle
+            
+            int noOfRotations = 1; //Number of Rotations
+            double negAxAngle[noOfRotations];
+            for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
+            
+            ublas::matrix<double> DummyMatrix,DummyMatrix2; 
+            DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
+            DummyMatrix = StiffnessMatrix;
+            
+            ///Rotating Stiffness over a number of axis/angle rotations
+            for (int aa=0; aa<noOfRotations; aa++) {
+                
+                StressTransformation StressRotMat(&AxVector[3*aa], AxAngle[aa]);
+                StrainTransformation invStrainRotMat(&AxVector[3*aa], negAxAngle[aa]);
+                
+                ublas::matrix<double> TrpMatrixStress; 
+                TrpMatrixStress = ublas::zero_matrix<FieldData>(6,6);
+                TrpMatrixStress=StressRotMat.StressRotMat;
+                
+                ublas::matrix<double> TrpMatrixInvStrain; 
+                TrpMatrixInvStrain = ublas::zero_matrix<FieldData>(6,6); 
+                TrpMatrixInvStrain=invStrainRotMat.StrainRotMat;
+                
+                DummyMatrix2 = ublas::zero_matrix<FieldData>(6,6); 
+                ublas::matrix< FieldData > dummyA = prod( DummyMatrix , TrpMatrixInvStrain );
+                DummyMatrix2 = prod(TrpMatrixStress,dummyA);
+                DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
+                DummyMatrix = DummyMatrix2;
+            }
+            
+            D.resize(6,6);
+            D.clear();
+            D = DummyMatrix;
+            
+            ///Compute Strains and save them on TAG
+            ublas::matrix< FieldData > GradU = *viit;
+            ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+            rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
+                
+            ublas::matrix<double> AARotMatrix; 
+            AARotMatrix = ublas::identity_matrix<FieldData>(3); 
+            
+            for (int aa=0; aa<noOfRotations; aa++) {
+            
+                AxisAngleRotationalMatrix RotMatrix(&AxVector[3*aa], AxAngle[aa]);
+                
+                ublas::matrix<double> rotationalMat; 
+                rotationalMat = ublas::zero_matrix<FieldData>(3,3);
+                rotationalMat=RotMatrix.AARotMat;
+                
+                ublas::matrix<double> AARotMatrix1; 
+                AARotMatrix1 = prod(rotationalMat,AARotMatrix);
+                AARotMatrix = ublas::zero_matrix<FieldData>(3,3);
+                AARotMatrix = AARotMatrix1;
+            }
+                
+            ///Rotate AxisYVector[0,1,0] to the direction of the fibre and save in TAG
+            ublas::vector<FieldData> AxisYVector(3);
+            AxisYVector[0]=0; AxisYVector[1]=0;AxisYVector[2]=1;
+            ublas::vector<FieldData> Fibre = prod(AARotMatrix,AxisYVector);
+            
+            rval = moab_post_proc.tag_set_data(th_fibre_orientation,&mit->second,1,&Fibre[0]); CHKERR_PETSC(rval);
+                
+            ///calculate stress and save it into tag
+            ublas::vector<FieldData> Strain_VectorNotation(6);
+            Strain_VectorNotation[0] = Strain(0,0);
+            Strain_VectorNotation[1] = Strain(1,1);
+            Strain_VectorNotation[2] = Strain(2,2);
+            Strain_VectorNotation[3] = 2*Strain(0,1);
+            Strain_VectorNotation[4] = 2*Strain(1,2);
+            Strain_VectorNotation[5] = 2*Strain(2,0);
+            ublas::vector< FieldData > Stress_VectorNotation = prod( D, Strain_VectorNotation );
+            ublas::matrix< FieldData > Stress = ublas::zero_matrix<FieldData>(3,3);
+            Stress(0,0) = Stress_VectorNotation[0];
+            Stress(1,1) = Stress_VectorNotation[1];
+            Stress(2,2) = Stress_VectorNotation[2];
+            Stress(0,1) = Stress(1,0) = Stress_VectorNotation[3];
+            Stress(1,2) = Stress(2,1) = Stress_VectorNotation[4];
+            Stress(2,0) = Stress(0,2) = Stress_VectorNotation[5];
+                
+            rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);  
+        }
+            
+        ierr = OpStudentEnd(); CHKERRQ(ierr);
+        PetscFunctionReturn(0); 
+    }
+        
+};
+
 }
 #endif //__ELASTICFEMETHODTRANSISO_HPP__
 
