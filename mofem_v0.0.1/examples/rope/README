@@ -1,6 +1,6 @@
 #Generate fibre direction in Model using Potential Flow Problem
 
-mpirun -np 4 ./potential_flow_rope -my_file new_clamped_wire.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+mpirun -np 4 ./potential_flow_rope -my_file new_clamped_wire_coarse.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
 #example how to run the actual problem
 
