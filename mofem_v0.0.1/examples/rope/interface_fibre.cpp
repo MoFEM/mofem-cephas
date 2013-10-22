@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     PetscInt order;
     ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
-        order = 3;
+        order = 1;
     }
     
     char outName[PETSC_MAX_PATH_LEN]="out.vtk";
