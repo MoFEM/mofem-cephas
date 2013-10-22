@@ -26,7 +26,6 @@
 #include "ElasticFEMethodTransIso.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-#include "moab/Skinner.hpp"
 
 
 using namespace MoFEM;

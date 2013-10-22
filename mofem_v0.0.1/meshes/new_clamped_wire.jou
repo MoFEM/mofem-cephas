@@ -1,8 +1,12 @@
+block 1 name "MAT_ELASTIC_1" 
+
 block 1 attribute count 2
 #Young's modulus of Steel Clamps (E)
 block 1 attribute index 1 200000 
 #Poisson's ration (nu)
 block 1 attribute index 2 0.3
+
+block 2 name "MAT_TRANSISO_1" 
 
 block 2 attribute count 5
 #Young's modulus in xy plane (Ep)
@@ -38,3 +42,7 @@ create pressure on surface 47 magnitude 1
 create pressure on surface 17 magnitude -1
 nodeset 3 vertex 54 
 nodeset 3 name 'ZeroPressure2'
+
+#Applying BC
+create displacement on surface 90 dof 1 dof 2 dof 3 fix
+create force on surface 99 vector 0 0 1 0 0 0

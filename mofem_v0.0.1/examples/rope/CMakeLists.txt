@@ -16,16 +16,16 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/rope/potential_flow")
-
 add_executable(wire_interface interface_fibre.cpp)
 target_link_libraries(wire_interface mofem_Field ${PROJECT_LIBS})
+add_executable(potential_flow_rope potential_flow_rope.cpp)
+target_link_libraries(potential_flow_rope mofem_Field ${PROJECT_LIBS})
 
-#cm_export_file("../../meshes/PeelTest.cub" "/" export_files_interface)
+#cm_export_file("../../meshes/new_clamped_wire.cub" "/" export_potential_flow)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/wiremesh29_08.cub
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/new_clamped_wire.cub
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

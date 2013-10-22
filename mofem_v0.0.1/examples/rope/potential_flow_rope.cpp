@@ -58,16 +58,7 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     order = 1;
   }
-  char block[255]="PotentialFlow2";
-  ierr = PetscOptionsGetString(PETSC_NULL,"-block_for_potential",block,255,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
-  }
-  char output_name[255]="out1";
-  ierr = PetscOptionsGetString(PETSC_NULL,"-output_file",output_name,255,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
-  }
+
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
@@ -78,16 +69,27 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
+  //add filds
+  ierr = mField.add_field("POTENTIAL_FIELD",H1,1); CHKERRQ(ierr);
+
+  //add finite elements
+  ierr = mField.add_finite_element("POTENTIAL_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("POTENTIAL_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("POTENTIAL_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("POTENTIAL_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
+
+  //add problems 
+  ierr = mField.add_problem("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
+
+  //define problems and finite elements
+  ierr = mField.modify_problem_add_finite_element("POTENTIAL_PROBLEM","POTENTIAL_ELEM"); CHKERRQ(ierr);
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
-    if(it->get_Cubit_name() == block) {
+    if(it->get_Cubit_name() == "PotentialFlow") {
  
       //add ents to field and set app. order
       ierr = mField.add_ents_to_field_by_TETs(0,"POTENTIAL_FIELD"); CHKERRQ(ierr);
@@ -97,6 +99,36 @@ int main(int argc, char *argv[]) {
 
     }
   }
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
+    if(it->get_Cubit_name() == "PotentialFlow1") {
+              
+      //add ents to field and set app. order
+      ierr = mField.add_ents_to_field_by_TETs(0,"POTENTIAL_FIELD"); CHKERRQ(ierr);
+              
+      //add finite elements entities
+      ierr = mField.add_ents_to_finite_element_by_TETs(it->meshset,"POTENTIAL_ELEM",true); CHKERRQ(ierr);
+              
+    }
+  }
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
+    if(it->get_Cubit_name() == "PotentialFlow2") {
+              
+    //add ents to field and set app. order
+    ierr = mField.add_ents_to_field_by_TETs(0,"POTENTIAL_FIELD"); CHKERRQ(ierr);
+              
+    //add finite elements entities
+    ierr = mField.add_ents_to_finite_element_by_TETs(it->meshset,"POTENTIAL_ELEM",true); CHKERRQ(ierr);
+              
+    }
+  }
+
+  ierr = mField.set_field_order(0,MBVERTEX,"POTENTIAL_FIELD",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
+
+  //set problem level
+  ierr = mField.modify_problem_ref_level_add_bit("POTENTIAL_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //build fields
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -168,7 +200,7 @@ int main(int argc, char *argv[]) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("POTENTIAL_PROBLEM","POTENTIAL_ELEM",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file(output_name,"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.write_file("out_potential_flow.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
