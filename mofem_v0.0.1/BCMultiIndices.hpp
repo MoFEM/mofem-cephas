@@ -145,7 +145,7 @@ struct Mat_TransIso: public generic_attribute_data {
      */
     struct Mat_Interf: public generic_attribute_data {
         struct __attribute__ ((packed)) _data_{
-            double fact; // Elastic modulus multiplier
+            double alpha; // Elastic modulus multiplier
         };
         
         _data_ data;

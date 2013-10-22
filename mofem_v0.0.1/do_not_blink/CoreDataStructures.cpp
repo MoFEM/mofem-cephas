@@ -1179,7 +1179,7 @@ ostream& operator<<(ostream& os,const Mat_Interf& e)
 {
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
-    os << "Elastic modulus multiplier = " << e.data.fact << endl << endl;
+    os << "Elastic modulus multiplier = " << e.data.alpha << endl << endl;
     return os;
 }
     
