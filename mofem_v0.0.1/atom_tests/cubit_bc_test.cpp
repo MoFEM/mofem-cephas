@@ -154,16 +154,38 @@ int main(int argc, char *argv[]) {
           myfile << mydata;
       }
       
-      //Interface
+      //cfd_bc
       else if (strcmp (&bc_data[0],"cfd_bc") == 0)
       {
-          interface_cubit_bc_data mydata;
+          cfd_cubit_bc_data mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-          //Print data
-          cout << mydata;
-          myfile << mydata;
-      }
           
+          //Interface bc (Hex:6 Dec:6)
+          if (mydata.data.type == 6) {  // 6 is the decimal value of the corresponding value (hex) in bc_data
+              //Print data
+              cout << endl << "Interface" << endl;
+              myfile << endl << "Interface" << endl;
+              cout << mydata;
+              myfile << mydata;
+          }
+          //Pressure inlet (Hex:f Dec:15)
+          else if (mydata.data.type == 15) {  // 15 is the decimal value of the corresponding value (hex) in bc_data
+              //Print data
+              cout << endl << "Pressure Inlet" << endl;
+              myfile << endl << "Pressure Inlet" << endl;
+              cout << mydata;
+              myfile << mydata;
+          }
+          //Pressure outlet (Hex:10 Dec:16)
+          else if (mydata.data.type == 16) {  // 16 is the decimal value of the corresponding value (hex) in bc_data
+              //Print data
+              cout << endl << "Pressure Outlet" << endl;
+              myfile << endl << "Pressure Outlet" << endl;
+              cout << mydata;
+              myfile << mydata;
+          }
+      }
+
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 
@@ -213,6 +235,14 @@ int main(int argc, char *argv[]) {
                 else if (name.compare(0,12,"MAT_TRANSISO") == 0)
                 {
                     Mat_TransIso mydata;
+                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+                    //Print data
+                    cout << mydata;
+                    myfile << mydata;
+                }
+                else if (name.compare(0,10,"MAT_INTERF") == 0)
+                {
+                    Mat_Interf mydata;
                     ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
                     //Print data
                     cout << mydata;

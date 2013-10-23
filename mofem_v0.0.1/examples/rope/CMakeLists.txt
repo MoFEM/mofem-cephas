@@ -21,16 +21,16 @@ target_link_libraries(wire_interface mofem_Field ${PROJECT_LIBS})
 add_executable(potential_flow_rope potential_flow_rope.cpp)
 target_link_libraries(potential_flow_rope mofem_Field ${PROJECT_LIBS})
 
-#cm_export_file("../../meshes/new_clamped_wire.cub" "/" export_potential_flow)
+#cm_export_file("../../meshes/new_clamped_wire_coarse.cub" "/" export_potential_flow)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/new_clamped_wire.cub
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/new_clamped_wire_coarse.cub
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #testing
-add_test(ComputeFibreDirection ${MPI_BIN_PATH}/mpirun -np 1 ./potential_flow_rope -my_file new_clamped_wire.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1 -log_summary)
-add_test(wireTest ${MPI_BIN_PATH}/mpirun -np 1 ./wire_interface -my_file solution.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -log_summary)
+add_test(ComputeFibreDirection ${MPI_BIN_PATH}/mpirun -np 2 ./potential_flow_rope -my_file new_clamped_wire_coarse.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1 -log_summary)
+add_test(wireTest ${MPI_BIN_PATH}/mpirun -np 2 ./wire_interface -my_file solution.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -log_summary)
 
