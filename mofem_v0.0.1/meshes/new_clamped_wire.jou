@@ -46,3 +46,11 @@ nodeset 3 name 'ZeroPressure2'
 #Applying BC
 create displacement on surface 90 dof 1 dof 2 dof 3 fix
 create force on surface 99 vector 0 0 1 0 0 0
+
+#Insert Interface using CFD interface
+create cfd_bc name "cfd_bc" interface on sideset 4
+create cfd_bc name "cfd_bc1" interface on sideset 5
+create cfd_bc name "cfd_bc2" interface on sideset 6
+
+block 6 name "MAT_INTERF_atom_test"
+block 6 attribute index 1 0.05

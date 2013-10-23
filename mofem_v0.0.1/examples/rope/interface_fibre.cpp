@@ -89,6 +89,31 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_BlockSet2; //Dirihlet BC is there
     ierr = mField.get_msId_meshset(2,BlockSet,meshset_BlockSet2); CHKERRQ(ierr);
     
+    cout << "<<<< SideSets >>>>>" << endl;
+    //SideSets
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+        cout << *it << endl;
+        ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
+        vector<char> bc_data;
+        ierr = it->get_Cubit_bc_data(bc_data); CHKERRQ(ierr);
+        if(bc_data.empty()) continue;
+        
+        else if (strcmp (&bc_data[0],"cfd_bc") == 0)
+        {
+            cfd_cubit_bc_data mydata;
+            ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+            
+            //Interface bc (Hex:6 Dec:6)
+            if (mydata.data.type == 6) {  // 6 is the decimal value of the corresponding value (hex) in bc_data
+                //Print data
+                cout << endl << "Interface" << endl;
+                myfile << endl << "Interface" << endl;
+                cout << mydata;
+                myfile << mydata;
+            }
+        
+    }
+    
     //Interface meshset 4
     EntityHandle meshset_interface;
     ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
@@ -309,7 +334,7 @@ int main(int argc, char *argv[]) {
     double ShearModulusZP;
     double YoungModulus;
     double PoissonRatio;
-    const double alpha = 0.05;
+    const double alpha;
     
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
     {
@@ -339,6 +364,13 @@ int main(int argc, char *argv[]) {
             cout << mydata;
             YoungModulus=mydata.data.Young;
             PoissonRatio=mydata.data.Poisson;
+        }
+        else if (name.compare(0,10,"MAT_INTERF") == 0)
+        {
+            Mat_Interf mydata;
+            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+            cout << mydata;
+            alpha = mydata.data.fact;
         }
     }
         
