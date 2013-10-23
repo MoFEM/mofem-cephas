@@ -674,9 +674,7 @@ struct TranIso_PostProc_AxisAngle_OnRefMesh: public PostProcDisplacemenysAndStar
             
         ierr = do_operator(); CHKERRQ(ierr);
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-            
-        EntityHandle fe_handle = fe_ptr->get_ent();
-            
+                        
         ///Get Stiffness Matrix
         ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
         StiffnessMatrix.resize(6);
@@ -807,9 +805,7 @@ struct TranIso_PostProc_FibreDirRot_OnRefMesh: public PostProcDisplacemenysAndSt
     PetscErrorCode ComputeGradient(double *fibreVector) {
         PetscFunctionBegin;
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-        
-        EntityHandle fe_handle = fe_ptr->get_ent();
-        
+                
         vector< ublas::matrix< FieldData > > phi;
         ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",phi); CHKERRQ(ierr);  
         for (int ii=0; ii<3; ii++) fibreVector[ii] = phi[0](0,ii);
@@ -823,9 +819,7 @@ struct TranIso_PostProc_FibreDirRot_OnRefMesh: public PostProcDisplacemenysAndSt
             
         ierr = do_operator(); CHKERRQ(ierr);
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-            
-        EntityHandle fe_handle = fe_ptr->get_ent();
-            
+                        
         ///Get Stiffness Matrix
         ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
         StiffnessMatrix.resize(6);
