@@ -197,7 +197,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public PostProcDisplacementsOnRe
 
       ierr = do_operator(); CHKERRQ(ierr);
 
-      //Strains to Noades in PostProc Mesh
+      //Strains to Nodes in PostProc Mesh
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
       ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
@@ -229,7 +229,7 @@ struct PostProcFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh
 
       ierr = do_operator(); CHKERRQ(ierr);
 
-      //Strains to Noades in PostProc Mesh
+      //Strains to Nodes in PostProc Mesh
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
       ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
@@ -279,7 +279,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
       ierr = do_operator(); CHKERRQ(ierr);
 
-      //Strains to Noades in PostProc Mesh
+      //Strains to Nodes in PostProc Mesh
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
       ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
@@ -325,8 +325,8 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
   // cerr << "eigen_values "<< eigen_values << endl;
 
   //Calculate principal stress vectors
-  //ublas::vector< FieldData > prin_stress_vect = prod(eigen_values,eigen_vectors);
-  ublas::vector< FieldData > prin_stress_vect = eigen_values;
+  ublas::vector< FieldData > prin_stress_vect = prod(eigen_values,eigen_vectors);
+  /*ublas::vector< FieldData > prin_stress_vect = eigen_values;*/
 
   rval = moab_post_proc.tag_set_data(th_prin_stress_vect,&mit->second,1,&(prin_stress_vect.data()[0])); CHKERR_PETSC(rval);
 

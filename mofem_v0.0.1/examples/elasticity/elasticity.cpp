@@ -246,7 +246,17 @@ int main(int argc, char *argv[]) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
-  //detroy matrices
+  //Get data - disp @ end and stress @ support
+  //Search displacment matrix for the maximum y disp
+  //
+  //Node side set, Fieldinterface, get_cubit_entities(side set, nodeset, dimensio 1, > returns vertex(coordinates)
+  //loop
+  //
+  //
+  //dit = dof
+
+
+  //destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
