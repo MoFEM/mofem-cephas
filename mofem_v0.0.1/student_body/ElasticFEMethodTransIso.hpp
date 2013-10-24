@@ -592,7 +592,7 @@ struct TranIsotropicFibreDirRotElasticFEMethod: public ElasticFEMethod {
                    
         D_At_GaussPoint.resize(coords_at_Gauss_nodes.size());
         
-        for(int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
+        for(unsigned int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
             
             double fVec[3];
         ierr = ComputeFibreDirection(&fVec[0]); CHKERRQ(ierr);
