@@ -246,17 +246,16 @@ int main(int argc, char *argv[]) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
-  //Get data - disp @ end and stress @ support
-  //Search displacment matrix for the maximum y disp
-  //
-  //Node side set, Fieldinterface, get_cubit_entities(side set, nodeset, dimensio 1, > returns vertex(coordinates)
-  //loop
-  //
-  //
-  //dit = dof
-
-
-  //destroy matrices
+/*  //End Disp
+  Range ents;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,1,ents,true); CHKERRQ(ierr);
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) {
+    if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.4e\n",dit->get_FieldData());
+    }
+  }*/
+      
+  //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
