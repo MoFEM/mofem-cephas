@@ -380,6 +380,9 @@ PetscErrorCode FieldCore::map_from_mesh(int verb) {
 	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMofemEntities.insert(RefMoFEMEntity(moab,*eit));
 	pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
 	switch (moab.type_from_handle(*eit)) {
+	  case MBTRI:
+	    p_MoFEMFiniteElement = refinedMofemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ref_ent.first)));
+	    assert(p_MoFEMFiniteElement.first->get_BitRefEdges_ulong()!=-1);
 	  case MBTET:
 	    p_MoFEMFiniteElement = refinedMofemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ref_ent.first)));
 	    assert(p_MoFEMFiniteElement.first->get_BitRefEdges_ulong()!=-1);
