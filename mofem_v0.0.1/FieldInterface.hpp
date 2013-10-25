@@ -461,6 +461,16 @@ struct FieldInterface {
   virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
   virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
+
+  /** \brief add TRI entities fromm meshset to finite element database given by name
+   *
+   * \param range contains tetrahedrals
+   * \param name Finite Element name
+   * \param recursive if true parent meshset is searched recursively
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name) = 0;
+
+
   /** \brief add TET entities fromm meshset to finite element database given by name
    *
    * \param range contains tetrahedrals
