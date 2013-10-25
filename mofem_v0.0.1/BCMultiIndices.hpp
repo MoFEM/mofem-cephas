@@ -49,6 +49,7 @@ enum Cubit_BC {
   UnknownCubitName = 1<< 12,
   Mat_ElasticSet = 1<<13,
   Mat_TransIsoSet = 1<<14,
+  Mat_InterfSet = 1 <<15,
   LastSet
 };
 
@@ -86,7 +87,7 @@ struct Mat_Elastic: public generic_attribute_data {
     _data_ data;
     
     const Cubit_BC_bitset type;
-    const int min_number_of_atributes;
+    const unsigned int min_number_of_atributes;
     Mat_Elastic(): type(Mat_ElasticSet),min_number_of_atributes(2) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
@@ -139,6 +140,33 @@ struct Mat_TransIso: public generic_attribute_data {
     
 };
 
+    /*! \struct Mat_Interf
+     *  \brief Linear interface data structure
+     */
+    struct Mat_Interf: public generic_attribute_data {
+        struct __attribute__ ((packed)) _data_{
+            double alpha; // Elastic modulus multiplier
+        };
+        
+        _data_ data;
+        
+        const Cubit_BC_bitset type;
+        Mat_Interf(): type(Mat_InterfSet) {};
+        
+        virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+            PetscFunctionBegin;
+            //Fill data
+            if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+            memcpy(&data, &attributes[0], sizeof(data));
+            PetscFunctionReturn(0);
+        }
+        
+        /*! \brief Print Mat_Interf data
+         */
+        friend ostream& operator<<(ostream& os,const Mat_Interf& e);
+        
+    };
+    
 /*! \struct generic_cubit_bc_data
  *  \brief Generic bc data structure
  */
@@ -413,19 +441,19 @@ struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
     
 };
 
-/*! \struct interface_cubit_bc_data
- *  \brief Definition of the interface (cfd_bc) data structure
+/*! \struct cfd_cubit_bc_data
+ *  \brief Definition of the cfd_bc data structure
  */
-struct interface_cubit_bc_data: public generic_cubit_bc_data {
+struct cfd_cubit_bc_data: public generic_cubit_bc_data {
     struct __attribute__ ((packed)) _data_{
         char name[6]; // 6 characters for "cfd_bc"
-        char pre1; // This is always zero
-        char pre2; // 6
+        char zero; // This is always zero
+        char type; // This is the type of cfd_bc
     };
     
     _data_ data;
     const Cubit_BC_bitset type;
-    interface_cubit_bc_data(): type(InterfaceSet) {};
+    cfd_cubit_bc_data(): type(InterfaceSet) {};
     
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -435,9 +463,9 @@ struct interface_cubit_bc_data: public generic_cubit_bc_data {
         PetscFunctionReturn(0);
     }
     
-    /*! \brief Print interface bc data
+    /*! \brief Print cfd_bc data
      */
-    friend ostream& operator<<(ostream& os,const interface_cubit_bc_data& e);
+    friend ostream& operator<<(ostream& os,const cfd_cubit_bc_data& e);
 
 };
     
@@ -560,7 +588,7 @@ struct CubitMeshSets {
    * Block name /  Number of attributes  / (1) Attribute 1, (2) Attribute 2 etc.
    * ---------------------------------------------------------------------------
    *
-   * MAT_ELASTIC / 2 /  (1) Young's  modulus
+   * MAT_ELASTIC / 10 /  (1) Young's  modulus
    *                    (2) Poisson's ratio
    *                    (3) User attribute 1
    *                    ...
@@ -571,6 +599,8 @@ struct CubitMeshSets {
    *                    (3) Poisson's ratio in xy plane (vp)
    *                    (4) Poisson's ratio in z-direction (vpz)
    *                    (5) Shear modulus in z-direction (Gzp)
+   *
+   * MAT_INTERF / 1 /   (1) Elastic modulus multiplier
    *
    * To be extended as appropriate
    */
@@ -624,6 +654,7 @@ PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
 	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
  *
  */
+    
 typedef multi_index_container<
   CubitMeshSets,
   indexed_by<

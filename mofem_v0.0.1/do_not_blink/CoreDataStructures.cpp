@@ -969,6 +969,8 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
         type |= Mat_ElasticSet; }
     else if (name.compare(0,12,"MAT_TRANSISO") == 0) {
         type |= Mat_TransIsoSet; }
+    else if (name.compare(0,10,"MAT_INTERF") == 0) {
+        type |= Mat_InterfSet; }
     
         //To be extended as appropriate
     
@@ -1138,10 +1140,9 @@ ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
     return os;   
 }
 
-ostream& operator<<(ostream& os,const interface_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const cfd_cubit_bc_data& e) {
     os << "\n";
-    os << "I n t e r f a c e (cfd_bc) \n \n";
-    os << "This sideset is associated with an interface" << "\n \n";
+    os << "CFD BC \n \n";
     return os;   
 }
         
@@ -1171,6 +1172,14 @@ ostream& operator<<(ostream& os,const Mat_TransIso& e)
     os << "Poisson's ratio in xy plane (vp)     = " << e.data.Poissonp << endl;
     os << "Poisson's ratio in z-direction (vpz) = " << e.data.Poissonpz << endl;
     os << "Shear modulus in z-direction (Gzp)   = " << e.data.Shearzp << endl << endl;
+    return os;
+}
+    
+ostream& operator<<(ostream& os,const Mat_Interf& e)
+{
+    os << endl << "Material Properties" << endl;
+    os << "-------------------" << endl;
+    os << "Elastic modulus multiplier = " << e.data.alpha << endl << endl;
     return os;
 }
     

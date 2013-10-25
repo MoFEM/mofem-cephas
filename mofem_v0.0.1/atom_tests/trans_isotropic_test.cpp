@@ -47,17 +47,13 @@ double roundn(double n) {
     return n;
 }
 
-struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
+struct TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh: public TranIso_PostProc_AxisAngle_OnRefMesh {
     
-    double E_p, E_z, nu_p, nu_pz, G_zp;
-    Tag th_fibre_orientation;
     ofstream myfile;
 
-    TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
+    TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp, int _noAA, double *_AxVector, double *_AxAngle):
+    TranIso_PostProc_AxisAngle_OnRefMesh(_moab,_lambda,_mu,_E_p,_E_z,_nu_p,_nu_pz,_G_zp,_noAA,_AxVector,_AxAngle) {
 
-        double def_VAL2[3] = {0,0,0};
-        rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
         
         myfile.open("transIso_Mat_Blessed_File.txt");
         myfile<<"Blessed File for Testing Transversely Isotropic Material Implimentation on moFEM "<<endl;
@@ -67,7 +63,7 @@ struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressO
         
     };
     
-    ~TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh() {
+    ~TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh() {
         myfile.close();
     }
     
@@ -97,14 +93,7 @@ struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressO
         
         ///Rotating the Stiffness matrix according a set of axes of rotations and their respective angle
         
-        ///Insert Axes and Angles of Rotation
-        int noOfRotations = 1; //Number of Rotations
-        double AxVector[3*noOfRotations]; //First Rotational Axis
-        AxVector[0]=1; AxVector[1]=0; AxVector[2]=0; //First Rotational Axis 
-//        AxVector[3]=1; AxVector[4]=0; AxVector[5]=0; //Second Rotational Axis
-        double AxAngle[noOfRotations];
-        AxAngle[0] = -0.25*M_PI; //First Rotational Angle
-//        AxAngle[1] = -0.25*M_PI; //Second Rotational Angle
+        int noOfRotations = noAA; //Number of Rotations
         double negAxAngle[noOfRotations];
         for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
         
@@ -265,7 +254,7 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-
+    
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
@@ -282,10 +271,6 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   FieldCore core(moab);
   FieldInterface& mField = core;
-    
-    //Open mesh_file_name.txt for writing
-//    ofstream myfile;
-//    myfile.open ((string(mesh_file_name)+".txt").c_str());
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -344,7 +329,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-    
+
   /****/
   //build database
 
@@ -408,14 +393,19 @@ int main(int argc, char *argv[]) {
                 ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
             
         }
-        
-        else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
     }
     
   //Assemble F and Aij
     
-  TranIsotropicElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
-
+    ///No of Axis/Angle of rotation
+    int noAA = 1; //could be 0 for no rotation
+    ///Array of Rotational Axes
+    double AxVector[6] = {/*1st Axis*/ 1,0,0 , /*2nd Axis*/ 0,1,0};
+    ///Array of Rotational Angles
+    double AxAngle[2] = {/*1st Angle*/ -0.25*M_PI ,/*2nd Angle*/ -0.25*M_PI};
+    
+    TranIsotropicAxisAngleRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
+    
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -463,7 +453,7 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-    TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_fibre_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+  TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh fe_fibre_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
     
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_fibre_post_proc_method);  CHKERRQ(ierr);
 
