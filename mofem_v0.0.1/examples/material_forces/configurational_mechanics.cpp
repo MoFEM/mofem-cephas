@@ -18,6 +18,13 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "configurational_mechanics.hpp"
+#include "FieldCore.hpp"
+#include "FEMethod_ComplexConstArea.hpp"
+#include "PostProcVertexMethod.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
+
+
 #include "SnesCtx.hpp"
 #include <petscksp.h>
 

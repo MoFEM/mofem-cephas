@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) {
 
   //ref meshset ref level 0
   Tag th_my_ref_level;
-  BitRefLevel def_bit_level = 0;
   rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
   const EntityHandle root_meshset = mField.get_moab().get_root_set();
   BitRefLevel *ptr_bit_level0;

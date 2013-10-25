@@ -450,7 +450,7 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   matPROJ_ctx &proj_ctx;
   string y_problem;
   Snes_CTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Range &_surface,matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),surface(_surface),lambda_field_name(_lambda_field_name),proj_ctx(_proj_all_ctx),verbose(_verbose) {
+    mField(_mField),surface(_surface),lambda_field_name(_lambda_field_name),verbose(_verbose),proj_ctx(_proj_all_ctx) {
 
     y_problem = "C_ALL_MATRIX";
 
