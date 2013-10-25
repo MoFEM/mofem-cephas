@@ -72,9 +72,7 @@ struct TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh: public TranIso_PostProc
         
         ierr = do_operator(); CHKERRQ(ierr);
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-        
-        EntityHandle fe_handle = fe_ptr->get_ent();
-        
+                
         ///Get Stiffness Matrix
         ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
         StiffnessMatrix.resize(6);
