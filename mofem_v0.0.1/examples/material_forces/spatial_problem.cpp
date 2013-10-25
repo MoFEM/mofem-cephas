@@ -152,13 +152,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition problems
-  ierr = conf_prob.spatialPartitionProblems(mField); CHKERRQ(ierr);
+  ierr = conf_prob.spatial_partition_problems(mField); CHKERRQ(ierr);
 
   //solve problem
   ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
-  ierr = conf_prob.solve_spatial_problem(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
 
-
+  SNES snes;
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+  ierr = conf_prob.solve_spatial_problem(mField,&snes,-1e-3); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_spatial.h5m"); CHKERR_PETSC(rval);

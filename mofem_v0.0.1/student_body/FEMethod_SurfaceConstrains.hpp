@@ -58,6 +58,7 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
 
   ublas::matrix<double> C_MAT_ELEM;
   ublas::vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
+  ublas::vector<double,ublas::bounded_array<double,3> > ent_lambda_data;
   ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map0;
@@ -95,6 +96,7 @@ struct C_CORNER_FEMethod:public FieldInterface::FEMethod {
   
   ublas::matrix<double> C_MAT_ELEM;
   vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
+  ublas::vector<double,ublas::bounded_array<double,3> > ent_lambda_data;
   ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
   ublas::vector<double,ublas::bounded_array<double,3> > coords; 

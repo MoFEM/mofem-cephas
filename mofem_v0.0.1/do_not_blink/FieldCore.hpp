@@ -195,8 +195,10 @@ struct FieldCore: public FieldInterface {
     const bool recursive = false, int verb = -1);
 
   //field
-  PetscErrorCode add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,int verb = -1);
-  PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1);
+  PetscErrorCode add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,
+    enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+  PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,
+    enum MoFEMTypes bh = MF_EXCL,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
@@ -218,10 +220,15 @@ struct FieldCore: public FieldInterface {
   EntityHandle get_field_meshset(const string& name) const;
 
   //MoFEMFiniteElement
-  PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name);
+  PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
   PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
   PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
   PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
+  PetscErrorCode modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
+  PetscErrorCode modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
+  PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
+  PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name);

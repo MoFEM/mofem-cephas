@@ -70,7 +70,7 @@ PetscErrorCode calculate_push_edge_relative(double *edge_coords,__CLPK_doublecom
   PetscFunctionReturn(0);
 }
 PetscErrorCode calculate_xQ(
-  __CLPK_doublecomplex *xlrms,__CLPK_doublecomplex *inv_xH/*gradient of defomeation*/,
+  __CLPK_doublecomplex *xlrms,__CLPK_doublecomplex *inv_xH/*inverse of gradient of defomeation*/,
   __CLPK_doublecomplex *dofs_egdes_X_1,__CLPK_doublecomplex *dofs_egdes_X_2,__CLPK_doublecomplex *xQ) {
   PetscFunctionBegin;
   //add transpose inv_xH
@@ -127,6 +127,10 @@ int get_qual_ver() { return qual_ver; }
   if( qual_ver == 2 ) { \
     /* quality gradient */ \
     complex_grad = xq.r+I*xq.i; \
+  } \
+  if( qual_ver == 3 ) { \
+    /* quality gradient scaled by volume */ \
+    complex_grad = V*((xb.r+I*xb.i)/(1.-gamma)-1./((xb.r+I*xb.i)-gamma)); \
   } \
   __CLPK_doublecomplex xgrad = { creal(complex_grad), cimag(complex_grad) }; \
   cblas_zscal(9,&xgrad,xQ,1); 

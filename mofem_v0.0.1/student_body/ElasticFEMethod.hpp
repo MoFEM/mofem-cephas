@@ -483,6 +483,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     virtual PetscErrorCode Fint() {
       PetscFunctionBegin;
 
+      try {
+
       double _lambda,_mu;
       ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
       ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
@@ -496,6 +498,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
       int gg = 0;
       for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
+	try {
 	  ublas::matrix< FieldData > GradU = *viit;
 	  ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
 	  ublas::vector< FieldData > VoightStrain(6);
@@ -517,6 +520,17 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	      f_int[rr] += prod( trans(B), VoightStress );
 	    }
 	  }
+	} catch (const std::exception& ex) {
+	  ostringstream ss;
+	  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	} 
+      }
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -524,11 +538,17 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     virtual PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
-      ierr = Fint(); CHKERRQ(ierr);
-      for(int rr = 0;rr<row_mat;rr++) {
-	if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	if(RowGlob[rr].size()==0) continue;
-	ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      try {
+	ierr = Fint(); CHKERRQ(ierr);
+	for(int rr = 0;rr<row_mat;rr++) {
+	  if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(RowGlob[rr].size()==0) continue;
+	  ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	}
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }

@@ -213,7 +213,7 @@ PetscErrorCode FieldCore::clear_map() {
   moFEMProblems.clear();
   PetscFunctionReturn(0);
 } 
-PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,int verb) {
+PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
@@ -267,7 +267,11 @@ PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const
   pair<MoFEMField_multiIndex::iterator,bool> p;
   try {
     p = moabFields.insert(MoFEMField(moab,meshset));  
-    if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"field not inesrted");
+    if(bh == MF_EXCL) {
+      if(!p.second) SETERRQ1(PETSC_COMM_SELF,1,
+	"field not inesrted %s (top tip, it could be already there)",
+	MoFEMField(moab,meshset).get_name().c_str());
+    }
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -279,12 +283,12 @@ PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const
   //
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb) {
+PetscErrorCode FieldCore::add_field(const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh,int verb) {
   PetscFunctionBegin;
   *build_MoFEM = 0;
   if(verb==-1) verb = verbose;
   BitFieldId id = get_field_shift();
-  ierr = add_field(name,id,space,rank,verb); CHKERRQ(ierr);
+  ierr = add_field(name,id,space,rank,bh,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::map_from_mesh(int verb) {
@@ -1038,13 +1042,19 @@ PetscErrorCode FieldCore::list_field() const {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::add_finite_element(const string &MoFEMFiniteElement_name) {
+PetscErrorCode FieldCore::add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
   finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
-  if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"this < %s > is there",MoFEMFiniteElement_name.c_str());
+  if(bh == MF_EXCL) {
+    if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"this < %s > is there",MoFEMFiniteElement_name.c_str());
+    }
+  } else {
+    if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) PetscFunctionReturn(0);
+  }
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
   //id
@@ -1124,6 +1134,51 @@ PetscErrorCode FieldCore::modify_finite_element_add_field_col(const string &MoFE
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,1,"this MoFEMFiniteElement is there");
   try {
     bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_col_change_bit_add(get_BitFieldId(name_col)));
+    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_data) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,1,"this MoFEMFiniteElement is there");
+  try {
+    bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,EntMoFEMFiniteElement_change_bit_off(get_BitFieldId(name_data)));
+    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"this < %s > is nor there",MoFEMFiniteElement_name.c_str());
+  try {
+    bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_row_change_bit_off(get_BitFieldId(name_row)));
+    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_col) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,1,"this MoFEMFiniteElement is there");
+  try {
+    bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_col_change_bit_off(get_BitFieldId(name_col)));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -1221,6 +1276,23 @@ PetscErrorCode FieldCore::add_ents_to_finite_element_by_TETs(const EntityHandle 
   Range tets;
   rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERR_PETSC(rval);
   rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::add_ents_to_finite_element_by_TETs(const Range& tets,const BitFEId id) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  const EntityHandle idm = get_meshset_by_BitFEId(id);
+  rval = moab.add_entities(idm,tets.subset_by_type(MBTET)); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::add_ents_to_finite_element_by_TETs(const Range& tets,const string &name) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  try {
+    ierr = add_ents_to_finite_element_by_TETs(tets,get_BitFEId(name));  CHKERRQ(ierr);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive) {
@@ -3284,6 +3356,7 @@ PetscErrorCode FieldCore::problem_get_FE(const string &problem_name,const string
   typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
+  if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no sach poblem like < %s >",problem_name.c_str());
   NumeredMoFEMFiniteElement_multiIndex &numeredFiniteElements = const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
   NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator miit = numeredFiniteElements.get<MoFEMFiniteElement_name_mi_tag>().lower_bound(fe_name);
   for(;miit!=numeredFiniteElements.get<MoFEMFiniteElement_name_mi_tag>().upper_bound(fe_name);miit++) {
@@ -3693,25 +3766,20 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
       ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
     }
     break;
-    case SCATTER_FORWARD:
-      switch (mode) {
-	case INSERT_VALUES:
-	  for(;miit!=hi_miit;miit++) {
-	    if(pcomm->rank()!=miit->get_part()) continue;
-	    DofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator diiiit;
-	    diiiit = dofsMoabField.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	    if(diiiit==dofsMoabField.get<Composite_mi_tag>().end()) {
-	      SETERRQ(PETSC_COMM_SELF,1,"no data to fill the vector (top tip: you want scatter forward of scatter reverse?)");
-	    }
-	    ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),INSERT_VALUES); CHKERRQ(ierr);
+    case SCATTER_FORWARD: {
+	for(;miit!=hi_miit;miit++) {
+	  if(pcomm->rank()!=miit->get_part()) continue;
+	  DofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator diiiit;
+	  diiiit = dofsMoabField.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+	  if(diiiit==dofsMoabField.get<Composite_mi_tag>().end()) {
+	    SETERRQ(PETSC_COMM_SELF,1,"no data to fill the vector (top tip: you want scatter forward of scatter reverse?)");
 	  }
-	  ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
-	  break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-    break;  
+	  ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),mode); CHKERRQ(ierr);
+	}
+	ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
+      } 
+      break;  
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
@@ -4169,7 +4237,7 @@ PetscErrorCode FieldCore::loop_finite_elements(
       PetscLogEventEnd(USER_EVENT_operator,0,0,0,0);
     } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
   }

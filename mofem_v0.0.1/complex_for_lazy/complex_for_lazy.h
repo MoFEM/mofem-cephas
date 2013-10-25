@@ -33,13 +33,17 @@ enum phisical_equation_volume { hooke = 0, stvenant_kirchhoff = 1,neohookean = 2
 void set_PhysicalEquationNumber(enum phisical_equation_volume eq);
 enum phisical_equation_volume get_PhysicalEquationNumber();
 
-void TakeIm(__CLPK_doublecomplex *xA,double *imA);
-void TakeRe(__CLPK_doublecomplex *xA,double *reA);
+PetscErrorCode StrainEnergy(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
+PetscErrorCode PiolaKirhoiff2(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
+PetscErrorCode PilaKirhoff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP);
+PetscErrorCode ElshebyStress(__CLPK_doublecomplex *xPsi,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xSigma);
 
-void SpatialGradientOfDeformation(__CLPK_doublecomplex *xh,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xF);
-void CauchyGreenDeformation(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC);
-void PiolaKrihoff1_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xP_PullBack);
-void ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xStress,__CLPK_doublecomplex *xStress_PullBack);
+PetscErrorCode TakeIm(__CLPK_doublecomplex *xA,double *imA);
+PetscErrorCode TakeRe(__CLPK_doublecomplex *xA,double *reA);
+PetscErrorCode SpatialGradientOfDeformation(__CLPK_doublecomplex *xh,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xF);
+PetscErrorCode CauchyGreenDeformation(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC);
+PetscErrorCode PiolaKrihoff1_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xP_PullBack);
+PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xStress,__CLPK_doublecomplex *xStress_PullBack);
 
 PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,

@@ -84,6 +84,13 @@ PetscErrorCode C_SURFACE_FEMethod::Integrate() {
       ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
       ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
       &(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+    /*if(fe_ptr->get_name()=="CandCT_SURFACE_ELEM") {
+      ublas::matrix<double> CT_MAT_ELEM = trans(C_MAT_ELEM);
+      ierr = MatSetValues(C,
+	ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
+	ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
+	&CT_MAT_ELEM.data()[0],ADD_VALUES); CHKERRQ(ierr);
+    }*/
     ierr = SaveConstrainOnTags(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
@@ -96,6 +103,7 @@ PetscErrorCode C_SURFACE_FEMethod::operator()() {
     for(;siit!=hi_siit;siit++) {
       EntityHandle face = siit->ent;
       if(find(skin_faces.begin(),skin_faces.end(),face)==skin_faces.end()) continue;
+      ent_lambda_data.resize(3);
       ent_dofs_data.resize(9);
       ent_global_col_indices.resize(9);
       ent_global_row_indices.resize(3);
@@ -112,6 +120,7 @@ PetscErrorCode C_SURFACE_FEMethod::operator()() {
 	  if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	  int global_idx = dit->get_petsc_gloabl_dof_idx();
 	  ent_global_row_indices[nn] = global_idx;
+	  ent_lambda_data[nn] = dit->get_FieldData();
 	  int local_idx = dit->get_petsc_local_dof_idx();
 	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	}
@@ -223,6 +232,23 @@ PetscErrorCode g_SURFACE_FEMethod::Integrate() {
     ierr = VecSetValues(g,
       ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
       &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+    /*if(fe_ptr->get_name()=="CandCT_SURFACE_ELEM") {
+      double area0 = norm_2(ent_normal_map0);
+      double area = norm_2(ent_normal_map);
+      for(unsigned int gg = 0;gg<g_NTRI3.size()/3;gg++) {
+	for(int nn = 0;nn<3;nn++) {
+	  for(int dd = 0;dd<3;dd++) {
+	    for(int nnn = 0;nnn<3;nnn++) {
+	      C_MAT_ELEM(nn,3*nnn+dd) += G_TRI_W[gg]*ent_normal_map[dd]*g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+nnn]*(area0/area);
+	    }
+	  }
+	}
+      }
+      ublas::vectior<double> f_lambda = prod(trans(C_MAT_ELEM),ent_lambda_data);
+      ierr = VecSetValues(f,
+	ent_global_col_indices.size(),&(ent_global_row_indices.data()[0]),
+	&(f_lambda.data())[0],ADD_VALUES); CHKERRQ(ierr);
+    }*/
     PetscFunctionReturn(0);
 }
 
@@ -248,6 +274,13 @@ PetscErrorCode C_CORNER_FEMethod::Integrate() {
       ent_global_row_indices.size(),&(ent_global_row_indices[0]),
       ent_global_col_indices.size(),&(ent_global_col_indices[0]),
       &(C_MAT_ELEM.data())[0],INSERT_VALUES); CHKERRQ(ierr);
+    /*if(fe_ptr->get_name()=="CandCT_SURFACE_ELEM") {
+      ublas::matrix<double> CT_MAT_ELEM = trans(C_MAT_ELEM);
+      ierr = MatSetValues(C,
+	ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
+	ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
+	&CT_MAT_ELEM.data()[0],ADD_VALUES); CHKERRQ(ierr);
+    }*/
     PetscFunctionReturn(0);
   }
 
@@ -259,6 +292,7 @@ PetscErrorCode C_CORNER_FEMethod::operator()() {
     for(;siit!=hi_siit;siit++) {
       EntityHandle node = siit->ent;
       if(corners.end()==find(corners.begin(),corners.end(),node)) continue;
+      ent_lambda_data.resize(3);
       ent_dofs_data.resize(3);
       ent_global_col_indices.resize(3);
       ent_global_row_indices.resize(3);
@@ -280,6 +314,7 @@ PetscErrorCode C_CORNER_FEMethod::operator()() {
 	int global_idx = dit->get_petsc_gloabl_dof_idx();
 	ent_global_row_indices[dit->get_dof_rank()] = global_idx;
 	int local_idx = dit->get_petsc_local_dof_idx();
+	ent_lambda_data[dit->get_dof_rank()] = dit->get_FieldData();
 	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
       }
       coords.resize(3);
