@@ -1435,6 +1435,29 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
     FieldSpace space = miit->get_space();
     //resolve antities on element
     switch (moab.type_from_handle(fe_ent)) {
+      case MBTRI: 
+	 switch (space) {
+	  case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
+  	   adj_ents.insert(nodes.begin(),nodes.end());
+	   for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) p.first->get_side_number_ptr(moab,*eeit);
+	   adj_ents.insert(faces.begin(),faces.end());
+	   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) p.first->get_side_number_ptr(moab,*fit);
+  	   adj_ents.insert(fe_ent);
+	    break;
+  	  case Hdiv: if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
+  	  case Hcurl: if(faces.empty()) moab.get_adjacencies(&fe_ent,1,2,false,faces);
+    	  case L2:
+  	   SETERRQ(PETSC_COMM_SELF,1,"Hdiv, Hcurl and L2 not yet implemented, make pull request when you need that");
+  	   break;
+	  case NoField: {
+	      EntityHandle field_meshset = miit->get_meshset();
+	      adj_ents.insert(field_meshset);
+	   }
+	   break;
+      	  default:
+  	   SETERRQ(PETSC_COMM_SELF,1,"this fild is not implemented for TET finite element");
+	 }
+	break;
       case MBTET:
 	 switch (space) {
 	  case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
