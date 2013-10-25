@@ -27,7 +27,8 @@
 
 /// number of dofs for L2 space
 #define NBVOLUME_L2(P) ((P+1)*(P+2)*(P+3)/6)
-#define NBSURFACE_L2(P) ((P+1)*(P+2)/2)
+#define NBFACE_L2(P) ((P+1)*(P+2)/2)
+#define NBEDGE_L2(P) (P+1)
 /// number of dofs on edge for H1 space
 #define NBEDGE_H1(P) ((P>0) ? (P-1) : 0)
 /// number of dofs on face for H1 space

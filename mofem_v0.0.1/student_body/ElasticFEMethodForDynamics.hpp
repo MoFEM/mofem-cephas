@@ -26,9 +26,9 @@
 #ifndef __LINEAR_DYNAMICS_ELASTICITY_HPP
 #define __LINEAR_DYNAMICS_ELASTICITY_HPP
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -36,7 +36,7 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-#include "moabTs.hpp"
+#include "TsCtx.hpp"
 
 using namespace MoFEM;
 
@@ -81,7 +81,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     Vec GhostU,GhostK;
     Vec u_by_row;
 
-    DynamicElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,moabField& _mField,
+    DynamicElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,FieldInterface& _mField,
       Mat &_Aij,Vec _D,Vec& _F,double _lambda,double _mu,double _rho,DynamicNeumannBC *_bc): 
       ElasticFEMethod(_mField,_dirihlet_bc_method_ptr,_Aij,_D,_F,_lambda,_mu),fe_post_proc_method(moab,_lambda,_mu),rho(_rho),debug(1),
       bc(_bc) {

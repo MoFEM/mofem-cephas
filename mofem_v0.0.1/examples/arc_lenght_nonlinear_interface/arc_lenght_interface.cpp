@@ -96,8 +96,8 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   //Create MoFEM (Joseph) database
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   BitRefLevel bit_level0;
   bit_level0.set(1);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
     EntityHandle meshset_level_interface;
     rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
-    ierr = mField.refine_get_ents(bit_level_interface,meshset_level_interface); CHKERRQ(ierr);
+    ierr = mField.refine_get_ents(bit_level_interface,BitRefLevel().set(),meshset_level_interface); CHKERRQ(ierr);
 
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
     ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
-    ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     /*
     ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
@@ -243,6 +243,12 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
+  //print bcs
+  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
+  ierr = mField.printCubitForceSet(); CHKERRQ(ierr);
+  //print block sets with materials
+  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+
   //create matrices
   Vec F,D;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
@@ -267,9 +273,51 @@ int main(int argc, char *argv[]) {
   const double ft = 1;
   const double Gf = 1;
 
+  struct MyArcLenghtIntElemFEMethod: public ArcLenghtIntElemFEMethod {
+    Range PostProcNodes;
+    MyArcLenghtIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
+      ArcLenghtCtx *_arc_ptr): ArcLenghtIntElemFEMethod(_moab,_Aij,_F,_D,_arc_ptr) {
+
+      Range all_nodes;
+      rval = moab.get_entities_by_type(0,MBVERTEX,all_nodes,true); CHKERR_THROW(rval);
+      for(Range::iterator nit = all_nodes.begin();nit!=all_nodes.end();nit++) {
+	double coords[3];
+	rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
+	if(fabs(coords[0]-5)<1e-6) {
+	  PostProcNodes.insert(*nit);
+	}
+      }
+      PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",PostProcNodes.size());
+
+    };
+
+    PetscErrorCode potsProcessLoadPath() {
+      PetscFunctionBegin;
+      NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+      NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
+      lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
+      if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
+      Range::iterator nit = PostProcNodes.begin();
+      for(;nit!=PostProcNodes.end();nit++) {
+	NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
+	dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
+	hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+	double coords[3];
+	rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
+	for(;dit!=hi_dit;dit++) {
+	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
+	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+	  PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
+	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
   ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
-  ArcLenghtIntElemFEMethod* MyArcMethod_ptr = new ArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
-  ArcLenghtIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
+  MyArcLenghtIntElemFEMethod* MyArcMethod_ptr = new MyArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
+  MyArcLenghtIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
 
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
@@ -305,15 +353,15 @@ int main(int argc, char *argv[]) {
   ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
 
   //Rhs
-  moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
-  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+  SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
   //Mat
-  moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
-  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+  SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;

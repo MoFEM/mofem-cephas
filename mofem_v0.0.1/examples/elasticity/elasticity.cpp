@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabField.hpp"
-#include "moabField_Core.hpp"
-#include "moabFEMethod_UpLevelStudent.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   //Create MoFEM (Joseph) database
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
@@ -148,6 +148,12 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
+  //print bcs
+  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
+  ierr = mField.printCubitForceSet(); CHKERRQ(ierr);
+  //print block sets with materials
+  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+
   //create matrices
   Vec F,D;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
@@ -157,7 +163,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(moabField& _mField,BaseDirihletBC *_dirihlet_ptr,
+    MyElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
       Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
       ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
 

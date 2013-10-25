@@ -1,5 +1,5 @@
 /** \file FEM.h
- * \brief Core moabField class for user interface
+ * \brief Core FieldInterface class for user interface
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -87,6 +87,14 @@ double Shape_intVolumeMBTET(double *diffN,const double *coords);
 /// calulate shape functions direvatives in space
 PetscErrorCode ShapeDiffMBTETinvJ(double *diffN,double *invJac,double *diffNinvJac);
 
+/// calulate spin matrix from vector
+// \param spinOmega is a spin matrxi
+// \param vecOmega is a spin vector
+PetscErrorCode Spin(double *spinOmega,double *vecOmega);
+
+/// Compose complex matrix (3x3) from two real matrices
+PetscErrorCode make_complex_matrix(double *reA,double *imA,__CLPK_doublecomplex *xA);
+
 /** 
  * \brief calculate local coordinates for given global coordinates
  *
@@ -110,7 +118,7 @@ PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *di
 
 //complex part
 void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLPK_doublecomplex *diffNinvJac,const enum CBLAS_TRANSPOSE Trans);
-void ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__CLPK_doublecomplex *xnormal);
+PetscErrorCode ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__CLPK_doublecomplex *xnormal);
 PetscErrorCode MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA);
 PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF);
 PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *det_xF);

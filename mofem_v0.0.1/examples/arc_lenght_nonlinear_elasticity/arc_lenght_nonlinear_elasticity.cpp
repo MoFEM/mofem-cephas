@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabFEMethod_ArcLenghtDriverComplexForLazy.hpp"
+#include "FEMethod_ArcLenghtDriverComplexForLazy.hpp"
 
 static char help[] = "\
 -my_file mesh file name\n\
@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
     ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-    ierr = mField.refine_get_ents(bit_level0,meshset_level0); CHKERRQ(ierr);
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
@@ -179,6 +179,12 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
+  //print bcs
+  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
+  ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
+  //print block sets with materials
+  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+
   //create matrices
   Vec F;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
@@ -199,7 +205,7 @@ int main(int argc, char *argv[]) {
   if(step==1) {
     EntityHandle node = 0;
     double coords[3];
-    for(_IT_GET_DOFS_MOABFIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
       if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
       EntityHandle ent = dof_ptr->get_ent();
       int dof_rank = dof_ptr->get_dof_rank();
@@ -252,12 +258,12 @@ int main(int argc, char *argv[]) {
   ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
   ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
 
-  moabSnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Rhs.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
-  moabSnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Mat.push_back(moabSnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+  SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+  SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
 
   ierr = MyFE.set_t_val(-1); CHKERRQ(ierr);
 

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moabFEMethod_ArcLenghtDriverComplexForLazy.hpp"
+#include "FEMethod_ArcLenghtDriverComplexForLazy.hpp"
 
 static char help[] = "\n\n";
 
@@ -50,8 +50,8 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
-  moabField_Core core(moab);
-  moabField& mField = core;
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
