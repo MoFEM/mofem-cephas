@@ -907,7 +907,7 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
 	ierr = MatZeroEntries(proj_all_ctx.C); CHKERRQ(ierr);
-	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",*CFE_SURFACE);  CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM_TRI",*CFE_SURFACE);  CHKERRQ(ierr);
 	if(cs) {
 	  ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",*CFE_CRACK_SURFACE);  CHKERRQ(ierr);
 	}

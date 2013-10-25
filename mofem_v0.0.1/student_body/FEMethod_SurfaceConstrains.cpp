@@ -97,12 +97,12 @@ PetscErrorCode C_SURFACE_FEMethod::Integrate() {
 
 PetscErrorCode C_SURFACE_FEMethod::operator()() {
     PetscFunctionBegin;
-    SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
-    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
-    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-    for(;siit!=hi_siit;siit++) {
-      EntityHandle face = siit->ent;
-      if(find(skin_faces.begin(),skin_faces.end(),face)==skin_faces.end()) continue;
+    //SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
+    //SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
+    //SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
+    //for(;siit!=hi_siit;siit++) {
+      EntityHandle face = fe_ptr->get_ent();
+      //if(find(skin_faces.begin(),skin_faces.end(),face)==skin_faces.end()) continue;
       ent_lambda_data.resize(3);
       ent_dofs_data.resize(9);
       ent_global_col_indices.resize(9);
@@ -150,8 +150,8 @@ PetscErrorCode C_SURFACE_FEMethod::operator()() {
       //cerr << ent_normal_map << endl << ent_normal_map0 << endl 
 	//<< inner_prod(ent_normal_map,ent_normal_map0)/inner_prod(ent_normal_map0,ent_normal_map0) << endl << endl;
       //cerr << ent_dofs_data << "\n" << coords << endl << endl;
-      ent_normal_map *= siit->sense;
-      ent_normal_map0 *= siit->sense;
+      //ent_normal_map *= siit->sense;
+      //ent_normal_map0 *= siit->sense;
       /*
       const EntityHandle* conn_tet; 
       rval = moab.get_connectivity(fe_ptr->get_ent(),conn_tet,num_nodes,true); CHKERR_PETSC(rval);
@@ -167,7 +167,7 @@ PetscErrorCode C_SURFACE_FEMethod::operator()() {
 	  break;
 	}
       }*/
-      if(debug_constrains) {
+      /*if(debug_constrains) {
 	const EntityHandle* conn_tet; 
 	int num_nodes; 
 	rval = moab.get_connectivity(fe_ptr->get_ent(),conn_tet,num_nodes,true); CHKERR_PETSC(rval);
@@ -183,10 +183,10 @@ PetscErrorCode C_SURFACE_FEMethod::operator()() {
 	cblas_daxpy(3,-1,&*coords.data().begin(),1,&*coords_opposite_node.data().begin(),1);
 	double dot = cblas_ddot(3,&*ent_normal_map0.data().begin(),1,&*coords_opposite_node.data().begin(),1);
 	if(dot>0) SETERRQ(PETSC_COMM_SELF,1,"Huston we have a problem");
-      }
+      }*/
       rval = moab.tag_set_data(th_material_normal,&face,1,&ent_normal_map.data()[0]); CHKERR_PETSC(rval);
       ierr = this->Integrate(); CHKERRQ(ierr);
-    }
+    //}
     PetscFunctionReturn(0);
   }
 

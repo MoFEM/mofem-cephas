@@ -55,7 +55,7 @@ struct FieldCore: public FieldInterface {
 
   //ref
   RefMoFEMEntity_multiIndex refinedMoFemEntities;
-  RefMoFEMElement_multiIndex refinedMofemElements;
+  RefMoFEMElement_multiIndex refinedMoFemElements;
   //field
   MoFEMField_multiIndex moabFields;
   MoFEMEntity_multiIndex entsMoabField;
