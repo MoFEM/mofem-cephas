@@ -2573,6 +2573,63 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
   *build_MoFEM |= 1<<5;  
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
+  PetscFunctionBegin; 
+  if(verb==-1) verb = verbose;
+  try {
+    Range ents2d;
+    rval = moab.get_entities_by_type(meshset,MBTRI,ents2d,false); CHKERR_PETSC(rval);
+    Range ents;
+    rval = moab.get_adjacencies(ents2d,1,true,ents,Interface::UNION); CHKERR_PETSC(rval);
+    if(verb > 1) {
+      PetscPrintf(PETSC_COMM_WORLD,"nb. 2d entities for seed %d\n",ents2d.size());
+    }
+    Range::iterator tit = ents2d.begin();
+    for(;tit!=ents2d.end();tit++) {
+      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedMofemEntities.insert(RefMoFEMEntity(moab,*tit));
+      if(debug > 0) {
+	ierr = test_moab(moab,*tit); CHKERRQ(ierr);
+      }
+      if(!((p_ent.first->get_BitRefLevel()&bit)==bit)) {
+        bool success = refinedMofemEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      }
+      pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+      switch (p_ent.first->get_ent_type()) {
+        case MBTET: 
+	 p_MoFEMFiniteElement = refinedMofemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));	
+	  assert(p_MoFEMFiniteElement.first->get_BitRefEdges_ulong()!=-1);
+	 break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+      if(verbose>2) {
+        ostringstream ss;
+        ss << *(p_MoFEMFiniteElement.first->get_RefMoFEMElement()) << endl;
+        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      }
+    }
+    for(int dd = 0;dd<1;dd++) {
+      rval = moab.get_entities_by_dimension(meshset,dd,ents); CHKERR_PETSC(rval);
+      Range::iterator eit = ents.begin();
+      for(;eit!=ents.end();eit++) {
+        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedMofemEntities.insert(RefMoFEMEntity(moab,*eit));
+        if(!((p_ent.first->get_BitRefLevel()&bit)==bit)) {
+	  bool success = refinedMofemEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+	  if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+        }
+        if(verbose>2) {
+  	ostringstream ss;
+  	ss << *(p_ent.first) << endl;
+  	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+        }
+      }
+    }
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
   PetscFunctionBegin; 
   if(verb==-1) verb = verbose;

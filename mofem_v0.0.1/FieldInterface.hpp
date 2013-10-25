@@ -220,6 +220,15 @@ struct FieldInterface {
   virtual PetscErrorCode printCubitMaterials() = 0;
 
   /**
+  * \brief seed 2D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+  * 
+  * \param EntityHandle MeshSet
+  * \param BitRefLevel bitLevel
+  * 
+  */
+  virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+
+  /**
   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
   * 
   * \param EntityHandle MeshSet

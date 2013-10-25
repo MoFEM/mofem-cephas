@@ -78,6 +78,17 @@ struct RefMoFEMElement_TET: public RefMoFEMElement {
 };
 
 /**
+ * \brief keeps data about abstract TRI finite element
+ */
+struct RefMoFEMElement_TRI: public RefMoFEMElement {
+  RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
+  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  friend ostream& operator<<(ostream& os,const RefMoFEMElement_TRI& e);
+};
+
+
+/**
  * \brief intrface to RefMoFEMElement
  */
 template<typename T>
