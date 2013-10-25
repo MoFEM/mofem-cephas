@@ -103,7 +103,7 @@ struct ConfigurationalMechanics {
     PetscErrorCode preProcess();
   };
 
-  struct ConstrainCrackForntEdges_FEMethid: public FieldInterface::FEMethod {
+  /*struct ConstrainCrackForntEdges_FEMethid: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
     ConstrainCrackForntEdges_FEMethid(FieldInterface& _mField) {}
@@ -120,7 +120,7 @@ struct ConfigurationalMechanics {
 
 
 
-  };
+  };*/
 
 
 };
