@@ -20,13 +20,8 @@
 #ifndef __CONFIGURATIONAL_MECHANICS_HPP__
 #define __CONFIGURATIONAL_MECHANICS_HPP__
 
-#include "FieldCore.hpp"
 #include "FieldInterface.hpp"
 #include "FEMethod_DriverComplexForLazy.hpp"
-#include "FEMethod_ComplexConstArea.hpp"
-#include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 
