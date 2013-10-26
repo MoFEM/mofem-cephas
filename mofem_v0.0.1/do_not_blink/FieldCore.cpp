@@ -2791,8 +2791,8 @@ PetscErrorCode FieldCore::add_verices_in_the_middel_of_edges(const EntityHandle 
 PetscErrorCode FieldCore::add_verices_in_the_middel_of_edges(const Range &_edges,const BitRefLevel &bit,int verb) {
   PetscFunctionBegin;
   Range edges = _edges;
-  typedef RefMoFEMEntity_multiIndex::index<Composite_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents = refinedMoFemEntities.get<Composite_mi_tag>();
+  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
+  ref_ents_by_composite &ref_ents = refinedMoFemEntities.get<Composite_EntityType_And_ParentEntityType_mi_tag>();
   ref_ents_by_composite::iterator miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
@@ -2866,16 +2866,16 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
   typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ents_by_ent;
   ref_ents_by_ent &ref_ents_ent = refinedMoFemEntities.get<MoABEnt_mi_tag>();
   // find all verices which parent is edge
-  typedef RefMoFEMEntity_multiIndex::index<Composite_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents = refinedMoFemEntities.get<Composite_mi_tag>();
+  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
+  ref_ents_by_composite &ref_ents = refinedMoFemEntities.get<Composite_EntityType_And_ParentEntityType_mi_tag>();
   ref_ents_by_composite::iterator miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
   for(;miit!=hi_miit;miit++) ref_parent_ents_view.insert(&*miit);
   typedef RefMoFEMElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
   ref_MoFEMFiniteElement_by_ent &ref_MoFEMFiniteElement = refinedMoFemElements.get<MoABEnt_mi_tag>();
-  typedef RefMoFEMElement_multiIndex::index<Composite_mi_tag>::type ref_ent_by_composite;
-  ref_ent_by_composite &by_composite = refinedMoFemElements.get<Composite_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_ent_by_composite;
+  ref_ent_by_composite &by_composite = refinedMoFemElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   // find oposite intrface nodes
   typedef BasicMoFEMEntityAdjacenctMap_multiIndex::index<EntType_mi_tag>::type AdjPrism_by_type;
   AdjPrism_by_type::iterator face_prism_miit = basicEntAdjacencies.get<EntType_mi_tag>().lower_bound(MBTRI);
@@ -2961,6 +2961,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	  if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible tet");
 	  Range tit_faces;
 	  rval = moab.get_adjacencies(&*tit,1,2,false,tit_faces); CHKERR_PETSC(rval);
+	  if(tit_faces.size()!=4) SETERRQ(PETSC_COMM_SELF,1,"existing tet in mofem databsee should have 4 adjacent edges");
 	  for(Range::iterator fit = tit_faces.begin();fit!=tit_faces.end();fit++) {
 	    ref_ents_by_ent::iterator fit_miit = ref_ents_ent.find(*fit);
 	    if(fit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedMoFemEntities");
@@ -3036,14 +3037,6 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
       //add this tet if exist to this ref level
       EntityHandle tet = miit_composite2->get_ref_ent();
       refinedMoFemEntities.modify(refinedMoFemEntities.find(tet),RefMoFEMEntity_change_add_bit(bit));
-      /*Range tet_faces;
-      rval = moab.get_adjacencies(&tet,1,2,false,tet_faces); CHKERR_PETSC(rval);
-      for(Range::iterator fit = tet_faces.begin();fit!=tet_faces.end();fit++) {
-	ref_ents_by_ent::iterator fit_miit = ref_ents_ent.find(*fit);
-	if(fit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedMoFemEntities");
-	bool success = refinedMoFemEntities.modify(fit_miit,RefMoFEMEntity_change_add_bit(bit));
-	if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible face");
-      }*/
       //set bit that this element is in databse - no need to create it
       ref_tets_bit.set(tt,1);
       if(verbose>2) {
@@ -3250,11 +3243,11 @@ PetscErrorCode FieldCore::refine_PRISM(const EntityHandle meshset,const BitRefLe
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ENTs_by_ent;
-  typedef RefMoFEMElement_multiIndex::index<Composite_mi_tag>::type ref_fe_by_composite;
-  ref_fe_by_composite &ref_fe_by_comp = refinedMoFemElements.get<Composite_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_fe_by_composite;
+  ref_fe_by_composite &ref_fe_by_comp = refinedMoFemElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   // find all verices which parent is edge
-  typedef RefMoFEMEntity_multiIndex::index<Composite_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents_by_comp = refinedMoFemEntities.get<Composite_mi_tag>();
+  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
+  ref_ents_by_composite &ref_ents_by_comp = refinedMoFemEntities.get<Composite_EntityType_And_ParentEntityType_mi_tag>();
   ref_ents_by_composite::iterator miit = ref_ents_by_comp.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   ref_ents_by_composite::iterator hi_miit = ref_ents_by_comp.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
@@ -3407,27 +3400,35 @@ PetscErrorCode FieldCore::refine_MESHSET(const EntityHandle meshset,const BitRef
   refinedMoFemEntities.modify(miit,RefMoFEMEntity_change_add_bit(bit));
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::refine_get_finite_elements(const BitRefLevel &bit,const EntityHandle meshset) {
+PetscErrorCode FieldCore::refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb) {
   PetscFunctionBegin;
-  RefMoFEMElement_multiIndex::iterator miit = refinedMoFemElements.begin();
-  for(;miit!=refinedMoFemElements.end();miit++) {
+  if(verb==-1) verb = verbose;
+  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator miit = refinedMoFemEntities.get<EntType_mi_tag>().lower_bound(MBTRI);
+  for(;miit!=refinedMoFemEntities.get<EntType_mi_tag>().upper_bound(MBTRI);miit++) {
     BitRefLevel bit2 = miit->get_BitRefLevel(); 
-    if((bit2&bit)==bit) {
-      switch (miit->get_ent_type()) {
-	case MBTET:
-	case MBPRISM:
-	break;
-	case MBENTITYSET:
-	continue;
-	default:
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    if((bit2&mask) != bit2) continue;
+    if(verb > 2) {
+      ostringstream ss;
+      ss << *miit << endl;
+      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }
+    if(verb > 3) {
+      ostringstream ss;
+      ss << bit << endl;
+      ss << mask << endl;
+      ss << bit2 << endl;
+      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }
+    if((bit2&bit).any()) {
+      if(verb > 3) {
+	ostringstream ss;
+	ss << "add ent to meshset" << endl;
+	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       EntityHandle ent = miit->get_ref_ent();
-      int type = miit->get_ent_type();
-      rval = moab.tag_set_data(th_ElemType,&ent,1,&type); CHKERR_PETSC(rval);
       rval = moab.add_entities(meshset,&ent,1); CHKERR_PETSC(rval);
     }
-  }	
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) {
@@ -3460,8 +3461,8 @@ PetscErrorCode FieldCore::refine_get_childern(
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef RefMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents = refinedMoFemEntities.get<Composite_mi_tag2>();
+  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
+  ref_ents_by_composite &ref_ents = refinedMoFemEntities.get<Composite_EntityHandle_And_ParentEntityType_mi_tag>();
   Range ents;
   rval = moab.get_entities_by_handle(parent,ents,recursive);  CHKERR_PETSC(rval);
   Range::iterator eit = ents.begin();

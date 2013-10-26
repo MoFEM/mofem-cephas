@@ -320,12 +320,15 @@ struct FieldInterface {
   virtual PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,
     const bool recursive = false,int verb = -1) = 0;
 
-  /**\brief add FEs entities (Tets/Prisms) from ref level given by bit to meshset
+  /**\brief add all ents from ref level given by bit to meshset
    *
    * \param BitRefLevel bitLevel
-   * \param EntityHandle meshset
+   * \param BitRefLevel mask
+   * \param EntityType type of entities
+   * \param EntityHandle meshset   
+   *
    */
-  virtual PetscErrorCode refine_get_finite_elements(const BitRefLevel &bit,const EntityHandle meshset) = 0;
+  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
    *
