@@ -298,28 +298,31 @@ PetscErrorCode FieldCore::map_from_mesh(int verb) {
   ierr = clear_map(); CHKERRQ(ierr);
   Range meshsets;
   rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,false);  CHKERR_PETSC(rval);
+  //loop all meshsets in moab database
   Range::iterator mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
-      try {
- 
-    CubitMeshSets base_meshset(moab,*mit);
-    if((base_meshset.CubitBCType&Cubit_BC_bitset(NodeSet|SideSet|BlockSet)).any()) {
-      pair<moabCubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(base_meshset);
-      if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"meshset not inserted");
-      ostringstream ss;
-      if(verb > 0) {
-	ss << "read cubit" << base_meshset << endl;
-	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    try {
+      //check if meshset is cubit meshset
+      CubitMeshSets base_meshset(moab,*mit);
+      if((base_meshset.CubitBCType&Cubit_BC_bitset(NodeSet|SideSet|BlockSet)).any()) {
+	pair<moabCubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(base_meshset);
+	if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"meshset not inserted");
+	ostringstream ss;
+	if(verb > 0) {
+	  ss << "read cubit" << base_meshset << endl;
+	  PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	}
+	//PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	//PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+	ierr = seed_ref_level_MESHSET(*mit,0); CHKERRQ(ierr);
       }
-      //PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-      //PetscSynchronizedFlush(PETSC_COMM_WORLD); 
-      ierr = seed_ref_level_MESHSET(*mit,0); CHKERRQ(ierr);
+    } catch (const char* msg) {
+      SETERRQ(PETSC_COMM_SELF,1,msg);
     }
-      } catch (const char* msg) {
-          SETERRQ(PETSC_COMM_SELF,1,msg);
-      }
     BitFieldId field_id;
+    //get bit id form field tag
     rval = moab.tag_get_data(th_FieldId,&*mit,1,&field_id); CHKERR_PETSC(rval);
+    //check if meshset if field meshset
     if(field_id!=0) {
       pair<MoFEMField_multiIndex::iterator,bool> p;
       try {
@@ -362,7 +365,9 @@ PetscErrorCode FieldCore::map_from_mesh(int verb) {
       }
     }
     BitFieldId fe_id;
+    //get bit id from fe tag
     rval = moab.tag_get_data(th_FEId,&*mit,1,&fe_id); CHKERR_PETSC(rval);
+    //check if meshset is finite element meshset
     if(fe_id!=0) {
       pair<MoFEMFiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(MoFEMFiniteElement(moab,*mit));
       if(verb > 0) {
@@ -399,7 +404,9 @@ PetscErrorCode FieldCore::map_from_mesh(int verb) {
       }
     }
     BitProblemId problem_id;
+    //get bit id form problem tag
     rval = moab.tag_get_data(th_ProblemId,&*mit,1,&problem_id); CHKERR_PETSC(rval);
+    //check if meshset if problem meshset
     if(problem_id!=0) {
       pair<MoFEMProblem_multiIndex::iterator,bool> p = moFEMProblems.insert(MoFEMProblem(moab,*mit));
       if(verb > 0) {
