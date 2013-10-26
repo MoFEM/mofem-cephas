@@ -95,6 +95,14 @@ int main(int argc, char *argv[]) {
     ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTET,true); CHKERRQ(ierr);
   }
 
+  /*EntityHandle skin_faces_meshset;
+  ierr = mField.get_msId_meshset(102,SideSet,skin_faces_meshset); CHKERRQ(ierr);
+  ierr = mField.seed_ref_level_2D(skin_faces_meshset,1); CHKERRQ(ierr);
+  EntityHandle crack_surface_meshset;
+  ierr = mField.get_msId_meshset(200,SideSet,skin_faces_meshset); CHKERRQ(ierr);
+  ierr = mField.seed_ref_level_2D(crack_surface_meshset,1); CHKERRQ(ierr);*/
+
+
   BitRefLevel last_ref = bit_level_interface;
   for(int ll = 2;ll<nb_ref_levels+2;ll++) {
     Range crack_edges,crack_nodes,edge_tets,level_tets,edges_to_refine;

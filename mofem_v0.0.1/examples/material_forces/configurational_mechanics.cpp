@@ -823,8 +823,6 @@ PetscErrorCode ConfigurationalMechanics::surface_projection_data(FieldInterface&
 
   ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,CrackCornersEdges,true); CHKERRQ(ierr);
 
   Interface& moab = mField.get_moab();
@@ -849,8 +847,8 @@ PetscErrorCode ConfigurationalMechanics::surface_projection_data(FieldInterface&
     ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&projSurfaceCtx->C); CHKERRQ(ierr);
   }
 
-  C_SURFACE_FEMethod CFE_SURFACE(moab,SurfacesFaces,projSurfaceCtx->C);
-  C_SURFACE_FEMethod CFE_CRACK_SURFACE(moab,CrackSurfacesFaces,projSurfaceCtx->C,"LAMBDA_CRACK_SURFACE");
+  C_SURFACE_FEMethod CFE_SURFACE(moab,projSurfaceCtx->C);
+  C_SURFACE_FEMethod CFE_CRACK_SURFACE(moab,projSurfaceCtx->C,"LAMBDA_CRACK_SURFACE");
   C_CORNER_FEMethod CFE_CORNER(moab,CornersNodes,projSurfaceCtx->C);
 
   ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);

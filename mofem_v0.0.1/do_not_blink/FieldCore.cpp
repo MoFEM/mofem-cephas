@@ -3033,6 +3033,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
     ref_ent_by_composite::iterator miit_composite = by_composite.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
     ref_ent_by_composite::iterator hi_miit_composite = by_composite.upper_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
     ref_ent_by_composite::iterator miit_composite2 = miit_composite;
+    if(nb_new_tets>0) 
     for(int tt = 0;miit_composite2!=hi_miit_composite;miit_composite2++,tt++) {
       //add this tet if exist to this ref level
       EntityHandle tet = miit_composite2->get_ref_ent();
@@ -3045,10 +3046,11 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
     }
+    if(nb_new_tets>0) 
     if(miit_composite!=hi_miit_composite) {
       //if that tet has the same pattern of splitted edges it has to have the same number of refined 
       //children elements - if not thorw an error
-      if(ref_tets_bit.count()!=(unsigned int)nb_new_tets) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      if(ref_tets_bit.count()!=(unsigned int)nb_new_tets) SETERRQ2(PETSC_COMM_SELF,1,"ref_tets_bit.count()==nb_new_tets but %u!=%u",ref_tets_bit.count(),nb_new_tets);
     } else {
       //if this element was not refined or was reffined with diffrent patterns of splitted edges create new elements
       EntityHandle ref_tets[8];
