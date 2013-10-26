@@ -151,7 +151,7 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
   int def_elem_type = MBMAXTYPE;
   rval = moab.tag_get_handle("ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type); CHKERR_THROW(rval); 
   //
-  map_from_mesh(verbose); 
+  initialiseDatabseInformationFromMesh(verbose); 
   //
   ShapeDiffMBTET(diffN_TET); 
   // Petsc Logs
@@ -291,7 +291,7 @@ PetscErrorCode FieldCore::add_field(const string& name,const FieldSpace space,co
   ierr = add_field(name,id,space,rank,bh,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::map_from_mesh(int verb) {
+PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionBegin;
   //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(verb==-1) verb = verbose;

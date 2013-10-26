@@ -80,7 +80,7 @@ struct FieldCore: public FieldInterface {
   BitFieldId get_field_shift();
   BitFEId get_BitFEId();
   BitProblemId get_problem_shift();
-  PetscErrorCode map_from_mesh(int verb = -1);
+  PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
   Interface& get_moab();
 
   //check consistency
