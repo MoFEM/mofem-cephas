@@ -2906,7 +2906,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
   Range::iterator tit = tets.begin();
   for(;tit!=tets.end();tit++) {
     ref_MoFEMFiniteElement_by_ent::iterator miit2 = ref_MoFEMFiniteElement.find(*tit);
-    if(miit2==ref_MoFEMFiniteElement.end()) SETERRQ(PETSC_COMM_SELF,1,"this MoFEMFiniteElement is not there");
+    if(miit2==ref_MoFEMFiniteElement.end()) SETERRQ(PETSC_COMM_SELF,1,"this tet is not in MoFEMFiniteElement");
     //connectivity
     const EntityHandle* conn; 
     int num_nodes; 
@@ -2914,7 +2914,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
     assert(num_nodes==4);
     for(int nn = 0;nn<num_nodes;nn++) {
       bool success = refinedMoFemEntities.modify(refinedMoFemEntities.get<MoABEnt_mi_tag>().find(conn[nn]),RefMoFEMEntity_change_add_bit(bit));
-      if(!success) SETERRQ(PETSC_COMM_SELF,1,"inconsitency in data");
+      if(!success) SETERRQ(PETSC_COMM_SELF,1,"can not set refinment bit level to tet node");
     }
     //get edges
     BitRefEdges parent_edges_bit(0);
@@ -2949,15 +2949,25 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
       } 
     }
     // build connectivity for rf tets
-    ref_ents_by_ent::iterator tit_miit;
     EntityHandle new_tets_conns[8*4];
     fill(&new_tets_conns[0],&new_tets_conns[8*4],no_handle);
     int sub_type = -1,nb_new_tets = 0;
     switch (parent_edges_bit.count()) {
-      case 0:
-	tit_miit = ref_ents_ent.find(*tit);
-	if(tit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	refinedMoFemEntities.modify(tit_miit,RefMoFEMEntity_change_add_bit(bit));
+      case 0: {
+	  ref_ents_by_ent::iterator tit_miit;
+	  tit_miit = ref_ents_ent.find(*tit);
+	  if(tit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  bool success = refinedMoFemEntities.modify(tit_miit,RefMoFEMEntity_change_add_bit(bit));
+	  if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible tet");
+	  Range tit_faces;
+	  rval = moab.get_adjacencies(&*tit,1,2,false,tit_faces); CHKERR_PETSC(rval);
+	  for(Range::iterator fit = tit_faces.begin();fit!=tit_faces.end();fit++) {
+	    ref_ents_by_ent::iterator fit_miit = ref_ents_ent.find(*fit);
+	    if(fit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedMoFemEntities");
+	    bool success = refinedMoFemEntities.modify(fit_miit,RefMoFEMEntity_change_add_bit(bit));
+	    if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible face");
+	  }
+	}
 	break;
       case 1:
 	sub_type = 0;
@@ -3024,7 +3034,16 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
     ref_ent_by_composite::iterator miit_composite2 = miit_composite;
     for(int tt = 0;miit_composite2!=hi_miit_composite;miit_composite2++,tt++) {
       //add this tet if exist to this ref level
-      refinedMoFemEntities.modify(refinedMoFemEntities.find(miit_composite2->get_ref_ent()),RefMoFEMEntity_change_add_bit(bit));
+      EntityHandle tet = miit_composite2->get_ref_ent();
+      refinedMoFemEntities.modify(refinedMoFemEntities.find(tet),RefMoFEMEntity_change_add_bit(bit));
+      /*Range tet_faces;
+      rval = moab.get_adjacencies(&tet,1,2,false,tet_faces); CHKERR_PETSC(rval);
+      for(Range::iterator fit = tet_faces.begin();fit!=tet_faces.end();fit++) {
+	ref_ents_by_ent::iterator fit_miit = ref_ents_ent.find(*fit);
+	if(fit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedMoFemEntities");
+	bool success = refinedMoFemEntities.modify(fit_miit,RefMoFEMEntity_change_add_bit(bit));
+	if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible face");
+      }*/
       //set bit that this element is in databse - no need to create it
       ref_tets_bit.set(tt,1);
       if(verbose>2) {
@@ -4253,7 +4272,7 @@ PetscErrorCode FieldCore::add_prism_to_basicEntAdjacencies(const EntityHandle pr
       if(face_side4.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prims don't have side face 4");
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side3.begin());
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side4.begin());
-      // set bit common for faces with side number 3 and 4
+      //set bit common for faces with side number 3 and 4
       RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedMoFemEntities.get<MoABEnt_mi_tag>().find(*face_side3.begin());
       if(miit_ref_ent!=refinedMoFemEntities.get<MoABEnt_mi_tag>().end()) {
 	BitRefLevel bit = miit_ref_ent->get_BitRefLevel();

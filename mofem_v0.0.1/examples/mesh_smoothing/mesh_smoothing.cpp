@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
     Range edges_to_refine;
     rval = moab.get_entities_by_type(meshset_level0,MBEDGE,edges_to_refine);  CHKERR_PETSC(rval);
     for(Range::iterator eit = edges_to_refine.begin();eit!=edges_to_refine.end();eit++) {
-      int numb = rand() % 2;
+      int numb = rand() % 4;
       if(numb == 0) {
 	ierr = moab.add_entities(meshset_ref_edges,&*eit,1); CHKERRQ(ierr);
       }
@@ -199,11 +199,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
     ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
 
-    EntityHandle refined_sideset_faces_meshset;
-    rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
-    ierr = mField.refine_get_childern(skin_faces_meshset,bit_level1,refined_sideset_faces_meshset,MBTRI,true); CHKERRQ(ierr);
-    ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,bit_level1,2); CHKERRQ(ierr);
-    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
 
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
@@ -212,6 +207,20 @@ int main(int argc, char *argv[]) {
       ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
       ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }
+
+    EntityHandle refined_sideset_faces_meshset;
+    rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),refined_sideset_faces_meshset); CHKERRQ(ierr);
+    //rval = moab.intersect_meshset(refined_sideset_faces_meshset,skin_faces_meshset); CHKERR_PETSC(rval);
+
+  if(pcomm->rank()==0) {
+    rval = moab.write_file("ttt.vtk","VTK","",&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
+  }
+
+    ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,bit_level1,2); CHKERRQ(ierr);
+    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
+
+
 
     problem_level = bit_level1;
   }
@@ -231,7 +240,6 @@ int main(int argc, char *argv[]) {
 
   ierr = mField.add_finite_element("C_SURFACE_ELEM_TRI"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("CTC_SURFACE_ELEM_TRI"); CHKERRQ(ierr);
-
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -300,7 +308,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",CornersEdges.size()); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",CornersNodes.size()); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"C_SURFACE_ELEM_TRI"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"CTC_SURFACE_ELEM_TRI"); CHKERRQ(ierr);
@@ -471,6 +479,14 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("MESH_SMOOTHING","MESH_SMOOTHER",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("C_ALL_MATRIX","C_SURFACE_ELEM_TRI",out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out_skin.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
