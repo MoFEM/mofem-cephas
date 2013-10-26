@@ -44,26 +44,14 @@ void C_SURFACE_FEMethod::run_in_constructor() {
     rval = moab.tag_get_handle("MATERIAL_NORMAL",3,MB_TYPE_DOUBLE,th_material_normal,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
   }
  
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,string _lambda_field_name,int _verbose): 
+C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,Mat _C,string _lambda_field_name,int _verbose): 
     FEMethod(),moab(_moab),C(_C),lambda_field_name(_lambda_field_name) {
-    run_in_constructor();
-    rval = moab.get_entities_by_type(skin_faces_meshset,MBTRI,skin_faces,true);  CHKERR_THROW(rval);
-  }
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),C(_C),lambda_field_name("LAMBDA_SURFACE") {
-    run_in_constructor();
-    rval = moab.get_entities_by_type(skin_faces_meshset,MBTRI,skin_faces,true);  CHKERR_THROW(rval);
-  }
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),C(_C),skin_faces(_skin_faces),lambda_field_name("LAMBDA_SURFACE") {
-    run_in_constructor();
-  }
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Mat _C,string _lambda_field_name,int _verbose): 
-    FEMethod(),moab(_moab),C(_C),skin_faces(_skin_faces),lambda_field_name(_lambda_field_name) {
     run_in_constructor();
   }
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),C(_C),lambda_field_name("LAMBDA_SURFACE") {} 
+    FEMethod(),moab(_moab),C(_C),lambda_field_name("LAMBDA_SURFACE") {
+    run_in_constructor();
+  }
 
 PetscErrorCode C_SURFACE_FEMethod::Integrate() {
     PetscFunctionBegin;
@@ -152,23 +140,14 @@ PetscErrorCode C_SURFACE_FEMethod::postProcess() {
   PetscFunctionReturn(0);
 }
 
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Vec _g,string _lambda_field_name,int _verbose): 
-    C_SURFACE_FEMethod(_moab,skin_faces,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
+g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,Vec _g,string _lambda_field_name,int _verbose): 
+    C_SURFACE_FEMethod(_moab,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
     VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
   }
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Vec _g,int _verbose): 
-    C_SURFACE_FEMethod(_moab,skin_faces,PETSC_NULL,_verbose),g(_g) {
+g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,Vec _g,int _verbose): 
+    C_SURFACE_FEMethod(_moab,PETSC_NULL,_verbose),g(_g) {
     VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
   }
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Vec _g,string _lambda_field_name,int _verbose): 
-    C_SURFACE_FEMethod(_moab,_skin_faces,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
-    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
-  }
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Vec _g,int _verbose): 
-    C_SURFACE_FEMethod(_moab,_skin_faces,PETSC_NULL,_verbose),g(_g) {
-    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
-  }
-
 
 PetscErrorCode g_SURFACE_FEMethod::Integrate() {
     PetscFunctionBegin;
@@ -189,23 +168,6 @@ PetscErrorCode g_SURFACE_FEMethod::Integrate() {
     ierr = VecSetValues(g,
       ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
       &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
-    /*if(fe_ptr->get_name()=="CandCT_SURFACE_ELEM") {
-      double area0 = norm_2(ent_normal_map0);
-      double area = norm_2(ent_normal_map);
-      for(unsigned int gg = 0;gg<g_NTRI3.size()/3;gg++) {
-	for(int nn = 0;nn<3;nn++) {
-	  for(int dd = 0;dd<3;dd++) {
-	    for(int nnn = 0;nnn<3;nnn++) {
-	      C_MAT_ELEM(nn,3*nnn+dd) += G_TRI_W[gg]*ent_normal_map[dd]*g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+nnn]*(area0/area);
-	    }
-	  }
-	}
-      }
-      ublas::vectior<double> f_lambda = prod(trans(C_MAT_ELEM),ent_lambda_data);
-      ierr = VecSetValues(f,
-	ent_global_col_indices.size(),&(ent_global_row_indices.data()[0]),
-	&(f_lambda.data())[0],ADD_VALUES); CHKERRQ(ierr);
-    }*/
     PetscFunctionReturn(0);
 }
 

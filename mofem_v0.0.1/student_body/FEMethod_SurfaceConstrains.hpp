@@ -36,7 +36,6 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   Interface& moab;
 
   Mat C;
-  Range skin_faces;
   Tag th_material_normal;
   vector<double> diffNTRI;
   vector<double> g_NTRI3;
@@ -46,10 +45,7 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
 
   string lambda_field_name;
  
-  C_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,string _lambda_field_name,int _verbose = 0);
-  C_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Mat _C,int _verbose = 0);
-  C_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Mat _C,string _lambda_field_name,int _verbose = 0);
-  C_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Mat _C,int _verbose = 0);
+  C_SURFACE_FEMethod(Interface& _moab,Mat _C,string _lambda_field_name,int _verbose = 0);
   C_SURFACE_FEMethod(Interface& _moab,Mat _C,int _verbose = 0);
 
   PetscErrorCode preProcess();
@@ -73,10 +69,8 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
 struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
 
   Vec g;
-  g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Vec _g,string _lambda_field_name,int _verbose = 0); 
-  g_SURFACE_FEMethod(Interface& _moab,EntityHandle skin_faces_meshset,Vec _g,int _verbose = 0); 
-  g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Vec _g,string _lambda_field_name,int _verbose = 0);
-  g_SURFACE_FEMethod(Interface& _moab,Range &_skin_faces,Vec _g,int _verbose = 0);
+  g_SURFACE_FEMethod(Interface& _moab,Vec _g,string _lambda_field_name,int _verbose = 0); 
+  g_SURFACE_FEMethod(Interface& _moab,Vec _g,int _verbose = 0); 
 
   ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
   PetscErrorCode Integrate();
