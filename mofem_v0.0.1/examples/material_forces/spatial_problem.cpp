@@ -95,13 +95,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTET,true); CHKERRQ(ierr);
   }
 
-  EntityHandle skin_faces_meshset;
-  ierr = mField.get_msId_meshset(102,SideSet,skin_faces_meshset); CHKERRQ(ierr);
-  ierr = mField.seed_ref_level_2D(skin_faces_meshset,1); CHKERRQ(ierr);
-  EntityHandle crack_surface_meshset;
-  ierr = mField.get_msId_meshset(200,SideSet,crack_surface_meshset); CHKERRQ(ierr);
-  ierr = mField.seed_ref_level_2D(crack_surface_meshset,1); CHKERRQ(ierr);
-
   BitRefLevel last_ref = bit_level_interface;
   for(int ll = 2;ll<nb_ref_levels+2;ll++) {
     Range crack_edges,crack_nodes,edge_tets,level_tets,edges_to_refine;
@@ -126,23 +119,6 @@ int main(int argc, char *argv[]) {
       ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
     }
   
-    //get meshset of triangles which are last_ref				
-    EntityHandle refined_sideset_faces_meshset;
-    rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
-    ierr = mField.refine_get_ents(last_ref,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
-
-    //seed 2d elements for last ref elements
-    Range SurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-    Range LevelFaces;
-    moab.get_entities_by_handle(refined_sideset_faces_meshset,LevelFaces,true);
-    LevelFaces = intersect(LevelFaces,SurfacesFaces);
-    rval = moab.clear_meshset(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.add_entities(refined_sideset_faces_meshset,LevelFaces); CHKERR_PETSC(rval);
-    ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,last_ref); CHKERRQ(ierr);
-    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-
   }
 
   Tag th_my_ref_level;
