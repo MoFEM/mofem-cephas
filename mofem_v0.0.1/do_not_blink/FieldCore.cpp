@@ -2608,6 +2608,31 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
   *build_MoFEM |= 1<<5;  
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::seed_finite_elements(const EntityHandle meshset,int verb) {
+  PetscFunctionBegin;
+  Range entities;
+  ierr = moab.get_entities_by_handle(meshset,entities,true); CHKERRQ(ierr);
+  for(Range::iterator eit = entities.begin();eit!=entities.end();eit++) {
+    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator 
+      eiit = refinedMoFemEntities.get<MoABEnt_mi_tag>().find(*eit);
+    if(eiit == refinedMoFemEntities.get<MoABEnt_mi_tag>().end())  SETERRQ(PETSC_COMM_SELF,1,"entity is not in database");
+    pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+    switch (eiit->get_ent_type()) {
+      case MBVERTEX: 
+	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*eiit)));	
+	break;
+      case MBEDGE: 
+	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*eiit)));	
+	break;
+      case MBTRI: 
+	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*eiit)));	
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
   PetscFunctionBegin; 
   if(verb==-1) verb = verbose;

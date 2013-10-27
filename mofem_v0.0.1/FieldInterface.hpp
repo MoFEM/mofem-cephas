@@ -220,6 +220,14 @@ struct FieldInterface {
   virtual PetscErrorCode printCubitMaterials() = 0;
 
   /**
+  * Create finite elements based from eneties in meshses. Throw error if entity is not in database
+  * 
+  * \param EntityHandle meshset
+  *
+  */
+  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
+
+  /**
   * \brief seed 2D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
   * 
   * \param EntityHandle MeshSet
