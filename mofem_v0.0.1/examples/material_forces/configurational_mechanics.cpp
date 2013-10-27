@@ -440,14 +440,6 @@ PetscErrorCode ConfigurationalMechanics::constrains_problem_definition(FieldInte
 
     Interface& moab = mField.get_moab();
 
-    Tag th_my_ref_level;
-    rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
-    const EntityHandle root_meshset = mField.get_moab().get_root_set();
-    BitRefLevel *ptr_bit_level0;
-    rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
-    BitRefLevel& bit_level0 = *ptr_bit_level0;
-
-
     //get meshset of triangles which are bit_level0				
     EntityHandle refined_sideset_faces_meshset;
     rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
@@ -592,26 +584,29 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
     CrackSurfacesEdgeFaces = CrackSurfacesEdgeFaces.subset_by_type(MBTRI);
     CrackSurfacesEdgeFaces = intersect(CrackSurfacesEdgeFaces,CrackSurfacesFaces);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Faces = %d\n",CrackSurfacesEdgeFaces.size()); CHKERRQ(ierr);
-    Range FrontSurfacesTets;   
-    rval = mField.get_moab().get_adjacencies(CrackSurfacesEdgeFaces,3,false,FrontSurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
-    FrontSurfacesTets = FrontSurfacesTets.subset_by_type(MBTET);
-    /*BitRefLevel bit_level;
-    bit_level.set(2);
-    EntityHandle tmp_meshset;
-    rval = mField.get_moab().create_meshset(MESHSET_SET,tmp_meshset); CHKERR_PETSC(rval);	
-    ierr = mField.refine_get_ents(bit_level,tmp_meshset); CHKERRQ(ierr);
-    Range tttt;
-    mField.get_moab().get_entities_by_handle(tmp_meshset,tttt,true);
-    FrontSurfacesTets = intersect(tttt,FrontSurfacesTets);*/
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Test = %d\n",FrontSurfacesTets.size()); CHKERRQ(ierr);
-    EntityHandle SurfacesTetsMeshset;
-    rval = mField.get_moab().create_meshset(MESHSET_SET,SurfacesTetsMeshset); CHKERR_PETSC(rval);	
-    rval = mField.get_moab().add_entities(SurfacesTetsMeshset,FrontSurfacesTets); CHKERR_PETSC(rval);
-    //rval = mField.get_moab().write_file("tets.vtk","VTK","",&SurfacesTetsMeshset,1); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-    rval = mField.get_moab().delete_entities(&SurfacesTetsMeshset,1); CHKERR_PETSC(rval);
+
+    Interface& moab = mField.get_moab();
+
+    //get meshset of triangles which are bit_level0				
+    EntityHandle refined_sideset_faces_meshset;
+    rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
+    //seed 2d elements for last ref elements
+    Range LevelFaces;
+    moab.get_entities_by_handle(refined_sideset_faces_meshset,LevelFaces,true);
+    //get level crack front faces
+    Range LevelCrackSurfacesFaces;
+    LevelCrackSurfacesFaces = intersect(LevelFaces,CrackSurfacesEdgeFaces);
+    rval = moab.clear_meshset(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.add_entities(refined_sideset_faces_meshset,LevelCrackSurfacesFaces); CHKERR_PETSC(rval);
+    ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,bit_level0); CHKERRQ(ierr);
+    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(
+      LevelCrackSurfacesFaces,"C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(
+      LevelCrackSurfacesFaces,"CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(
+      LevelCrackSurfacesFaces,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
   }
 
   //add entitities (by tets) to the field
@@ -1055,6 +1050,14 @@ PetscErrorCode ConfigurationalMechanics::griffith_g(FieldInterface& mField,strin
   ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  {
+    //Matrix View
+    MatView(projFrontCtx->C,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+    std::string wait;
+    std::cin >> wait;
+  }
+
 
   Mat RT;
   {

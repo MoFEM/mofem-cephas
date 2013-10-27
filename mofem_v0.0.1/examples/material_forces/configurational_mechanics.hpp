@@ -44,7 +44,18 @@ struct ConfigurationalMechanics {
   EntityHandle cornersNodesMeshset,surfacesFacesNodesMeshset,crackSurfacesFacesNodesMeshset,crackForntMeshset;
   matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
 
-  ConfigurationalMechanics(): projSurfaceCtx(NULL),projFrontCtx(NULL) {};
+  BitRefLevel *ptr_bit_level0;
+  BitRefLevel bit_level0;
+  ConfigurationalMechanics(FieldInterface& mField): projSurfaceCtx(NULL),projFrontCtx(NULL) {
+
+    ErrorCode rval;
+    Tag th_my_ref_level;
+    rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_THROW(rval);
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+    rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_THROW(rval);
+    bit_level0 = *ptr_bit_level0;
+
+  };
   
   PetscErrorCode set_material_fire_wall(FieldInterface& mField);
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
