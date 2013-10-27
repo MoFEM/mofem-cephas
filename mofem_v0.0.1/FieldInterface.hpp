@@ -225,7 +225,15 @@ struct FieldInterface {
   * \param EntityHandle meshset
   *
   */
-  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
+  virtual PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1) = 0;
+
+  /**
+  * Create finite elements based from eneties in meshses. Throw error if entity is not in database
+  * 
+  * \param Range entities
+  *
+  */
+  virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
 
   /**
   * \brief seed 2D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
@@ -481,6 +489,13 @@ struct FieldInterface {
   virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
   virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
+  /** \brief add VERTICES entities fromm meshset to finite element database given by name
+   *
+   * \param range contains tetrahedrals
+   * \param name Finite Element name
+   * \param recursive if true parent meshset is searched recursively
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const string &name) = 0;
 
   /** \brief add TRI entities fromm meshset to finite element database given by name
    *

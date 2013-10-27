@@ -311,15 +311,9 @@ int main(int argc, char *argv[]) {
       CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
       rval = moab.add_entities(cornersNodesMeshset,CornersNodes); CHKERR_PETSC(rval);
       //add surface elements
-      Range CornersTets;
-      rval = moab.get_adjacencies(CornersNodes,3,false,CornersTets,Interface::UNION); CHKERR_PETSC(rval);
-      EntityHandle CornersTetsMeshset;
-      rval = moab.create_meshset(MESHSET_SET,CornersTetsMeshset); CHKERR_PETSC(rval);	
-      rval = moab.add_entities(CornersTetsMeshset,CornersTets); CHKERR_PETSC(rval);
-      CornersTets = intersect(CornersTets,SurfacesTets);
-      ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"C_CORNER_ELEM"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
-      rval = moab.delete_entities(&CornersTetsMeshset,1); CHKERR_PETSC(rval);
+      ierr = mField.seed_finite_elements(CornersNodes); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"C_CORNER_ELEM"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
     }
     {
       Range SurfacesNodes;

@@ -83,8 +83,7 @@ struct C_CORNER_FEMethod:public FieldInterface::FEMethod {
   Interface& moab;
 
   Mat C;
-  Range corners;
-  C_CORNER_FEMethod(Interface& _moab,Range _corners,Mat _C,int _verbose = 0); 
+  C_CORNER_FEMethod(Interface& _moab,Mat _C,int _verbose = 0); 
 
   PetscErrorCode preProcess(); 
   
@@ -106,7 +105,7 @@ struct C_CORNER_FEMethod:public FieldInterface::FEMethod {
 struct g_CORNER_FEMethod: public C_CORNER_FEMethod {
   
   Vec g;
-  g_CORNER_FEMethod(Interface& _moab,Range _corners,Vec _g,int _verbose = 0); 
+  g_CORNER_FEMethod(Interface& _moab,Vec _g,int _verbose = 0); 
 
   ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
 

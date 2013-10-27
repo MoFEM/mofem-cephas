@@ -171,8 +171,8 @@ PetscErrorCode g_SURFACE_FEMethod::Integrate() {
     PetscFunctionReturn(0);
 }
 
-C_CORNER_FEMethod::C_CORNER_FEMethod(Interface& _moab,Range _corners,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),C(_C),corners(_corners) {}
+C_CORNER_FEMethod::C_CORNER_FEMethod(Interface& _moab,Mat _C,int _verbose): 
+    FEMethod(),moab(_moab),C(_C) {}
 
 PetscErrorCode C_CORNER_FEMethod::preProcess() {
     PetscFunctionBegin;
@@ -205,41 +205,35 @@ PetscErrorCode C_CORNER_FEMethod::Integrate() {
 
 PetscErrorCode C_CORNER_FEMethod::operator()() {
     PetscFunctionBegin;
-    SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
-    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBVERTEX,0));
-    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBVERTEX,4));
-    for(;siit!=hi_siit;siit++) {
-      EntityHandle node = siit->ent;
-      if(corners.end()==find(corners.begin(),corners.end(),node)) continue;
-      ent_lambda_data.resize(3);
-      ent_dofs_data.resize(3);
-      ent_global_col_indices.resize(3);
-      ent_global_row_indices.resize(3);
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
-      dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",node));
-      hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",node));
-      if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
-      for(;dit!=hi_dit;dit++) {
+    EntityHandle node = fe_ptr->get_ent();
+    ent_lambda_data.resize(3);
+    ent_dofs_data.resize(3);
+    ent_global_col_indices.resize(3);
+    ent_global_row_indices.resize(3);
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
+    dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",node));
+    hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",node));
+    if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
+    for(;dit!=hi_dit;dit++) {
 	int global_idx = dit->get_petsc_gloabl_dof_idx();
 	ent_global_col_indices[dit->get_dof_rank()] = global_idx;
 	int local_idx = dit->get_petsc_local_dof_idx();
 	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	ent_dofs_data[dit->get_dof_rank()] = dit->get_FieldData();
-      }
-      dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_CORNER",node));
-      hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_CORNER",node));
-      if(distance(dit,hi_dit)!=3) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_CORNER should be 3, but is %d",distance(dit,hi_dit));
-      for(;dit!=hi_dit;dit++) {
+    }
+    dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("LAMBDA_CORNER",node));
+    hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("LAMBDA_CORNER",node));
+    if(distance(dit,hi_dit)!=3) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_CORNER should be 3, but is %d",distance(dit,hi_dit));
+    for(;dit!=hi_dit;dit++) {
 	int global_idx = dit->get_petsc_gloabl_dof_idx();
 	ent_global_row_indices[dit->get_dof_rank()] = global_idx;
 	int local_idx = dit->get_petsc_local_dof_idx();
 	ent_lambda_data[dit->get_dof_rank()] = dit->get_FieldData();
 	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
-      }
-      coords.resize(3);
-      rval = moab.get_coords(&node,1,&*coords.data().begin()); CHKERR_PETSC(rval);
-      ierr = this->Integrate(); CHKERRQ(ierr);
     }
+    coords.resize(3);
+    rval = moab.get_coords(&node,1,&*coords.data().begin()); CHKERR_PETSC(rval);
+    ierr = this->Integrate(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -248,8 +242,8 @@ PetscErrorCode C_CORNER_FEMethod::postProcess() {
     PetscFunctionReturn(0);
   }
 
-g_CORNER_FEMethod::g_CORNER_FEMethod(Interface& _moab,Range _corners,Vec _g,int _verbose): 
-    C_CORNER_FEMethod(_moab,_corners,PETSC_NULL,_verbose),g(_g) {
+g_CORNER_FEMethod::g_CORNER_FEMethod(Interface& _moab,Vec _g,int _verbose): 
+    C_CORNER_FEMethod(_moab,PETSC_NULL,_verbose),g(_g) {
     VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
   }
 

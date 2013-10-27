@@ -881,18 +881,12 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
     if(init) {
 	init = false;
-	ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
-	ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
-
 	ierr = mField.set_global_VecCreateGhost(problem_name,Col,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-	Range CornersEdgesNodes;
-	rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
-	CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
 	CFE_SURFACE = new C_SURFACE_FEMethod(moab,proj_all_ctx.C);
 	gFE_SURFACE = new g_SURFACE_FEMethod(moab,proj_all_ctx.g);
-	CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.C);
-	gFE_CORNER = new g_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.g);
+	CFE_CORNER = new C_CORNER_FEMethod(moab,proj_all_ctx.C);
+	gFE_CORNER = new g_CORNER_FEMethod(moab,proj_all_ctx.g);
 	if(cs) {
 	  //CRACK
 	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
