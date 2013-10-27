@@ -44,6 +44,7 @@ BasicMoFEMEntity::BasicMoFEMEntity(const EntityHandle _ent): ent(_ent) {
   }
 }
 //ref moab ent
+BitRefEdges MoFEM::RefMoFEMElement::DummyBitRefEdges = BitRefEdges(0);
 RefMoFEMEntity::RefMoFEMEntity(
   Interface &moab,const EntityHandle _ent): 
     BasicMoFEMEntity(_ent),tag_parent_ent(NULL),tag_BitRefLevel(NULL) {
@@ -65,12 +66,7 @@ ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
 
 //ref moab MoFEMFiniteElement
 RefMoFEMElement::RefMoFEMElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
-  interface_RefMoFEMEntity<RefMoFEMEntity>(_RefMoFEMEntity_ptr) {
-  ErrorCode rval;
-  Tag th_RefBitEdge;
-  rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); CHKERR_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); CHKERR_THROW(rval);
-}
+  interface_RefMoFEMEntity<RefMoFEMEntity>(_RefMoFEMEntity_ptr) {}
 ostream& operator<<(ostream& os,const RefMoFEMElement& e) {
   os << " ref egdes " << e.get_BitRefEdges();
   os << " " << *e.ref_ptr;
@@ -94,13 +90,16 @@ SideNumber* RefMoFEMElement_MESHSET::get_side_number_ptr(Interface &moab,EntityH
   return NULL;
 }
 RefMoFEMElement_PRISM::RefMoFEMElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMElement(moab,_RefMoFEMEntity_ptr) {
+  ErrorCode rval;
+  Tag th_RefBitEdge;
+  rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); CHKERR_THROW(rval);
   switch (ref_ptr->get_ent_type()) {
     case MBPRISM:
     break;
     default:
       THROW_AT_LINE("this work only for PRISMs");
   }
-  ErrorCode rval;
   EntityHandle prism = get_ref_ent();
   int num_nodes;
   const EntityHandle* conn;
@@ -217,6 +216,9 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
 }
 RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMElement(moab,_RefMoFEMEntity_ptr) {
   ErrorCode rval;
+  Tag th_RefBitEdge;
+  rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); CHKERR_THROW(rval);
   Tag th_RefType;
   switch (ref_ptr->get_ent_type()) {
     case MBTET:
@@ -283,6 +285,14 @@ ostream& operator<<(ostream& os,const RefMoFEMElement_TRI& e) {
   os << *e.ref_ptr;
   return os;
 }
+RefMoFEMElement_EDGE::RefMoFEMElement_EDGE(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMElement(moab,_RefMoFEMEntity_ptr) {
+  switch (ref_ptr->get_ent_type()) {
+    case MBEDGE:
+    break;
+    default:
+      THROW_AT_LINE("this work only for TRIs");
+  }
+}
 SideNumber* RefMoFEMElement_EDGE::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
@@ -306,6 +316,14 @@ ostream& operator<<(ostream& os,const RefMoFEMElement_EDGE& e) {
   os << *e.ref_ptr;
   return os;
 }
+RefMoFEMElement_VERTEX::RefMoFEMElement_VERTEX(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMElement(moab,_RefMoFEMEntity_ptr) {
+  switch (ref_ptr->get_ent_type()) {
+    case MBVERTEX:
+    break;
+    default:
+      THROW_AT_LINE("this work only for TRIs");
+  }
+}
 SideNumber* RefMoFEMElement_VERTEX::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
@@ -317,7 +335,7 @@ SideNumber* RefMoFEMElement_VERTEX::get_side_number_ptr(Interface &moab,EntityHa
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,-1,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
-  THROW_AT_LINE("no side entitiy for vertex if its is not a vertex itself");
+  THROW_AT_LINE("no side entitiy for vertex if its is not an vertex itself");
   return NULL;
 }
 ostream& operator<<(ostream& os,const RefMoFEMElement_VERTEX& e) {
