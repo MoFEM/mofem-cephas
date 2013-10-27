@@ -571,26 +571,10 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
 
     Interface& moab = mField.get_moab();
 
-    //get meshset of triangles which are bit_level0				
-    EntityHandle refined_sideset_faces_meshset;
-    rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
-    //seed 2d elements for last ref elements
-    Range LevelFaces;
-    moab.get_entities_by_handle(refined_sideset_faces_meshset,LevelFaces,true);
-    //get level crack front faces
-    Range LevelCrackSurfacesFaces;
-    LevelCrackSurfacesFaces = intersect(LevelFaces,CrackSurfacesEdgeFaces);
-    rval = moab.clear_meshset(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.add_entities(refined_sideset_faces_meshset,LevelCrackSurfacesFaces); CHKERR_PETSC(rval);
-    ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,bit_level0); CHKERRQ(ierr);
-    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(
-      LevelCrackSurfacesFaces,"C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(
-      LevelCrackSurfacesFaces,"CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(
-      LevelCrackSurfacesFaces,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(CrackSurfacesEdgeFaces); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
 
     ierr = mField.seed_finite_elements(CrackFrontEdges); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_EDGEs(CrackFrontEdges,"FRONT_CONSTRAIN"); CHKERRQ(ierr);
