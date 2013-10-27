@@ -29,6 +29,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
+  try {
+
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   Core mb_instance;
@@ -57,7 +59,7 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  ConfigurationalMechanics conf_prob;
+  ConfigurationalMechanics conf_prob(mField);
 
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
@@ -133,6 +135,10 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
   PetscFinalize();
+
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
 
   return 0;
 }

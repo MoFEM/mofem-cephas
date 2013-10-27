@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  ConfigurationalMechanics conf_prob;
+  ConfigurationalMechanics conf_prob(mField);
 
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 

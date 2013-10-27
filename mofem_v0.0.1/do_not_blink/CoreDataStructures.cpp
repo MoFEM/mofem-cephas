@@ -253,8 +253,6 @@ ostream& operator<<(ostream& os,const RefMoFEMElement_TET& e) {
   return os;
 }
 RefMoFEMElement_TRI::RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMElement(moab,_RefMoFEMEntity_ptr) {
-  ErrorCode rval;
-  Tag th_RefType;
   switch (ref_ptr->get_ent_type()) {
     case MBTRI:
     break;
