@@ -283,6 +283,47 @@ ostream& operator<<(ostream& os,const RefMoFEMElement_TRI& e) {
   os << *e.ref_ptr;
   return os;
 }
+SideNumber* RefMoFEMElement_EDGE::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+  SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
+  if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
+  if(ref_ptr->ent == ent) {
+    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
+    return const_cast<SideNumber*>(&*miit);
+  }
+  if(moab.type_from_handle(ent)==MBENTITYSET) {
+    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,-1,0,0)).first;
+    return const_cast<SideNumber*>(&*miit);
+  }
+  ErrorCode rval;
+  int side_number,sense,offset;
+  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
+  if(side_number==-1) THROW_AT_LINE("this not working");
+  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
+  //cerr << side_number << " " << sense << " " << offset << endl;
+  return const_cast<SideNumber*>(&*miit);
+}
+ostream& operator<<(ostream& os,const RefMoFEMElement_EDGE& e) {
+  os << *e.ref_ptr;
+  return os;
+}
+SideNumber* RefMoFEMElement_VERTEX::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+  SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
+  if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
+  if(ref_ptr->ent == ent) {
+    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
+    return const_cast<SideNumber*>(&*miit);
+  }
+  if(moab.type_from_handle(ent)==MBENTITYSET) {
+    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,-1,0,0)).first;
+    return const_cast<SideNumber*>(&*miit);
+  }
+  THROW_AT_LINE("no side entitiy for vertex if its is not a vertex itself");
+  return NULL;
+}
+ostream& operator<<(ostream& os,const RefMoFEMElement_VERTEX& e) {
+  os << *e.ref_ptr;
+  return os;
+}
 
 
 MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_meshset),
