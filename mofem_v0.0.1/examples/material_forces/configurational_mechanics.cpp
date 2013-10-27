@@ -539,6 +539,7 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
   ierr = mField.add_finite_element("C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("FRONT_CONSTRAIN"); CHKERRQ(ierr);
 
   ierr = mField.modify_finite_element_add_field_row("C_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("C_CRACKFRONT_AREA_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -555,13 +556,16 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
   ierr = mField.modify_finite_element_add_field_data("dCT_CRACKFRONT_AREA_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("dCT_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
 
+  ierr = mField.modify_finite_element_add_field_row("FRONT_CONSTRAIN","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("FRONT_CONSTRAIN","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FRONT_CONSTRAIN","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
   //Problem
   ierr = mField.add_problem("C_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = mField.add_problem("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("CTC_CRACKFRONT_MATRIX","CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
 
-  //add tets
   {
     Range CrackSurfacesFaces,CrackFrontEdges;
     ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
@@ -601,6 +605,10 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
       LevelCrackSurfacesFaces,"CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(
       LevelCrackSurfacesFaces,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+
+    ierr = mField.seed_finite_elements(CrackFrontEdges); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_EDGEs(CrackFrontEdges,"FRONT_CONSTRAIN"); CHKERRQ(ierr);
+
   }
 
   //add entitities (by tets) to the field
@@ -610,6 +618,7 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
 
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element(problem,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element(problem,"FRONT_CONSTRAIN"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

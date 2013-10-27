@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     
       ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+      //ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);

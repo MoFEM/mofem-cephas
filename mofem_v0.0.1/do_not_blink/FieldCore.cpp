@@ -1276,6 +1276,23 @@ PetscErrorCode FieldCore::list_problem() const {
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::add_ents_to_finite_element_by_EDGEs(const Range& edges,const BitFEId id) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  const EntityHandle idm = get_meshset_by_BitFEId(id);
+  rval = moab.add_entities(idm,edges.subset_by_type(MBEDGE)); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::add_ents_to_finite_element_by_EDGEs(const Range& edges,const string &name) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  try {
+    ierr = add_ents_to_finite_element_by_EDGEs(edges,get_BitFEId(name));  CHKERRQ(ierr);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const BitFEId id) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
@@ -1464,6 +1481,16 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
       case MBVERTEX:
 	switch (space) {
 	  case H1: 
+	    adj_ents.insert(fe_ent);
+	    break;
+      	  default:
+  	   SETERRQ(PETSC_COMM_SELF,1,"this fild is not implemented for TET finite element");
+	}
+	break;
+      case MBEDGE:
+	switch (space) {
+	  case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
+	    adj_ents.insert(nodes.begin(),nodes.end());
 	    adj_ents.insert(fe_ent);
 	    break;
       	  default:
