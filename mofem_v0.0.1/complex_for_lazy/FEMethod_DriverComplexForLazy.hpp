@@ -848,7 +848,7 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr), 
     proj_all_ctx(_proj_all_ctx),init(true),problem_name(_problem_name),cs(true) {};
 
-  Range CornersEdges,CornersNodes,SurfacesFaces,CrackSurfacesFaces;
+  Range CornersEdges,CornersNodes,SurfacesFaces;
   C_SURFACE_FEMethod *CFE_SURFACE;
   g_SURFACE_FEMethod *gFE_SURFACE;
   C_CORNER_FEMethod *CFE_CORNER;
@@ -883,24 +883,20 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	init = false;
 	ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
 	ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
-	ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-	if(cs) {
-	  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
-	}
 
 	ierr = mField.set_global_VecCreateGhost(problem_name,Col,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 	Range CornersEdgesNodes;
 	rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
 	CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
-	CFE_SURFACE = new C_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.C);
-	gFE_SURFACE = new g_SURFACE_FEMethod(moab,SurfacesFaces,proj_all_ctx.g);
+	CFE_SURFACE = new C_SURFACE_FEMethod(moab,proj_all_ctx.C);
+	gFE_SURFACE = new g_SURFACE_FEMethod(moab,proj_all_ctx.g);
 	CFE_CORNER = new C_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.C);
 	gFE_CORNER = new g_CORNER_FEMethod(moab,CornersNodes,proj_all_ctx.g);
 	if(cs) {
 	  //CRACK
-	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,CrackSurfacesFaces,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
-	  gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,CrackSurfacesFaces,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
+	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
+	  gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
 	}
 
 	ierr = MatSetOption(proj_all_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);

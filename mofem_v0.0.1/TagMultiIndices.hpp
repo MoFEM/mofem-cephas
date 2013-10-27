@@ -70,6 +70,12 @@ namespace MoFEM {
   struct BitProblemId_mi_tag {};
   struct MoFEMProblem_mi_tag {};
 
+
+  struct Composite_EntityType_And_ParentEntityType_mi_tag {};
+  struct Composite_EntityHandle_And_ParentEntityType_mi_tag {};
+  struct Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
+
+
 }
 
 #endif // __TAGMULTIINDICES_HPP__

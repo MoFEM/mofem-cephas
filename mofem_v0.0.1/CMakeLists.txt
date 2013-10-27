@@ -134,7 +134,6 @@ file(COPY
 enable_testing()
 include(CTest)
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
-add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
 

@@ -220,6 +220,15 @@ struct FieldInterface {
   virtual PetscErrorCode printCubitMaterials() = 0;
 
   /**
+  * \brief seed 2D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+  * 
+  * \param EntityHandle MeshSet
+  * \param BitRefLevel bitLevel
+  * 
+  */
+  virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+
+  /**
   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
   * 
   * \param EntityHandle MeshSet
@@ -311,12 +320,15 @@ struct FieldInterface {
   virtual PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,
     const bool recursive = false,int verb = -1) = 0;
 
-  /**\brief add FEs entities (Tets/Prisms) from ref level given by bit to meshset
+  /**\brief add all ents from ref level given by bit to meshset
    *
    * \param BitRefLevel bitLevel
-   * \param EntityHandle meshset
+   * \param BitRefLevel mask
+   * \param EntityType type of entities
+   * \param EntityHandle meshset   
+   *
    */
-  virtual PetscErrorCode refine_get_finite_elements(const BitRefLevel &bit,const EntityHandle meshset) = 0;
+  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
    *
@@ -460,6 +472,16 @@ struct FieldInterface {
      */  
   virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
   virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+
+
+  /** \brief add TRI entities fromm meshset to finite element database given by name
+   *
+   * \param range contains tetrahedrals
+   * \param name Finite Element name
+   * \param recursive if true parent meshset is searched recursively
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name) = 0;
+
 
   /** \brief add TET entities fromm meshset to finite element database given by name
    *
