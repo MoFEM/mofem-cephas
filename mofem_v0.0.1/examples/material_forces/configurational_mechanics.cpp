@@ -440,31 +440,17 @@ PetscErrorCode ConfigurationalMechanics::constrains_problem_definition(FieldInte
 
     Interface& moab = mField.get_moab();
 
-    //get meshset of triangles which are bit_level0				
-    EntityHandle refined_sideset_faces_meshset;
-    rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
 
-    //seed 2d elements for last ref elements
-    Range LevelFaces;
-    moab.get_entities_by_handle(refined_sideset_faces_meshset,LevelFaces,true);
-    Range AdjCrackFrontFaces;
-    rval = moab.get_adjacencies(CrackCornersEdges,2,false,AdjCrackFrontFaces,Interface::UNION); CHKERR_PETSC(rval);
-    CrackSurfacesFaces = subtract(CrackSurfacesFaces,AdjCrackFrontFaces);
-    Range LevelFacesSurfacesFaces;
-    LevelFacesSurfacesFaces = intersect(LevelFaces,SurfacesFaces);
-    Range LevelFacesCrackSurfacesFaces;
-    LevelFacesCrackSurfacesFaces = intersect(LevelFaces,CrackSurfacesFaces);
-    rval = moab.clear_meshset(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.add_entities(refined_sideset_faces_meshset,LevelFacesSurfacesFaces); CHKERR_PETSC(rval);
-    rval = moab.add_entities(refined_sideset_faces_meshset,LevelFacesCrackSurfacesFaces); CHKERR_PETSC(rval);
-    ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,bit_level0); CHKERRQ(ierr);
-    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(LevelFacesSurfacesFaces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(LevelFacesSurfacesFaces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
     if(cs) {
-      ierr = mField.add_ents_to_finite_element_by_TRIs(LevelFacesCrackSurfacesFaces,"C_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(LevelFacesCrackSurfacesFaces,"CTC_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
+      Range AdjCrackFrontFaces;
+      rval = moab.get_adjacencies(CrackCornersEdges,2,false,AdjCrackFrontFaces,Interface::UNION); CHKERR_PETSC(rval);
+      CrackSurfacesFaces = subtract(CrackSurfacesFaces,AdjCrackFrontFaces);
+      ierr = mField.seed_finite_elements(CrackSurfacesFaces); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesFaces,"C_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesFaces,"CTC_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
     }
 
     Range CrackCornersEdgesNodes;

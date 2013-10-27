@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
       ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }
 
-    EntityHandle refined_sideset_faces_meshset;
+    /*EntityHandle refined_sideset_faces_meshset;
     rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
     ierr = mField.refine_get_ents(bit_level1,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
     
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     rval = moab.clear_meshset(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
     rval = moab.add_entities(refined_sideset_faces_meshset,Level1Faces); CHKERR_PETSC(rval);
     ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,bit_level1); CHKERRQ(ierr);
-    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);*/
 
 
     problem_level = bit_level1;
@@ -298,6 +298,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",CornersEdges.size()); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",CornersNodes.size()); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
 
