@@ -975,9 +975,7 @@ PetscErrorCode ConfigurationalMechanics::griffith_force_vector(FieldInterface& m
     ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
   }
 
-  Range CrackSurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
-  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,CrackSurfacesFaces,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
+  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -1048,9 +1046,7 @@ PetscErrorCode ConfigurationalMechanics::griffith_g(FieldInterface& mField,strin
   //}
   //ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx->C); CHKERRQ(ierr);
 
-  Range CrackSurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
-  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,CrackSurfacesFaces,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
+  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -1160,12 +1156,10 @@ PetscErrorCode ConfigurationalMechanics::solve_material_problem(FieldInterface& 
   NL_MaterialFEMethodProjected MyMaterialFE(
     mField,*projSurfaceCtx,&myDirihletBCMaterial,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),alpha3);
 
-  Range CrackSurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
   Mat C_crack_fornt;
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
-  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,CrackSurfacesFaces,*projFrontCtx,"LAMBDA_CRACKFRONT_AREA");
-  Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,CrackSurfacesFaces,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"LAMBDA_CRACKFRONT_AREA");
+  Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,"LAMBDA_CRACKFRONT_AREA");
   MyCTgc.set_problem("MATERIAL_MECHANICS");
 
   FEMethod_DriverComplexForLazy_CoupledProjected Projection(mField,*projSurfaceCtx,&myDirihletBCMaterial,"MATERIAL_MECHANICS");
@@ -1259,12 +1253,10 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
   ierr = MyMeshSmoother.init_crack_front_data(false,true); CHKERRQ(ierr);
   ////******
 
-  Range CrackSurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
   Mat C_crack_fornt;
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
-  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,CrackSurfacesFaces,*projFrontCtx,"LAMBDA_CRACKFRONT_AREA");
-  Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,CrackSurfacesFaces,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"LAMBDA_CRACKFRONT_AREA");
+  Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,"LAMBDA_CRACKFRONT_AREA");
 
   FEMethod_DriverComplexForLazy_CoupledProjected Projection(mField,*projSurfaceCtx,&myDirihletBC,"COUPLED_PROBLEM");
   SnesCtx snes_ctx(mField,"COUPLED_PROBLEM");
