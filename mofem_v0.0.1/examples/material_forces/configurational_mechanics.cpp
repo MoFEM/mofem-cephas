@@ -1051,12 +1051,12 @@ PetscErrorCode ConfigurationalMechanics::griffith_g(FieldInterface& mField,strin
   ierr = MatAssemblyBegin(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  {
+  /*{
     //Matrix View
     MatView(projFrontCtx->C,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
     std::string wait;
     std::cin >> wait;
-  }
+  }*/
 
 
   Mat RT;
