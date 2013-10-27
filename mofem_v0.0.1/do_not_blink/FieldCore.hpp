@@ -178,6 +178,8 @@ struct FieldCore: public FieldInterface {
   }
 
   //refine
+  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
+  PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
   PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit);
@@ -228,6 +230,8 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
   PetscErrorCode modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
   PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
+  PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const BitFEId id);

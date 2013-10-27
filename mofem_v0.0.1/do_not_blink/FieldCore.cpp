@@ -385,12 +385,14 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
 	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,*eit));
 	pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
 	switch (moab.type_from_handle(*eit)) {
+	  case MBVERTEX:
+	    p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*p_ref_ent.first)));
+	  case MBEDGE:
+	    p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*p_ref_ent.first)));
 	  case MBTRI:
 	    p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ref_ent.first)));
-	    assert(p_MoFEMFiniteElement.first->get_BitRefEdges_ulong()!=-1);
 	  case MBTET:
 	    p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ref_ent.first)));
-	    assert(p_MoFEMFiniteElement.first->get_BitRefEdges_ulong()!=-1);
 	    break;
 	  case MBPRISM:
   	    p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ref_ent.first)));
@@ -1274,6 +1276,23 @@ PetscErrorCode FieldCore::list_problem() const {
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const BitFEId id) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  const EntityHandle idm = get_meshset_by_BitFEId(id);
+  rval = moab.add_entities(idm,vert.subset_by_type(MBVERTEX)); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const string &name) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  try {
+    ierr = add_ents_to_finite_element_by_VERTICEs(vert,get_BitFEId(name));  CHKERRQ(ierr);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::add_ents_to_finite_element_by_TRIs(const Range& tris,const BitFEId id) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
@@ -1442,28 +1461,27 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
     FieldSpace space = miit->get_space();
     //resolve antities on element
     switch (moab.type_from_handle(fe_ent)) {
-      case MBTRI: 
-	 switch (space) {
-	  case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
-  	   adj_ents.insert(nodes.begin(),nodes.end());
-	   for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) p.first->get_side_number_ptr(moab,*eeit);
-	   adj_ents.insert(faces.begin(),faces.end());
-	   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) p.first->get_side_number_ptr(moab,*fit);
-  	   adj_ents.insert(fe_ent);
+      case MBVERTEX:
+	switch (space) {
+	  case H1: 
+	    adj_ents.insert(fe_ent);
 	    break;
-  	  case Hdiv: if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
-  	  case Hcurl: if(faces.empty()) moab.get_adjacencies(&fe_ent,1,2,false,faces);
-    	  case L2:
-  	   SETERRQ(PETSC_COMM_SELF,1,"Hdiv, Hcurl and L2 not yet implemented, make pull request when you need that");
-  	   break;
-	  case NoField: {
-	      EntityHandle field_meshset = miit->get_meshset();
-	      adj_ents.insert(field_meshset);
-	   }
-	   break;
       	  default:
   	   SETERRQ(PETSC_COMM_SELF,1,"this fild is not implemented for TET finite element");
-	 }
+	}
+	break;
+      case MBTRI: 
+	switch (space) {
+	  case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
+	    adj_ents.insert(nodes.begin(),nodes.end());
+	    for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) p.first->get_side_number_ptr(moab,*eeit);
+	    adj_ents.insert(faces.begin(),faces.end());
+	    for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) p.first->get_side_number_ptr(moab,*fit);
+	    adj_ents.insert(fe_ent);
+	    break;
+      	  default:
+	    SETERRQ(PETSC_COMM_SELF,1,"this fild is not implemented for TET finite element");
+	}
 	break;
       case MBTET:
 	 switch (space) {
@@ -1560,38 +1578,6 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	 eit_eit = ent_ents.begin();
 	 for(;eit_eit!=ent_ents.end();eit_eit++) {
 	  switch (space) {
-	    case H1: 
-	      if(moab.type_from_handle(*eit_eit)!=MBENTITYSET) {
-		if(moab.dimension_from_handle(*eit_eit)>0) {
-		  rval = moab.get_connectivity(&*eit_eit,1,nodes,true); CHKERR_PETSC(rval);
-		  adj_ents.insert(nodes.begin(),nodes.end());
-		} else if(moab.type_from_handle(*eit_eit)==MBVERTEX) adj_ents.insert(*eit_eit);
-	      }
-	    case Hdiv: 
-	      if(moab.type_from_handle(*eit_eit)!=MBENTITYSET) {
-		if(moab.dimension_from_handle(*eit_eit)>1) {
-		  rval = moab.get_adjacencies(&*eit_eit,1,1,false,edges); CHKERR_PETSC(rval);
-		  adj_ents.insert(edges.begin(),edges.end());
-		} else if(moab.dimension_from_handle(*eit_eit)==1) {
-		  adj_ents.insert(*eit_eit);
-		}
-	      }
-	    case Hcurl: 
-	      if(moab.type_from_handle(*eit_eit)!=MBENTITYSET) {
-		if(moab.dimension_from_handle(*eit_eit)>=2) {
-		  rval = moab.get_adjacencies(&*eit_eit,1,2,false,faces); CHKERR_PETSC(rval);
-		  adj_ents.insert(faces.begin(),faces.end());
-		} else if(moab.dimension_from_handle(*eit_eit)==2) {
-		  adj_ents.insert(*eit_eit);
-		}
-	      }
-	    case L2:
-	      if(moab.type_from_handle(*eit_eit)!=MBENTITYSET) {
-		if(moab.dimension_from_handle(*eit_eit)==3) {
-		  adj_ents.insert(*eit_eit);
-		}
-	      }
-	    break;
 	    case NoField:
 	      if(moab.type_from_handle(*eit_eit)==MBENTITYSET) {
 		//if field (ii) has space NoField only add dofs which associated with the meshsets
@@ -1606,7 +1592,7 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	 }
 	 break;
 	 default:
-	  SETERRQ(PETSC_COMM_SELF,1,"this fild is not implemented for this type finite element");
+	  SETERRQ(PETSC_COMM_SELF,1,"this finite element type is not implemented");
     }
     Range::iterator eit2 = adj_ents.begin();
     for(;eit2!=adj_ents.end();eit2++) {
@@ -2606,6 +2592,36 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
   *build_MoFEM |= 1<<5;  
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::seed_finite_elements(const EntityHandle meshset,int verb) {
+  PetscFunctionBegin;
+  Range entities;
+  ierr = moab.get_entities_by_handle(meshset,entities,true); CHKERRQ(ierr);
+  ierr = seed_finite_elements(entities,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::seed_finite_elements(const Range &entities,int verb) {
+  PetscFunctionBegin;
+  for(Range::iterator eit = entities.begin();eit!=entities.end();eit++) {
+    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator 
+      eiit = refinedMoFemEntities.get<MoABEnt_mi_tag>().find(*eit);
+    if(eiit == refinedMoFemEntities.get<MoABEnt_mi_tag>().end())  SETERRQ(PETSC_COMM_SELF,1,"entity is not in database");
+    pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+    switch (eiit->get_ent_type()) {
+      case MBVERTEX: 
+	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*eiit)));	
+	break;
+      case MBEDGE: 
+	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*eiit)));	
+	break;
+      case MBTRI: 
+	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*eiit)));	
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
   PetscFunctionBegin; 
   if(verb==-1) verb = verbose;
@@ -2690,11 +2706,9 @@ PetscErrorCode FieldCore::seed_ref_level_3D(const EntityHandle meshset,const Bit
       switch (p_ent.first->get_ent_type()) {
         case MBTET: 
 	 p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));	
-	  assert(p_MoFEMFiniteElement.first->get_BitRefEdges_ulong()!=-1);
 	 break;
 	case MBPRISM:
 	  p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
-	  assert(p_MoFEMFiniteElement.first->get_BitRefEdges_ulong()!=-1);
 	  break;
         case MBENTITYSET:
 	  p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ent.first)));
