@@ -128,12 +128,27 @@ int main(int argc, char *argv[]) {
     ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
-    for(int ii = 0;ii<1;ii++) {
+    double alpha3_0 = 0;
+    PetscBool flg;
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-my_alpha3",&alpha3_0,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_alpha3 (what is fracture energy ?)");
+    }
+
+    double alpha3 = alpha3_0;
+    double reduction = 1,gamma = 1.2;
+    double nrm2_front_equlibrium_i = 0;
+    int its_d = 5;
+    for(int ii = 0;ii<20;ii++) {
+
+      alpha3 /= reduction;
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"alpha3 = %6.4e\n",alpha3); CHKERRQ(ierr);
+
 
       SNES snes;
       ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
 
-      ierr = conf_prob.solve_coupled_problem(mField,&snes,-1e-3,pow(1./(ii+1.),2)); CHKERRQ(ierr);
+      ierr = conf_prob.solve_coupled_problem(mField,&snes,-1e-3,alpha3); CHKERRQ(ierr);
 
       int its;
       ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
@@ -141,7 +156,7 @@ int main(int argc, char *argv[]) {
     
       ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-      //ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -149,9 +164,29 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
+      if(ii>0) {
+	reduction = pow((double)its_d/(double)(its+1),gamma);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
+      }
+
+      if(ii == 0) {
+	nrm2_front_equlibrium_i = conf_prob.nrm2_front_equlibrium;
+      }
+      if(ii > 0) {
+	if(nrm2_front_equlibrium_i < conf_prob.nrm2_front_equlibrium) break;
+	nrm2_front_equlibrium_i = conf_prob.nrm2_front_equlibrium;
+      }
+
+      PetscBool flg;
+      double gc;
+      ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+      if(flg != PETSC_TRUE) {
+	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+      }
+      if(fabs((gc+conf_prob.min_g)/gc)<1e-2) break;
+      if(fabs((gc+conf_prob.ave_g)/gc)<1e-3) break;
 
     }
-
 
   }
 

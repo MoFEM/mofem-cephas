@@ -73,7 +73,10 @@ struct ConfigurationalMechanics {
   PetscErrorCode set_coordinates_from_material_solution(FieldInterface& mField);
   PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes,double step_size);
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
+
+  double nrm2_front_equlibrium;
   PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double step_size,double alpha3);
+
   PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
   PetscErrorCode surface_projection_data(FieldInterface& mField,string problem);
@@ -81,7 +84,7 @@ struct ConfigurationalMechanics {
   PetscErrorCode front_projection_data(FieldInterface& mField,string problem);
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
-  PetscScalar ave_g;
+  PetscScalar ave_g,min_g;
   PetscErrorCode griffith_g(FieldInterface& mField,string problem);
 
   struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {
@@ -109,24 +112,36 @@ struct ConfigurationalMechanics {
     PetscErrorCode preProcess();
   };
 
-  /*struct ConstrainCrackForntEdges_FEMethid: public FieldInterface::FEMethod {
+  struct ConstrainCrackForntEdges_FEMethod: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
-    ConstrainCrackForntEdges_FEMethid(FieldInterface& _mField) {}
+    ConfigurationalMechanics *conf_prob;
 
-    Range crackFrontNodes; 
-    PetscErrorCode init_crack_front_data(bool _add_diag = false) {
-      PetscFunctionBegin;
-      add_diag = _add_diag;
-      Range crack_corners_edges;
-      ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
-      rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontNodes,true); CHKERR_PETSC(rval);
-      PetscFunctionReturn(0);
+    double alpha3;
+    ublas::vector<DofIdx> rowDofs,colDofs;
+    ublas::vector<FieldData> dofsX,coords;
+    ublas::vector<FieldData> delta0,delta;
+    ublas::vector<FieldData> f;
+    ublas::matrix<FieldData> K;
+
+    ConstrainCrackForntEdges_FEMethod(
+      FieldInterface& _mField,ConfigurationalMechanics *_conf_prob,double _alpha3): mField(_mField),conf_prob(_conf_prob),alpha3(_alpha3) {
+      rowDofs.resize(6);
+      colDofs.resize(6);
+      dofsX.resize(6);
+      coords.resize(6);
+      delta0.resize(3);
+      delta.resize(3);
+      f.resize(6);
+      K.resize(6,6);
     }
+    
 
+    PetscErrorCode preProcess();
+    PetscErrorCode operator()();
+    PetscErrorCode postProcess();
 
-
-  };*/
+  };
 
 
 };
