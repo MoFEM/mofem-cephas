@@ -78,13 +78,13 @@
 #include<petscts.h>
 
 //BLAS
-#ifdef __APPLE__
-  #include <Accelerate/Accelerate.h>
-  #include<lapack_wrap.h>
-#else 
+//#ifdef __APPLE__
+//  #include <Accelerate/Accelerate.h>
+//  #include<lapack_wrap.h>
+//#else 
   #include<cblas.h>
   #include<lapack_wrap.h>
-#endif
+//#endif
 
 //MOFEM
 #include<FEM.h>

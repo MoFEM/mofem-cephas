@@ -24,10 +24,10 @@ extern "C" {
 #ifndef __lapack__
 #define __lapack__
 
-#ifdef __APPLE__
-#endif
+//#ifdef __APPLE__
+//#endif
 
-#ifndef __APPLE__
+//#ifndef __APPLE__
 #if defined(__LP64__) /* In LP64 match sizes with the 32 bit ABI */
 typedef int 		__CLPK_integer;
 typedef int 		__CLPK_logical;
@@ -96,7 +96,7 @@ __CLPK_integer dpbtrs_ (
   char *uplo,__CLPK_integer *n,__CLPK_integer *kd,__CLPK_integer *nrhs,
   __CLPK_doublereal *ab,__CLPK_integer *ldab,__CLPK_doublereal *b,__CLPK_integer *ldb,__CLPK_integer *info);
 
-#endif
+//#endif
 
 inline static __CLPK_integer lapack_sgetrf (__CLPK_integer m,
   __CLPK_integer n, float *a, __CLPK_integer lda, __CLPK_integer *ipiv)
