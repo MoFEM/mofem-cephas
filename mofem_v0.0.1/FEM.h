@@ -31,13 +31,17 @@
 #include<petsclog.h>
 
 
-//#ifdef __APPLE__
-//  #include <Accelerate/Accelerate.h>
-//  #include<lapack_wrap.h>
-//#else 
+#ifdef __APPLE__
+  #ifdef __CBLAS__
+  #include<cblas.h>
+  #else  
+  #include <Accelerate/Accelerate.h>
+  #endif
+  #include<lapack_wrap.h>
+#else 
   #include<cblas.h>
   #include<lapack_wrap.h>
-//#endif
+#endif
 
 #define LAMBDA(E,NU) (E*NU/((1.+NU)*(1.-2.*NU)))
 #define MU(E,NU) (0.5*E/(1.+NU))

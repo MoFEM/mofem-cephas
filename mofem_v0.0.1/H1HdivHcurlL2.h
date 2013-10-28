@@ -17,13 +17,17 @@
 #ifndef __H1_H__
 #define __H1_H__
 
-//#ifdef __APPLE__
-//  #include <Accelerate/Accelerate.h>
-//  #include<lapack_wrap.h>
-//#else 
+#ifdef __APPLE__
+  #ifdef __CBLAS__
+  #include<cblas.h>
+  #else  
+  #include <Accelerate/Accelerate.h>
+  #endif
+  #include<lapack_wrap.h>
+#else 
   #include<cblas.h>
   #include<lapack_wrap.h>
-//#endif
+#endif
 
 /// number of dofs for L2 space
 #define NBVOLUME_L2(P) ((P+1)*(P+2)*(P+3)/6)
