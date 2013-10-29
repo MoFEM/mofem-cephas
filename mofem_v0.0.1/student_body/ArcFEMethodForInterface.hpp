@@ -198,7 +198,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);

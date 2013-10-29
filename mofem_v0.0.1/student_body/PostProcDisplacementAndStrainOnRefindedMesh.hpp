@@ -65,7 +65,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
-      ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+      ierr = PetscTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
       if(init_ref) PetscFunctionReturn(0);
@@ -167,7 +167,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      ierr = PetscGetTime(&v2); CHKERRQ(ierr);
+      ierr = PetscTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       ParallelComm* pcomm_post_proc = ParallelComm::get_pcomm(&moab_post_proc,MYPCOMM_INDEX);

@@ -167,8 +167,6 @@ using namespace boost::multiprecision;
 
 namespace MoFEM {
 
-PetscErrorCode PetscGetTime(PetscLogDouble *t);
-
 //CONSTS
 
 const int max_ApproximationOrder = 5;
