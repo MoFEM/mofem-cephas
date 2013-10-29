@@ -17,35 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include <petscksp.h>
-
-#include "SnesCtx.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "cholesky.hpp"
-#include <petscksp.h>
-
-#include "SnesCtx.hpp"
-#include "FEMethod_ComplexForLazy.hpp"
-#include "FEMethod_DriverComplexForLazy.hpp"
-
 #ifndef __ARCLEGHTTOOLS_HPP__
 #define __ARCLEGHTTOOLS_HPP__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <petsc-private/snesimpl.h>
-#ifdef __cplusplus
-}
-#endif
 
 namespace MoFEM {
 
@@ -65,6 +38,8 @@ struct ArcLenghtCtx_DataOnMesh {
     rval = moab.tag_get_by_ptr(th_dlambda,&root,1,tag_data_dlambda); CHKERR_THROW(rval);
   }
 };
+
+
 
 struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
 
@@ -177,6 +152,8 @@ struct MatShellCtx {
 
   friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 };
+
+
 PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -209,6 +186,7 @@ struct PCShellCtx {
   friend PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
   friend PetscErrorCode pc_setup_arc_length(PC pc);
 };
+
 PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -233,6 +211,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   ierr = MatCtx->set_lambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode pc_setup_arc_length(PC pc) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -247,137 +226,8 @@ PetscErrorCode pc_setup_arc_length(PC pc) {
   PetscFunctionReturn(0);
 }
 
-
-PetscErrorCode snes_apply_arc_lenght(_p_SNES *snes,Vec x) {
-  PetscFunctionBegin;
-
-  PetscErrorCode ierr;
-  
-  PetscInt           lits;
-  MatStructure       flg = DIFFERENT_NONZERO_PATTERN;
-  Vec                Y,F;
-  KSPConvergedReason kspreason;
-
-  ierr = SNESSetUpMatrices(snes);CHKERRQ(ierr);
-
-  snes->numFailures            = 0;
-  snes->numLinearSolveFailures = 0;
-  snes->reason                 = SNES_CONVERGED_ITERATING;
-  snes->iter                   = 0;
-  snes->norm                   = 0.0;
-
-  //PC pc;
-  PetscBool domainerror;
-  PetscReal fnorm,ynorm,xnorm;
-  PetscInt  maxits,i;
-
-  xnorm = 0;
-  maxits = snes->max_its;	/* maximum number of iterations */
-
-  F = snes->vec_func;
-  Y = snes->vec_sol_update;
-
-  ierr = SNESComputeFunction(snes,x,F);CHKERRQ(ierr);
-  if (snes->domainerror) {
-    snes->reason = SNES_DIVERGED_FUNCTION_DOMAIN;
-    PetscFunctionReturn(0);
-  }
-
-  if (!snes->norm_init_set) {
-    ierr = VecNormBegin(F,NORM_2,&fnorm);CHKERRQ(ierr);	/* fnorm <- ||F||  */
-    ierr = VecNormEnd(F,NORM_2,&fnorm);CHKERRQ(ierr);
-    if (PetscIsInfOrNanReal(fnorm)) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_FP,"User provided compute function generated a Not-a-Number");
-  } else {
-    fnorm = snes->norm_init;
-    snes->norm_init_set = PETSC_FALSE;
-  }
-  ierr = PetscObjectTakeAccess(snes);CHKERRQ(ierr);
-  snes->norm = fnorm;
-  ierr = PetscObjectGrantAccess(snes);CHKERRQ(ierr);
-  SNESLogConvHistory(snes,fnorm,0);
-  ierr = SNESMonitor(snes,0,fnorm);CHKERRQ(ierr);
-
-  /* set parameter for default relative tolerance convergence test */
-  snes->ttol = fnorm*snes->rtol;
-  /* test convergence */
-  ierr = (*snes->ops->converged)(snes,0,0.0,0.0,fnorm,&snes->reason,snes->cnvP);CHKERRQ(ierr);
-  if (snes->reason) PetscFunctionReturn(0);
-
-  for (i=0; i<maxits; i++) {
-
-    /* Call general purpose update function */
-    if (snes->ops->update) {
-      ierr = (*snes->ops->update)(snes, snes->iter);CHKERRQ(ierr);
-    }
-
-    /* Solve J Y = F, where J is Jacobian matrix */
-    ierr = SNESComputeJacobian(snes,x,&snes->jacobian,&snes->jacobian_pre,&flg);CHKERRQ(ierr);
-    ierr = KSPSetOperators(snes->ksp,snes->jacobian,snes->jacobian_pre,flg);CHKERRQ(ierr);
-
-    /* PC */
-    /*{
-      ierr = KSPGetPC(snes->ksp,&pc); CHKERRQ(ierr);
-      ierr = PCSetUp(pc); CHKERRQ(ierr);
-      void *void_pc_ctx;
-      ierr = PCShellGetContext(pc,&void_pc_ctx); CHKERRQ(ierr);
-      PCShellCtx *PCCtx = (PCShellCtx*)void_pc_ctx;
-      ierr = PCApply(PCCtx->pc,F,SnesCtx->arc_ptr->y_residual); CHKERRQ(ierr);
-      ierr = PCApply(PCCtx->pc,SnesCtx->arc_ptr->F_lambda,SnesCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
-
-    }*/
-
-    ierr = KSPSolve(snes->ksp,F,Y);CHKERRQ(ierr);
-    ierr = KSPGetConvergedReason(snes->ksp,&kspreason);CHKERRQ(ierr);
-    if (kspreason < 0 && ++snes->numLinearSolveFailures >= snes->maxLinearSolveFailures) {
-      ierr = PetscInfo2(snes,"iter=%D, number linear solve failures %D greater than current SNES allowed, stopping solve\n",snes->iter,snes->numLinearSolveFailures);CHKERRQ(ierr);
-      snes->reason = SNES_DIVERGED_LINEAR_SOLVE;
-    } 	else {
-      snes->reason = SNES_CONVERGED_ITS;
-    }
-    ierr = KSPGetIterationNumber(snes->ksp,&lits);CHKERRQ(ierr);
-    snes->linear_its += lits;
-    ierr = PetscInfo2(snes,"iter=%D, linear solve iterations=%D\n",snes->iter,lits);CHKERRQ(ierr);
-    snes->iter++;
-
-    /* Take the computed step. */
-    ierr = VecAXPY(x,-1.0,Y);CHKERRQ(ierr);
-
-    ierr = SNESComputeFunction(snes,x,F);CHKERRQ(ierr);
-    ierr = SNESGetFunctionDomainError(snes, &domainerror);CHKERRQ(ierr);
-    if (domainerror) {
-      snes->reason = SNES_DIVERGED_FUNCTION_DOMAIN;
-      PetscFunctionReturn(0);
-    }
-
-    ierr = VecNormBegin(F,NORM_2,&fnorm);CHKERRQ(ierr);	/* fnorm <- ||F||  */
-    ierr = VecNormEnd(F,NORM_2,&fnorm);CHKERRQ(ierr);
-    if (PetscIsInfOrNanReal(fnorm)) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_FP,"User provided compute function generated a Not-a-Number");
-    ierr = VecNormBegin(Y,NORM_2,&ynorm);CHKERRQ(ierr);	/* fnorm <- ||F||  */
-    ierr = VecNormEnd(Y,NORM_2,&ynorm);CHKERRQ(ierr);
-    if (PetscIsInfOrNanReal(ynorm)) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_FP,"User provided compute function generated a Not-a-Number");
-
-    /* Monitor convergence */
-    ierr = PetscObjectTakeAccess(snes);CHKERRQ(ierr);
-    snes->iter = i+1;
-    snes->norm = fnorm;
-
-    ierr = PetscObjectGrantAccess(snes);CHKERRQ(ierr);
-    SNESLogConvHistory(snes,snes->norm,lits);
-    ierr = SNESMonitor(snes,snes->iter,snes->norm);CHKERRQ(ierr);
-    /* Test for convergence, xnorm = || x || */
-    if (snes->ops->converged != SNESSkipConverged) { ierr = VecNorm(x,NORM_2,&xnorm);CHKERRQ(ierr); }
-    ierr = (*snes->ops->converged)(snes,snes->iter,xnorm,ynorm,fnorm,&snes->reason,snes->cnvP);CHKERRQ(ierr);
-    if (snes->reason) break;
-  }
-  if (i == maxits) {
-    ierr = PetscInfo1(snes,"Maximum number of iterations has been reached: %D\n",maxits);CHKERRQ(ierr);
-    if(!snes->reason) snes->reason = SNES_DIVERGED_MAX_IT;
-  }
-
-  PetscFunctionReturn(0);
-}
-
 }
 
 #endif // __ARCLEGHTTOOLS_HPP__
+
 

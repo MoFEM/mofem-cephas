@@ -232,6 +232,8 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
   PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const string &name);
+  PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const BitFEId id);

@@ -62,6 +62,9 @@ struct matPROJ_ctx {
     PetscLogEventRegister("ProjectionCTC_QTKQ",0,&USER_EVENT_projCTC_QTKQ);
   }
 
+
+  PetscReal rtol,abstol,dtol;
+  PetscInt maxits;
   Mat C,K;
   Vec g;
 

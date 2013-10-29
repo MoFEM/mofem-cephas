@@ -22,9 +22,12 @@ include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
 include(cmake/ExportFile.cmake)
 
+message(${PETSCVAR_CXX})
 
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} ) 
-set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
+string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
+message(${PETSCVAR_CXX_})
+set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
 
 include(cmake/ResolveCompilerPaths.cmake)
 
@@ -116,9 +119,7 @@ add_library(mofem_Field
 resolve_libraries(PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib 
-  ${PETSC_DIR}/${PETSC_ARCH}/lib/libpetsc.a
-  ${PETSCVAR_PACKAGES_LIBS}
-  ${PETSCVAR_PETSC_EXTERNAL_LIB_BASIC}
+  ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}

@@ -17,25 +17,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
 #include "FEMethod_UpLevelStudent.hpp"
-#include "cholesky.hpp"
-#include <petscksp.h>
-
 #include "ElasticFEMethod.hpp"
+#include "ElasticFEMethodForInterface.hpp"
+
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-#include "ElasticFEMethodForInterface.hpp"
-#include "ArcLeghtTools.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <petsc-private/snesimpl.h>
-#ifdef __cplusplus
-}
-#endif
+#include "SnesCtx.hpp"
+#include "ArcLeghtTools.hpp"
 
 namespace MoFEM {
 
@@ -198,7 +188,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);

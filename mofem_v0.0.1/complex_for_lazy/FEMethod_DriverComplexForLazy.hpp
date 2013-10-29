@@ -78,7 +78,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
@@ -399,7 +399,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
 
-    ierr = PetscGetTime(&v2); CHKERRQ(ierr);
+    ierr = PetscTime(&v2); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscFunctionReturn(0);
@@ -1046,7 +1046,7 @@ struct FEMethod_DriverComplexForLazy_MaterialProjected: public FEMethod_DriverCo
     PetscFunctionBegin;
 
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
@@ -1211,7 +1211,7 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
     PetscFunctionBegin;
 
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-    ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+    ierr = PetscTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:

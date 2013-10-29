@@ -76,6 +76,7 @@
 #include<petsclog.h>
 #include<petscsnes.h>
 #include<petscts.h>
+#include<petsctime.h>
 
 //BLAS
 #ifdef __APPLE__

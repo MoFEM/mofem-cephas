@@ -428,27 +428,17 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
 struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
   FieldInterface& mField;
+  string problem;
   string lambda_field_name;
   double gc;
   int verbose;
 
   matPROJ_ctx &proj_ctx;
-  string y_problem;
-  Snes_CTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),lambda_field_name(_lambda_field_name),verbose(_verbose),proj_ctx(_proj_all_ctx) {
-
-    y_problem = "C_ALL_MATRIX";
-
-  }
+  Snes_CTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _problem,string _lambda_field_name,int _verbose = 0):
+    mField(_mField),problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose),proj_ctx(_proj_all_ctx) {}
 
   ErrorCode rval;
   PetscErrorCode ierr;
-
-  PetscErrorCode set_problem(string _y_problem) {
-    PetscFunctionBegin;
-    y_problem = _y_problem;
-    PetscFunctionReturn(0);
-  }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -458,6 +448,21 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
     }
+
+    Vec D;
+    ierr = mField.VecCreateGhost(problem,Col,&D); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    Vec _D_;
+    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Col,&_D_); CHKERRQ(ierr);
+    ierr = VecScatterBegin(proj_ctx.scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterEnd(proj_ctx.scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost("C_CRACKFRONT_MATRIX",Col,_D_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecDestroy(&_D_); CHKERRQ(ierr);
+    ierr = VecDestroy(&D); CHKERRQ(ierr);
 
     C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,proj_ctx.C,PETSC_NULL,lambda_field_name);
 
@@ -488,20 +493,15 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     ierr = VecAssemblyEnd(LambdaVec); CHKERRQ(ierr);
     //ierr = VecView(LambdaVec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-    if("C_ALL_MATRIX" == y_problem) {
-      ierr = MatMultTransposeAdd(proj_ctx.C,LambdaVec,snes_f,snes_f); CHKERRQ(ierr);
-    } else {
-      Vec f;
-      ierr = mField.VecCreateGhost("C_ALL_MATRIX",Col,&f); CHKERRQ(ierr);
-      VecScatter ctx;
-      string x_problem = "C_ALL_MATRIX";
-      ierr = mField.VecScatterCreate(f,x_problem,MoFEM::Col,snes_f,y_problem,MoFEM::Row,&ctx,1); CHKERRQ(ierr);
-      ierr = MatMultTranspose(proj_ctx.C,LambdaVec,f); CHKERRQ(ierr);
-      ierr = VecScatterBegin(ctx,f,snes_f,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecScatterEnd(ctx,f,snes_f,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecDestroy(&f); CHKERRQ(ierr);
-      ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
-    }
+
+    Vec _f_;
+    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Col,&_f_); CHKERRQ(ierr);
+    ierr = MatMultTranspose(proj_ctx.C,LambdaVec,_f_); CHKERRQ(ierr);
+
+    ierr = VecScatterBegin(proj_ctx.scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(proj_ctx.scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+    ierr = VecDestroy(&_f_); CHKERRQ(ierr);
 
     ierr = VecDestroy(&LambdaVec); CHKERRQ(ierr);
 
