@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
-  //ierr = PetscTime(&v1); CHKERRQ(ierr);
-  //ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+  ierr = PetscTime(&v1); CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   FieldCore core(moab);
   FieldInterface& mField = core;

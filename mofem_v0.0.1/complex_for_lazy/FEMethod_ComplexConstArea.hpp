@@ -230,7 +230,6 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-    EntityHandle face = fe_ptr->get_ent();
     try {
 	ierr = getData(true); CHKERRQ(ierr);
     } catch (const std::exception& ex) {

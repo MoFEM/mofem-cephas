@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
       NTN = ublas::zero_matrix<FieldData>(RowN[0].size2(),ColN[0].size2());
       ublas::vector<FieldData> F;
       F = ublas::zero_vector<FieldData>(RowN[0].size2());
-      for(int gg = 0;gg<g_NTET.size()/4;gg++) {
+      for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) {
 	double w = G_TET_W45[gg];
 	assert(w == w);
 	NTN += w*V*prod(trans(RowN[gg]), ColN[gg]);

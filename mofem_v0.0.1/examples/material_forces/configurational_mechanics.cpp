@@ -824,7 +824,6 @@ PetscErrorCode ConfigurationalMechanics::surface_projection_data(FieldInterface&
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-  ErrorCode rval;
 
   Interface& moab = mField.get_moab();
 
