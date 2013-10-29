@@ -101,7 +101,8 @@ struct RefMoFEMEntity_change_add_bit {
  * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
  * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
- * \param ordered_non_unique Composite_mi_tag
+ * \param ordered_non_unique Composite_EntityType_And_ParentEntityType_mi_tag
+ * \param ordered_non_unique Composite_EntityHandle_And_ParentEntityType_mi_tag
  */
 typedef multi_index_container<
   RefMoFEMEntity,
@@ -115,13 +116,13 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<ParentEntType_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> >,
     ordered_non_unique<
-      tag<Composite_mi_tag>, 
+      tag<Composite_EntityType_And_ParentEntityType_mi_tag>, 
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
 	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
     ordered_non_unique<
-      tag<Composite_mi_tag2>, 
+      tag<Composite_EntityHandle_And_ParentEntityType_mi_tag>, 
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
@@ -159,6 +160,7 @@ struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMEleme
  * \param hashed_unique MoABEnt_mi_tag 
  * \param ordered_non_unique Meshset_mi_tag 
  * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
+ * \param ordered_non_unique Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag
  */
 typedef multi_index_container<
   ptrWrapperRefMoFEMElement,
@@ -170,7 +172,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefMoFEMElement::get_ent_type> >,
     ordered_non_unique<
-      tag<Composite_mi_tag>,
+      tag<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
       composite_key<
 	ptrWrapperRefMoFEMElement,
 	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent>,
@@ -253,6 +255,22 @@ struct MoFEMFiniteElement_row_change_bit_add {
 struct EntMoFEMFiniteElement_change_bit_add {
   BitFieldId f_id_data;
   EntMoFEMFiniteElement_change_bit_add(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+
+struct MoFEMFiniteElement_col_change_bit_off {
+  BitFieldId f_id_col;
+  MoFEMFiniteElement_col_change_bit_off(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+struct MoFEMFiniteElement_row_change_bit_off {
+  BitFieldId f_id_row;
+  MoFEMFiniteElement_row_change_bit_off(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+struct EntMoFEMFiniteElement_change_bit_off {
+  BitFieldId f_id_data;
+  EntMoFEMFiniteElement_change_bit_off(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
   void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
 };
 

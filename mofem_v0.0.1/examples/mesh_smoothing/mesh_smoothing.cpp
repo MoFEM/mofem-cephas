@@ -178,6 +178,10 @@ int main(int argc, char *argv[]) {
     meshref = PETSC_FALSE;
   }
 
+  EntityHandle skin_faces_meshset;
+  ierr = mField.get_msId_meshset(102,SideSet,skin_faces_meshset); CHKERRQ(ierr);
+  ierr = mField.seed_ref_level_2D(skin_faces_meshset,bit_level0); CHKERRQ(ierr);
+
   if(meshref == PETSC_TRUE) {
     //random mesh refinment
     EntityHandle meshset_ref_edges;
@@ -195,6 +199,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
     ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
 
+
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
       EntityHandle cubit_meshset = cubit_it->meshset; 
@@ -202,6 +207,23 @@ int main(int argc, char *argv[]) {
       ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
       ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }
+
+    EntityHandle refined_sideset_faces_meshset;
+    rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
+    ierr = mField.refine_get_ents(bit_level1,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
+    
+    Range SurfacesFaces;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+    Range Level1Faces;
+    moab.get_entities_by_handle(refined_sideset_faces_meshset,Level1Faces,true);
+    Level1Faces = intersect(Level1Faces,SurfacesFaces);
+    rval = moab.clear_meshset(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.add_entities(refined_sideset_faces_meshset,Level1Faces); CHKERR_PETSC(rval);
+    ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,bit_level1); CHKERRQ(ierr);
+    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
+
+
     problem_level = bit_level1;
   }
 
@@ -223,15 +245,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_col("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-  ierr = mField.modify_finite_element_add_field_row("C_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("C_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("C_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("C_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
-
-  ierr = mField.modify_finite_element_add_field_row("CTC_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("CTC_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("CTC_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
-
   ierr = mField.modify_finite_element_add_field_row("C_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("C_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("C_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -241,6 +254,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_col("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
 
+  ierr = mField.modify_finite_element_add_field_row("C_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("C_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("C_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("C_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
+
+  ierr = mField.modify_finite_element_add_field_row("CTC_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("CTC_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("CTC_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
+
+
   //define problems
   ierr = mField.add_problem("MESH_SMOOTHING"); CHKERRQ(ierr);
   ierr = mField.add_problem("CCT_ALL_MATRIX"); CHKERRQ(ierr);
@@ -249,8 +272,9 @@ int main(int argc, char *argv[]) {
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING","MESH_SMOOTHER"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_CORNER_ELEM"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_CORNER_ELEM"); CHKERRQ(ierr);
+
+  ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_SURFACE_ELEM"); CHKERRQ(ierr);
 
   //set refinment level for problem
@@ -272,24 +296,12 @@ int main(int argc, char *argv[]) {
     ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",CornersEdges.size()); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",CornersNodes.size()); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
-    if(SurfacesFaces.empty()) {
-      Skinner skin(&moab);
-      Range tets;
-      rval = moab.get_entities_by_type(0,MBTET,tets,true);  CHKERR_PETSC(rval);
-      rval = skin.find_skin(tets,false,SurfacesFaces); CHKERR(rval);
-      EntityHandle meshset;
-      ierr = mField.get_msId_meshset(102,SideSet,meshset); CHKERRQ(ierr);
-      rval = moab.add_entities(meshset,SurfacesFaces); CHKERR_PETSC(rval);
-      if(CornersNodes.empty()) {
-	Range Nodes;
-	rval = moab.get_connectivity(SurfacesFaces,Nodes,true);  CHKERR_PETSC(rval);
-	CornersNodes.insert(Nodes[0]);
-	ierr = mField.get_msId_meshset(101,NodeSet,meshset); CHKERRQ(ierr);
-	rval = moab.add_entities(meshset,CornersNodes); CHKERR_PETSC(rval);
-      }
-    }
+    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
+
+    if(SurfacesFaces.empty()) SETERRQ(PETSC_COMM_SELF,1,"no surface elements");
     Range SurfacesTets;
     rval = moab.get_adjacencies(SurfacesFaces,3,false,SurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
     {
@@ -299,15 +311,9 @@ int main(int argc, char *argv[]) {
       CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
       rval = moab.add_entities(cornersNodesMeshset,CornersNodes); CHKERR_PETSC(rval);
       //add surface elements
-      Range CornersTets;
-      rval = moab.get_adjacencies(CornersNodes,3,false,CornersTets,Interface::UNION); CHKERR_PETSC(rval);
-      EntityHandle CornersTetsMeshset;
-      rval = moab.create_meshset(MESHSET_SET,CornersTetsMeshset); CHKERR_PETSC(rval);	
-      rval = moab.add_entities(CornersTetsMeshset,CornersTets); CHKERR_PETSC(rval);
-      CornersTets = intersect(CornersTets,SurfacesTets);
-      ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"C_CORNER_ELEM"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_TETs(CornersTetsMeshset,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
-      rval = moab.delete_entities(&CornersTetsMeshset,1); CHKERR_PETSC(rval);
+      ierr = mField.seed_finite_elements(CornersNodes); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"C_CORNER_ELEM"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
     }
     {
       Range SurfacesNodes;
@@ -316,16 +322,9 @@ int main(int argc, char *argv[]) {
       rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
       SurfacesNodes = subtract(SurfacesNodes,CornersNodes);
       SurfacesNodes = subtract(SurfacesNodes,CornersEdgesNodes);
-      rval = moab.create_meshset(MESHSET_SET,surfacesFacesMeshset); CHKERR_PETSC(rval);	
+      rval = moab.create_meshset(MESHSET_SET,surfacesFacesMeshset); CHKERR_PETSC(rval);
       rval = moab.add_entities(surfacesFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
       rval = moab.add_entities(surfacesFacesMeshset,SurfacesNodes); CHKERR_PETSC(rval);
-      //add surface elements
-      EntityHandle SurfacesTetsMeshset;
-      rval = moab.create_meshset(MESHSET_SET,SurfacesTetsMeshset); CHKERR_PETSC(rval);	
-      rval = moab.add_entities(SurfacesTetsMeshset,SurfacesTets); CHKERR_PETSC(rval);
-      ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"C_SURFACE_ELEM"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_TETs(SurfacesTetsMeshset,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
-      rval = moab.delete_entities(&SurfacesTetsMeshset,1); CHKERR_PETSC(rval);
     }
   }
 
@@ -448,11 +447,21 @@ int main(int argc, char *argv[]) {
   PostProcVertexMethod ent_method_residual(moab,"MESH_NODE_POSITIONS",F,"RESIDUAL");
   ierr = mField.loop_dofs("MESH_SMOOTHING","MESH_NODE_POSITIONS",Row,ent_method_residual); CHKERRQ(ierr);
 
+  rval = moab.write_file("smoothed.h5m"); CHKERR_PETSC(rval);
+
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("MESH_SMOOTHING","MESH_SMOOTHER",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("C_ALL_MATRIX","C_SURFACE_ELEM",out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out_skin.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 

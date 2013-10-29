@@ -103,7 +103,7 @@ struct PotentialElem: public FEMethod_UpLevelStudent {
 	for(int cc = rr;cc<(1+6+4+1);cc++) {
 	  if(RowGlobDofs[cc].size()==0) continue;
 	  K.resize(RowGlobDofs[rr].size(),RowGlobDofs[cc].size());
-	  for(int gg = 0;gg<g_NTET.size()/4;gg++) {
+	  for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) {
 	    ublas::noalias(K) = prod( trans(diffRowNMatrix[rr][gg]),diffRowNMatrix[cc][gg] ); 
 	    K *= V*G_TET_W[gg];
 	    ierr = MatSetValues(A,

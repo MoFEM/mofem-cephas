@@ -104,6 +104,7 @@ add_library(mofem_Field
   student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
   student_body/FEMethod_SurfaceConstrains.cpp
   FieldInterface.cpp
+  SnesCtx.cpp
   FEM.c
   H1.c
   L2.c
@@ -133,7 +134,6 @@ file(COPY
 enable_testing()
 include(CTest)
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
-add_subdirectory("${PROJECT_SOURCE_DIR}/dirty_testing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
 

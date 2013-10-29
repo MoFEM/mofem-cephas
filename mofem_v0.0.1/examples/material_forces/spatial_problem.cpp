@@ -29,6 +29,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
+  try {
+
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   Core mb_instance;
@@ -48,7 +50,6 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     nb_ref_levels = 0;
   }
-
  
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
@@ -68,7 +69,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
   ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
 
-  ConfigurationalMechanics conf_prob;
+  Tag th_my_ref_level;
+  BitRefLevel def_bit_level = 0;
+  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
+    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  BitRefLevel *ptr_bit_level0;
+  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+
+  ConfigurationalMechanics conf_prob(mField);
 
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
@@ -118,16 +127,8 @@ int main(int argc, char *argv[]) {
       ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
       ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
     }
-
+  
   }
-
-  Tag th_my_ref_level;
-  BitRefLevel def_bit_level = 0;
-  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
-    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
-  const EntityHandle root_meshset = mField.get_moab().get_root_set();
-  BitRefLevel *ptr_bit_level0;
-  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
 
   BitRefLevel& bit_level0 = *ptr_bit_level0;
   bit_level0 = last_ref;
@@ -152,13 +153,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition problems
-  ierr = conf_prob.spatialPartitionProblems(mField); CHKERRQ(ierr);
+  ierr = conf_prob.spatial_partition_problems(mField); CHKERRQ(ierr);
 
   //solve problem
   ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
-  ierr = conf_prob.solve_spatial_problem(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
 
-
+  SNES snes;
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+  ierr = conf_prob.solve_spatial_problem(mField,&snes,-1e-3); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_spatial.h5m"); CHKERR_PETSC(rval);
@@ -179,6 +183,10 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
   PetscFinalize();
+
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
 
   return 0;
 }

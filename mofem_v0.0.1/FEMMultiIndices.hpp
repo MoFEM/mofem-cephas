@@ -31,11 +31,13 @@ namespace MoFEM {
  */
 struct RefMoFEMElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
-  BitRefEdges *tag_BitRefEdges;
+
+  static BitRefEdges DummyBitRefEdges;
+
   SideNumber_multiIndex side_number_table;
   RefMoFEMElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  inline const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
-  int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
+  inline const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
+  int get_BitRefEdges_ulong() const { return 0; }
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   virtual SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const {
     NOT_USED(moab);
@@ -59,22 +61,59 @@ struct RefMoFEMElement_MESHSET: public RefMoFEMElement {
  * \brief keeps data about abstract PRISM finite element
  */
 struct RefMoFEMElement_PRISM: public RefMoFEMElement {
+  BitRefEdges *tag_BitRefEdges;
   RefMoFEMElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
   const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  inline const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
+  int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
 };
 
 /**
  * \brief keeps data about abstract TET finite element
  */
 struct RefMoFEMElement_TET: public RefMoFEMElement {
+  BitRefEdges *tag_BitRefEdges;
   const int* tag_type_data;
   RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
   const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
+  inline const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
+  int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
   inline int get_ref_type() const { return tag_type_data[0]; }
   inline int get_ref_sub_type() const { return tag_type_data[1]; }
   friend ostream& operator<<(ostream& os,const RefMoFEMElement_TET& e);
+};
+
+/**
+ * \brief keeps data about abstract TRI finite element
+ */
+struct RefMoFEMElement_TRI: public RefMoFEMElement {
+  RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
+  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  friend ostream& operator<<(ostream& os,const RefMoFEMElement_TRI& e);
+};
+
+/**
+ * \brief keeps data about abstract EDGE finite element
+ */
+struct RefMoFEMElement_EDGE: public RefMoFEMElement {
+  RefMoFEMElement_EDGE(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
+  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  friend ostream& operator<<(ostream& os,const RefMoFEMElement_EDGE& e);
+};
+
+/**
+ * \brief keeps data about abstract VERTEX finite element
+ */
+struct RefMoFEMElement_VERTEX: public RefMoFEMElement {
+  RefMoFEMElement_VERTEX(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
+  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  friend ostream& operator<<(ostream& os,const RefMoFEMElement_VERTEX& e);
 };
 
 /**

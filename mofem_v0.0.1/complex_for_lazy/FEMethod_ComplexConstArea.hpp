@@ -1,4 +1,3 @@
-
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
@@ -25,6 +24,14 @@
 //#include "FieldCore.hpp"
 //#include "complex_for_lazy.h"
 #include <math.h>
+
+extern "C" {
+void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
+  double circumcenter[3],double *xi,double *eta,double *zeta);
+void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
+  double circumcenter[3],double *xi,double *eta);
+}
+
 //#include <complex>
 
 namespace MoFEM {
@@ -43,93 +50,86 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   Interface& moab;
 
   Mat C,Q;
-  Range surface;
   string lambda_field_name;
   int verbose;
 
-  C_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Range &_surface,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),moab(_mField.get_moab()),C(_C),Q(_Q),surface(_surface),lambda_field_name(_lambda_field_name),verbose(_verbose) { 
+  C_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
+    mField(_mField),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) { 
     diffNTRI.resize(3,2);
     ShapeDiffMBTRI(&*diffNTRI.data().begin());
-    g_NTRI3.resize(1,3);
-    ShapeMBTRI(&*g_NTRI3.data().begin(),G_TRI_X1,G_TRI_Y1,1);
     G_TRI_W = G_TRI_W1;
+
+    dofs_X.resize(9);
+    Lambda.resize(3);
+    lambda_dofs_row_indx.resize(3);
+    disp_dofs_row_idx.resize(9);
+    disp_dofs_col_idx.resize(9);
+
+    coords.resize(9);
+
   }
 
   ublas::matrix<double> diffNTRI;
-  ublas::matrix<double> g_NTRI3;
   const double *G_TRI_W;
   ublas::vector<double> coords;
-  ublas::vector<double> normal0;
 
-  ublas::vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
+  ublas::vector<DofIdx> disp_dofs_col_idx,disp_dofs_row_idx,lambda_dofs_row_indx;
   ublas::vector<double,ublas::bounded_array<double,9> > dofs_X;
   ublas::vector<double,ublas::bounded_array<double,3> > Lambda;
 
-  PetscErrorCode getData(SideNumber_multiIndex::nth_index<1>::type::iterator siit) {
+  PetscErrorCode getData(bool is_that_C_otherwise_dC) {
     PetscFunctionBegin;
     try {
-    EntityHandle face = siit->ent;
-    dofs_X.resize(9);
-    Lambda.resize(3);
-    ent_global_row_indices.resize(3);
-    ent_global_col_indices.resize(9);
+
+    EntityHandle face = fe_ptr->get_ent();
+    fill(lambda_dofs_row_indx.begin(),lambda_dofs_row_indx.end(),-1);
+    fill(disp_dofs_row_idx.begin(),disp_dofs_row_idx.end(),-1);
+    fill(disp_dofs_col_idx.begin(),disp_dofs_col_idx.end(),-1);
     const EntityHandle* conn_face; 
     int num_nodes; 
     rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
     if(num_nodes != 3) SETERRQ(PETSC_COMM_SELF,1,"face should have three nodes");
     for(int nn = 0;nn<num_nodes;nn++) {
+      if(is_that_C_otherwise_dC) { // it is C
+	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
+	dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	if(distance(dit,hi_dit)>0) {
+	  if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
+	  if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	  Lambda[nn] = dit->get_FieldData();
+	  lambda_dofs_row_indx[nn] = dit->get_petsc_gloabl_dof_idx();
+	}
+      } else { // it is dC
+	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
+	dit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	hi_dit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	if(distance(dit,hi_dit)>0) {
+	  if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
+	  Lambda[nn] = dit->get_FieldData();
+	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator diit,hi_diit;
+	  diit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	  hi_diit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	  if(distance(diit,hi_diit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
+	  for(;diit!=hi_diit;diit++) {
+	    if(diit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	    assert(nn*3+diit->get_dof_rank()<9);
+	    disp_dofs_row_idx[nn*3+diit->get_dof_rank()] = diit->get_petsc_gloabl_dof_idx();
+	  }
+	}
+      }
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
-      dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-      hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-      int NN = nn;
-      if(siit->sense!=1) {
-	if(nn == 1) NN = 2;
-	if(nn == 2) NN = 1;
-      } 
-      try {
-      if(distance(dit,hi_dit)==0) {
-  	ent_global_row_indices[NN] = -1;
-      } else {
-  	if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
-	Lambda[NN] = dit->get_FieldData();
-  	int global_idx = dit->get_petsc_gloabl_dof_idx();
-  	ent_global_row_indices[NN] = global_idx;
-  	int local_idx = dit->get_petsc_local_dof_idx();
-  	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
-      }
-      } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
       dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
       hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
       if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
-      try {
       for(;dit!=hi_dit;dit++) {
-  	dofs_X[NN*3+dit->get_dof_rank()] = dit->get_FieldData();
-  	int global_idx = dit->get_petsc_gloabl_dof_idx();
-  	assert(NN*3+dit->get_dof_rank()<9);
-	if(ent_global_row_indices[NN] == -1) {
-	  ent_global_col_indices[NN*3+dit->get_dof_rank()] = -1;
-	} else {
-	  ent_global_col_indices[NN*3+dit->get_dof_rank()] = global_idx;
-	}
-  	int local_idx = dit->get_petsc_local_dof_idx();
-  	if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
-      }
-      } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	dofs_X[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
+	assert(nn*3+dit->get_dof_rank()<9);
+	disp_dofs_col_idx[nn*3+dit->get_dof_rank()] = dit->get_petsc_gloabl_dof_idx();
       }
     }
-    coords.resize(num_nodes*3);
-    rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
-    normal0.resize(3);
-    ierr = ShapeFaceNormalMBTRI(&*diffNTRI.data().begin(),&coords.data()[0],&normal0.data()[0]); CHKERRQ(ierr);
-    normal0 *= siit->sense;
+
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -138,13 +138,13 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calulate_CONROL_AREA(double *diffNTRI,double *dofs_iX,double *C,double *iC) {
+  PetscErrorCode calcDirevatives(double *diffNTRI,double *dofs_iX,double *C,double *iC) {
     PetscFunctionBegin;
     __CLPK_doublecomplex x_dofs_X[9];
     for(int nn = 0;nn<3;nn++) {
       for(int dd = 0;dd<3;dd++) {
         x_dofs_X[nn*3+dd].r = dofs_X[nn*3+dd];
-        if(dofs_iX!=NULL) {
+        if(dofs_iX != NULL) {
 	  x_dofs_X[nn*3+dd].i = dofs_iX[nn*3+dd];
 	} else {
 	  x_dofs_X[nn*3+dd].i = 0;
@@ -230,45 +230,41 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-    SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
-    SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
-    SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-    ublas::vector<double> ELEM_CONSTRAIN(9);
-    for(;siit!=hi_siit;siit++) {
-      EntityHandle face = siit->ent;
-      if(find(surface.begin(),surface.end(),face) == surface.end()) continue;
-      try {
-	ierr = getData(siit); CHKERRQ(ierr);
-      } catch (const std::exception& ex) {
+    EntityHandle face = fe_ptr->get_ent();
+    try {
+	ierr = getData(true); CHKERRQ(ierr);
+    } catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
 	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      };
-      try {
-	ierr = calulate_CONROL_AREA(&*diffNTRI.data().begin(),NULL,&*ELEM_CONSTRAIN.data().begin(),NULL); CHKERRQ(ierr);
+    };
+    try {
+	ublas::vector<double> ELEM_CONSTRAIN(9);
+	ierr = calcDirevatives(
+	  &*diffNTRI.data().begin(),NULL,&*ELEM_CONSTRAIN.data().begin(),NULL); CHKERRQ(ierr);
 	for(int nn = 0;nn<3;nn++) {
-	  if(ent_global_row_indices[nn]==-1) continue;
+	  if(lambda_dofs_row_indx[nn]==-1) continue;
 	  for(int NN = 0;NN<3;NN++) {
 	    if(NN!=nn) continue;
 	    if(Q == PETSC_NULL) {
 	      ierr = MatSetValues(C,
-		1,&(ent_global_row_indices.data()[nn]),
-		3,&(ent_global_col_indices.data()[3*NN]),
+		1,&(lambda_dofs_row_indx.data()[nn]),
+		3,&(disp_dofs_col_idx.data()[3*NN]),
 		&ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
 	    }
 	    if(Q != PETSC_NULL) {
-	      if(mapV.find(ent_global_row_indices[nn])==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	      ierr = VecSetValues(mapV[ent_global_row_indices[nn]],3,&(ent_global_col_indices.data()[3*NN]),
+	      if(mapV.find(lambda_dofs_row_indx[nn])==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      ierr = VecSetValues(mapV[lambda_dofs_row_indx[nn]],
+		3,&(disp_dofs_col_idx.data()[3*NN]),
 		&ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
 	    }
 	  }	
 	}
-      } catch (const std::exception& ex) {
+    } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }; 
-    }
+    }; 
     PetscFunctionReturn(0);
   }
   
@@ -279,6 +275,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       Vec Qv;
       ierr = mField.VecCreateGhost(problem_ptr->get_name(),Col,&Qv); CHKERRQ(ierr);
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,lambda_field_name,dofs)) {
+	if(mapV.find(dofs->get_petsc_gloabl_dof_idx())==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	ierr = VecAssemblyBegin(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
 	ierr = MatMult(Q,mapV[dofs->get_petsc_gloabl_dof_idx()],Qv); CHKERRQ(ierr);
@@ -290,6 +287,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  vector<DofIdx> glob_idx;
 	  vector<double> vals;
 	  for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_ENT_FOR_LOOP_(problem_ptr,dofs->get_ent(),diit)) {
+	    if(diit->get_name() != "MESH_NODE_POSITIONS") continue;
 	    glob_idx.push_back(diit->get_petsc_gloabl_dof_idx());
 	    vals.push_back(array[diit->get_petsc_local_dof_idx()]);
 	  }
@@ -314,14 +312,235 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   * Calulate direcative of dA^2/dX^2 
   *
   */
-/*struct dC_CONSTANT_AREA_FEMethod: public  dC_CONSTANT_AREA_FEMethod {
+struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
 
-  Mat dC;
-  dC_CONSTANT_AREA_FEMethod(Interface& _moab,Range &_surface,Mat _dC,string _lambda_field_name,int _verbose = 0);
+  Mat dCT;
+  double gc;  
+  const double eps;
+
+  dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _dCT,string _lambda_field_name,double _gc,int _verbose = 0):
+    C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),gc(_gc),eps(1e-5) {}
+
+  //Vec diag;
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    ierr = C_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
+
+    PetscBool flg;
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+    }
+
+    //ierr = mField.VecCreateGhost(problem_ptr->get_name(),Row,&diag); CHKERRQ(ierr);
+    //ierr = VecSetOption(diag,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
+    //ierr = VecZeroEntries(diag); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    EntityHandle face = fe_ptr->get_ent();
+    try {
+	ierr = getData(false); CHKERRQ(ierr);
+    } catch (const std::exception& ex) {
+	  ostringstream ss;
+	  ss << "thorw in method: " << ex.what() << endl;
+	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+    try {
+	double center[3]; 
+	const EntityHandle* conn_face; 
+	int num_nodes; 
+	rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+	rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+	tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
+	cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
+	double r = cblas_dnrm2(3,center,1);
+	for(int NN = 0;NN<3;NN++) {
+	  for(int dd = 0;dd<3;dd++) {
+	    ublas::vector<double> idofs_X(9,0);
+	    idofs_X[NN*3+dd] = r*eps;
+	    ublas::vector<double> dELEM_CONSTRAIN(9);
+	    ierr = calcDirevatives(&*diffNTRI.data().begin(),
+	      &*idofs_X.data().begin(),NULL,&*dELEM_CONSTRAIN.data().begin()); CHKERRQ(ierr);
+	    dELEM_CONSTRAIN /= r*eps;
+	    /*cerr << idofs_X << endl;
+	    cerr << dELEM_CONSTRAIN << endl;
+	    cerr << lambda_dofs_row_indx << endl;
+	    cerr << disp_dofs_row_idx << endl;
+	    cerr << disp_dofs_col_idx << endl;*/
+	    dELEM_CONSTRAIN *= gc;
+	    //cerr << dELEM_CONSTRAIN << endl;
+	    ierr = MatSetValues(dCT,
+	      9,&(disp_dofs_row_idx.data()[0]),
+	      1,&(disp_dofs_col_idx.data()[3*NN+dd]),
+		&dELEM_CONSTRAIN.data()[0],ADD_VALUES); CHKERRQ(ierr);
+	    /*for(int ddd = 0;ddd<9;ddd++) {
+	      if(ddd != NN*3+dd) continue;
+	      ierr = VecSetValue(diag,
+		disp_dofs_row_idx.data()[ddd],
+		dELEM_CONSTRAIN.data()[ddd],ADD_VALUES); CHKERRQ(ierr);
+	    }*/
+	  }
+	}
+    } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "thorw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    } 
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+
+    //ierr = VecAssemblyBegin(diag); CHKERRQ(ierr);
+    //ierr = VecAssemblyEnd(diag); CHKERRQ(ierr);
+
+    /*Range crack_corners_edges,crackFrontNodes;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
+    rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontNodes,true); CHKERR_PETSC(rval);
+
+    double *array_diag;
+    ierr = VecGetArray(diag,&array_diag); CHKERRQ(ierr);
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"MESH_NODE_POSITIONS",dof)) {
+      if(dof->get_part()!=pcomm->rank()) continue;
+      EntityHandle ent = dof->get_ent();
+      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),ent) != crackFrontNodes.end()) {
+	PetscPrintf(PETSC_COMM_WORLD,"dCTgc diag: ent %ld dof %d rank %d diag %6.4e\n",
+	  dof->get_ent(),
+	  dof->get_petsc_local_dof_idx(),dof->get_dof_rank(),
+	  array_diag[dof->get_petsc_local_dof_idx()]);
+      }
+    }
+    ierr = VecRestoreArray(diag,&array_diag); CHKERRQ(ierr);*/
+    //ierr = VecDestroy(&diag); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+  
+};
+
+struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
+
+  FieldInterface& mField;
+  string lambda_field_name;
+  double gc;
+  int verbose;
+
+  matPROJ_ctx &proj_ctx;
+  string y_problem;
+  Snes_CTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
+    mField(_mField),lambda_field_name(_lambda_field_name),verbose(_verbose),proj_ctx(_proj_all_ctx) {
+
+    y_problem = "C_ALL_MATRIX";
+
+  }
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  PetscErrorCode set_problem(string _y_problem) {
+    PetscFunctionBegin;
+    y_problem = _y_problem;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    PetscBool flg;
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+    }
+
+    C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,proj_ctx.C,PETSC_NULL,lambda_field_name);
+
+    ierr = MatSetOption(proj_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = MatSetOption(proj_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
+    ierr = MatZeroEntries(proj_ctx.C); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(proj_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(proj_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    /*{
+      //Matrix View
+      MatView(C,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+      std::string wait;
+      std::cin >> wait;
+    }*/
+
+    Vec LambdaVec;
+    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Row,&LambdaVec); CHKERRQ(ierr);
+    const MoFEMProblem *front_problem_ptr;
+    ierr = mField.get_problem("C_CRACKFRONT_MATRIX",&front_problem_ptr); CHKERRQ(ierr);
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(front_problem_ptr,"LAMBDA_CRACKFRONT_AREA",dit)) {
+      if(dit->get_part()!=pcomm->rank()) continue;
+      ierr = VecSetValue(LambdaVec,dit->get_petsc_gloabl_dof_idx(),gc,INSERT_VALUES); CHKERRQ(ierr);
+    }
+    ierr = VecAssemblyBegin(LambdaVec); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(LambdaVec); CHKERRQ(ierr);
+    //ierr = VecView(LambdaVec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+    if("C_ALL_MATRIX" == y_problem) {
+      ierr = MatMultTransposeAdd(proj_ctx.C,LambdaVec,snes_f,snes_f); CHKERRQ(ierr);
+    } else {
+      Vec f;
+      ierr = mField.VecCreateGhost("C_ALL_MATRIX",Col,&f); CHKERRQ(ierr);
+      VecScatter ctx;
+      string x_problem = "C_ALL_MATRIX";
+      ierr = mField.VecScatterCreate(f,x_problem,MoFEM::Col,snes_f,y_problem,MoFEM::Row,&ctx,1); CHKERRQ(ierr);
+      ierr = MatMultTranspose(proj_ctx.C,LambdaVec,f); CHKERRQ(ierr);
+      ierr = VecScatterBegin(ctx,f,snes_f,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecScatterEnd(ctx,f,snes_f,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecDestroy(&f); CHKERRQ(ierr);
+      ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
+    }
+
+    ierr = VecDestroy(&LambdaVec); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
+
+  matPROJ_ctx &proj_ctx;
+
+  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
+    dCTgc_CONSTANT_AREA_FEMethod(_mField,_proj_all_ctx.K,_lambda_field_name,_verbose),proj_ctx(_proj_all_ctx) { }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    ierr = dCTgc_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
+
+    ierr = MatAssemblyBegin(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+
+    ierr = dCTgc_CONSTANT_AREA_FEMethod::postProcess(); CHKERRQ(ierr);
+
+    ierr = MatAssemblyBegin(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+   
+    PetscFunctionReturn(0);
+  }
 
 
-};*/
-
+};
 
 }
 

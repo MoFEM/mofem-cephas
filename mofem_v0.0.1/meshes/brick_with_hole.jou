@@ -1,8 +1,8 @@
 reset
 
-create torus major radius 1 minor radius 0.2 
-webcut volume 1 with plane xplane offset 0 noimprint nomerge 
-delete volume 2
+brick x 1 y 1 z 1
+create sphere radius 0.2 
+subtract volume 2 from volume 1 
 
 block 1 volume 1 
 block 1 name 'PotentialFlow'
@@ -12,8 +12,6 @@ nodeset 2 name 'ZeroPressure'
 
 create pressure  on surface 2 magnitude 1
 create pressure  on surface 3 magnitude -1
-
-#create Displacement  on vertex 1 dof all fix 0 
 
 volume all scheme Tetmesh
 volume all size auto factor 10
