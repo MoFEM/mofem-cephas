@@ -76,6 +76,7 @@
 #include<petsclog.h>
 #include<petscsnes.h>
 #include<petscts.h>
+#include<petsctime.h>
 
 //BLAS
 #ifdef __APPLE__
@@ -165,6 +166,8 @@ using namespace boost::multi_index;
 using namespace boost::multiprecision;
 
 namespace MoFEM {
+
+PetscErrorCode PetscGetTime(PetscLogDouble *t);
 
 //CONSTS
 

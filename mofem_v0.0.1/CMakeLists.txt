@@ -22,9 +22,12 @@ include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
 include(cmake/ExportFile.cmake)
 
+message(${PETSCVAR_CXX})
 
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} ) 
-set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX})
+string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
+message(${PETSCVAR_CXX_})
+set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
 
 include(cmake/ResolveCompilerPaths.cmake)
 
