@@ -256,7 +256,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
     double def_VAL[9] = {0.0,0.0,0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
     double def_VAL2[3] = { 0.0, 0.0, 0.0 };
     rval = moab_post_proc.tag_get_handle("STRESS_VAL",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT",3,MB_TYPE_DOUBLE,th_prin_stress_vect,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT1",3,MB_TYPE_DOUBLE,th_prin_stress_vect,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
 
     // See FEAP - - A Finite Element Analysis Program
     D_lambda = ublas::zero_matrix<FieldData>(6,6);
@@ -329,6 +329,8 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
   /*ublas::vector< FieldData > prin_stress_vect = eigen_values;*/
 
   rval = moab_post_proc.tag_set_data(th_prin_stress_vect,&mit->second,1,&(prin_stress_vect.data()[0])); CHKERR_PETSC(rval);
+
+  
 
       }
 
