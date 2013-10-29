@@ -17,35 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include <petscksp.h>
-
-#include "SnesCtx.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "cholesky.hpp"
-#include <petscksp.h>
-
-#include "SnesCtx.hpp"
-#include "FEMethod_ComplexForLazy.hpp"
-#include "FEMethod_DriverComplexForLazy.hpp"
-
 #ifndef __ARCLEGHTTOOLS_HPP__
 #define __ARCLEGHTTOOLS_HPP__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <petsc-private/snesimpl.h>
-#ifdef __cplusplus
-}
-#endif
 
 namespace MoFEM {
 
@@ -65,6 +38,8 @@ struct ArcLenghtCtx_DataOnMesh {
     rval = moab.tag_get_by_ptr(th_dlambda,&root,1,tag_data_dlambda); CHKERR_THROW(rval);
   }
 };
+
+
 
 struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
 
@@ -177,6 +152,8 @@ struct MatShellCtx {
 
   friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 };
+
+
 PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -209,6 +186,7 @@ struct PCShellCtx {
   friend PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
   friend PetscErrorCode pc_setup_arc_length(PC pc);
 };
+
 PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -233,6 +211,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   ierr = MatCtx->set_lambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode pc_setup_arc_length(PC pc) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -247,8 +226,8 @@ PetscErrorCode pc_setup_arc_length(PC pc) {
   PetscFunctionReturn(0);
 }
 
-
 }
 
 #endif // __ARCLEGHTTOOLS_HPP__
+
 

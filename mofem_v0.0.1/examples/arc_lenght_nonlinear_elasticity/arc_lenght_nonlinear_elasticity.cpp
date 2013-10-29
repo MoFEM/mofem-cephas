@@ -17,12 +17,18 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FEMethod_ArcLenghtDriverComplexForLazy.hpp"
+
 
 static char help[] = "\
 -my_file mesh file name\n\
 -my_sr reduction of step size\n\
 -my_ms maximal number of steps\n\n";
+
+
+#include "PostProcVertexMethod.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "FEMethod_DriverComplexForLazy.hpp"
+#include "FEMethod_ArcLenghtDriverComplexForLazy.hpp"
 
 using namespace MoFEM;
 
@@ -162,6 +168,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
   }
 
+
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
 
@@ -174,6 +181,7 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
+
   //partition
   ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -185,13 +193,18 @@ int main(int argc, char *argv[]) {
   //print block sets with materials
   ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
 
+
+
   //create matrices
   Vec F;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-  
+
+    
   ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
+
+
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);

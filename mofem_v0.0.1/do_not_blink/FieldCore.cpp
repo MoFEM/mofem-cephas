@@ -958,7 +958,7 @@ PetscErrorCode FieldCore::dofs_L2H1HcurlHdiv(const BitFieldId id,int &dof_counte
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::build_fields(int verb) {
-  PetscFunctionBegin;
+  //PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   field_set_by_id &set_id = moabFields.get<BitFieldId_mi_tag>();
@@ -991,7 +991,8 @@ PetscErrorCode FieldCore::build_fields(int verb) {
   }
   PetscPrintf(PETSC_COMM_WORLD,"Nb. dofs %u\n",dofsMoabField.size());
   *build_MoFEM = 1<<0;
-  PetscFunctionReturn(0);
+  //PetscFunctionReturn(0);
+  return 0;
 }
 PetscErrorCode FieldCore::list_dof_by_id(const BitFieldId id) const {
   PetscFunctionBegin;
