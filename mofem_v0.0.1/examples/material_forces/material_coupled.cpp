@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
-  ierr = PetscGetTime(&v1); CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+  //ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+  //ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   FieldCore core(moab);
   FieldInterface& mField = core;
@@ -173,7 +173,12 @@ int main(int argc, char *argv[]) {
 	nrm2_front_equlibrium_i = conf_prob.nrm2_front_equlibrium;
       }
       if(ii > 0) {
-	if(nrm2_front_equlibrium_i < conf_prob.nrm2_front_equlibrium) break;
+	if(nrm2_front_equlibrium_i < conf_prob.nrm2_front_equlibrium) {
+	  ierr = PetscPrintf(PETSC_COMM_WORLD,
+	    "stop: nrm2_front_equlibrium_i < conf_prob.nrm2_front_equlibrium = %6.4e,%6.4e\n",
+	    nrm2_front_equlibrium_i,conf_prob.nrm2_front_equlibrium); CHKERRQ(ierr);
+	  break;
+	}
 	nrm2_front_equlibrium_i = conf_prob.nrm2_front_equlibrium;
       }
 
@@ -183,8 +188,18 @@ int main(int argc, char *argv[]) {
       if(flg != PETSC_TRUE) {
 	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
       }
-      if(fabs((gc+conf_prob.min_g)/gc)<1e-2) break;
-      if(fabs((gc+conf_prob.ave_g)/gc)<1e-3) break;
+      if(
+	( fabs((gc+conf_prob.min_g)/gc)<1e-2 )&&
+	( fabs((gc+conf_prob.max_g)/gc)<1e-2 ) ) {
+	ierr = PetscPrintf(PETSC_COMM_WORLD,
+	  "stop: (gc+conf_prob.min/max_g)/gc = %6.4e,%6.4e\n",
+	  (gc+conf_prob.min_g)/gc,(gc+conf_prob.max_g)/gc); CHKERRQ(ierr);
+	break;
+      }
+      if(fabs((gc+conf_prob.ave_g)/gc)<1e-3) {
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"stop: (gc+conf_prob.ave_g)/gc = %6.4e\n",(gc+conf_prob.ave_g)/gc); CHKERRQ(ierr);
+	break;
+      }
 
     }
 
@@ -200,8 +215,8 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  ierr = PetscGetTime(&v2);CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
+  //ierr = PetscGetTime(&v2);CHKERRQ(ierr);
+  //ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
 

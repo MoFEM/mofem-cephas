@@ -26,6 +26,14 @@
 
 namespace MoFEM {
 
+PetscErrorCode PetscGetTime(PetscLogDouble *t) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = ::PetscTime(t); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
 const bool Idx_mi_tag::IamNotPartitioned = true;
 const bool Part_mi_tag::IamNotPartitioned = false;
 

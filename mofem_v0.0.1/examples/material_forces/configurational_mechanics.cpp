@@ -24,7 +24,6 @@
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 
-
 #include "SnesCtx.hpp"
 #include <petscksp.h>
 
@@ -113,7 +112,7 @@ struct NL_MeshSmootherCoupled: public FEMethod_DriverComplexForLazy_CoupledMeshS
     NL_MeshSmootherCoupled(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _alpha3,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledMeshSmoother(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_alpha3) {
-	set_qual_ver(3);
+	set_qual_ver(0);
       }
   
   };
@@ -346,7 +345,34 @@ PetscErrorCode ConfigurationalMechanics::coupled_problem_definition(FieldInterfa
 
   PetscFunctionReturn(0);
 }
+PetscErrorCode ConfigurationalMechanics::arclenght_problem_definition(FieldInterface& mField) {
+  PetscFunctionBegin;
 
+  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) PetscFunctionReturn(0);
+  material_FirelWall->set(FW_arc_lenhghat_definition);
+
+  PetscErrorCode ierr;
+
+  ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
+
+  ierr = mField.add_finite_element("ARC_LENGHT"); CHKERRQ(ierr);
+  //Define rows/cols and element data
+  ierr = mField.modify_finite_element_add_field_row("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  //elem data
+  ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+
+  ierr = mField.modify_finite_element_add_field_row("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+
+  ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","ARC_LENGHT"); CHKERRQ(ierr);
+
+  //Field for ArcLenght
+  ierr = mField.add_field("X0_MATERIAL_POSITION",H1,3); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
 PetscErrorCode ConfigurationalMechanics::constrains_problem_definition(FieldInterface& mField) {
   PetscFunctionBegin;
 
@@ -1056,6 +1082,7 @@ PetscErrorCode ConfigurationalMechanics::griffith_g(FieldInterface& mField,strin
   }
   ierr = VecSum(LambdaVec,&ave_g); CHKERRQ(ierr);
   ierr = VecMin(LambdaVec,PETSC_NULL,&min_g); CHKERRQ(ierr);
+  ierr = VecMax(LambdaVec,PETSC_NULL,&max_g); CHKERRQ(ierr);
 
   {
     int N;
@@ -1123,9 +1150,8 @@ PetscErrorCode ConfigurationalMechanics::solve_material_problem(FieldInterface& 
 
   Mat C_crack_fornt;
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
-  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"MATERIAL_MECHANICS","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,"LAMBDA_CRACKFRONT_AREA");
-  MyCTgc.set_problem("MATERIAL_MECHANICS");
 
   FEMethod_DriverComplexForLazy_CoupledProjected Projection(mField,*projSurfaceCtx,&myDirihletBCMaterial,"MATERIAL_MECHANICS");
   SnesCtx snes_ctx(mField,"MATERIAL_MECHANICS");
@@ -1222,7 +1248,7 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
 
   Mat C_crack_fornt;
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
-  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,"LAMBDA_CRACKFRONT_AREA");
 
   FEMethod_DriverComplexForLazy_CoupledProjected Projection(mField,*projSurfaceCtx,&myDirihletBC,"COUPLED_PROBLEM");
@@ -1470,11 +1496,11 @@ PetscErrorCode ConfigurationalMechanics::SpatialAndSmoothing_FEMEthod::preProces
   PetscFunctionReturn(0);
 }
 PetscErrorCode  SNESMonitorSpatialAndSmoothing_FEMEthod(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy) {
-  PetscViewer viewer = dummy ? (PetscViewer) dummy : PETSC_VIEWER_STDOUT_(((PetscObject)snes)->comm);
+  //PetscViewer viewer = dummy ? (PetscViewer) dummy : PETSC_VIEWER_STDOUT_(((PetscObject)snes)->comm);
 
-  PetscViewerASCIIAddTab(viewer,((PetscObject)snes)->tablevel);
-  PetscViewerASCIIPrintf(viewer,"\t%3D SNES Function norm %14.12e \n",its,(double)fgnorm);
-  PetscViewerASCIISubtractTab(viewer,((PetscObject)snes)->tablevel);
+ // PetscViewerASCIIAddTab(viewer,((PetscObject)snes)->tablevel);
+  PetscPrintf(PETSC_COMM_WORLD,"\t%3D SNES Function norm %14.12e \n",its,(double)fgnorm);
+  //PetscViewerASCIISubtractTab(viewer,((PetscObject)snes)->tablevel);
 
   return(0);
 }
@@ -1566,20 +1592,20 @@ PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::oper
 PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::postProcess() {
   PetscFunctionBegin;
 
-    PetscErrorCode ierr;
+  PetscErrorCode ierr;
 
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction: {
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	} break;
-      case ctx_SNESSetJacobian: 
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
+  switch(snes_ctx) {
+    case ctx_SNESSetFunction: {
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    } break;
+    case ctx_SNESSetJacobian: 
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  }
 
   PetscFunctionReturn(0);
 }

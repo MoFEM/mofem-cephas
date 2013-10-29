@@ -38,7 +38,8 @@ struct ConfigurationalMechanics {
     FW_constrains_problem_definition,
     FW_constrains_crack_front_problem_definition,
     FW_set_spatial_positions,
-    FW_set_material_positions
+    FW_set_material_positions,
+    FW_arc_lenhghat_definition
   };
 
   EntityHandle cornersNodesMeshset,surfacesFacesNodesMeshset,crackSurfacesFacesNodesMeshset,crackForntMeshset;
@@ -61,6 +62,7 @@ struct ConfigurationalMechanics {
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
   PetscErrorCode material_problem_definition(FieldInterface& mField);
   PetscErrorCode coupled_problem_definition(FieldInterface& mField);
+  PetscErrorCode arclenght_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_crack_front_problem_definition(FieldInterface& mField,string problem);
   PetscErrorCode spatial_partition_problems(FieldInterface& mField);
@@ -84,7 +86,7 @@ struct ConfigurationalMechanics {
   PetscErrorCode front_projection_data(FieldInterface& mField,string problem);
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
-  PetscScalar ave_g,min_g;
+  PetscScalar ave_g,min_g,max_g;
   PetscErrorCode griffith_g(FieldInterface& mField,string problem);
 
   struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {
