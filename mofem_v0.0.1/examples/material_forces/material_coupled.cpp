@@ -215,8 +215,8 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  //ierr = PetscTime(&v2);CHKERRQ(ierr);
-  //ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
+  ierr = PetscTime(&v2);CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
 
