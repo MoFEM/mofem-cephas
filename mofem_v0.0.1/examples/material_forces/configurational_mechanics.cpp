@@ -1472,8 +1472,8 @@ PetscErrorCode ConfigurationalMechanics::SpatialAndSmoothing_FEMEthod::preProces
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
   ierr = SNESMonitorCancel(snes); CHKERRQ(ierr);
   ierr = SNESMonitorSet(snes,SNESMonitorSpatialAndSmoothing_FEMEthod,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-  SNESLineSearch linesearch; 
-  ierr = SNESGetSNESLineSearch(snes,&linesearch); CHKERRQ(ierr);
+  //SNESLineSearch linesearch; 
+  //ierr = SNESGetSNESLineSearch(snes,&linesearch); CHKERRQ(ierr);
   /*SNESLINESEARCHBT*/
   /*SNESLINESEARCHL2*/
   //ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);

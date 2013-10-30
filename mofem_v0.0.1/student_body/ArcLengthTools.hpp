@@ -118,11 +118,13 @@ struct ArcLengthMatShell {
 
   Mat Aij;
   ArcLenghtCtx* arc_ptr;
-  ArcLengthMatShell(FieldInterface& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr): scale_lambda(1),mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr) {};
+  string problem_name;
+  ArcLengthMatShell(FieldInterface& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr,string _problem_name): 
+    scale_lambda(1),mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr),problem_name(_problem_name) {};
   PetscErrorCode set_lambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
     PetscFunctionBegin;
     const MoFEMProblem *problem_ptr;
-    ierr = mField.get_problem("ELASTIC_MECHANICS",&problem_ptr); CHKERRQ(ierr);
+    ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
     //get problem dofs
     NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
     NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit;
