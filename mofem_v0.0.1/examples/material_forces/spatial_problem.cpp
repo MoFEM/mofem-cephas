@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel *ptr_bit_level0;
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
 
-  ConfigurationalMechanics conf_prob(mField);
+  ConfigurationalFractureMechanics conf_prob(mField);
 
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 

@@ -115,7 +115,7 @@ struct NL_MeshSmootherCoupled: public FEMethod_DriverComplexForLazy_CoupledMeshS
   
   };
   
-PetscErrorCode ConfigurationalMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_ElementIndiciesRow(
+PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_ElementIndiciesRow(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
   PetscFunctionBegin;
   field_name = "SPATIAL_POSITION";
@@ -125,7 +125,7 @@ PetscErrorCode ConfigurationalMechanics::CubitDisplacementDirihletBC_Coupled::Se
   PetscFunctionReturn(0);
 }
   
-PetscErrorCode ConfigurationalMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_ElementIndiciesCol(
+PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_ElementIndiciesCol(
   FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
   PetscFunctionBegin;
   CubitDisplacementDirihletBC::field_name = "SPATIAL_POSITION";
@@ -136,7 +136,7 @@ PetscErrorCode ConfigurationalMechanics::CubitDisplacementDirihletBC_Coupled::Se
 }
   
 
-PetscErrorCode ConfigurationalMechanics::set_material_fire_wall(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::set_material_fire_wall(FieldInterface& mField) {
   PetscFunctionBegin;
 
   ErrorCode rval;
@@ -150,7 +150,7 @@ PetscErrorCode ConfigurationalMechanics::set_material_fire_wall(FieldInterface& 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::spatial_problem_definition(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(FieldInterface& mField) {
   PetscFunctionBegin;
 
   if(material_FirelWall->operator[](FW_spatial_problem_definition)) PetscFunctionReturn(0);
@@ -241,7 +241,7 @@ PetscErrorCode ConfigurationalMechanics::spatial_problem_definition(FieldInterfa
 }
 
 
-PetscErrorCode ConfigurationalMechanics::material_problem_definition(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::material_problem_definition(FieldInterface& mField) {
   PetscFunctionBegin;
 
   if(material_FirelWall->operator[](FW_material_problem_definition)) PetscFunctionReturn(0);
@@ -280,7 +280,7 @@ PetscErrorCode ConfigurationalMechanics::material_problem_definition(FieldInterf
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::coupled_problem_definition(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::coupled_problem_definition(FieldInterface& mField) {
   PetscFunctionBegin;
 
   if(material_FirelWall->operator[](FW_coupled_problem_definition)) PetscFunctionReturn(0);
@@ -343,7 +343,7 @@ PetscErrorCode ConfigurationalMechanics::coupled_problem_definition(FieldInterfa
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::arclenght_problem_definition(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::arclenght_problem_definition(FieldInterface& mField) {
   PetscFunctionBegin;
 
   ErrorCode rval;
@@ -385,7 +385,7 @@ PetscErrorCode ConfigurationalMechanics::arclenght_problem_definition(FieldInter
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::constrains_problem_definition(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(FieldInterface& mField) {
   PetscFunctionBegin;
 
   if(material_FirelWall->operator[](FW_constrains_problem_definition)) PetscFunctionReturn(0);
@@ -546,7 +546,7 @@ PetscErrorCode ConfigurationalMechanics::constrains_problem_definition(FieldInte
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definition(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_definition(FieldInterface& mField,string problem) {
   PetscFunctionBegin;
 
   if(material_FirelWall->operator[](FW_constrains_crack_front_problem_definition)) PetscFunctionReturn(0);
@@ -629,7 +629,7 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::spatial_partition_problems(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::spatial_partition_problems(FieldInterface& mField) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -642,7 +642,7 @@ PetscErrorCode ConfigurationalMechanics::spatial_partition_problems(FieldInterfa
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::material_partition_problems(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::material_partition_problems(FieldInterface& mField) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -655,7 +655,7 @@ PetscErrorCode ConfigurationalMechanics::material_partition_problems(FieldInterf
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::coupled_partition_problems(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::coupled_partition_problems(FieldInterface& mField) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -668,7 +668,7 @@ PetscErrorCode ConfigurationalMechanics::coupled_partition_problems(FieldInterfa
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::constrains_partition_problems(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::constrains_partition_problems(FieldInterface& mField,string problem) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -685,7 +685,7 @@ PetscErrorCode ConfigurationalMechanics::constrains_partition_problems(FieldInte
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::crackfront_partition_problems(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::crackfront_partition_problems(FieldInterface& mField,string problem) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -703,7 +703,7 @@ PetscErrorCode ConfigurationalMechanics::crackfront_partition_problems(FieldInte
 
 }
 
-PetscErrorCode ConfigurationalMechanics::set_spatial_positions(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::set_spatial_positions(FieldInterface& mField) {
   PetscFunctionBegin;
   if(material_FirelWall->operator[](FW_set_spatial_positions)) PetscFunctionReturn(0);
   material_FirelWall->set(FW_set_spatial_positions);
@@ -726,7 +726,7 @@ PetscErrorCode ConfigurationalMechanics::set_spatial_positions(FieldInterface& m
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::set_material_positions(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::set_material_positions(FieldInterface& mField) {
   PetscFunctionBegin;
 
   if(material_FirelWall->operator[](FW_set_material_positions)) PetscFunctionReturn(0);
@@ -750,7 +750,7 @@ PetscErrorCode ConfigurationalMechanics::set_material_positions(FieldInterface& 
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::set_coordinates_from_material_solution(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::set_coordinates_from_material_solution(FieldInterface& mField) {
   PetscFunctionBegin;
 
   ErrorCode rval;
@@ -767,7 +767,7 @@ PetscErrorCode ConfigurationalMechanics::set_coordinates_from_material_solution(
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::solve_spatial_problem(FieldInterface& mField,SNES *snes,double step_size) {
+PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInterface& mField,SNES *snes,double step_size) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -830,7 +830,7 @@ PetscErrorCode ConfigurationalMechanics::solve_spatial_problem(FieldInterface& m
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::surface_projection_data(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldInterface& mField,string problem) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -876,7 +876,7 @@ PetscErrorCode ConfigurationalMechanics::surface_projection_data(FieldInterface&
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::project_force_vector(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInterface& mField,string problem) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -925,7 +925,7 @@ PetscErrorCode ConfigurationalMechanics::project_force_vector(FieldInterface& mF
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::front_projection_data(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::front_projection_data(FieldInterface& mField,string problem) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -946,7 +946,7 @@ PetscErrorCode ConfigurationalMechanics::front_projection_data(FieldInterface& m
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::griffith_force_vector(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInterface& mField,string problem) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -999,7 +999,7 @@ PetscErrorCode ConfigurationalMechanics::griffith_force_vector(FieldInterface& m
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::griffith_g(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mField,string problem) {
   PetscFunctionBegin;
   
   PetscErrorCode ierr;
@@ -1117,7 +1117,7 @@ PetscErrorCode ConfigurationalMechanics::griffith_g(FieldInterface& mField,strin
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::solve_material_problem(FieldInterface& mField,SNES *snes) {
+PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInterface& mField,SNES *snes) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -1211,7 +1211,7 @@ PetscErrorCode ConfigurationalMechanics::solve_material_problem(FieldInterface& 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& mField,SNES *snes,double step_size,double alpha3) {
+PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInterface& mField,SNES *snes,double step_size,double alpha3) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -1408,7 +1408,7 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
 }
 
 
-PetscErrorCode ConfigurationalMechanics::calculate_spatial_residual(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::calculate_spatial_residual(FieldInterface& mField) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -1440,7 +1440,7 @@ PetscErrorCode ConfigurationalMechanics::calculate_spatial_residual(FieldInterfa
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalMechanics::calculate_material_forces(FieldInterface& mField,string problem,string fe) {
+PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(FieldInterface& mField,string problem,string fe) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -1482,7 +1482,7 @@ PetscErrorCode ConfigurationalMechanics::calculate_material_forces(FieldInterfac
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::preProcess() {
+PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMethod::preProcess() {
   PetscFunctionBegin;
 
     PetscErrorCode ierr;
@@ -1503,7 +1503,7 @@ PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::preP
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::operator()() {
+PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMethod::operator()() {
   PetscFunctionBegin;
   EntityHandle edge = fe_ptr->get_ent();
 
@@ -1562,7 +1562,7 @@ PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::oper
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::postProcess() {
+PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMethod::postProcess() {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -1582,7 +1582,7 @@ PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::post
 
   PetscFunctionReturn(0);
 }
-ConfigurationalMechanics::ArcLenghtElemFEMethod::ArcLenghtElemFEMethod(FieldInterface& _mField,ConfigurationalMechanics *_conf_prob,ArcLenghtCtx *_arc_ptr): 
+ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::ArcLenghtElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLenghtCtx *_arc_ptr): 
     mField(_mField),conf_prob(_conf_prob),arc_ptr(_arc_ptr) {
     PetscInt ghosts[1] = { 0 };
     Interface &moab = mField.get_moab();
@@ -1593,21 +1593,21 @@ ConfigurationalMechanics::ArcLenghtElemFEMethod::ArcLenghtElemFEMethod(FieldInte
       VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag);
     }
 }
-ConfigurationalMechanics::ArcLenghtElemFEMethod::~ArcLenghtElemFEMethod() {
+ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::~ArcLenghtElemFEMethod() {
     VecDestroy(&GhostDiag);
 }
-PetscErrorCode ConfigurationalMechanics::ArcLenghtElemFEMethod::calulate_lambda_int(double &_lambda_int_) {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::calulate_lambda_int(double &_lambda_int_) {
   PetscFunctionBegin;
   _lambda_int_ = arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::ArcLenghtElemFEMethod::calulate_db() {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::calulate_db() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ierr = VecZeroEntries(arc_ptr->db); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::ArcLenghtElemFEMethod::calulate_dx_and_dlambda(Vec x) {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::calulate_dx_and_dlambda(Vec x) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   //set dx
@@ -1638,7 +1638,7 @@ PetscErrorCode ConfigurationalMechanics::ArcLenghtElemFEMethod::calulate_dx_and_
   PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arc_ptr->dlambda,arc_ptr->dx2);
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::ArcLenghtElemFEMethod::preProcess() {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::preProcess() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   switch(snes_ctx) {
@@ -1659,7 +1659,7 @@ PetscErrorCode ConfigurationalMechanics::ArcLenghtElemFEMethod::preProcess() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::ArcLenghtElemFEMethod::operator()() {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::operator()() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 
@@ -1690,7 +1690,7 @@ PetscErrorCode ConfigurationalMechanics::ArcLenghtElemFEMethod::operator()() {
     
     PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalMechanics::ArcLenghtElemFEMethod::postProcess() {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::postProcess() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 
