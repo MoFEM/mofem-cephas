@@ -33,7 +33,7 @@ PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   double db_dot_x;
   ierr = VecDot(ctx->arc_ptr->db,x,&db_dot_x); CHKERRQ(ierr);
   double f_lambda;
-  f_lambda = ctx->scale_lambda*(ctx->arc_ptr->diag*lambda + db_dot_x);
+  f_lambda = ctx->arc_ptr->diag*lambda + db_dot_x;
   ierr = ctx->set_lambda(f,&f_lambda,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAXPY(f,-lambda,ctx->arc_ptr->F_lambda); CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -53,10 +53,10 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   double db_dot_pc_x,db_dot_x_lambda;
   ierr = VecDot(PCCtx->arc_ptr->db,pc_x,&db_dot_pc_x); CHKERRQ(ierr);
   ierr = VecDot(PCCtx->arc_ptr->db,PCCtx->arc_ptr->x_lambda,&db_dot_x_lambda); CHKERRQ(ierr);
-  double denominator = MatCtx->scale_lambda*PCCtx->arc_ptr->diag+MatCtx->scale_lambda*db_dot_x_lambda;
+  double denominator = PCCtx->arc_ptr->diag+db_dot_x_lambda;
   double res_lambda;
   ierr = MatCtx->set_lambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
-  double ddlambda = (res_lambda - MatCtx->scale_lambda*db_dot_pc_x)/denominator;
+  double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
   //cerr << res_lambda << " " << ddlambda << " " << db_dot_pc_x << " " << db_dot_x_lambda << " " << PCCtx->arc_ptr->diag << endl;
   if(ddlambda != ddlambda) SETERRQ(PETSC_COMM_SELF,1,"problem with constraint");
   ierr = VecAXPY(pc_x,ddlambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);

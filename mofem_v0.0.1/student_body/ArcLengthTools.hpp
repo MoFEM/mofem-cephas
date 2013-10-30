@@ -73,6 +73,7 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
   }
 
 
+  //dx2 - dot product of 
   double diag,dx2,F_lambda2,res_lambda,;
   Vec F_lambda,db,x_lambda,y_residual,x0,dx;
   ArcLenghtCtx(FieldInterface &mField,const string &problem_name): ArcLenghtCtx_DataOnMesh(mField), dlambda(*(double *)tag_data_dlambda[0]) {
@@ -116,14 +117,13 @@ struct ArcLengthMatShell {
   PetscErrorCode ierr;
 
 
-  double scale_lambda;
   FieldInterface& mField;
 
   Mat Aij;
   ArcLenghtCtx* arc_ptr;
   string problem_name;
   ArcLengthMatShell(FieldInterface& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr,string _problem_name): 
-    scale_lambda(1),mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr),problem_name(_problem_name) {};
+    mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr),problem_name(_problem_name) {};
   PetscErrorCode set_lambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
     PetscFunctionBegin;
     const MoFEMProblem *problem_ptr;
