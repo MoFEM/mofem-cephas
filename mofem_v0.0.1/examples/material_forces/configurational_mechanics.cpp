@@ -1490,16 +1490,11 @@ PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::oper
   rval = mField.get_moab().get_connectivity(edge,conn,num_nodes,true); CHKERR_PETSC(rval);
   if(num_nodes!=2) SETERRQ(PETSC_COMM_SELF,1,"this implementation works for edges (2 nodes entities)");
   for(int nn = 0;nn<2; nn++) {
-    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
-    dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));
-    hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));
-    for(;dit!=hi_dit;dit++) {
+    for(_IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(this,"MESH_NODE_POSITIONS",conn[nn],dit)) { 
       rowDofs[3*nn+dit->get_EntDofIdx()] = dit->get_petsc_gloabl_dof_idx();
       dofsX[3*nn+dit->get_EntDofIdx()] = dit->get_FieldData();
     }
-    dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));
-    hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));
-    for(;dit!=hi_dit;dit++) {
+    for(_IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(this,"MESH_NODE_POSITIONS",conn[nn],dit)) { 
       colDofs[3*nn+dit->get_EntDofIdx()] = dit->get_petsc_gloabl_dof_idx();
     }
   }
