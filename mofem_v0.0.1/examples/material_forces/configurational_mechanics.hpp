@@ -134,15 +134,26 @@ struct ConfigurationalMechanics {
 
   };
 
-  /*struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
+  struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
 
+    FieldInterface& mField;
+    ConfigurationalMechanics *conf_prob;
     ArcLenghtCtx* arc_ptr;
     Vec GhostDiag;
-    ArcLenghtElemFEMethod(Interface& _moab,ArcLenghtCtx *_arc_ptr);
+    ArcLenghtElemFEMethod(FieldInterface& _mField,ConfigurationalMechanics *_conf_prob,ArcLenghtCtx *_arc_ptr);
     ~ArcLenghtElemFEMethod();
 
+    PetscErrorCode calulate_lambda_int(double &_lambda_int_);
+    PetscErrorCode calulate_db();
+    PetscErrorCode calulate_dx_and_dlambda(Vec x);
 
-  };*/
+    double lambda_int;
+
+    PetscErrorCode preProcess();
+    PetscErrorCode operator()();
+    PetscErrorCode postProcess();
+
+  };
 
 };
 
