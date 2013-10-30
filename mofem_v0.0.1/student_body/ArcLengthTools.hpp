@@ -107,7 +107,7 @@ struct ArcLenghtSnesCtx: public SnesCtx {
 
 };
 
-struct MatShellCtx {
+struct ArcLengthMatShell {
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -118,7 +118,7 @@ struct MatShellCtx {
 
   Mat Aij;
   ArcLenghtCtx* arc_ptr;
-  MatShellCtx(FieldInterface& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr): scale_lambda(1),mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr) {};
+  ArcLengthMatShell(FieldInterface& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr): scale_lambda(1),mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr) {};
   PetscErrorCode set_lambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
     PetscFunctionBegin;
     const MoFEMProblem *problem_ptr;
@@ -148,7 +148,7 @@ struct MatShellCtx {
 
     PetscFunctionReturn(0);
   }
-  ~MatShellCtx() { }
+  ~ArcLengthMatShell() { }
 
   friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 };
@@ -159,7 +159,7 @@ PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
-  MatShellCtx *ctx = (MatShellCtx*)void_ctx;
+  ArcLengthMatShell *ctx = (ArcLengthMatShell*)void_ctx;
   ierr = MatMult(ctx->Aij,x,f); CHKERRQ(ierr);
   double lambda;
   ierr = ctx->set_lambda(x,&lambda,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -195,7 +195,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   PCShellCtx *PCCtx = (PCShellCtx*)void_ctx;
   void *void_MatCtx;
   MatShellGetContext(PCCtx->ShellAij,&void_MatCtx);
-  MatShellCtx *MatCtx = (MatShellCtx*)void_MatCtx;
+  ArcLengthMatShell *MatCtx = (ArcLengthMatShell*)void_MatCtx;
   ierr = PCApply(PCCtx->pc,pc_f,pc_x); CHKERRQ(ierr);
   ierr = PCApply(PCCtx->pc,PCCtx->arc_ptr->F_lambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
   double db_dot_pc_x,db_dot_x_lambda;
