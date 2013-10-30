@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) { 
     if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.4e\n",dit->get_FieldData());
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
     }
   }
 
