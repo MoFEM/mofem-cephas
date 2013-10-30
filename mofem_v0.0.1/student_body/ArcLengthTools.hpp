@@ -64,6 +64,11 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * set parematers controling arc-length equaitions
+   * alpha controls of diagonal therms
+   * beta controls diagonal therm
+   */
   PetscErrorCode set_alpha_and_beta(double _alpha,double _beta) { 
     PetscFunctionBegin;
     alpha = _alpha;
@@ -71,7 +76,6 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\tSet alpha = %6.4e beta = %6.4e\n",alpha,beta); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-
 
   //dx2 - dot product of 
   double diag,dx2,F_lambda2,res_lambda,;
