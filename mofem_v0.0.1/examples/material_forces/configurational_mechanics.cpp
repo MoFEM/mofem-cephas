@@ -25,6 +25,8 @@
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 
 #include "SnesCtx.hpp"
+#include "ArcLeghtTools.hpp"
+
 #include <petscksp.h>
 
 using namespace MoFEM;
@@ -362,11 +364,11 @@ PetscErrorCode ConfigurationalMechanics::arclenght_problem_definition(FieldInter
   //elem data
   ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
 
-  ierr = mField.modify_finite_element_add_field_row("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  //ierr = mField.modify_finite_element_add_field_row("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  //ierr = mField.modify_finite_element_add_field_col("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  //ierr = mField.modify_finite_element_add_field_data("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
 
-  ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","ARC_LENGHT"); CHKERRQ(ierr);
+  //ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","ARC_LENGHT"); CHKERRQ(ierr);
 
   //Field for ArcLenght
   ierr = mField.add_field("X0_MATERIAL_POSITION",H1,3); CHKERRQ(ierr);
@@ -1234,8 +1236,14 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
   NL_MaterialFEMethodCoupled MyMaterialFE(
     mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   NL_MeshSmootherCoupled MyMeshSmoother(mField,*projSurfaceCtx,&myDirihletBC,1.);
-
   ConstrainCrackForntEdges_FEMethod FrontPenalty(mField,this,alpha3);
+
+  ArcLenghtCtx* arc_ctx;
+  ArcLenghtSnesCtx *arc_snes_ctx;
+  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
+    arc_ctx = new ArcLenghtCtx(mField,"COUPLED_PROBLEM");
+    arc_snes_ctx = new ArcLenghtSnesCtx(mField,"ELASTIC_MECHANICS",arc_ctx);
+  }
   
   ////******
   ierr = MySpatialFE.init_crack_front_data(); CHKERRQ(ierr);
@@ -1340,6 +1348,11 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&CTC_QTKQ); CHKERRQ(ierr);
+
+  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
+    delete arc_ctx;
+    delete arc_snes_ctx;
+  }
 
   PetscFunctionReturn(0);
 }
