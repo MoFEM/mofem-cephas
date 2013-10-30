@@ -24,7 +24,6 @@
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 
-
 #include "SnesCtx.hpp"
 #include <petscksp.h>
 
@@ -113,7 +112,7 @@ struct NL_MeshSmootherCoupled: public FEMethod_DriverComplexForLazy_CoupledMeshS
     NL_MeshSmootherCoupled(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _alpha3,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledMeshSmoother(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_alpha3) {
-	set_qual_ver(3);
+	set_qual_ver(0);
       }
   
   };
@@ -346,7 +345,34 @@ PetscErrorCode ConfigurationalMechanics::coupled_problem_definition(FieldInterfa
 
   PetscFunctionReturn(0);
 }
+PetscErrorCode ConfigurationalMechanics::arclenght_problem_definition(FieldInterface& mField) {
+  PetscFunctionBegin;
 
+  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) PetscFunctionReturn(0);
+  material_FirelWall->set(FW_arc_lenhghat_definition);
+
+  PetscErrorCode ierr;
+
+  ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
+
+  ierr = mField.add_finite_element("ARC_LENGHT"); CHKERRQ(ierr);
+  //Define rows/cols and element data
+  ierr = mField.modify_finite_element_add_field_row("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+  //elem data
+  ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+
+  ierr = mField.modify_finite_element_add_field_row("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+
+  ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","ARC_LENGHT"); CHKERRQ(ierr);
+
+  //Field for ArcLenght
+  ierr = mField.add_field("X0_MATERIAL_POSITION",H1,3); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
 PetscErrorCode ConfigurationalMechanics::constrains_problem_definition(FieldInterface& mField) {
   PetscFunctionBegin;
 
@@ -440,31 +466,17 @@ PetscErrorCode ConfigurationalMechanics::constrains_problem_definition(FieldInte
 
     Interface& moab = mField.get_moab();
 
-    //get meshset of triangles which are bit_level0				
-    EntityHandle refined_sideset_faces_meshset;
-    rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
 
-    //seed 2d elements for last ref elements
-    Range LevelFaces;
-    moab.get_entities_by_handle(refined_sideset_faces_meshset,LevelFaces,true);
-    Range AdjCrackFrontFaces;
-    rval = moab.get_adjacencies(CrackCornersEdges,2,false,AdjCrackFrontFaces,Interface::UNION); CHKERR_PETSC(rval);
-    CrackSurfacesFaces = subtract(CrackSurfacesFaces,AdjCrackFrontFaces);
-    Range LevelFacesSurfacesFaces;
-    LevelFacesSurfacesFaces = intersect(LevelFaces,SurfacesFaces);
-    Range LevelFacesCrackSurfacesFaces;
-    LevelFacesCrackSurfacesFaces = intersect(LevelFaces,CrackSurfacesFaces);
-    rval = moab.clear_meshset(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.add_entities(refined_sideset_faces_meshset,LevelFacesSurfacesFaces); CHKERR_PETSC(rval);
-    rval = moab.add_entities(refined_sideset_faces_meshset,LevelFacesCrackSurfacesFaces); CHKERR_PETSC(rval);
-    ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,bit_level0); CHKERRQ(ierr);
-    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(LevelFacesSurfacesFaces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(LevelFacesSurfacesFaces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
     if(cs) {
-      ierr = mField.add_ents_to_finite_element_by_TRIs(LevelFacesCrackSurfacesFaces,"C_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(LevelFacesCrackSurfacesFaces,"CTC_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
+      Range AdjCrackFrontFaces;
+      rval = moab.get_adjacencies(CrackCornersEdges,2,false,AdjCrackFrontFaces,Interface::UNION); CHKERR_PETSC(rval);
+      CrackSurfacesFaces = subtract(CrackSurfacesFaces,AdjCrackFrontFaces);
+      ierr = mField.seed_finite_elements(CrackSurfacesFaces); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesFaces,"C_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesFaces,"CTC_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
     }
 
     Range CrackCornersEdgesNodes;
@@ -539,6 +551,7 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
   ierr = mField.add_finite_element("C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("FRONT_CONSTRAIN"); CHKERRQ(ierr);
 
   ierr = mField.modify_finite_element_add_field_row("C_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("C_CRACKFRONT_AREA_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -555,13 +568,16 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
   ierr = mField.modify_finite_element_add_field_data("dCT_CRACKFRONT_AREA_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("dCT_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
 
+  ierr = mField.modify_finite_element_add_field_row("FRONT_CONSTRAIN","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("FRONT_CONSTRAIN","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FRONT_CONSTRAIN","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
   //Problem
   ierr = mField.add_problem("C_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = mField.add_problem("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("CTC_CRACKFRONT_MATRIX","CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
 
-  //add tets
   {
     Range CrackSurfacesFaces,CrackFrontEdges;
     ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
@@ -579,28 +595,14 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
     CrackSurfacesEdgeFaces = intersect(CrackSurfacesEdgeFaces,CrackSurfacesFaces);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Faces = %d\n",CrackSurfacesEdgeFaces.size()); CHKERRQ(ierr);
 
-    Interface& moab = mField.get_moab();
+    ierr = mField.seed_finite_elements(CrackSurfacesEdgeFaces); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
 
-    //get meshset of triangles which are bit_level0				
-    EntityHandle refined_sideset_faces_meshset;
-    rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
-    //seed 2d elements for last ref elements
-    Range LevelFaces;
-    moab.get_entities_by_handle(refined_sideset_faces_meshset,LevelFaces,true);
-    //get level crack front faces
-    Range LevelCrackSurfacesFaces;
-    LevelCrackSurfacesFaces = intersect(LevelFaces,CrackSurfacesEdgeFaces);
-    rval = moab.clear_meshset(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.add_entities(refined_sideset_faces_meshset,LevelCrackSurfacesFaces); CHKERR_PETSC(rval);
-    ierr = mField.seed_ref_level_2D(refined_sideset_faces_meshset,bit_level0); CHKERRQ(ierr);
-    rval = moab.delete_entities(&refined_sideset_faces_meshset,1); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(
-      LevelCrackSurfacesFaces,"C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(
-      LevelCrackSurfacesFaces,"CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(
-      LevelCrackSurfacesFaces,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(CrackFrontEdges); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_EDGEs(CrackFrontEdges,"FRONT_CONSTRAIN"); CHKERRQ(ierr);
+
   }
 
   //add entitities (by tets) to the field
@@ -610,6 +612,7 @@ PetscErrorCode ConfigurationalMechanics::constrains_crack_front_problem_definiti
 
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element(problem,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element(problem,"FRONT_CONSTRAIN"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -819,7 +822,6 @@ PetscErrorCode ConfigurationalMechanics::surface_projection_data(FieldInterface&
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-  ErrorCode rval;
 
   Interface& moab = mField.get_moab();
 
@@ -1076,6 +1078,9 @@ PetscErrorCode ConfigurationalMechanics::griffith_g(FieldInterface& mField,strin
     PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
   }
   ierr = VecSum(LambdaVec,&ave_g); CHKERRQ(ierr);
+  ierr = VecMin(LambdaVec,PETSC_NULL,&min_g); CHKERRQ(ierr);
+  ierr = VecMax(LambdaVec,PETSC_NULL,&max_g); CHKERRQ(ierr);
+
   {
     int N;
     ierr = VecGetSize(LambdaVec,&N); CHKERRQ(ierr);
@@ -1142,9 +1147,8 @@ PetscErrorCode ConfigurationalMechanics::solve_material_problem(FieldInterface& 
 
   Mat C_crack_fornt;
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
-  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"MATERIAL_MECHANICS","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,"LAMBDA_CRACKFRONT_AREA");
-  MyCTgc.set_problem("MATERIAL_MECHANICS");
 
   FEMethod_DriverComplexForLazy_CoupledProjected Projection(mField,*projSurfaceCtx,&myDirihletBCMaterial,"MATERIAL_MECHANICS");
   SnesCtx snes_ctx(mField,"MATERIAL_MECHANICS");
@@ -1229,17 +1233,19 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
     mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   NL_MaterialFEMethodCoupled MyMaterialFE(
     mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  NL_MeshSmootherCoupled MyMeshSmoother(mField,*projSurfaceCtx,&myDirihletBC,alpha3);
+  NL_MeshSmootherCoupled MyMeshSmoother(mField,*projSurfaceCtx,&myDirihletBC,1.);
+
+  ConstrainCrackForntEdges_FEMethod FrontPenalty(mField,this,alpha3);
   
   ////******
   ierr = MySpatialFE.init_crack_front_data(); CHKERRQ(ierr);
   ierr = MyMaterialFE.init_crack_front_data(); CHKERRQ(ierr);
-  ierr = MyMeshSmoother.init_crack_front_data(false,true); CHKERRQ(ierr);
+  ierr = MyMeshSmoother.init_crack_front_data(false,false); CHKERRQ(ierr);
   ////******
 
   Mat C_crack_fornt;
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
-  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,"LAMBDA_CRACKFRONT_AREA");
 
   FEMethod_DriverComplexForLazy_CoupledProjected Projection(mField,*projSurfaceCtx,&myDirihletBC,"COUPLED_PROBLEM");
@@ -1257,12 +1263,13 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&MyMaterialFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("dCT_CRACKFRONT_AREA_ELEM",&MydCTgc));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyMeshSmoother));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("FRONT_CONSTRAIN",&FrontPenalty));
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&MySpatialFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&MyMaterialFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyMeshSmoother));
 
-  snes_ctx.get_preProcess_to_do_Rhs().push_back(&PercSpatialAndSmootherSolver);
+  //snes_ctx.get_preProcess_to_do_Rhs().push_back(&PercSpatialAndSmootherSolver);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&Projection);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyCTgc);
   snes_ctx.get_postProcess_to_do_Rhs().push_back(&Projection);
@@ -1325,7 +1332,6 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
   PostProcVertexMethod ent_method_front_equlibrium(mField.get_moab(),"MESH_NODE_POSITIONS",F,"FRONT_EQULIBRIUM");
   ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_front_equlibrium); CHKERRQ(ierr);
 
-  double nrm2_front_equlibrium;
   ierr = VecNorm(F,NORM_2,&nrm2_front_equlibrium); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_Front_Equlibrium = %6.4e\n",nrm2_front_equlibrium); CHKERRQ(ierr);
 
@@ -1487,11 +1493,117 @@ PetscErrorCode ConfigurationalMechanics::SpatialAndSmoothing_FEMEthod::preProces
   PetscFunctionReturn(0);
 }
 PetscErrorCode  SNESMonitorSpatialAndSmoothing_FEMEthod(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy) {
-  PetscViewer viewer = dummy ? (PetscViewer) dummy : PETSC_VIEWER_STDOUT_(((PetscObject)snes)->comm);
+  //PetscViewer viewer = dummy ? (PetscViewer) dummy : PETSC_VIEWER_STDOUT_(((PetscObject)snes)->comm);
 
-  PetscViewerASCIIAddTab(viewer,((PetscObject)snes)->tablevel);
-  PetscViewerASCIIPrintf(viewer,"\t%3D SNES Function norm %14.12e \n",its,(double)fgnorm);
-  PetscViewerASCIISubtractTab(viewer,((PetscObject)snes)->tablevel);
+ // PetscViewerASCIIAddTab(viewer,((PetscObject)snes)->tablevel);
+  PetscPrintf(PETSC_COMM_WORLD,"\t%3D SNES Function norm %14.12e \n",its,(double)fgnorm);
+  //PetscViewerASCIISubtractTab(viewer,((PetscObject)snes)->tablevel);
 
   return(0);
 }
+PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::preProcess() {
+  PetscFunctionBegin;
+
+    PetscErrorCode ierr;
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	break;
+      case ctx_SNESSetJacobian: 
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::operator()() {
+  PetscFunctionBegin;
+  EntityHandle edge = fe_ptr->get_ent();
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  try {
+
+  const EntityHandle* conn; 
+  int num_nodes; 
+  rval = mField.get_moab().get_connectivity(edge,conn,num_nodes,true); CHKERR_PETSC(rval);
+  if(num_nodes!=2) SETERRQ(PETSC_COMM_SELF,1,"this implementation works for edges (2 nodes entities)");
+  for(int nn = 0;nn<2; nn++) {
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
+    dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));
+    hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));
+    for(;dit!=hi_dit;dit++) {
+      rowDofs[3*nn+dit->get_EntDofIdx()] = dit->get_petsc_gloabl_dof_idx();
+      dofsX[3*nn+dit->get_EntDofIdx()] = dit->get_FieldData();
+    }
+    dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));
+    hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));
+    for(;dit!=hi_dit;dit++) {
+      colDofs[3*nn+dit->get_EntDofIdx()] = dit->get_petsc_gloabl_dof_idx();
+    }
+  }
+  rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+  for(int dd = 0;dd<3;dd++) {
+    delta0[dd] = coords[3+dd] - coords[dd];
+    delta[dd] = dofsX[3+dd] - dofsX[dd];
+  }
+  double l0_2 = pow(delta0[0],2)+pow(delta0[1],2)+pow(delta0[2],2);
+  double l0 = sqrt(l0_2);
+  double l_2 = pow(delta[0],2)+pow(delta[1],2)+pow(delta[2],2);
+  double e = (l_2-l0_2)/(2*l0_2);
+  ublas::vector<FieldData> c = delta/l0;
+  for(int dd = 0;dd<3;dd++) {
+    f[dd+0] = -e*c[dd];
+    f[dd+3] = +e*c[dd];
+    for(int ddd = 0;ddd<3;ddd++) {
+      K(dd+0,ddd+0) = +c[dd]*c[ddd] + e*( dd==ddd ? +1 : 0);
+      K(dd+3,ddd+3) = +c[dd]*c[ddd] + e*( dd==ddd ? +1 : 0);
+      K(dd+0,ddd+3) = -c[dd]*c[ddd] + e*( dd==ddd ? -1 : 0);
+      K(dd+3,ddd+0) = -c[dd]*c[ddd] + e*( dd==ddd ? -1 : 0);
+    }
+  }
+  K = K/l0;
+  f = f*alpha3;
+  K = K*alpha3;
+  ierr = VecSetValues(snes_f,rowDofs.size(),&*rowDofs.data().begin(),&*f.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+  ierr = MatSetValues(conf_prob->projSurfaceCtx->K,
+    rowDofs.size(),&*rowDofs.data().begin(),
+    colDofs.size(),&*colDofs.data().begin(),
+    &*K.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+
+  } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::postProcess() {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+
+  switch(snes_ctx) {
+    case ctx_SNESSetFunction: {
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    } break;
+    case ctx_SNESSetJacobian: 
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  }
+
+  PetscFunctionReturn(0);
+}
+

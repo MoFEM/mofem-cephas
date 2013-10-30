@@ -20,35 +20,10 @@
 #ifndef __ARC_LENGHT_NONLINEAR_ELASTICITY_HPP__
 #define __ARC_LENGHT_NONLINEAR_ELASTICITY_HPP__
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include <petscksp.h>
-
-#include "SnesCtx.hpp"
+#include "FEMethod_DriverComplexForLazy.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "cholesky.hpp"
-#include <petscksp.h>
-
-#include "SnesCtx.hpp"
-#include "FEMethod_ComplexForLazy.hpp"
-#include "FEMethod_DriverComplexForLazy.hpp"
-
-#include "complex_for_lazy.h"
-
 #include "ArcLeghtTools.hpp"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <petsc-private/snesimpl.h>
-#ifdef __cplusplus
-}
-#endif
 
 namespace MoFEM {
 

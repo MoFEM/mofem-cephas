@@ -32,6 +32,7 @@ PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
       ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr); // neet to be recalculated when C is changed
       ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+      ierr = KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits); CHKERRQ(ierr);
       ierr = KSPSetUp(ksp); CHKERRQ(ierr);
       ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
       ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);

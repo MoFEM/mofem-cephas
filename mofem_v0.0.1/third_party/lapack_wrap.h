@@ -25,9 +25,15 @@ extern "C" {
 #define __lapack__
 
 #ifdef __APPLE__
+#ifdef __CBLAS__
+  #define __CLPK_TYPES__
 #endif
+#else 
+  #define __CLPK_TYPES__
+#endif
+  
+#ifdef __CLPK_TYPES__
 
-#ifndef __APPLE__
 #if defined(__LP64__) /* In LP64 match sizes with the 32 bit ABI */
 typedef int 		__CLPK_integer;
 typedef int 		__CLPK_logical;

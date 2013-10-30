@@ -18,7 +18,11 @@
 #define __H1_H__
 
 #ifdef __APPLE__
+  #ifdef __CBLAS__
+  #include<cblas.h>
+  #else  
   #include <Accelerate/Accelerate.h>
+  #endif
   #include<lapack_wrap.h>
 #else 
   #include<cblas.h>
