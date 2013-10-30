@@ -25,7 +25,7 @@
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 
 #include "SnesCtx.hpp"
-#include "ArcLeghtTools.hpp"
+#include "ArcLengthTools.hpp"
 
 #include <petscksp.h>
 
