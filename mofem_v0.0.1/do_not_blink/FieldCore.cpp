@@ -4251,8 +4251,8 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	      conn[0],conn[1],conn[2],
 	      new_conn[0],new_conn[1],new_conn[2] 
 	    };
-	    //cerr << \
-	    //  conn[0] << " " << conn[1] << " " << conn[2] << " ::: " \
+	    //cerr << 
+	    //  conn[0] << " " << conn[1] << " " << conn[2] << " ::: " 
 	    //  << new_conn[0] << " " << new_conn[1] << " " << new_conn[2] << endl;
 	    EntityHandle prism = no_handle;
 	    rval = moab.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
