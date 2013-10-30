@@ -27,8 +27,6 @@
 #include "SnesCtx.hpp"
 #include "ArcLengthTools.hpp"
 
-#include <petscksp.h>
-
 using namespace MoFEM;
 
 struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
@@ -1238,11 +1236,18 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
   NL_MeshSmootherCoupled MyMeshSmoother(mField,*projSurfaceCtx,&myDirihletBC,1.);
   ConstrainCrackForntEdges_FEMethod FrontPenalty(mField,this,alpha3);
 
+  Mat Arc_CTC_QTKQ;
   ArcLenghtCtx* arc_ctx;
-  ArcLenghtSnesCtx *arc_snes_ctx;
+  ArcLenghtSnesCtx* arc_snes_ctx;
+  ArcLengthMatShell* arc_mat_ctx;
+  PCShellCtx* pc_ctx;
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
     arc_ctx = new ArcLenghtCtx(mField,"COUPLED_PROBLEM");
-    arc_snes_ctx = new ArcLenghtSnesCtx(mField,"ELASTIC_MECHANICS",arc_ctx);
+    arc_snes_ctx = new ArcLenghtSnesCtx(mField,"COUPLED_PROBLEM",arc_ctx);
+    arc_mat_ctx = new ArcLengthMatShell(mField,CTC_QTKQ,arc_ctx,"COUPLED_PROBLEM");
+    ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)arc_mat_ctx,&Arc_CTC_QTKQ); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(Arc_CTC_QTKQ,MATOP_MULT,(void(*)(void))arc_lenght_mult_shell); CHKERRQ(ierr);
+    pc_ctx = new PCShellCtx(CTC_QTKQ,precK,arc_ctx);
   }
   
   ////******
@@ -1258,12 +1263,28 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
 
   FEMethod_DriverComplexForLazy_CoupledProjected Projection(mField,*projSurfaceCtx,&myDirihletBC,"COUPLED_PROBLEM");
   SnesCtx snes_ctx(mField,"COUPLED_PROBLEM");
-  //SpatialSolver_FEMethod PercSpatialSolver(mField,this);
-  SpatialAndSmoothing_FEMEthod PercSpatialAndSmootherSolver(mField,this,CTC_QTKQ,precK,F,myDirihletBC);
   
-  ierr = SNESSetApplicationContext(*snes,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetFunction(*snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(*snes,CTC_QTKQ,precK,SnesMat,&snes_ctx); CHKERRQ(ierr);
+  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
+
+    ierr = SNESSetApplicationContext(*snes,&arc_snes_ctx); CHKERRQ(ierr);
+    ierr = SNESSetFunction(*snes,F,SnesRhs,&arc_snes_ctx); CHKERRQ(ierr);
+    ierr = SNESSetJacobian(*snes,Arc_CTC_QTKQ,precK,SnesMat,&arc_snes_ctx); CHKERRQ(ierr);
+
+    KSP ksp;
+    ierr = SNESGetKSP(*snes,&ksp); CHKERRQ(ierr);
+    PC pc;
+    ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
+    PCShellCtx* PCCtx = new PCShellCtx(precK,Arc_CTC_QTKQ,arc_ctx);
+    ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
+    ierr = PCShellSetContext(pc,PCCtx); CHKERRQ(ierr);
+    ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
+    ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
+
+  } else {
+    ierr = SNESSetApplicationContext(*snes,&snes_ctx); CHKERRQ(ierr);
+    ierr = SNESSetFunction(*snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
+    ierr = SNESSetJacobian(*snes,CTC_QTKQ,precK,SnesMat,&snes_ctx); CHKERRQ(ierr);
+  }
   ierr = SNESSetFromOptions(*snes); CHKERRQ(ierr);
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
@@ -1277,7 +1298,6 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&MyMaterialFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyMeshSmoother));
 
-  //snes_ctx.get_preProcess_to_do_Rhs().push_back(&PercSpatialAndSmootherSolver);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&Projection);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyCTgc);
   snes_ctx.get_postProcess_to_do_Rhs().push_back(&Projection);
@@ -1352,6 +1372,9 @@ PetscErrorCode ConfigurationalMechanics::solve_coupled_problem(FieldInterface& m
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
     delete arc_ctx;
     delete arc_snes_ctx;
+    delete arc_mat_ctx;
+    ierr = MatDestroy(&Arc_CTC_QTKQ); CHKERRQ(ierr);
+    delete pc_ctx;
   }
 
   PetscFunctionReturn(0);
@@ -1431,88 +1454,6 @@ PetscErrorCode ConfigurationalMechanics::calculate_material_forces(FieldInterfac
   ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
-}
-ConfigurationalMechanics::SpatialAndSmoothing_FEMEthod::SpatialAndSmoothing_FEMEthod(
-  FieldInterface& _mField,ConfigurationalMechanics *_conf_prob,
-  Mat _CTC_QTKQ,Mat _precK,Vec _F,CubitDisplacementDirihletBC_Coupled &_myDirihletBC): 
-    mField(_mField),conf_prob(_conf_prob),
-    CTC_QTKQ(_CTC_QTKQ),precK(_precK),F(_F),
-    myDirihletBC(_myDirihletBC) {}
-
-PetscErrorCode ConfigurationalMechanics::SpatialAndSmoothing_FEMEthod::preProcess() {
-  PetscFunctionBegin;
-
-  PetscErrorCode ierr;
-
-  SNES snes;
-  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
-
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.;
-  NL_ElasticFEMethodCoupled_OnlyDiagonal MySpatialFE(
-    mField,*conf_prob->projSurfaceCtx,&myDirihletBC,
-    LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  NL_MaterialFEMethodCoupled_OnlyCoupling MyMaterialFE(
-    mField,*conf_prob->projSurfaceCtx,&myDirihletBC,
-    LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  double alpha3 = 1;
-  NL_MeshSmootherCoupled MyMeshSmoother(mField,*conf_prob->projSurfaceCtx,&myDirihletBC,alpha3);
-  
-  ////******
-  ierr = MyMaterialFE.init_crack_front_data(true); CHKERRQ(ierr);
-  ierr = MyMeshSmoother.init_crack_front_data(true,false); CHKERRQ(ierr);
-  ////******
-
-  FEMethod_DriverComplexForLazy_CoupledProjected Projection(mField,*conf_prob->projSurfaceCtx,&myDirihletBC,"COUPLED_PROBLEM");
-  SnesCtx snes_ctx(mField,"COUPLED_PROBLEM");
-  
-  ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,CTC_QTKQ,precK,SnesMat,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
-  ierr = SNESMonitorCancel(snes); CHKERRQ(ierr);
-  ierr = SNESMonitorSet(snes,SNESMonitorSpatialAndSmoothing_FEMEthod,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-  //SNESLineSearch linesearch; 
-  //ierr = SNESGetSNESLineSearch(snes,&linesearch); CHKERRQ(ierr);
-  /*SNESLINESEARCHBT*/
-  /*SNESLINESEARCHL2*/
-  //ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
-
-  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&MySpatialFE));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&MyMaterialFE));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyMeshSmoother));
-  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&MySpatialFE));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&MyMaterialFE));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyMeshSmoother));
-
-  snes_ctx.get_preProcess_to_do_Rhs().push_back(&Projection);
-  snes_ctx.get_postProcess_to_do_Rhs().push_back(&Projection);
-  snes_ctx.get_preProcess_to_do_Mat().push_back(&Projection);
-  snes_ctx.get_postProcess_to_do_Mat().push_back(&Projection);
-
-  ierr = SNESSolve(snes,PETSC_NULL,snes_x); CHKERRQ(ierr);
-  int its;
-  ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"\tspatial and meshsmoothing number of Newton iterations = %D\n",its); CHKERRQ(ierr);
-  
-  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-
-  ierr = MatZeroEntries(conf_prob->projSurfaceCtx->K); CHKERRQ(ierr);
-  ierr = MatZeroEntries(precK); CHKERRQ(ierr);
-  ierr = VecZeroEntries(F);   CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-PetscErrorCode  SNESMonitorSpatialAndSmoothing_FEMEthod(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy) {
-  //PetscViewer viewer = dummy ? (PetscViewer) dummy : PETSC_VIEWER_STDOUT_(((PetscObject)snes)->comm);
-
- // PetscViewerASCIIAddTab(viewer,((PetscObject)snes)->tablevel);
-  PetscPrintf(PETSC_COMM_WORLD,"\t%3D SNES Function norm %14.12e \n",its,(double)fgnorm);
-  //PetscViewerASCIISubtractTab(viewer,((PetscObject)snes)->tablevel);
-
-  return(0);
 }
 PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::preProcess() {
   PetscFunctionBegin;
@@ -1619,4 +1560,15 @@ PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::post
 
   PetscFunctionReturn(0);
 }
-
+/*ConfigurationalMechanics::ArcLenghtElemFEMethod::ArcLenghtElemFEMethod(Interface& _moab,ArcLenghtCtx *_arc_ptr): FEMethod(),moab(_moab),arc_ptr(_arc_ptr) {
+  PetscInt ghosts[1] = { 0 };
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm->rank() == 0) {
+    VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostDiag);
+  } else {
+    VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag);
+  }
+}
+ConfigurationalMechanics::ArcLenghtElemFEMethod::~ArcLenghtElemFEMethod() {
+  VecDestroy(&GhostDiag);
+}*/

@@ -101,19 +101,6 @@ struct ConfigurationalMechanics {
   
   };
 
-  struct SpatialAndSmoothing_FEMEthod: public FieldInterface::FEMethod {
-    FieldInterface& mField;
-    ConfigurationalMechanics *conf_prob;
-    Mat CTC_QTKQ,precK;
-    Vec F;
-    CubitDisplacementDirihletBC_Coupled& myDirihletBC;
-    SpatialAndSmoothing_FEMEthod(
-      FieldInterface& _mField,ConfigurationalMechanics *_conf_prob,
-      Mat _CTC_QTKQ,Mat _precK,Vec _F,
-      CubitDisplacementDirihletBC_Coupled& _myDirihletBC);
-    PetscErrorCode preProcess();
-  };
-
   struct ConstrainCrackForntEdges_FEMethod: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
@@ -145,6 +132,15 @@ struct ConfigurationalMechanics {
 
   };
 
+  /*struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
+
+    ArcLenghtCtx* arc_ptr;
+    Vec GhostDiag;
+    ArcLenghtElemFEMethod(Interface& _moab,ArcLenghtCtx *_arc_ptr);
+    ~ArcLenghtElemFEMethod();
+
+
+  };*/
 
 };
 
