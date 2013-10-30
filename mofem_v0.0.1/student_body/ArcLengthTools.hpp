@@ -20,6 +20,9 @@
 #ifndef __ARCLEGHTTOOLS_HPP__
 #define __ARCLEGHTTOOLS_HPP__
 
+#include "FieldInterface.hpp"
+#include "SnesCtx.hpp"
+
 namespace MoFEM {
 
 struct ArcLenghtCtx_DataOnMesh {
@@ -155,24 +158,7 @@ struct ArcLengthMatShell {
   friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 };
 
-
-PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  void *void_ctx;
-  ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
-  ArcLengthMatShell *ctx = (ArcLengthMatShell*)void_ctx;
-  ierr = MatMult(ctx->Aij,x,f); CHKERRQ(ierr);
-  double lambda;
-  ierr = ctx->set_lambda(x,&lambda,SCATTER_FORWARD); CHKERRQ(ierr);
-  double db_dot_x;
-  ierr = VecDot(ctx->arc_ptr->db,x,&db_dot_x); CHKERRQ(ierr);
-  double f_lambda;
-  f_lambda = ctx->scale_lambda*(ctx->arc_ptr->diag*lambda + db_dot_x);
-  ierr = ctx->set_lambda(f,&f_lambda,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAXPY(f,-lambda,ctx->arc_ptr->F_lambda); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
+PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 
 struct PCShellCtx {
   PC pc;
@@ -189,44 +175,8 @@ struct PCShellCtx {
   friend PetscErrorCode pc_setup_arc_length(PC pc);
 };
 
-PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  void *void_ctx;
-  ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
-  PCShellCtx *PCCtx = (PCShellCtx*)void_ctx;
-  void *void_MatCtx;
-  MatShellGetContext(PCCtx->ShellAij,&void_MatCtx);
-  ArcLengthMatShell *MatCtx = (ArcLengthMatShell*)void_MatCtx;
-  ierr = PCApply(PCCtx->pc,pc_f,pc_x); CHKERRQ(ierr);
-  ierr = PCApply(PCCtx->pc,PCCtx->arc_ptr->F_lambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
-  double db_dot_pc_x,db_dot_x_lambda;
-  ierr = VecDot(PCCtx->arc_ptr->db,pc_x,&db_dot_pc_x); CHKERRQ(ierr);
-  ierr = VecDot(PCCtx->arc_ptr->db,PCCtx->arc_ptr->x_lambda,&db_dot_x_lambda); CHKERRQ(ierr);
-  double denominator = MatCtx->scale_lambda*PCCtx->arc_ptr->diag+MatCtx->scale_lambda*db_dot_x_lambda;
-  double res_lambda;
-  ierr = MatCtx->set_lambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
-  double ddlambda = (res_lambda - MatCtx->scale_lambda*db_dot_pc_x)/denominator;
-  //cerr << res_lambda << " " << ddlambda << " " << db_dot_pc_x << " " << db_dot_x_lambda << " " << PCCtx->arc_ptr->diag << endl;
-  if(ddlambda != ddlambda) SETERRQ(PETSC_COMM_SELF,1,"problem with constraint");
-  ierr = VecAXPY(pc_x,ddlambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
-  ierr = MatCtx->set_lambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode pc_setup_arc_length(PC pc) {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  void *void_ctx;
-  ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
-  PCShellCtx *ctx = (PCShellCtx*)void_ctx;
-  ierr = PCSetFromOptions(ctx->pc); CHKERRQ(ierr);
-  MatStructure flag;
-  ierr = PCGetOperators(pc,&ctx->ShellAij,&ctx->Aij,&flag); CHKERRQ(ierr);
-  ierr = PCSetOperators(ctx->pc,ctx->ShellAij,ctx->Aij,flag); CHKERRQ(ierr);
-  ierr = PCSetUp(ctx->pc); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
+PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
+PetscErrorCode pc_setup_arc_length(PC pc);
 
 }
 

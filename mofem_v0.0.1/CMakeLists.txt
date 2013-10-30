@@ -106,6 +106,7 @@ add_library(mofem_Field
   student_body/DirihletBC.cpp
   student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
   student_body/FEMethod_SurfaceConstrains.cpp
+  student_body/ArcLengthTools.cpp
   FieldInterface.cpp
   SnesCtx.cpp
   FEM.c

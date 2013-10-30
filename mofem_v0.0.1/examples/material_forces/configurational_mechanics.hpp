@@ -22,6 +22,8 @@
 
 #include "FieldInterface.hpp"
 #include "FEMethod_DriverComplexForLazy.hpp"
+#include "SnesCtx.hpp"
+#include "ArcLengthTools.hpp"
 
 using namespace MoFEM;
 

@@ -24,8 +24,6 @@
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 
-#include "SnesCtx.hpp"
-#include "ArcLengthTools.hpp"
 
 using namespace MoFEM;
 
@@ -1555,15 +1553,4 @@ PetscErrorCode ConfigurationalMechanics::ConstrainCrackForntEdges_FEMethod::post
 
   PetscFunctionReturn(0);
 }
-/*ConfigurationalMechanics::ArcLenghtElemFEMethod::ArcLenghtElemFEMethod(Interface& _moab,ArcLenghtCtx *_arc_ptr): FEMethod(),moab(_moab),arc_ptr(_arc_ptr) {
-  PetscInt ghosts[1] = { 0 };
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm->rank() == 0) {
-    VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostDiag);
-  } else {
-    VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag);
-  }
-}
-ConfigurationalMechanics::ArcLenghtElemFEMethod::~ArcLenghtElemFEMethod() {
-  VecDestroy(&GhostDiag);
-}*/
+
