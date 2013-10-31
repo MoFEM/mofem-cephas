@@ -28,6 +28,9 @@ target_link_libraries(l2_approximation mofem_student_body mofem_Field ${PROJECT_
 add_executable(trans_isotropic_test trans_isotropic_test.cpp)
 target_link_libraries(trans_isotropic_test mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(mesh_smoothing_atom mesh_smoothing_atom.cpp)
+target_link_libraries(mesh_smoothing_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" "/" export_atom_tests)
@@ -46,6 +49,7 @@ cm_export_file("../meshes/elasticity_atom_test_01X.cub" "/" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01Y.cub" "/" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01Z.cub" "/" export_atom_tests)
 cm_export_file("../meshes/trans_isotropic_cube.cub" "/" export_atom_tests)
+cm_export_file("../meshes/chees_atom.cub" "/" export_atom_tests)
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
@@ -106,7 +110,8 @@ add_test(elasticity_atom_test_01Z_compare ${CMAKE_COMMAND} -E compare_files ${CM
 add_test(l2_atom_approximation ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/l2_approximation -my_file elasticity_atom_test_01X.cub)
 add_test(l2_atom_approximation_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/l2_approximation.txt ${CMAKE_BINARY_DIR}/atom_tests/l2_approximation.txt)
 
-
+add_test(mesh_smoothing_atom_test ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing_atom -my_file chees_atom.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-12 -ksp_rtol 1e-12 -snes_monitor -snes_type newtonls -snes_linesearch_type bt -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason -my_penalty 1e10 -my_gamma 0.0 -my_alpha2 1)
+add_test(mesh_smoothing_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_smoothing.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_smoothing.txt)
 
 
 
