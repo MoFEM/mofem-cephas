@@ -6,19 +6,10 @@ set(CTEST_PROJECT_NAME "MoFEM")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
 set(CTEST_BUILD_CONFIGURATION "Debug")
 
-#ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
+ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
 find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
 find_program(CTEST_GIT_COMMAND NAMES git)
-find_program(CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
-
-SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS 
-  "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes --gen-suppressions=all")
-SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE ${CTEST_SOURCE_DIRECTORY}/mofem_valgrind.supp)
-
-MEMORYCHECK_COMMAND:FILEPATH=${CTEST_MEMORYCHECK_COMMAND}
-MEMORYCHECK_COMMAND_OPTIONS:STRING=${CTEST_MEMORYCHECK_COMMAND_OPTIONS}
-MEMORYCHECK_SUPPRESSIONS_FILE:FILEPATH=${CTEST_MEMORYCHECK_SUPPRESSIONS_FILE}
 
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(INIT_REPOSITORY "YES")
@@ -92,5 +83,6 @@ if(${DOTEST} GREATER 0)
   if(CTEST_COVERAGE_COMMAND)
     ctest_coverage()
   endif(CTEST_COVERAGE_COMMAND)
+  ctest_submit()
 endif(${DOTEST} GREATER 0)
 
