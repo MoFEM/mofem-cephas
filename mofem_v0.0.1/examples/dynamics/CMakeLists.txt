@@ -17,7 +17,7 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 add_executable(linear_dynamics_elasticity linear_dynamics_elasticity.cpp)
-target_link_libraries(linear_dynamics_elasticity mofem_Field ${PROJECT_LIBS})
+target_link_libraries(linear_dynamics_elasticity mofem_Field mofem_student_body ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/LShape.cub" "/" export_files_linear_dynamics_elasticity)
 cm_export_file("../../meshes/LShapeCoarse.cub" "/" export_linear_dynamics_elasticity)

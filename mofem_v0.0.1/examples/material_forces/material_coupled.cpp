@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-#include "configurational_mechanics.hpp"
+#include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
 
 

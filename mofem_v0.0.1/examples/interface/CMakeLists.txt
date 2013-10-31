@@ -17,7 +17,7 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 add_executable(interface interface.cpp)
-target_link_libraries(interface mofem_Field ${PROJECT_LIBS})
+target_link_libraries(interface mofem_Field mofem_student_body ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/PeelTest.cub" "/" export_files_interface)
 cm_export_file("../../meshes/PeelTestHalfCrack.cub" "/" export_files_interface)

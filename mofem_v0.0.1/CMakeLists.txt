@@ -94,25 +94,33 @@ include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 
 add_library(mofem_Field 
+  FieldInterface.cpp
+  SnesCtx.cpp
   third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
   do_not_blink/CoreDataStructures.cpp
   do_not_blink/TETRefine.cpp
   do_not_blink/FieldCore.cpp
-  complex_for_lazy/complex_for_lazy.c
-  complex_for_lazy/FEMethod_ComplexForLazy.cpp
+  FEM.c
+  H1.c
+  L2.c
+)
+
+add_library(mofem_student_body
   student_body/FEMethod_LowLevelStudent.cpp
   student_body/FEMethod_UpLevelStudent.cpp
   student_body/DirihletBC.cpp
   student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
   student_body/FEMethod_SurfaceConstrains.cpp
   student_body/ArcLengthTools.cpp
-  FieldInterface.cpp
-  SnesCtx.cpp
-  FEM.c
-  H1.c
-  L2.c
 )
+
+add_library(mofem_complex_for_lazy
+  complex_for_lazy/complex_for_lazy.c
+  complex_for_lazy/FEMethod_ComplexForLazy.cpp
+  complex_for_lazy/ConfigurationalFractureMechanics.cpp
+)
+
 #add_library(cgal_interface 
 #  cgal_interface.cpp
 #)

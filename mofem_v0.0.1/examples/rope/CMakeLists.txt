@@ -17,9 +17,9 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 add_executable(wire_interface interface_fibre.cpp)
-target_link_libraries(wire_interface mofem_Field ${PROJECT_LIBS})
+target_link_libraries(wire_interface mofem_Field mofem_student_body ${PROJECT_LIBS})
 add_executable(potential_flow_rope potential_flow_rope.cpp)
-target_link_libraries(potential_flow_rope mofem_Field ${PROJECT_LIBS})
+target_link_libraries(potential_flow_rope mofem_Field mofem_student_body ${PROJECT_LIBS})
 
 #cm_export_file("../../meshes/new_clamped_wire_coarse.cub" "/" export_potential_flow)
 
