@@ -944,7 +944,7 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
     PetscReal g_nrm2;
     ierr = VecNorm(proj_all_ctx.g, NORM_2,&g_nrm2); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD,"\t g_nrm2 = %6.4e\n",g_nrm2);
+    PetscPrintf(PETSC_COMM_WORLD,"\tg_nrm2 = %6.4e\n",g_nrm2);
 
     PetscFunctionReturn(0);
   }
@@ -978,25 +978,25 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	ierr = MatMult(R,proj_all_ctx.g,Rg); CHKERRQ(ierr);
 	PetscReal Rg_nrm2;
 	ierr = VecNorm(Rg,NORM_2,&Rg_nrm2); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\t Rg_nrm2 = %6.4e\n",Rg_nrm2);
+	PetscPrintf(PETSC_COMM_WORLD,"\tRg_nrm2 = %6.4e\n",Rg_nrm2);
 	Vec KRg;
 	ierr = VecDuplicate(f,&KRg); CHKERRQ(ierr);
 	ierr = MatMult(proj_all_ctx.K,Rg,KRg); CHKERRQ(ierr);
 	PetscReal KRg_nrm2;
 	ierr = VecNorm(KRg,NORM_2,&KRg_nrm2); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\t KRg_nrm2 = %6.4e\n",KRg_nrm2);
+	PetscPrintf(PETSC_COMM_WORLD,"\tKRg_nrm2 = %6.4e\n",KRg_nrm2);
 	ierr = VecAXPY(f,-1.,KRg); CHKERRQ(ierr);
 
 	//+QT*(f-QTKRg)
 	PetscReal f_nrm2;
 	ierr = VecNorm(f,NORM_2,&f_nrm2); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\t f_nrm2 = %6.4e\n",f_nrm2);
+	PetscPrintf(PETSC_COMM_WORLD,"\tf_nrm2 = %6.4e\n",f_nrm2);
 	Vec tmp_f;
 	ierr = VecDuplicate(f,&tmp_f); CHKERRQ(ierr);
 	ierr = MatMult(Q,f,tmp_f); CHKERRQ(ierr);
 	PetscReal QTf_nrm2;
 	ierr = VecNorm(tmp_f,NORM_2,&QTf_nrm2); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\t QTf_nrm2 = %6.4e\n",QTf_nrm2);
+	PetscPrintf(PETSC_COMM_WORLD,"\tQTf_nrm2 = %6.4e\n",QTf_nrm2);
 	ierr = VecSwap(f,tmp_f); CHKERRQ(ierr);
 
 	//CTg

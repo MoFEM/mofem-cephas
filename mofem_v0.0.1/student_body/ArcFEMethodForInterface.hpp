@@ -25,7 +25,7 @@
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 #include "SnesCtx.hpp"
-#include "ArcLeghtTools.hpp"
+#include "ArcLengthTools.hpp"
 
 namespace MoFEM {
 
@@ -651,6 +651,7 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
+    //get dlambda dof 
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
     dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("LAMBDA");
     hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("LAMBDA");
@@ -659,12 +660,14 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: {
+	//calulate residual for arc lenght row
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
       }
       break; 
       case ctx_SNESSetJacobian: {
+	//calulate diagonal therm
 	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
 	ierr = MatSetValue(Aij,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
@@ -723,12 +726,15 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
     //dlambda
     NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
 	  = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-    if(dofs_moabfield_no_const.size()==0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    if(dofs_moabfield_no_const.size()==0) SETERRQ(PETSC_COMM_SELF,1,"size of row is zero");
     NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
-    if(dit==dofs_moabfield_no_const.get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    if(dit==dofs_moabfield_no_const.get<FieldName_mi_tag>().end()) {
+      SETERRQ(PETSC_COMM_SELF,1,"LAMBDA field for arc lenght force scaling factor not found");
+    }
     hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
-    if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"should be only one LAMDA dof");
+    //if LAMBDA dof is on this partition
     if(dit->get_petsc_local_dof_idx()!=-1) {
       double *array;
       ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
@@ -736,9 +742,10 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
       array[dit->get_petsc_local_dof_idx()] = 0;
       ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
     }
+    //brodcast dlambda
     int part = dit->part;
     MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
-    //dx2
+    //calulate dx2 (dot product)
     ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arc_ptr->dlambda,arc_ptr->dx2);
     PetscFunctionReturn(0);

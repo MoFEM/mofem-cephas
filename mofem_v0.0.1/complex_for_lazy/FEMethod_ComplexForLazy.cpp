@@ -112,7 +112,7 @@ PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
   if(mesh_quality_analysis&type_of_analysis) {
     ierr = PetscOptionsGetReal("","-my_alpha2",&alpha2,&flg_alpha2); CHKERRQ(ierr);
     ierr = PetscOptionsGetReal("","-my_gamma",&gamma,&flg_gamma); CHKERRQ(ierr);
-    int def_quality = -1;
+    double def_quality = -1;
     rval = moab.tag_get_handle("QUALITY0",1,MB_TYPE_DOUBLE,th_quality0,MB_TAG_CREAT|MB_TAG_SPARSE,&def_quality); 
     if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
     CHKERR(rval);

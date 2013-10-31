@@ -23,7 +23,7 @@
 #include "FEMethod_DriverComplexForLazy.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-#include "ArcLeghtTools.hpp"
+#include "ArcLengthTools.hpp"
 
 namespace MoFEM {
 

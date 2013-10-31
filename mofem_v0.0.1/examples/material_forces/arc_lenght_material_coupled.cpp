@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.coupled_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_crack_front_problem_definition(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.arclenght_problem_definition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC_COUPLED",MBTET); CHKERRQ(ierr);
@@ -192,12 +193,12 @@ int main(int argc, char *argv[]) {
 	( fabs((gc+conf_prob.min_g)/gc)<1e-2 )&&
 	( fabs((gc+conf_prob.max_g)/gc)<1e-2 ) ) {
 	ierr = PetscPrintf(PETSC_COMM_WORLD,
-	  "stop: (gc-conf_prob.min/max_g)/gc = %6.4e,%6.4e\n",
+	  "stop: (gc+conf_prob.min/max_g)/gc = %6.4e,%6.4e\n",
 	  (gc+conf_prob.min_g)/gc,(gc+conf_prob.max_g)/gc); CHKERRQ(ierr);
 	break;
       }
       if(fabs((gc+conf_prob.ave_g)/gc)<1e-3) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"stop: (gc-conf_prob.ave_g)/gc = %6.4e\n",(gc+conf_prob.ave_g)/gc); CHKERRQ(ierr);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"stop: (gc+conf_prob.ave_g)/gc = %6.4e\n",(gc+conf_prob.ave_g)/gc); CHKERRQ(ierr);
 	break;
       }
 

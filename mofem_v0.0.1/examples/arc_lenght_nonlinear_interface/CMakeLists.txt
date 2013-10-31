@@ -17,7 +17,7 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 add_executable(arc_lenght_interface arc_lenght_interface.cpp)
-target_link_libraries(arc_lenght_interface mofem_Field ${PROJECT_LIBS})
+target_link_libraries(arc_lenght_interface mofem_Field mofem_student_body ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/PeelTest.cub" "/" export_files_arc_lenght_interface)
 

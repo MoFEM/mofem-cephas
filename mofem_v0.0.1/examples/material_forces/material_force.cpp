@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "configurational_mechanics.hpp"
+#include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
 
 using namespace MoFEM;
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  ConfigurationalMechanics conf_prob(mField);
+  ConfigurationalFractureMechanics conf_prob(mField);
 
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 

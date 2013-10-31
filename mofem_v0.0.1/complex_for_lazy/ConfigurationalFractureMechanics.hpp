@@ -22,10 +22,12 @@
 
 #include "FieldInterface.hpp"
 #include "FEMethod_DriverComplexForLazy.hpp"
+#include "SnesCtx.hpp"
+#include "ArcLengthTools.hpp"
 
 using namespace MoFEM;
 
-struct ConfigurationalMechanics {
+struct ConfigurationalFractureMechanics {
  
   Tag th_MaterialFireWall;
   typedef bitset<16> Material_FirelWall_def;
@@ -47,7 +49,7 @@ struct ConfigurationalMechanics {
 
   BitRefLevel *ptr_bit_level0;
   BitRefLevel bit_level0;
-  ConfigurationalMechanics(FieldInterface& mField): projSurfaceCtx(NULL),projFrontCtx(NULL) {
+  ConfigurationalFractureMechanics(FieldInterface& mField): projSurfaceCtx(NULL),projFrontCtx(NULL) {
 
     ErrorCode rval;
     Tag th_my_ref_level;
@@ -101,23 +103,10 @@ struct ConfigurationalMechanics {
   
   };
 
-  struct SpatialAndSmoothing_FEMEthod: public FieldInterface::FEMethod {
-    FieldInterface& mField;
-    ConfigurationalMechanics *conf_prob;
-    Mat CTC_QTKQ,precK;
-    Vec F;
-    CubitDisplacementDirihletBC_Coupled& myDirihletBC;
-    SpatialAndSmoothing_FEMEthod(
-      FieldInterface& _mField,ConfigurationalMechanics *_conf_prob,
-      Mat _CTC_QTKQ,Mat _precK,Vec _F,
-      CubitDisplacementDirihletBC_Coupled& _myDirihletBC);
-    PetscErrorCode preProcess();
-  };
-
   struct ConstrainCrackForntEdges_FEMethod: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
-    ConfigurationalMechanics *conf_prob;
+    ConfigurationalFractureMechanics *conf_prob;
 
     double alpha3;
     ublas::vector<DofIdx> rowDofs,colDofs;
@@ -127,7 +116,7 @@ struct ConfigurationalMechanics {
     ublas::matrix<FieldData> K;
 
     ConstrainCrackForntEdges_FEMethod(
-      FieldInterface& _mField,ConfigurationalMechanics *_conf_prob,double _alpha3): mField(_mField),conf_prob(_conf_prob),alpha3(_alpha3) {
+      FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,double _alpha3): mField(_mField),conf_prob(_conf_prob),alpha3(_alpha3) {
       rowDofs.resize(6);
       colDofs.resize(6);
       dofsX.resize(6);
@@ -145,6 +134,26 @@ struct ConfigurationalMechanics {
 
   };
 
+  struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
+
+    FieldInterface& mField;
+    ConfigurationalFractureMechanics *conf_prob;
+    ArcLenghtCtx* arc_ptr;
+    Vec GhostDiag;
+    ArcLenghtElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLenghtCtx *_arc_ptr);
+    ~ArcLenghtElemFEMethod();
+
+    PetscErrorCode calulate_lambda_int(double &_lambda_int_);
+    PetscErrorCode calulate_db();
+    PetscErrorCode calulate_dx_and_dlambda(Vec x);
+
+    double lambda_int;
+
+    PetscErrorCode preProcess();
+    PetscErrorCode operator()();
+    PetscErrorCode postProcess();
+
+  };
 
 };
 
