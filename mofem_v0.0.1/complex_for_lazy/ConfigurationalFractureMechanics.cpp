@@ -27,13 +27,14 @@
 
 using namespace MoFEM;
 
+phisical_equation_volume eq_solid = hooke; //stvenant_kirchhoff
+
 struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   
     NL_ElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
         FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
         FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
-      set_PhysicalEquationNumber(stvenant_kirchhoff);
-      //set_PhysicalEquationNumber(hooke);
+      set_PhysicalEquationNumber(eq_solid);
     }
   
   };
@@ -43,8 +44,7 @@ struct NL_MaterialFEMethod: public FEMethod_DriverComplexForLazy_Material {
     NL_MaterialFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
         FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
         FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
-      set_PhysicalEquationNumber(stvenant_kirchhoff);
-      //set_PhysicalEquationNumber(hooke);
+      set_PhysicalEquationNumber(eq_solid);
     }
   
   };
@@ -54,8 +54,7 @@ struct NL_MaterialFEMethodProjected: public FEMethod_DriverComplexForLazy_Materi
     NL_MaterialFEMethodProjected(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
         FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
         FEMethod_DriverComplexForLazy_MaterialProjected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
-      set_PhysicalEquationNumber(stvenant_kirchhoff);
-      //set_PhysicalEquationNumber(hooke);
+      set_PhysicalEquationNumber(eq_solid);
     }
   
   };
@@ -65,8 +64,7 @@ struct NL_ElasticFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledSp
     NL_ElasticFEMethodCoupled(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledSpatial(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
-        set_PhysicalEquationNumber(stvenant_kirchhoff);
-	//set_PhysicalEquationNumber(hooke);
+	set_PhysicalEquationNumber(eq_solid);
       }
   
   };
@@ -76,8 +74,7 @@ struct NL_MaterialFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledM
     NL_MaterialFEMethodCoupled(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledMaterial(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
-        set_PhysicalEquationNumber(stvenant_kirchhoff);
-	//set_PhysicalEquationNumber(hooke);
+	set_PhysicalEquationNumber(eq_solid);
       }
   
   };
@@ -87,8 +84,7 @@ struct NL_ElasticFEMethodCoupled_OnlyDiagonal: public FEMethod_DriverComplexForL
     NL_ElasticFEMethodCoupled_OnlyDiagonal(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledSpatial_OnlyDiagonal(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
-        set_PhysicalEquationNumber(stvenant_kirchhoff);
-	//set_PhysicalEquationNumber(hooke);
+	set_PhysicalEquationNumber(eq_solid);
       }
   
   };
@@ -98,8 +94,7 @@ struct NL_MaterialFEMethodCoupled_OnlyCoupling: public FEMethod_DriverComplexFor
     NL_MaterialFEMethodCoupled_OnlyCoupling(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledMaterial_OnlyCoupling(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
-        set_PhysicalEquationNumber(stvenant_kirchhoff);
-	//set_PhysicalEquationNumber(hooke);
+	set_PhysicalEquationNumber(eq_solid);
       }
   
   };
@@ -1081,11 +1076,14 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     EntityHandle ent = diit->get_ent();
     rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERR_PETSC(rval);
     ostringstream ss;
-    ss << "griffith force ";
-    ss << "coords " << setw(20) << coords;
-    ss << "\t" << "ent " << diit->get_ent();
-    ss << "\t" << scientific << setprecision(4) << diit->get_FieldData();
-    ss << "\t relative error " << scientific << setprecision(4) << (gc+diit->get_FieldData())/gc;
+    ss << "griffith force at";
+    ss << "ent " << diit->get_ent();
+    ss << "\tcoords";
+    ss << " " << setw(10) << setprecision(4) << coords[0];
+    ss << " " << setw(10) << setprecision(4) << coords[1];
+    ss << " " << setw(10) << setprecision(4) << coords[2];
+    ss << "\t\tg " << scientific << setprecision(4) << -diit->get_FieldData();
+    ss << "\t relative error (gc-g)/gc " << scientific << setprecision(4) << (gc+diit->get_FieldData())/gc;
     ss << endl; 
     PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
   }

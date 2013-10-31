@@ -192,12 +192,12 @@ int main(int argc, char *argv[]) {
 	( fabs((gc+conf_prob.min_g)/gc)<1e-2 )&&
 	( fabs((gc+conf_prob.max_g)/gc)<1e-2 ) ) {
 	ierr = PetscPrintf(PETSC_COMM_WORLD,
-	  "stop: (gc+conf_prob.min/max_g)/gc = %6.4e,%6.4e\n",
+	  "stop: (gc-conf_prob.min/max_g)/gc = %6.4e,%6.4e\n",
 	  (gc+conf_prob.min_g)/gc,(gc+conf_prob.max_g)/gc); CHKERRQ(ierr);
 	break;
       }
       if(fabs((gc+conf_prob.ave_g)/gc)<1e-3) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"stop: (gc+conf_prob.ave_g)/gc = %6.4e\n",(gc+conf_prob.ave_g)/gc); CHKERRQ(ierr);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"stop: (gc-conf_prob.ave_g)/gc = %6.4e\n",(gc+conf_prob.ave_g)/gc); CHKERRQ(ierr);
 	break;
       }
 
