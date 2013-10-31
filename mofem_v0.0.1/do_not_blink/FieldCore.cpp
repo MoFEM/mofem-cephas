@@ -2565,6 +2565,7 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
 	miit = problem_MoFEMFiniteElement.cols_dofs.get<Unique_mi_tag>().begin();
 	for(;miit!=problem_MoFEMFiniteElement.cols_dofs.get<Unique_mi_tag>().end();miit++) ss << "cols: " << *miit << endl;
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       }
     }
   }
