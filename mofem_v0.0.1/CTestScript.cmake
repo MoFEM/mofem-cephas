@@ -6,16 +6,19 @@ set(CTEST_PROJECT_NAME "MoFEM")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
 set(CTEST_BUILD_CONFIGURATION "Debug")
 
-ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
+#ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
 find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
 find_program(CTEST_GIT_COMMAND NAMES git)
 find_program(CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
 
-if(CTEST_MEMORYCHECK_COMMAND) 
-  SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS 
-    "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes --gen-suppressions=all")
-endif
+SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS 
+  "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes --gen-suppressions=all")
+SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE ${CTEST_SOURCE_DIRECTORY}/mofem_valgrind.supp)
+
+MEMORYCHECK_COMMAND:FILEPATH=${CTEST_MEMORYCHECK_COMMAND}
+MEMORYCHECK_COMMAND_OPTIONS:STRING=${CTEST_MEMORYCHECK_COMMAND_OPTIONS}
+MEMORYCHECK_SUPPRESSIONS_FILE:FILEPATH=${CTEST_MEMORYCHECK_SUPPRESSIONS_FILE}
 
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(INIT_REPOSITORY "YES")
@@ -30,7 +33,7 @@ set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} ${CTEST_BUILD_OPTIONS} -
 set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"-G${CTEST_CMAKE_GENERATOR}\"")
 set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\"")
 
-# Perform the Nightly build
+# Perform the CDashTesting
 ctest_start(${DASHBOARDTEST})
 
 ctest_update(SOURCE "${GID_SOURCE_REPO}" RETURN_VALUE DOTEST)
@@ -42,33 +45,50 @@ else(NOT INIT_REPOSITORY)
 endif()
 if(FORCETESTING) 
   set(DOTEST 1)
-  message ("Fore build")
+  message ("Force build")
 endif(FORCETESTING)
 
-
-
 set(CTEST_CUSTOM_MEMCHECK_IGNORE
-    ${CTEST_CUSTOM_MEMCHECK_IGNORE}
-    SimpleElasticityTest
-    SimpleInterfaceTest
-    SimpleInterfaceTestHalfCrack
-    LinearDynamicsElasticity
-    SimpleNonLinearElasticityTest
-    ArcLenghtNonLinearElasticityTest
-    ArcLenghtInterfaceTest
-    SimpleMeshSmoothingTest
-    SimplePotentialFlowTest
-    ComputeFibreDirection
-    wireTest
+  ${CTEST_CUSTOM_MEMCHECK_IGNORE}
+  cubit_bc_atom_test_disp01_compare
+  cubit_bc_atom_test_force01_compare
+  cubit_bc_atom_test_velocity01_compare
+  cubit_bc_atom_test_accel01_compare
+  cubit_bc_atom_test_temper01_compare
+  cubit_bc_atom_test_pressure01_compare
+  cubit_bc_atom_test_heatflux01_compare
+  cubit_bc_atom_test_comb01_compare
+  cubit_bc_atom_test_bcoverlap01_compare
+  cubit_bc_atom_test_interf01_compare
+  cubit_bc_atom_test_mat_elastic_compare
+  cubit_bc_atom_test_mat_transiso_compare
+  cubit_bc_atom_test_mat_interf_compare
+  cubit_bc_atom_test_inlet_outlet_compare
+  elasticity_atom_test_01X_compare
+  traniso_mat_test_compare
+  elasticity_atom_test_01Y_compare
+  elasticity_atom_test_01Z_compare
+  l2_atom_approximation_compare
+  SimpleElasticityTest
+  SimpleInterfaceTest
+  SimpleInterfaceTestHalfCrack
+  LinearDynamicsElasticity
+  SimpleNonLinearElasticityTest
+  ArcLenghtNonLinearElasticityTest
+  ArcLenghtInterfaceTest
+  SimpleMeshSmoothingTest
+  SimplePotentialFlowTest
+  ComputeFibreDirection
+  wireTest
 )
 
 if(${DOTEST} GREATER 0)
   ctest_configure()
   ctest_build()
-  ctest_test()
   if(CTEST_MEMORYCHECK_COMMAND)
-    ctest_submit()
+    ctest_memcheck()
   endif(CTEST_MEMORYCHECK_COMMAND)
+  ctest_test()
   if(CTEST_COVERAGE_COMMAND)
     ctest_coverage()
   endif(CTEST_COVERAGE_COMMAND)
