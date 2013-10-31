@@ -39,6 +39,14 @@ if(FORCETESTING)
   message ("Fore build")
 endif(FORCETESTING)
 
+set(CTEST_CUSTOM_MEMCHECK_IGNORE
+  ${CTEST_CUSTOM_MEMCHECK_IGNORE}
+    LinearDynamicsElasticity
+    SimpleNonLinearElasticityTest
+    ArcLenghtNonLinearElasticityTest
+    ArcLenghtInterfaceTest
+)
+
 if(${DOTEST} GREATER 0)
   ctest_configure()
   ctest_build()
