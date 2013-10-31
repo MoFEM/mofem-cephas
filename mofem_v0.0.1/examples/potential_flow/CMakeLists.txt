@@ -17,7 +17,7 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 add_executable(potential_flow potential_flow.cpp)
-target_link_libraries(potential_flow mofem_Field mofem_student_body ${PROJECT_LIBS})
+target_link_libraries(potential_flow mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/pipe.cub" "/" export_potential_flow)
 

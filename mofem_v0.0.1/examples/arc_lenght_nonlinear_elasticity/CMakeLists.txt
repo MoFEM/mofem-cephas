@@ -21,10 +21,10 @@
 include_directories("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
 
 add_executable(arc_lenght_nonlinear_elasticity arc_lenght_nonlinear_elasticity.cpp)
-target_link_libraries(arc_lenght_nonlinear_elasticity mofem_Field mofem_student_body mofem_complex_for_lazy ${PROJECT_LIBS})
+target_link_libraries(arc_lenght_nonlinear_elasticity mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(post_proc_arc_lenght_nonlinear_elasticity post_proc_arc_lenght_nonlinear_elasticity.cpp)
-target_link_libraries(post_proc_arc_lenght_nonlinear_elasticity mofem_Field mofem_student_body mofem_complex_for_lazy ${PROJECT_LIBS})
+target_link_libraries(post_proc_arc_lenght_nonlinear_elasticity mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/dome_thin_symm.cub" "/" export_files_arc_lenght_nonlinearelasticity)
 
