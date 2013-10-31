@@ -10,6 +10,12 @@ ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
 find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
 find_program(CTEST_GIT_COMMAND NAMES git)
+find_program(CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
+
+if(CTEST_MEMORYCHECK_COMMAND) 
+  SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS 
+    "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes --gen-suppressions=all")
+endif
 
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(INIT_REPOSITORY "YES")
@@ -39,21 +45,32 @@ if(FORCETESTING)
   message ("Fore build")
 endif(FORCETESTING)
 
+
+
 set(CTEST_CUSTOM_MEMCHECK_IGNORE
-  ${CTEST_CUSTOM_MEMCHECK_IGNORE}
+    ${CTEST_CUSTOM_MEMCHECK_IGNORE}
+    SimpleElasticityTest
+    SimpleInterfaceTest
+    SimpleInterfaceTestHalfCrack
     LinearDynamicsElasticity
     SimpleNonLinearElasticityTest
     ArcLenghtNonLinearElasticityTest
     ArcLenghtInterfaceTest
+    SimpleMeshSmoothingTest
+    SimplePotentialFlowTest
+    ComputeFibreDirection
+    wireTest
 )
 
 if(${DOTEST} GREATER 0)
   ctest_configure()
   ctest_build()
   ctest_test()
+  if(CTEST_MEMORYCHECK_COMMAND)
+    ctest_submit()
+  endif(CTEST_MEMORYCHECK_COMMAND)
   if(CTEST_COVERAGE_COMMAND)
     ctest_coverage()
   endif(CTEST_COVERAGE_COMMAND)
-  ctest_submit()
 endif(${DOTEST} GREATER 0)
 
