@@ -61,6 +61,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   elasticity_atom_test_01Z_compare
   l2_atom_approximation_compare
   mesh_smoothing_atom_test_compare
+  mesh_insert_interface_atom_test_compare
   SimpleElasticityTest
   SimpleInterfaceTest
   SimpleInterfaceTestHalfCrack

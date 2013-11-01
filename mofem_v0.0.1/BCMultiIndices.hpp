@@ -488,6 +488,7 @@ struct CubitMeshSets {
   inline int get_msId() const { return *msId; }
   inline Cubit_BC_bitset get_CubitBCType() const { return CubitBCType; }
 
+  inline EntityHandle get_meshset() const { return meshset; }
   inline unsigned long int get_CubitBCType_ulong() const { return CubitBCType.to_ulong(); }
   inline unsigned long int get_CubitBCType_mask_meshset_types_ulong() const { return (CubitBCType&meshsets_mask).to_ulong(); }
   inline unsigned long int get_CubitBCType_bc_data_types_ulong() const { return (CubitBCType&(~meshsets_mask)).to_ulong(); }

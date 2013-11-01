@@ -3454,8 +3454,8 @@ PetscErrorCode FieldCore::refine_MESHSET(const EntityHandle meshset,const BitRef
 PetscErrorCode FieldCore::refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator miit = refinedMoFemEntities.get<EntType_mi_tag>().lower_bound(MBTRI);
-  for(;miit!=refinedMoFemEntities.get<EntType_mi_tag>().upper_bound(MBTRI);miit++) {
+  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator miit = refinedMoFemEntities.get<EntType_mi_tag>().lower_bound(type);
+  for(;miit!=refinedMoFemEntities.get<EntType_mi_tag>().upper_bound(type);miit++) {
     BitRefLevel bit2 = miit->get_BitRefLevel(); 
     if((bit2&mask) != bit2) continue;
     if(verb > 2) {
