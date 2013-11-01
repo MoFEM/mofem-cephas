@@ -3916,7 +3916,7 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
 		p_e_miit = entsMoabField.insert(moabent);
 	      } catch (const std::exception& ex) {
 		ostringstream ss;
-		ss << ex.what() << endl;
+		ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
 		SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 	      }
 	      if(p_e_miit.first->get_max_order()<order) {

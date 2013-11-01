@@ -52,13 +52,13 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
 
   virtual PetscErrorCode SaveConstrainOnTags();
 
-  ublas::matrix<double> C_MAT_ELEM;
-  ublas::vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
+  ublas::bounded_matrix<double,3,9 > C_MAT_ELEM;
+  ublas::vector<DofIdx,ublas::bounded_array<DofIdx,9> > ent_global_col_indices,ent_global_row_indices;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_lambda_data;
   ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map0;
-  ublas::vector<double> coords;
+  ublas::vector<double,ublas::bounded_array<double,9> > coords;
 
   virtual PetscErrorCode Integrate();
   PetscErrorCode operator()();
@@ -87,10 +87,10 @@ struct C_CORNER_FEMethod:public FieldInterface::FEMethod {
 
   PetscErrorCode preProcess(); 
   
-  ublas::matrix<double> C_MAT_ELEM;
-  vector<DofIdx> ent_global_col_indices,ent_global_row_indices;
+  ublas::bounded_matrix<double,3,3 > C_MAT_ELEM;
+  ublas::vector<DofIdx,ublas::bounded_array<DofIdx,3> > ent_global_col_indices,ent_global_row_indices;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_lambda_data;
-  ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data;
+  ublas::vector<double,ublas::bounded_array<double,3> > ent_dofs_data;
   ublas::vector<double,ublas::bounded_array<double,3> > ent_normal_map;
   ublas::vector<double,ublas::bounded_array<double,3> > coords; 
 
