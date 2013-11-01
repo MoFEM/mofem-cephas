@@ -115,7 +115,7 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 	  FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
 	  dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("LAMBDA");
 	  hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("LAMBDA");
-	  if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"can not find LAMBDA (load factor) field");
 	  double _lambda_ = dit->get_FieldData();
 	  cblas_dscal(9,_lambda_,t,1);
 	  ierr = CalculateSpatialTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
@@ -244,7 +244,7 @@ struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
     dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("LAMBDA");
     hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("LAMBDA");
     //only one LAMBDA
-    if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"can not find LAMBDA (load factor) field");
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: {
@@ -364,8 +364,8 @@ struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
       NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
       dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
       hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
-      if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-
+      if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"can not find LAMBDA (load factor) field");
+      //check if locl dof idx is non zero, i.e. that lambda is acessible from this processor
       if(dit->get_petsc_local_dof_idx()!=-1) {
 	    double *array;
 	    ierr = VecGetArray(x,&array); CHKERRQ(ierr);

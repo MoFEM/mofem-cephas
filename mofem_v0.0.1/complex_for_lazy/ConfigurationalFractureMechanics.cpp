@@ -24,7 +24,6 @@
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 
-
 using namespace MoFEM;
 
 phisical_equation_volume eq_solid = hooke; //stvenant_kirchhoff
@@ -61,13 +60,133 @@ struct NL_MaterialFEMethodProjected: public FEMethod_DriverComplexForLazy_Materi
   
 struct NL_ElasticFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledSpatial {
   
-    NL_ElasticFEMethodCoupled(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+  ArcLenghtCtx *arc_ptr;
+  NL_ElasticFEMethodCoupled(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLenghtCtx *_arc_ptr = NULL,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-      FEMethod_DriverComplexForLazy_CoupledSpatial(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
+      FEMethod_DriverComplexForLazy_CoupledSpatial(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), arc_ptr(_arc_ptr) {
 	set_PhysicalEquationNumber(eq_solid);
       }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    
+    ierr = FEMethod_DriverComplexForLazy_CoupledSpatial::preProcess(); CHKERRQ(ierr);
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+	if(arc_ptr != NULL) {
+	  ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
+	  ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	  ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	}
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+ 
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
+    ierr = calulateKFint(proj_all_ctx.K,snes_f); CHKERRQ(ierr);
+    if(arc_ptr==NULL) {
+      ierr = calulateKFext(proj_all_ctx.K,snes_f,*(this->t_val)); CHKERRQ(ierr);
+    } else {
+      ierr = calulateKFext(proj_all_ctx.K,arc_ptr->F_lambda,1.); CHKERRQ(ierr);
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    
+    ierr = FEMethod_DriverComplexForLazy_CoupledSpatial::postProcess(); CHKERRQ(ierr);
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+	if(arc_ptr != NULL) {
+	  ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+	  //F_lambda2
+	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+	}
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+ 
+    PetscFunctionReturn(0);
+  }
+
   
   };
+
+struct NL_ElasticFEMethodCoupled_F_lambda_Only: public FEMethod_DriverComplexForLazy_CoupledSpatial {
+
+  ArcLenghtCtx *arc_ptr;
+  NL_ElasticFEMethodCoupled_F_lambda_Only(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLenghtCtx *_arc_ptr = NULL,int _verbose = 0):
+      FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+      FEMethod_DriverComplexForLazy_CoupledSpatial(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), arc_ptr(_arc_ptr) {
+	set_PhysicalEquationNumber(eq_solid);
+      }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    
+    ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+ 
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
+    snes_ctx = ctx_SNESSetFunction;
+    ierr = calulateKFext(PETSC_NULL,arc_ptr->F_lambda,1); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    
+    ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+    //F_lambda2
+    ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+ 
+    PetscFunctionReturn(0);
+  }
+
+};
   
 struct NL_MaterialFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledMaterial {
   
@@ -1237,18 +1356,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   Vec F;
   ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Row,&F); CHKERRQ(ierr);
 
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.;
-  NL_ElasticFEMethodCoupled MySpatialFE(
-    mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  NL_MaterialFEMethodCoupled MyMaterialFE(
-    mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  NL_MeshSmootherCoupled MyMeshSmoother(mField,*projSurfaceCtx,&myDirihletBC,1.);
-  ConstrainCrackForntEdges_FEMethod FrontPenalty(mField,this,alpha3);
-
   SnesCtx* snes_ctx;
   Mat Arc_CTC_QTKQ;
-  ArcLenghtCtx* arc_ctx;
+  ArcLenghtCtx* arc_ctx = NULL;
   ArcLenghtSnesCtx* arc_snes_ctx;
   ArcLengthMatShell* arc_mat_ctx;
   PCShellCtx* pc_ctx;
@@ -1265,17 +1375,36 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   } else {
     snes_ctx = new SnesCtx(mField,"COUPLED_PROBLEM");
   }
-  
+
+  const double YoungModulus = 1;
+  const double PoissonRatio = 0.;
+  NL_ElasticFEMethodCoupled MySpatialFE(
+    mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),arc_ctx);
+  NL_MaterialFEMethodCoupled MyMaterialFE(
+    mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  NL_MeshSmootherCoupled MyMeshSmoother(mField,*projSurfaceCtx,&myDirihletBC,1.);
+  ConstrainCrackForntEdges_FEMethod FrontPenalty(mField,this,alpha3);
+ 
   ////******
   ierr = MySpatialFE.init_crack_front_data(); CHKERRQ(ierr);
   ierr = MyMaterialFE.init_crack_front_data(); CHKERRQ(ierr);
   ierr = MyMeshSmoother.init_crack_front_data(false,false); CHKERRQ(ierr);
   ////******
 
+  Vec D;
+  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
-    ierr = arc_ctx->set_s(0); CHKERRQ(ierr);
+    ierr = arc_elem->set_dlambda_to_x(D,step_size); CHKERRQ(ierr);
+    ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
     ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
-    ierr = MySpatialFE.set_t_val(step_size); CHKERRQ(ierr);
+    NL_ElasticFEMethodCoupled_F_lambda_Only MySpatialFE_F_lambda_Only(
+      mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),arc_ctx);
+    ierr = mField.loop_finite_elements("COUPLED_PROBLEM","ELASTIC_COUPLED",MySpatialFE_F_lambda_Only);  CHKERRQ(ierr);
+    ierr = arc_ctx->set_s(arc_ctx->dlambda*arc_ctx->beta*sqrt(arc_ctx->F_lambda2)); CHKERRQ(ierr);
   } else {
     ierr = MySpatialFE.set_t_val(step_size); CHKERRQ(ierr);
   }
@@ -1327,12 +1456,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   snes_ctx->get_postProcess_to_do_Rhs().push_back(&Projection);
   snes_ctx->get_preProcess_to_do_Mat().push_back(&Projection);
   snes_ctx->get_postProcess_to_do_Mat().push_back(&Projection);
-
-  Vec D;
-  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
-  ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
@@ -1597,12 +1720,41 @@ ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::~ArcLenghtElemFEMethod(
 PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::calulate_lambda_int(double &_lambda_int_) {
   PetscFunctionBegin;
   _lambda_int_ = arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
+
+  cerr << arc_ptr->dlambda << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2 << endl;
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::calulate_db() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ierr = VecZeroEntries(arc_ptr->db); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::set_dlambda_to_x(Vec x,double dlambda) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
+	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+  NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+  dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+  if(dit == dofs_moabfield_no_const.get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"can not find LAMBDA (load factor) field");
+  hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
+  if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"can not find LAMBDA (load factor)");
+  //check if locl dof idx is non zero, i.e. that lambda is acessible from this processor
+  if(dit->get_petsc_local_dof_idx()!=-1) {
+    double *array;
+    ierr = VecGetArray(x,&array); CHKERRQ(ierr);
+    double lambda_old = array[dit->get_petsc_local_dof_idx()];
+    if(!(dlambda == dlambda)) {
+      ostringstream sss;
+      sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
+      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+    }
+    array[dit->get_petsc_local_dof_idx()] = lambda_old + dlambda;
+    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",lambda_old, array[dit->get_petsc_local_dof_idx()], dlambda);
+    ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::calulate_dx_and_dlambda(Vec x) {
@@ -1673,7 +1825,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::operator
 	//calulate residual for arc lenght row
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(snes_f,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
+	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e\n",arc_ptr->res_lambda,lambda_int);
 	//calulate diagonal therm
 	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);

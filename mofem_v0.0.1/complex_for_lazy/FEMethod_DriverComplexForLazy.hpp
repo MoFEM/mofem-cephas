@@ -1310,35 +1310,16 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
     PetscFunctionReturn(0);
 
   }
-
-  PetscErrorCode operator()() {
+  
+  PetscErrorCode calulateKFext(Mat K,Vec f,double lambda) {
     PetscFunctionBegin;
-
-    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
-    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
-
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
-	ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
-	ierr = CalculateSpatialTangent(proj_all_ctx.K); CHKERRQ(ierr);
-	ierr = GetIndicesRow(RowGlobMaterial,material_field_name); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesRow(this,RowGlobMaterial,DirihletBC); CHKERRQ(ierr);
-	ierr = AssembleSpatialCoupledTangent(proj_all_ctx.K); CHKERRQ(ierr);
-	break;
-      case ctx_SNESSetJacobian:
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
 
       pressure_cubit_bc_data mydata;
       ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
 
-      double t_val_ = *(this->t_val)*mydata.data.value1;
+      double t_val_ = lambda*mydata.data.value1;//*(this->t_val)*mydata.data.value1;
       double t[] = { 0,0,-t_val_, 0,0,-t_val_, 0,0,-t_val_ };
 
       Range NeumannSideSet;
@@ -1346,8 +1327,10 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
 
       switch(snes_ctx) {
 	case ctx_SNESSetFunction: 
-	  ierr = CaluclateSpatialFext(snes_f,t,NeumannSideSet); CHKERRQ(ierr);
-	  ierr = CalculateSpatialTangentExt(proj_all_ctx.K,t,NeumannSideSet); CHKERRQ(ierr);
+	  ierr = CaluclateSpatialFext(f,t,NeumannSideSet); CHKERRQ(ierr);
+	  if(K!=PETSC_NULL) {
+	    ierr = CalculateSpatialTangentExt(K,t,NeumannSideSet); CHKERRQ(ierr);
+	  }
 	  break;
 	case ctx_SNESSetJacobian:
 	  break;
@@ -1356,6 +1339,39 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
       }
 
     }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode calulateKFint(Mat K,Vec f) {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction:  
+	ierr = CalculateSpatialFint(f); CHKERRQ(ierr);
+	ierr = CalculateSpatialTangent(K); CHKERRQ(ierr);
+	ierr = GetIndicesRow(RowGlobMaterial,material_field_name); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesRow(this,RowGlobMaterial,DirihletBC); CHKERRQ(ierr);
+	ierr = AssembleSpatialCoupledTangent(K); CHKERRQ(ierr);
+	break;
+      case ctx_SNESSetJacobian:
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
+    ierr = calulateKFint(proj_all_ctx.K,snes_f); CHKERRQ(ierr);
+    ierr = calulateKFext(proj_all_ctx.K,snes_f,(*(this->t_val))); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }

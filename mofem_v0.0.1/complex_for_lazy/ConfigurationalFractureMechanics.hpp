@@ -143,6 +143,7 @@ struct ConfigurationalFractureMechanics {
     ArcLenghtElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLenghtCtx *_arc_ptr);
     ~ArcLenghtElemFEMethod();
 
+    PetscErrorCode set_dlambda_to_x(Vec x,double dlambda);
     PetscErrorCode calulate_lambda_int(double &_lambda_int_);
     PetscErrorCode calulate_db();
     PetscErrorCode calulate_dx_and_dlambda(Vec x);

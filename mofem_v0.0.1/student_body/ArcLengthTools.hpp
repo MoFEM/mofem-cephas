@@ -25,6 +25,11 @@
 
 namespace MoFEM {
 
+/**
+ * Strore informarion mesh for ArcLenght control
+ *
+ * dlamda - is current increment of load factor
+ */
 struct ArcLenghtCtx_DataOnMesh {
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -42,8 +47,29 @@ struct ArcLenghtCtx_DataOnMesh {
   }
 };
 
-
-
+/**
+ * Store variables for ArcLength analaysis
+ *
+ * r_lambda = f_lambda - s
+ * f_lambda = alpha*f(dx*dx) + beta*(dlambda*sqrt(F_lambda*F_lambda) 
+ *
+ * dx = x-x0
+ *
+ * db*ddx + diag*ddlambda - r_lambda = 0
+ * 
+ * alpha,beta parameters
+ * dlambda is load factor
+ * s arc-lenght radius
+ * F_lambda reference load vcetor
+ * F_lambda2 dot product of F_lambda
+ * diag value on matrix diagonal
+ * x0  displacement vetor at begining of step
+ * x current displacemengt vector
+ * dx2 dot product of dx vector
+ * db direvative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
+ *
+ * x_lambda is solution of eq. K*x_lambda = F_lambda
+ */
 struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
 
   ErrorCode rval;
@@ -53,6 +79,7 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
   PetscErrorCode set_dlambda(double _dlambda) {
     PetscFunctionBegin;
     dlambda = _dlambda;
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tSet dlambda = %6.4e\n",dlambda); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   } 
 
@@ -66,7 +93,7 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
 
   /**
    * set parematers controling arc-length equaitions
-   * alpha controls of diagonal therms
+   * alpha controls off diagonal therms
    * beta controls diagonal therm
    */
   PetscErrorCode set_alpha_and_beta(double _alpha,double _beta) { 
@@ -78,15 +105,14 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
   }
 
   //dx2 - dot product of 
-  double diag,dx2,F_lambda2,res_lambda,;
-  Vec F_lambda,db,x_lambda,y_residual,x0,dx;
+  double diag,dx2,F_lambda2,res_lambda;
+  Vec F_lambda,db,x_lambda,x0,dx;
   ArcLenghtCtx(FieldInterface &mField,const string &problem_name): ArcLenghtCtx_DataOnMesh(mField), dlambda(*(double *)tag_data_dlambda[0]) {
 
     mField.VecCreateGhost(problem_name,Row,&F_lambda);
     VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
     mField.VecCreateGhost(problem_name,Row,&db);
     mField.VecCreateGhost(problem_name,Row,&x_lambda);
-    mField.VecCreateGhost(problem_name,Row,&y_residual);
     mField.VecCreateGhost(problem_name,Row,&x0);
     mField.VecCreateGhost(problem_name,Row,&dx);
 
@@ -96,7 +122,6 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
     VecDestroy(&F_lambda);
     VecDestroy(&db);
     VecDestroy(&x_lambda);
-    VecDestroy(&y_residual);
     VecDestroy(&x0);
     VecDestroy(&dx);
   }
@@ -104,6 +129,9 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
 
 };
 
+/**
+ * It is ctx structure passed to SNES solver
+ */
 struct ArcLenghtSnesCtx: public SnesCtx {
 
   ErrorCode rval;
@@ -115,6 +143,11 @@ struct ArcLenghtSnesCtx: public SnesCtx {
 
 };
 
+/**
+ * Shell matrix which has tructure
+ * [ K 		F_lambda]
+ * [ db		diag	]
+ */
 struct ArcLengthMatShell {
 
   ErrorCode rval;
@@ -162,8 +195,14 @@ struct ArcLengthMatShell {
   friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 };
 
+/**
+ * mult operator for Arc Length Shell Mat
+ */
 PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 
+/**
+ * strutture for Arc Length precodnditioner
+ */
 struct PCShellCtx {
   PC pc;
   Mat ShellAij,Aij;
@@ -179,7 +218,19 @@ struct PCShellCtx {
   friend PetscErrorCode pc_setup_arc_length(PC pc);
 };
 
+/**
+ * apply oppertor for Arc Length precoditionet
+ * solves K*pc_x = pc_f
+ * solves K*x_lambda = F_lambda
+ * solves ddlambda = ( res_lambda - db*x_lambda )/( diag + db*pc_x )
+ * calulate pc_x = pc_x + ddlambda*x_lambda
+ */
 PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
+
+/**
+ * set up struture for Arc Length precoditioner
+ * it sets precoditioner for matrix K
+ */
 PetscErrorCode pc_setup_arc_length(PC pc);
 
 }
