@@ -103,7 +103,7 @@ struct NL_ElasticFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledSp
     if(arc_ptr==NULL) {
       ierr = calulateKFext(proj_all_ctx.K,snes_f,*(this->t_val)); CHKERRQ(ierr);
     } else {
-      ierr = calulateKFext(proj_all_ctx.K,arc_ptr->F_lambda,1.); CHKERRQ(ierr);
+      ierr = calulateKFext(proj_all_ctx.K,arc_ptr->F_lambda,-1.); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
@@ -167,7 +167,7 @@ struct NL_ElasticFEMethodCoupled_F_lambda_Only: public FEMethod_DriverComplexFor
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
     ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
     snes_ctx = ctx_SNESSetFunction;
-    ierr = calulateKFext(PETSC_NULL,arc_ptr->F_lambda,1); CHKERRQ(ierr);
+    ierr = calulateKFext(PETSC_NULL,arc_ptr->F_lambda,-1); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -1398,14 +1398,15 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
-
+    ierr = mField.get_problem("COUPLED_PROBLEM",&(arc_elem->problem_ptr)); CHKERRQ(ierr);
     ierr = arc_elem->set_dlambda_to_x(D,step_size); CHKERRQ(ierr);
     ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
+    ierr = arc_elem->calulate_dx_and_dlambda(D); CHKERRQ(ierr);
     ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
     NL_ElasticFEMethodCoupled_F_lambda_Only MySpatialFE_F_lambda_Only(
       mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),arc_ctx);
     ierr = mField.loop_finite_elements("COUPLED_PROBLEM","ELASTIC_COUPLED",MySpatialFE_F_lambda_Only);  CHKERRQ(ierr);
-    //ierr = arc_ctx->set_s(arc_ctx->dlambda*arc_ctx->beta*sqrt(arc_ctx->F_lambda2)); CHKERRQ(ierr);
+    ierr = arc_ctx->set_s(arc_ctx->dlambda*arc_ctx->beta*sqrt(arc_ctx->F_lambda2)); CHKERRQ(ierr);
   } else {
     ierr = MySpatialFE.set_t_val(step_size); CHKERRQ(ierr);
   }
