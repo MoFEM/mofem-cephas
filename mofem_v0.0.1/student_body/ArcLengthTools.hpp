@@ -78,23 +78,39 @@ struct ArcLengthCtx {
   //dx2 - dot product of 
   double diag,dx2,F_lambda2,res_lambda;
   Vec F_lambda,db,x_lambda,x0,dx;
-  ArcLengthCtx(FieldInterface &mField,const string &problem_name) {
 
-    mField.VecCreateGhost(problem_name,Row,&F_lambda);
-    VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
-    mField.VecCreateGhost(problem_name,Row,&db);
-    mField.VecCreateGhost(problem_name,Row,&x_lambda);
-    mField.VecCreateGhost(problem_name,Row,&x0);
-    mField.VecCreateGhost(problem_name,Row,&dx);
+  ArcLengthCtx(FieldInterface &mField,const string &problem_name) {
+    PetscErrorCode ierr;
+
+    ierr = mField.VecCreateGhost(problem_name,Row,&F_lambda); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = mField.VecCreateGhost(problem_name,Row,&db); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = mField.VecCreateGhost(problem_name,Row,&x_lambda); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = mField.VecCreateGhost(problem_name,Row,&x0); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = mField.VecCreateGhost(problem_name,Row,&dx); CHKERRABORT(PETSC_COMM_SELF,ierr);
+
+    const MoFEMProblem *problem_ptr;
+    ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
+	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+    dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+    hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
+    if(distance(dit,hi_dit)!=1) {
+      PetscAbortErrorHandler(PETSC_COMM_SELF,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	"can not find unique LAMBDA (load factor)",PETSC_NULL);
+      CHKERRABORT(PETSC_COMM_SELF,1);
+    }
 
   }
 
   ~ArcLengthCtx() {
-    VecDestroy(&F_lambda);
-    VecDestroy(&db);
-    VecDestroy(&x_lambda);
-    VecDestroy(&x0);
-    VecDestroy(&dx);
+    PetscErrorCode ierr;
+    ierr = VecDestroy(&F_lambda); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = VecDestroy(&db); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = VecDestroy(&x_lambda); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = VecDestroy(&x0); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = VecDestroy(&dx); CHKERRABORT(PETSC_COMM_SELF,ierr);
   }
 
 
