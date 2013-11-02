@@ -33,10 +33,10 @@ struct ArcElasticFEMethod: public ElasticFEMethod {
 
   ArcElasticFEMethod(FieldInterface& _mField): ElasticFEMethod(_mField) {};
 
-  ArcLenghtCtx *arc_ptr;
+  ArcLengthCtx *arc_ptr;
   ArcElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
-      double _lambda,double _mu,ArcLenghtCtx *_arc_ptr): 
+      double _lambda,double _mu,ArcLengthCtx *_arc_ptr): 
       ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu),arc_ptr(_arc_ptr) {};
 
   PetscErrorCode preProcess() {
@@ -526,21 +526,21 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
 };
 
-struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
+struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
   Interface& moab;
   ErrorCode rval;
   PetscErrorCode ierr;
 
   Mat Aij;
   Vec F,D;
-  ArcLenghtCtx* arc_ptr;
+  ArcLengthCtx* arc_ptr;
   Vec GhostDiag,GhostLambdaInt;
   Range Faces3,Faces4;
   Range Edges3,Edges4;
   Range Nodes3,Nodes4;
 
-  ArcLenghtIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
-    ArcLenghtCtx *_arc_ptr): FEMethod(),moab(_moab),Aij(_Aij),F(_F),D(_D),arc_ptr(_arc_ptr) {
+  ArcLengthIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
+    ArcLengthCtx *_arc_ptr): FEMethod(),moab(_moab),Aij(_Aij),F(_F),D(_D),arc_ptr(_arc_ptr) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
@@ -571,7 +571,7 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
  
     
   }
-  ~ArcLenghtIntElemFEMethod() {
+  ~ArcLengthIntElemFEMethod() {
     VecDestroy(&GhostDiag);
     VecDestroy(&GhostLambdaInt);
   }
@@ -660,7 +660,7 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: {
-	//calulate residual for arc lenght row
+	//calulate residual for arc length row
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
@@ -730,7 +730,7 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
     NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
     if(dit==dofs_moabfield_no_const.get<FieldName_mi_tag>().end()) {
-      SETERRQ(PETSC_COMM_SELF,1,"LAMBDA field for arc lenght force scaling factor not found");
+      SETERRQ(PETSC_COMM_SELF,1,"LAMBDA field for arc length force scaling factor not found");
     }
     hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
     if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"should be only one LAMDA dof");

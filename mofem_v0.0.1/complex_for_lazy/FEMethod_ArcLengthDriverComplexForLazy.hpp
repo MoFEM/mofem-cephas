@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ARC_LENGHT_NONLINEAR_ELASTICITY_HPP__
-#define __ARC_LENGHT_NONLINEAR_ELASTICITY_HPP__
+#ifndef __ARC_LENGTH_NONLINEAR_ELASTICITY_HPP__
+#define __ARC_LENGTH_NONLINEAR_ELASTICITY_HPP__
 
 #include "FEMethod_DriverComplexForLazy.hpp"
 #include "PostProcVertexMethod.hpp"
@@ -32,13 +32,13 @@ PetscErrorCode ierr;
 
 struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
-  ArcLenghtCtx* arc_ptr;
+  ArcLengthCtx* arc_ptr;
 
   Range& NodeSet1;
 
   MyElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
-      ArcLenghtCtx *_arc_ptr,Range &_NodeSet1,int _verbose = 0): 
+      ArcLengthCtx *_arc_ptr,Range &_NodeSet1,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_ptr,_lambda,_mu,_verbose), 
       arc_ptr(_arc_ptr),NodeSet1(_NodeSet1) {
@@ -187,12 +187,12 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
 };
 
-struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
+struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
   Interface& moab;
 
-  ArcLenghtCtx* arc_ptr;
+  ArcLengthCtx* arc_ptr;
   Vec GhostDiag;
-  ArcLenghtElemFEMethod(Interface& _moab,ArcLenghtCtx *_arc_ptr): FEMethod(),moab(_moab),arc_ptr(_arc_ptr) {
+  ArcLengthElemFEMethod(Interface& _moab,ArcLengthCtx *_arc_ptr): FEMethod(),moab(_moab),arc_ptr(_arc_ptr) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
@@ -201,7 +201,7 @@ struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
       VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag);
     }
   }
-  ~ArcLenghtElemFEMethod() {
+  ~ArcLengthElemFEMethod() {
     VecDestroy(&GhostDiag);
   }
 
@@ -388,5 +388,5 @@ struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
 
 }
 
-#endif //__ARC_LENGHT_NONLINEAR_ELASTICITY_HPP__
+#endif //__ARC_LENGTH_NONLINEAR_ELASTICITY_HPP__
 

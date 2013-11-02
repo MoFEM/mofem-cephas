@@ -64,7 +64,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
   PetscErrorCode material_problem_definition(FieldInterface& mField);
   PetscErrorCode coupled_problem_definition(FieldInterface& mField);
-  PetscErrorCode arclenght_problem_definition(FieldInterface& mField);
+  PetscErrorCode arclength_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_crack_front_problem_definition(FieldInterface& mField,string problem);
   PetscErrorCode spatial_partition_problems(FieldInterface& mField);
@@ -134,14 +134,14 @@ struct ConfigurationalFractureMechanics {
 
   };
 
-  struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
+  struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
     ConfigurationalFractureMechanics *conf_prob;
-    ArcLenghtCtx* arc_ptr;
+    ArcLengthCtx* arc_ptr;
     Vec GhostDiag;
-    ArcLenghtElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLenghtCtx *_arc_ptr);
-    ~ArcLenghtElemFEMethod();
+    ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
+    ~ArcLengthElemFEMethod();
 
     PetscErrorCode set_dlambda_to_x(Vec x,double dlambda);
     PetscErrorCode calulate_lambda_int(double &_lambda_int_);

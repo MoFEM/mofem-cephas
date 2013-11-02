@@ -141,8 +141,8 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
   rval= moab.tag_get_handle("BLOCK_HEADER",12*sizeof(unsigned int),MB_TYPE_INTEGER,
     bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]); CHKERR_THROW(rval); 
   Tag block_attribs;
-  int def_Block_Attributes_lenght = 0;
-  rval = moab.tag_get_handle("Block_Attributes",def_Block_Attributes_lenght,MB_TYPE_DOUBLE,
+  int def_Block_Attributes_length = 0;
+  rval = moab.tag_get_handle("Block_Attributes",def_Block_Attributes_length,MB_TYPE_DOUBLE,
     block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval); 
   Tag entity_name_tag;
   rval = moab.tag_get_handle(

@@ -37,7 +37,7 @@ namespace MoFEM {
  * 
  * alpha,beta parameters
  * dlambda is load factor
- * s arc-lenght radius
+ * s arc-length radius
  * F_lambda reference load vcetor
  * F_lambda2 dot product of F_lambda
  * diag value on matrix diagonal
@@ -48,7 +48,7 @@ namespace MoFEM {
  *
  * x_lambda is solution of eq. K*x_lambda = F_lambda
  */
-struct ArcLenghtCtx {
+struct ArcLengthCtx {
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -78,7 +78,7 @@ struct ArcLenghtCtx {
   //dx2 - dot product of 
   double diag,dx2,F_lambda2,res_lambda;
   Vec F_lambda,db,x_lambda,x0,dx;
-  ArcLenghtCtx(FieldInterface &mField,const string &problem_name) {
+  ArcLengthCtx(FieldInterface &mField,const string &problem_name) {
 
     mField.VecCreateGhost(problem_name,Row,&F_lambda);
     VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
@@ -89,7 +89,7 @@ struct ArcLenghtCtx {
 
   }
 
-  ~ArcLenghtCtx() {
+  ~ArcLengthCtx() {
     VecDestroy(&F_lambda);
     VecDestroy(&db);
     VecDestroy(&x_lambda);
@@ -103,13 +103,13 @@ struct ArcLenghtCtx {
 /**
  * It is ctx structure passed to SNES solver
  */
-struct ArcLenghtSnesCtx: public SnesCtx {
+struct ArcLengthSnesCtx: public SnesCtx {
 
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  ArcLenghtCtx* arc_ptr;
-  ArcLenghtSnesCtx(FieldInterface &_mField,const string &_problem_name,ArcLenghtCtx* _arc_ptr):
+  ArcLengthCtx* arc_ptr;
+  ArcLengthSnesCtx(FieldInterface &_mField,const string &_problem_name,ArcLengthCtx* _arc_ptr):
     SnesCtx(_mField,_problem_name),arc_ptr(_arc_ptr) {}
 
 };
@@ -128,9 +128,9 @@ struct ArcLengthMatShell {
   FieldInterface& mField;
 
   Mat Aij;
-  ArcLenghtCtx* arc_ptr;
+  ArcLengthCtx* arc_ptr;
   string problem_name;
-  ArcLengthMatShell(FieldInterface& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr,string _problem_name): 
+  ArcLengthMatShell(FieldInterface& _mField,Mat _Aij,ArcLengthCtx *_arc_ptr,string _problem_name): 
     mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr),problem_name(_problem_name) {};
   PetscErrorCode set_lambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
     PetscFunctionBegin;
@@ -163,13 +163,13 @@ struct ArcLengthMatShell {
   }
   ~ArcLengthMatShell() { }
 
-  friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
+  friend PetscErrorCode arc_length_mult_shell(Mat A,Vec x,Vec f);
 };
 
 /**
  * mult operator for Arc Length Shell Mat
  */
-PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
+PetscErrorCode arc_length_mult_shell(Mat A,Vec x,Vec f);
 
 /**
  * strutture for Arc Length precodnditioner
@@ -177,8 +177,8 @@ PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
 struct PCShellCtx {
   PC pc;
   Mat ShellAij,Aij;
-  ArcLenghtCtx* arc_ptr;
-  PCShellCtx(Mat _ShellAij,Mat _Aij,ArcLenghtCtx* _arc_ptr): 
+  ArcLengthCtx* arc_ptr;
+  PCShellCtx(Mat _ShellAij,Mat _Aij,ArcLengthCtx* _arc_ptr): 
     ShellAij(_ShellAij),Aij(_Aij),arc_ptr(_arc_ptr) {
     PCCreate(PETSC_COMM_WORLD,&pc);
   }

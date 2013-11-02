@@ -16,17 +16,17 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(arc_lenght_interface arc_lenght_interface.cpp)
-target_link_libraries(arc_lenght_interface mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(arc_length_interface arc_length_interface.cpp)
+target_link_libraries(arc_length_interface mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/PeelTest.cub" "/" export_files_arc_lenght_interface)
+cm_export_file("../../meshes/PeelTest.cub" "/" export_files_arc_length_interface)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #testing
-add_test(ArcLenghtInterfaceTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_lenght_interface
+add_test(ArcLengthInterfaceTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
   -my_file PeelTest.cub
   -ksp_type fgmres -pc_type asm -sub_pc_type lu
   -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10
