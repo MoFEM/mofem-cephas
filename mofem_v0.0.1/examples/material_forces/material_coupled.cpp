@@ -135,6 +135,8 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_alpha3 (what is fracture energy ?)");
     }
 
+    SNES snes;
+    ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
     double alpha3 = alpha3_0;
     double reduction = 1,gamma = 1.2;
     double nrm2_front_equlibrium_i = 0;
@@ -145,17 +147,13 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"alpha3 = %6.4e\n",alpha3); CHKERRQ(ierr);
 
 
-      SNES snes;
-      ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-
+    
       ierr = conf_prob.solve_coupled_problem(mField,&snes,-1e-3,alpha3); CHKERRQ(ierr);
 
       int its;
       ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
     
-      ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-
       ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -202,6 +200,8 @@ int main(int argc, char *argv[]) {
       }
 
     }
+    ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
 
   }
 
