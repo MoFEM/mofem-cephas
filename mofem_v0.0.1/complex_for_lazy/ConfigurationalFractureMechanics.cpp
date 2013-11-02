@@ -1398,13 +1398,14 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
+
     ierr = arc_elem->set_dlambda_to_x(D,step_size); CHKERRQ(ierr);
     ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
     ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
     NL_ElasticFEMethodCoupled_F_lambda_Only MySpatialFE_F_lambda_Only(
       mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),arc_ctx);
     ierr = mField.loop_finite_elements("COUPLED_PROBLEM","ELASTIC_COUPLED",MySpatialFE_F_lambda_Only);  CHKERRQ(ierr);
-    ierr = arc_ctx->set_s(arc_ctx->dlambda*arc_ctx->beta*sqrt(arc_ctx->F_lambda2)); CHKERRQ(ierr);
+    //ierr = arc_ctx->set_s(arc_ctx->dlambda*arc_ctx->beta*sqrt(arc_ctx->F_lambda2)); CHKERRQ(ierr);
   } else {
     ierr = MySpatialFE.set_t_val(step_size); CHKERRQ(ierr);
   }
@@ -1719,9 +1720,9 @@ ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::~ArcLenghtElemFEMethod(
 }
 PetscErrorCode ConfigurationalFractureMechanics::ArcLenghtElemFEMethod::calulate_lambda_int(double &_lambda_int_) {
   PetscFunctionBegin;
-  _lambda_int_ = arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
+  //_lambda_int_ = arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 
-  cerr << arc_ptr->dlambda << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2 << endl;
+  //cerr << arc_ptr->dlambda << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2 << endl;
 
   PetscFunctionReturn(0);
 }

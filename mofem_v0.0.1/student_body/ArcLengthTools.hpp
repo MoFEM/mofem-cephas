@@ -26,28 +26,6 @@
 namespace MoFEM {
 
 /**
- * Strore informarion mesh for ArcLenght control
- *
- * dlamda - is current increment of load factor
- */
-struct ArcLenghtCtx_DataOnMesh {
-  ErrorCode rval;
-  PetscErrorCode ierr;
-
-  Interface &moab;
-  const void* tag_data_dlambda[1];
-  ArcLenghtCtx_DataOnMesh(FieldInterface &mField): moab(mField.get_moab()) {
-    Tag th_dlambda;
-    double def_dlambda = 0;
-    rval = moab.tag_get_handle("_DLAMBDA",1,MB_TYPE_DOUBLE,th_dlambda,MB_TAG_CREAT|MB_TAG_MESH,&def_dlambda);  
-    if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-    CHKERR_THROW(rval);
-    EntityHandle root = moab.get_root_set();
-    rval = moab.tag_get_by_ptr(th_dlambda,&root,1,tag_data_dlambda); CHKERR_THROW(rval);
-  }
-};
-
-/**
  * Store variables for ArcLength analaysis
  *
  * r_lambda = f_lambda - s
@@ -70,18 +48,10 @@ struct ArcLenghtCtx_DataOnMesh {
  *
  * x_lambda is solution of eq. K*x_lambda = F_lambda
  */
-struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
+struct ArcLenghtCtx {
 
   ErrorCode rval;
   PetscErrorCode ierr;
-
-  double& dlambda; //reference to moab data see ArcLenghtCtc_DataOnMesh and constructor ArcLenghtCtx
-  PetscErrorCode set_dlambda(double _dlambda) {
-    PetscFunctionBegin;
-    dlambda = _dlambda;
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tSet dlambda = %6.4e\n",dlambda); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  } 
 
   double s,beta,alpha;
   PetscErrorCode set_s(double _s) { 
@@ -104,10 +74,11 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
     PetscFunctionReturn(0);
   }
 
+  double dlambda;
   //dx2 - dot product of 
   double diag,dx2,F_lambda2,res_lambda;
   Vec F_lambda,db,x_lambda,x0,dx;
-  ArcLenghtCtx(FieldInterface &mField,const string &problem_name): ArcLenghtCtx_DataOnMesh(mField), dlambda(*(double *)tag_data_dlambda[0]) {
+  ArcLenghtCtx(FieldInterface &mField,const string &problem_name) {
 
     mField.VecCreateGhost(problem_name,Row,&F_lambda);
     VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
