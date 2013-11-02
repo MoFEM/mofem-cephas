@@ -79,6 +79,12 @@ struct ArcLengthCtx {
   double diag,dx2,F_lambda2,res_lambda;
   Vec F_lambda,db,x_lambda,x0,dx;
 
+  NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit;
+  DofIdx get_petsc_gloabl_dof_idx() { return dit->get_petsc_gloabl_dof_idx(); };
+  DofIdx get_petsc_local_dof_idx() { return dit->get_petsc_local_dof_idx(); };
+  FieldData& get_FieldData() { return dit->get_FieldData(); }
+  int get_part() { return dit->get_part(); };
+
   ArcLengthCtx(FieldInterface &mField,const string &problem_name) {
     PetscErrorCode ierr;
 
@@ -93,7 +99,7 @@ struct ArcLengthCtx {
     ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_SELF,ierr);
     NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
 	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit;
     dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
     hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
     if(distance(dit,hi_dit)!=1) {
@@ -152,27 +158,22 @@ struct ArcLengthMatShell {
     PetscFunctionBegin;
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
-    //get problem dofs
-    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit;
-    dit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
-    DofIdx lambda_dof_index = dit->get_petsc_local_dof_idx();
-    int part = dit->part;
-    if(lambda_dof_index!=-1) {
+    if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
       PetscScalar *array;
       ierr = VecGetArray(ksp_x,&array); CHKERRQ(ierr);
       switch(scattermode) {
 	case SCATTER_FORWARD:
-	  *lambda = array[lambda_dof_index];
+	  *lambda = array[arc_ptr->get_petsc_local_dof_idx()];
 	  break;
 	case SCATTER_REVERSE:
-	  array[lambda_dof_index] = *lambda;
+	  array[arc_ptr->get_petsc_local_dof_idx()] = *lambda;
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
       ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
     } 
+    int part = arc_ptr->get_part();
     MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
 
     PetscFunctionReturn(0);

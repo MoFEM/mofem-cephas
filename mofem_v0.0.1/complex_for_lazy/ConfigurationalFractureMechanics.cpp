@@ -1783,7 +1783,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
     ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
   }
   //brodcast dlambda
-  int part = dit->part;
+  int part = arc_ptr->get_part();
   MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
   //calulate dx2 (dot product)
   ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
