@@ -1433,8 +1433,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ierr = mField.get_problem("COUPLED_PROBLEM",&(arc_elem->problem_ptr)); CHKERRQ(ierr);
     ierr = arc_elem->set_dlambda_to_x(D,step_size); CHKERRQ(ierr);
     ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
-    ierr = arc_elem->calulate_dx_and_dlambda(D); CHKERRQ(ierr);
-    ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+    ierr = arc_elem->get_dlambda(D); CHKERRQ(ierr);
+    ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
     NL_ElasticFEMethodCoupled_F_lambda_Only MySpatialFE_F_lambda_Only(
       mField,*projSurfaceCtx,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),arc_ctx);
     NL_MaterialFEMethodCoupled_F_lambda_Only MyMaterialFE_F_lambda_Only(
@@ -1454,8 +1454,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     //F_lambda2
     ierr = VecDot(arc_ctx->F_lambda,arc_ctx->F_lambda,&arc_ctx->F_lambda2); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ctx->F_lambda2);
-
-    ierr = arc_ctx->set_s(arc_ctx->dlambda*arc_ctx->beta*sqrt(arc_ctx->F_lambda2)); CHKERRQ(ierr);
+    //set s
+    arc_elem->snes_x = D;
+    ierr = arc_elem->calulate_lambda_int(); CHKERRQ(ierr);
+    ierr = arc_ctx->set_s(arc_elem->lambda_int); CHKERRQ(ierr);
   } else {
     ierr = MySpatialFE.set_t_val(step_size); CHKERRQ(ierr);
   }
@@ -1760,17 +1762,17 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
     Interface &moab = mField.get_moab();
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
-      ierr = VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostDiag); CHKERRABORT(PETSC_COMM_SELF,ierr);
+      ierr = VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&ghostDiag); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     } else {
-      ierr = VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag); CHKERRABORT(PETSC_COMM_SELF,ierr);
+      ierr = VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&ghostDiag); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     }
 
-    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crackSurfacesFaces,true); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crackSurfacesFaces,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     Range level_tris;
-    ierr = mField.refine_get_ents(conf_prob->bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = mField.refine_get_ents(conf_prob->bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     crackSurfacesFaces = intersect(crackSurfacesFaces,level_tris);
 
-    ierr = mField.get_problem("COUPLED_PROBLEM",&problem_ptr); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = mField.get_problem("COUPLED_PROBLEM",&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     set<DofIdx> set_idx;
     for(Range::iterator fit = crackSurfacesFaces.begin();fit!=crackSurfacesFaces.end();fit++) {
       const EntityHandle* conn; 
@@ -1789,21 +1791,25 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
       }
     }
 
-    ierr = PetscMalloc(set_idx.size()*sizeof(PetscInt),&isIdx); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = PetscMalloc(set_idx.size()*sizeof(PetscInt),&isIdx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     copy(set_idx.begin(),set_idx.end(),isIdx);
-    ierr = ISCreateGeneral(PETSC_COMM_SELF,set_idx.size(),isIdx,PETSC_USE_POINTER,&isSurface); CHKERRABORT(PETSC_COMM_SELF,ierr);
-    ierr = VecCreateSeq(PETSC_COMM_SELF,set_idx.size(),&surfaceDofs); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = ISCreateGeneral(PETSC_COMM_SELF,set_idx.size(),isIdx,PETSC_USE_POINTER,&isSurface); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = VecCreateSeq(PETSC_COMM_SELF,set_idx.size(),&surfaceDofs); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+
+    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Row,&lambdaVec); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = VecSet(lambdaVec,1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 
 }
 ConfigurationalFractureMechanics::ArcLengthElemFEMethod::~ArcLengthElemFEMethod() {
   PetscErrorCode ierr;
-  ierr = VecScatterDestroy(&surfaceScatter); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = VecDestroy(&GhostDiag); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = VecDestroy(&surfaceDofs); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = ISDestroy(&isSurface); CHKERRABORT(PETSC_COMM_SELF,ierr);
-  ierr = PetscFree(isIdx); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = VecScatterDestroy(&surfaceScatter); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDestroy(&ghostDiag); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDestroy(&surfaceDofs); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = ISDestroy(&isSurface); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = PetscFree(isIdx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDestroy(&lambdaVec); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_lambda_int(double &_lambda_int_) {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_lambda_int() {
   PetscFunctionBegin;
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -1823,7 +1829,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
   }
   ierr = VecRestoreArray(surfaceDofs,&array); CHKERRABORT(PETSC_COMM_SELF,ierr);
 
-  Area = 0;
+  aRea = 0;
   ublas::vector<double,ublas::bounded_array<double,6> > diffNTRI(6);
   ShapeDiffMBTRI(&diffNTRI.data()[0]);
   for(Range::iterator fit = crackSurfacesFaces.begin();fit!=crackSurfacesFaces.end();fit++) {
@@ -1838,21 +1844,26 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
       }
     }
     ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&dofsX.data()[0],&normal.data()[0]); CHKERRQ(ierr);
-    Area += norm_2(normal);
+    aRea += norm_2(normal);
   }
 
-
-  cerr << "Area " << Area << endl;
-
-  _lambda_int_ = arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
-  cerr << arc_ptr->dlambda << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2 << endl;
+  lambda_int = arc_ptr->alpha*aRea + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
+  PetscPrintf(PETSC_COMM_WORLD,"\tsurface crack area = %6.4e lambda_int = %6.4e\n",aRea,lambda_int);
 
   PetscFunctionReturn(0);
 }
 PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_db() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = VecZeroEntries(arc_ptr->db); CHKERRQ(ierr);
+  if(arc_ptr->alpha!=0) {
+    ierr = MatMultTranspose(conf_prob->projFrontCtx->C,lambdaVec,arc_ptr->db); CHKERRQ(ierr);
+    ierr = VecScale(arc_ptr->db,0.5); CHKERRQ(ierr);
+    if(arc_ptr->alpha!=1) {
+      ierr = VecScale(arc_ptr->db,arc_ptr->alpha); CHKERRQ(ierr);
+    }
+  } else {
+    ierr = VecZeroEntries(arc_ptr->db); CHKERRQ(ierr);
+  }   
   PetscFunctionReturn(0);
 }
 PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::set_dlambda_to_x(Vec x,double dlambda) {
@@ -1875,7 +1886,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::set_dlam
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_dx_and_dlambda(Vec x) {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::get_dlambda(Vec x) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   //set dx
@@ -1892,9 +1903,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
   //brodcast dlambda
   int part = arc_ptr->get_part();
   MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
-  //calulate dx2 (dot product)
-  ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arc_ptr->dlambda,arc_ptr->dx2);
+  PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e\n",arc_ptr->dlambda);
   PetscFunctionReturn(0);
 }
 PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::preProcess() {
@@ -1902,13 +1911,13 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::preProce
   PetscErrorCode ierr;
   switch(snes_ctx) {
     case ctx_SNESSetFunction: { 
-	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
-	ierr = calulate_db(); CHKERRQ(ierr);
-	ierr = calulate_lambda_int(lambda_int); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = get_dlambda(snes_x); CHKERRQ(ierr);
+	ierr = calulate_lambda_int(); CHKERRQ(ierr);
+	ierr = calulate_db(); CHKERRQ(ierr);
       }
       break;
     case ctx_SNESSetJacobian: 
@@ -1931,7 +1940,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::operator
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e\n",arc_ptr->res_lambda,lambda_int);
 	//calulate diagonal therm
 	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
-	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValue(ghostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
 	ierr = MatSetValue(conf_prob->projSurfaceCtx->K,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break; 
@@ -1948,14 +1957,14 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::postProc
     PetscErrorCode ierr;
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
-	ierr = VecAssemblyBegin(GhostDiag); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(GhostDiag); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(GhostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(GhostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(ghostDiag); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(ghostDiag); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	double *diag;
-	ierr = VecGetArray(GhostDiag,&diag); CHKERRQ(ierr);
+	ierr = VecGetArray(ghostDiag,&diag); CHKERRQ(ierr);
 	arc_ptr->diag = *diag;
-	ierr = VecRestoreArray(GhostDiag,&diag); CHKERRQ(ierr);
+	ierr = VecRestoreArray(ghostDiag,&diag); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\tdiag = %6.4e\n",arc_ptr->diag);
       }
       break;
