@@ -67,8 +67,8 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   SimpleInterfaceTestHalfCrack
   LinearDynamicsElasticity
   SimpleNonLinearElasticityTest
-  ArcLenghtNonLinearElasticityTest
-  ArcLenghtInterfaceTest
+  ArcLengthNonLinearElasticityTest
+  ArcLengthInterfaceTest
   SimpleMeshSmoothingTest
   SimplePotentialFlowTest
   ComputeFibreDirection
