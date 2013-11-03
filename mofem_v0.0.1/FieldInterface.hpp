@@ -350,6 +350,17 @@ struct FieldInterface {
    *
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask
+   * \param EntityType type of entities
+   * \param Range ents   
+   *
+   */
+  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1) = 0;
+
+
+  /**\brief add all ents from ref level given by bit to meshset
+   *
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel mask
    * \param EntityHandle meshset   
    *
    */

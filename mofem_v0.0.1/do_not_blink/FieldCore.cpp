@@ -3453,6 +3453,13 @@ PetscErrorCode FieldCore::refine_MESHSET(const EntityHandle meshset,const BitRef
 }
 PetscErrorCode FieldCore::refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb) {
   PetscFunctionBegin;
+  Range ents;
+  ierr = refine_get_ents(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  rval = moab.add_entities(meshset,ents); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb) {
+  PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator miit = refinedMoFemEntities.get<EntType_mi_tag>().lower_bound(type);
   for(;miit!=refinedMoFemEntities.get<EntType_mi_tag>().upper_bound(type);miit++) {
@@ -3477,7 +3484,7 @@ PetscErrorCode FieldCore::refine_get_ents(const BitRefLevel &bit,const BitRefLev
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       EntityHandle ent = miit->get_ref_ent();
-      rval = moab.add_entities(meshset,&ent,1); CHKERR_PETSC(rval);
+      ents.insert(ent);
     }
   }
   PetscFunctionReturn(0);
