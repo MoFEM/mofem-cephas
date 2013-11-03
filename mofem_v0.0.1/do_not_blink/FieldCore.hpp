@@ -191,6 +191,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
   PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1);
+  PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1);
   PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset);
   PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents);
   PetscErrorCode refine_get_childern(
@@ -324,6 +325,8 @@ struct FieldCore: public FieldInterface {
 
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name);
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name);
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent);
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent);
 
   EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name);
   EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name);

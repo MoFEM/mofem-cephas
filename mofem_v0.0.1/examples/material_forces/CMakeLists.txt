@@ -28,8 +28,8 @@ target_link_libraries(material_problem mofem_complex_for_lazy mofem_student_body
 add_executable(material_coupled material_coupled.cpp)
 target_link_libraries(material_coupled mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(arc_lenght_material_coupled arc_lenght_material_coupled.cpp)
-target_link_libraries(arc_lenght_material_coupled mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
+target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/chees.cub" "/" export_files_material_mechanics)
 cm_export_file("../../meshes/crack1.cub" "/" export_files_material_mechanics)

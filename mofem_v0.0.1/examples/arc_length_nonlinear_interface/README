@@ -1,6 +1,6 @@
 #example how to run
 
-mpirun -np 5 ./arc_lenght_interface \
+mpirun -np 5 ./arc_length_interface \
   -my_file PeelTest.cub -ksp_type fgmres \
   -pc_type asm -sub_pc_type lu \
   -ksp_monitor ksp_monitor \

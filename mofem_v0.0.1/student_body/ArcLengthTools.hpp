@@ -25,36 +25,33 @@
 
 namespace MoFEM {
 
-struct ArcLenghtCtx_DataOnMesh {
+/**
+ * Store variables for ArcLength analaysis
+ *
+ * r_lambda = f_lambda - s
+ * f_lambda = alpha*f(dx*dx) + beta*(dlambda*sqrt(F_lambda*F_lambda) 
+ *
+ * dx = x-x0
+ *
+ * db*ddx + diag*ddlambda - r_lambda = 0
+ * 
+ * alpha,beta parameters
+ * dlambda is load factor
+ * s arc-length radius
+ * F_lambda reference load vcetor
+ * F_lambda2 dot product of F_lambda
+ * diag value on matrix diagonal
+ * x0  displacement vetor at begining of step
+ * x current displacemengt vector
+ * dx2 dot product of dx vector
+ * db direvative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
+ *
+ * x_lambda is solution of eq. K*x_lambda = F_lambda
+ */
+struct ArcLengthCtx {
+
   ErrorCode rval;
   PetscErrorCode ierr;
-
-  Interface &moab;
-  const void* tag_data_dlambda[1];
-  ArcLenghtCtx_DataOnMesh(FieldInterface &mField): moab(mField.get_moab()) {
-    Tag th_dlambda;
-    double def_dlambda = 0;
-    rval = moab.tag_get_handle("_DLAMBDA",1,MB_TYPE_DOUBLE,th_dlambda,MB_TAG_CREAT|MB_TAG_MESH,&def_dlambda);  
-    if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-    CHKERR_THROW(rval);
-    EntityHandle root = moab.get_root_set();
-    rval = moab.tag_get_by_ptr(th_dlambda,&root,1,tag_data_dlambda); CHKERR_THROW(rval);
-  }
-};
-
-
-
-struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
-
-  ErrorCode rval;
-  PetscErrorCode ierr;
-
-  double& dlambda; //reference to moab data see ArcLenghtCtc_DataOnMesh and constructor ArcLenghtCtx
-  PetscErrorCode set_dlambda(double _dlambda) {
-    PetscFunctionBegin;
-    dlambda = _dlambda;
-    PetscFunctionReturn(0);
-  } 
 
   double s,beta,alpha;
   PetscErrorCode set_s(double _s) { 
@@ -66,7 +63,7 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
 
   /**
    * set parematers controling arc-length equaitions
-   * alpha controls of diagonal therms
+   * alpha controls off diagonal therms
    * beta controls diagonal therm
    */
   PetscErrorCode set_alpha_and_beta(double _alpha,double _beta) { 
@@ -77,44 +74,73 @@ struct ArcLenghtCtx: public ArcLenghtCtx_DataOnMesh {
     PetscFunctionReturn(0);
   }
 
+  double dlambda;
   //dx2 - dot product of 
-  double diag,dx2,F_lambda2,res_lambda,;
-  Vec F_lambda,db,x_lambda,y_residual,x0,dx;
-  ArcLenghtCtx(FieldInterface &mField,const string &problem_name): ArcLenghtCtx_DataOnMesh(mField), dlambda(*(double *)tag_data_dlambda[0]) {
+  double diag,dx2,F_lambda2,res_lambda;
+  Vec F_lambda,db,x_lambda,x0,dx;
 
-    mField.VecCreateGhost(problem_name,Row,&F_lambda);
-    VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
-    mField.VecCreateGhost(problem_name,Row,&db);
-    mField.VecCreateGhost(problem_name,Row,&x_lambda);
-    mField.VecCreateGhost(problem_name,Row,&y_residual);
-    mField.VecCreateGhost(problem_name,Row,&x0);
-    mField.VecCreateGhost(problem_name,Row,&dx);
+  NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit;
+  DofIdx get_petsc_gloabl_dof_idx() { return dit->get_petsc_gloabl_dof_idx(); };
+  DofIdx get_petsc_local_dof_idx() { return dit->get_petsc_local_dof_idx(); };
+  FieldData& get_FieldData() { return dit->get_FieldData(); }
+  int get_part() { return dit->get_part(); };
+
+  ArcLengthCtx(FieldInterface &mField,const string &problem_name) {
+    PetscErrorCode ierr;
+
+    ierr = mField.VecCreateGhost(problem_name,Row,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.VecCreateGhost(problem_name,Row,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.VecCreateGhost(problem_name,Row,&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.VecCreateGhost(problem_name,Row,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.VecCreateGhost(problem_name,Row,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+
+    const MoFEMProblem *problem_ptr;
+    ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
+	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit;
+    dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+    hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
+    if(distance(dit,hi_dit)!=1) {
+      PetscAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	"can not find unique LAMBDA (load factor)",PETSC_NULL);
+      CHKERRABORT(PETSC_COMM_WORLD,1);
+    }
 
   }
 
-  ~ArcLenghtCtx() {
-    VecDestroy(&F_lambda);
-    VecDestroy(&db);
-    VecDestroy(&x_lambda);
-    VecDestroy(&y_residual);
-    VecDestroy(&x0);
-    VecDestroy(&dx);
+  ~ArcLengthCtx() {
+    PetscErrorCode ierr;
+    ierr = VecDestroy(&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = VecDestroy(&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = VecDestroy(&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = VecDestroy(&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = VecDestroy(&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
 
 
 };
 
-struct ArcLenghtSnesCtx: public SnesCtx {
+/**
+ * It is ctx structure passed to SNES solver
+ */
+struct ArcLengthSnesCtx: public SnesCtx {
 
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  ArcLenghtCtx* arc_ptr;
-  ArcLenghtSnesCtx(FieldInterface &_mField,const string &_problem_name,ArcLenghtCtx* _arc_ptr):
+  ArcLengthCtx* arc_ptr;
+  ArcLengthSnesCtx(FieldInterface &_mField,const string &_problem_name,ArcLengthCtx* _arc_ptr):
     SnesCtx(_mField,_problem_name),arc_ptr(_arc_ptr) {}
 
 };
 
+/**
+ * Shell matrix which has tructure
+ * [ K 		F_lambda]
+ * [ db		diag	]
+ */
 struct ArcLengthMatShell {
 
   ErrorCode rval;
@@ -124,51 +150,52 @@ struct ArcLengthMatShell {
   FieldInterface& mField;
 
   Mat Aij;
-  ArcLenghtCtx* arc_ptr;
+  ArcLengthCtx* arc_ptr;
   string problem_name;
-  ArcLengthMatShell(FieldInterface& _mField,Mat _Aij,ArcLenghtCtx *_arc_ptr,string _problem_name): 
+  ArcLengthMatShell(FieldInterface& _mField,Mat _Aij,ArcLengthCtx *_arc_ptr,string _problem_name): 
     mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr),problem_name(_problem_name) {};
   PetscErrorCode set_lambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
     PetscFunctionBegin;
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
-    //get problem dofs
-    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit;
-    dit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
-    DofIdx lambda_dof_index = dit->get_petsc_local_dof_idx();
-    int part = dit->part;
-    if(lambda_dof_index!=-1) {
+    if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
       PetscScalar *array;
       ierr = VecGetArray(ksp_x,&array); CHKERRQ(ierr);
       switch(scattermode) {
 	case SCATTER_FORWARD:
-	  *lambda = array[lambda_dof_index];
+	  *lambda = array[arc_ptr->get_petsc_local_dof_idx()];
 	  break;
 	case SCATTER_REVERSE:
-	  array[lambda_dof_index] = *lambda;
+	  array[arc_ptr->get_petsc_local_dof_idx()] = *lambda;
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
       ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
     } 
+    int part = arc_ptr->get_part();
     MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
 
     PetscFunctionReturn(0);
   }
   ~ArcLengthMatShell() { }
 
-  friend PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
+  friend PetscErrorCode arc_length_mult_shell(Mat A,Vec x,Vec f);
 };
 
-PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f);
+/**
+ * mult operator for Arc Length Shell Mat
+ */
+PetscErrorCode arc_length_mult_shell(Mat A,Vec x,Vec f);
 
+/**
+ * strutture for Arc Length precodnditioner
+ */
 struct PCShellCtx {
   PC pc;
   Mat ShellAij,Aij;
-  ArcLenghtCtx* arc_ptr;
-  PCShellCtx(Mat _ShellAij,Mat _Aij,ArcLenghtCtx* _arc_ptr): 
+  ArcLengthCtx* arc_ptr;
+  PCShellCtx(Mat _ShellAij,Mat _Aij,ArcLengthCtx* _arc_ptr): 
     ShellAij(_ShellAij),Aij(_Aij),arc_ptr(_arc_ptr) {
     PCCreate(PETSC_COMM_WORLD,&pc);
   }
@@ -179,7 +206,19 @@ struct PCShellCtx {
   friend PetscErrorCode pc_setup_arc_length(PC pc);
 };
 
+/**
+ * apply oppertor for Arc Length precoditionet
+ * solves K*pc_x = pc_f
+ * solves K*x_lambda = F_lambda
+ * solves ddlambda = ( res_lambda - db*x_lambda )/( diag + db*pc_x )
+ * calulate pc_x = pc_x + ddlambda*x_lambda
+ */
 PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
+
+/**
+ * set up struture for Arc Length precoditioner
+ * it sets precoditioner for matrix K
+ */
 PetscErrorCode pc_setup_arc_length(PC pc);
 
 }

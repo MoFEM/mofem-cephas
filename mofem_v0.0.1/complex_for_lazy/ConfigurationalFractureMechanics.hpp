@@ -64,7 +64,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
   PetscErrorCode material_problem_definition(FieldInterface& mField);
   PetscErrorCode coupled_problem_definition(FieldInterface& mField);
-  PetscErrorCode arclenght_problem_definition(FieldInterface& mField);
+  PetscErrorCode arclength_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_crack_front_problem_definition(FieldInterface& mField,string problem);
   PetscErrorCode spatial_partition_problems(FieldInterface& mField);
@@ -75,11 +75,12 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode set_spatial_positions(FieldInterface& mField);
   PetscErrorCode set_material_positions(FieldInterface& mField);
   PetscErrorCode set_coordinates_from_material_solution(FieldInterface& mField);
-  PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes,double step_size);
+  PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes);
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
 
   double nrm2_front_equlibrium;
-  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double step_size,double alpha3);
+  double aRea,lambda;
+  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double alpha3,double da = 0);
 
   PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
@@ -134,20 +135,29 @@ struct ConfigurationalFractureMechanics {
 
   };
 
-  struct ArcLenghtElemFEMethod: public FieldInterface::FEMethod {
+  struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
     ConfigurationalFractureMechanics *conf_prob;
-    ArcLenghtCtx* arc_ptr;
-    Vec GhostDiag;
-    ArcLenghtElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLenghtCtx *_arc_ptr);
-    ~ArcLenghtElemFEMethod();
+    ArcLengthCtx* arc_ptr;
 
-    PetscErrorCode calulate_lambda_int(double &_lambda_int_);
+    Vec ghostDiag;
+    Range crackSurfacesFaces;
+    PetscInt *isIdx;
+    IS isSurface;
+    Vec surfaceDofs;
+    VecScatter surfaceScatter;
+    Vec lambdaVec;
+
+    ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
+    ~ArcLengthElemFEMethod();
+
+    double aRea,lambda_int;
+
+    PetscErrorCode set_dlambda_to_x(Vec x,double dlambda);
+    PetscErrorCode calulate_lambda_int();
     PetscErrorCode calulate_db();
-    PetscErrorCode calulate_dx_and_dlambda(Vec x);
-
-    double lambda_int;
+    PetscErrorCode get_dlambda(Vec x);
 
     PetscErrorCode preProcess();
     PetscErrorCode operator()();

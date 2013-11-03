@@ -153,7 +153,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&DofMoFEMEntity::get_id>, ltbit<BitFieldId> >,
     ordered_non_unique<
-      tag<Composite_mi_tag>, 
+      tag<Composite_Name_And_Ent_And_EndDofIdx>, 
       composite_key<
 	DofMoFEMEntity,
 	const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
@@ -161,7 +161,7 @@ typedef multi_index_container<
 	const_mem_fun<DofMoFEMEntity,DofIdx,&DofMoFEMEntity::get_EntDofIdx> 
       > >,
     ordered_non_unique<
-      tag<Composite_mi_tag2>, 
+      tag<Composite_Name_And_Ent>, 
       composite_key<
 	DofMoFEMEntity,
 	const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,

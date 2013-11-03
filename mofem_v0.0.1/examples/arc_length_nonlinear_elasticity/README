@@ -7,7 +7,7 @@ Check before run
 Example run
 ===========
 
-mpirun -np 4 ./arc_lenght_nonlinear_elasticity \
+mpirun -np 4 ./arc_length_nonlinear_elasticity \
   -my_file dome_thin_symm.cub \
   -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 \
   -snes_monitor -snes_type newtonls -snes_linesearch_type bt \

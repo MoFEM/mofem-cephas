@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode arc_lenght_mult_shell(Mat A,Vec x,Vec f) {
+PetscErrorCode arc_length_mult_shell(Mat A,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   void *void_ctx;

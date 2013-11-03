@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     //Fields
     ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
     ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
-    //Field for ArcLenght
+    //Field for ArcLength
     ierr = mField.add_field("X0_DISPLACEMENT",H1,3); CHKERRQ(ierr);
 
     //FE
@@ -168,13 +168,13 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_col("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
 
-    //FE ArcLenght
-    ierr = mField.add_finite_element("ARC_LENGHT"); CHKERRQ(ierr);
+    //FE ArcLength
+    ierr = mField.add_finite_element("ARC_LENGTH"); CHKERRQ(ierr);
     //Define rows/cols and element data
-    ierr = mField.modify_finite_element_add_field_row("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("ARC_LENGTH","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ARC_LENGTH","LAMBDA"); CHKERRQ(ierr);
     //elem data
-    ierr = mField.modify_finite_element_add_field_data("ARC_LENGHT","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ARC_LENGTH","LAMBDA"); CHKERRQ(ierr);
 
     //define problems
     ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     //set finite elements for problem
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ARC_LENGHT"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ARC_LENGTH"); CHKERRQ(ierr);
 
     //set refinment level for problem
     ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
@@ -199,16 +199,16 @@ int main(int argc, char *argv[]) {
 
 
     //this entity will carray data for this finite element
-    EntityHandle meshset_FE_ARC_LENGHT;
-    rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGHT); CHKERR_PETSC(rval);
+    EntityHandle meshset_FE_ARC_LENGTH;
+    rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGTH); CHKERR_PETSC(rval);
     //get LAMBDA field meshset
     EntityHandle meshset_field_LAMBDA = mField.get_field_meshset("LAMBDA");
-    //add LAMBDA field meshset to finite element ARC_LENGHT
-    rval = moab.add_entities(meshset_FE_ARC_LENGHT,&meshset_field_LAMBDA,1); CHKERR_PETSC(rval);
-    //add finite element ARC_LENGHT meshset to refinment database (all ref bit leveles)
-    ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGHT,BitRefLevel().set()); CHKERRQ(ierr);
-    //finally add created meshset to the ARC_LENGHT finite element
-    ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGHT,"ARC_LENGHT"); CHKERRQ(ierr);
+    //add LAMBDA field meshset to finite element ARC_LENGTH
+    rval = moab.add_entities(meshset_FE_ARC_LENGTH,&meshset_field_LAMBDA,1); CHKERR_PETSC(rval);
+    //add finite element ARC_LENGTH meshset to refinment database (all ref bit leveles)
+    ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGTH,BitRefLevel().set()); CHKERRQ(ierr);
+    //finally add created meshset to the ARC_LENGTH finite element
+    ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGTH,"ARC_LENGTH"); CHKERRQ(ierr);
 
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -273,10 +273,10 @@ int main(int argc, char *argv[]) {
   const double ft = 1;
   const double Gf = 1;
 
-  struct MyArcLenghtIntElemFEMethod: public ArcLenghtIntElemFEMethod {
+  struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
     Range PostProcNodes;
-    MyArcLenghtIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
-      ArcLenghtCtx *_arc_ptr): ArcLenghtIntElemFEMethod(_moab,_Aij,_F,_D,_arc_ptr) {
+    MyArcLengthIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
+      ArcLengthCtx *_arc_ptr): ArcLengthIntElemFEMethod(_moab,_Aij,_F,_D,_arc_ptr) {
 
       Range all_nodes;
       rval = moab.get_entities_by_type(0,MBVERTEX,all_nodes,true); CHKERR_THROW(rval);
@@ -315,10 +315,10 @@ int main(int argc, char *argv[]) {
 
   };
 
-  ArcLenghtCtx* ArcCtx = new ArcLenghtCtx(mField,"ELASTIC_MECHANICS");
-  MyArcLenghtIntElemFEMethod* MyArcMethod_ptr = new MyArcLenghtIntElemFEMethod(moab,Aij,F,D,ArcCtx);
-  MyArcLenghtIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
-  ArcLenghtSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
+  ArcLengthCtx* ArcCtx = new ArcLengthCtx(mField,"ELASTIC_MECHANICS");
+  MyArcLengthIntElemFEMethod* MyArcMethod_ptr = new MyArcLengthIntElemFEMethod(moab,Aij,F,D,ArcCtx);
+  MyArcLengthIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
+  ArcLengthSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
 
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
   ArcLengthMatShell* MatCtx = new ArcLengthMatShell(mField,Aij,ArcCtx,"ELASTIC_MECHANICS");
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)MatCtx,&ShellAij); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_lenght_mult_shell); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
 
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -356,12 +356,12 @@ int main(int argc, char *argv[]) {
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
   //Mat
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGHT",&MyArcMethod));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;
@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
       ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
-      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ARC_LENGHT",MyArcMethod);  CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ARC_LENGTH",MyArcMethod);  CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
