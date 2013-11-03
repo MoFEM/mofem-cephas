@@ -116,7 +116,27 @@ int main(int argc, char *argv[]) {
   //caculate material forces
   ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
 
-  for(int aa = 0;aa<1;aa++) {
+  double alpha3_0 = 0;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_alpha3",&alpha3_0,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_alpha3 (what is fracture energy ?)");
+  }
+
+  double da_0 = 0;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_da",&da_0,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_da (what is crack area increment ?)");
+  }
+  PetscInt nb_load_steps = 0;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_load_steps",&nb_load_steps,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_load_steps (what is number of load_steps ?)");
+  }
+
+
+  //shuld not do load steps, loop is always one
+  //it is left here for testing reasons
+  for(int aa = 0;aa<nb_load_steps;aa++) {
 
     ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -128,13 +148,6 @@ int main(int argc, char *argv[]) {
     ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-
-    double alpha3_0 = 0;
-    PetscBool flg;
-    ierr = PetscOptionsGetReal(PETSC_NULL,"-my_alpha3",&alpha3_0,&flg); CHKERRQ(ierr);
-    if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_alpha3 (what is fracture energy ?)");
-    }
 
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -149,9 +162,9 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"alpha3 = %6.4e\n",alpha3); CHKERRQ(ierr);
 
       if(ii == 0) {
-	ierr = conf_prob.solve_coupled_problem(mField,&snes,-1e-3,alpha3); CHKERRQ(ierr);
+	ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3,da_0); CHKERRQ(ierr);
       } else {
-	ierr = conf_prob.solve_coupled_problem(mField,&snes,0,alpha3); CHKERRQ(ierr);
+	ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3,0); CHKERRQ(ierr);
       }
 
       int its;
@@ -204,6 +217,8 @@ int main(int argc, char *argv[]) {
       }
 
     }
+
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",aa,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);
 
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 

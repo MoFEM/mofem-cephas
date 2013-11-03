@@ -75,11 +75,12 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode set_spatial_positions(FieldInterface& mField);
   PetscErrorCode set_material_positions(FieldInterface& mField);
   PetscErrorCode set_coordinates_from_material_solution(FieldInterface& mField);
-  PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes,double step_size);
+  PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes);
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
 
   double nrm2_front_equlibrium;
-  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double step_size,double alpha3);
+  double aRea,lambda;
+  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double alpha3,double da = 0);
 
   PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);

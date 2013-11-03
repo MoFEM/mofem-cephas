@@ -913,7 +913,7 @@ PetscErrorCode ConfigurationalFractureMechanics::set_coordinates_from_material_s
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInterface& mField,SNES *snes,double step_size) {
+PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInterface& mField,SNES *snes) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -949,7 +949,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = MySpatialFE.set_t_val(step_size); CHKERRQ(ierr);
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
@@ -1360,7 +1359,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInterface& mField,SNES *snes,double step_size,double alpha3) {
+PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInterface& mField,SNES *snes,double alpha3,double da) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -1431,7 +1430,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
     ierr = mField.get_problem("COUPLED_PROBLEM",&(arc_elem->problem_ptr)); CHKERRQ(ierr);
-    ierr = arc_elem->set_dlambda_to_x(D,step_size); CHKERRQ(ierr);
+    ierr = arc_elem->set_dlambda_to_x(D,*(MySpatialFE.t_val)); CHKERRQ(ierr);
     ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
     ierr = arc_elem->get_dlambda(D); CHKERRQ(ierr);
     ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
@@ -1457,9 +1456,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     //set s
     arc_elem->snes_x = D;
     ierr = arc_elem->calulate_lambda_int(); CHKERRQ(ierr);
-    ierr = arc_ctx->set_s(arc_elem->lambda_int); CHKERRQ(ierr);
+    ierr = arc_ctx->set_s(arc_elem->lambda_int+da); CHKERRQ(ierr);
   } else {
-    ierr = MySpatialFE.set_t_val(step_size); CHKERRQ(ierr);
   }
 
   Mat C_crack_fornt;
@@ -1520,6 +1518,11 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
+    ierr = MySpatialFE.set_t_val(arc_ctx->get_FieldData()); CHKERRQ(ierr);
+    aRea = arc_elem->aRea;
+    lambda = arc_ctx->get_FieldData();
+  }
 
   PostProcVertexMethod ent_method_spatial(mField.get_moab(),"SPATIAL_POSITION");
   ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_spatial); CHKERRQ(ierr);
