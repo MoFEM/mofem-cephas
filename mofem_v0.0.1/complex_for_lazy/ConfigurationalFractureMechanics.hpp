@@ -140,11 +140,18 @@ struct ConfigurationalFractureMechanics {
     ConfigurationalFractureMechanics *conf_prob;
     ArcLengthCtx* arc_ptr;
     Vec GhostDiag;
-    Range CrackSurfacesFaces;
+
+    Range crackSurfacesFaces;
+    PetscInt *isIdx;
+    IS isSurface;
+    Vec surfaceDofs;
+    VecScatter surfaceScatter;
+
     ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
     ~ArcLengthElemFEMethod();
 
     PetscErrorCode set_dlambda_to_x(Vec x,double dlambda);
+    double Area;
     PetscErrorCode calulate_lambda_int(double &_lambda_int_);
     PetscErrorCode calulate_db();
     PetscErrorCode calulate_dx_and_dlambda(Vec x);

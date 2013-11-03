@@ -1639,7 +1639,8 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_F_Material = %6.4e\n",nrm2_material); CHKERRQ(ierr);
 
   //Fields
-  ierr = mField.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost(
+    problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
     //cerr << *dof << endl;
   //}
@@ -1749,9 +1750,12 @@ PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMeth
 
   PetscFunctionReturn(0);
 }
-ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr): 
+ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
+  FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr): 
     mField(_mField),conf_prob(_conf_prob),arc_ptr(_arc_ptr) {
     PetscErrorCode ierr;
+    ErrorCode rval;
+
     PetscInt ghosts[1] = { 0 };
     Interface &moab = mField.get_moab();
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -1761,31 +1765,86 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(F
       ierr = VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag); CHKERRABORT(PETSC_COMM_SELF,ierr);
     }
 
-    Range CrackSurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRABORT(PETSC_COMM_SELF,ierr);
-    Range LevelTris;
-    ierr = mField.refine_get_ents(conf_prob->bit_level0,BitRefLevel().set(),MBTRI,LevelTris); CHKERRABORT(PETSC_COMM_SELF,ierr);
-    CrackSurfacesFaces = intersect(CrackSurfacesFaces,LevelTris);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crackSurfacesFaces,true); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    Range level_tris;
+    ierr = mField.refine_get_ents(conf_prob->bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    crackSurfacesFaces = intersect(crackSurfacesFaces,level_tris);
+
+    ierr = mField.get_problem("COUPLED_PROBLEM",&problem_ptr); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    set<DofIdx> set_idx;
+    for(Range::iterator fit = crackSurfacesFaces.begin();fit!=crackSurfacesFaces.end();fit++) {
+      const EntityHandle* conn; 
+      int num_nodes; 
+      rval = mField.get_moab().get_connectivity(*fit,conn,num_nodes,true); 
+      if (MB_SUCCESS != rval) { 
+	PetscAbortErrorHandler(PETSC_COMM_SELF,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,rval,PETSC_ERROR_INITIAL,
+	  "can not get connectibity",PETSC_NULL);
+	CHKERRABORT(PETSC_COMM_SELF,rval);
+      }
+      for(int nn = 0;nn<num_nodes; nn++) {
+	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,conn[nn],dit)) {
+	  if(dit->get_name()!="MESH_NODE_POSITIONS") continue;
+	  set_idx.insert(dit->get_petsc_gloabl_dof_idx());
+	}
+      }
+    }
+
+    ierr = PetscMalloc(set_idx.size()*sizeof(PetscInt),&isIdx); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    copy(set_idx.begin(),set_idx.end(),isIdx);
+    ierr = ISCreateGeneral(PETSC_COMM_SELF,set_idx.size(),isIdx,PETSC_USE_POINTER,&isSurface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    ierr = VecCreateSeq(PETSC_COMM_SELF,set_idx.size(),&surfaceDofs); CHKERRABORT(PETSC_COMM_SELF,ierr);
 
 }
 ConfigurationalFractureMechanics::ArcLengthElemFEMethod::~ArcLengthElemFEMethod() {
-    PetscErrorCode ierr;
-    ierr = VecDestroy(&GhostDiag); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  PetscErrorCode ierr;
+  ierr = VecScatterDestroy(&surfaceScatter); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = VecDestroy(&GhostDiag); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = VecDestroy(&surfaceDofs); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = ISDestroy(&isSurface); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = PetscFree(isIdx); CHKERRABORT(PETSC_COMM_SELF,ierr);
 }
 PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_lambda_int(double &_lambda_int_) {
   PetscFunctionBegin;
   ErrorCode rval;
+  PetscErrorCode ierr;
 
-  for(Range::iterator fit = CrackSurfacesFaces.begin();fit!=CrackSurfacesFaces.end();fit++) {
+  ierr = VecScatterCreate(snes_x,isSurface,surfaceDofs,PETSC_NULL,&surfaceScatter); CHKERRABORT(PETSC_COMM_SELF,ierr);
+  ierr = VecScatterBegin(surfaceScatter,snes_x,surfaceDofs,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(surfaceScatter,snes_x,surfaceDofs,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterDestroy(&surfaceScatter); CHKERRABORT(PETSC_COMM_SELF,ierr);
+
+  double *array;
+  ierr = VecGetArray(surfaceDofs,&array); CHKERRQ(ierr);  
+  PetscInt size;
+  ISGetSize(isSurface,&size);
+  for(int ii = 0;ii<size;ii++) {
+    problem_ptr->numered_dofs_rows.get<
+      PetscGlobalIdx_mi_tag>().find(isIdx[ii])->get_FieldData() = array[ii];
+  }
+  ierr = VecRestoreArray(surfaceDofs,&array); CHKERRABORT(PETSC_COMM_SELF,ierr);
+
+  Area = 0;
+  ublas::vector<double,ublas::bounded_array<double,6> > diffNTRI(6);
+  ShapeDiffMBTRI(&diffNTRI.data()[0]);
+  for(Range::iterator fit = crackSurfacesFaces.begin();fit!=crackSurfacesFaces.end();fit++) {
     const EntityHandle* conn; 
     int num_nodes; 
     rval = mField.get_moab().get_connectivity(*fit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    ublas::vector<double,ublas::bounded_array<double,9> > dofsX(9);
+    ublas::vector<double,ublas::bounded_array<double,3> > normal(3);
     for(int nn = 0;nn<num_nodes; nn++) {
-
+      for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"MESH_NODE_POSITIONS",conn[nn],dit)) {
+	dofsX[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
+      }
     }
+    ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&dofsX.data()[0],&normal.data()[0]); CHKERRQ(ierr);
+    Area += norm_2(normal);
   }
-  _lambda_int_ = arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 
+
+  cerr << "Area " << Area << endl;
+
+  _lambda_int_ = arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
   cerr << arc_ptr->dlambda << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2 << endl;
 
   PetscFunctionReturn(0);

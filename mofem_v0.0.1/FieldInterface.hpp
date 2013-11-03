@@ -1225,7 +1225,7 @@ struct FieldInterface {
   ///loop over all dofs from a moFEM field and particular field
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
     DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
-      IT != MFIELD.get_dofs_by_name_end(NAME,ENT); IT++
+      IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
 
   /** \brief Get finite elements multi index
     *
