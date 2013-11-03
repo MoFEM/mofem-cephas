@@ -1751,20 +1751,39 @@ PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMeth
 }
 ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr): 
     mField(_mField),conf_prob(_conf_prob),arc_ptr(_arc_ptr) {
+    PetscErrorCode ierr;
     PetscInt ghosts[1] = { 0 };
     Interface &moab = mField.get_moab();
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
-      VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostDiag);
+      ierr = VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostDiag); CHKERRABORT(PETSC_COMM_SELF,ierr);
     } else {
-      VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag);
+      ierr = VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag); CHKERRABORT(PETSC_COMM_SELF,ierr);
     }
+
+    Range CrackSurfacesFaces;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    Range LevelTris;
+    ierr = mField.refine_get_ents(conf_prob->bit_level0,BitRefLevel().set(),MBTRI,LevelTris); CHKERRABORT(PETSC_COMM_SELF,ierr);
+    CrackSurfacesFaces = intersect(CrackSurfacesFaces,LevelTris);
+
 }
 ConfigurationalFractureMechanics::ArcLengthElemFEMethod::~ArcLengthElemFEMethod() {
-    VecDestroy(&GhostDiag);
+    PetscErrorCode ierr;
+    ierr = VecDestroy(&GhostDiag); CHKERRABORT(PETSC_COMM_SELF,ierr);
 }
 PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_lambda_int(double &_lambda_int_) {
   PetscFunctionBegin;
+  ErrorCode rval;
+
+  for(Range::iterator fit = CrackSurfacesFaces.begin();fit!=CrackSurfacesFaces.end();fit++) {
+    const EntityHandle* conn; 
+    int num_nodes; 
+    rval = mField.get_moab().get_connectivity(*fit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    for(int nn = 0;nn<num_nodes; nn++) {
+
+    }
+  }
   _lambda_int_ = arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 
   cerr << arc_ptr->dlambda << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2 << endl;

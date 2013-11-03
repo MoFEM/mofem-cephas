@@ -140,6 +140,7 @@ struct ConfigurationalFractureMechanics {
     ConfigurationalFractureMechanics *conf_prob;
     ArcLengthCtx* arc_ptr;
     Vec GhostDiag;
+    Range CrackSurfacesFaces;
     ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
     ~ArcLengthElemFEMethod();
 
