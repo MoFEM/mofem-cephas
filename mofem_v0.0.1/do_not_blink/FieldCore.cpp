@@ -4549,6 +4549,12 @@ DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::ge
 DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::get_dofs_by_name_end(const string &field_name) {
   return dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
 }
+DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator FieldCore::get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent) {
+  return dofsMoabField.get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(field_name,ent));
+}
+DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator FieldCore::get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent) {
+  return dofsMoabField.get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(field_name,ent));
+}
 PetscErrorCode FieldCore::get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr) {
   PetscFunctionBegin;
   *finiteElements_ptr = &finiteElements;
