@@ -138,6 +138,8 @@ int main(int argc, char *argv[]) {
   //it is left here for testing reasons
   for(int aa = 0;aa<nb_load_steps;aa++) {
 
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of step = %D\n",aa); CHKERRQ(ierr);
+
     ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
