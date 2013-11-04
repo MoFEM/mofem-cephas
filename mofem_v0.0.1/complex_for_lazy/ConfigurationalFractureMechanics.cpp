@@ -511,6 +511,12 @@ PetscErrorCode ConfigurationalFractureMechanics::arclength_problem_definition(Fi
   ierr = mField.modify_finite_element_add_field_row("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MATERIAL_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MATERIAL_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MATERIAL_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("MESH_SMOOTHER","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MESH_SMOOTHER","LAMBDA"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MESH_SMOOTHER","LAMBDA"); CHKERRQ(ierr);
 
   ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","ARC_LENGTH"); CHKERRQ(ierr);
 
@@ -1423,14 +1429,17 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ////******
 
   Vec D;
-  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Col,&D); CHKERRQ(ierr);
+  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
+    arc_ctx->get_FieldData() = *(MySpatialFE.t_val);
+  }
   ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
     ierr = mField.get_problem("COUPLED_PROBLEM",&(arc_elem->problem_ptr)); CHKERRQ(ierr);
-    ierr = arc_elem->set_dlambda_to_x(D,*(MySpatialFE.t_val)); CHKERRQ(ierr);
+    ierr = arc_elem->set_dlambda_to_x(D,0);/**(MySpatialFE.t_val));*/ CHKERRQ(ierr);
     ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
     ierr = arc_elem->get_dlambda(D); CHKERRQ(ierr);
     ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);

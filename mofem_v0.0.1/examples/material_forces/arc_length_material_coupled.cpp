@@ -138,6 +138,8 @@ int main(int argc, char *argv[]) {
   //it is left here for testing reasons
   for(int aa = 0;aa<nb_load_steps;aa++) {
 
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of step = %D\n",aa); CHKERRQ(ierr);
+
     ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
@@ -158,11 +160,13 @@ int main(int argc, char *argv[]) {
     int its_d = 5;
     for(int ii = 0;ii<20;ii++) {
 
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"number of substep = %D\n",ii); CHKERRQ(ierr);
+
       alpha3 /= reduction;
       ierr = PetscPrintf(PETSC_COMM_WORLD,"alpha3 = %6.4e\n",alpha3); CHKERRQ(ierr);
 
       if(ii == 0) {
-	ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3,da_0); CHKERRQ(ierr);
+	ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3,(aa == 0) ? 0 : da_0); CHKERRQ(ierr);
       } else {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3,0); CHKERRQ(ierr);
       }
@@ -219,6 +223,15 @@ int main(int argc, char *argv[]) {
     }
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",aa,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);
+    if(pcomm->rank()==0) {
+      EntityHandle out_meshset;
+      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      ierr = mField.problem_get_FE("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
+      ostringstream ss;
+      ss << "out_load_step_" << aa << ".vtk";
+      rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    }
 
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
