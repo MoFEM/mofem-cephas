@@ -197,10 +197,12 @@ struct PCShellCtx {
   ArcLengthCtx* arc_ptr;
   PCShellCtx(Mat _ShellAij,Mat _Aij,ArcLengthCtx* _arc_ptr): 
     ShellAij(_ShellAij),Aij(_Aij),arc_ptr(_arc_ptr) {
-    PCCreate(PETSC_COMM_WORLD,&pc);
+    PetscErrorCode ierr;
+    ierr = PCCreate(PETSC_COMM_WORLD,&pc); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
   ~PCShellCtx() {
-    PCDestroy(&pc);
+    PetscErrorCode ierr;
+    ierr = PCDestroy(&pc); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
   friend PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
   friend PetscErrorCode pc_setup_arc_length(PC pc);

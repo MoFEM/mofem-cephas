@@ -985,16 +985,9 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-
   Interface& moab = mField.get_moab();
 
-  if(projSurfaceCtx!=NULL) {
-    ierr = projSurfaceCtx->DestroyQorP(); CHKERRQ(ierr);
-    ierr = projSurfaceCtx->DestroyQTKQ(); CHKERRQ(ierr);
-    ierr = MatDestroy(&projSurfaceCtx->C); CHKERRQ(ierr);
-    delete projSurfaceCtx;
-    projSurfaceCtx = NULL;
-  }
+  ierr = delete_surface_projection_data(mField); CHKERRQ(ierr);
 
   if(projSurfaceCtx==NULL) {
     projSurfaceCtx = new matPROJ_ctx(mField,problem,"C_ALL_MATRIX");
@@ -1027,6 +1020,22 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode ConfigurationalFractureMechanics::delete_surface_projection_data(FieldInterface& mField) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+
+  if(projSurfaceCtx!=NULL) {
+    ierr = projSurfaceCtx->DestroyQorP(); CHKERRQ(ierr);
+    ierr = projSurfaceCtx->DestroyQTKQ(); CHKERRQ(ierr);
+    ierr = MatDestroy(&projSurfaceCtx->C); CHKERRQ(ierr);
+    delete projSurfaceCtx;
+    projSurfaceCtx = NULL;
+  }
+
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInterface& mField,string problem) {
   PetscFunctionBegin;
 
@@ -1035,15 +1044,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInter
 
   Vec F_Material;
   ierr = mField.VecCreateGhost(problem,Row,&F_Material); CHKERRQ(ierr);
-  /*for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
-    cerr << *dof << endl;
-  }*/
   ierr = mField.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  //Vec F_Griffith;
-  //ierr = mField.VecCreateGhost(problem,Row,&F_Griffith); CHKERRQ(ierr);
-  //ierr = mField.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE",Row,F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  ierr = projSurfaceCtx->InitQorP(F_Material); CHKERRQ(ierr);
 
   int M,m;
   ierr = VecGetSize(F_Material,&M); CHKERRQ(ierr);
@@ -1055,23 +1056,17 @@ PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInter
   Vec QTF_Material;
   ierr = VecDuplicate(F_Material,&QTF_Material); CHKERRQ(ierr);
   ierr = MatMult(Q,F_Material,QTF_Material); CHKERRQ(ierr);
-  //Vec QTF_Griffith;
-  //ierr = VecDuplicate(F_Griffith,&QTF_Griffith); CHKERRQ(ierr);
-  //ierr = MatMult(Q,F_Griffith,QTF_Griffith); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS",QTF_Material,"MATERIAL_FORCE_PROJECTED");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Row,ent_method_material); CHKERRQ(ierr);
-  //PostProcVertexMethod ent_method_griffith(mField.get_moab(),"MESH_NODE_POSITIONS",QTF_Griffith,"GRIFFITH_FORCE_PROJECTED");
-  //ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Row,ent_method_griffith); CHKERRQ(ierr);
 
   double nrm2_material;
   ierr = VecNorm(QTF_Material,NORM_2,&nrm2_material);   CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_QTF_Material = %6.4e\n",nrm2_material); CHKERRQ(ierr);
 
-  ierr = VecDestroy(&QTF_Material); CHKERRQ(ierr);
-  //ierr = VecDestroy(&QTF_Griffith); CHKERRQ(ierr);
   ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
   ierr = MatDestroy(&Q); CHKERRQ(ierr);
+  ierr = VecDestroy(&QTF_Material); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -1081,17 +1076,27 @@ PetscErrorCode ConfigurationalFractureMechanics::front_projection_data(FieldInte
 
   PetscErrorCode ierr;
   
+  ierr = delete_front_projection_data(mField); CHKERRQ(ierr);
+
+  if(projFrontCtx==NULL) {
+    projFrontCtx = new matPROJ_ctx(mField,problem,"C_CRACKFRONT_MATRIX");
+    ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx->C); CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ConfigurationalFractureMechanics::delete_front_projection_data(FieldInterface& mField) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+
   if(projFrontCtx!=NULL) {
     ierr = projFrontCtx->DestroyQorP(); CHKERRQ(ierr);
     ierr = projFrontCtx->DestroyQTKQ(); CHKERRQ(ierr);
     ierr = MatDestroy(&projFrontCtx->C); CHKERRQ(ierr);
     delete projFrontCtx;
     projFrontCtx = NULL;
-  }
-
-  if(projFrontCtx==NULL) {
-    projFrontCtx = new matPROJ_ctx(mField,problem,"C_CRACKFRONT_MATRIX");
-    ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx->C); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
@@ -1143,6 +1148,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = VecNorm(QTGriffithForceVec,NORM_2,&nrm2_griffith_force);   CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_QTGriffithForceVec = %6.4e\n",nrm2_griffith_force); CHKERRQ(ierr);
 
+  ierr = MatDestroy(&Q); CHKERRQ(ierr);
   ierr = VecDestroy(&LambdaVec); CHKERRQ(ierr);
   ierr = VecDestroy(&GriffithForceVec); CHKERRQ(ierr);
   ierr = VecDestroy(&QTGriffithForceVec); CHKERRQ(ierr);
@@ -1217,6 +1223,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     ierr = MatShellSetOperation(RT,MATOP_MULT,(void(*)(void))matRT_mult_shell); CHKERRQ(ierr);
   }
 
+  ierr = projFrontCtx->InitQorP(F_Material); CHKERRQ(ierr);
   ierr = MatMult(RT,F_Material,LambdaVec); CHKERRQ(ierr);
   ierr = MatMult(projFrontCtx->CT,LambdaVec,F_Griffith); CHKERRQ(ierr);
 
@@ -1263,6 +1270,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   PostProcVertexMethod ent_method_griffith(mField.get_moab(),"MESH_NODE_POSITIONS",F_Griffith,"G");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Row,ent_method_griffith); CHKERRQ(ierr);
 
+  ierr = MatDestroy(&Q); CHKERRQ(ierr);
   ierr = MatDestroy(&RT); CHKERRQ(ierr);
   ierr = VecDestroy(&F_Griffith); CHKERRQ(ierr);
   ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
@@ -1279,17 +1287,21 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
   DirihletBCMethod_DriverComplexForLazy myDirihletBCMaterial(mField,"MATERIAL_MECHANICS","MESH_POSITION");
   ierr = myDirihletBCMaterial.Init(); CHKERRQ(ierr);
 
+  ierr = front_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = surface_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+
+  Vec F;
+  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F); CHKERRQ(ierr);
+  Vec D;
+  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Col,&D); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
   Mat precK;
   ierr = mField.MatCreateMPIAIJWithArrays("MATERIAL_MECHANICS",&precK); CHKERRQ(ierr);
   ierr = MatDuplicate(precK,MAT_DO_NOT_COPY_VALUES,&projSurfaceCtx->K); CHKERRQ(ierr);
-  if(projSurfaceCtx->C == PETSC_NULL) {
-    ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&projSurfaceCtx->C); CHKERRQ(ierr);
-  }
-  if(projSurfaceCtx->g == PETSC_NULL) {
-    ierr = mField.VecCreateGhost("C_ALL_MATRIX",Row,&projSurfaceCtx->g); CHKERRQ(ierr);
-  }
-  Vec F;
-  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("C_ALL_MATRIX",Row,&projSurfaceCtx->g); CHKERRQ(ierr);
 
   Mat CTC_QTKQ;
   int M,N,m,n;
@@ -1297,6 +1309,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
   ierr = MatGetLocalSize(projSurfaceCtx->K,&m,&n); CHKERRQ(ierr);
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,projSurfaceCtx,&CTC_QTKQ); CHKERRQ(ierr);
   ierr = MatShellSetOperation(CTC_QTKQ,MATOP_MULT,(void(*)(void))matCTC_QTKQ_mult_shell); CHKERRQ(ierr);
+
+  Mat C_crack_fornt;
+  ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;
@@ -1311,8 +1326,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
   NL_MaterialFEMethodProjected MyMaterialFE(
     mField,*projSurfaceCtx,&myDirihletBCMaterial,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),alpha3);
 
-  Mat C_crack_fornt;
-  ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
   Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"MATERIAL_MECHANICS","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,"LAMBDA_CRACKFRONT_AREA");
 
@@ -1336,12 +1349,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
   snes_ctx.get_preProcess_to_do_Mat().push_back(&Projection);
   snes_ctx.get_postProcess_to_do_Mat().push_back(&Projection);
 
-  Vec D;
-  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
-  ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
@@ -1361,6 +1368,12 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&precK); CHKERRQ(ierr);
   ierr = MatDestroy(&CTC_QTKQ); CHKERRQ(ierr);
+  ierr = MatDestroy(&C_crack_fornt); CHKERRQ(ierr);
+  ierr = MatDestroy(&projSurfaceCtx->K); CHKERRQ(ierr);
+  ierr = VecDestroy(&projSurfaceCtx->g); CHKERRQ(ierr);
+
+  ierr = delete_surface_projection_data(mField); CHKERRQ(ierr);
+  ierr = delete_front_projection_data(mField); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -1370,28 +1383,32 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   PetscErrorCode ierr;
 
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"COUPLED_PROBLEM");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+  ierr = front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
+  //create matrices
   Mat precK;
   ierr = mField.MatCreateMPIAIJWithArrays("COUPLED_PROBLEM",&precK); CHKERRQ(ierr);
   ierr = MatDuplicate(precK,MAT_DO_NOT_COPY_VALUES,&projSurfaceCtx->K); CHKERRQ(ierr);
-  if(projSurfaceCtx->C == PETSC_NULL) {
-    ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&projSurfaceCtx->C); CHKERRQ(ierr);
-  }
-  if(projSurfaceCtx->g == PETSC_NULL) {
-    ierr = mField.VecCreateGhost("C_ALL_MATRIX",Row,&projSurfaceCtx->g); CHKERRQ(ierr);
-  }
+  ierr = mField.VecCreateGhost("C_ALL_MATRIX",Row,&projSurfaceCtx->g); CHKERRQ(ierr);
 
-  //create matrices
   Mat CTC_QTKQ;
   int M,N,m,n;
   ierr = MatGetSize(projSurfaceCtx->K,&M,&N); CHKERRQ(ierr);
   ierr = MatGetLocalSize(projSurfaceCtx->K,&m,&n); CHKERRQ(ierr);
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,projSurfaceCtx,&CTC_QTKQ); CHKERRQ(ierr);
   ierr = MatShellSetOperation(CTC_QTKQ,MATOP_MULT,(void(*)(void))matCTC_QTKQ_mult_shell); CHKERRQ(ierr);
+
   Vec F;
   ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Row,&F); CHKERRQ(ierr);
+  Vec D;
+  ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Col,&D); CHKERRQ(ierr);
+
+  Mat C_crack_fornt;
+  ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
+
+  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"COUPLED_PROBLEM");
+  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   SnesCtx* snes_ctx;
   Mat Arc_CTC_QTKQ;
@@ -1428,8 +1445,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = MyMeshSmoother.init_crack_front_data(false,false); CHKERRQ(ierr);
   ////******
 
-  Vec D;
-  ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Col,&D); CHKERRQ(ierr);
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
     arc_ctx->get_FieldData() = *(MySpatialFE.t_val);
   }
@@ -1469,8 +1484,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   } else {
   }
 
-  Mat C_crack_fornt;
-  ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
   Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,*projSurfaceCtx,"LAMBDA_CRACKFRONT_AREA");
 
@@ -1486,9 +1499,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ierr = SNESGetKSP(*snes,&ksp); CHKERRQ(ierr);
     PC pc;
     ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
-    PCShellCtx* PCCtx = new PCShellCtx(precK,Arc_CTC_QTKQ,arc_ctx);
     ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
-    ierr = PCShellSetContext(pc,PCCtx); CHKERRQ(ierr);
+    ierr = PCShellSetContext(pc,pc_ctx); CHKERRQ(ierr);
     ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
     ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
 
@@ -1545,9 +1557,13 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  MySpatialFE.snes_x = D;
   MySpatialFE.snes_f = F;
+  MyMaterialFE.snes_x = D;
   MyMaterialFE.snes_f = F;
+  MyCTgc.snes_x = D;
   MyCTgc.snes_f = F;
+  Projection.snes_x = D;
   Projection.snes_f = F;
   Projection.set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);
   MyCTgc.set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);
@@ -1571,19 +1587,29 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   //detroy matrices
   ierr = MatDestroy(&precK); CHKERRQ(ierr);
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&projSurfaceCtx->K); CHKERRQ(ierr);
+  ierr = VecDestroy(&projSurfaceCtx->g); CHKERRQ(ierr);
+
   ierr = MatDestroy(&CTC_QTKQ); CHKERRQ(ierr);
 
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+
+  ierr = MatDestroy(&C_crack_fornt); CHKERRQ(ierr);
+
+  ierr = delete_surface_projection_data(mField); CHKERRQ(ierr);
+  ierr = delete_front_projection_data(mField); CHKERRQ(ierr);
 
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
-    delete arc_ctx;
-    delete arc_mat_ctx;
     ierr = MatDestroy(&Arc_CTC_QTKQ); CHKERRQ(ierr);
+    delete arc_ctx;
+    delete arc_snes_ctx;
+    delete arc_mat_ctx;
     delete pc_ctx;
     delete arc_elem;
-  } 
-  delete snes_ctx;
+  } else {
+    delete snes_ctx;
+  }
 
   PetscFunctionReturn(0);
 }

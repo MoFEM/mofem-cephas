@@ -111,13 +111,13 @@ add_test(elasticity_atom_test_01Y_compare ${CMAKE_COMMAND} -E compare_files ${CM
 add_test(elasticity_atom_test_01Z ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/elasticity_atom_test -my_file elasticity_atom_test_01Z.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary -my_order 5)
 add_test(elasticity_atom_test_01Z_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/elasticity_atom_test_01Z.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/elasticity_atom_test_01Z.cub.txt)
 
-add_test(l2_atom_approximation ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/l2_approximation -my_file elasticity_atom_test_01X.cub)
+add_test(l2_atom_approximation ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/l2_approximation -my_file elasticity_atom_test_01X.cub -log_summary)
 add_test(l2_atom_approximation_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/l2_approximation.txt ${CMAKE_BINARY_DIR}/atom_tests/l2_approximation.txt)
 
-add_test(mesh_smoothing_atom_test ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing_atom -my_file chees_atom.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-12 -ksp_rtol 1e-12 -snes_monitor -snes_type newtonls -snes_linesearch_type bt -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason -my_penalty 1e10 -my_gamma 0.0 -my_alpha2 1)
+add_test(mesh_smoothing_atom_test ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing_atom -my_file chees_atom.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-12 -ksp_rtol 1e-12 -snes_monitor -snes_type newtonls -snes_linesearch_type bt -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason -my_penalty 1e10 -my_gamma 0.0 -my_alpha2 1 -log_summary)
 add_test(mesh_smoothing_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_smoothing.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_smoothing.txt)
 
-add_test(mesh_insert_interface_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file cub_with_interface.cub)
+add_test(mesh_insert_interface_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file cub_with_interface.cub -log_summary)
 add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
 
 

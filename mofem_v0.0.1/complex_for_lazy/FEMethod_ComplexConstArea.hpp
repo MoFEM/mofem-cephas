@@ -447,21 +447,26 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
     }
-
+    
     Vec D;
     ierr = mField.VecCreateGhost(problem,Col,&D); CHKERRQ(ierr);
     ierr = mField.set_local_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
     Vec _D_;
     ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Col,&_D_); CHKERRQ(ierr);
-    ierr = VecScatterBegin(proj_ctx.scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(proj_ctx.scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    VecScatter scatter;
+    string y_problem = "C_CRACKFRONT_MATRIX";
+    ierr = mField.VecScatterCreate(D,problem,Col,_D_,y_problem,Col,&scatter); CHKERRQ(ierr);
+    ierr = VecScatterBegin(scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterEnd(scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = mField.set_local_VecCreateGhost("C_CRACKFRONT_MATRIX",Col,_D_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecDestroy(&_D_); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
+    ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
 
     C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,proj_ctx.C,PETSC_NULL,lambda_field_name);
 
@@ -497,9 +502,10 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Col,&_f_); CHKERRQ(ierr);
     ierr = MatMultTranspose(proj_ctx.C,LambdaVec,_f_); CHKERRQ(ierr);
 
-    ierr = VecScatterBegin(proj_ctx.scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(proj_ctx.scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
+    ierr = mField.VecScatterCreate(_f_,problem,Row,_f_,y_problem,Col,&scatter); CHKERRQ(ierr);
+    ierr = VecScatterBegin(scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
     ierr = VecDestroy(&_f_); CHKERRQ(ierr);
 
     ierr = VecDestroy(&LambdaVec); CHKERRQ(ierr);

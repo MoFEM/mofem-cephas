@@ -151,6 +151,9 @@ int main(int argc, char *argv[]) {
     ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
+    ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+    ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
+
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
 
@@ -182,6 +185,9 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+
+      ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+      ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
       if(ii>0) {
 	reduction = pow((double)its_d/(double)(its+1),gamma);
