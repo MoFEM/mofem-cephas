@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
   matPROJ_ctx proj_all_ctx(mField,"MESH_SMOOTHING","C_ALL_MATRIX");
   Mat precK;
   ierr = mField.MatCreateMPIAIJWithArrays("MESH_SMOOTHING",&precK); CHKERRQ(ierr);
-  ierr = MatDuplicate(precK,MAT_DO_NOT_COPY_VALUES,&proj_all_ctx.K); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("MESH_SMOOTHING",&proj_all_ctx.K); CHKERRQ(ierr);
   ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&proj_all_ctx.C); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("C_ALL_MATRIX",Row,&proj_all_ctx.g); CHKERRQ(ierr);
 
@@ -434,9 +434,15 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+  MyFE.snes_x = D;
   MyFE.snes_f = F;
   MyFE.set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);
   ierr = mField.loop_finite_elements("MESH_SMOOTHING","MESH_SMOOTHER",MyFE); CHKERRQ(ierr);
+
+  /*MyFE.snes_A = &CTC_QTKQ;
+  MyFE.snes_B = &precK;
+  MyFE.set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetJacobian);
+  ierr = mField.loop_finite_elements("MESH_SMOOTHING","MESH_SMOOTHER",MyFE); CHKERRQ(ierr);*/
 
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("MESH_SMOOTHING",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -466,16 +472,18 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  ierr = proj_all_ctx.DestroyQorP(); CHKERRQ(ierr);
-  ierr = proj_all_ctx.DestroyQTKQ(); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
-  ierr = MatDestroy(&proj_all_ctx.K); CHKERRQ(ierr);
+  ierr = proj_all_ctx.DestroyQorP(); CHKERRQ(ierr);
+  ierr = proj_all_ctx.DestroyQTKQ(); CHKERRQ(ierr);
+
   ierr = MatDestroy(&precK); CHKERRQ(ierr);
-  ierr = MatDestroy(&proj_all_ctx.C); CHKERRQ(ierr);
-  ierr = VecDestroy(&proj_all_ctx.g); CHKERRQ(ierr);
   ierr = MatDestroy(&CTC_QTKQ); CHKERRQ(ierr);
+
+  ierr = VecDestroy(&proj_all_ctx.g); CHKERRQ(ierr);
+  ierr = MatDestroy(&proj_all_ctx.K); CHKERRQ(ierr);
+  ierr = MatDestroy(&proj_all_ctx.C); CHKERRQ(ierr);
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

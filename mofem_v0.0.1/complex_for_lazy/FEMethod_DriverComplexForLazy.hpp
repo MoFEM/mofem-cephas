@@ -938,9 +938,6 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	  delete CFE_CRACK_SURFACE;
 	}
 
-	//ierr = proj_all_ctx.RecalculateCTandCCT(); CHKERRQ(ierr);
-	//ierr = proj_all_ctx.RecalulateCTC(); CHKERRQ(ierr);
-
     }  else {
 	ierr = set_local_VecCreateGhost_for_ConstrainsProblem(x); CHKERRQ(ierr);
     }
@@ -979,6 +976,10 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
   PetscErrorCode _postProcess_ctx_SNESSetFunction(Vec f) {
     PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
 
 	ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -1048,14 +1049,27 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	ierr = VecDestroy(&tmp_f); CHKERRQ(ierr);
 	ierr = MatDestroy(&Q); CHKERRQ(ierr);
 	ierr = MatDestroy(&R); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
 
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode _postProcess_ctx_SNESSetJacobian(Mat B) {
+  PetscErrorCode _postProcess_ctx_SNESSetJacobian(Mat *B) {
     PetscFunctionBegin;
-    ierr = MatCopy(proj_all_ctx.K,B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-    ierr = MatAXPY(B,alpha,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESSetJacobian: { 
+	ierr = MatCopy(proj_all_ctx.K,*B,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+	ierr = MatAXPY(*B,alpha,proj_all_ctx.CTC,DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
     PetscFunctionReturn(0);
   }
 
@@ -1073,9 +1087,6 @@ struct FEMethod_DriverComplexForLazy_MaterialProjected: public FEMethod_DriverCo
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-    ierr = PetscTime(&v1); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
@@ -1148,8 +1159,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    ierr = FEMethod_DriverComplexForLazy_MeshSmoothing::preProcess(); CHKERRQ(ierr);
-
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = _preProcess_ctx_SNESSetFunction(snes_x,snes_f); CHKERRQ(ierr);
@@ -1205,8 +1214,7 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = _postProcess_ctx_SNESSetJacobian(*snes_B); CHKERRQ(ierr);
-
+	ierr = _postProcess_ctx_SNESSetJacobian(snes_B); CHKERRQ(ierr);
       }
       break;
       default:
@@ -1676,7 +1684,7 @@ struct FEMethod_DriverComplexForLazy_CoupledProjected: public FEMethod_DriverCom
       }
       break;
       case ctx_SNESSetJacobian:
-	ierr = _postProcess_ctx_SNESSetJacobian(*snes_B); CHKERRQ(ierr);
+	ierr = _postProcess_ctx_SNESSetJacobian(snes_B); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");

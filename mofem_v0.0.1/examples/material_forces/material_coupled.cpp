@@ -134,6 +134,8 @@ int main(int argc, char *argv[]) {
     ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
+    ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+    ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
    
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -141,7 +143,7 @@ int main(int argc, char *argv[]) {
     double reduction = 1,gamma = 1.2;
     double nrm2_front_equlibrium_i = 0;
     int its_d = 5;
-    for(int ii = 0;ii<20;ii++) {
+    for(int ii = 0;ii<1;ii++) {
 
       alpha3 /= reduction;
       ierr = PetscPrintf(PETSC_COMM_WORLD,"alpha3 = %6.4e\n",alpha3); CHKERRQ(ierr);
@@ -151,6 +153,9 @@ int main(int argc, char *argv[]) {
       int its;
       ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+
+      ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     
       ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
@@ -159,6 +164,9 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+
+      ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+      ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
       if(ii>0) {
 	reduction = pow((double)its_d/(double)(its+1),gamma);

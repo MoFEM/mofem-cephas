@@ -85,8 +85,10 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
   PetscErrorCode surface_projection_data(FieldInterface& mField,string problem);
+  PetscErrorCode delete_surface_projection_data(FieldInterface& mField);
   PetscErrorCode project_force_vector(FieldInterface& mField,string problem);
   PetscErrorCode front_projection_data(FieldInterface& mField,string problem);
+  PetscErrorCode delete_front_projection_data(FieldInterface& mField);
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
   PetscScalar ave_g,min_g,max_g;

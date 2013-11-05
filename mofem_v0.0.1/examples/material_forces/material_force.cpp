@@ -111,6 +111,8 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.griffith_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.griffith_g(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+  ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_material.h5m"); CHKERR_PETSC(rval);
