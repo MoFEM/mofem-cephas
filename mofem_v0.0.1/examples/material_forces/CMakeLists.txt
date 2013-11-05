@@ -31,8 +31,8 @@ target_link_libraries(material_coupled mofem_complex_for_lazy mofem_student_body
 add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
 target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/chees.cub" "/" export_files_material_mechanics)
 cm_export_file("../../meshes/crack1.cub" "/" export_files_material_mechanics)
+cm_export_file("../../meshes/T3_horiz.cub" "/" export_files_material_mechanics)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

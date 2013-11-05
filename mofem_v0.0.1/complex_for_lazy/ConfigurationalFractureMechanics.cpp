@@ -189,7 +189,7 @@ struct NL_MeshSmootherCoupled: public FEMethod_DriverComplexForLazy_CoupledMeshS
     NL_MeshSmootherCoupled(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _alpha3,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledMeshSmoother(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_alpha3) {
-	set_qual_ver(0);
+	set_qual_ver(3);
       }
   
   };
