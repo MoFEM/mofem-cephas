@@ -34,6 +34,9 @@ target_link_libraries(mesh_smoothing_atom mofem_complex_for_lazy mofem_student_b
 add_executable(mesh_insert_interface_atom mesh_insert_interface_atom.cpp)
 target_link_libraries(mesh_insert_interface_atom mofem_Field ${PROJECT_LIBS})
 
+add_executable(nonlinear_elasticity_atom nonlinear_elasticity_atom.cpp)
+target_link_libraries(nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" "/" export_atom_tests)
@@ -54,6 +57,8 @@ cm_export_file("../meshes/elasticity_atom_test_01Z.cub" "/" export_atom_tests)
 cm_export_file("../meshes/trans_isotropic_cube.cub" "/" export_atom_tests)
 cm_export_file("../meshes/chees_atom.cub" "/" export_atom_tests)
 cm_export_file("../meshes/cub_with_interface.cub" "/" export_atom_tests)
+cm_export_file("../meshes/elasticity_atom_test_01X_pressure.cub" "/" export_atom_tests)
+
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
@@ -120,6 +125,8 @@ add_test(mesh_smoothing_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CM
 add_test(mesh_insert_interface_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file cub_with_interface.cub -log_summary)
 add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
 
+add_test(nonlinear_elasticity_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 1 -log_summary)
+add_test(nonlinear_elasticity_atom_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_elasticity_atom.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_elasticity_atom.txt)
 
 
 
