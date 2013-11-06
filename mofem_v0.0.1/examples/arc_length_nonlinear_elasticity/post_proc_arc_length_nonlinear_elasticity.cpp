@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FEMethod_ArcLenghtDriverComplexForLazy.hpp"
+#include "FEMethod_ArcLengthDriverComplexForLazy.hpp"
 
 static char help[] = "\n\n";
 

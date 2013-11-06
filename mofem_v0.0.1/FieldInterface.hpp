@@ -350,6 +350,17 @@ struct FieldInterface {
    *
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask
+   * \param EntityType type of entities
+   * \param Range ents   
+   *
+   */
+  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1) = 0;
+
+
+  /**\brief add all ents from ref level given by bit to meshset
+   *
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel mask
    * \param EntityHandle meshset   
    *
    */
@@ -1184,10 +1195,37 @@ struct FieldInterface {
     */
   virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) = 0;
 
-    ///loop over all dofs from a moFEM field and particular field
+  ///loop over all dofs from a moFEM field and particular field
   #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
       IT != MFIELD.get_dofs_by_name_end(NAME); IT++
+
+  /** 
+    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
+    *
+    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
+    * 	...
+    * }
+    *
+    * \param field_name  
+    */
+  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent) = 0;
+
+  /** 
+    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
+    *
+    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
+    * 	...
+    * }
+    *
+    * \param field_name  
+    */
+  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent) = 0;
+
+  ///loop over all dofs from a moFEM field and particular field
+  #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
+    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
+      IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
 
   /** \brief Get finite elements multi index
     *
@@ -1216,7 +1254,7 @@ struct FieldInterface {
     */
   virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
 
-    ///loop over all finite elements from a moFEM field and FE
+  ///loop over all finite elements from a moFEM field and FE
   #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
       IT != MFIELD.get_fes_moabfield_by_name_end(NAME); IT++

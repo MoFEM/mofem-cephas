@@ -20,20 +20,20 @@
 #include subdirectory
 include_directories("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
 
-add_executable(arc_lenght_nonlinear_elasticity arc_lenght_nonlinear_elasticity.cpp)
-target_link_libraries(arc_lenght_nonlinear_elasticity mofem_Field ${PROJECT_LIBS})
+add_executable(arc_length_nonlinear_elasticity arc_length_nonlinear_elasticity.cpp)
+target_link_libraries(arc_length_nonlinear_elasticity mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(post_proc_arc_lenght_nonlinear_elasticity post_proc_arc_lenght_nonlinear_elasticity.cpp)
-target_link_libraries(post_proc_arc_lenght_nonlinear_elasticity mofem_Field ${PROJECT_LIBS})
+add_executable(post_proc_arc_length_nonlinear_elasticity post_proc_arc_length_nonlinear_elasticity.cpp)
+target_link_libraries(post_proc_arc_length_nonlinear_elasticity mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/dome_thin_symm.cub" "/" export_files_arc_lenght_nonlinearelasticity)
+cm_export_file("../../meshes/dome_thin_symm.cub" "/" export_files_arc_length_nonlinearelasticity)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #testing
-add_test(ArcLenghtNonLinearElasticityTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_lenght_nonlinear_elasticity
+add_test(ArcLengthNonLinearElasticityTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
   -my_file dome_thin_symm.cub -ksp_type fgmres 
   -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor 
   -ksp_atol 1e-10 -ksp_rtol 1e-10 

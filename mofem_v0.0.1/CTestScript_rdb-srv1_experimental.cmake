@@ -8,6 +8,12 @@ if(NOT DASHBOARDTEST)
   set(DASHBOARDTEST "Experimental")
 endif(NOT DASHBOARDTEST)
 
+#valgrind set up
+find_program(CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
+SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS 
+  "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes --gen-suppressions=all")
+SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "$ENV{HOME}/tmp/mofem/source/mofem_v0.0.1/rdb-srv1-valgrind.supp")
+
 include(CTestScript.cmake)
 
 

@@ -25,7 +25,7 @@
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 #include "SnesCtx.hpp"
-#include "ArcLeghtTools.hpp"
+#include "ArcLengthTools.hpp"
 
 namespace MoFEM {
 
@@ -33,10 +33,10 @@ struct ArcElasticFEMethod: public ElasticFEMethod {
 
   ArcElasticFEMethod(FieldInterface& _mField): ElasticFEMethod(_mField) {};
 
-  ArcLenghtCtx *arc_ptr;
+  ArcLengthCtx *arc_ptr;
   ArcElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
-      double _lambda,double _mu,ArcLenghtCtx *_arc_ptr): 
+      double _lambda,double _mu,ArcLengthCtx *_arc_ptr): 
       ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu),arc_ptr(_arc_ptr) {};
 
   PetscErrorCode preProcess() {
@@ -526,21 +526,21 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
 };
 
-struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
+struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
   Interface& moab;
   ErrorCode rval;
   PetscErrorCode ierr;
 
   Mat Aij;
   Vec F,D;
-  ArcLenghtCtx* arc_ptr;
+  ArcLengthCtx* arc_ptr;
   Vec GhostDiag,GhostLambdaInt;
   Range Faces3,Faces4;
   Range Edges3,Edges4;
   Range Nodes3,Nodes4;
 
-  ArcLenghtIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
-    ArcLenghtCtx *_arc_ptr): FEMethod(),moab(_moab),Aij(_Aij),F(_F),D(_D),arc_ptr(_arc_ptr) {
+  ArcLengthIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
+    ArcLengthCtx *_arc_ptr): FEMethod(),moab(_moab),Aij(_Aij),F(_F),D(_D),arc_ptr(_arc_ptr) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
@@ -571,7 +571,7 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
  
     
   }
-  ~ArcLenghtIntElemFEMethod() {
+  ~ArcLengthIntElemFEMethod() {
     VecDestroy(&GhostDiag);
     VecDestroy(&GhostLambdaInt);
   }
@@ -651,23 +651,19 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
-    FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
-    dit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("LAMBDA");
-    hi_dit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("LAMBDA");
-    //only one LAMBDA
-    if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-
     switch(snes_ctx) {
       case ctx_SNESSetFunction: {
+	//calulate residual for arc length row
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
-	ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValue(F,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
       }
       break; 
       case ctx_SNESSetJacobian: {
+	//calulate diagonal therm
 	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValue(Aij,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValue(Aij,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
@@ -682,14 +678,8 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	//add F_lambda
-	NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
-	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-	NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
-	dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
-	hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
-	if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	ierr = VecAXPY(F,-dit->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",dit->get_FieldData());  
+	ierr = VecAXPY(F,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
 	//snes_f norm
 	double fnorm;
 	ierr = VecNormBegin(F,NORM_2,&fnorm); CHKERRQ(ierr);	
@@ -720,25 +710,18 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
     //dx
     ierr = VecCopy(x,arc_ptr->dx); CHKERRQ(ierr);
     ierr = VecAXPY(arc_ptr->dx,-1,arc_ptr->x0); CHKERRQ(ierr);
-    //dlambda
-    NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
-	  = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-    if(dofs_moabfield_no_const.size()==0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
-    dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
-    if(dit==dofs_moabfield_no_const.get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-    hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
-    if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-    if(dit->get_petsc_local_dof_idx()!=-1) {
+    //if LAMBDA dof is on this partition
+    if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
       double *array;
       ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
-      arc_ptr->dlambda = array[dit->get_petsc_local_dof_idx()];
-      array[dit->get_petsc_local_dof_idx()] = 0;
+      arc_ptr->dlambda = array[arc_ptr->get_petsc_local_dof_idx()];
+      array[arc_ptr->get_petsc_local_dof_idx()] = 0;
       ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
     }
-    int part = dit->part;
+    //brodcast dlambda
+    int part = arc_ptr->get_part();
     MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
-    //dx2
+    //calulate dx2 (dot product)
     ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arc_ptr->dlambda,arc_ptr->dx2);
     PetscFunctionReturn(0);
@@ -763,26 +746,18 @@ struct ArcLenghtIntElemFEMethod: public FieldInterface::FEMethod {
   virtual PetscErrorCode set_dlambda_to_x(Vec x,double dlambda) {
       PetscFunctionBegin;
 
-      NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
-	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-      NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
-      dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
-      if(dit == dofs_moabfield_no_const.get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
-      if(distance(dit,hi_dit)!=1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-
-      if(dit->get_petsc_local_dof_idx()!=-1) {
+      if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
 	    double *array;
 	    ierr = VecGetArray(x,&array); CHKERRQ(ierr);
-	    double lambda_old = array[dit->get_petsc_local_dof_idx()];
+	    double lambda_old = array[arc_ptr->get_petsc_local_dof_idx()];
 	    if(!(dlambda == dlambda)) {
 	      ostringstream sss;
 	      sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
 	      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
 	    }
-	    array[dit->get_petsc_local_dof_idx()] = lambda_old + dlambda;
+	    array[arc_ptr->get_petsc_local_dof_idx()] = lambda_old + dlambda;
 	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-	      lambda_old, array[dit->get_petsc_local_dof_idx()], dlambda);
+	      lambda_old, array[arc_ptr->get_petsc_local_dof_idx()], dlambda);
 	    ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
       }
 

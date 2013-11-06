@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.coupled_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_crack_front_problem_definition(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.arclength_problem_definition(mField); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC_COUPLED",MBTET); CHKERRQ(ierr);
@@ -121,7 +122,23 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_alpha3 (what is fracture energy ?)");
   }
 
-  for(int aa = 0;aa<1;aa++) {
+  double da_0 = 0;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_da",&da_0,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_da (what is crack area increment ?)");
+  }
+  PetscInt nb_load_steps = 0;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_load_steps",&nb_load_steps,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_load_steps (what is number of load_steps ?)");
+  }
+
+
+  //shuld not do load steps, loop is always one
+  //it is left here for testing reasons
+  for(int aa = 0;aa<nb_load_steps;aa++) {
+
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of step = %D\n",aa); CHKERRQ(ierr);
 
     ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -136,26 +153,30 @@ int main(int argc, char *argv[]) {
 
     ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
     ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
-   
+
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
+
     double alpha3 = alpha3_0;
     double reduction = 1,gamma = 1.2;
     double nrm2_front_equlibrium_i = 0;
     int its_d = 5;
-    for(int ii = 0;ii<1;ii++) {
+    for(int ii = 0;ii<20;ii++) {
+
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"number of substep = %D\n",ii); CHKERRQ(ierr);
 
       alpha3 /= reduction;
       ierr = PetscPrintf(PETSC_COMM_WORLD,"alpha3 = %6.4e\n",alpha3); CHKERRQ(ierr);
-    
-      ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3); CHKERRQ(ierr);
+
+      if(ii == 0) {
+	ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3,(aa == 0) ? 0 : da_0); CHKERRQ(ierr);
+      } else {
+	ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3,0); CHKERRQ(ierr);
+      }
 
       int its;
       ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
-
-      ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-      ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     
       ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
@@ -201,11 +222,23 @@ int main(int argc, char *argv[]) {
 	break;
       }
       if(fabs((gc+conf_prob.ave_g)/gc)<1e-3) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"stop: (gc-conf_prob.ave_g)/gc = %6.4e\n",(gc+conf_prob.ave_g)/gc); CHKERRQ(ierr);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"stop: (gc+conf_prob.ave_g)/gc = %6.4e\n",(gc+conf_prob.ave_g)/gc); CHKERRQ(ierr);
 	break;
       }
 
     }
+
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",aa,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);
+    if(pcomm->rank()==0) {
+      EntityHandle out_meshset;
+      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      ierr = mField.problem_get_FE("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
+      ostringstream ss;
+      ss << "out_load_step_" << aa << ".vtk";
+      rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    }
+
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
 

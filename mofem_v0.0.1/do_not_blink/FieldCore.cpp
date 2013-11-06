@@ -141,8 +141,8 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
   rval= moab.tag_get_handle("BLOCK_HEADER",12*sizeof(unsigned int),MB_TYPE_INTEGER,
     bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]); CHKERR_THROW(rval); 
   Tag block_attribs;
-  int def_Block_Attributes_lenght = 0;
-  rval = moab.tag_get_handle("Block_Attributes",def_Block_Attributes_lenght,MB_TYPE_DOUBLE,
+  int def_Block_Attributes_length = 0;
+  rval = moab.tag_get_handle("Block_Attributes",def_Block_Attributes_length,MB_TYPE_DOUBLE,
     block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval); 
   Tag entity_name_tag;
   rval = moab.tag_get_handle(
@@ -746,8 +746,8 @@ PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const Entit
       assert(miit4!=entsMoabField.end());
       if(miit4->get_max_order()<order) nb_ents_set_order_up++;
       if(miit4->get_max_order()>order) nb_ents_set_order_down++;
-      typedef DofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type dof_set_type;
-      dof_set_type& set_set = dofsMoabField.get<Composite_mi_tag2>();
+      typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type dof_set_type;
+      dof_set_type& set_set = dofsMoabField.get<Composite_Name_And_Ent>();
       dof_set_type::iterator miit5 = set_set.lower_bound(boost::make_tuple(miit4->get_name_ref(),miit4->get_ent()));
       dof_set_type::iterator hi_miit6 = set_set.upper_bound(boost::make_tuple(miit4->get_name_ref(),miit4->get_ent()));
       for(;miit5!=hi_miit6;miit5++) {
@@ -1069,7 +1069,7 @@ PetscErrorCode FieldCore::add_finite_element(const string &MoFEMFiniteElement_na
     if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) PetscFunctionReturn(0);
   }
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
   //id
   BitFEId id = get_BitFEId();
   rval = moab.tag_set_data(th_FEId,&meshset,1,&id); CHKERR_PETSC(rval);
@@ -1449,10 +1449,10 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_by_id;
   typedef MoFEMField_multiIndex::index<Meshset_mi_tag>::type field_by_meshset;
   typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ent_by_ent;
-  typedef DofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type dof_set_type;
+  typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type dof_set_type;
   field_by_id &moabFields_by_id = moabFields.get<BitFieldId_mi_tag>();
   field_by_meshset &moabFields_by_meshset = moabFields.get<Meshset_mi_tag>();
-  dof_set_type& dof_set = dofsMoabField.get<Composite_mi_tag2>();
+  dof_set_type& dof_set = dofsMoabField.get<Composite_Name_And_Ent>();
   EntityHandle fe_ent = EntFe.get_ent();
   pair<EntMoFEMFiniteElement_multiIndex::iterator,bool> p = finiteElementsMoFEMEnts.insert(EntFe);
   //get id of mofem fields for row, col and data
@@ -1960,7 +1960,7 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
     for(;miit_col!=hi_miit_col;miit_col++) {
       bool success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_part_change(part,miit_col->dof_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-      if(miit_row->part == pcomm->rank()) {
+      if(miit_col->part == pcomm->rank()) {
 	success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       }
@@ -2565,6 +2565,7 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
 	miit = problem_MoFEMFiniteElement.cols_dofs.get<Unique_mi_tag>().begin();
 	for(;miit!=problem_MoFEMFiniteElement.cols_dofs.get<Unique_mi_tag>().end();miit++) ss << "cols: " << *miit << endl;
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       }
     }
   }
@@ -3452,9 +3453,16 @@ PetscErrorCode FieldCore::refine_MESHSET(const EntityHandle meshset,const BitRef
 }
 PetscErrorCode FieldCore::refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb) {
   PetscFunctionBegin;
+  Range ents;
+  ierr = refine_get_ents(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  rval = moab.add_entities(meshset,ents); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb) {
+  PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator miit = refinedMoFemEntities.get<EntType_mi_tag>().lower_bound(MBTRI);
-  for(;miit!=refinedMoFemEntities.get<EntType_mi_tag>().upper_bound(MBTRI);miit++) {
+  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator miit = refinedMoFemEntities.get<EntType_mi_tag>().lower_bound(type);
+  for(;miit!=refinedMoFemEntities.get<EntType_mi_tag>().upper_bound(type);miit++) {
     BitRefLevel bit2 = miit->get_BitRefLevel(); 
     if((bit2&mask) != bit2) continue;
     if(verb > 2) {
@@ -3476,7 +3484,7 @@ PetscErrorCode FieldCore::refine_get_ents(const BitRefLevel &bit,const BitRefLev
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       EntityHandle ent = miit->get_ref_ent();
-      rval = moab.add_entities(meshset,&ent,1); CHKERR_PETSC(rval);
+      ents.insert(ent);
     }
   }
   PetscFunctionReturn(0);
@@ -3902,9 +3910,9 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
 	    if(miit->get_petsc_gloabl_dof_idx()>=size) {
 	      SETERRQ(PETSC_COMM_SELF,1,"data inconsitency: nb. of dofs and decalared nb. dofs in database");
 	    }
-	    DofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator diiiit;
-	    diiiit = dofsMoabField.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	    if(diiiit==dofsMoabField.get<Composite_mi_tag>().end()) {
+	    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx>::type::iterator diiiit;
+	    diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+	    if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx>().end()) {
 	      EntityHandle ent = miit->get_ent();
 	      rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERR_PETSC(rval);
 	      //create field moabent
@@ -3915,7 +3923,7 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
 		p_e_miit = entsMoabField.insert(moabent);
 	      } catch (const std::exception& ex) {
 		ostringstream ss;
-		ss << ex.what() << endl;
+		ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
 		SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 	      }
 	      if(p_e_miit.first->get_max_order()<order) {
@@ -3923,9 +3931,9 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
 		if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 	      }
 	      //create field moabdof
-	      DofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator hi_diit,diit;
-	      diit = dofsMoabField.get<Composite_mi_tag2>().lower_bound(boost::make_tuple(field_name,miit->get_ent()));
-	      hi_diit = dofsMoabField.get<Composite_mi_tag2>().upper_bound(boost::make_tuple(field_name,miit->get_ent()));
+	      DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator hi_diit,diit;
+	      diit = dofsMoabField.get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(field_name,miit->get_ent()));
+	      hi_diit = dofsMoabField.get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(field_name,miit->get_ent()));
 	      for(;diit!=hi_diit;diit++) {
 		DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_rank(),diit->get_EntDofIdx());
 		pair<DofMoFEMEntity_multiIndex::iterator,bool> cpy_p_diit;
@@ -3935,8 +3943,8 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
 		  if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 		}
 	      }
-	      diiiit = dofsMoabField.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	      if(diiiit==dofsMoabField.get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	      diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+	      if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx>().end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	    }
 	    diiiit->get_FieldData() = array[miit->get_petsc_gloabl_dof_idx()];
 	    if(verb > 1) {
@@ -3961,9 +3969,9 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
     case SCATTER_FORWARD: {
 	for(;miit!=hi_miit;miit++) {
 	  if(pcomm->rank()!=miit->get_part()) continue;
-	  DofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator diiiit;
-	  diiiit = dofsMoabField.get<Composite_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	  if(diiiit==dofsMoabField.get<Composite_mi_tag>().end()) {
+	  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx>::type::iterator diiiit;
+	  diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+	  if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx>().end()) {
 	    SETERRQ(PETSC_COMM_SELF,1,"no data to fill the vector (top tip: you want scatter forward of scatter reverse?)");
 	  }
 	  ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),mode); CHKERRQ(ierr);
@@ -4540,6 +4548,12 @@ DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::ge
 }
 DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::get_dofs_by_name_end(const string &field_name) {
   return dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
+}
+DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator FieldCore::get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent) {
+  return dofsMoabField.get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(field_name,ent));
+}
+DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator FieldCore::get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent) {
+  return dofsMoabField.get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(field_name,ent));
 }
 PetscErrorCode FieldCore::get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr) {
   PetscFunctionBegin;

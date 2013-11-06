@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "configurational_mechanics.hpp"
+#include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
 
 using namespace MoFEM;
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  ConfigurationalMechanics conf_prob(mField);
+  ConfigurationalFractureMechanics conf_prob(mField);
 
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
@@ -111,6 +111,8 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.griffith_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.griffith_g(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+  ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_material.h5m"); CHKERR_PETSC(rval);

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "configurational_mechanics.hpp"
+#include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
 
 using namespace MoFEM;
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel *ptr_bit_level0;
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
 
-  ConfigurationalMechanics conf_prob(mField);
+  ConfigurationalFractureMechanics conf_prob(mField);
 
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
@@ -159,9 +159,26 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
   ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
 
+  double *t_val;
+  Tag th_t_val;
+  double def_t_val = 0;
+  rval = mField.get_moab().tag_get_handle("_LoadFactor_t_val",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+  if(rval == MB_ALREADY_ALLOCATED) {
+    rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_PETSC(rval);
+  } else {
+    CHKERR_PETSC(rval);
+    rval = mField.get_moab().tag_set_data(th_t_val,&root_meshset,1,&def_t_val); CHKERR_PETSC(rval);
+    rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_PETSC(rval);
+  }
+
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_load",t_val,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_WORLD,1,"*** ERROR -my_load (what is load factor?)");
+  }
+
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
-  ierr = conf_prob.solve_spatial_problem(mField,&snes,-1e-3); CHKERRQ(ierr);
+  ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {

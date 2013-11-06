@@ -22,10 +22,12 @@
 
 #include "FieldInterface.hpp"
 #include "FEMethod_DriverComplexForLazy.hpp"
+#include "SnesCtx.hpp"
+#include "ArcLengthTools.hpp"
 
 using namespace MoFEM;
 
-struct ConfigurationalMechanics {
+struct ConfigurationalFractureMechanics {
  
   Tag th_MaterialFireWall;
   typedef bitset<16> Material_FirelWall_def;
@@ -47,7 +49,7 @@ struct ConfigurationalMechanics {
 
   BitRefLevel *ptr_bit_level0;
   BitRefLevel bit_level0;
-  ConfigurationalMechanics(FieldInterface& mField): projSurfaceCtx(NULL),projFrontCtx(NULL) {
+  ConfigurationalFractureMechanics(FieldInterface& mField): projSurfaceCtx(NULL),projFrontCtx(NULL) {
 
     ErrorCode rval;
     Tag th_my_ref_level;
@@ -62,7 +64,7 @@ struct ConfigurationalMechanics {
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
   PetscErrorCode material_problem_definition(FieldInterface& mField);
   PetscErrorCode coupled_problem_definition(FieldInterface& mField);
-  PetscErrorCode arclenght_problem_definition(FieldInterface& mField);
+  PetscErrorCode arclength_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_crack_front_problem_definition(FieldInterface& mField,string problem);
   PetscErrorCode spatial_partition_problems(FieldInterface& mField);
@@ -73,17 +75,20 @@ struct ConfigurationalMechanics {
   PetscErrorCode set_spatial_positions(FieldInterface& mField);
   PetscErrorCode set_material_positions(FieldInterface& mField);
   PetscErrorCode set_coordinates_from_material_solution(FieldInterface& mField);
-  PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes,double step_size);
+  PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes);
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
 
   double nrm2_front_equlibrium;
-  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double step_size,double alpha3);
+  double aRea,lambda;
+  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double alpha3,double da = 0);
 
   PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
   PetscErrorCode surface_projection_data(FieldInterface& mField,string problem);
+  PetscErrorCode delete_surface_projection_data(FieldInterface& mField);
   PetscErrorCode project_force_vector(FieldInterface& mField,string problem);
   PetscErrorCode front_projection_data(FieldInterface& mField,string problem);
+  PetscErrorCode delete_front_projection_data(FieldInterface& mField);
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
   PetscScalar ave_g,min_g,max_g;
@@ -101,23 +106,10 @@ struct ConfigurationalMechanics {
   
   };
 
-  struct SpatialAndSmoothing_FEMEthod: public FieldInterface::FEMethod {
-    FieldInterface& mField;
-    ConfigurationalMechanics *conf_prob;
-    Mat CTC_QTKQ,precK;
-    Vec F;
-    CubitDisplacementDirihletBC_Coupled& myDirihletBC;
-    SpatialAndSmoothing_FEMEthod(
-      FieldInterface& _mField,ConfigurationalMechanics *_conf_prob,
-      Mat _CTC_QTKQ,Mat _precK,Vec _F,
-      CubitDisplacementDirihletBC_Coupled& _myDirihletBC);
-    PetscErrorCode preProcess();
-  };
-
   struct ConstrainCrackForntEdges_FEMethod: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
-    ConfigurationalMechanics *conf_prob;
+    ConfigurationalFractureMechanics *conf_prob;
 
     double alpha3;
     ublas::vector<DofIdx> rowDofs,colDofs;
@@ -127,7 +119,7 @@ struct ConfigurationalMechanics {
     ublas::matrix<FieldData> K;
 
     ConstrainCrackForntEdges_FEMethod(
-      FieldInterface& _mField,ConfigurationalMechanics *_conf_prob,double _alpha3): mField(_mField),conf_prob(_conf_prob),alpha3(_alpha3) {
+      FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,double _alpha3): mField(_mField),conf_prob(_conf_prob),alpha3(_alpha3) {
       rowDofs.resize(6);
       colDofs.resize(6);
       dofsX.resize(6);
@@ -145,6 +137,35 @@ struct ConfigurationalMechanics {
 
   };
 
+  struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
+
+    FieldInterface& mField;
+    ConfigurationalFractureMechanics *conf_prob;
+    ArcLengthCtx* arc_ptr;
+
+    Vec ghostDiag;
+    Range crackSurfacesFaces;
+    PetscInt *isIdx;
+    IS isSurface;
+    Vec surfaceDofs;
+    VecScatter surfaceScatter;
+    Vec lambdaVec;
+
+    ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
+    ~ArcLengthElemFEMethod();
+
+    double aRea,lambda_int;
+
+    PetscErrorCode set_dlambda_to_x(Vec x,double dlambda);
+    PetscErrorCode calulate_lambda_int();
+    PetscErrorCode calulate_db();
+    PetscErrorCode get_dlambda(Vec x);
+
+    PetscErrorCode preProcess();
+    PetscErrorCode operator()();
+    PetscErrorCode postProcess();
+
+  };
 
 };
 

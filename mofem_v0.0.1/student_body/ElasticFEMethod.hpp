@@ -137,6 +137,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       ierr = PetscTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
       g_NTET.resize(4*45);
@@ -180,6 +181,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = PetscTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       PetscFunctionReturn(0);
     }
 
