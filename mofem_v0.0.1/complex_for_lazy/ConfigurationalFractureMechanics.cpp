@@ -26,7 +26,7 @@
 
 using namespace MoFEM;
 
-phisical_equation_volume eq_solid = /*hooke;*/ stvenant_kirchhoff;
+phisical_equation_volume eq_solid = hooke; /*stvenant_kirchhoff;*/
 
 struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   
