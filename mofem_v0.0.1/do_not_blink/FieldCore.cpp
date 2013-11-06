@@ -1630,7 +1630,8 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
       if(!(bit_ref_MoFEMFiniteElement&bit_ref_ent).any()) {
 	ostringstream ss;
 	ss << "top tip: check if you seed mesh with the elements for bit ref level1" << endl;
-	ss << "inconsitency in database" << " type " << moab.type_from_handle(*eit2) << " bits FE " << bit_ref_MoFEMFiniteElement << " bits ent " << bit_ref_ent;
+	ss << "inconsitency in database entity" << " type " << moab.type_from_handle(*eit2) << " bits ENT " << bit_ref_ent << endl;
+	ss << "inconsitency in database entity" << " type " << moab.type_from_handle(p.first->get_ent()) << " bits FE " << bit_ref_MoFEMFiniteElement << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       dof_set_type::iterator ents_miit2 = dof_set.lower_bound(boost::make_tuple(miit->get_name_ref(),ref_ent_miit->get_ref_ent()));
@@ -2634,6 +2635,7 @@ PetscErrorCode FieldCore::seed_finite_elements(const Range &entities,int verb) {
     RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator 
       eiit = refinedMoFemEntities.get<MoABEnt_mi_tag>().find(*eit);
     if(eiit == refinedMoFemEntities.get<MoABEnt_mi_tag>().end())  SETERRQ(PETSC_COMM_SELF,1,"entity is not in database");
+    if(eiit->get_BitRefLevel().none()) continue;
     pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
     switch (eiit->get_ent_type()) {
       case MBVERTEX: 
