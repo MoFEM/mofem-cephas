@@ -26,7 +26,7 @@
 
 using namespace MoFEM;
 
-phisical_equation_volume eq_solid = hooke; //stvenant_kirchhoff
+phisical_equation_volume eq_solid = hooke; /*stvenant_kirchhoff;*/
 
 struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   
@@ -613,6 +613,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
     ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
   }
 
+
   {
     //
     Range CornersEdges,CornersNodes,SurfacesFaces;
@@ -629,6 +630,10 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Crack SideSet 201 = %d\n",CrackCornersEdges.size()); CHKERRQ(ierr);
 
     Interface& moab = mField.get_moab();
+
+    Range level_tris;
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+    SurfacesFaces = intersect(SurfacesFaces,level_tris);
 
     ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
@@ -759,10 +764,20 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
     CrackSurfacesEdgeFaces = intersect(CrackSurfacesEdgeFaces,CrackSurfacesFaces);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Faces = %d\n",CrackSurfacesEdgeFaces.size()); CHKERRQ(ierr);
 
+    Range level_tris;
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+    CrackSurfacesEdgeFaces = intersect(CrackSurfacesEdgeFaces,level_tris);
+
     ierr = mField.seed_finite_elements(CrackSurfacesEdgeFaces); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
+
+    Range level_edges;
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
+    CrackFrontEdges = intersect(CrackFrontEdges,level_edges);
+
+
 
     ierr = mField.seed_finite_elements(CrackFrontEdges); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_EDGEs(CrackFrontEdges,"FRONT_CONSTRAIN"); CHKERRQ(ierr);
@@ -1700,6 +1715,13 @@ PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMeth
       case ctx_SNESSetFunction: 
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = VecDuplicate(snes_f,&tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	break;
@@ -1779,6 +1801,17 @@ PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMeth
     case ctx_SNESSetFunction: {
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      //ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      PetscReal snes_f_nrm2;
+      ierr = VecNorm(snes_f, NORM_2,&snes_f_nrm2); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"\ttruss f_nrm2 = %6.4e\n",snes_f_nrm2);
+      ierr = VecAXPY(tmp_snes_f,1,snes_f); CHKERRQ(ierr);
+      ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
+      ierr = VecDestroy(&tmp_snes_f); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     } break;

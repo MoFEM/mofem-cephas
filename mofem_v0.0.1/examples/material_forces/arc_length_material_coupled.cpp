@@ -189,6 +189,7 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
       ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
+      if(its==0) break;
       if(ii>0) {
 	reduction = pow((double)its_d/(double)(its+1),gamma);
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
@@ -206,6 +207,7 @@ int main(int argc, char *argv[]) {
 	}
 	nrm2_front_equlibrium_i = conf_prob.nrm2_front_equlibrium;
       }
+
 
       PetscBool flg;
       double gc;
