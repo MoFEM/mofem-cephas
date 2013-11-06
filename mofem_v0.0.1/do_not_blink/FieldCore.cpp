@@ -4172,7 +4172,13 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   EntityHandle meshset_for_bit_level;
   rval = moab.create_meshset(MESHSET_SET,meshset_for_bit_level); CHKERR_PETSC(rval);
   //subtract those elements which will be refined, i.e. disconetcted form other side elements, and connected to new prisms, if they area created
-  rval = moab.add_entities(meshset_for_bit_level,subtract(meshset_3d_ents,side_ents3d)); CHKERR_PETSC(rval);
+  meshset_3d_ents = subtract(meshset_3d_ents,side_ents3d);
+  rval = moab.add_entities(meshset_for_bit_level,meshset_3d_ents); CHKERR_PETSC(rval);
+  for(int dd = 0;dd<3;dd++) {
+    Range ents_dd;
+    rval = moab.get_adjacencies(meshset_3d_ents,dd,false,ents_dd,moab::Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(meshset_for_bit_level,ents_dd); CHKERR_PETSC(rval);
+  }
   //create new tets on "father" side
   Range new_tets;
   Range::iterator tit = side_ents3d.begin();
