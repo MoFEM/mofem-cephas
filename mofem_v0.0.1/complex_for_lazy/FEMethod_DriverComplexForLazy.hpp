@@ -1435,12 +1435,18 @@ struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComp
     FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),
     proj_all_ctx(_proj_all_ctx) {}
 
+  Vec tmp_snes_f;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction:  
+	ierr = VecDuplicate(snes_f,&tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -1531,6 +1537,17 @@ struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComp
       case ctx_SNESSetFunction: { 
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	PetscReal snes_f_nrm2;
+	ierr = VecNorm(snes_f, NORM_2,&snes_f_nrm2); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\tmaterial f_nrm2 = %6.4e\n",snes_f_nrm2);
+	ierr = VecAXPY(tmp_snes_f,1,snes_f); CHKERRQ(ierr);
+	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecDestroy(&tmp_snes_f); CHKERRQ(ierr);
 	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -1557,12 +1574,20 @@ struct FEMethod_DriverComplexForLazy_CoupledMeshSmoother: public FEMethod_Driver
     FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_alpha3,_verbose),
     proj_all_ctx(_proj_all_ctx) {}
 
+  Vec tmp_snes_f;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = VecDuplicate(snes_f,&tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -1596,9 +1621,21 @@ struct FEMethod_DriverComplexForLazy_CoupledMeshSmoother: public FEMethod_Driver
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: {
+
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	PetscReal snes_f_nrm2;
+	ierr = VecNorm(snes_f, NORM_2,&snes_f_nrm2); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\tsmoother f_nrm2 = %6.4e\n",snes_f_nrm2);
+	ierr = VecAXPY(tmp_snes_f,1,snes_f); CHKERRQ(ierr);
+	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecDestroy(&tmp_snes_f); CHKERRQ(ierr);
+
 	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 

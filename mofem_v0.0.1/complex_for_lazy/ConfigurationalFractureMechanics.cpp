@@ -1700,6 +1700,13 @@ PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMeth
       case ctx_SNESSetFunction: 
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = VecDuplicate(snes_f,&tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
+	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	break;
@@ -1779,6 +1786,17 @@ PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMeth
     case ctx_SNESSetFunction: {
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      //ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      PetscReal snes_f_nrm2;
+      ierr = VecNorm(snes_f, NORM_2,&snes_f_nrm2); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"\ttruss f_nrm2 = %6.4e\n",snes_f_nrm2);
+      ierr = VecAXPY(tmp_snes_f,1,snes_f); CHKERRQ(ierr);
+      ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
+      ierr = VecDestroy(&tmp_snes_f); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(conf_prob->projSurfaceCtx->K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     } break;

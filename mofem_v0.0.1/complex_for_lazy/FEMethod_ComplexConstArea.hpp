@@ -501,6 +501,9 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     Vec _f_;
     ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Col,&_f_); CHKERRQ(ierr);
     ierr = MatMultTranspose(proj_ctx.C,LambdaVec,_f_); CHKERRQ(ierr);
+    PetscReal _f_nrm2;
+    ierr = VecNorm(_f_, NORM_2,&_f_nrm2); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,"\tfront f_nrm2 = %6.4e\n",_f_nrm2);
 
     ierr = mField.VecScatterCreate(_f_,problem,Row,_f_,y_problem,Col,&scatter); CHKERRQ(ierr);
     ierr = VecScatterBegin(scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

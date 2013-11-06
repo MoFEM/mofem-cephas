@@ -130,7 +130,7 @@ struct ConfigurationalFractureMechanics {
       K.resize(6,6);
     }
     
-
+    Vec tmp_snes_f;
     PetscErrorCode preProcess();
     PetscErrorCode operator()();
     PetscErrorCode postProcess();
