@@ -4130,6 +4130,13 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   //nodes on interface but not on crack front (those should not be splitted)
   Range nodes;
   rval = moab.get_entities_by_type(children_nodes_and_skin_edges[0],MBVERTEX,nodes,false);  CHKERR_PETSC(rval);
+  Range meshset_3d_ents,meshset_2d_ents;
+  rval = moab.get_entities_by_handle(meshset,meshset_3d_ents,true); CHKERR_PETSC(rval);
+  meshset_3d_ents = meshset_3d_ents.subset_by_type(MBTET);
+  rval = moab.get_adjacencies(meshset_3d_ents,2,false,meshset_2d_ents,moab::Interface::UNION); CHKERR_PETSC(rval);
+  side_ents3d = intersect(meshset_3d_ents,side_ents3d);
+  other_ents3d = intersect(meshset_3d_ents,other_ents3d); 
+  triangles = intersect(meshset_2d_ents,triangles);
   if(verb>3) {
     PetscPrintf(PETSC_COMM_WORLD,"triangles %u\n",triangles.size());
     PetscPrintf(PETSC_COMM_WORLD,"side_ents3d %u\n",side_ents3d.size());
@@ -4164,13 +4171,8 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   //crete meshset for new mesh bit level
   EntityHandle meshset_for_bit_level;
   rval = moab.create_meshset(MESHSET_SET,meshset_for_bit_level); CHKERR_PETSC(rval);
-  Range meshset_ents;
-  rval = moab.get_entities_by_handle(meshset,meshset_ents,false); CHKERR_PETSC(rval);
-  if(intersect(meshset_ents,side_ents3d).size() != side_ents3d.size()) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-  }
   //subtract those elements which will be refined, i.e. disconetcted form other side elements, and connected to new prisms, if they area created
-  rval = moab.add_entities(meshset_for_bit_level,subtract(meshset_ents,side_ents3d)); CHKERR_PETSC(rval);
+  rval = moab.add_entities(meshset_for_bit_level,subtract(meshset_3d_ents,side_ents3d)); CHKERR_PETSC(rval);
   //create new tets on "father" side
   Range new_tets;
   Range::iterator tit = side_ents3d.begin();
