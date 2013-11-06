@@ -71,8 +71,8 @@ int main(int argc, char *argv[]) {
       EntityHandle ref_level_interface_meshset = meshset;
       rval = moab.create_meshset(MESHSET_SET,ref_level_interface_meshset); CHKERR_PETSC(rval);
       rval = moab.add_entities(ref_level_interface_meshset,interface_tris); CHKERR_PETSC(rval);
-      bit_levels.push_back(BitRefLevel().set(ll++));
       ierr = mField.get_msId_3dENTS_sides(ref_level_interface_meshset,true,0); CHKERRQ(ierr);
+      bit_levels.push_back(BitRefLevel().set(ll++));
       ierr = mField.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),ref_level_interface_meshset,true,true,0); CHKERRQ(ierr);
       rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
       rval = moab.delete_entities(&ref_level_interface_meshset,1); CHKERR_PETSC(rval);
