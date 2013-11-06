@@ -1069,7 +1069,7 @@ PetscErrorCode FieldCore::add_finite_element(const string &MoFEMFiniteElement_na
     if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) PetscFunctionReturn(0);
   }
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
   //id
   BitFEId id = get_BitFEId();
   rval = moab.tag_set_data(th_FEId,&meshset,1,&id); CHKERR_PETSC(rval);
