@@ -59,9 +59,28 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
     EntityHandle meshset = cit->get_meshset();
-    bit_levels.push_back(BitRefLevel().set(ll++));
-    ierr = mField.get_msId_3dENTS_sides(meshset,true,0); CHKERRQ(ierr);
-    ierr = mField.get_msId_3dENTS_split_sides(0,bit_levels.back(),meshset,true,true,0); CHKERRQ(ierr);
+    if(ll>0) {
+      EntityHandle ref_level_meshset = 0;
+      rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
+      ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
+      Range interface_tris,ref_level_tets,ref_level_tris;
+      rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(ref_level_tets,2,false,ref_level_tris,Interface::UNION); CHKERR_PETSC(rval);
+      rval = moab.get_entities_by_handle(meshset,interface_tris,true); CHKERR_PETSC(rval);
+      interface_tris = intersect(interface_tris,ref_level_tris);
+      EntityHandle ref_level_interface_meshset = meshset;
+      rval = moab.create_meshset(MESHSET_SET,ref_level_interface_meshset); CHKERR_PETSC(rval);
+      rval = moab.add_entities(ref_level_interface_meshset,interface_tris); CHKERR_PETSC(rval);
+      bit_levels.push_back(BitRefLevel().set(ll++));
+      ierr = mField.get_msId_3dENTS_sides(ref_level_interface_meshset,true,0); CHKERRQ(ierr);
+      ierr = mField.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),ref_level_interface_meshset,true,true,0); CHKERRQ(ierr);
+      rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
+      rval = moab.delete_entities(&ref_level_interface_meshset,1); CHKERR_PETSC(rval);
+    } else {
+      bit_levels.push_back(BitRefLevel().set(ll++));
+      ierr = mField.get_msId_3dENTS_sides(meshset,true,0); CHKERRQ(ierr);
+      ierr = mField.get_msId_3dENTS_split_sides(0,bit_levels.back(),meshset,true,true,0); CHKERRQ(ierr);
+    }
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,ciit)) {
       EntityHandle cubit_meshset = ciit->meshset; 
       ierr = mField.refine_get_childern(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
@@ -97,6 +116,8 @@ int main(int argc, char *argv[]) {
   myfile.close();
 
   //rval = moab.write_file(mesh_out_file_name,"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+  //rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+
 
   PetscFinalize();
 
