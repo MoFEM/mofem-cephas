@@ -450,13 +450,29 @@ struct TranIsotropicFibreDirRotElasticFEMethod: public ElasticFEMethod {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
-    
+ 
+    PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
+      PetscFunctionBegin;
+
+      *_lambda = lambda;
+      *_mu = mu;
+
+      //FIXME
+      //Here You should Get Parameters from atributes of Mat_TransIsoSet.
+      //All parameters which you geting in constructor can be retrived for each element,
+      //	this will allow to have problem, whith heterogenous material properties,
+      //	f.e. each rope can have diffrent properties
+      //Look to ElasticFEMethid how is done.
+
+      PetscFunctionReturn(0);
+    }
+   
     PetscErrorCode Fint() {
         PetscFunctionBegin;
         
         double _lambda,_mu;
         ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
-        ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+        ierr = calulateD(_lambda,_mu); CHKERRQ(ierr); 
 
         //Gradient at Gauss points; 
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
