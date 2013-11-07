@@ -1,6 +1,6 @@
 reset
  
-brick x 2 y 2 z 0.4
+brick x 2 y 5 z 0.4
 
 create Cylinder height 0.4 major radius 0.25 minor radius 0.2 
 webcut volume 2 with plane yplane imprint merge
@@ -14,8 +14,8 @@ Merge All
 block 1 volume all 
 block 1 name 'MAT_ELASTIC'
 block 1 attribute count 2
-block 1 attribute index 1 1.0
-block 1 attribute index 2 0.
+block 1 attribute index 1 10.0
+block 1 attribute index 2 0.3
 
 Sideset 100  curve all 
 sideset 100 curve 40 31 32 39   remove
