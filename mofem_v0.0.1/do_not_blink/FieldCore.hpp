@@ -358,6 +358,7 @@ struct FieldCore: public FieldInterface {
     const NumeredDofMoFEMEntitys_by_unique_id &dofs_col_by_id = p_miit->numered_dofs_cols.get<Unique_mi_tag>();
     DofIdx nb_dofs_row = dofs_row_by_idx.size();
     assert(p_miit->get_nb_dofs_row()==nb_dofs_row);
+    if(nb_dofs_row == 0) SETERRQ(PETSC_COMM_SELF,1,"problem has zero rows");
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type::iterator miit_row,hi_miit_row;
     if(Tag::IamNotPartitioned) {
       DofIdx nb_dofs_row_on_proc = (DofIdx)ceil(nb_dofs_row/pcomm->size());
