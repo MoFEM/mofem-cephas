@@ -239,6 +239,37 @@ int main(int argc, char *argv[]) {
       ss << "out_load_step_" << aa << ".vtk";
       rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+
+      const MoFEMProblem *problem_ptr;
+      ierr = mField.get_problem("COUPLED_PROBLEM",&problem_ptr); CHKERRQ(ierr);
+
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
+	if(it->get_Cubit_name() != "LoadPath") continue;
+
+	Range nodes;
+	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+	for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
+
+	  double coords[3];
+	  rval = moab.get_coords(&*nit,1,coords); CHKERR_PETSC(rval);
+	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
+
+	    if(dof->get_name()!="SPATIAL_POSITION") continue;
+
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,
+	      "load_path_disp ent %ld dim %d "
+	      "coords ( %8.6f %8.6f %8.6f ) "
+	      "val %6.4e Lambda %6.4e\n",
+	      dof->get_ent(),dof->get_dof_rank(),
+	      coords[0],coords[1],coords[2],
+	      dof->get_FieldData()-coords[dof->get_dof_rank()],      
+	      conf_prob.lambda); CHKERRQ(ierr);
+
+	  }
+	}
+
+      }
+
     }
 
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
