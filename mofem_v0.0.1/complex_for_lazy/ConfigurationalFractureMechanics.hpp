@@ -92,6 +92,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
   PetscScalar ave_g,min_g,max_g;
+  PetscScalar ave_j,min_j,max_j;
   PetscErrorCode griffith_g(FieldInterface& mField,string problem);
 
   struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {

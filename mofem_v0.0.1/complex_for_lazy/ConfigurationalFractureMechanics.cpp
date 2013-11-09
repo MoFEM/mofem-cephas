@@ -189,7 +189,7 @@ struct NL_MeshSmootherCoupled: public FEMethod_DriverComplexForLazy_CoupledMeshS
     NL_MeshSmootherCoupled(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _alpha3,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledMeshSmoother(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_alpha3) {
-	set_qual_ver(3);
+	set_qual_ver(0);
       }
   
   };
@@ -1077,6 +1077,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInter
 
   PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS",QTF_Material,"MATERIAL_FORCE_PROJECTED");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Row,ent_method_material); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,QTF_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   double nrm2_material;
   ierr = VecNorm(QTF_Material,NORM_2,&nrm2_material);   CHKERRQ(ierr);
@@ -1229,6 +1230,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   }*/
 
 
+  // R = CT*(CC^T)^(-1) [ unit m/m^(-2) = 1/m ] [ 0.5/0.25 = 2 ]
+  // R^T = (CC^T)^(-T)C [ unit m/m^(-2) = 1/m ] 
   Mat RT;
   {
     int N,n;
@@ -1240,22 +1243,50 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,projFrontCtx,&RT); CHKERRQ(ierr);
     ierr = MatShellSetOperation(RT,MATOP_MULT,(void(*)(void))matRT_mult_shell); CHKERRQ(ierr);
   }
-
+  
   ierr = projFrontCtx->InitQorP(F_Material); CHKERRQ(ierr);
-  ierr = MatMult(RT,F_Material,LambdaVec); CHKERRQ(ierr);
-  ierr = MatMult(projFrontCtx->CT,LambdaVec,F_Griffith); CHKERRQ(ierr);
+  // unit of LambdaVec [ N * 1/m = N*m/m^2 = J/m^2 ]
+  ierr = MatMult(RT,F_Material,LambdaVec); CHKERRQ(ierr);  
 
   ierr = VecGhostUpdateBegin(LambdaVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(LambdaVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("C_CRACKFRONT_MATRIX",Row,LambdaVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
+  Vec JVec;
+  ierr = VecDuplicate(LambdaVec,&JVec); CHKERRQ(ierr);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+
   ErrorCode rval;
   ublas::vector<double> coords;
   coords.resize(3);
   PetscPrintf(PETSC_COMM_WORLD,"\n\ngriffith force\n\n");
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_CRACKFRONT_AREA",diit)) {
+
+  const MoFEMProblem *problem_ptr;
+  ierr = mField.get_problem("C_CRACKFRONT_MATRIX",&problem_ptr); CHKERRQ(ierr);
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
     EntityHandle ent = diit->get_ent();
     rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERR_PETSC(rval);
+
+    int dd = 0;
+    ublas::vector<double,ublas::bounded_array<double,9> > material_force(3);
+    for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"MATERIAL_FORCE",diit->get_ent(),diiit)) {
+      material_force[diiit->get_dof_rank()] = diiit->get_FieldData();
+      dd++;
+    }
+    if(dd != 3) SETERRQ1(PETSC_COMM_SELF,1,"can not find material force vector at node %ld",diit->get_ent());
+
+    ublas::vector<double,ublas::bounded_array<double,9> > griffith_force(3);
+    for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"GRIFFITH_FORCE",diit->get_ent(),diiit)) {
+      griffith_force[diiit->get_dof_rank()] = diiit->get_FieldData();
+      dd++;
+    }
+    if(dd != 6) SETERRQ1(PETSC_COMM_SELF,1,"can not find griffith force vector at node %ld",diit->get_ent());
+
+    double j = norm_2(material_force)/norm_2(griffith_force);
+    if(diit->get_part()==pcomm->rank()) {
+      ierr = VecSetValue(JVec,diit->get_petsc_gloabl_dof_idx(),j,INSERT_VALUES); CHKERRQ(ierr);
+    }
+
     ostringstream ss;
     ss << "griffith force at ";
     ss << "ent " << diit->get_ent();
@@ -1264,25 +1295,37 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     ss << " " << setw(10) << setprecision(4) << coords[1];
     ss << " " << setw(10) << setprecision(4) << coords[2];
     ss << "\t\tg " << scientific << setprecision(4) << -diit->get_FieldData();
+    ss << " / " << scientific << setprecision(4) << j;
+    ss << " ( " << scientific << setprecision(4) << -diit->get_FieldData()/j << " )";
     ss << "\t relative error (gc-g)/gc " << scientific << setprecision(4) << (gc+diit->get_FieldData())/gc;
+    ss << " / " << scientific << setprecision(4) << (gc-j)/gc;
     ss << endl; 
     PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
+
   }
   ierr = VecSum(LambdaVec,&ave_g); CHKERRQ(ierr);
   ierr = VecMin(LambdaVec,PETSC_NULL,&min_g); CHKERRQ(ierr);
   ierr = VecMax(LambdaVec,PETSC_NULL,&max_g); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(JVec); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(JVec); CHKERRQ(ierr);
+  ierr = VecSum(JVec,&ave_j); CHKERRQ(ierr);
+  ierr = VecMin(JVec,PETSC_NULL,&min_j); CHKERRQ(ierr);
+  ierr = VecMax(JVec,PETSC_NULL,&max_j); CHKERRQ(ierr);
 
   {
     int N;
     ierr = VecGetSize(LambdaVec,&N); CHKERRQ(ierr);
     ave_g /= N;
+    ave_j /= N;
   }
-  PetscPrintf(PETSC_COMM_WORLD,"\naverage griffith force %6.4e\n",ave_g);
+  PetscPrintf(PETSC_COMM_WORLD,"\naverage griffith force %6.4e / %6.4e\n",ave_g,ave_j);
   PetscPrintf(PETSC_COMM_WORLD,"\n\n");
 
   PostProcVertexMethod ent_method(mField.get_moab(),"LAMBDA_CRACKFRONT_AREA");
   ierr = mField.loop_dofs("C_CRACKFRONT_MATRIX","LAMBDA_CRACKFRONT_AREA",Row,ent_method); CHKERRQ(ierr);
 
+  // unit of F_Griffith [ N/m * m = N ]
+  ierr = MatMult(projFrontCtx->CT,LambdaVec,F_Griffith); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_griffith(mField.get_moab(),"MESH_NODE_POSITIONS",F_Griffith,"G");
@@ -1918,7 +1961,8 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
       }
     }
     ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&dofsX.data()[0],&normal.data()[0]); CHKERRQ(ierr);
-    aRea += norm_2(normal);
+    //crack surface area is a half of crack top and bottom body surface
+    aRea += norm_2(normal)*0.25;
   }
 
   lambda_int = arc_ptr->alpha*aRea + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
@@ -1931,7 +1975,6 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
   PetscErrorCode ierr;
   if(arc_ptr->alpha!=0) {
     ierr = MatMultTranspose(conf_prob->projFrontCtx->C,lambdaVec,arc_ptr->db); CHKERRQ(ierr);
-    ierr = VecScale(arc_ptr->db,0.5); CHKERRQ(ierr);
     if(arc_ptr->alpha!=1) {
       ierr = VecScale(arc_ptr->db,arc_ptr->alpha); CHKERRQ(ierr);
     }

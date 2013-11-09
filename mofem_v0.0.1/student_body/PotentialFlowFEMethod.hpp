@@ -146,7 +146,7 @@ struct PotentialElem: public FEMethod_UpLevelStudent {
 	  ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
 	  double normal[3];
 	  ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,normal); CHKERRQ(ierr);
-	  double area = cblas_dnrm2(3,normal,1);
+	  double area = cblas_dnrm2(3,normal,1)*0.5;
 
 	  //nodes
 	  vector<DofIdx>& RowGlob_nodes = RowGlobDofs[0];

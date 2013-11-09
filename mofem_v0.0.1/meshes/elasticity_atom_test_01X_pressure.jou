@@ -7,9 +7,10 @@ cubit.cmd('block 1 volume 1  ')
 cubit.cmd('block 1 attribute count 2')
 
 #!Young's Modulus
-cubit.cmd('block 1 attribute index 1 1')
+cubit.cmd('block 1 name "MAT_ELASTIC1"')
+cubit.cmd('block 1 attribute index 1 4.')
 #!Poisson ratio
-cubit.cmd('block 1 attribute index 2 0')
+cubit.cmd('block 1 attribute index 2 0.0')
 
 #!Displacement bcs
 cubit.cmd('create Displacement on vertex 7 dof 1 dof 2 dof 3 fix 0')
@@ -17,8 +18,8 @@ cubit.cmd('create Displacement on vertex 4 dof 1 dof 2 fix 0')
 cubit.cmd('create Displacement on vertex 8 dof 1 fix 0')
 
 #!Pressure
-cubit.cmd('create pressure  on surface 6  magnitude 1')
-cubit.cmd('create pressure  on surface 4  magnitude 1')
+cubit.cmd('create pressure  on surface 6  magnitude -4')
+cubit.cmd('create pressure  on surface 4  magnitude -4')
 
 #!Mesh
 cubit.cmd('volume 1  size 0.5')

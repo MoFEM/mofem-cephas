@@ -139,7 +139,6 @@ PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *n
   normal[0] = diffX_y*diffY_z - diffX_z*diffY_y;
   normal[1] = diffX_z*diffY_x - diffX_x*diffY_z;
   normal[2] = diffX_x*diffY_y - diffX_y*diffY_x;
-  cblas_dscal(3,0.5,normal,1);
   PetscFunctionReturn(0);
 }
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac) {

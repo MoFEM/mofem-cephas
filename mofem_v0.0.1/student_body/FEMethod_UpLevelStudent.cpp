@@ -97,11 +97,11 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gN
   //face3
   rval = moab.get_coords(conn_face3,3,coords_face3); CHKERR_PETSC(rval);
   ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face3,normal3); CHKERRQ(ierr);
-  area3 = cblas_dnrm2(3,normal3,1);
+  area3 = cblas_dnrm2(3,normal3,1)*0.5;
   //face4
   rval = moab.get_coords(conn_face4,3,coords_face4); CHKERR_PETSC(rval);
   ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face4,normal4); CHKERRQ(ierr);
-  area4 = cblas_dnrm2(3,normal4,1);
+  area4 = cblas_dnrm2(3,normal4,1)*0.5;
 
   /*copy(&normal3[0],&normal3[3],ostream_iterator<double>(cerr," "));
   cerr << " -->  ";
