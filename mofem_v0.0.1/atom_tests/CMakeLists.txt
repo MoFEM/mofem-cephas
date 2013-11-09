@@ -130,7 +130,7 @@ add_test(mesh_insert_interface_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT
 add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
 
 #nonlinear elasticty
-add_test(nonlinear_elasticity_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 1 -log_summary)
+add_test(nonlinear_elasticity_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 4 -log_summary)
 add_test(nonlinear_elasticity_atom_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_elasticity_atom.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_elasticity_atom.txt)
 
 #arc length elasticty
