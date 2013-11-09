@@ -1318,7 +1318,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     ave_g /= N;
     ave_j /= N;
   }
-  PetscPrintf(PETSC_COMM_WORLD,"\naverage griffith force %6.4e / %6.4e\n",ave_g,ave_j);
+  PetscPrintf(PETSC_COMM_WORLD,"\naverage griffith force %6.4e / %6.4e\n",-ave_g,ave_j);
   PetscPrintf(PETSC_COMM_WORLD,"\n\n");
 
   PostProcVertexMethod ent_method(mField.get_moab(),"LAMBDA_CRACKFRONT_AREA");
