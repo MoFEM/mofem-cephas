@@ -152,10 +152,6 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     }}
     __CLPK_doublecomplex x_normal[3];
     ierr = ShapeFaceNormalMBTRI_complex(diffNTRI,x_dofs_X,x_normal); CHKERRQ(ierr);
-    /*for(int nn = 0;nn<3;nn++) {
-      x_normal[nn].r *= snes;
-      x_normal[nn].i *= snes;
-    }*/
     double complex x_nrm2 = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
@@ -198,12 +194,12 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     bzero(xNSpinX_xi,3*sizeof(__CLPK_doublecomplex));
     bzero(xNSpinX_eta,3*sizeof(__CLPK_doublecomplex));
     __CLPK_doublecomplex x_zero = { 0, 0 };
-    __CLPK_doublecomplex x_scalar = { -creal(1./x_nrm2), -cimag(1./x_nrm2) };
+    __CLPK_doublecomplex x_scalar = { -creal(1./x_nrm2), -cimag(1./x_nrm2) }; // unit [ 1/m^2 ]
     cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_xi,3,x_normal,1,&x_zero,xNSpinX_xi,1);
     cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_eta,3,x_normal,1,&x_zero,xNSpinX_eta,1);
     for(int nn = 0;nn<3;nn++) {
       if(C != NULL) {
-        C[3*nn + 0] = xNSpinX_xi[0].r*diffNTRI[2*nn+1]-xNSpinX_eta[0].r*diffNTRI[2*nn+0];
+        C[3*nn + 0] = xNSpinX_xi[0].r*diffNTRI[2*nn+1]-xNSpinX_eta[0].r*diffNTRI[2*nn+0]; // unit [ 1/m ]
         C[3*nn + 1] = xNSpinX_xi[1].r*diffNTRI[2*nn+1]-xNSpinX_eta[1].r*diffNTRI[2*nn+0];
         C[3*nn + 2] = xNSpinX_xi[2].r*diffNTRI[2*nn+1]-xNSpinX_eta[2].r*diffNTRI[2*nn+0];
       }
@@ -212,6 +208,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       iC[3*nn + 1] = xNSpinX_xi[1].i*diffNTRI[2*nn+1]-xNSpinX_eta[1].i*diffNTRI[2*nn+0];
       iC[3*nn + 2] = xNSpinX_xi[2].i*diffNTRI[2*nn+1]-xNSpinX_eta[2].i*diffNTRI[2*nn+0];
     }
+    if( C != NULL) cblas_dscal(9,0.25, C,1);
+    if(iC != NULL) cblas_dscal(9,0.25,iC,1);
     PetscFunctionReturn(0);
   }
 
@@ -317,8 +315,8 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
   double gc;  
   const double eps;
 
-  dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _dCT,string _lambda_field_name,double _gc,int _verbose = 0):
-    C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),gc(_gc),eps(1e-5) {}
+  dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _dCT,string _lambda_field_name,int _verbose = 0):
+    C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),eps(1e-10) {}
 
   //Vec diag;
   PetscErrorCode preProcess() {

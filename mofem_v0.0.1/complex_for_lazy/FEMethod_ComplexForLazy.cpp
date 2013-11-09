@@ -984,9 +984,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face
         int num_nodes;
         rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
         rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
-        //double normal[3];
-        //ierr = ShapeFaceNormalMBTRI(diffNTRI,&*coords_face.data().begin(),normal); CHKERRQ(ierr);
-        //double r = sqrt(cblas_dnrm2(3,normal,1));
 	double center[3]; 
 	tricircumcenter3d_tp(&coords_face.data()[0],&coords_face.data()[3],&coords_face.data()[6],center,NULL,NULL);
 	cblas_daxpy(3,-1,&coords_face.data()[0],1,center,1);

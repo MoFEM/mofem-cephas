@@ -882,8 +882,8 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     double normal_real[3];
     double normal_imag[3];
     for(dd = 0;dd<3;dd++) {
-      normal_real[dd] = xnormal[dd].r;
-      normal_imag[dd] = xnormal[dd].i;
+      normal_real[dd] = 0.5*xnormal[dd].r;
+      normal_imag[dd] = 0.5*xnormal[dd].i;
     }
     nn = 0;
     for(;nn<3;nn++) {
@@ -954,7 +954,7 @@ PetscErrorCode KExt_hh_hierarchical(double eps,int order,int *order_edge,
 	xnormal,gg); CHKERRQ(ierr);
       double normal_imag[3];
       for(dd = 0;dd<3;dd++) {
-	normal_imag[dd] = xnormal[dd].i/eps;
+	normal_imag[dd] = 0.5*xnormal[dd].i/eps;
       }
       nn = 0;
       for(;nn<3;nn++) {
@@ -1022,7 +1022,7 @@ PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
 	  dofs_x,dofs_x_edge,dofs_x_face,NULL,idofs_x_edge,NULL,
 	  xnormal,gg); CHKERRQ(ierr);
 	double normal_imag[3];
-	for(dd = 0;dd<3;dd++) normal_imag[dd] = xnormal[dd].i/eps;
+	for(dd = 0;dd<3;dd++) normal_imag[dd] = 0.5*xnormal[dd].i/eps;
         nn = 0;
         for(;nn<3;nn++) {
 	  for(dd = 0;dd<3;dd++) KExt_hedge[EE][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
@@ -1080,7 +1080,7 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
 	dofs_x,dofs_x_edge,dofs_x_face,NULL,NULL,idofs_x_face,
 	xnormal,gg); CHKERRQ(ierr);
       double normal_imag[3];
-      for(dd = 0;dd<3;dd++) normal_imag[dd] = xnormal[dd].i/eps;
+      for(dd = 0;dd<3;dd++) normal_imag[dd] = 0.5*xnormal[dd].i/eps;
       nn = 0;
       for(;nn<3;nn++) {
 	for(dd = 0;dd<3;dd++) KExt_hface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
@@ -1128,8 +1128,8 @@ PetscErrorCode Fext_H(int order,int *order_edge,
     double normal_real[3];
     double normal_imag[3];
     for(dd = 0;dd<3;dd++) {
-      normal_real[dd] = xnormal[dd].r;
-      normal_imag[dd] = xnormal[dd].i;
+      normal_real[dd] = 0.5*xnormal[dd].r;
+      normal_imag[dd] = 0.5*xnormal[dd].i;
     }
     nn = 0;
     for(;nn<3;nn++) {
@@ -1169,7 +1169,7 @@ PetscErrorCode KExt_HH(double eps,int order,int *order_edge,
 	xnormal,gg); CHKERRQ(ierr);
       double normal_imag[3];
       for(dd = 0;dd<3;dd++) {
-	normal_imag[dd] = xnormal[dd].i/eps;
+	normal_imag[dd] = 0.5*xnormal[dd].i/eps;
       }
       nn = 0;
       for(;nn<3;nn++) {
