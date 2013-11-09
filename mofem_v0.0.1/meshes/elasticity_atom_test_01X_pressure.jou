@@ -22,7 +22,7 @@ cubit.cmd('create pressure  on surface 6  magnitude -4')
 cubit.cmd('create pressure  on surface 4  magnitude -4')
 
 #!Mesh
-cubit.cmd('volume 1  size 0.5')
+cubit.cmd('volume 1  size 1')
 cubit.cmd('volume 1 scheme Tetmesh')
 cubit.cmd('mesh volume 1')
 
