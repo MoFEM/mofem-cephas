@@ -257,8 +257,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     double s1[3],s2[3],normal[3];
     ierr = ShapeFaceBaseMBTRI(&diffNTRI[0],coords,normal,s1,s2); CHKERRQ(ierr);
     double nrm2_normal = cblas_dnrm2(3,normal,1);
-    double nrm2_s1 = cblas_dnrm2(3,s1,1);
-    double nrm2_s2 = cblas_dnrm2(3,s2,1);
     cblas_dscal(3,1./nrm2_normal,normal,1);
   
     double q[9];
