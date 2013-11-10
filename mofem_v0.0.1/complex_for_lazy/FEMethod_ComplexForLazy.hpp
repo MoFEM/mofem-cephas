@@ -219,7 +219,6 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
 
   PetscErrorCode OpComplexForLazyStart();
 
-  private:
   vector<int> order_edges;
   vector<int> order_faces;
   int order_volume;

@@ -54,6 +54,18 @@ PetscErrorCode PiolaKirhoiff2(double lambda,double mu,__CLPK_doublecomplex *xF,_
   PetscFunctionReturn(0);
 }
 //*************************//
+PetscErrorCode CauchyStress(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xCauchyStress) {
+  PetscFunctionBegin;
+  if(ph_eq_vol == hooke) {
+    cblas_zcopy(9,xP,1,xCauchyStress,1);
+    PetscFunctionReturn(0);
+  } else {
+    __CLPK_doublecomplex tmp2 = {0,0};
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,xJ,xP,3,xF,3,&tmp2,xCauchyStress,3);
+    PetscFunctionReturn(0);
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode PilaKirhoff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP) {
   PetscFunctionBegin;
   if(ph_eq_vol == hooke) {
