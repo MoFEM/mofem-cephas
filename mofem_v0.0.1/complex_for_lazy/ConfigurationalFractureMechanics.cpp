@@ -61,7 +61,8 @@ struct NL_MaterialFEMethodProjected: public FEMethod_DriverComplexForLazy_Materi
 struct NL_ElasticFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledSpatial {
   
   ArcLengthCtx *arc_ptr;
-  NL_ElasticFEMethodCoupled(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLengthCtx *_arc_ptr = NULL,int _verbose = 0):
+  NL_ElasticFEMethodCoupled(
+    FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLengthCtx *_arc_ptr = NULL,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledSpatial(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), arc_ptr(_arc_ptr) {
 	set_PhysicalEquationNumber(eq_solid);
@@ -70,15 +71,27 @@ struct NL_ElasticFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledSp
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
-    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
-    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
 
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
-    ierr = calulateKFint(proj_all_ctx.K,snes_f); CHKERRQ(ierr);
-    if(arc_ptr==NULL) {
-      ierr = calulateKFext(proj_all_ctx.K,snes_f,*(this->t_val)); CHKERRQ(ierr);
-    } else {
-      ierr = calulateKFext(proj_all_ctx.K,arc_ptr->F_lambda,-1.); CHKERRQ(ierr);
+      ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+      ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
+      ierr = CalulateKFint(proj_all_ctx.K,snes_f); CHKERRQ(ierr);
+      if(arc_ptr==NULL) {
+	ierr = CalulateKFext(proj_all_ctx.K,snes_f,*(this->t_val)); CHKERRQ(ierr);
+      } else {
+	ierr = CalulateKFext(proj_all_ctx.K,PETSC_NULL,-arc_ptr->get_FieldData()); CHKERRQ(ierr);
+	ierr = CalulateKFext(PETSC_NULL,arc_ptr->F_lambda,-1.); CHKERRQ(ierr);
+      }
+
+      } break;
+      case ctx_SNESSetJacobian: {
+      } break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
 
     PetscFunctionReturn(0);
@@ -89,7 +102,8 @@ struct NL_ElasticFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledSp
 struct NL_ElasticFEMethodCoupled_F_lambda_Only: public FEMethod_DriverComplexForLazy_CoupledSpatial {
 
   ArcLengthCtx *arc_ptr;
-  NL_ElasticFEMethodCoupled_F_lambda_Only(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLengthCtx *_arc_ptr = NULL,int _verbose = 0):
+  NL_ElasticFEMethodCoupled_F_lambda_Only(
+    FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLengthCtx *_arc_ptr = NULL,int _verbose = 0):
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_CoupledSpatial(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose), arc_ptr(_arc_ptr) {
 	set_PhysicalEquationNumber(eq_solid);
@@ -107,7 +121,7 @@ struct NL_ElasticFEMethodCoupled_F_lambda_Only: public FEMethod_DriverComplexFor
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
     ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
     snes_ctx = ctx_SNESSetFunction;
-    ierr = calulateKFext(PETSC_NULL,arc_ptr->F_lambda,-1); CHKERRQ(ierr);
+    ierr = CalulateKFext(PETSC_NULL,arc_ptr->F_lambda,-1); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }

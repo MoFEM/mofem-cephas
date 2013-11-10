@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
 
     //Open mesh_file_name.txt for writing
     ofstream myfile;
-    myfile.open("nonlinear_elasticity_atom.txt");
+    myfile.open(("nonlinear_"+string(mesh_file_name)+".txt").c_str());
     
     //Output displacements
     cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  //Save data on mesh
+  /*//Save data on mesh
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }
+  }*/
 
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

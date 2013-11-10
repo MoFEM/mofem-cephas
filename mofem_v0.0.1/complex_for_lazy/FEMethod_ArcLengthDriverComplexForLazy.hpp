@@ -73,52 +73,23 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
-
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+      this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
 
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	  ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
+	  ierr = CalulateKFext(PETSC_NULL,arc_ptr->F_lambda,1); CHKERRQ(ierr);
 	}
 	break;
       case ctx_SNESSetJacobian: {
 	  ierr = CalculateSpatialTangent(*snes_B); CHKERRQ(ierr);
+	  ierr = CalulateKFext(*snes_B,PETSC_NULL,arc_ptr->get_FieldData()); CHKERRQ(ierr);
 	}
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-
-      pressure_cubit_bc_data mydata;
-      ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-      /*ostringstream ss;
-      ss << *it << endl;
-      ss << mydata;
-      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
-
-      double t_val = *(this->t_val)*mydata.data.value1;
-      double t[] = { 0,0,t_val, 0,0,t_val, 0,0,t_val };
-
-      Range NeumannSideSet;
-      ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
-
-      switch(snes_ctx) {
-	case ctx_SNESNone:
-	case ctx_SNESSetFunction: { 
-	  ierr = CaluclateSpatialFext(arc_ptr->F_lambda,t,NeumannSideSet); CHKERRQ(ierr);
-	  }
-	  break;
-	case ctx_SNESSetJacobian: {
-	  cblas_dscal(9,arc_ptr->get_FieldData(),t,1);
-	  ierr = CalculateSpatialTangentExt(*snes_B,t,NeumannSideSet); CHKERRQ(ierr);
-	  } break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-
     }
 
     PetscFunctionReturn(0);
