@@ -107,6 +107,52 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
     ierr = H1_VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_x_volume,volume_h); CHKERRQ(ierr); \
     cblas_daxpy(9,1,volume_h,1,h,1); }
 
+PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
+  double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
+  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,
+  int gg) {
+  PetscFunctionBegin;
+
+  double ZERO[9];
+  bzero(ZERO,sizeof(double)*9);
+
+  double H[9];
+  ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xSigma[9],xCauchyStress[9],xPsi,det_xF,det_xH;
+  double reP[9],reSigma[9],imP[9],imSigma[9];
+  ierr = MakeComplexTensor(H,ZERO,xH); CHKERRQ(ierr);
+  cblas_zcopy(9,xH,1,inv_xH,1);
+  ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
+  ierr = InvertComplexGradient(inv_xH); CHKERRQ(ierr);
+
+  double h[9];
+  ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
+  HIERARHICAL_APPROX
+  ierr = MakeComplexTensor(h,ZERO,xh); CHKERRQ(ierr);
+
+  ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); 
+  ierr = DeterminantComplexGradient(xF,&det_xF); CHKERRQ(ierr); 
+  ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr);
+  
+  ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr); 
+  ierr = StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); CHKERRQ(ierr); 
+
+  ierr = PiolaKirhoiff2(lambda,mu,xF,xC,&det_xF,xS,matctx); CHKERRQ(ierr); 
+  ierr = PilaKirhoff1(lambda,mu,xF,xS,xP); CHKERRQ(ierr); 
+  ierr = ElshebyStress(&xPsi,xF,xP,xSigma); 
+  ierr = CauchyStress(xF,&det_xF,xP,xCauchyStress); CHKERRQ(ierr);
+
+  *Psi = xPsi.r;
+  *J = det_xF.r;
+
+  TakeRe(xP,Piola1Stress);
+  TakeRe(xSigma,EshelbyStress);
+  TakeRe(xCauchyStress,CauhyStress);
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_iX,double *dofs_ix_node,
