@@ -120,7 +120,6 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,i
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xSigma[9],xCauchyStress[9],xPsi,det_xF,det_xH;
-  double reP[9],reSigma[9],imP[9],imSigma[9];
   ierr = MakeComplexTensor(H,ZERO,xH); CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
   ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
