@@ -136,9 +136,10 @@ int main(int argc, char *argv[]) {
 
   //shuld not do load steps, loop is always one
   //it is left here for testing reasons
-  for(int aa = 0;aa<nb_load_steps;aa++) {
+  ierr = conf_prob.save_edge_lenght_in_tags(mField); CHKERRQ(ierr);
+  /*for(int aa = 0;aa<nb_load_steps;aa++) {
 
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of step = %D\n",aa); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n\n** number of step = %D\n\n\n",aa); CHKERRQ(ierr);
 
     ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -163,7 +164,7 @@ int main(int argc, char *argv[]) {
     int its_d = 5;
     for(int ii = 0;ii<20;ii++) {
 
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"number of substep = %D\n",ii); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substep = %D\n\n",ii); CHKERRQ(ierr);
 
       alpha3 /= reduction;
       ierr = PetscPrintf(PETSC_COMM_WORLD,"alpha3 = %6.4e\n",alpha3); CHKERRQ(ierr);
@@ -274,10 +275,18 @@ int main(int argc, char *argv[]) {
 
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-
-  }
+  }*/
+  ierr = conf_prob.save_edge_streach_lenght_in_tags(mField); CHKERRQ(ierr);
 
   rval = moab.write_file("out_material_coupled.h5m"); CHKERR_PETSC(rval);
+
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out_edges.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;

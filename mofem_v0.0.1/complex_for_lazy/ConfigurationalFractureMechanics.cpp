@@ -1769,6 +1769,63 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 
   PetscFunctionReturn(0);
 }
+PetscErrorCode ConfigurationalFractureMechanics::save_edge_lenght_in_tags(FieldInterface& mField) {
+  PetscFunctionBegin;
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  Range bit_level_edges;
+  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,bit_level_edges); CHKERRQ(ierr);
+  double def_VAL[1] = {0};
+  Tag th_edge_length;
+  rval = mField.get_moab().tag_get_handle("EDGE_LENGTH",1,MB_TYPE_DOUBLE,th_edge_length,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR(rval);
+  vector<double> edges_length(bit_level_edges.size());
+  Range::iterator eit = bit_level_edges.begin();
+  for(int ee = 0;eit!=bit_level_edges.end();eit++,ee++) {
+    const EntityHandle* conn; 
+    int num_nodes; 
+    rval = mField.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    double coords[6];
+    rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
+    cblas_daxpy(3,-1,&coords[3],1,&coords[0],1);
+    edges_length[ee] = cblas_dnrm2(3,coords,1);
+    if(edges_length[ee] <= 0) SETERRQ(PETSC_COMM_SELF,1,"edge lenght is 0 (or negative)");
+  }
+  rval = mField.get_moab().tag_set_data(th_edge_length,bit_level_edges,&edges_length[0]); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ConfigurationalFractureMechanics::save_edge_streach_lenght_in_tags(FieldInterface& mField) {
+  PetscFunctionBegin;
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  Range bit_level_edges;
+  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,bit_level_edges); CHKERRQ(ierr);
+  double def_VAL[1] = {0};
+  Tag th_edge_strech;
+  rval = mField.get_moab().tag_get_handle("EDGE_STREACH",1,MB_TYPE_DOUBLE,th_edge_strech,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR(rval);
+  vector<double> edges_streach(bit_level_edges.size());
+  Range::iterator eit = bit_level_edges.begin();
+  for(int ee = 0;eit!=bit_level_edges.end();eit++,ee++) {
+    const EntityHandle* conn; 
+    int num_nodes; 
+    rval = mField.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    double coords[6];
+    rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
+    cblas_daxpy(3,-1,&coords[3],1,&coords[0],1);
+    edges_streach[ee] = cblas_dnrm2(3,coords,1);
+  }
+  Tag th_edge_length;
+  rval = mField.get_moab().tag_get_handle("EDGE_LENGTH",th_edge_length); CHKERR(rval);
+  vector<double> edges_length0(bit_level_edges.size());
+  rval = mField.get_moab().tag_get_data(th_edge_length,bit_level_edges,&*edges_length0.begin()); CHKERR_PETSC(rval);
+  vector<double>::iterator vit_streach = edges_streach.begin();
+  vector<double>::iterator vit_length0 = edges_length0.begin();
+  for(;vit_streach != edges_streach.end();vit_streach++,vit_length0++) {
+    if(*vit_length0 <= 0) SETERRQ(PETSC_COMM_SELF,1,"edge lenght is 0 (or negative)");
+    *vit_streach /= *vit_length0;
+  }
+  rval = mField.get_moab().tag_set_data(th_edge_strech,bit_level_edges,&*edges_streach.begin()); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
 PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMethod::preProcess() {
   PetscFunctionBegin;
 

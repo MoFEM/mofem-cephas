@@ -107,7 +107,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       double def_VAL[3] = {0,0,0};
       // create TAG
       string tag_name = field_name+"_VAL";
-      rval = moab_post_proc.tag_get_handle(tag_name.c_str(),3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+      rval = moab_post_proc.tag_get_handle(tag_name.c_str(),3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
       init_ref = true;
 
@@ -188,7 +188,7 @@ struct PostProcDisplacemenysAndStarinOnRefMesh: public PostProcDisplacementsOnRe
     Tag th_strain;
     PostProcDisplacemenysAndStarinOnRefMesh(Interface& _moab): PostProcDisplacementsOnRefMesh(_moab) {
       double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0};
-      rval = moab_post_proc.tag_get_handle("STRAIN_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+      rval = moab_post_proc.tag_get_handle("STRAIN_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
     }
 
@@ -220,7 +220,7 @@ struct PostProcFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh
     Tag th_strain;
     PostProcFieldsAndGradientOnRefMesh(Interface& _moab): PostProcDisplacementsOnRefMesh(_moab,"SPATIAL_POSITION") {
       double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0};
-      rval = moab_post_proc.tag_get_handle("F_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+      rval = moab_post_proc.tag_get_handle("F_VAL",9,MB_TYPE_DOUBLE,th_strain,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
     }
 
@@ -254,7 +254,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(
     Interface& _moab,double _lambda,double _mu): PostProcDisplacemenysAndStarinOnRefMesh(_moab),lambda(_lambda),mu(_mu) {
     double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0 };
-    rval = moab_post_proc.tag_get_handle("STRESS_VAL",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("STRESS_VAL",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
     // See FEAP - - A Finite Element Analysis Program
     D_lambda = ublas::zero_matrix<FieldData>(6,6);
