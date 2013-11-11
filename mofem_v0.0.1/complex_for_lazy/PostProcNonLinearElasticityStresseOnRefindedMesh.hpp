@@ -36,11 +36,11 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
     PostProcDisplacementsOnRefMesh(_moab,"SPATIAL_POSITION"),fe_method(_fe_method) {
 
     double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0 };
-    rval = moab_post_proc.tag_get_handle("CAUCHY_STRESS_VAL",9,MB_TYPE_DOUBLE,th_cauchy_stress,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    rval = moab_post_proc.tag_get_handle("PIOLA1_STRESS_VAL",9,MB_TYPE_DOUBLE,th_piola_stress,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    rval = moab_post_proc.tag_get_handle("ESHELBY_STRESS_VAL",9,MB_TYPE_DOUBLE,th_eshelby_stress,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    rval = moab_post_proc.tag_get_handle("PSI_VAL",1,MB_TYPE_DOUBLE,th_psi,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    rval = moab_post_proc.tag_get_handle("J_VAL",1,MB_TYPE_DOUBLE,th_j,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("CAUCHY_STRESS_VAL",9,MB_TYPE_DOUBLE,th_cauchy_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("PIOLA1_STRESS_VAL",9,MB_TYPE_DOUBLE,th_piola_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("ESHELBY_STRESS_VAL",9,MB_TYPE_DOUBLE,th_eshelby_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("PSI_VAL",1,MB_TYPE_DOUBLE,th_psi,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("J_VAL",1,MB_TYPE_DOUBLE,th_j,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
   }
 

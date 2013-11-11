@@ -136,6 +136,7 @@ int main(int argc, char *argv[]) {
 
   //shuld not do load steps, loop is always one
   //it is left here for testing reasons
+  ierr = conf_prob.save_edge_lenght_in_tags(mField); CHKERRQ(ierr);
   for(int aa = 0;aa<nb_load_steps;aa++) {
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of step = %D\n",aa); CHKERRQ(ierr);
@@ -274,10 +275,18 @@ int main(int argc, char *argv[]) {
 
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-
   }
+  ierr = conf_prob.save_edge_streach_lenght_in_tags(mField); CHKERRQ(ierr);
 
   rval = moab.write_file("out_material_coupled.h5m"); CHKERR_PETSC(rval);
+
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out_edges.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
