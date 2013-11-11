@@ -20,10 +20,8 @@
 #ifndef __MOABFEMETHOD_CONSTAREA_HPP__
 #define __MOABFEMETHOD_CONSTAREA_HPP__
 
-//#include "FieldInterface.hpp"
-//#include "FieldCore.hpp"
-//#include "complex_for_lazy.h"
 #include <math.h>
+#include <complex>
 
 extern "C" {
 void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
@@ -32,7 +30,6 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
   double circumcenter[3],double *xi,double *eta);
 }
 
-//#include <complex>
 
 namespace MoFEM {
 
@@ -152,7 +149,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     }}
     __CLPK_doublecomplex x_normal[3];
     ierr = ShapeFaceNormalMBTRI_complex(diffNTRI,x_dofs_X,x_normal); CHKERRQ(ierr);
-    double complex x_nrm2 = csqrt(
+    double __complex__ x_nrm2 = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
       cpow((x_normal[2].r+I*x_normal[2].i),2));

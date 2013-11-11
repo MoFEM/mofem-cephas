@@ -194,7 +194,9 @@ int main(int argc, char *argv[]) {
     ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-    rval = conf_prob.fe_post_proc_stresses_method->moab_post_proc.write_file("out_stresses.vtk","VTK",""); CHKERR_PETSC(rval);
+    if(conf_prob.fe_post_proc_stresses_method!=NULL) {
+      rval = conf_prob.fe_post_proc_stresses_method->moab_post_proc.write_file("out_stresses.vtk","VTK",""); CHKERR_PETSC(rval);
+    }
   }
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
