@@ -3011,6 +3011,22 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	  if(tit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  bool success = refinedMoFemEntities.modify(tit_miit,RefMoFEMEntity_change_add_bit(bit));
 	  if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible tet");
+	  Range tit_conn;
+	  rval = moab.get_connectivity(&*tit,1,tit_conn,true); CHKERR_PETSC(rval);
+	  for(Range::iterator nit = tit_conn.begin();nit!=tit_conn.end();nit++) {
+	    ref_ents_by_ent::iterator nit_miit = ref_ents_ent.find(*nit);
+	    if(nit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedMoFemEntities");
+	    bool success = refinedMoFemEntities.modify(nit_miit,RefMoFEMEntity_change_add_bit(bit));
+	    if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible node");
+	  }
+	  Range tit_edges;
+	  rval = moab.get_adjacencies(&*tit,1,1,false,tit_edges); CHKERR_PETSC(rval);
+	  for(Range::iterator eit = tit_edges.begin();eit!=tit_edges.end();eit++) {
+	    ref_ents_by_ent::iterator eit_miit = ref_ents_ent.find(*eit);
+	    if(eit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedMoFemEntities");
+	    bool success = refinedMoFemEntities.modify(eit_miit,RefMoFEMEntity_change_add_bit(bit));
+	    if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible edge");
+	  }
 	  Range tit_faces;
 	  rval = moab.get_adjacencies(&*tit,1,2,false,tit_faces); CHKERR_PETSC(rval);
 	  if(tit_faces.size()!=4) SETERRQ(PETSC_COMM_SELF,1,"existing tet in mofem databsee should have 4 adjacent edges");
@@ -3020,6 +3036,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	    bool success = refinedMoFemEntities.modify(fit_miit,RefMoFEMEntity_change_add_bit(bit));
 	    if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible face");
 	  }
+	  continue;
 	}
 	break;
       case 1:
