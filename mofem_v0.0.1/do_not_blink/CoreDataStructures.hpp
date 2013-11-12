@@ -146,7 +146,7 @@ struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMEleme
     assert(ref.wrapp == 1);
     (const_cast<ptrWrapperRefMoFEMElement&>(ref)).wrapp++;
   }
-  ~ptrWrapperRefMoFEMElement() { 
+  virtual ~ptrWrapperRefMoFEMElement() { 
     if(wrapp == 1) {
       delete interface_RefMoFEMEntity<RefMoFEMElement>::ref_ptr; 
     }
