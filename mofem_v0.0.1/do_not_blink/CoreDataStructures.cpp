@@ -224,7 +224,11 @@ RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_
     case MBTET:
     break;
     default:
+      PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	"this work only for TETs",PETSC_NULL);
       THROW_AT_LINE("this work only for TETs");
+      //PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	//"this work only for TETs",PETSC_NULL);
   }
   rval = moab.tag_get_handle("_RefType",th_RefType); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefType,&ref_ptr->ent,1,(const void **)&tag_type_data); CHKERR_THROW(rval);
@@ -739,19 +743,23 @@ static void EntMoFEMFiniteElement_dofs_change(
   vector<UId>::iterator vit = data.begin();
   for(;miit!=uids_view.end();miit++,vit++) *vit = (*miit)->get_unique_id();
   assert(vit==data.end());
-  int tag_sizes[1]; tag_sizes[0] = data.size()*sizeof(UId);
+  int tag_sizes[1]; 
+  tag_sizes[0] = data.size()*sizeof(UId);
   void const* tag_data[] = { &data[0] };
   rval = moab.tag_set_by_ptr(th_DofUid,&ent,1,tag_data,tag_sizes); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_DofUid,&ent,1,tag_uids_data,tag_uids_size); CHKERR_THROW(rval);
 }
 void EntMoFEMFiniteElement_row_dofs_change::operator()(EntMoFEMFiniteElement &MoFEMFiniteElement) { 
-  EntMoFEMFiniteElement_dofs_change(moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidRow,(const void **)&MoFEMFiniteElement.tag_row_uids_data,&MoFEMFiniteElement.tag_row_uids_size);
+  EntMoFEMFiniteElement_dofs_change(
+    moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidRow,(const void **)&MoFEMFiniteElement.tag_row_uids_data,&MoFEMFiniteElement.tag_row_uids_size);
 }
 void EntMoFEMFiniteElement_col_dofs_change::operator()(EntMoFEMFiniteElement &MoFEMFiniteElement) { 
-  EntMoFEMFiniteElement_dofs_change(moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidCol,(const void **)&MoFEMFiniteElement.tag_col_uids_data,&MoFEMFiniteElement.tag_col_uids_size);
+  EntMoFEMFiniteElement_dofs_change(
+    moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidCol,(const void **)&MoFEMFiniteElement.tag_col_uids_data,&MoFEMFiniteElement.tag_col_uids_size);
 }
 void EntMoFEMFiniteElement_data_dofs_change::operator()(EntMoFEMFiniteElement &MoFEMFiniteElement) { 
-  EntMoFEMFiniteElement_dofs_change(moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidData,(const void **)&MoFEMFiniteElement.tag_data_uids_data,&MoFEMFiniteElement.tag_data_uids_size);
+  EntMoFEMFiniteElement_dofs_change(
+    moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidData,(const void **)&MoFEMFiniteElement.tag_data_uids_data,&MoFEMFiniteElement.tag_data_uids_size);
 }
 
 //MoFEMFiniteElement data

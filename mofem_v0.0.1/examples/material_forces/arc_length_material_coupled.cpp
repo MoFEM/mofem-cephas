@@ -88,14 +88,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("COUPLED_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_set_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_set_bit("COUPLED_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("C_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("CTC_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_set_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_set_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_set_bit("C_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_set_bit("CTC_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -127,19 +127,27 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_da (what is crack area increment ?)");
   }
+
+
+  int def_nb_load_steps = 0;
+  Tag th_nb_load_steps;
+  rval = mField.get_moab().tag_get_handle("_NB_LOAD_STEPS",1,MB_TYPE_INTEGER,
+    th_nb_load_steps,MB_TAG_CREAT|MB_TAG_SPARSE,&def_nb_load_steps); 
+  int *ptr_nb_load_steps;
+  rval = mField.get_moab().tag_get_by_ptr(th_nb_load_steps,&root_meshset,1,(const void**)&ptr_nb_load_steps); CHKERR_PETSC(rval);
+  int &step = *ptr_nb_load_steps;
+
   PetscInt nb_load_steps = 0;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_load_steps",&nb_load_steps,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_load_steps (what is number of load_steps ?)");
   }
 
-
   //shuld not do load steps, loop is always one
   //it is left here for testing reasons
-  ierr = conf_prob.save_edge_lenght_in_tags(mField); CHKERRQ(ierr);
-  /*for(int aa = 0;aa<nb_load_steps;aa++) {
+  for(int aa = 0;step<nb_load_steps;step++,aa++) {
 
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n\n** number of step = %D\n\n\n",aa); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n\n** number of step = %D\n\n\n",step); CHKERRQ(ierr);
 
     ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -231,13 +239,13 @@ int main(int argc, char *argv[]) {
 
     }
 
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",aa,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",step,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       ierr = mField.problem_get_FE("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
       ostringstream ss;
-      ss << "out_load_step_" << aa << ".vtk";
+      ss << "out_load_step_" << step << ".vtk";
       rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
 
@@ -275,16 +283,36 @@ int main(int argc, char *argv[]) {
 
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-  }*/
-  ierr = conf_prob.save_edge_streach_lenght_in_tags(mField); CHKERRQ(ierr);
+  }
+  ierr = conf_prob.save_edge_strech_lenght_in_tags(mField); CHKERRQ(ierr);
 
-  rval = moab.write_file("out_material_coupled.h5m"); CHKERR_PETSC(rval);
+  if(pcomm->rank()==0) {
+    rval = moab.write_file("out_arc_length.h5m"); CHKERR_PETSC(rval);
+  }
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out_edges.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+
+  if(pcomm->rank()==0) {
+    Range SurfacesFaces;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+    Range CrackSurfacesFaces;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
+    Range level_tris;
+    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+    SurfacesFaces = intersect(SurfacesFaces,level_tris);
+    CrackSurfacesFaces = intersect(CrackSurfacesFaces,level_tris);
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    rval = moab.add_entities(out_meshset,CrackSurfacesFaces); CHKERR_PETSC(rval);
+    rval = moab.write_file("out_crack_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.add_entities(out_meshset,SurfacesFaces); CHKERR_PETSC(rval);
+    rval = moab.write_file("out_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 

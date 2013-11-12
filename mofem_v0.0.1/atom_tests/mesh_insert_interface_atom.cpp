@@ -115,8 +115,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_by_TETs(0,"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
   //add problems 
-  //set problem for all levels, only for testing pruposes
-  for(int lll = 0;lll<ll;lll++) {
+  //set problem for all last two levels, only for testing pruposes
+  for(int lll = ll-2;lll<ll;lll++) {
     stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
     ierr = mField.add_problem(problem_name.str()); CHKERRQ(ierr);
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   }
 
   //set problem level
-  for(int lll = 0;lll<ll;lll++) {
+  for(int lll = ll-2;lll<ll;lll++) {
     stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
     stringstream message;
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition
-  for(int lll = 0;lll<ll;lll++) {
+  for(int lll = ll-2;lll<ll;lll++) {
     stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
     ierr = mField.partition_problem(problem_name.str()); CHKERRQ(ierr);

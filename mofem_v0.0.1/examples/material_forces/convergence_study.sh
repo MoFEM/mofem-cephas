@@ -1,0 +1,121 @@
+#!/bin/sh
+
+while test $# -gt 0; do
+        case "$1" in
+                -h|--help)
+                        echo "converence_study"
+                        echo " "
+                        echo "convergence_study [arguments]"
+                        echo " "
+                        echo "options:"
+                        echo "-h, --help"
+                        echo "-f, --file_name=FILE_NAME"
+			echo "-l, --load_factor=LOAD_FACTOR"
+			echo "-g, --gc=GRIFFITH_ENERGY"
+                        exit 0
+                        ;;
+                -f)
+                        shift
+                        if test $# -gt 0; then
+                                export FILE=$1
+                        else
+                                echo "no file name specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --file_name*)
+                        export FILE_NAME=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+                -l)
+                        shift
+                        if test $# -gt 0; then
+                                export LOAD_FACTOR=$1
+                        else
+                                echo "no load factor specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --load_factor*)
+                        export LOAD_FACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+		-g)
+                        shift
+                        if test $# -gt 0; then
+                                export GC=$1
+                        else
+                                echo "no griffith energy specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --gc*)
+                        export GC=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+
+                *)
+                        break
+                        ;;
+        esac
+done
+
+if [ -z ${FILE+x} ]; then 
+  echo "Mesh file is unset, convergence_study --help"
+fi
+
+if [ -z ${LOAD_FACTOR+x} ]; then 
+  echo "Load factor is unset, convergence_study --help"
+  exit 1
+fi
+
+if [ -z ${GC+x} ]; then 
+  echo "Griffith energy is unset, convergence_study --help"
+else
+  GC=0
+fi
+
+BIN_PATH="/Users/likask/MyBuild/build_mofem/v0.0.1_release_petsc_nodebug/examples/material_forces"
+MPIRUN="/opt/build_for_gcc-mp-4.4/local/bin/mpirun -np 3" 
+
+DIR_SURFIX=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
+DIR_PREFIX=`basename $FILE .cub`
+DIR_PREFIX=`basename $DIR_PREFIX .h5m`
+DIR_NAME=material_forces_"$DIR_PREFIX"_"$DIR_SURFIX"
+
+mkdir $DIR_NAME
+
+for order in 2
+do
+  for ref_level in 1
+  do
+
+    echo | tee -a $DIR_NAME/log_griffith_forces
+    echo average griffith force order $order ref level $ref_level | tee -a $DIR_NAME/log_griffith_forces
+    echo | tee -a $DIR_NAME/log_griffith_forces
+
+    $MPIRUN $BIN_PATH/spatial_problem \
+      -my_file $FILE -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+      -ksp_atol 1e-18 -ksp_rtol 1e-12 -ksp_monitor \
+      -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-5 -snes_rtol 1e-8 -snes_stol 0 \
+      -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_pot_proc_ref_level 1 | tee -a $DIR_NAME/log_solution
+
+    $BIN_PATH/material_force \
+      -my_file out_spatial.h5m \
+	-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_atol 1e-12 -ksp_rtol 1e-12 \
+	-ksp_monitor -my_penalty 1\
+	-my_gc $GC | tee -a $DIR_NAME/log_griffith_forces
+
+  done
+
+  mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
+  mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
+  mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
+
+
+done
+
+

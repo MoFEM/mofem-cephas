@@ -321,6 +321,12 @@ struct problem_change_ref_level_bit_add {
   problem_change_ref_level_bit_add(const BitRefLevel _bit): bit(_bit) {};
   void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) |= bit; };
 };
+/// \brief set ref level to problem
+struct problem_change_ref_level_bit_set {
+  BitRefLevel bit;
+  problem_change_ref_level_bit_set(const BitRefLevel _bit): bit(_bit) {};
+  void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) = bit; };
+};
 /// \brief add finite element to problem
 struct problem_MoFEMFiniteElement_change_bit_add {
   BitFEId f_id;

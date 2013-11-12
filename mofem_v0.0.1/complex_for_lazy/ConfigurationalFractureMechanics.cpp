@@ -319,11 +319,11 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
   PetscErrorCode ierr;
 
   //Fields
-  ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("ELASTIC",MF_ZERO); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -453,9 +453,9 @@ PetscErrorCode ConfigurationalFractureMechanics::coupled_problem_definition(Fiel
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_field("MATERIAL_FORCE",H1,3,MF_ZERO); CHKERRQ(ierr);
   //FE
-  ierr = mField.add_finite_element("ELASTIC_COUPLED"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("MATERIAL_COUPLED"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("MESH_SMOOTHER"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("ELASTIC_COUPLED",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MATERIAL_COUPLED",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MESH_SMOOTHER",MF_ZERO); CHKERRQ(ierr);
   
   //fes definitions
   ierr = mField.modify_finite_element_add_field_row("ELASTIC_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -512,7 +512,7 @@ PetscErrorCode ConfigurationalFractureMechanics::arclength_problem_definition(Fi
   material_FirelWall->set(FW_arc_lenhghat_definition);
 
   PetscErrorCode ierr;
-
+  
   ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
 
   ierr = mField.add_finite_element("ARC_LENGTH"); CHKERRQ(ierr);
@@ -563,22 +563,22 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   bool cs = true;
 
   //Fields
-  ierr = mField.add_field("LAMBDA_SURFACE",H1,1); CHKERRQ(ierr);
-  ierr = mField.add_field("LAMBDA_CORNER",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("LAMBDA_SURFACE",H1,1,MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_field("LAMBDA_CORNER",H1,3,MF_ZERO); CHKERRQ(ierr);
   //CRACK
   if(cs) {
-    ierr = mField.add_field("LAMBDA_CRACK_SURFACE",H1,1); CHKERRQ(ierr);
+    ierr = mField.add_field("LAMBDA_CRACK_SURFACE",H1,1,MF_ZERO); CHKERRQ(ierr);
   }
 
   //FE
-  ierr = mField.add_finite_element("C_SURFACE_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("CTC_SURFACE_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("C_CORNER_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("CTC_CORNER_ELEM"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("C_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("CTC_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("C_CORNER_ELEM",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("CTC_CORNER_ELEM",MF_ZERO); CHKERRQ(ierr);
   //CRACK
   if(cs) {
-    ierr = mField.add_finite_element("C_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
-    ierr = mField.add_finite_element("CTC_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("C_CRACK_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("CTC_CRACK_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
   }
 
   //Define rows/cols and element data
@@ -646,7 +646,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
     Interface& moab = mField.get_moab();
 
     Range level_tris;
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+    ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
     SurfacesFaces = intersect(SurfacesFaces,level_tris);
 
     ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
@@ -730,14 +730,14 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
   ErrorCode rval;
 
   //Fields
-  ierr = mField.add_field("LAMBDA_CRACKFRONT_AREA",H1,1); CHKERRQ(ierr);
-  ierr = mField.add_field("GRIFFITH_FORCE",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("LAMBDA_CRACKFRONT_AREA",H1,1,MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_field("GRIFFITH_FORCE",H1,3,MF_ZERO); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_finite_element("C_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("CTC_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("FRONT_CONSTRAIN"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("C_CRACKFRONT_AREA_ELEM",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("CTC_CRACKFRONT_AREA_ELEM",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("dCT_CRACKFRONT_AREA_ELEM",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("FRONT_CONSTRAIN",MF_ZERO); CHKERRQ(ierr);
 
   ierr = mField.modify_finite_element_add_field_row("C_CRACKFRONT_AREA_ELEM","LAMBDA_CRACKFRONT_AREA"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("C_CRACKFRONT_AREA_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -782,7 +782,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Faces = %d\n",CrackSurfacesEdgeFaces.size()); CHKERRQ(ierr);
 
     Range level_tris;
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+    ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
     CrackSurfacesEdgeFaces = intersect(CrackSurfacesEdgeFaces,level_tris);
 
     ierr = mField.seed_finite_elements(CrackSurfacesEdgeFaces); CHKERRQ(ierr);
@@ -791,7 +791,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
     ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
 
     Range level_edges;
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
+    ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
     CrackFrontEdges = intersect(CrackFrontEdges,level_edges);
 
 
@@ -1615,6 +1615,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
+    *(MySpatialFE.t_val) = arc_ctx->get_FieldData();
+  }
 
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -1769,12 +1772,12 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::save_edge_lenght_in_tags(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::save_edge_lenght_in_tags(FieldInterface& mField,BitRefLevel mask) {
   PetscFunctionBegin;
   ErrorCode rval;
   PetscErrorCode ierr;
   Range bit_level_edges;
-  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,bit_level_edges); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(*ptr_bit_level0,mask,MBEDGE,bit_level_edges); CHKERRQ(ierr);
   double def_VAL[1] = {0};
   Tag th_edge_length;
   rval = mField.get_moab().tag_get_handle("EDGE_LENGTH",1,MB_TYPE_DOUBLE,th_edge_length,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR(rval);
@@ -1793,16 +1796,16 @@ PetscErrorCode ConfigurationalFractureMechanics::save_edge_lenght_in_tags(FieldI
   rval = mField.get_moab().tag_set_data(th_edge_length,bit_level_edges,&edges_length[0]); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::save_edge_streach_lenght_in_tags(FieldInterface& mField) {
+PetscErrorCode ConfigurationalFractureMechanics::save_edge_strech_lenght_in_tags(FieldInterface& mField) {
   PetscFunctionBegin;
   ErrorCode rval;
   PetscErrorCode ierr;
   Range bit_level_edges;
-  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,bit_level_edges); CHKERRQ(ierr);
+  ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBEDGE,bit_level_edges); CHKERRQ(ierr);
   double def_VAL[1] = {0};
   Tag th_edge_strech;
-  rval = mField.get_moab().tag_get_handle("EDGE_STREACH",1,MB_TYPE_DOUBLE,th_edge_strech,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR(rval);
-  vector<double> edges_streach(bit_level_edges.size());
+  rval = mField.get_moab().tag_get_handle("EDGE_STRECH",1,MB_TYPE_DOUBLE,th_edge_strech,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR(rval);
+  vector<double> edges_strech(bit_level_edges.size());
   Range::iterator eit = bit_level_edges.begin();
   for(int ee = 0;eit!=bit_level_edges.end();eit++,ee++) {
     const EntityHandle* conn; 
@@ -1811,19 +1814,66 @@ PetscErrorCode ConfigurationalFractureMechanics::save_edge_streach_lenght_in_tag
     double coords[6];
     rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
     cblas_daxpy(3,-1,&coords[3],1,&coords[0],1);
-    edges_streach[ee] = cblas_dnrm2(3,coords,1);
+    edges_strech[ee] = cblas_dnrm2(3,coords,1);
   }
   Tag th_edge_length;
   rval = mField.get_moab().tag_get_handle("EDGE_LENGTH",th_edge_length); CHKERR(rval);
   vector<double> edges_length0(bit_level_edges.size());
   rval = mField.get_moab().tag_get_data(th_edge_length,bit_level_edges,&*edges_length0.begin()); CHKERR_PETSC(rval);
-  vector<double>::iterator vit_streach = edges_streach.begin();
+  vector<double>::iterator vit_strech = edges_strech.begin();
   vector<double>::iterator vit_length0 = edges_length0.begin();
-  for(;vit_streach != edges_streach.end();vit_streach++,vit_length0++) {
+  for(;vit_strech != edges_strech.end();vit_strech++,vit_length0++) {
     if(*vit_length0 <= 0) SETERRQ(PETSC_COMM_SELF,1,"edge lenght is 0 (or negative)");
-    *vit_streach /= *vit_length0;
+    *vit_strech /= *vit_length0;
   }
-  rval = mField.get_moab().tag_set_data(th_edge_strech,bit_level_edges,&*edges_streach.begin()); CHKERR_PETSC(rval);
+  rval = mField.get_moab().tag_set_data(th_edge_strech,bit_level_edges,&*edges_strech.begin()); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ConfigurationalFractureMechanics::refine_streched_edges(FieldInterface& mField,double strech_treshold,bool crack_crack_surface_only) {
+  PetscFunctionBegin;
+  try {
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  int last = 0;
+  for(int ii = 0;ii<ptr_bit_level0->size();ii++) {
+    if(ptr_bit_level0->test(ii)) last = ii;
+  }
+  last++;
+  Range bit_level_edges;
+  ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBEDGE,bit_level_edges); CHKERRQ(ierr);
+  if(crack_crack_surface_only) {
+    Range crack_surfaces_faces,adj_cracksurfaces_edges;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surfaces_faces,true); CHKERRQ(ierr);
+    rval = mField.get_moab().get_adjacencies(crack_surfaces_faces,1,false,adj_cracksurfaces_edges,Interface::UNION); CHKERR_PETSC(rval);
+    bit_level_edges = intersect(bit_level_edges,adj_cracksurfaces_edges);
+  }
+  Tag th_edge_strech;
+  rval = mField.get_moab().tag_get_handle("EDGE_STRECH",th_edge_strech); CHKERR_PETSC(rval);
+  Range edges_to_refine;
+  Range::iterator eit = bit_level_edges.begin();
+  for(int ee = 0;eit!=bit_level_edges.end();eit++,ee++) {
+    double edge_strech;
+    rval = mField.get_moab().tag_get_data(th_edge_strech,&*eit,1,&edge_strech); CHKERR_PETSC(rval);
+    if(edge_strech<strech_treshold) continue;
+    edges_to_refine.insert(*eit);
+  }
+  BitRefLevel last_ref = BitRefLevel().set(last);
+  ierr = mField.add_verices_in_the_middel_of_edges(edges_to_refine,last_ref,2); CHKERRQ(ierr);
+  Range level_tets;
+  ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
+  ierr = mField.refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
+    EntityHandle cubit_meshset = cubit_it->meshset; 
+    ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+    ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
+  }
+  *ptr_bit_level0 = last_ref;
+  ierr = save_edge_lenght_in_tags(mField,*ptr_bit_level0); CHKERRQ(ierr);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMethod::preProcess() {
@@ -1961,7 +2011,7 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
 
     ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crackSurfacesFaces,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     Range level_tris;
-    ierr = mField.refine_get_ents(conf_prob->bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.refine_get_ents(*conf_prob->ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     crackSurfacesFaces = intersect(crackSurfacesFaces,level_tris);
 
     ierr = mField.get_problem("COUPLED_PROBLEM",&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
