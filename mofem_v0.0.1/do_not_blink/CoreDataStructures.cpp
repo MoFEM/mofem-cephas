@@ -591,7 +591,7 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
   }
   if(nb_dofs>0) {
     data.resize(nb_dofs,0);
-    int tag_size[] = { data.size()*sizeof(FieldData) };
+    int tag_size[1]; tag_size[0] = data.size()*sizeof(FieldData);
     void const* tag_data[] = { &data[0] };
     rval = moab.tag_set_by_ptr(e.field_ptr->th_FieldData,&ent,1,tag_data,tag_size); CHKERR(rval); assert(rval==MB_SUCCESS);
     rval = moab.tag_get_by_ptr(e.field_ptr->th_FieldData,&ent,1,(const void **)&e.tag_FieldData,&e.tag_FieldData_size); CHKERR(rval);
