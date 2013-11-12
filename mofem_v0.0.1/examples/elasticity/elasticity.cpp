@@ -186,8 +186,8 @@ int main(int argc, char *argv[]) {
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   //Assemble F and Aij
-  const double YoungModulus = 1000000;
-  const double PoissonRatio = 0.1;
+  const double YoungModulus = 1;
+  const double PoissonRatio = 0;
   MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -247,13 +247,13 @@ int main(int argc, char *argv[]) {
   }
 
   //End Disp
-  Range ents;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) { 
-    if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
-    }
-  }
+  /*Range ents;*/
+  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
+  //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) { 
+    //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
+      //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
+    //}
+  /*}*/
 
   //Support stresses
   //Range ents;
