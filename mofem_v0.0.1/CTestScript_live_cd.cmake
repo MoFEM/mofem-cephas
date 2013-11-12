@@ -1,4 +1,4 @@
-set(CTEST_BUILD_OPTIONS "-DPETSC_DIR=/opt/petsc-3.4.3 -DPETSC_ARCH=arch-linux2-c-opt -DMOAB_DIR=/opt/local-moab-4.6.0/ -DCMAKE_CXX_FLAGS=-I/opt/local/include -L/opt/local/lib")
+set(CTEST_BUILD_OPTIONS "-DPETSC_DIR=/opt/petsc-3.4.3 -DPETSC_ARCH=arch-linux2-c-opt -DMOAB_DIR=/opt/local-moab-4.6.0/ -DCMAKE_CXX_FLAGS=-I/opt/local/include -L/opt/local/lib -Wunused-local-typedefs")
 
 set(CTEST_SITE "live-cd")
 set(CTEST_BUILD_NAME "Linux-mpicxx")
