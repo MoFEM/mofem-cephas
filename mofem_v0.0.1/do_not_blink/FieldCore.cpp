@@ -231,12 +231,12 @@ PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const
   }
   //name
   void const* tag_data[] = { name.c_str() };
-  int tag_sizes[] = { name.size() };
+  int tag_sizes[1]; tag_sizes[0] = name.size();
   rval = moab.tag_set_by_ptr(th_FieldName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   //name data prefix
   string name_data_prefix("_App_Data");
   void const* tag_prefix_data[] = { name_data_prefix.c_str() };
-  int tag_prefix_sizes[] = { name_data_prefix.size() };
+  int tag_prefix_sizes[1]; tag_prefix_sizes[0] = name_data_prefix.size();
   rval = moab.tag_set_by_ptr(th_FieldName_DataNamePrefix,&meshset,1,tag_prefix_data,tag_prefix_sizes); CHKERR_PETSC(rval);
   Tag th_AppOrder,th_FieldData,th_Rank,th_AppDofOrder,th_DofRank;
   //data
@@ -1075,7 +1075,7 @@ PetscErrorCode FieldCore::add_finite_element(const string &MoFEMFiniteElement_na
   rval = moab.tag_set_data(th_FEId,&meshset,1,&id); CHKERR_PETSC(rval);
   //id name
   void const* tag_data[] = { MoFEMFiniteElement_name.c_str() };
-  int tag_sizes[] = { MoFEMFiniteElement_name.size() };
+  int tag_sizes[1]; tag_sizes[0] = MoFEMFiniteElement_name.size();
   rval = moab.tag_set_by_ptr(th_FEName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   //tags
   Tag th_FEMatData,th_FEVecData;
@@ -1240,7 +1240,7 @@ PetscErrorCode FieldCore::add_problem(const BitProblemId id,const string& name) 
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
   rval = moab.tag_set_data(th_ProblemId,&meshset,1,&id); CHKERR_PETSC(rval);
   void const* tag_data[] = { name.c_str() };
-  int tag_sizes[] = { name.size() };
+  int tag_sizes[1]; tag_sizes[0] = name.size();
   rval = moab.tag_set_by_ptr(th_ProblemName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   //create entry
   pair<MoFEMProblem_multiIndex::iterator,bool> p = moFEMProblems.insert(MoFEMProblem(moab,meshset));
@@ -3133,7 +3133,9 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 	    assert(V>0); 
 	  }
-	  int ref_type[] = { parent_edges_bit.count(),sub_type }; 
+	  int ref_type[2];
+	  ref_type[0] = parent_edges_bit.count();
+	  ref_type[1] = sub_type; 
 	  rval = moab.tag_set_data(th_RefType,&ref_tets[tt],1,ref_type); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_RefParentHandle,&ref_tets[tt],1,&*tit); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_RefBitLevel,&ref_tets[tt],1,&bit); CHKERR_PETSC(rval);

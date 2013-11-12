@@ -715,6 +715,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     } else {
       FaceEdgeOrder[ee] = 0;
       EdgeData[ee] = NULL;
+      N_edge[ee] = NULL;
+      diffN_edge[ee] = NULL;
     }
   }
   ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&g_NTRI[0],&diffNTRI[0],N_edge,diffN_edge,g_TRI_dim); CHKERRQ(ierr);
