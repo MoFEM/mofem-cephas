@@ -18,56 +18,6 @@
    <insert_a_suppression_name_here>
    Memcheck:Leak
    fun:malloc
-   fun:__fopen_internal
-   fun:_ZN4moab6Tqdcfr9load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
-   fun:main
-}
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   fun:_Znwm
-   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
-   fun:_ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag
-   fun:_ZNSsC1EPKcRKSaIcE
-   fun:_ZN4moab6Tqdcfr14process_recordERNS0_10AcisRecordE
-   fun:_ZN4moab6Tqdcfr17read_acis_recordsEPKc
-   fun:_ZN4moab6Tqdcfr9load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
-   fun:main
-}
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   fun:_Znwm
-   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
-   fun:_ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag
-   fun:_ZNSsC1EPKcRKSaIcE
-   fun:_ZN4moab6Tqdcfr14process_recordERNS0_10AcisRecordE
-   fun:_ZN4moab6Tqdcfr17read_acis_recordsEPKc
-   fun:_ZN4moab6Tqdcfr9load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
-   fun:main
-}
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   fun:_Znwm
-   fun:_ZN4moab6Tqdcfr18parse_acis_attribsEjRSt6vectorINS0_10AcisRecordESaIS2_EE
-   fun:_ZN4moab6Tqdcfr22interpret_acis_recordsERSt6vectorINS0_10AcisRecordESaIS2_EE
-   fun:_ZN4moab6Tqdcfr17read_acis_recordsEPKc
-   fun:_ZN4moab6Tqdcfr9load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
-   fun:main
-}
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   fun:malloc
    fun:opal_bitmap_init
    fun:orte_odls_base_open
    obj:*
@@ -62058,19 +62008,6 @@
    obj:/usr/lib/openmpi/lib/libmpi.so.0.0.4
    fun:PMPI_Init_thread
    fun:PetscInitialize
-   fun:main
-}
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   fun:_Znwm
-   fun:_ZNSt6vectorISsSaISsEE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPSsS1_EERKSs
-   fun:_ZN4moab6Tqdcfr18parse_acis_attribsEjRSt6vectorINS0_10AcisRecordESaIS2_EE
-   fun:_ZN4moab6Tqdcfr22interpret_acis_recordsERSt6vectorINS0_10AcisRecordESaIS2_EE
-   fun:_ZN4moab6Tqdcfr17read_acis_recordsEPKc
-   fun:_ZN4moab6Tqdcfr9load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
-   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
    fun:main
 }
 {
