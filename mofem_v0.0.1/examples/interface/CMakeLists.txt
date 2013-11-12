@@ -19,8 +19,8 @@
 add_executable(interface interface.cpp)
 target_link_libraries(interface mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/PeelTest.cub" "/" export_files_interface)
-cm_export_file("../../meshes/PeelTestHalfCrack.cub" "/" export_files_interface)
+cm_export_file("../../meshes/PeelTest.cub" export_files_interface)
+cm_export_file("../../meshes/PeelTestHalfCrack.cub" export_files_interface)
 
 
 file(COPY

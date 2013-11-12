@@ -19,9 +19,9 @@
 add_executable(elasticity elasticity.cpp)
 target_link_libraries(elasticity mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/LShape.cub" "/" export_files_elasticity)
-cm_export_file("../../meshes/LShapeCoarse.cub" "/" export_files_elasticity)
-cm_export_file("../../meshes/LShapeDense.cub" "/" export_files_elasticity)
+cm_export_file("../../meshes/LShape.cub" export_files_elasticity)
+cm_export_file("../../meshes/LShapeCoarse.cub" export_files_elasticity)
+cm_export_file("../../meshes/LShapeDense.cub" export_files_elasticity)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -30,6 +30,8 @@ file(COPY
 #testing
 add_test(SimpleElasticityTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
   -my_file LShapeCoarse.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary)
+
+install(TARGETS elasticity DESTINATION bin)
 
 
 

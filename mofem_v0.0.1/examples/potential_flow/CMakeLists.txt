@@ -19,7 +19,7 @@
 add_executable(potential_flow potential_flow.cpp)
 target_link_libraries(potential_flow mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/pipe.cub" "/" export_potential_flow)
+cm_export_file("../../meshes/pipe.cub" export_potential_flow)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -30,4 +30,5 @@ file(COPY
 add_test(SimplePotentialFlowTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/potential_flow
   -my_file pipe.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 5 -log_summary)
 
+install(TARGETS potential_flow DESTINATION bin)
 
