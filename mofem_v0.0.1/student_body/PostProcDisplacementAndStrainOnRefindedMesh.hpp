@@ -277,12 +277,8 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
   }
 
-
-
   PetscErrorCode operator()() {
       PetscFunctionBegin;
-
-      int a = 0;
 
       //Loop over elements
       ierr = do_operator(); CHKERRQ(ierr);
@@ -293,8 +289,6 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
-
-
 
       for(;viit!=GradU_at_GaussPt.end();viit++,mit++) {
         ublas::matrix< FieldData > GradU = *viit;
