@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
 
   //Assemble F and Aij
   const double YoungModulus = 1;
-  const double PoissonRatio = 0;
+  const double PoissonRatio = 0.0;
   MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
