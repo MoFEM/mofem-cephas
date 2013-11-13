@@ -31,10 +31,15 @@ target_link_libraries(material_coupled mofem_complex_for_lazy mofem_student_body
 add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
 target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/crack1.cub" "/" export_files_material_mechanics)
-cm_export_file("../../meshes/T3_horiz.cub" "/" export_files_material_mechanics)
-
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
+install(TARGETS spatial_problem DESTINATION bin)
+install(TARGETS material_force DESTINATION bin)
+install(TARGETS material_coupled DESTINATION bin)
+install(TARGETS arc_length_material_coupled DESTINATION bin)
+
+cm_export_file("../../meshes/crack1.cub" export_files_material_mechanics)
+cm_export_file("../../meshes/T3_horiz.cub" export_files_material_mechanics)
 

@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
   //ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,1); CHKERRQ(ierr);
+  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
   //BitRefLevel bit_level0;
   //bit_level0.set(0);
 
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
   // stl::bitset see for more details
   BitRefLevel bit_level_interface;
-  bit_level_interface.set(1);
+  bit_level_interface.set(0);
   ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,false,true); CHKERRQ(ierr);
 
   //add refined ent to cubit meshsets
@@ -105,7 +105,8 @@ int main(int argc, char *argv[]) {
   }
 
   BitRefLevel last_ref = bit_level_interface;
-  for(int ll = 2;ll<nb_ref_levels+2;ll++) {
+  for(int ll = 1;ll<nb_ref_levels+1;ll++) {
+
     Range crack_edges,crack_nodes,edge_tets,level_tets,edges_to_refine;
 
     ierr = mField.refine_get_ents(last_ref,BitRefLevel().set(),level_tets); CHKERRQ(ierr);
@@ -129,6 +130,8 @@ int main(int argc, char *argv[]) {
     }
   
   }
+
+
 
   BitRefLevel& bit_level0 = *ptr_bit_level0;
   bit_level0 = last_ref;
@@ -191,6 +194,9 @@ int main(int argc, char *argv[]) {
     ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    if(conf_prob.fe_post_proc_stresses_method!=NULL) {
+      rval = conf_prob.fe_post_proc_stresses_method->moab_post_proc.write_file("out_stresses.vtk","VTK",""); CHKERR_PETSC(rval);
+    }
   }
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);

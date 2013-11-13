@@ -591,7 +591,7 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
   }
   if(nb_dofs>0) {
     data.resize(nb_dofs,0);
-    int tag_size[] = { data.size()*sizeof(FieldData) };
+    int tag_size[1]; tag_size[0] = data.size()*sizeof(FieldData);
     void const* tag_data[] = { &data[0] };
     rval = moab.tag_set_by_ptr(e.field_ptr->th_FieldData,&ent,1,tag_data,tag_size); CHKERR(rval); assert(rval==MB_SUCCESS);
     rval = moab.tag_get_by_ptr(e.field_ptr->th_FieldData,&ent,1,(const void **)&e.tag_FieldData,&e.tag_FieldData_size); CHKERR(rval);
@@ -739,7 +739,7 @@ static void EntMoFEMFiniteElement_dofs_change(
   vector<UId>::iterator vit = data.begin();
   for(;miit!=uids_view.end();miit++,vit++) *vit = (*miit)->get_unique_id();
   assert(vit==data.end());
-  int tag_sizes[] = { data.size()*sizeof(UId) };
+  int tag_sizes[1]; tag_sizes[0] = data.size()*sizeof(UId);
   void const* tag_data[] = { &data[0] };
   rval = moab.tag_set_by_ptr(th_DofUid,&ent,1,tag_data,tag_sizes); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_DofUid,&ent,1,tag_uids_data,tag_uids_size); CHKERR_THROW(rval);

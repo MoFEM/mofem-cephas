@@ -26,7 +26,7 @@ target_link_libraries(arc_length_nonlinear_elasticity mofem_complex_for_lazy mof
 add_executable(post_proc_arc_length_nonlinear_elasticity post_proc_arc_length_nonlinear_elasticity.cpp)
 target_link_libraries(post_proc_arc_length_nonlinear_elasticity mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/dome_thin_symm.cub" "/" export_files_arc_length_nonlinearelasticity)
+cm_export_file("../../meshes/dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

@@ -40,27 +40,29 @@ target_link_libraries(nonlinear_elasticity_atom mofem_complex_for_lazy mofem_stu
 add_executable(arc_length_nonlinear_elasticity_atom arc_length_nonlinear_elasticity_atom.cpp)
 target_link_libraries(arc_length_nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/velocity01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/accel01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/temper01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/pressure01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/heatflux01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/comb01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/bcoverlap01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/interf01.cub" "/" export_atom_tests)
-cm_export_file("../meshes/mat_elastic.cub" "/" export_atom_tests)
-cm_export_file("../meshes/mat_transiso.cub" "/" export_atom_tests)
-cm_export_file("../meshes/mat_interf.cub" "/" export_atom_tests)
-cm_export_file("../meshes/inlet_outlet.cub" "/" export_atom_tests)
-cm_export_file("../meshes/elasticity_atom_test_01X.cub" "/" export_atom_tests)
-cm_export_file("../meshes/elasticity_atom_test_01Y.cub" "/" export_atom_tests)
-cm_export_file("../meshes/elasticity_atom_test_01Z.cub" "/" export_atom_tests)
-cm_export_file("../meshes/trans_isotropic_cube.cub" "/" export_atom_tests)
-cm_export_file("../meshes/chees_atom.cub" "/" export_atom_tests)
-cm_export_file("../meshes/cub_with_interface.cub" "/" export_atom_tests)
-cm_export_file("../meshes/elasticity_atom_test_01X_pressure.cub" "/" export_atom_tests)
+cm_export_file("../meshes/disp01.cub" export_atom_tests)
+cm_export_file("../meshes/force01.cub" export_atom_tests)
+cm_export_file("../meshes/velocity01.cub" export_atom_tests)
+cm_export_file("../meshes/accel01.cub" export_atom_tests)
+cm_export_file("../meshes/temper01.cub" export_atom_tests)
+cm_export_file("../meshes/pressure01.cub" export_atom_tests)
+cm_export_file("../meshes/heatflux01.cub" export_atom_tests)
+cm_export_file("../meshes/comb01.cub" export_atom_tests)
+cm_export_file("../meshes/bcoverlap01.cub" export_atom_tests)
+cm_export_file("../meshes/interf01.cub" export_atom_tests)
+cm_export_file("../meshes/mat_elastic.cub" export_atom_tests)
+cm_export_file("../meshes/mat_transiso.cub" export_atom_tests)
+cm_export_file("../meshes/mat_interf.cub" export_atom_tests)
+cm_export_file("../meshes/inlet_outlet.cub" export_atom_tests)
+cm_export_file("../meshes/elasticity_atom_test_01X.cub" export_atom_tests)
+cm_export_file("../meshes/elasticity_atom_test_01Y.cub" export_atom_tests)
+cm_export_file("../meshes/elasticity_atom_test_01Z.cub" export_atom_tests)
+cm_export_file("../meshes/trans_isotropic_cube.cub" export_atom_tests)
+cm_export_file("../meshes/chees_atom.cub" export_atom_tests)
+cm_export_file("../meshes/cub_with_interface.cub" export_atom_tests)
+cm_export_file("../meshes/elasticity_atom_test_01X_pressure.cub" export_atom_tests)
+cm_export_file("../meshes/elasticity_atom_test_sheer_force.cub" export_atom_tests)
+cm_export_file("../meshes/templar.cub" export_atom_tests)
 
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
@@ -125,15 +127,21 @@ add_test(l2_atom_approximation_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE
 add_test(mesh_smoothing_atom_test ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing_atom -my_file chees_atom.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-12 -ksp_rtol 1e-12 -snes_monitor -snes_type newtonls -snes_linesearch_type bt -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason -my_penalty 1e10 -my_gamma 0.0 -my_alpha2 1 -log_summary)
 add_test(mesh_smoothing_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_smoothing.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_smoothing.txt)
 
-add_test(mesh_insert_interface_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file cub_with_interface.cub -log_summary)
+add_test(mesh_insert_interface_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub -log_summary)
 add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
 
 #nonlinear elasticty
-add_test(nonlinear_elasticity_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 1 -log_summary)
-add_test(nonlinear_elasticity_atom_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_elasticity_atom.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_elasticity_atom.txt)
+add_test(nonlinear_elasticity_atom_pressure ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 4 -log_summary)
+add_test(nonlinear_elasticity_atom_pressure_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_elasticity_atom_test_01X_pressure.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_elasticity_atom_test_01X_pressure.cub.txt)
+
+add_test(nonlinear_elasticity_atom_sheer_force ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_atom -my_file elasticity_atom_test_sheer_force.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 4 -log_summary)
+add_test(nonlinear_elasticity_atom_sheer_force_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_elasticity_atom_test_sheer_force.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_elasticity_atom_test_sheer_force.cub.txt)
+
 
 #arc length elasticty
-add_test(arc_length_nonlinear_elasticity_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1e-2 -my_ms 3 -my_order 5 -snes_converged_reason -log_summary)
+add_test(arc_length_nonlinear_elasticity_atom ${MPI_BIN_PATH}/mpirun -np 1 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1. -my_ms 3 -my_order 5 -snes_converged_reason -log_summary)
 add_test(arc_length_nonlinear_elasticity_atom_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/arc_length_nonlinear_elasticity_atom.txt ${CMAKE_BINARY_DIR}/atom_tests/arc_length_nonlinear_elasticity_atom.txt)
 
 

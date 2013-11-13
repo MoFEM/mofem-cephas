@@ -24,6 +24,7 @@
 #include "SnesCtx.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
 
 #include "FEMethod_DriverComplexForLazy.hpp"
 
@@ -220,9 +221,12 @@ int main(int argc, char *argv[]) {
 
   PostProcFieldsAndGradientOnRefMesh fe_post_proc_method(moab);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  PostProcStressNonLinearElasticity fe_post_proc_stresses_method(moab,MyFE);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_stresses_method);  CHKERRQ(ierr);
+
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
+    rval = fe_post_proc_stresses_method.moab_post_proc.write_file("out_post_proc_stresses.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
   //detroy matrices

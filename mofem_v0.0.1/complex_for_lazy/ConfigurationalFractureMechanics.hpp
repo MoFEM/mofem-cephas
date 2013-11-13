@@ -22,6 +22,8 @@
 
 #include "FieldInterface.hpp"
 #include "FEMethod_DriverComplexForLazy.hpp"
+#include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
+
 #include "SnesCtx.hpp"
 #include "ArcLengthTools.hpp"
 
@@ -58,7 +60,15 @@ struct ConfigurationalFractureMechanics {
     rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_THROW(rval);
     bit_level0 = *ptr_bit_level0;
 
+    fe_post_proc_stresses_method = NULL;
+
   };
+
+  ~ConfigurationalFractureMechanics() {
+    if(fe_post_proc_stresses_method!=NULL) {
+      delete fe_post_proc_stresses_method;
+    }
+  }
   
   PetscErrorCode set_material_fire_wall(FieldInterface& mField);
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
@@ -75,6 +85,8 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode set_spatial_positions(FieldInterface& mField);
   PetscErrorCode set_material_positions(FieldInterface& mField);
   PetscErrorCode set_coordinates_from_material_solution(FieldInterface& mField);
+
+  PostProcStressNonLinearElasticity *fe_post_proc_stresses_method;
   PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes);
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
 
@@ -91,7 +103,11 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode delete_front_projection_data(FieldInterface& mField);
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
+  PetscErrorCode save_edge_lenght_in_tags(FieldInterface& mField);
+  PetscErrorCode save_edge_streach_lenght_in_tags(FieldInterface& mField);
+
   PetscScalar ave_g,min_g,max_g;
+  PetscScalar ave_j,min_j,max_j;
   PetscErrorCode griffith_g(FieldInterface& mField,string problem);
 
   struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {
@@ -130,7 +146,7 @@ struct ConfigurationalFractureMechanics {
       K.resize(6,6);
     }
     
-
+    Vec tmp_snes_f;
     PetscErrorCode preProcess();
     PetscErrorCode operator()();
     PetscErrorCode postProcess();

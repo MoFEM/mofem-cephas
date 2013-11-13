@@ -231,12 +231,12 @@ PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const
   }
   //name
   void const* tag_data[] = { name.c_str() };
-  int tag_sizes[] = { name.size() };
+  int tag_sizes[1]; tag_sizes[0] = name.size();
   rval = moab.tag_set_by_ptr(th_FieldName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   //name data prefix
   string name_data_prefix("_App_Data");
   void const* tag_prefix_data[] = { name_data_prefix.c_str() };
-  int tag_prefix_sizes[] = { name_data_prefix.size() };
+  int tag_prefix_sizes[1]; tag_prefix_sizes[0] = name_data_prefix.size();
   rval = moab.tag_set_by_ptr(th_FieldName_DataNamePrefix,&meshset,1,tag_prefix_data,tag_prefix_sizes); CHKERR_PETSC(rval);
   Tag th_AppOrder,th_FieldData,th_Rank,th_AppDofOrder,th_DofRank;
   //data
@@ -1069,13 +1069,13 @@ PetscErrorCode FieldCore::add_finite_element(const string &MoFEMFiniteElement_na
     if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) PetscFunctionReturn(0);
   }
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
   //id
   BitFEId id = get_BitFEId();
   rval = moab.tag_set_data(th_FEId,&meshset,1,&id); CHKERR_PETSC(rval);
   //id name
   void const* tag_data[] = { MoFEMFiniteElement_name.c_str() };
-  int tag_sizes[] = { MoFEMFiniteElement_name.size() };
+  int tag_sizes[1]; tag_sizes[0] = MoFEMFiniteElement_name.size();
   rval = moab.tag_set_by_ptr(th_FEName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   //tags
   Tag th_FEMatData,th_FEVecData;
@@ -1240,7 +1240,7 @@ PetscErrorCode FieldCore::add_problem(const BitProblemId id,const string& name) 
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
   rval = moab.tag_set_data(th_ProblemId,&meshset,1,&id); CHKERR_PETSC(rval);
   void const* tag_data[] = { name.c_str() };
-  int tag_sizes[] = { name.size() };
+  int tag_sizes[1]; tag_sizes[0] = name.size();
   rval = moab.tag_set_by_ptr(th_ProblemName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   //create entry
   pair<MoFEMProblem_multiIndex::iterator,bool> p = moFEMProblems.insert(MoFEMProblem(moab,meshset));
@@ -1630,7 +1630,8 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
       if(!(bit_ref_MoFEMFiniteElement&bit_ref_ent).any()) {
 	ostringstream ss;
 	ss << "top tip: check if you seed mesh with the elements for bit ref level1" << endl;
-	ss << "inconsitency in database" << " type " << moab.type_from_handle(*eit2) << " bits FE " << bit_ref_MoFEMFiniteElement << " bits ent " << bit_ref_ent;
+	ss << "inconsitency in database entity" << " type " << moab.type_from_handle(*eit2) << " bits ENT " << bit_ref_ent << endl;
+	ss << "inconsitency in database entity" << " type " << moab.type_from_handle(p.first->get_ent()) << " bits FE  " << bit_ref_MoFEMFiniteElement << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       dof_set_type::iterator ents_miit2 = dof_set.lower_bound(boost::make_tuple(miit->get_name_ref(),ref_ent_miit->get_ref_ent()));
@@ -2634,6 +2635,7 @@ PetscErrorCode FieldCore::seed_finite_elements(const Range &entities,int verb) {
     RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator 
       eiit = refinedMoFemEntities.get<MoABEnt_mi_tag>().find(*eit);
     if(eiit == refinedMoFemEntities.get<MoABEnt_mi_tag>().end())  SETERRQ(PETSC_COMM_SELF,1,"entity is not in database");
+    if(eiit->get_BitRefLevel().none()) continue;
     pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
     switch (eiit->get_ent_type()) {
       case MBVERTEX: 
@@ -3009,6 +3011,22 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	  if(tit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  bool success = refinedMoFemEntities.modify(tit_miit,RefMoFEMEntity_change_add_bit(bit));
 	  if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible tet");
+	  Range tit_conn;
+	  rval = moab.get_connectivity(&*tit,1,tit_conn,true); CHKERR_PETSC(rval);
+	  for(Range::iterator nit = tit_conn.begin();nit!=tit_conn.end();nit++) {
+	    ref_ents_by_ent::iterator nit_miit = ref_ents_ent.find(*nit);
+	    if(nit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedMoFemEntities");
+	    bool success = refinedMoFemEntities.modify(nit_miit,RefMoFEMEntity_change_add_bit(bit));
+	    if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible node");
+	  }
+	  Range tit_edges;
+	  rval = moab.get_adjacencies(&*tit,1,1,false,tit_edges); CHKERR_PETSC(rval);
+	  for(Range::iterator eit = tit_edges.begin();eit!=tit_edges.end();eit++) {
+	    ref_ents_by_ent::iterator eit_miit = ref_ents_ent.find(*eit);
+	    if(eit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedMoFemEntities");
+	    bool success = refinedMoFemEntities.modify(eit_miit,RefMoFEMEntity_change_add_bit(bit));
+	    if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible edge");
+	  }
 	  Range tit_faces;
 	  rval = moab.get_adjacencies(&*tit,1,2,false,tit_faces); CHKERR_PETSC(rval);
 	  if(tit_faces.size()!=4) SETERRQ(PETSC_COMM_SELF,1,"existing tet in mofem databsee should have 4 adjacent edges");
@@ -3018,6 +3036,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	    bool success = refinedMoFemEntities.modify(fit_miit,RefMoFEMEntity_change_add_bit(bit));
 	    if(!success) SETERRQ(PETSC_COMM_SELF,1,"imposible face");
 	  }
+	  continue;
 	}
 	break;
       case 1:
@@ -3114,7 +3133,9 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 	    assert(V>0); 
 	  }
-	  int ref_type[] = { parent_edges_bit.count(),sub_type }; 
+	  int ref_type[2];
+	  ref_type[0] = parent_edges_bit.count();
+	  ref_type[1] = sub_type; 
 	  rval = moab.tag_set_data(th_RefType,&ref_tets[tt],1,ref_type); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_RefParentHandle,&ref_tets[tt],1,&*tit); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_RefBitLevel,&ref_tets[tt],1,&bit); CHKERR_PETSC(rval);
@@ -4130,6 +4151,13 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   //nodes on interface but not on crack front (those should not be splitted)
   Range nodes;
   rval = moab.get_entities_by_type(children_nodes_and_skin_edges[0],MBVERTEX,nodes,false);  CHKERR_PETSC(rval);
+  Range meshset_3d_ents,meshset_2d_ents;
+  rval = moab.get_entities_by_dimension(meshset,3,meshset_3d_ents,true); CHKERR_PETSC(rval);
+  Range meshset_tets = meshset_3d_ents.subset_by_type(MBTET);
+  rval = moab.get_adjacencies(meshset_tets,2,false,meshset_2d_ents,moab::Interface::UNION); CHKERR_PETSC(rval);
+  side_ents3d = intersect(meshset_3d_ents,side_ents3d);
+  other_ents3d = intersect(meshset_3d_ents,other_ents3d); 
+  triangles = intersect(meshset_2d_ents,triangles);
   if(verb>3) {
     PetscPrintf(PETSC_COMM_WORLD,"triangles %u\n",triangles.size());
     PetscPrintf(PETSC_COMM_WORLD,"side_ents3d %u\n",side_ents3d.size());
@@ -4164,13 +4192,14 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   //crete meshset for new mesh bit level
   EntityHandle meshset_for_bit_level;
   rval = moab.create_meshset(MESHSET_SET,meshset_for_bit_level); CHKERR_PETSC(rval);
-  Range meshset_ents;
-  rval = moab.get_entities_by_handle(meshset,meshset_ents,false); CHKERR_PETSC(rval);
-  if(intersect(meshset_ents,side_ents3d).size() != side_ents3d.size()) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-  }
   //subtract those elements which will be refined, i.e. disconetcted form other side elements, and connected to new prisms, if they area created
-  rval = moab.add_entities(meshset_for_bit_level,subtract(meshset_ents,side_ents3d)); CHKERR_PETSC(rval);
+  meshset_3d_ents = subtract(meshset_3d_ents,side_ents3d);
+  rval = moab.add_entities(meshset_for_bit_level,meshset_3d_ents); CHKERR_PETSC(rval);
+  for(int dd = 0;dd<3;dd++) {
+    Range ents_dd;
+    rval = moab.get_adjacencies(meshset_3d_ents,dd,false,ents_dd,moab::Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(meshset_for_bit_level,ents_dd); CHKERR_PETSC(rval);
+  }
   //create new tets on "father" side
   Range new_tets;
   Range::iterator tit = side_ents3d.begin();
@@ -4209,6 +4238,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     rval = moab.create_element(MBTET,new_conn,4,tet); CHKERR_PETSC(rval);
     rval = moab.tag_set_data(th_RefParentHandle,&tet,1,&*tit); CHKERR_PETSC(rval);
     rval = moab.add_entities(meshset_for_bit_level,&tet,1); CHKERR_PETSC(rval);
+    rval = moab.add_entities(meshset_for_bit_level,new_conn,4); CHKERR_PETSC(rval);
     new_tets.insert(tet);
   }
   Range new_ents; 
@@ -4336,7 +4366,8 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     }
     //add entity to mofem database
     rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERR_PETSC(rval);
-    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,new_ent[0]));
+    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent 
+      = refinedMoFemEntities.insert(RefMoFEMEntity(moab,new_ent[0]));
     refinedMoFemEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
     if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_ent %u\n",new_ent.size());
     new_ents_in_database.insert(new_ent.begin(),new_ent.end());

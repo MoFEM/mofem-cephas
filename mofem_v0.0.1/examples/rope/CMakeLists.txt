@@ -21,8 +21,6 @@ target_link_libraries(wire_interface mofem_student_body mofem_Field ${PROJECT_LI
 add_executable(potential_flow_rope potential_flow_rope.cpp)
 target_link_libraries(potential_flow_rope mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-#cm_export_file("../../meshes/new_clamped_wire_coarse.cub" "/" export_potential_flow)
-
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

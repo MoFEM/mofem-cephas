@@ -19,9 +19,9 @@
 add_executable(linear_dynamics_elasticity linear_dynamics_elasticity.cpp)
 target_link_libraries(linear_dynamics_elasticity mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/LShape.cub" "/" export_files_linear_dynamics_elasticity)
-cm_export_file("../../meshes/LShapeCoarse.cub" "/" export_linear_dynamics_elasticity)
-cm_export_file("../../meshes/LShapeDense.cub" "/" export_linear_dynamics_elasticity)
+cm_export_file("../../meshes/LShape.cub" export_files_linear_dynamics_elasticity)
+cm_export_file("../../meshes/LShapeCoarse.cub" export_linear_dynamics_elasticity)
+cm_export_file("../../meshes/LShapeDense.cub" export_linear_dynamics_elasticity)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

@@ -114,6 +114,7 @@ struct interface_RefMoFEMEntity {
   inline EntityType get_parent_ent_type() const { return ref_ptr->get_parent_ent_type(); };
   inline EntityID get_ent_id() const { return ref_ptr->get_ent_id(); };
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return ref_ptr->get_RefMoFEMEntity_ptr(); }
+  virtual ~interface_RefMoFEMEntity() {}
 };
 
 

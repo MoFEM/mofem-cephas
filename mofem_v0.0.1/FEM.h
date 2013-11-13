@@ -72,6 +72,9 @@ PetscErrorCode ShapeDiffMBTRI(double *diffN);
 /// \param coords is position of the nodes
 /// \param normal vector
 PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal);
+PetscErrorCode ShapeFaceBaseMBTRI(
+  double *diffN,const double *coords,
+  double *normal,double *s1,double *s2);
 /// calulate jacobioan 
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
 /// calulate direvatives of shape functions in space

@@ -820,6 +820,7 @@ struct FieldInterface {
     Vec snes_x,snes_f;
     Mat *snes_A,*snes_B;
     MatStructure *snes_flag;
+    virtual ~SnesMethod() {};
   };
   struct TSMethod {
     enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetRHSJacobian, ctx_TSSetIFunction, ctx_TSSetIJacobian, ctx_TSTSMonitorSet, ctx_TSNone };
@@ -837,6 +838,7 @@ struct FieldInterface {
     //
     PetscInt ts_step;
     PetscReal ts_a,ts_t;
+    virtual ~TSMethod() {};
   };
 
   struct BasicMethod: public SnesMethod,TSMethod {
@@ -861,6 +863,7 @@ struct FieldInterface {
     const MoFEMFiniteElement_multiIndex *finite_elements;
     const EntMoFEMFiniteElement_multiIndex *finite_elements_moabents;
     const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *fem_adjacencies;
+    virtual ~BasicMethod() {};
   };
 
   /**

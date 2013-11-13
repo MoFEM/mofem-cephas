@@ -39,8 +39,8 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   NL_ElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
-    set_PhysicalEquationNumber(neohookean);
-    //set_PhysicalEquationNumber(hooke);
+    //set_PhysicalEquationNumber(neohookean);
+    set_PhysicalEquationNumber(hooke);
   }
 
 };
@@ -185,8 +185,8 @@ int main(int argc, char *argv[]) {
   DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.25;
+  const double YoungModulus = 1.;
+  const double PoissonRatio = 0.;
   NL_ElasticFEMethod MyFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 
   SnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  double step_size = -1e-1;
+  double step_size = -1.;
   ierr = MyFE.set_t_val(step_size); CHKERRQ(ierr);
   ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
 
     //Open mesh_file_name.txt for writing
     ofstream myfile;
-    myfile.open("nonlinear_elasticity_atom.txt");
+    myfile.open(("nonlinear_"+string(mesh_file_name)+".txt").c_str());
     
     //Output displacements
     cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;

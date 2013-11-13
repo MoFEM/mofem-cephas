@@ -121,7 +121,9 @@ PetscErrorCode ShapeDiffMBTRI(double *diffN) {
   diffN[4] = diffN_MBTRI2x; diffN[5] = diffN_MBTRI2y;
   PetscFunctionReturn(0);
 }
-PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal) {
+PetscErrorCode ShapeFaceBaseMBTRI(
+  double *diffN,const double *coords,
+  double *normal,double *s1,double *s2) {
   PetscFunctionBegin;
   double diffX_x,diffX_y,diffX_z;
   double diffY_x,diffY_y,diffY_z;
@@ -136,10 +138,27 @@ PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *n
     diffY_y += coords[3*ii + 1]*diffN[2*ii+1];
     diffY_z += coords[3*ii + 2]*diffN[2*ii+1];
   }
+  if(s1 != NULL) {
+    s1[0] = diffX_x;
+    s1[1] = diffX_y;
+    s1[2] = diffX_z;
+  }
+  if(s2 != NULL) {
+    s2[0] = diffY_x;
+    s2[1] = diffY_y;
+    s2[2] = diffY_z;
+  }
   normal[0] = diffX_y*diffY_z - diffX_z*diffY_y;
   normal[1] = diffX_z*diffY_x - diffX_x*diffY_z;
   normal[2] = diffX_x*diffY_y - diffX_y*diffY_x;
-  cblas_dscal(3,0.5,normal,1);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ShapeFaceNormalMBTRI(
+  double *diffN,const double *coords,double *normal) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = ShapeFaceBaseMBTRI(diffN,coords,normal,NULL,NULL);  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac) {

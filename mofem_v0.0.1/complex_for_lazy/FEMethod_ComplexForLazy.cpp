@@ -79,6 +79,12 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDir
   ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
   g_TRI_dim = 13;
   g_TRI_W = G_TRI_W13;
+
+  propeties_from_BlockSet_Mat_ElasticSet = false;
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+    propeties_from_BlockSet_Mat_ElasticSet = true;
+  }
+
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double *_mu,void *ptr_matctx) {
   PetscFunctionBegin;
@@ -86,21 +92,29 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
   *_lambda = lambda;
   *_mu = mu;
 
-  EntityHandle ent = fe_ptr->get_ent();
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+  if(propeties_from_BlockSet_Mat_ElasticSet) {
+    EntityHandle ent = fe_ptr->get_ent();
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 
-    Mat_Elastic mydata;
-    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      Mat_Elastic mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
 
-    Range meshsets;
-    rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-    for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-      if( moab.contains_entities(*mit,&ent,1) ) {
-	*_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
-	*_mu = MU(mydata.data.Young,mydata.data.Poisson);
-	break;
+      Range meshsets;
+      rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+      meshsets.insert(it->meshset);
+      for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+	if( moab.contains_entities(*mit,&ent,1) ) {
+	  *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
+	  *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+	  PetscFunctionReturn(0);  
+	}
       }
+
     }
+
+    SETERRQ(PETSC_COMM_SELF,1,
+      "Element is not in elestic block, however you run non-linear elastic analysis with that element\n"
+      "top tip: check if you update block sets after mesh refinments or interface insertion");
 
   }
 
@@ -701,6 +715,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     } else {
       FaceEdgeOrder[ee] = 0;
       EdgeData[ee] = NULL;
+      N_edge[ee] = NULL;
+      diffN_edge[ee] = NULL;
     }
   }
   ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&g_NTRI[0],&diffNTRI[0],N_edge,diffN_edge,g_TRI_dim); CHKERRQ(ierr);
@@ -970,9 +986,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face
         int num_nodes;
         rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
         rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
-        //double normal[3];
-        //ierr = ShapeFaceNormalMBTRI(diffNTRI,&*coords_face.data().begin(),normal); CHKERRQ(ierr);
-        //double r = sqrt(cblas_dnrm2(3,normal,1));
 	double center[3]; 
 	tricircumcenter3d_tp(&coords_face.data()[0],&coords_face.data()[3],&coords_face.data()[6],center,NULL,NULL);
 	cblas_daxpy(3,-1,&coords_face.data()[0],1,center,1);
