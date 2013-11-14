@@ -58,8 +58,8 @@ configure_file(
   @ONLY
   )
 
-install(FILES arc_length.sh DESTINATION bin)
-install(FILES convergence_study.sh DESTINATION bin)
+install(FILES arc_length.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+install(FILES convergence_study.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
 cm_export_file("convergence_study.sh" script_material_mechanics)
 cm_export_file("arc_length.sh" script_material_mechanics)

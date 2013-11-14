@@ -1835,7 +1835,7 @@ PetscErrorCode ConfigurationalFractureMechanics::refine_streched_edges(FieldInte
   ErrorCode rval;
   PetscErrorCode ierr;
   int last = 0;
-  for(int ii = 0;ii<ptr_bit_level0->size();ii++) {
+  for(unsigned int ii = 0;ii<ptr_bit_level0->size();ii++) {
     if(ptr_bit_level0->test(ii)) last = ii;
   }
   last++;

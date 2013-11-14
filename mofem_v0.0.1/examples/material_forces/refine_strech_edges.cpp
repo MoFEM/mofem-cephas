@@ -53,11 +53,6 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
-  ierr = PetscTime(&v1); CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-
   FieldCore core(moab);
   FieldInterface& mField = core;
 
@@ -82,7 +77,7 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.save_edge_strech_lenght_in_tags(mField); CHKERRQ(ierr);
   ierr = conf_prob.refine_streched_edges(mField,strech_treshold,false); CHKERRQ(ierr);
 
-  for(int oo = ConfigurationalFractureMechanics::FW_spatial_problem_definition;oo<conf_prob.material_FirelWall->size();oo++) {
+  for(unsigned int oo = ConfigurationalFractureMechanics::FW_spatial_problem_definition;oo<conf_prob.material_FirelWall->size();oo++) {
     if(oo == ConfigurationalFractureMechanics::FW_arc_lenhghat_definition) continue;
     conf_prob.material_FirelWall->set(oo,0);
   }
