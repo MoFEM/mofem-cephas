@@ -1330,13 +1330,38 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   ierr = VecMin(JVec,PETSC_NULL,&min_j); CHKERRQ(ierr);
   ierr = VecMax(JVec,PETSC_NULL,&max_j); CHKERRQ(ierr);
 
+  Range crackSurfacesFaces;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crackSurfacesFaces,true); CHKERRQ(ierr);
+  Range level_tris;
+  ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+  crackSurfacesFaces = intersect(crackSurfacesFaces,level_tris);
+
+  double aRea = 0;
+  ublas::vector<double,ublas::bounded_array<double,6> > diffNTRI(6);
+  ShapeDiffMBTRI(&diffNTRI.data()[0]);
+  for(Range::iterator fit = crackSurfacesFaces.begin();fit!=crackSurfacesFaces.end();fit++) {
+    const EntityHandle* conn; 
+    int num_nodes; 
+    rval = mField.get_moab().get_connectivity(*fit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    ublas::vector<double,ublas::bounded_array<double,9> > dofsX(9);
+    ublas::vector<double,ublas::bounded_array<double,3> > normal(3);
+    for(int nn = 0;nn<num_nodes; nn++) {
+      for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"MESH_NODE_POSITIONS",conn[nn],dit)) {
+	dofsX[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
+      }
+    }
+    ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&dofsX.data()[0],&normal.data()[0]); CHKERRQ(ierr);
+    //crack surface area is a half of crack top and bottom body surface
+    aRea += norm_2(normal)*0.25;
+  }
+
   {
     int N;
     ierr = VecGetSize(LambdaVec,&N); CHKERRQ(ierr);
     ave_g /= N;
     ave_j /= N;
   }
-  PetscPrintf(PETSC_COMM_WORLD,"\naverage griffith force %6.4e / %6.4e\n",-ave_g,ave_j);
+  PetscPrintf(PETSC_COMM_WORLD,"\naverage griffith force %6.4e / %6.4e Crasck surface area %6.4e\n",-ave_g,ave_j,aRea);
   PetscPrintf(PETSC_COMM_WORLD,"\n\n");
 
   PostProcVertexMethod ent_method(mField.get_moab(),"LAMBDA_CRACKFRONT_AREA");
@@ -2051,8 +2076,9 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::~ArcLengthElemFEMethod(
   ierr = PetscFree(isIdx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&lambdaVec); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_lambda_int() {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_area() {
   PetscFunctionBegin;
+
   ErrorCode rval;
   PetscErrorCode ierr;
 
@@ -2089,7 +2115,15 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
     //crack surface area is a half of crack top and bottom body surface
     aRea += norm_2(normal)*0.25;
   }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_lambda_int() {
+  PetscFunctionBegin;
 
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  ierr = calulate_area(); CHKERRQ(ierr);
   lambda_int = arc_ptr->alpha*aRea + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
   PetscPrintf(PETSC_COMM_WORLD,"\tsurface crack area = %6.4e lambda_int = %6.4e\n",aRea,lambda_int);
 

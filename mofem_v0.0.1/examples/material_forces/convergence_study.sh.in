@@ -12,6 +12,8 @@ while test $# -gt 0; do
                         echo "-f, --file_name=FILE_NAME"
 			echo "-l, --load_factor=LOAD_FACTOR"
 			echo "-g, --gc=GRIFFITH_ENERGY"
+			echo "-o, --orders=\"1 2 3 4 5\"" 
+			echo "-r, -ref=\"0 1 2 3 4 ...\""
                         exit 0
                         ;;
                 -f)
@@ -56,7 +58,34 @@ while test $# -gt 0; do
                         export GC=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
-
+		-o)
+                        shift
+                        if test $# -gt 0; then
+                                export ORDERS=$1
+                        else
+                                echo "no griffith energy specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --orders*)
+                        export ORDERS=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+		-r)
+                        shift
+                        if test $# -gt 0; then
+                                export REF=$1
+                        else
+                                echo "no griffith energy specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --ref*)
+                        export REF=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
                 *)
                         break
                         ;;
@@ -74,10 +103,21 @@ fi
 
 if [ -z ${GC+x} ]; then 
   echo "Griffith energy is unset, convergence_study --help"
+  exit 1
+fi
+
+if [ -z ${ORDERS+x} ]; then 
+  echo "Approximation order is unset, convergence_study --help"
+  exit 1
+fi
+
+if [ -z ${REF+x} ]; then 
+  echo "Refinment levels is unset, convergence_study --help"
+  exit 1
 fi
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
-MPIRUN="@MPI_BIN_PATH@mpirun -np 3" 
+MPIRUN="@MPI_BIN_PATH@mpirun -np 4" 
 
 DIR_SURFIX=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
 DIR_PREFIX=`basename $FILE .cub`
@@ -85,11 +125,10 @@ DIR_PREFIX=`basename $DIR_PREFIX .h5m`
 DIR_NAME=material_forces_"$DIR_PREFIX"_"$DIR_SURFIX"
 
 mkdir $DIR_NAME
-export DIR_NAME
 
-for order in 2
+for order in $ORDERS
 do
-  for ref_level in 1
+  for ref_level in $REF
   do
 
     echo | tee -a $DIR_NAME/log_griffith_forces

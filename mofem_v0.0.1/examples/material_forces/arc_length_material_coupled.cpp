@@ -249,6 +249,28 @@ int main(int argc, char *argv[]) {
       rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
 
+      {
+	Range SurfacesFaces;
+	ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+	Range CrackSurfacesFaces;
+	ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
+	Range level_tris;
+	ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+	SurfacesFaces = intersect(SurfacesFaces,level_tris);
+	CrackSurfacesFaces = intersect(CrackSurfacesFaces,level_tris);
+	EntityHandle out_meshset;
+	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+	rval = moab.add_entities(out_meshset,CrackSurfacesFaces); CHKERR_PETSC(rval);
+	ostringstream ss1;
+	ss1 << "out_crack_surface_" << step << ".vtk";
+	rval = moab.write_file(ss1.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+	rval = moab.add_entities(out_meshset,SurfacesFaces); CHKERR_PETSC(rval);
+	ostringstream ss2;
+	ss2 << "out_surface_" << step << ".vtk";
+	rval = moab.write_file(ss2.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+      }
+
       const MoFEMProblem *problem_ptr;
       ierr = mField.get_problem("COUPLED_PROBLEM",&problem_ptr); CHKERRQ(ierr);
 
@@ -295,24 +317,6 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out_edges.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
-
-  if(pcomm->rank()==0) {
-    Range SurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-    Range CrackSurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
-    Range level_tris;
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
-    SurfacesFaces = intersect(SurfacesFaces,level_tris);
-    CrackSurfacesFaces = intersect(CrackSurfacesFaces,level_tris);
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    rval = moab.add_entities(out_meshset,CrackSurfacesFaces); CHKERR_PETSC(rval);
-    rval = moab.write_file("out_crack_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.add_entities(out_meshset,SurfacesFaces); CHKERR_PETSC(rval);
-    rval = moab.write_file("out_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 

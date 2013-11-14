@@ -175,6 +175,7 @@ struct ConfigurationalFractureMechanics {
     double aRea,lambda_int;
 
     PetscErrorCode set_dlambda_to_x(Vec x,double dlambda);
+    PetscErrorCode calulate_area();
     PetscErrorCode calulate_lambda_int();
     PetscErrorCode calulate_db();
     PetscErrorCode get_dlambda(Vec x);
