@@ -88,7 +88,7 @@ move surface all x -5.5 y -5.5 z 0 include_merged
 compress all
 
 #sweep surface all vector 0 0 10 distance 30
-sweep surface all helix zaxis thread_distance 90 angle 90 right_handed
+sweep surface all helix zaxis thread_distance 22.5 angle 22.5 right_handed
 
 imprint volume all
 merge volume all
@@ -161,9 +161,10 @@ create cfd_bc name "cfd_b5" interface on surface 38
 create cfd_bc name "cfd_b6" interface on surface 48
 create cfd_bc name "cfd_b7" interface on surface 54
 
-volume all size auto factor 10
+volume all size auto factor 16
 volume all scheme Tetmesh
 mesh volume all 
 
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/templar.cub" overwrite
+
 
