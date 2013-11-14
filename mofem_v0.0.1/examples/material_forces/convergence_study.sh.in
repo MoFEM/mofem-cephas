@@ -12,8 +12,8 @@ while test $# -gt 0; do
                         echo "-f, --file_name=FILE_NAME"
 			echo "-l, --load_factor=LOAD_FACTOR"
 			echo "-g, --gc=GRIFFITH_ENERGY"
-			echo "-o, --orders=\"1 2 3 4 5\"" 
-			echo "-r, -ref=\"0 1 2 3 4 ...\""
+			echo "-o, --orders=1,2,3,4,5 (max is 5)\"" 
+			echo "-r, -ref=0,1,2,3,4 ... (memory and time is your limit)\""
                         exit 0
                         ;;
                 -f)
@@ -126,9 +126,9 @@ DIR_NAME=material_forces_"$DIR_PREFIX"_"$DIR_SURFIX"
 
 mkdir $DIR_NAME
 
-for order in $ORDERS
+for order in `echo $ORDERS | sed -e 's/,/ /g'`
 do
-  for ref_level in $REF
+  for ref_level in `echo $REF | sed -e 's/,/ /g'`
   do
 
     echo | tee -a $DIR_NAME/log_griffith_forces
