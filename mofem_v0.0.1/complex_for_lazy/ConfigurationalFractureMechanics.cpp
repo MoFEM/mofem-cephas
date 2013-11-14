@@ -654,12 +654,12 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
 
     if(cs) {
-      Range CrackEdgeNodes;
-      rval = moab.get_connectivity(CrackCornersEdges,CrackEdgeNodes,true); CHKERR_PETSC(rval);
-      Range AdjCrackFrontFaces;
-      rval = moab.get_adjacencies(CrackEdgeNodes,2,false,AdjCrackFrontFaces,Interface::UNION); CHKERR_PETSC(rval);
+      //Range CrackEdgeNodes;
+      //rval = moab.get_connectivity(CrackCornersEdges,CrackEdgeNodes,true); CHKERR_PETSC(rval);
+      //Range AdjCrackFrontFaces;
+      //rval = moab.get_adjacencies(CrackEdgeNodes,2,false,AdjCrackFrontFaces,Interface::UNION); CHKERR_PETSC(rval);
       CrackSurfacesFaces = intersect(CrackSurfacesFaces,level_tris);
-      CrackSurfacesFaces = subtract(CrackSurfacesFaces,AdjCrackFrontFaces);
+      //CrackSurfacesFaces = subtract(CrackSurfacesFaces,AdjCrackFrontFaces);
       ierr = mField.seed_finite_elements(CrackSurfacesFaces); CHKERRQ(ierr);
       ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesFaces,"C_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
       ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesFaces,"CTC_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
@@ -667,8 +667,6 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
 
     Range CrackCornersEdgesNodes;
     rval = moab.get_connectivity(CrackCornersEdges,CrackCornersEdgesNodes,true); CHKERR_PETSC(rval);
-    Range CrackCornerTets;
-    rval = moab.get_adjacencies(CrackCornersEdgesNodes,3,false,CrackCornerTets,Interface::UNION); CHKERR_PETSC(rval);
     Range CornersEdgesNodes;
     rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
     {
@@ -2120,7 +2118,6 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
 PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_lambda_int() {
   PetscFunctionBegin;
 
-  ErrorCode rval;
   PetscErrorCode ierr;
 
   ierr = calulate_area(); CHKERRQ(ierr);
