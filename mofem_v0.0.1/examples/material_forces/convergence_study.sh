@@ -74,8 +74,6 @@ fi
 
 if [ -z ${GC+x} ]; then 
   echo "Griffith energy is unset, convergence_study --help"
-else
-  GC=0
 fi
 
 BIN_PATH="/Users/likask/MyBuild/build_mofem/v0.0.1_release_petsc_nodebug/examples/material_forces"
@@ -87,6 +85,7 @@ DIR_PREFIX=`basename $DIR_PREFIX .h5m`
 DIR_NAME=material_forces_"$DIR_PREFIX"_"$DIR_SURFIX"
 
 mkdir $DIR_NAME
+export DIR_NAME
 
 for order in 2
 do
