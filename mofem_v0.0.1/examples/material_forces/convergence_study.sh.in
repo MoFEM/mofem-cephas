@@ -147,11 +147,12 @@ do
 	-ksp_monitor -my_penalty 1\
 	-my_gc $GC | tee -a $DIR_NAME/log_griffith_forces
 
+    mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
+    mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
+    mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
+
   done
 
-  mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
-  mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
-  mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
 
 
 done
