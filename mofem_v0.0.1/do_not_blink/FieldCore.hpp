@@ -255,6 +255,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode add_problem(const string& name);
   PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
+  PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit);
   BitProblemId get_BitProblemId(const string& name) const;
   PetscErrorCode list_problem() const;
 
@@ -387,7 +388,7 @@ struct FieldCore: public FieldInterface {
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	dofs_vec.resize(0);
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row if element
+	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row of element
 	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
 	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue; // if entity is not problem refinment level
 	  int size  = adj_miit->EntMoFEMFiniteElement_ptr->tag_col_uids_size/sizeof(UId);

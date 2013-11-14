@@ -36,7 +36,10 @@ struct ConfigurationalFractureMechanics {
   Material_FirelWall_def *material_FirelWall;
 
   enum FirWall {
-    FW_spatial_problem_definition = 0,
+    FW_add_crack = 1,
+    FW_refine_near_crack_tip,
+    FW_set_load_factor,
+    FW_spatial_problem_definition,
     FW_material_problem_definition,
     FW_coupled_problem_definition,
     FW_constrains_problem_definition,
@@ -50,7 +53,6 @@ struct ConfigurationalFractureMechanics {
   matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
 
   BitRefLevel *ptr_bit_level0;
-  BitRefLevel bit_level0;
   ConfigurationalFractureMechanics(FieldInterface& mField): projSurfaceCtx(NULL),projFrontCtx(NULL) {
 
     ErrorCode rval;
@@ -58,7 +60,6 @@ struct ConfigurationalFractureMechanics {
     rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_THROW(rval);
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
     rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_THROW(rval);
-    bit_level0 = *ptr_bit_level0;
 
     fe_post_proc_stresses_method = NULL;
 
@@ -103,8 +104,9 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode delete_front_projection_data(FieldInterface& mField);
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
-  PetscErrorCode save_edge_lenght_in_tags(FieldInterface& mField);
-  PetscErrorCode save_edge_streach_lenght_in_tags(FieldInterface& mField);
+  PetscErrorCode save_edge_lenght_in_tags(FieldInterface& mField,BitRefLevel mask);
+  PetscErrorCode save_edge_strech_lenght_in_tags(FieldInterface& mField);
+  PetscErrorCode refine_streched_edges(FieldInterface& mField,double strech_treshold,bool crack_crack_surface_only);
 
   PetscScalar ave_g,min_g,max_g;
   PetscScalar ave_j,min_j,max_j;

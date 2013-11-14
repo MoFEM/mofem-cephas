@@ -593,9 +593,26 @@ struct FieldInterface {
    ierr = mField.modify_problem_ref_level_add_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2); CHKERRQ(ierr);
    *\endcode
    * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
-    */
+  */
     
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
+
+  /** \brief set ref level for problem
+    *
+   * if same finite element is solved using different level of refinements, than the level of refinement has to be specificied to problem in query
+   *
+   * \param name Problem name
+   * \param BitRefLevel bitLevel
+   * Example: \code
+   ierr = mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF1","ELASTIC"); CHKERRQ(ierr);
+   ierr = mField.modify_problem_add_finite_element("BEAM_BENDING_ON_MESH_REF2","ELASTIC"); CHKERRQ(ierr);
+   
+   ierr = mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF1",bit_level1); CHKERRQ(ierr);
+   ierr = mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2); CHKERRQ(ierr);
+   *\endcode
+   * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
+  */
+  virtual PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /// list problems
   virtual PetscErrorCode list_problem() const = 0;
