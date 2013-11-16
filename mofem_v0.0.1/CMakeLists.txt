@@ -143,6 +143,7 @@ file(COPY
 #add executable library form subdirectory
 enable_testing()
 include(CTest)
+add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
