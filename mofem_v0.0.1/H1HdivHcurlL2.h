@@ -71,6 +71,14 @@ PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p,double *diffN,doub
 PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 
+// Hdiv shape functions
+
+PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f_e[4][3],int GDIM);
+PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f[4],int GDIM);
+PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(int *sense,int *p,double *coords,double *N,double *PHI_v_e[6],int GDIM);
+PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(int *faces_nodes,int *p,double *coords,double *N,double *PHI_v_f[4],int GDIM);
+PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(int *sense,int p,double *N,double *PHI_v,int GDIM);
+
 #ifdef __cplusplus
 }
 #endif

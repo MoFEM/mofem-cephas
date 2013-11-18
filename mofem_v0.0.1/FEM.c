@@ -285,8 +285,7 @@ PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *di
   PetscFunctionBegin;
   if(dim < 2) SETERRQ(PETSC_COMM_SELF,1,"dim < 2");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
-  //assert(dim >= 2);
-  //assert(dim <= 3);
+  if(p<0) SETERRQ(PETSC_COMM_SELF,1,"p < 0");
   if(p==0) PetscFunctionReturn(0);
   L[0] = 1;
   diffL[0*p+0] = 0;
@@ -294,19 +293,26 @@ PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *di
   if(dim == 3) diffL[2*p+0] = 0;
   if(p==1) PetscFunctionReturn(0);
   L[1] = s;
-  diffL[0*p+1] = diff_s[0];
-  diffL[1*p+1] = diff_s[1];
-  if(dim == 3) diffL[2*p+1] = diff_s[2];
+  if(diff_s!=NULL) {
+    diffL[0*p+1] = diff_s[0];
+    diffL[1*p+1] = diff_s[1];
+    if(dim == 3) diffL[2*p+1] = diff_s[2];
+  }
   if(p==2) PetscFunctionReturn(0);
   int l = 2;
   for(;l<p;l++) {
     double A = ( (2*(double)l-1)/((double)l) );
     double B = ( (double)(l-1)/((double)l) );
     L[l] = A*s*L[l-1] - B*L[l-2]; 
-    diffL[0*p+l] = A*(s*diffL[0*p+l-1] + diff_s[0]*L[l-1]) - B*diffL[0*p+l-2]; 
-    diffL[1*p+l] = A*(s*diffL[1*p+l-1] + diff_s[1]*L[l-1]) - B*diffL[1*p+l-2]; 
-    if(dim == 2) continue;
-    diffL[2*p+l] = A*(s*diffL[2*p+l-1] + diff_s[2]*L[l-1]) - B*diffL[2*p+l-2]; 
+    if(diffL!=NULL) {
+      if(diff_s==NULL) {
+	SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+      }
+      diffL[0*p+l] = A*(s*diffL[0*p+l-1] + diff_s[0]*L[l-1]) - B*diffL[0*p+l-2]; 
+      diffL[1*p+l] = A*(s*diffL[1*p+l-1] + diff_s[1]*L[l-1]) - B*diffL[1*p+l-2]; 
+      if(dim == 2) continue;
+      diffL[2*p+l] = A*(s*diffL[2*p+l-1] + diff_s[2]*L[l-1]) - B*diffL[2*p+l-2];
+    }
   }
   PetscFunctionReturn(0);
 }
