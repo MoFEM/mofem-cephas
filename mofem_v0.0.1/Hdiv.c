@@ -202,13 +202,12 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
 	int  n = 0;
 	for(;(l+m+n)<p-4;n++) {
 	  double s = Beta_0ijk*Psi_l[0]*Psi_m[0]*Psi_n[0];
-	  PHI_v[3*3*jj + 3*0 + 0] = s;
-	  PHI_v[3*3*jj + 3*1 + 1] = s;
-	  PHI_v[3*3*jj + 3*2 + 2] = s;
+	  PHI_v[3*3*jj + 3*0 + 0] = s; PHI_v[3*3*jj + 3*0 + 1] = 0; PHI_v[3*3*jj + 3*0 + 2] = 0;
+	  PHI_v[3*3*jj + 3*0 + 0] = 0; PHI_v[3*3*jj + 3*1 + 1] = s; PHI_v[3*3*jj + 3*0 + 2] = 0;
+	  PHI_v[3*3*jj + 3*0 + 0] = 0; PHI_v[3*3*jj + 3*0 + 1] = 0; PHI_v[3*3*jj + 3*2 + 2] = s;
 	}
       }
     }
   }
   PetscFunctionReturn(0);
 }
-
