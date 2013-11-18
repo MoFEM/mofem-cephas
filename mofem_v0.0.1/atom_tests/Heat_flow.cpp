@@ -20,7 +20,7 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "FEMethod_UpLevelStudent.hpp"
-#include "PotentialFlowFEMethod.hpp"
+#include "ThermalFEMethod.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
 
@@ -70,43 +70,43 @@ int main(int argc, char *argv[]) {
   FieldInterface& mField = core;
 
   //add filds
-  ierr = mField.add_field("POTENTIAL_FIELD",H1,1); CHKERRQ(ierr);
+  ierr = mField.add_field("THERMAL_FIELD",H1,1); CHKERRQ(ierr);
 
   //add finite elements
-  ierr = mField.add_finite_element("POTENTIAL_ELEM"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("POTENTIAL_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("POTENTIAL_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("POTENTIAL_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("THERMAL_ELEM"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("THERMAL_ELEM","THERMAL_FIELD"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("THERMAL_ELEM","THERMAL_FIELD"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("THERMAL_ELEM","THERMAL_FIELD"); CHKERRQ(ierr);
 
   //add problems 
-  ierr = mField.add_problem("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.add_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
 
   //define problems and finite elements
-  ierr = mField.modify_problem_add_finite_element("POTENTIAL_PROBLEM","POTENTIAL_ELEM"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("THERMAL_PROBLEM","THERMAL_ELEM"); CHKERRQ(ierr);
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
-    if(it->get_Cubit_name() == "PotentialFlow") {
+    if(it->get_Cubit_name() == "THER_MAT") {
  
       //add ents to field and set app. order
-      ierr = mField.add_ents_to_field_by_TETs(0,"POTENTIAL_FIELD"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_field_by_TETs(0,"THERMAL_FIELD"); CHKERRQ(ierr);
 
       //add finite elements entities
-      ierr = mField.add_ents_to_finite_element_by_TETs(it->meshset,"POTENTIAL_ELEM",true); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TETs(it->meshset,"THERMAL_ELEM",true); CHKERRQ(ierr);
 
     }
   }
 
-  ierr = mField.set_field_order(0,MBVERTEX,"POTENTIAL_FIELD",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTET,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"THERMAL_FIELD",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"THERMAL_FIELD",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"THERMAL_FIELD",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"THERMAL_FIELD",order); CHKERRQ(ierr);
 
   //set problem level
-  ierr = mField.modify_problem_ref_level_add_bit("POTENTIAL_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("THERMAL_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //build fields
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -118,9 +118,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition problems
-  ierr = mField.partition_problem("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_ghost_dofs("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
 
   //print bcs
   ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
@@ -128,14 +128,14 @@ int main(int argc, char *argv[]) {
 
   //create matrices and vectors
   Vec F,D;
-  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",Row,&F); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",Col,&D); CHKERRQ(ierr);
   Mat A;
-  ierr = mField.MatCreateMPIAIJWithArrays("POTENTIAL_PROBLEM",&A); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("THERMAL_PROBLEM",&A); CHKERRQ(ierr);
 
-  PotentialElem elem(mField,A,F);
+  ThermalElem elem(mField,A,F);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("POTENTIAL_PROBLEM","POTENTIAL_ELEM",elem);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_ELEM",elem);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -159,15 +159,15 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("POTENTIAL_PROBLEM",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  Tag th_phi;
+  Tag th_temp;
   double def_val = 0;
-  rval = moab.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"POTENTIAL_FIELD",dof)) {
+  rval = moab.tag_get_handle("TEMP",1,MB_TYPE_DOUBLE,th_temp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"THERMAL_FIELD",dof)) {
     EntityHandle ent = dof->get_ent();
     double val = dof->get_FieldData();
-    rval = moab.tag_set_data(th_phi,&ent,1,&val); CHKERR_PETSC(rval);
+    rval = moab.tag_set_data(th_temp,&ent,1,&val); CHKERR_PETSC(rval);
   }
 
   if(pcomm->rank()==0) {
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("POTENTIAL_PROBLEM","POTENTIAL_ELEM",out_meshset); CHKERRQ(ierr);
+    ierr = mField.problem_get_FE("THERMAL_PROBLEM","THERMAL_ELEM",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }

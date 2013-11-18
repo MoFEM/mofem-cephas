@@ -31,8 +31,12 @@ target_link_libraries(trans_isotropic_test mofem_Field ${PROJECT_LIBS})
 add_executable(textile_REV textile_REV.cpp)
 target_link_libraries(textile_REV mofem_Field ${PROJECT_LIBS})
 
-add_executable(potential_Zahur potential_Zahur.cpp)
-target_link_libraries(potential_Zahur mofem_Field ${PROJECT_LIBS})
+add_executable(Lin_Elas_Zahur Lin_Elas_Zahur.cpp)
+target_link_libraries(Lin_Elas_Zahur mofem_Field ${PROJECT_LIBS})
+
+add_executable(Heat_flow Heat_flow.cpp)
+target_link_libraries(Heat_flow mofem_Field ${PROJECT_LIBS})
+
 
 cm_export_file("../meshes/disp01.cub" "/" export_atom_tests)
 cm_export_file("../meshes/force01.cub" "/" export_atom_tests)
