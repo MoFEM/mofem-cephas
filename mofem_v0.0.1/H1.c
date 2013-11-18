@@ -27,6 +27,7 @@
 
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
   double *edgeN01 = NULL,*edgeN12 = NULL,*edgeN20 = NULL;
   if(edgeN!=NULL) {
     edgeN01 = edgeN[0];
@@ -59,9 +60,9 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
     double ksi20 = (N[node_shift+0] - N[node_shift+2])*sense[2];
     double L01[P[0]],L12[P[1]],L20[P[2]];
     double diffL01[2*P[0]],diffL12[2*P[1]],diffL20[2*P[2]];
-    Lagrange_basis(P[0],ksi01,diff_ksi01,L01,diffL01,2); 
-    Lagrange_basis(P[1],ksi12,diff_ksi12,L12,diffL12,2);
-    Lagrange_basis(P[2],ksi20,diff_ksi20,L20,diffL20,2);
+    ierr = Lagrange_basis(P[0],ksi01,diff_ksi01,L01,diffL01,2);  CHKERRQ(ierr);
+    ierr = Lagrange_basis(P[1],ksi12,diff_ksi12,L12,diffL12,2); CHKERRQ(ierr);
+    ierr = Lagrange_basis(P[2],ksi20,diff_ksi20,L20,diffL20,2); CHKERRQ(ierr);
     int shift;
     if(edgeN!=NULL) {
       //edge01
@@ -111,6 +112,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
 }
 PetscErrorCode H1_FaceShapeFunctions_MBTRI(int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
   int P = NBFACE_H1(p);
   if(P == 0) PetscFunctionReturn(0);
   double diff_ksiL0[2],diff_ksiL1[2];
@@ -130,8 +132,8 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(int *face_nodes,int p,double *N,doubl
     ksi_faces[1] = N[ node_shift+face_nodes[2] ] - N[ node_shift+face_nodes[0] ];
     double L0[ p-2 ],L1[ p-2 ];
     double diffL0[ 2*(p-2) ],diffL1[ 2*(p-2) ];
-    Lagrange_basis(p-2,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2); 
-    Lagrange_basis(p-2,ksi_faces[1],diff_ksi_faces[1],L1,diffL1,2); 
+    ierr = Lagrange_basis(p-2,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2);  CHKERRQ(ierr);
+    ierr = Lagrange_basis(p-2,ksi_faces[1],diff_ksi_faces[1],L1,diffL1,2);  CHKERRQ(ierr);
     double v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2];
     if(faceN!=NULL) {
         int shift = ii*P;
@@ -170,6 +172,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(int *face_nodes,int p,double *N,doubl
 }
 PetscErrorCode H1_EdgeShapeFunctions_MBTET(int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
   int P[6];
   int ee = 0;
   for(;ee<6; ee++) P[ee] = NBEDGE_H1(p[ee]);
@@ -192,7 +195,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(int *sense,int *p,double *N,double *d
     for(ee = 0;ee<6;ee++) {
       if(P[ee]==0) continue;
       double L[p[ee]-1],diffL[3*(p[ee]-1)];
-      Lagrange_basis(p[ee]-1,edges_ksi[ee],edges_diff_ksi[ee],L,diffL,3); 
+      ierr = Lagrange_basis(p[ee]-1,edges_ksi[ee],edges_diff_ksi[ee],L,diffL,3);  CHKERRQ(ierr);
       if(edgeN != NULL)
       if(edgeN[ee] != NULL) {
 	int shift = ii*P[ee];
@@ -214,6 +217,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(int *sense,int *p,double *N,double *d
 }
 PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
   int P[4];
   int ff = 0;
   for(;ff<4; ff++) P[ff] = NBFACE_H1(p[ff]);
@@ -241,8 +245,8 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,dou
       if(P[ff]==0) continue;
       double L0[ p[ff]-2 ],L1[ p[ff]-2 ];
       double diffL0[ 3*(p[ff]-2) ],diffL1[ 3*(p[ff]-2) ];
-      Lagrange_basis(p[ff]-2,ksi_faces[ff*2+0],diff_ksi_faces[ff*2+0],L0,diffL0,3); 
-      Lagrange_basis(p[ff]-2,ksi_faces[ff*2+1],diff_ksi_faces[ff*2+1],L1,diffL1,3); 
+      ierr = Lagrange_basis(p[ff]-2,ksi_faces[ff*2+0],diff_ksi_faces[ff*2+0],L0,diffL0,3);  CHKERRQ(ierr);
+      ierr = Lagrange_basis(p[ff]-2,ksi_faces[ff*2+1],diff_ksi_faces[ff*2+1],L1,diffL1,3);  CHKERRQ(ierr);
       double v = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
       if(faceN!=NULL)
       if(faceN[ff]!=NULL) {
@@ -283,6 +287,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,dou
 }
 PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
   int P = NBVOLUME_H1(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
@@ -300,9 +305,9 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,doubl
     double ksiL2 = N[ node_shift+3 ] - N[ node_shift + 0];
     double L0[ p-3 ],L1[ p-3 ],L2[ p-3 ];
     double diffL0[ 3*(p-3) ],diffL1[ 3*(p-3) ],diffL2[ 3*(p-3) ];
-    Lagrange_basis(p-3,ksiL0,diff_ksiL0,L0,diffL0,3); 
-    Lagrange_basis(p-3,ksiL1,diff_ksiL1,L1,diffL1,3); 
-    Lagrange_basis(p-3,ksiL2,diff_ksiL2,L2,diffL2,3); 
+    ierr = Lagrange_basis(p-3,ksiL0,diff_ksiL0,L0,diffL0,3);  CHKERRQ(ierr);
+    ierr = Lagrange_basis(p-3,ksiL1,diff_ksiL1,L1,diffL1,3);  CHKERRQ(ierr);
+    ierr = Lagrange_basis(p-3,ksiL2,diff_ksiL2,L2,diffL2,3);  CHKERRQ(ierr);
     double v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3];
     int shift = ii*P;
     if(volumeN!=NULL) {
