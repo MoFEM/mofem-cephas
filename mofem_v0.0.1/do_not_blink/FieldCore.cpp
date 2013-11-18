@@ -710,6 +710,25 @@ PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const Entit
   const field_set_by_id &set_id = moabFields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.find(id);
   if(miit==set_id.end()) SETERRQ(PETSC_COMM_SELF,1,"no id found"); 
+  switch(miit->get_space()) {
+    case H1:
+      if(type==MBVERTEX) {
+	if(order!=1) {
+	  SETERRQ(PETSC_COMM_SELF,1,"approximation order for H1 sapce and vertex diffrent than 1 makes not sense"); 
+	}
+      }
+      break;
+     case Hdiv:
+      if(type==MBVERTEX) {
+	SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on vertices makes no sense"); 
+      } 
+      if(type==MBEDGE) {
+	SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on edges makes no sense"); 
+      } 
+      break;
+    default:
+      break;
+  }
   EntityHandle idm = no_handle;
   try {
    idm = get_field_meshset(id);
