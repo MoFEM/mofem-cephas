@@ -59,8 +59,8 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(
 	cblas_dcopy(3,&Phi_f_e[ff*3*3+ee*3],1,&(PHI_f_e[ff][ee])[3*jj],1);
 	cblas_dscal(3,lambda,&(PHI_f_e[ff][ee])[3*jj],1);
 	jj++;
-	int l = 0;
-	for(;l<p[ff];l++) {
+	int l = 1;
+	for(;l<=p[ff];l++) {
 	  cblas_dcopy(3,&Phi_f_e[ff*3*3+ee*3],1,&(PHI_f_e[ff][ee])[3*jj],1);
 	  cblas_dscal(3,lambda*Psi_l[l],&(PHI_f_e[ff][ee])[3*jj],1);
 	}
@@ -95,9 +95,9 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(
       double Beta_0ij = 
 	N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
       int jj = 0;
-      int l = 0;
-      for(;l<p[ff]-3;l++) {
-	int m = 0;
+      int l = 1;
+      for(;l<=p[ff]-3;l++) {
+	int m = 1;
 	for(;(l+m)<p[ff]-3;m++) {
 	  cblas_dcopy(3,Phi_f,1,&(PHI_f[ff])[3*jj],1);
 	  cblas_dscal(3,Beta_0ij*Psi_l[l]*Psi_m[m],&(PHI_f[ff])[3*jj],1);

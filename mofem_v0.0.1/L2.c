@@ -42,8 +42,8 @@ PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
     double ksiL20 = N[ node_shift+0 ] - N[ node_shift + 2];
     double L01[ p+1 ],L20[ p+1 ];
     double diffL01[ 2*(p+1) ],diffL20[ 2*(p+1) ];
-    ierr = Lagrange_basis(p+1,ksiL01,diff_ksiL01,L01,diffL01,2); CHKERRQ(ierr);
-    ierr = Lagrange_basis(p+1,ksiL20,diff_ksiL20,L20,diffL20,2); CHKERRQ(ierr);
+    ierr = Lagrange_basis(p,ksiL01,diff_ksiL01,L01,diffL01,2); CHKERRQ(ierr);
+    ierr = Lagrange_basis(p,ksiL20,diff_ksiL20,L20,diffL20,2); CHKERRQ(ierr);
     int shift = ii*P;
     if(L2N!=NULL) {
       int jj = 0;
@@ -93,9 +93,9 @@ PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N
     double ksiL2 = N[ node_shift+3 ] - N[ node_shift + 0];
     double L0[ p+1 ],L1[ p+1 ],L2[ p+1 ];
     double diffL0[ 3*(p+1) ],diffL1[ 3*(p+1) ],diffL2[ 3*(p+1) ];
-    ierr = Lagrange_basis(p+1,ksiL0,diff_ksiL0,L0,diffL0,3);  CHKERRQ(ierr);
-    ierr = Lagrange_basis(p+1,ksiL1,diff_ksiL1,L1,diffL1,3);  CHKERRQ(ierr);
-    ierr = Lagrange_basis(p+1,ksiL2,diff_ksiL2,L2,diffL2,3);  CHKERRQ(ierr);
+    ierr = Lagrange_basis(p,ksiL0,diff_ksiL0,L0,diffL0,3);  CHKERRQ(ierr);
+    ierr = Lagrange_basis(p,ksiL1,diff_ksiL1,L1,diffL1,3);  CHKERRQ(ierr);
+    ierr = Lagrange_basis(p,ksiL2,diff_ksiL2,L2,diffL2,3);  CHKERRQ(ierr);
     int shift = ii*P;
     if(L2N!=NULL) {
       int jj = 0;
