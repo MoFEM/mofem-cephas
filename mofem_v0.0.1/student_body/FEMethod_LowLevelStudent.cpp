@@ -228,10 +228,10 @@ PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
   diff_data_at_gauss_pt.clear();
   //
   fill(maxOrderEdgeH1.begin(),maxOrderEdgeH1.end(),0);
-  fill(maxOrderEdgeHdiv.begin(),maxOrderEdgeHdiv.end(),0);
+  fill(maxOrderEdgeHcurl.begin(),maxOrderEdgeHcurl.end(),0);
   fill(maxOrderFaceH1.begin(),maxOrderFaceH1.end(),0);
-  fill(maxOrderFaceHdiv.begin(),maxOrderFaceHdiv.end(),0);
   fill(maxOrderFaceHcurl.begin(),maxOrderFaceHcurl.end(),0);
+  fill(maxOrderFaceHdiv.begin(),maxOrderFaceHdiv.end(),0);
   maxOrderElemH1 = maxOrderElemHdiv = maxOrderElemHcurl = maxOrderElemL2 = 0;
   //
   H1edgeN_TRI.clear();
@@ -249,20 +249,20 @@ PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
     case MBTET: 
       // edge
       maxOrderEdgeH1.resize(6);
-      maxOrderEdgeHdiv.resize(6);
+      maxOrderEdgeHcurl.resize(6);
       // face
       maxOrderFaceH1.resize(4);
-      maxOrderFaceHdiv.resize(4);
       maxOrderFaceHcurl.resize(4);
+      maxOrderFaceHdiv.resize(4);
       break;
     case MBPRISM:
       // edge
       maxOrderEdgeH1.resize(9);
-      maxOrderEdgeHdiv.resize(9);
+      maxOrderEdgeHcurl.resize(9);
       // face
       maxOrderFaceH1.resize(5);
-      maxOrderFaceHdiv.resize(5);
       maxOrderFaceHcurl.resize(5);
+      maxOrderFaceHdiv.resize(5);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -285,14 +285,14 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	      ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
 	    }
 	    break;
-	    case Hdiv: {
-	      isHdiv = true;
-	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
-	    }
-	    break;
 	    case Hcurl: {
 	      isHcurl = true;
-	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHcurl), &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hdiv: {
+	      isHdiv = true;
+	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
 	    }
 	    break;
 	    case L2: {
@@ -321,14 +321,14 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	      ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
 	    }
 	    break;
-	    case Hdiv: {
-	      isHdiv = true;
-	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
-	    }
-	    break;
 	    case Hcurl: {
 	      isHcurl = true;
-	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHcurl), &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hdiv: {
+	      isHdiv = true;
+	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
 	    }
 	    break;
 	    case L2: {
@@ -481,12 +481,12 @@ PetscErrorCode FEMethod_LowLevelStudent::DataOp() {
 	    break;
 	    case Hdiv: {
 	      isHdiv = true;
-	      ierr = SetMaxOrder(miit2, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
+	      ierr = SetMaxOrder(miit2, &(maxOrderEdgeHcurl), &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
 	    }
 	    break;
 	    case Hcurl: {
 	      isHcurl = true;
-	      ierr = SetMaxOrder(miit2, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	      ierr = SetMaxOrder(miit2, NULL, &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
 	    }
 	    break;
 	    case L2: {
@@ -551,7 +551,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
 	// edge
 	int _sense_edges_[6];
-	if(isH1 || isHdiv) {
+	if(isH1 || isHcurl) {
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBEDGE,0));
 	  SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBEDGE,6));
 	  for(;siit!=hi_siit;siit++) {
@@ -637,6 +637,95 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  ierr = H1_VolumeShapeFunctions_MBTET(maxOrderElemH1,&gNTET[0],diffNTET,&H1elemN[0],&diffH1elemN[0],gNTET_dim);  CHKERRQ(ierr);
 	  ierr = H1_VolumeShapeDiffMBTETinvJ(maxOrderElemH1,maxOrderElemH1,&diffH1elemN[0],invJac,&diffH1elemNinvJac[0],gNTET_dim); CHKERRQ(ierr);
 	}
+	if(isHcurl) {
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	}
+	if(isHdiv) {
+	  int P_face[4];
+	  fill(&P_face[0],&P_face[4],0);
+	  Hdiv_egde_faceN.resize(4);
+	  for(int ff = 0;ff<4;ff++) {
+	    Hdiv_egde_faceN[ff].resize(3);
+	  }
+	  Hdiv_face_bubbleN.resize(4);
+	  //(p+1)*(p+2)/2 - for each face
+	  double *PHI_f_e[4][3];
+	  for(int ff = 0;ff<4;ff++) {
+	    for(int ee = 0;ee<3;ee++) {
+	      int nb = maxOrderFaceHdiv[ff]+1;
+	      ((Hdiv_egde_faceN[ff])[ee]).resize(nb); //3*p
+	      (PHI_f_e[ff])[ee] = &*((Hdiv_egde_faceN[ff])[ee]).data().begin();
+	      P_face[ff] += nb;
+	    }
+	  }
+	  double *PHI_f[4];
+	  for(int ff = 0;ff<4;ff++) {
+	    int nb = (maxOrderFaceHdiv[ff]-2)*(maxOrderFaceHdiv[ff]-1)/2;
+	    if(nb>0) { 
+	      (Hdiv_face_bubbleN[ff]).resize(nb); //(p-2)*(p-1)/2
+	      PHI_f[ff] = &*(Hdiv_face_bubbleN[ff]).data().begin();
+	      P_face[ff] += nb;
+	    } else {
+	      (Hdiv_face_bubbleN[ff]).resize(0); //(p-2)*(p-1)/2
+	      PHI_f[ff] = NULL;
+	    }
+	  }
+	  for(int ff = 0;ff<4;ff++) {
+	    if(P_face[ff]!=NBFACE_Hdiv(maxOrderFaceHdiv[ff])) {
+	      SETERRQ(PETSC_COMM_SELF,1,"data insonsitency, i.e. sum of face dofs inconsitency");
+	    }
+	  }
+	  //(p-1)*(p+1)*(p+2)/2
+	  int P_volume = 0;
+	  Hdiv_edge_volumeN.resize(6);
+	  double *PHI_v_e[6];
+	  for(int ee = 0;ee<6;ee++) {
+	    int nb = maxOrderElemHdiv-2;
+	    if(nb>0) {
+	      (Hdiv_edge_volumeN[ee]).resize(nb); //6*(p-2)
+	      PHI_v_e[ee] = &*(Hdiv_edge_volumeN[ee]).data().begin();
+	      P_volume += nb;
+	    } else {
+	      (Hdiv_edge_volumeN[ee]).resize(0); 
+	      PHI_v_e[ee] = NULL;
+	    }
+	  }
+	  Hdiv_face_volumeN.resize(4);
+	  double *PHI_v_f[4];
+	  for(int ff = 0;ff<4;ff++) {
+	    int nb = 2*((maxOrderElemHdiv-2)*(maxOrderElemHdiv-1)/2);
+	    if(nb>0) {
+	      (Hdiv_face_volumeN[ff]).resize(nb);
+	      PHI_v_f[ff] = &*Hdiv_face_volumeN[ff].data().begin(); //4*2*(p-2)*(p-1)/2
+	      P_volume += nb;
+	    } else {
+	      Hdiv_face_volumeN[ff].resize(0);
+	      PHI_v_f[ff] = NULL;
+	    }
+	  }
+	  double *PHI_v;
+	  {
+	    int nb = 3*(maxOrderElemHdiv-3)*(maxOrderElemHdiv-2)*(maxOrderElemHdiv-1)/6;
+	    if(nb>0) {
+	      Hdiv_volumeN.resize(nb);
+	      PHI_v = &*Hdiv_volumeN.data().begin();
+	      P_volume += nb;
+	    } else {
+	      Hdiv_volumeN.resize(0);
+	      PHI_v = NULL;
+	    }
+	  }
+	  if(P_volume!=NBVOLUME_Hdiv(maxOrderElemHdiv)) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data insonsitency, i.e. sum of volume dofs inconsitency");
+	  }
+	  int _faces_order_[4];
+	  copy(maxOrderFaceHdiv.begin(),maxOrderFaceHdiv.end(),&_faces_order_[0]);
+	  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f_e,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v_e,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v_f,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v,gNTET_dim); CHKERRQ(ierr);
+	}
 	if(isL2) {
 	  // vol L2
 	  L2elemN.resize(gNTET_dim*NBVOLUME_L2(max_ApproximationOrder));
@@ -650,11 +739,11 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
       } 
       break;
       case MBPRISM: {
-	SETERRQ(PETSC_COMM_SELF,1,"Aaaa... not implemented yet");
+	SETERRQ(PETSC_COMM_SELF,1,"Aaaa... make no sense");
       } 
       break;
      default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"shoul be exectued for TET");
   }
   PetscFunctionReturn(0);
 }
@@ -918,10 +1007,6 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
       g_dim = gNTET.size()/4;
       nb_Ns = 4;
       break;
-    /*case MBPRISM:
-      g_dim = gNTRI.size()/3;
-      nb_Ns = 6;
-      break;*/
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
   }

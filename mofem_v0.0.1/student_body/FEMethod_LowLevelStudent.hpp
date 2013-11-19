@@ -171,6 +171,7 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
   vector<double> gNTRIonPRISM;
   PetscErrorCode ShapeFunctions_PRISM(vector<double>& _gNTRI_);
 
+  //H1,L2
   vector< vector<double> > H1edgeN,diffH1edgeN;
   vector< vector<double> > H1faceN,diffH1faceN;
   vector<double> H1elemN,diffH1elemN;
@@ -179,13 +180,20 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
   vector< vector<double> > diffH1faceNinvJac;
   vector<double> diffH1elemNinvJac;
   vector<double> diffL2elemNinvJac;
+  //Hdiv
+  vector< vector< ublas::vector<double> > > Hdiv_egde_faceN;
+  vector< ublas::vector<double> > Hdiv_face_bubbleN;
+  vector< ublas::vector<double> > Hdiv_edge_volumeN;
+  vector< ublas::vector<double> > Hdiv_face_volumeN;
+  ublas::vector< double > Hdiv_volumeN;
+
   /// get element shape functions
   PetscErrorCode get_ShapeFunction(
     vector<const double*> *shape_by_gauss_pt,
     vector<const double*> *diff_shape_by_gauss_pt,
     const MoFEMField* field_ptr,EntityType type,int side_number = -1);
   bool isH1,isHdiv,isHcurl,isL2;
-  vector<int> maxOrderEdgeH1,maxOrderEdgeHdiv;
+  vector<int> maxOrderEdgeH1,maxOrderEdgeHcurl;
   vector<int> maxOrderFaceH1,maxOrderFaceHdiv,maxOrderFaceHcurl;
   int maxOrderElemH1,maxOrderElemHdiv,maxOrderElemHcurl,maxOrderElemL2;
 

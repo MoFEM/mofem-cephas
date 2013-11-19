@@ -41,10 +41,22 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
     ierr = LocalIndices(); CHKERRQ(ierr);
     ierr = DataOp(); CHKERRQ(ierr);
     ierr = ShapeFunctions_TET(_gNTET_); CHKERRQ(ierr);
+  try {
     ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
     ierr = DiffData_at_GaussPoints(); CHKERRQ(ierr);
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in GetColNMatrix_at_GaussPoint(): " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+  try {
     ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
     ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in GetColNMatrix_at_GaussPoint(): " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
   try {
     ierr = GetRowDiffNMatrix_at_GaussPoint(); CHKERRQ(ierr);
     ierr = GetColDiffNMatrix_at_GaussPoint(); CHKERRQ(ierr);
@@ -53,12 +65,10 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
     ss << "thorw in GetRowDiffNMatrix_at_GaussPoint(): " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
-
   EntityHandle fe_handle = fe_ptr->get_ent();
   V = Shape_intVolumeMBTET(diffNTET,&*coords.data().begin()); 
   if( V <= 0 ) SETERRQ1(PETSC_COMM_SELF,1,"V < 0 for EntityHandle = %lu\n",fe_handle);
   rval = moab.tag_set_data(th_volume,&fe_handle,1,&V); CHKERR_PETSC(rval);
-
   const int g_dim = get_dim_gNTET();
   coords_at_Gauss_nodes.resize(g_dim);
   for(int gg = 0;gg<g_dim;gg++) {
