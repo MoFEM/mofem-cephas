@@ -39,9 +39,11 @@
 #define NBFACE_H1(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
 /// number of dofs on volume for H1 space
 #define NBVOLUME_H1(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
+//Hcurl
 #define NBEDGE_Hcurl(P) (P+1)
 #define NBFACE_Hcurl(P) ((P>0) ? (P-1)*(P+1) : 0)
 #define NBVOLUME_Hcurl(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
+//Hdiv
 #define NBEDGE_Hdiv(P) (0)
 #define NBFACE_Hdiv(P) ((P+1)*(P+2)/2)
 #define NBVOLUME_Hdiv(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
@@ -87,9 +89,9 @@ PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,do
 
 PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f_e[4][3],int GDIM);
 PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f[4],int GDIM);
-PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(int *sense,int *p,double *coords,double *N,double *PHI_v_e[6],int GDIM);
-PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(int *faces_nodes,int *p,double *coords,double *N,double *PHI_v_f[4],int GDIM);
-PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(int *sense,int p,double *N,double *PHI_v,int GDIM);
+PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(int p,double *coords,double *N,double *PHI_v_e[6],int GDIM);
+PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(int p,double *coords,double *N,double *PHI_v_f[4],int GDIM);
+PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(int p,double *coords,double *N,double *PHI_v,int GDIM);
 
 #ifdef __cplusplus
 }
