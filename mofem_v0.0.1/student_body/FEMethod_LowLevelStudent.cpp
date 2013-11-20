@@ -643,35 +643,48 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	if(isHdiv) {
 	  int P_face[4];
 	  fill(&P_face[0],&P_face[4],0);
+	  Hdiv_egde_faceOrder.resize(4);
 	  Hdiv_egde_faceN.resize(4);
 	  for(int ff = 0;ff<4;ff++) {
+	    Hdiv_egde_faceOrder[ff].resize(3);
 	    Hdiv_egde_faceN[ff].resize(3);
 	  }
+	  Hdiv_face_bubbleOrder.resize(4);
 	  Hdiv_face_bubbleN.resize(4);
 	  //(p+1)*(p+2)/2 - for each face
+	  int *AppOrder_f_e[4][3];
 	  double *PHI_f_e[4][3];
 	  for(int ff = 0;ff<4;ff++) {
 	    for(int ee = 0;ee<3;ee++) {
 	      if(maxOrderFaceHdiv[ff]>=1) {
 		int nb = maxOrderFaceHdiv[ff];
-		((Hdiv_egde_faceN[ff])[ee]).resize(3*nb*gNTET_dim); //p
+		((Hdiv_egde_faceOrder[ff])[ee]).resize(3*nb*gNTET_dim); 
+		((Hdiv_egde_faceN[ff])[ee]).resize(3*nb*gNTET_dim); 
+		(AppOrder_f_e[ff])[ee] = &*((Hdiv_egde_faceOrder[ff])[ee]).data().begin();
 		(PHI_f_e[ff])[ee] = &*((Hdiv_egde_faceN[ff])[ee]).data().begin();
 		P_face[ff] += nb;
 	      } else {
-		((Hdiv_egde_faceN[ff])[ee]).resize(0); //p
+		((Hdiv_egde_faceOrder[ff])[ee]).resize(0); 
+		((Hdiv_egde_faceN[ff])[ee]).resize(0); 
+		(AppOrder_f_e[ff])[ee] = NULL;
 		(PHI_f_e[ff])[ee] = NULL;
 	      }
 	    }
 	  }
+	  int *AppOrder_f[4];
 	  double *PHI_f[4];
 	  for(int ff = 0;ff<4;ff++) {
 	    if(maxOrderFaceHdiv[ff]>=3) { 
 	      int nb = ((maxOrderFaceHdiv[ff]-2)*(maxOrderFaceHdiv[ff]-2)+maxOrderFaceHdiv[ff]-2)/2;
+	      (Hdiv_face_bubbleOrder[ff]).resize(3*nb*gNTET_dim);
 	      (Hdiv_face_bubbleN[ff]).resize(3*nb*gNTET_dim);
+	      AppOrder_f[ff] = &*(Hdiv_face_bubbleOrder[ff]).data().begin();
 	      PHI_f[ff] = &*(Hdiv_face_bubbleN[ff]).data().begin();
 	      P_face[ff] += nb;
 	    } else {
+	      (Hdiv_face_bubbleOrder[ff]).resize(0);
 	      (Hdiv_face_bubbleN[ff]).resize(0);
+	      AppOrder_f[ff] = NULL;
 	      PHI_f[ff] = NULL;
 	    }
 	  }
@@ -684,25 +697,35 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  }
 	  //(p-1)*(p+1)*(p+2)/2
 	  int P_volume = 0;
+	  Hdiv_edge_volumeOrder.resize(6);
 	  Hdiv_edge_volumeN.resize(6);
+	  int *AppOrder_v_e[6];
 	  double *PHI_v_e[6];
 	  for(int ee = 0;ee<6;ee++) {
 	    if(maxOrderElemHdiv>=2) {
 	      int nb = maxOrderElemHdiv-1;
+	      (Hdiv_edge_volumeOrder[ee]).resize(3*nb*gNTET_dim); //(p-2)
 	      (Hdiv_edge_volumeN[ee]).resize(3*nb*gNTET_dim); //(p-2)
+	      AppOrder_v_e[ee] = &*(Hdiv_edge_volumeOrder[ee]).data().begin();
 	      PHI_v_e[ee] = &*(Hdiv_edge_volumeN[ee]).data().begin();
 	      P_volume += nb;
 	    } else {
+	      (Hdiv_edge_volumeOrder[ee]).resize(0); 
 	      (Hdiv_edge_volumeN[ee]).resize(0); 
+	      AppOrder_v_e[ee] = NULL;
 	      PHI_v_e[ee] = NULL;
 	    }
 	  }
+	  Hdiv_face_volumeOrder.resize(4);
 	  Hdiv_face_volumeN.resize(4);
+	  int *AppOrder_v_f[4];
 	  double *PHI_v_f[4];
 	  for(int ff = 0;ff<4;ff++) {
 	    if(maxOrderElemHdiv>=3) {
 	      int nb = 2*(((maxOrderElemHdiv-2)*(maxOrderElemHdiv-2)+(maxOrderElemHdiv-2))/2);
+	      (Hdiv_face_volumeOrder[ff]).resize(3*nb*gNTET_dim);
 	      (Hdiv_face_volumeN[ff]).resize(3*nb*gNTET_dim);
+	      AppOrder_v_f[ff] = &*Hdiv_face_volumeOrder[ff].data().begin(); //2*(p-2)*(p-1)/2
 	      PHI_v_f[ff] = &*Hdiv_face_volumeN[ff].data().begin(); //2*(p-2)*(p-1)/2
 	      P_volume += nb;
 	    } else {
@@ -710,15 +733,19 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	      PHI_v_f[ff] = NULL;
 	    }
 	  }
+	  int *AppOrder_v;
 	  double *PHI_v;
 	  {
 	    int nb = 3*(maxOrderElemHdiv-3)*(maxOrderElemHdiv-2)*(maxOrderElemHdiv-1)/6;
 	    if(maxOrderElemHdiv>=4) {
+	      Hdiv_volumeOrder.resize(3*nb*gNTET_dim);
 	      Hdiv_volumeN.resize(3*nb*gNTET_dim);
+	      AppOrder_v = &*Hdiv_volumeOrder.data().begin();
 	      PHI_v = &*Hdiv_volumeN.data().begin();
 	      P_volume += nb;
 	    } else {
 	      Hdiv_volumeN.resize(0);
+	      AppOrder_v = NULL;
 	      PHI_v = NULL;
 	    }
 	  }
@@ -728,11 +755,114 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  }
 	  int _faces_order_[4];
 	  copy(maxOrderFaceHdiv.begin(),maxOrderFaceHdiv.end(),&_faces_order_[0]);
-	  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f_e,gNTET_dim); CHKERRQ(ierr);
-	  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f,gNTET_dim); CHKERRQ(ierr);
-	  ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v_e,gNTET_dim); CHKERRQ(ierr);
-	  ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v_f,gNTET_dim); CHKERRQ(ierr);
-	  ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f_e,AppOrder_f_e,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f,AppOrder_f,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v_e,AppOrder_v_e,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v_f,AppOrder_v_f,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v,AppOrder_v,gNTET_dim); CHKERRQ(ierr);
+
+	  Hdiv_faceN_byOrder.resize(4);
+	  for(int ff = 0;ff<4;ff++) {
+	    int nb_it_AppOrder_f_e[3] = {0,0,0};
+	    int *it_AppOrder_f_e[3] = { AppOrder_f_e[ff][0], AppOrder_f_e[ff][1], AppOrder_f_e[ff][2] };
+	    double *it_PHI_f_e[3] = { PHI_f_e[ff][0], PHI_f_e[ff][1], PHI_f_e[ff][2] };
+	    int nb_it_AppOrder_f = 0;
+	    int *it_AppOrder_f = AppOrder_f[ff];
+	    double *it_PHI_f = PHI_f[ff];
+	    Hdiv_faceN_byOrder[ff].resize(0);
+	    for(int gg = 0;gg<gNTET_dim;gg++)
+	    for(int oo = 0;oo<=maxOrderFaceHdiv[ff];oo++) {
+	      for(int ee = 0;ee<3;ee++) {
+		if(nb_it_AppOrder_f_e[ee]<Hdiv_egde_faceOrder[ff][ee].size())
+		while(*it_AppOrder_f_e[ee] == oo) {
+		  it_AppOrder_f_e[ee]++;
+		  nb_it_AppOrder_f_e[ee]++;
+		  for(int dd = 0;dd<3;dd++) {
+		    Hdiv_faceN_byOrder[ff].push_back(*it_PHI_f_e[ee]);
+		    it_PHI_f_e[ee]++;
+		  }
+		}
+	      }
+	      if(nb_it_AppOrder_f<Hdiv_face_bubbleOrder[ff].size())
+	      while(*it_AppOrder_f == oo) {
+		it_AppOrder_f++;
+		nb_it_AppOrder_f++;
+		for(int dd = 0;dd<3;dd++) {
+    		  Hdiv_faceN_byOrder[ff].push_back(*it_PHI_f);
+		  it_PHI_f++;
+		}
+	      }
+	      
+	    }
+	  }
+	  for(int ff = 0;ff<4;ff++) {
+	    int size = Hdiv_egde_faceN[ff][0].size() + Hdiv_egde_faceN[ff][1].size() + Hdiv_egde_faceN[ff][2].size() + 
+			Hdiv_face_bubbleN[ff].size();
+	    if(Hdiv_faceN_byOrder[ff].size()!=size) {
+	      SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_faceN_byOrder[ff].size(),size);
+	    }
+	  }
+	  {
+	    int nb_it_AppOrder_v_e[6] = {0,0,0, 0,0,0 };
+	    int *it_AppOrder_v_e[6] = {
+	      AppOrder_v_e[0], AppOrder_v_e[1], AppOrder_v_e[2], 
+	      AppOrder_v_e[3], AppOrder_v_e[4], AppOrder_v_e[5] };
+	    double *it_PHI_v_e[6] = {
+	      PHI_v_e[0], PHI_v_e[1], PHI_v_e[2], 
+	      PHI_v_e[3], PHI_v_e[4], PHI_v_e[5] };
+	    int nb_it_AppOrder_v_f[4] = {0,0,0,0 };
+	    int *it_AppOrder_v_f[4] = {
+	      AppOrder_v_f[0], AppOrder_v_f[1], AppOrder_v_f[2], AppOrder_v_f[3] };
+	    double *it_PHI_v_f[4] = {
+	      PHI_v_f[0], PHI_v_f[1], PHI_v_f[2], PHI_v_f[3] };
+	    int nb_it_AppOrder_v = 0;
+	    int *it_AppOrder_v = AppOrder_v;
+	    double *it_PHI_v = PHI_v;
+	    Hdiv_volumeN_byOrder.resize(0);
+	    for(int gg = 0;gg<gNTET_dim;gg++)
+	    for(int oo = 0;oo<=maxOrderElemHdiv;oo++) {
+
+	      for(int ee = 0;ee<6;ee++) {
+		if(nb_it_AppOrder_v_e[ee]<Hdiv_edge_volumeOrder[ee].size())
+		while(*it_AppOrder_v_e[ee]==oo) {
+		  it_AppOrder_v_e[ee]++;
+		  nb_it_AppOrder_v_e[ee]++;
+		  for(int dd = 0;dd<3;dd++) {
+		    Hdiv_volumeN_byOrder.push_back(*it_PHI_v_e[ee]);
+		    it_PHI_v_e[ee]++;
+		  }
+		}
+	      }
+	      for(int ff = 0;ff<4;ff++) {
+		if(nb_it_AppOrder_v_f[ff]!=Hdiv_face_volumeOrder[ff].size())
+		while(*it_AppOrder_v_f[ff]==oo) {
+		  it_AppOrder_v_f[ff]++;
+		  nb_it_AppOrder_v_f[ff]++;
+		  for(int dd = 0;dd<3;dd++) {
+		    Hdiv_volumeN_byOrder.push_back(*it_PHI_v_f[ff]);
+		    it_PHI_v_f[ff]++;
+		  }
+		}
+	      }
+	      if(nb_it_AppOrder_v<Hdiv_volumeOrder.size())
+	      while(*it_AppOrder_v==oo) {
+		it_AppOrder_v++;
+		nb_it_AppOrder_v++;
+		for(int dd = 0;dd<3;dd++) {
+		  Hdiv_volumeN_byOrder.push_back(*it_PHI_v);
+		  it_PHI_v++;
+		}
+	      }
+
+	    }
+	  }
+	}
+	int size = Hdiv_edge_volumeN[0].size() + Hdiv_edge_volumeN[1].size() + Hdiv_edge_volumeN[2].size() +
+	    Hdiv_edge_volumeN[3].size() + Hdiv_edge_volumeN[4].size() + Hdiv_edge_volumeN[5].size() +
+	    Hdiv_face_volumeN[0].size() + Hdiv_face_volumeN[1].size() + Hdiv_face_volumeN[2].size() + Hdiv_face_volumeN[3].size() +
+	    Hdiv_volumeN.size();
+	if(Hdiv_volumeN_byOrder.size()!=size) {
+	  SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_volumeN_byOrder.size(),size);
 	}
 	if(isL2) {
 	  // vol L2
@@ -1110,21 +1240,24 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	  unsigned int nb_dofs = ent_ptr->forder(order);
 	  if(nb_dofs == 0) continue;
 	  if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	  data.resize(g_dim);
 	  unsigned int gg = 0;
 	  for(;gg<g_dim;gg++) {
 	    data[gg].resize(rank,3);
 	    unsigned int rr = 0;
-	    for(;rr<rank;rr++) {
+	    /*for(;rr<rank;rr++) {
 	      if(ent_ptr->get_ent_type()!=MBTRI) {
 	      } else if(ent_ptr->get_ent_type()!=MBTRI) {
 	      } else SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
- 	    }
+ 	    }*/
 	  }
+	  SETERRQ(PETSC_COMM_SELF,1,"Aaa ...");
 	}
 	break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
+
     }
   }
   PetscFunctionReturn(0);

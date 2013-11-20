@@ -104,8 +104,8 @@ int main(int argc, char *argv[]) {
 
   //add ents to field and set app. order
   ierr = mField.add_ents_to_field_by_TETs(0,"FIELD_HDIV"); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"FIELD_HDIV",3); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTET,"FIELD_HDIV",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"FIELD_HDIV",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"FIELD_HDIV",5); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELEM_HDIV",MBTET); CHKERRQ(ierr);
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
       ierr = GlobIndices(); CHKERRQ(ierr);
       ierr = LocalIndices(); CHKERRQ(ierr);
       ierr = DataOp(); CHKERRQ(ierr);
-      ierr = ShapeFunctions_TET(gNTET); CHKERRQ(ierr);
+      ierr = ShapeFunctions_TET(g_NTET); CHKERRQ(ierr);
       ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
 
 
