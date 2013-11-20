@@ -2,6 +2,8 @@ set(CTEST_BUILD_OPTIONS "-DCMAKE_CXX_FLAGS=-lstdc++ -DPETSC_DIR=/opt/build_for_g
 
 set(CTEST_SITE "lukaszs-laptop.lan")
 set(CTEST_BUILD_NAME "Darwin-mpicxx")
+set(CTEST_BRANCH "CDashTesting")
+
 if(NOT DASHBOARDTEST) 
   set(FORCETESTING "YES")
   set(DASHBOARDTEST "Experimental")

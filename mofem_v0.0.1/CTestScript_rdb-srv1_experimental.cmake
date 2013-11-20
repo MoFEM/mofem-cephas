@@ -2,6 +2,7 @@ set(CTEST_BUILD_OPTIONS "-DPETSC_DIR=/opt/petsc-3.4.3 -DPETSC_ARCH=arch-linux2-c
 
 set(CTEST_SITE "rdb-srv1")
 set(CTEST_BUILD_NAME "Linux-mpicxx")
+set(CTEST_BRANCH "CDashTesting")
 
 if(NOT DASHBOARDTEST) 
   set(FORCETESTING "YES")
