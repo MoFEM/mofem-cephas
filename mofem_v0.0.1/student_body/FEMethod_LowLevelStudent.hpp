@@ -182,12 +182,20 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
   vector< vector<double> > diffH1faceNinvJac;
   vector<double> diffH1elemNinvJac;
   vector<double> diffL2elemNinvJac;
-  //Hdiv
+  //Hdiv Face
+  vector< vector< ublas::vector<int> > > Hdiv_egde_faceOrder;
   vector< vector< ublas::vector<double> > > Hdiv_egde_faceN;
+  vector< ublas::vector<int> > Hdiv_face_bubbleOrder;
   vector< ublas::vector<double> > Hdiv_face_bubbleN;
+  //Hdiv Volume
+  vector< ublas::vector<int> > Hdiv_edge_volumeOrder;
   vector< ublas::vector<double> > Hdiv_edge_volumeN;
+  vector< ublas::vector<int> > Hdiv_face_volumeOrder;
   vector< ublas::vector<double> > Hdiv_face_volumeN;
+  ublas::vector< int > Hdiv_volumeOrder;
   ublas::vector< double > Hdiv_volumeN;
+  vector< vector<double> > Hdiv_faceN_byOrder;
+  vector<double> Hdiv_volumeN_byOrder;
 
   /// get element shape functions
   PetscErrorCode get_ShapeFunction(
