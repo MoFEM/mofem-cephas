@@ -287,12 +287,17 @@ PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *di
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
   if(p<0) SETERRQ(PETSC_COMM_SELF,1,"p < 0");
   L[0] = 1;
-  diffL[0*(p+1)+0] = 0;
-  diffL[1*(p+1)+0] = 0;
-  if(dim == 3) diffL[2*(p+1)+0] = 0;
+  if(diffL!=NULL) {
+    diffL[0*(p+1)+0] = 0;
+    diffL[1*(p+1)+0] = 0;
+    if(dim == 3) diffL[2*(p+1)+0] = 0;
+  }
   if(p==0) PetscFunctionReturn(0);
   L[1] = s;
-  if(diff_s!=NULL) {
+  if(diffL!=NULL) {
+    if(diff_s==NULL) {
+      SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+    }
     diffL[0*(p+1)+1] = diff_s[0];
     diffL[1*(p+1)+1] = diff_s[1];
     if(dim == 3) diffL[2*(p+1)+1] = diff_s[2];

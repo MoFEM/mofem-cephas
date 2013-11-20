@@ -37,7 +37,7 @@ extern "C" {
 #define NBVOLUME_Hcurl(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
 //Hdiv
 #define NBEDGE_Hdiv(P) (0)
-#define NBFACE_Hdiv(P) ((P+1)*(P+2)/2)
+#define NBFACE_Hdiv(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
 #define NBVOLUME_Hdiv(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
 
 /** 
