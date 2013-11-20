@@ -2,6 +2,7 @@ set(CTEST_BUILD_OPTIONS "-DCMAKE_CXX_FLAGS=-I/opt/local/include\\ -L/opt/local/l
 
 set(CTEST_SITE "live-cd")
 set(CTEST_BUILD_NAME "Linux-mpicxx")
+set(CTEST_BRANCH "CDashTesting")
 
 if(NOT DASHBOARDTEST)
   # set(FORCETESTING "YES")

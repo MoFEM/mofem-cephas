@@ -2,6 +2,7 @@ set(CTEST_BUILD_OPTIONS "-DCMAKE_CXX_FLAGS=-lstdc++ -DCMAKE_BUILD_TYPE=Debug -DP
 
 set(CTEST_SITE "michael_laptop")
 set(CTEST_BUILD_NAME "macos-x")
+set(CTEST_BRANCH "CDashTesting")
 
 if(NOT DASHBOARDTEST) 
   set(FORCETESTING "YES")
