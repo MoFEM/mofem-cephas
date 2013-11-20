@@ -98,10 +98,12 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
   Data_EntType data_faces;
   Data_EntType data_elem;
 
-  typedef map<string,vector< ublas::vector<FieldData> > > Data_at_Gauss_pt;
-  typedef map<string,vector< ublas::matrix<FieldData> > > DiffData_at_Gauss_pt;
-  Data_at_Gauss_pt data_at_gauss_pt;
-  DiffData_at_Gauss_pt diff_data_at_gauss_pt;
+  typedef map<string,vector< ublas::vector<FieldData> > > H1L2_Data_at_Gauss_pt;
+  typedef map<string,vector< ublas::matrix<FieldData> > > H1_DiffData_at_Gauss_pt;
+  typedef map<string,vector< ublas::matrix<FieldData> > > HcurlHdiv_Data_at_Gauss_pt;
+  H1L2_Data_at_Gauss_pt h1l2_data_at_gauss_pt;
+  H1_DiffData_at_Gauss_pt h1_diff_data_at_gauss_pt;
+  HcurlHdiv_Data_at_Gauss_pt hcurl_hdiv_data_at_gauss_pt;
   PetscErrorCode Data_at_GaussPoints();
   PetscErrorCode DiffData_at_GaussPoints();
 
@@ -189,8 +191,8 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
 
   /// get element shape functions
   PetscErrorCode get_ShapeFunction(
-    vector<const double*> *shape_by_gauss_pt,
-    vector<const double*> *diff_shape_by_gauss_pt,
+    vector<const double*> *base_functions_by_gauss_pt,
+    vector<const double*> *diff_base_functions_by_gauss_pt,
     const MoFEMField* field_ptr,EntityType type,int side_number = -1);
   bool isH1,isHdiv,isHcurl,isL2;
   vector<int> maxOrderEdgeH1,maxOrderEdgeHcurl;

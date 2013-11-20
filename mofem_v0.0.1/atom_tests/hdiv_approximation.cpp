@@ -104,8 +104,8 @@ int main(int argc, char *argv[]) {
 
   //add ents to field and set app. order
   ierr = mField.add_ents_to_field_by_TETs(0,"FIELD_HDIV"); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"FIELD_HDIV",0); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTET,"FIELD_HDIV",0); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"FIELD_HDIV",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"FIELD_HDIV",3); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELEM_HDIV",MBTET); CHKERRQ(ierr);
@@ -127,7 +127,59 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("PROBLEM"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("PROBLEM"); CHKERRQ(ierr);
 
+  struct ApproxAnaliticalFunction {
 
+    FieldData scalar(ublas::vector<FieldData> coords) {
+      return coords[0]*coords[0] + coords[1]*coords[1] + coords[2]*coords[2];
+    }
+  
+    ublas::vector<FieldData> dx_field;
+    ublas::vector<FieldData>& dx_scalar(ublas::vector<FieldData> coords) {
+      dx_field.resize(3);
+      dx_field[0] = 2*coords[0];
+      dx_field[1] = 2*coords[1];
+      dx_field[2] = 2*coords[2];
+      return dx_field;
+    }
+
+  };
+
+  struct HdivApprox: public FEMethod_UpLevelStudent,ApproxAnaliticalFunction {
+
+    HdivApprox(Interface& _moab): FEMethod_UpLevelStudent(_moab) {}; 
+
+    vector<double> g_NTET;
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      g_NTET.resize(45*4);
+      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+
+      fe_ent_ptr = fe_ptr->fe_ptr;
+      ierr = InitDataStructures(); CHKERRQ(ierr);
+      ierr = GlobIndices(); CHKERRQ(ierr);
+      ierr = LocalIndices(); CHKERRQ(ierr);
+      ierr = DataOp(); CHKERRQ(ierr);
+      ierr = ShapeFunctions_TET(gNTET); CHKERRQ(ierr);
+      ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
+
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  HdivApprox fe(moab);
+  ierr = mField.loop_finite_elements("PROBLEM","ELEM_HDIV",fe);  CHKERRQ(ierr);
 
   PetscFinalize();
 

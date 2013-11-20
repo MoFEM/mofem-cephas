@@ -88,7 +88,6 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gN
   ierr = DataOp(); CHKERRQ(ierr);
 
   ierr = ShapeFunctions_PRISM(_gNTRI_); CHKERRQ(ierr);
-  //ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
   ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
   ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
 
@@ -433,15 +432,15 @@ PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,E
 }
 PetscErrorCode FEMethod_UpLevelStudent::GetGaussDataVector(const string &field_name,vector< ublas::vector<FieldData> > &Data) {
   PetscFunctionBegin;
-  Data_at_Gauss_pt::iterator miit = data_at_gauss_pt.find(field_name);
-  if(miit == data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  H1L2_Data_at_Gauss_pt::iterator miit = h1l2_data_at_gauss_pt.find(field_name);
+  if(miit == h1l2_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   Data = miit->second;
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_UpLevelStudent::GetGaussDiffDataVector(const string &field_name,vector< ublas::matrix<FieldData> > &Data) {
   PetscFunctionBegin;
-  DiffData_at_Gauss_pt::iterator miit = diff_data_at_gauss_pt.find(field_name);
-  if(miit == diff_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  H1_DiffData_at_Gauss_pt::iterator miit = h1_diff_data_at_gauss_pt.find(field_name);
+  if(miit == h1_diff_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   Data = miit->second;
   PetscFunctionReturn(0);
 }
