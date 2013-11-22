@@ -801,6 +801,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	    if(Hdiv_faceN_byOrder[ff].size()!=size) {
 	      SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_faceN_byOrder[ff].size(),size);
 	    }
+	    if(Hdiv_faceN_byOrder[ff].size()!=3*gNTET_dim*NBFACE_Hdiv(maxOrderFaceHdiv[ff])) {
+	      SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_faceN_byOrder[ff].size(),3*gNTET_dim*NBFACE_Hdiv(maxOrderFaceHdiv[ff]));
+	    }
 	  }
 	  {
 	    int nb_it_AppOrder_v_e[6] = {0,0,0, 0,0,0 };
@@ -856,13 +859,16 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 
 	    }
 	  }
-	}
-	int size = Hdiv_edge_volumeN[0].size() + Hdiv_edge_volumeN[1].size() + Hdiv_edge_volumeN[2].size() +
+	  int size = Hdiv_edge_volumeN[0].size() + Hdiv_edge_volumeN[1].size() + Hdiv_edge_volumeN[2].size() +
 	    Hdiv_edge_volumeN[3].size() + Hdiv_edge_volumeN[4].size() + Hdiv_edge_volumeN[5].size() +
 	    Hdiv_face_volumeN[0].size() + Hdiv_face_volumeN[1].size() + Hdiv_face_volumeN[2].size() + Hdiv_face_volumeN[3].size() +
 	    Hdiv_volumeN.size();
-	if(Hdiv_volumeN_byOrder.size()!=size) {
-	  SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_volumeN_byOrder.size(),size);
+	  if(Hdiv_volumeN_byOrder.size()!=size) {
+	    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_volumeN_byOrder.size(),size);
+	  }
+	  if(Hdiv_volumeN_byOrder.size()!=3*gNTET_dim*NBVOLUME_Hdiv(maxOrderElemHdiv)) {
+	    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_volumeN_byOrder.size(),3*gNTET_dim*NBVOLUME_Hdiv(maxOrderElemHdiv));
+	  }
 	}
 	if(isL2) {
 	  // vol L2
@@ -1248,19 +1254,31 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	    unsigned int rr = 0;
 	    for(;rr<rank;rr++) {
 	      if(ent_ptr->get_ent_type()!=MBTRI) {
-		/*int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
-		data[gg](rank,0) = cblas_ddot(Hdiv_faceN_byOrder[side_number].size()/3,&(Hdiv_faceN_byOrder[side_number])[0],3,&dof_data[rr],rank);
-		data[gg](rank,1) = cblas_ddot(Hdiv_faceN_byOrder[side_number].size()/3,&(Hdiv_faceN_byOrder[side_number])[1],3,&dof_data[rr],rank);
-		data[gg](rank,2) = cblas_ddot(Hdiv_faceN_byOrder[side_number].size()/3,&(Hdiv_faceN_byOrder[side_number])[2],3,&dof_data[rr],rank);*/
+		try {
+		  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
+		  int shift = gg*NBFACE_Hdiv(maxOrderFaceHdiv[side_number]);
+		  mat(rr,0) = cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+0],3,&dof_data[rr],rank);
+		  mat(rr,1) = cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+1],3,&dof_data[rr],rank);
+		  mat(rr,2) = cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+2],3,&dof_data[rr],rank);
+		} catch (const std::exception& ex) {
+		  ostringstream ss;
+		  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+		  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+		}
 	      } else if(ent_ptr->get_ent_type()!=MBTET) {
-		int shift = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
-		mat(rank,0) = cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+0],3,&dof_data[rr],rank);
-		mat(rank,1) = cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+1],3,&dof_data[rr],rank);
-		//mat(rank,2) = cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+2],3,&dof_data[rr],rank);
+		try {
+		  int shift = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
+		  mat(rr,0) = cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+0],3,&dof_data[rr],rank);
+		  mat(rr,1) = cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+1],3,&dof_data[rr],rank);
+		  mat(rr,2) = cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+2],3,&dof_data[rr],rank);
+		} catch (const std::exception& ex) {
+		  ostringstream ss;
+		  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+		  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+		}
 	      } else SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
  	    }
 	  }
-	  SETERRQ(PETSC_COMM_SELF,1,"Aaa ...");
 	}
 	break;
 	default:
@@ -1399,24 +1417,31 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
   Indices_Type::iterator nit = nodesGlobIndices.begin();
   for(;nit!=nodesGlobIndices.end();nit++) {
     const MoFEMField* field_ptr = nit->first;
-    vector<const double*> base_functions_by_gauss_pt;
-    ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,MBVERTEX); CHKERRQ(ierr);
-    assert(base_functions_by_gauss_pt.size()==g_dim);
-    vector< ublas::matrix<FieldData> > &data = N_Matrix_nodes[field_ptr];
-    data.resize(g_dim);
-    int rank = field_ptr->get_max_rank();
-    if(rank*nb_Ns!=nit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-    unsigned int gg = 0;
-    for(;gg<g_dim;gg++) {
-      ublas::matrix<FieldData> &mat = data[gg];
-      mat.resize(rank,rank*nb_Ns);
-      mat = ublas::zero_matrix<FieldData>(rank,rank*nb_Ns);
-      int rr = 0;
-      for(;rr<rank;rr++) {
-	if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-	ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
-	for(unsigned int jj = 0;jj<nb_Ns;jj++) mr(rank*jj + rr) = (base_functions_by_gauss_pt[gg])[jj];
+    switch (field_ptr->get_space()) {
+      case H1: {
+	vector<const double*> base_functions_by_gauss_pt;
+	ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,MBVERTEX); CHKERRQ(ierr);
+	assert(base_functions_by_gauss_pt.size()==g_dim);
+	vector< ublas::matrix<FieldData> > &data = N_Matrix_nodes[field_ptr];
+	data.resize(g_dim);
+	int rank = field_ptr->get_max_rank();
+	if(rank*nb_Ns!=nit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	unsigned int gg = 0;
+	for(;gg<g_dim;gg++) {
+	  ublas::matrix<FieldData> &mat = data[gg];
+	  mat.resize(rank,rank*nb_Ns);
+	  ublas::noalias(mat) = ublas::zero_matrix<FieldData>(rank,rank*nb_Ns);
+	  int rr = 0;
+	  for(;rr<rank;rr++) {
+	    if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	    ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
+	    for(unsigned int jj = 0;jj<nb_Ns;jj++) mr(rank*jj + rr) = (base_functions_by_gauss_pt[gg])[jj];
+	  }
+	}
       }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
   }
   // edges // faces // volumes
@@ -1426,35 +1451,96 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
     for(Indices_EntType::iterator dit = F[ss]->begin();dit!=F[ss]->end();dit++) {
       const MoFEMEntity* ent_ptr = dit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
-      vector<const double*> base_functions_by_gauss_pt;
-      if(ss<2) {
-	try {
-	  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
-	  ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
-	} catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
-	}
-      } else {
-	ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
-      }
-      vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
-      data.resize(g_dim);
-      int rank = field_ptr->get_max_rank();
-      int order = ent_ptr->get_max_order();
-      unsigned int nb_dofs = rank*ent_ptr->forder(order); 
-      if(nb_dofs!=dit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-      unsigned int gg = 0;
-      for(;gg<g_dim;gg++) {
-	if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-	ublas::matrix<FieldData> &mat = data[gg];
-	mat.resize(rank,nb_dofs);
-	mat = ublas::zero_matrix<FieldData>(rank,nb_dofs);
-	for(int rr = 0;rr<rank;rr++) {
-	  ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
-	  for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
-	    mr(rank*jj + rr) = (base_functions_by_gauss_pt[gg])[jj];
+      switch (field_ptr->get_space()) {
+	case L2: {
+	  if(ent_ptr->get_ent_type()!=MBTET) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  }
 	}
+	case H1: {
+	  vector<const double*> base_functions_by_gauss_pt;
+	  if(ss<2) {
+	    try {
+	      int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
+	      ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
+	    } catch (const char* msg) {
+	      SETERRQ(PETSC_COMM_SELF,1,msg);
+	    }
+	  } else {
+	    ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
+	  }
+	  vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
+	  data.resize(g_dim);
+	  int rank = field_ptr->get_max_rank();
+	  int order = ent_ptr->get_max_order();
+	  unsigned int nb_dofs = rank*ent_ptr->forder(order); 
+	  if(nb_dofs!=dit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	  unsigned int gg = 0;
+	  for(;gg<g_dim;gg++) {
+	    if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	    ublas::matrix<FieldData> &mat = data[gg];
+	    mat.resize(rank,nb_dofs);
+	    ublas::noalias(mat) = ublas::zero_matrix<FieldData>(rank,nb_dofs);
+	    for(int rr = 0;rr<rank;rr++) {
+	      ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
+	      for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
+		mr(rank*jj + rr) = (base_functions_by_gauss_pt[gg])[jj];
+	      }
+	    }
+	  }
+	}
+	break;
+	case Hdiv: {
+	  const string &field_name = field_ptr->get_name();
+	  unsigned int rank = field_ptr->get_max_rank();
+	  unsigned int order = ent_ptr->get_max_order();
+	  unsigned int nb_dofs = ent_ptr->forder(order);
+	  if(nb_dofs == 0) continue;
+	  vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
+	  data.resize(g_dim);
+	  unsigned int gg = 0;
+	  for(;gg<g_dim;gg++) {
+	    ublas::matrix<FieldData> &mat = data[gg];
+	    mat.resize(3*rank,nb_dofs);
+	    ublas::noalias(mat) = ublas::zero_matrix<FieldData>(3*rank,nb_dofs);
+	    for(int rr = 0;rr<rank;rr++) {
+	      ublas::matrix_row<ublas::matrix<FieldData> > mr0(mat,3*rr+0);
+	      ublas::matrix_row<ublas::matrix<FieldData> > mr1(mat,3*rr+1);
+	      ublas::matrix_row<ublas::matrix<FieldData> > mr2(mat,3*rr+2);
+	      if(ent_ptr->get_ent_type()!=MBTRI) {
+		try {
+		  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
+		  int shift = gg*NBFACE_Hdiv(maxOrderFaceHdiv[side_number]);
+		  for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
+		    mr0[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift+3*jj+0];
+		    mr1[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift+3*jj+1];
+		    mr2[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift+3*jj+1];
+		  }
+		} catch (const std::exception& ex) {
+		  ostringstream ss;
+		  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+		  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+		}
+	      } else if(ent_ptr->get_ent_type()!=MBTET) {
+		try {
+		  int shift = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
+		  for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
+		    mr0[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift+3*jj+0];
+		    mr1[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift+3*jj+1];
+		    mr2[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift+3*jj+1];
+		  }
+		} catch (const std::exception& ex) {
+		  ostringstream ss;
+		  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+		  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+		}
+	      } else SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    }
+	  }
+	}
+	break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
     }
   }

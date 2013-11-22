@@ -166,6 +166,9 @@ int main(int argc, char *argv[]) {
       ierr = DataOp(); CHKERRQ(ierr);
       ierr = ShapeFunctions_TET(g_NTET); CHKERRQ(ierr);
       ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
+      ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
+      ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
+
 
 
       PetscFunctionReturn(0);
