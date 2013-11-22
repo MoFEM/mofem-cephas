@@ -1243,13 +1243,22 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	  data.resize(g_dim);
 	  unsigned int gg = 0;
 	  for(;gg<g_dim;gg++) {
-	    data[gg].resize(rank,3);
+	    ublas::matrix<FieldData>& mat = data[gg];
+	    mat.resize(rank,3);
 	    unsigned int rr = 0;
-	    /*for(;rr<rank;rr++) {
+	    for(;rr<rank;rr++) {
 	      if(ent_ptr->get_ent_type()!=MBTRI) {
-	      } else if(ent_ptr->get_ent_type()!=MBTRI) {
+		/*int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
+		data[gg](rank,0) = cblas_ddot(Hdiv_faceN_byOrder[side_number].size()/3,&(Hdiv_faceN_byOrder[side_number])[0],3,&dof_data[rr],rank);
+		data[gg](rank,1) = cblas_ddot(Hdiv_faceN_byOrder[side_number].size()/3,&(Hdiv_faceN_byOrder[side_number])[1],3,&dof_data[rr],rank);
+		data[gg](rank,2) = cblas_ddot(Hdiv_faceN_byOrder[side_number].size()/3,&(Hdiv_faceN_byOrder[side_number])[2],3,&dof_data[rr],rank);*/
+	      } else if(ent_ptr->get_ent_type()!=MBTET) {
+		int shift = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
+		mat(rank,0) = cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+0],3,&dof_data[rr],rank);
+		mat(rank,1) = cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+1],3,&dof_data[rr],rank);
+		//mat(rank,2) = cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+2],3,&dof_data[rr],rank);
 	      } else SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
- 	    }*/
+ 	    }
 	  }
 	  SETERRQ(PETSC_COMM_SELF,1,"Aaa ...");
 	}
