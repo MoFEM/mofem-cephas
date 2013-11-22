@@ -20,16 +20,7 @@
 #define __FEM_H__
 
 #include<stdlib.h>
-
-#include<petscmat.h>
-#include<petscao.h>
-#include<petscbt.h>
-
-#include<petscmat.h>
-#include<petscao.h>
-#include<petscbt.h>
-#include<petsclog.h>
-
+#include<petscsys.h>
 
 #ifdef __APPLE__
   #ifdef __CBLAS__
@@ -39,8 +30,14 @@
   #endif
   #include<lapack_wrap.h>
 #else 
-  #include<cblas.h>
-  #include<lapack_wrap.h>
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+    #include<cblas.h>
+    #include<lapack_wrap.h>
+  #ifdef __cplusplus
+  }
+  #endif
 #endif
 
 #define LAMBDA(E,NU) (E*NU/((1.+NU)*(1.-2.*NU)))
