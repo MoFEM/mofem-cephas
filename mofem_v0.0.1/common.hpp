@@ -78,20 +78,6 @@
 #include<petscts.h>
 #include<petsctime.h>
 
-//BLAS
-#ifdef __APPLE__
-  #ifdef __CBLAS__
-  #include<cblas.h>
-  #else  
-  #include <Accelerate/Accelerate.h>
-  #endif
-  #include<lapack_wrap.h>
-#else 
-  #include<cblas.h>
-  #include<lapack_wrap.h>
-#endif
-
-
 //MOFEM
 #include<FEM.h>
 #include<H1HdivHcurlL2.h>

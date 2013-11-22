@@ -17,16 +17,8 @@
 #ifndef __H1_H__
 #define __H1_H__
 
-#ifdef __APPLE__
-  #ifdef __CBLAS__
-  #include<cblas.h>
-  #else  
-  #include <Accelerate/Accelerate.h>
-  #endif
-  #include<lapack_wrap.h>
-#else 
-  #include<cblas.h>
-  #include<lapack_wrap.h>
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /// number of dofs for L2 space
@@ -47,10 +39,6 @@
 #define NBEDGE_Hdiv(P) (0)
 #define NBFACE_Hdiv(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
 #define NBVOLUME_Hdiv(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** 
  * \brief Calulate Lagrange approximation basis
