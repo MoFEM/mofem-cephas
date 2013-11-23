@@ -48,21 +48,19 @@ cm_export_file("../../meshes/T3_horiz.cub" export_files_material_mechanics)
 
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/convergence_study.sh.in"
-  "${CMAKE_CURRENT_SOURCE_DIR}/convergence_study.sh"
+  "${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh"
   @ONLY
   )
 
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/arc_length.sh.in"
-  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length.sh"
+  "${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh"
   @ONLY
   )
 
-install(FILES arc_length.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
-install(FILES convergence_study.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
-cm_export_file("convergence_study.sh" script_material_mechanics)
-cm_export_file("arc_length.sh" script_material_mechanics)
 
 
 

@@ -29,7 +29,7 @@ file(COPY
 
 
 #testing
-add_test(SimpleNonLinearElasticityTest ${MPI_BIN_PATH}/mpirun -np 4 
+add_test(SimpleNonLinearElasticityTest ${MPI_RUN} -np 4 
   ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity
   -my_file LShapeCoarse.cub 
   -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10

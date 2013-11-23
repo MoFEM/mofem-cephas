@@ -224,14 +224,14 @@ PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
   data_edges.clear();
   data_faces.clear();
   data_elem.clear();
-  data_at_gauss_pt.clear();
-  diff_data_at_gauss_pt.clear();
+  h1l2_data_at_gauss_pt.clear();
+  h1_diff_data_at_gauss_pt.clear();
   //
   fill(maxOrderEdgeH1.begin(),maxOrderEdgeH1.end(),0);
-  fill(maxOrderEdgeHdiv.begin(),maxOrderEdgeHdiv.end(),0);
+  fill(maxOrderEdgeHcurl.begin(),maxOrderEdgeHcurl.end(),0);
   fill(maxOrderFaceH1.begin(),maxOrderFaceH1.end(),0);
-  fill(maxOrderFaceHdiv.begin(),maxOrderFaceHdiv.end(),0);
   fill(maxOrderFaceHcurl.begin(),maxOrderFaceHcurl.end(),0);
+  fill(maxOrderFaceHdiv.begin(),maxOrderFaceHdiv.end(),0);
   maxOrderElemH1 = maxOrderElemHdiv = maxOrderElemHcurl = maxOrderElemL2 = 0;
   //
   H1edgeN_TRI.clear();
@@ -249,20 +249,20 @@ PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
     case MBTET: 
       // edge
       maxOrderEdgeH1.resize(6);
-      maxOrderEdgeHdiv.resize(6);
+      maxOrderEdgeHcurl.resize(6);
       // face
       maxOrderFaceH1.resize(4);
-      maxOrderFaceHdiv.resize(4);
       maxOrderFaceHcurl.resize(4);
+      maxOrderFaceHdiv.resize(4);
       break;
     case MBPRISM:
       // edge
       maxOrderEdgeH1.resize(9);
-      maxOrderEdgeHdiv.resize(9);
+      maxOrderEdgeHcurl.resize(9);
       // face
       maxOrderFaceH1.resize(5);
-      maxOrderFaceHdiv.resize(5);
       maxOrderFaceHcurl.resize(5);
+      maxOrderFaceHdiv.resize(5);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -285,14 +285,14 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	      ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
 	    }
 	    break;
-	    case Hdiv: {
-	      isHdiv = true;
-	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
-	    }
-	    break;
 	    case Hcurl: {
 	      isHcurl = true;
-	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHcurl), &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hdiv: {
+	      isHdiv = true;
+	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
 	    }
 	    break;
 	    case L2: {
@@ -321,14 +321,14 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	      ierr = SetMaxOrder(miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
 	    }
 	    break;
-	    case Hdiv: {
-	      isHdiv = true;
-	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
-	    }
-	    break;
 	    case Hcurl: {
 	      isHcurl = true;
-	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	      ierr = SetMaxOrder(miit, &(maxOrderEdgeHcurl), &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hdiv: {
+	      isHdiv = true;
+	      ierr = SetMaxOrder(miit, NULL, &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
 	    }
 	    break;
 	    case L2: {
@@ -481,12 +481,12 @@ PetscErrorCode FEMethod_LowLevelStudent::DataOp() {
 	    break;
 	    case Hdiv: {
 	      isHdiv = true;
-	      ierr = SetMaxOrder(miit2, &(maxOrderEdgeHdiv), &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
+	      ierr = SetMaxOrder(miit2, &(maxOrderEdgeHcurl), &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
 	    }
 	    break;
 	    case Hcurl: {
 	      isHcurl = true;
-	      ierr = SetMaxOrder(miit2, NULL, &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	      ierr = SetMaxOrder(miit2, NULL, &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
 	    }
 	    break;
 	    case L2: {
@@ -551,7 +551,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
 	// edge
 	int _sense_edges_[6];
-	if(isH1 || isHdiv) {
+	if(isH1 || isHcurl) {
 	  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBEDGE,0));
 	  SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBEDGE,6));
 	  for(;siit!=hi_siit;siit++) {
@@ -637,24 +637,218 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  ierr = H1_VolumeShapeFunctions_MBTET(maxOrderElemH1,&gNTET[0],diffNTET,&H1elemN[0],&diffH1elemN[0],gNTET_dim);  CHKERRQ(ierr);
 	  ierr = H1_VolumeShapeDiffMBTETinvJ(maxOrderElemH1,maxOrderElemH1,&diffH1elemN[0],invJac,&diffH1elemNinvJac[0],gNTET_dim); CHKERRQ(ierr);
 	}
+	if(isHcurl) {
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	}
+	if(isHdiv) {
+	  int P_face[4];
+	  fill(&P_face[0],&P_face[4],0);
+	  Hdiv_egde_faceN.resize(4);
+	  for(int ff = 0;ff<4;ff++) {
+	    Hdiv_egde_faceN[ff].resize(3);
+	  }
+	  Hdiv_face_bubbleN.resize(4);
+	  //(p+1)*(p+2)/2 - for each face
+	  double *PHI_f_e[4][3];
+	  for(int ff = 0;ff<4;ff++) {
+	    for(int ee = 0;ee<3;ee++) {
+	      if(maxOrderFaceHdiv[ff]>=1) {
+		int nb = maxOrderFaceHdiv[ff];
+		((Hdiv_egde_faceN[ff])[ee]).resize(3*nb*gNTET_dim); 
+		(PHI_f_e[ff])[ee] = &*((Hdiv_egde_faceN[ff])[ee]).data().begin();
+		P_face[ff] += nb;
+	      } else {
+		((Hdiv_egde_faceN[ff])[ee]).resize(0); 
+		(PHI_f_e[ff])[ee] = NULL;
+	      }
+	    }
+	  }
+	  double *PHI_f[4];
+	  for(int ff = 0;ff<4;ff++) {
+	    if(maxOrderFaceHdiv[ff]>=3) { 
+	      int nb = ((maxOrderFaceHdiv[ff]-2)*(maxOrderFaceHdiv[ff]-2)+maxOrderFaceHdiv[ff]-2)/2;
+	      (Hdiv_face_bubbleN[ff]).resize(3*nb*gNTET_dim);
+	      PHI_f[ff] = &*(Hdiv_face_bubbleN[ff]).data().begin();
+	      P_face[ff] += nb;
+	    } else {
+	      (Hdiv_face_bubbleN[ff]).resize(0);
+	      PHI_f[ff] = NULL;
+	    }
+	  }
+	  for(int ff = 0;ff<4;ff++) {
+	    if(P_face[ff]!=NBFACE_Hdiv(maxOrderFaceHdiv[ff])) {
+	      SETERRQ2(PETSC_COMM_SELF,1,
+		"data insonsitency, i.e. sum of face dofs inconsitency %d != %d",
+		P_face[ff],NBFACE_Hdiv(maxOrderFaceHdiv[ff]));
+	    }
+	  }
+	  int _faces_order_[4];
+	  copy(maxOrderFaceHdiv.begin(),maxOrderFaceHdiv.end(),&_faces_order_[0]);
+	  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f_e,gNTET_dim); CHKERRQ(ierr);
+	  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f,gNTET_dim); CHKERRQ(ierr);
+
+	  Hdiv_faceN_byOrder.resize(4);
+	  for(int ff = 0;ff<4;ff++) {
+	    Hdiv_faceN_byOrder.resize(0);
+	  }
+	  for(int gg = 0;gg<gNTET_dim;gg++) {
+	    for(int ff = 0;ff<4;ff++) {
+
+	      int shift_e = gg*maxOrderFaceHdiv[ff];
+	      int shift_f = gg*((maxOrderFaceHdiv[ff]-2)*(maxOrderFaceHdiv[ff]-2)+(maxOrderFaceHdiv[ff]-2))/2;
+
+	      for(int oo = 1;oo<=maxOrderFaceHdiv[ff];oo++) {
+
+		//edges
+		for(int ee = 0;ee<3;ee++) {
+		  for(int dd = 0;dd<3;dd++) {
+		    Hdiv_faceN_byOrder[ff].push_back(((Hdiv_egde_faceN[ff])[ee])(3*shift_e+3*(oo-1)+dd));
+		  }
+		}
+		//face
+		if(oo<3) continue;
+		int start = ((oo-1-2)*(oo-1-2)+(oo-1-2))/2;
+		int end = ((oo-2)*(oo-2)+(oo-2))/2;
+		for(int dd = start;dd<end;dd++) {
+		  for(int ddd = 0;ddd<3;ddd++) {
+		    Hdiv_faceN_byOrder[ff].push_back(Hdiv_face_bubbleN[ff][3*shift_f+3*dd+ddd]);
+		  }
+		}
+
+	      }
+	    }
+	  }
+
+	  for(int ff = 0;ff<4;ff++) {
+	    int size = Hdiv_egde_faceN[ff][0].size() + Hdiv_egde_faceN[ff][1].size() + Hdiv_egde_faceN[ff][2].size() + 
+			Hdiv_face_bubbleN[ff].size();
+	    if(Hdiv_faceN_byOrder[ff].size()!=size) {
+	      SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_faceN_byOrder[ff].size(),size);
+	    }
+	    if(Hdiv_faceN_byOrder[ff].size()!=3*gNTET_dim*NBFACE_Hdiv(maxOrderFaceHdiv[ff])) {
+	      SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_faceN_byOrder[ff].size(),3*gNTET_dim*NBFACE_Hdiv(maxOrderFaceHdiv[ff]));
+	    }
+	  }
+
+	  //(p-1)*(p+1)*(p+2)/2
+	  int P_volume = 0;
+	  Hdiv_edge_volumeN.resize(6);
+	  double *PHI_v_e[6];
+	  for(int ee = 0;ee<6;ee++) {
+	    if(maxOrderElemHdiv>=2) {
+	      int nb = maxOrderElemHdiv-1;
+	      (Hdiv_edge_volumeN[ee]).resize(3*nb*gNTET_dim); //(p-2)
+	      PHI_v_e[ee] = &*(Hdiv_edge_volumeN[ee]).data().begin();
+	      P_volume += nb;
+	    } else {
+	      (Hdiv_edge_volumeN[ee]).resize(0); 
+	      PHI_v_e[ee] = NULL;
+	    }
+	  }
+	  Hdiv_face_volumeN.resize(4);
+	  double *PHI_v_f[4];
+	  for(int ff = 0;ff<4;ff++) {
+	    if(maxOrderElemHdiv>=3) {
+	      int nb = 2*(((maxOrderElemHdiv-2)*(maxOrderElemHdiv-2)+(maxOrderElemHdiv-2))/2);
+	      (Hdiv_face_volumeN[ff]).resize(3*nb*gNTET_dim);
+	      PHI_v_f[ff] = &*Hdiv_face_volumeN[ff].data().begin(); //2*(p-2)*(p-1)/2
+	      P_volume += nb;
+	    } else {
+	      Hdiv_face_volumeN[ff].resize(0);
+	      PHI_v_f[ff] = NULL;
+	    }
+	  }
+	  double *PHI_v;
+	  {
+	    int nb = 3*(maxOrderElemHdiv-3)*(maxOrderElemHdiv-2)*(maxOrderElemHdiv-1)/6;
+	    if(maxOrderElemHdiv>=4) {
+	      Hdiv_volumeN.resize(3*nb*gNTET_dim);
+	      PHI_v = &*Hdiv_volumeN.data().begin();
+	      P_volume += nb;
+	    } else {
+	      Hdiv_volumeN.resize(0);
+	      PHI_v = NULL;
+	    }
+	  }
+	  if(P_volume!=NBVOLUME_Hdiv(maxOrderElemHdiv)) {
+	    SETERRQ2(PETSC_COMM_SELF,1,"data insonsitency, i.e. sum of volume dofs inconsitency %d != %d",
+	      P_volume,NBVOLUME_Hdiv(maxOrderElemHdiv));
+	  }
+	  if(maxOrderElemHdiv>=2) {
+	    ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v_e,gNTET_dim); CHKERRQ(ierr);
+	  } 
+	  if(maxOrderElemHdiv>=3) {
+	    ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v_f,gNTET_dim); CHKERRQ(ierr);
+	  }
+	  if(maxOrderElemHdiv>=4) {
+	    ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(maxOrderElemHdiv,&gNTET[0],PHI_v,gNTET_dim); CHKERRQ(ierr);
+	  }
+
+	  Hdiv_volumeN_byOrder.resize(0);
+	  for(int gg = 0;gg<gNTET_dim;gg++) {
+	  
+	    int shift_e = gg*(maxOrderElemHdiv-1);
+	    int shift_f = gg*((maxOrderElemHdiv-2)*(maxOrderElemHdiv-2)+(maxOrderElemHdiv-2))/2;
+	    int shift_v = gg*(maxOrderElemHdiv-3)*(maxOrderElemHdiv-2)*(maxOrderElemHdiv-1)/6;
+	  
+	    for(int oo = 2;oo<=maxOrderElemHdiv;oo++) {
+
+	      for(int ee = 0;ee<6;ee++) {
+		for(int dd = 0;dd<3;dd++) {
+		  Hdiv_volumeN_byOrder.push_back(Hdiv_edge_volumeN[ee][3*shift_e+3*(oo-2)+dd]);
+		}
+	      }
+	      if(oo<3) continue;
+	      for(int ff = 0;ff<4;ff++) {
+		int start = ((oo-1-2)*(oo-1-2)+(oo-1-2))/2;
+		int end = ((oo-2)*(oo-2)+(oo-2))/2;
+		for(int dd = start;dd<end;dd++) {
+		  for(int ddd = 0;ddd<6;ddd++) {
+		    Hdiv_volumeN_byOrder.push_back(Hdiv_face_volumeN[ff][6*shift_f+6*dd+ddd]);
+		  }
+		}
+	      }
+	      if(oo<4) continue;
+	      int start = (oo-1-3)*(oo-1-2)*(oo-1-1)/6;
+	      int end = (oo-3)*(oo-2)*(oo-1)/6;
+	      for(int dd = start;dd<end;dd++) {
+		for(int ddd = 0;ddd<9;ddd++) {
+		  Hdiv_volumeN_byOrder.push_back(Hdiv_volumeN[9*shift_v+9*dd+ddd]);
+		}
+	      }
+      
+	    }
+	  }
+
+	  int size = 
+	    Hdiv_edge_volumeN[0].size() + Hdiv_edge_volumeN[1].size() + Hdiv_edge_volumeN[2].size() +
+	    Hdiv_edge_volumeN[3].size() + Hdiv_edge_volumeN[4].size() + Hdiv_edge_volumeN[5].size() +
+	    Hdiv_face_volumeN[0].size() + Hdiv_face_volumeN[1].size() + Hdiv_face_volumeN[2].size() + Hdiv_face_volumeN[3].size() +
+	    Hdiv_volumeN.size();
+	  if(Hdiv_volumeN_byOrder.size()!=size) {
+	    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_volumeN_byOrder.size(),size);
+	  }
+	  if(Hdiv_volumeN_byOrder.size()!=3*gNTET_dim*NBVOLUME_Hdiv(maxOrderElemHdiv)) {
+	    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_volumeN_byOrder.size(),3*gNTET_dim*NBVOLUME_Hdiv(maxOrderElemHdiv));
+	  }
+
+	}
 	if(isL2) {
 	  // vol L2
 	  L2elemN.resize(gNTET_dim*NBVOLUME_L2(max_ApproximationOrder));
 	  diffL2elemN.resize(3*gNTET_dim*NBVOLUME_L2(max_ApproximationOrder));
 	  diffL2elemNinvJac.resize(3*gNTET_dim*NBVOLUME_L2(max_ApproximationOrder));
 	  ierr = L2_ShapeFunctions_MBTET(maxOrderElemL2,&gNTET[0],diffNTET,&L2elemN[0],&diffL2elemN[0],gNTET_dim); CHKERRQ(ierr);
-	  //copy(gNTET.begin(),gNTET.end(),ostream_iterator<double>(cout, " ")); cout << "gNTET" << endl;
-	  //copy(&L2elemN[0],&L2elemN[gNTET_dim*NBVOLUME_L2(maxOrderElemL2)],ostream_iterator<double>(cout, " ")); cout << "L2elemN" << endl;
 	  ierr = L2_VolumeShapeDiffMBTETinvJ(maxOrderElemL2,maxOrderElemL2,&diffL2elemN[0],invJac,&diffL2elemNinvJac[0],gNTET_dim); CHKERRQ(ierr);
 	}
       } 
       break;
       case MBPRISM: {
-	SETERRQ(PETSC_COMM_SELF,1,"Aaaa... not implemented yet");
+	SETERRQ(PETSC_COMM_SELF,1,"Aaaa... make no sense");
       } 
       break;
      default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"shoul be exectued for TET");
   }
   PetscFunctionReturn(0);
 }
@@ -756,6 +950,15 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	ierr = H1_FaceShapeFunctions_MBTRI(_face_nodes4_,_face_order4_,&gNTRI[0],NULL,_faceN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	cblas_dscal(gNTRI_dim*NBFACE_H1(_face_order4_),-1,_faceN4_,1);
       }
+      if(isHdiv) {
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+      if(isHcurl) {
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+      if(isL2) {
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
     }
     break;
     default:
@@ -764,8 +967,8 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
-    vector<const double*> *shape_by_gauss_pt,
-    vector<const double*> *diff_shape_by_gauss_pt,
+    vector<const double*> *base_functions_by_gauss_pt,
+    vector<const double*> *diff_base_functions_by_gauss_pt,
     const MoFEMField* field_ptr,EntityType type,int side_number) {
   PetscFunctionBegin;
   int gNTET_dim = get_dim_gNTET();
@@ -773,11 +976,11 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
   switch (fe_ent_ptr->get_ent_type()) {
     case MBTET: {
       int gg = 0;
-      if(shape_by_gauss_pt!=NULL) {
-	shape_by_gauss_pt->resize(gNTET_dim,NULL);
+      if(base_functions_by_gauss_pt!=NULL) {
+	base_functions_by_gauss_pt->resize(gNTET_dim,NULL);
       }
-      if(diff_shape_by_gauss_pt!=NULL) {
-	diff_shape_by_gauss_pt->resize(gNTET_dim,NULL);
+      if(diff_base_functions_by_gauss_pt!=NULL) {
+	diff_base_functions_by_gauss_pt->resize(gNTET_dim,NULL);
       }
       switch (field_ptr->get_space()) {
         case H1: {
@@ -785,11 +988,11 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	    case MBVERTEX: {
 	      if(side_number != -1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTET_dim;gg++) {
-		if(shape_by_gauss_pt!=NULL) {
-		  (*shape_by_gauss_pt)[gg] = &gNTET[4*gg];
+		if(base_functions_by_gauss_pt!=NULL) {
+		  (*base_functions_by_gauss_pt)[gg] = &gNTET[4*gg];
 		}
-		if(diff_shape_by_gauss_pt!=NULL) {
-		  (*diff_shape_by_gauss_pt)[gg] = &diffNTETinvJac[0];
+		if(diff_base_functions_by_gauss_pt!=NULL) {
+		  (*diff_base_functions_by_gauss_pt)[gg] = &diffNTETinvJac[0];
 		}
 	      }
 	    }
@@ -798,11 +1001,11 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	      if(side_number < 0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      if(side_number > 6) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTET_dim;gg++) {
-		if(shape_by_gauss_pt!=NULL) {
-		  (*shape_by_gauss_pt)[gg] = &((H1edgeN[side_number])[gg*NBEDGE_H1(maxOrderEdgeH1[side_number])]);
+		if(base_functions_by_gauss_pt!=NULL) {
+		  (*base_functions_by_gauss_pt)[gg] = &((H1edgeN[side_number])[gg*NBEDGE_H1(maxOrderEdgeH1[side_number])]);
 		}
-		if(diff_shape_by_gauss_pt!=NULL) {
-		  (*diff_shape_by_gauss_pt)[gg] = &((diffH1edgeNinvJac[side_number])[3*gg*NBEDGE_H1(maxOrderEdgeH1[side_number])]);
+		if(diff_base_functions_by_gauss_pt!=NULL) {
+		  (*diff_base_functions_by_gauss_pt)[gg] = &((diffH1edgeNinvJac[side_number])[3*gg*NBEDGE_H1(maxOrderEdgeH1[side_number])]);
 		}
 	      }
 	    }
@@ -811,11 +1014,11 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	      if(side_number < 0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      if(side_number > 4) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTET_dim;gg++) {
-		if(shape_by_gauss_pt!=NULL) {
-		  (*shape_by_gauss_pt)[gg] = &((H1faceN[side_number])[gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
+		if(base_functions_by_gauss_pt!=NULL) {
+		  (*base_functions_by_gauss_pt)[gg] = &((H1faceN[side_number])[gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
 		}
-  		if(diff_shape_by_gauss_pt!=NULL) {
-		  (*diff_shape_by_gauss_pt)[gg] = &((diffH1faceNinvJac[side_number])[3*gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
+  		if(diff_base_functions_by_gauss_pt!=NULL) {
+		  (*diff_base_functions_by_gauss_pt)[gg] = &((diffH1faceNinvJac[side_number])[3*gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
 		}
 	      }
 	    }
@@ -823,11 +1026,11 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	    case MBTET: {
 	      if(side_number != -1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTET_dim;gg++) {
-		if(shape_by_gauss_pt!=NULL) {
-		  (*shape_by_gauss_pt)[gg] = &((H1elemN)[gg*NBVOLUME_H1(maxOrderElemH1)]);
+		if(base_functions_by_gauss_pt!=NULL) {
+		  (*base_functions_by_gauss_pt)[gg] = &((H1elemN)[gg*NBVOLUME_H1(maxOrderElemH1)]);
 		}
-  		if(diff_shape_by_gauss_pt!=NULL) {
-		  (*diff_shape_by_gauss_pt)[gg] = &(diffH1elemNinvJac[3*gg*NBVOLUME_H1(maxOrderElemH1)]);
+  		if(diff_base_functions_by_gauss_pt!=NULL) {
+		  (*diff_base_functions_by_gauss_pt)[gg] = &(diffH1elemNinvJac[3*gg*NBVOLUME_H1(maxOrderElemH1)]);
 		}
 	      }
 	    }
@@ -840,11 +1043,11 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	case L2: {
 	  if(type != MBTET) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       	  for(;gg<gNTET_dim;gg++) {
-    	    if(shape_by_gauss_pt!=NULL) {
-	      (*shape_by_gauss_pt)[gg] = &((L2elemN)[gg*NBVOLUME_L2(maxOrderElemL2)]);
+    	    if(base_functions_by_gauss_pt!=NULL) {
+	      (*base_functions_by_gauss_pt)[gg] = &((L2elemN)[gg*NBVOLUME_L2(maxOrderElemL2)]);
 	    }
-	    if(diff_shape_by_gauss_pt!=NULL) {
-	      (*diff_shape_by_gauss_pt)[gg] = &(diffL2elemNinvJac[3*gg*NBVOLUME_L2(maxOrderElemL2)]);
+	    if(diff_base_functions_by_gauss_pt!=NULL) {
+	      (*diff_base_functions_by_gauss_pt)[gg] = &(diffL2elemNinvJac[3*gg*NBVOLUME_L2(maxOrderElemL2)]);
 	    }
 	  }
 	}
@@ -856,10 +1059,10 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
     }
     break;
     case MBPRISM: {
-      if(shape_by_gauss_pt!=NULL) {
-	shape_by_gauss_pt->resize(gNTRI_dim,NULL);
+      if(base_functions_by_gauss_pt!=NULL) {
+	base_functions_by_gauss_pt->resize(gNTRI_dim,NULL);
       }
-      if(diff_shape_by_gauss_pt!=NULL) {
+      if(diff_base_functions_by_gauss_pt!=NULL) {
 	SETERRQ(PETSC_COMM_SELF,1,"Aaaaa... not implemented yet");
       }
       int gg = 0;
@@ -869,8 +1072,8 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	    case MBVERTEX: {
 	      if(side_number != -1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTRI_dim;gg++) {
-		if(shape_by_gauss_pt!=NULL) {
-		  (*shape_by_gauss_pt)[gg] = &gNTRIonPRISM[6*gg];
+		if(base_functions_by_gauss_pt!=NULL) {
+		  (*base_functions_by_gauss_pt)[gg] = &gNTRIonPRISM[6*gg];
 		}
 	      }
 	    }
@@ -880,8 +1083,8 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	      if(side_number > 8) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      if(side_number > 2 && side_number < 6) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTRI_dim;gg++) {
-		if(shape_by_gauss_pt!=NULL) {
-		  (*shape_by_gauss_pt)[gg] = &((H1edgeN[side_number])[gg*NBEDGE_H1(maxOrderEdgeH1[side_number])]);
+		if(base_functions_by_gauss_pt!=NULL) {
+		  (*base_functions_by_gauss_pt)[gg] = &((H1edgeN[side_number])[gg*NBEDGE_H1(maxOrderEdgeH1[side_number])]);
 		}
 	      }
 	    }
@@ -889,8 +1092,8 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	    case MBTRI: {
 	      if(side_number != 3 && side_number != 4) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTRI_dim;gg++) {
-		if(shape_by_gauss_pt!=NULL) {
-		  (*shape_by_gauss_pt)[gg] = &((H1faceN[side_number])[gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
+		if(base_functions_by_gauss_pt!=NULL) {
+		  (*base_functions_by_gauss_pt)[gg] = &((H1faceN[side_number])[gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
 		}
 	      }
 	    }
@@ -918,33 +1121,37 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
       g_dim = gNTET.size()/4;
       nb_Ns = 4;
       break;
-    /*case MBPRISM:
-      g_dim = gNTRI.size()/3;
-      nb_Ns = 6;
-      break;*/
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
   }
-  data_at_gauss_pt.clear();
+  h1l2_data_at_gauss_pt.clear();
+  hcurl_hdiv_data_at_gauss_pt.clear();
   // nodes
   for(Data_Type::iterator dit = data_nodes.begin();dit!=data_nodes.end();dit++) {
     const MoFEMField* field_ptr = dit->first;
     const string &field_name = field_ptr->get_name();
-    ublas::vector<FieldData> &dof_data = dit->second;
-    vector<const double*> shape_by_gauss_pt;
-    ierr = get_ShapeFunction(&shape_by_gauss_pt,NULL,field_ptr,MBVERTEX); CHKERRQ(ierr);
-    assert(shape_by_gauss_pt.size()==g_dim);
-    vector< ublas::vector<FieldData> > &data = data_at_gauss_pt[field_name];
-    data.resize(g_dim);
-    int rank = field_ptr->get_max_rank();
-    unsigned int gg = 0;
-    for(;gg<g_dim;gg++) {
-      data[gg].resize(rank);
-      int rr = 0;
-      for(;rr<rank;rr++) {
-	if(shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-	(data[gg])[rr] += cblas_ddot(nb_Ns,shape_by_gauss_pt[gg],1,&dof_data[rr],rank);
+    switch (field_ptr->get_space()) {
+      case H1: {
+	ublas::vector<FieldData> &dof_data = dit->second;
+	vector<const double*> base_functions_by_gauss_pt;
+	ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,MBVERTEX); CHKERRQ(ierr);
+	assert(base_functions_by_gauss_pt.size()==g_dim);
+	vector< ublas::vector<FieldData> > &data = h1l2_data_at_gauss_pt[field_name];
+	data.resize(g_dim);
+	int rank = field_ptr->get_max_rank();
+	unsigned int gg = 0;
+	for(;gg<g_dim;gg++) {
+	  data[gg].resize(rank);
+	  int rr = 0;
+	  for(;rr<rank;rr++) {
+	    if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	    (data[gg])[rr] += cblas_ddot(nb_Ns,base_functions_by_gauss_pt[gg],1,&dof_data[rr],rank);
+	  }
+	}
       }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
   }
   // edges // faces // volumes
@@ -953,37 +1160,107 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
     for(Data_EntType::iterator dit = F[ss]->begin();dit!=F[ss]->end();dit++) {
       const MoFEMEntity* ent_ptr = dit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
-      const string &field_name = field_ptr->get_name();
-      ublas::vector<FieldData> &dof_data = dit->second;
-      vector<const double*> shape_by_gauss_pt;
-      if(ss<2) {
-	try {
-	  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
-	  ierr = get_ShapeFunction(&shape_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
-	} catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
+      switch (field_ptr->get_space()) {
+	case L2: {
+	  if(ent_ptr->get_ent_type()!=MBTET) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
 	}
-      } else {
-	ierr = get_ShapeFunction(&shape_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
+	case H1: {
+	  const string &field_name = field_ptr->get_name();
+	  ublas::vector<FieldData> &dof_data = dit->second;
+	  vector<const double*> base_functions_by_gauss_pt;
+	  if(ss<2) {
+	    try {
+	      int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
+	      ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
+	    } catch (const char* msg) {
+	      SETERRQ(PETSC_COMM_SELF,1,msg);
+	    }
+	  } else {
+	    ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
+	  }
+	  assert(base_functions_by_gauss_pt.size()==g_dim);
+	  vector< ublas::vector<FieldData> > &data = h1l2_data_at_gauss_pt[field_name];
+	  data.resize(g_dim);
+	  unsigned int rank = field_ptr->get_max_rank();
+	  unsigned int order = ent_ptr->get_max_order();
+	  unsigned int nb_dofs = ent_ptr->forder(order);
+	  if(nb_dofs == 0) continue;
+	  if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	  if(base_functions_by_gauss_pt.size()/g_dim > nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	  unsigned int gg = 0;
+	  for(;gg<g_dim;gg++) {
+	    data[gg].resize(rank);
+	    unsigned int rr = 0;
+	    for(;rr<rank;rr++) {
+	      if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	      (data[gg])[rr] += cblas_ddot(nb_dofs,base_functions_by_gauss_pt[gg],1,&dof_data[rr],rank);
+	    }
+	  }
+	}
+	break;
+	case Hdiv: {
+	  const string &field_name = field_ptr->get_name();
+	  ublas::vector<FieldData> &dof_data = dit->second;
+	  vector< ublas::matrix<FieldData> > &data = hcurl_hdiv_data_at_gauss_pt[field_name];
+	  unsigned int rank = field_ptr->get_max_rank();
+	  unsigned int order = ent_ptr->get_max_order();
+	  unsigned int nb_dofs = ent_ptr->forder(order);
+	  if(nb_dofs == 0) continue;
+	  if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	  data.resize(g_dim);
+	  unsigned int gg = 0;
+	  for(;gg<g_dim;gg++) {
+	    ublas::matrix<FieldData>& mat = data[gg];
+	    mat.resize(rank,3);
+	    unsigned int rr = 0;
+	    for(;rr<rank;rr++) {
+	      if(ent_ptr->get_ent_type()==MBTRI) {
+		try {
+		  if(ent_ptr->get_space()!=Hdiv) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+		  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
+		  if(maxOrderFaceHdiv[side_number]>0) {
+		    int nb_dofs_ = NBFACE_Hdiv(order);
+		    if(nb_dofs!=nb_dofs_) SETERRQ2(PETSC_COMM_SELF,1,"data inconsitencies, %d != %d",nb_dofs,nb_dofs_);
+		    int shift = gg*nb_dofs;
+		    mat(rr,0) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+0],3,&dof_data[rr],rank);
+		    mat(rr,1) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+1],3,&dof_data[rr],rank);
+		    mat(rr,2) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+2],3,&dof_data[rr],rank);
+		  }
+		} catch (const std::exception& ex) {
+		  ostringstream ss;
+		  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+		  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+		}
+	      } else if(ent_ptr->get_ent_type()==MBTET) {
+		if(ent_ptr->get_space()!=Hdiv) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+		try {
+		  if(maxOrderElemHdiv>1) {
+		  int nb_dofs_ = NBVOLUME_Hdiv(order);
+		  if(nb_dofs!=nb_dofs_) {
+		      cerr << "order " << order << " " << ent_ptr->forder(order) << endl;
+		      SETERRQ2(PETSC_COMM_SELF,1,"data inconsitencies, %d != %d",nb_dofs,nb_dofs_);
+		    }
+		    int shift = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
+		    mat(rr,0) += cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+0],3,&dof_data[rr],rank);
+		    mat(rr,1) += cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+1],3,&dof_data[rr],rank);
+		    mat(rr,2) += cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+2],3,&dof_data[rr],rank);
+		  }
+		} catch (const std::exception& ex) {
+		  ostringstream ss;
+		  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+		  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+		}
+	      } else SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+ 	    }
+	  }
+	}
+	break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      assert(shape_by_gauss_pt.size()==g_dim);
-      vector< ublas::vector<FieldData> > &data = data_at_gauss_pt[field_name];
-      data.resize(g_dim);
-      unsigned int rank = field_ptr->get_max_rank();
-      unsigned int order = ent_ptr->get_max_order();
-      unsigned int nb_dofs = ent_ptr->forder(order);
-      if(nb_dofs == 0) continue;
-      if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-      if(shape_by_gauss_pt.size()/g_dim > nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-      unsigned int gg = 0;
-      for(;gg<g_dim;gg++) {
-	data[gg].resize(rank);
-        unsigned int rr = 0;
-        for(;rr<rank;rr++) {
-	  if(shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-	  (data[gg])[rr] += cblas_ddot(nb_dofs,shape_by_gauss_pt[gg],1,&dof_data[rr],rank);
-        }
-      }
+
     }
   }
   PetscFunctionReturn(0);
@@ -999,42 +1276,39 @@ PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
   }
-  diff_data_at_gauss_pt.clear();
+  h1_diff_data_at_gauss_pt.clear();
   // nodes
   for(Data_Type::iterator dit = data_nodes.begin();dit!=data_nodes.end();dit++) {
     const MoFEMField* field_ptr = dit->first;
     const string &field_name = field_ptr->get_name();
-    int dim = 0;
     switch(field_ptr->get_space()) {
-      case H1:
-      case Hdiv:
-      case Hcurl:
-      case L2:
-	dim = 3;
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
-    }
-    ublas::vector<FieldData> &dof_data = dit->second;
-    vector<const double*> diff_shape_by_gauss_pt;
-    ierr = get_ShapeFunction(NULL,&diff_shape_by_gauss_pt,field_ptr,MBVERTEX); CHKERRQ(ierr);
-    assert(diff_shape_by_gauss_pt.size()==g_dim);
-    vector<ublas::matrix<FieldData> > &diff_data = diff_data_at_gauss_pt[field_name];
-    diff_data.resize(g_dim);
-    int rank = field_ptr->get_max_rank();
-    for(unsigned int gg = 0;gg<g_dim;gg++) {
-      diff_data[gg] = ublas::zero_matrix<FieldData>(rank,dim);
-    }
-    unsigned int gg = 0;
-    for(;gg<g_dim;gg++) {
-      int dd = 0;
-      for(;dd<dim;dd++) {
-	int rr = 0;
-	for(;rr<rank;rr++) {
-	  if(diff_shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-	  (diff_data[gg])(rr,dd) += cblas_ddot(nb_Ns,&(diff_shape_by_gauss_pt[gg])[dd],dim,&dof_data[rr],rank);
+      case H1: {
+        int dim = 3;
+	ublas::vector<FieldData> &dof_data = dit->second;
+	vector<const double*> diff_base_functions_by_gauss_pt;
+	ierr = get_ShapeFunction(NULL,&diff_base_functions_by_gauss_pt,field_ptr,MBVERTEX); CHKERRQ(ierr);
+	assert(diff_base_functions_by_gauss_pt.size()==g_dim);
+	vector<ublas::matrix<FieldData> > &diff_data = h1_diff_data_at_gauss_pt[field_name];
+	diff_data.resize(g_dim);
+	int rank = field_ptr->get_max_rank();
+	for(unsigned int gg = 0;gg<g_dim;gg++) {
+	  diff_data[gg] = ublas::zero_matrix<FieldData>(rank,dim);
+	}
+	unsigned int gg = 0;
+	for(;gg<g_dim;gg++) {
+	  int dd = 0;
+	  for(;dd<dim;dd++) {
+	    int rr = 0;
+	    for(;rr<rank;rr++) {
+	      if(diff_base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	      (diff_data[gg])(rr,dd) += cblas_ddot(nb_Ns,&(diff_base_functions_by_gauss_pt[gg])[dd],dim,&dof_data[rr],rank);
+	    }
+	  }
 	}
       }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
     }
   }
   // edges // faces // folumes
@@ -1044,49 +1318,51 @@ PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
       const MoFEMEntity* ent_ptr = dit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       const string &field_name = field_ptr->get_name();
-      int dim = 0;
       switch(field_ptr->get_space()) {
-	case H1:
-	case Hdiv:
-	case Hcurl:
-	case L2:
-	  dim = 3;
-	  break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
-      }
-      ublas::vector<FieldData> &dof_data = dit->second;
-      vector<const double*> diff_shape_by_gauss_pt;
-      if(ss<2) {
-	try {
-	  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
-	  ierr = get_ShapeFunction(NULL,&diff_shape_by_gauss_pt,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
-	} catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
+	case L2: {
+	  if(ent_ptr->get_ent_type()!=MBTET) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  } else continue;
 	}
-      } else {
-	ierr = get_ShapeFunction(NULL,&diff_shape_by_gauss_pt,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
-      }
-      assert(diff_shape_by_gauss_pt.size()==g_dim);
-      vector<ublas::matrix<FieldData> > &diff_data = diff_data_at_gauss_pt[field_name];
-      diff_data.resize(g_dim);
-      unsigned int rank = field_ptr->get_max_rank();
-      unsigned int order = ent_ptr->get_max_order();
-      unsigned int nb_dofs = ent_ptr->forder(order);
-      if(nb_dofs == 0) continue;
-      if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-      if(diff_shape_by_gauss_pt.size()/(dim*g_dim) > nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-      unsigned int gg = 0;
-      for(;gg<g_dim;gg++) {
-	diff_data[gg].resize(rank,dim);
-	int dd = 0;
-	for(;dd<dim;dd++) {
-	  unsigned int rr = 0;
-	  for(;rr<rank;rr++) {
-	    if(diff_shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-	    (diff_data[gg])(rr,dd) += cblas_ddot(nb_dofs,&(diff_shape_by_gauss_pt[gg])[dd],dim,&dof_data[rr],rank);
+	case H1: {
+	  int dim = 3;
+	  ublas::vector<FieldData> &dof_data = dit->second;
+	  vector<const double*> diff_base_functions_by_gauss_pt;
+	  if(ss<2) {
+	    try {
+	      int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
+	      ierr = get_ShapeFunction(NULL,&diff_base_functions_by_gauss_pt,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
+	    } catch (const char* msg) {
+	      SETERRQ(PETSC_COMM_SELF,1,msg);
+	    }
+	  } else {
+	    ierr = get_ShapeFunction(NULL,&diff_base_functions_by_gauss_pt,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
+	  }
+	  assert(diff_base_functions_by_gauss_pt.size()==g_dim);
+	  vector<ublas::matrix<FieldData> > &diff_data = h1_diff_data_at_gauss_pt[field_name];
+	  diff_data.resize(g_dim);
+	  unsigned int rank = field_ptr->get_max_rank();
+	  unsigned int order = ent_ptr->get_max_order();
+	  unsigned int nb_dofs = ent_ptr->forder(order);
+	  if(nb_dofs == 0) continue;
+	  if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	  if(diff_base_functions_by_gauss_pt.size()/(dim*g_dim) > nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	  unsigned int gg = 0;
+	  for(;gg<g_dim;gg++) {
+	    diff_data[gg].resize(rank,dim);
+	    int dd = 0;
+	    for(;dd<dim;dd++) {
+	      unsigned int rr = 0;
+	      for(;rr<rank;rr++) {
+		if(diff_base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+		(diff_data[gg])(rr,dd) += cblas_ddot(nb_dofs,&(diff_base_functions_by_gauss_pt[gg])[dd],dim,&dof_data[rr],rank);
+	      }
+	    }
 	  }
 	}
+	break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
       }
     }
   }
@@ -1117,24 +1393,31 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
   Indices_Type::iterator nit = nodesGlobIndices.begin();
   for(;nit!=nodesGlobIndices.end();nit++) {
     const MoFEMField* field_ptr = nit->first;
-    vector<const double*> shape_by_gauss_pt;
-    ierr = get_ShapeFunction(&shape_by_gauss_pt,NULL,field_ptr,MBVERTEX); CHKERRQ(ierr);
-    assert(shape_by_gauss_pt.size()==g_dim);
-    vector< ublas::matrix<FieldData> > &data = N_Matrix_nodes[field_ptr];
-    data.resize(g_dim);
-    int rank = field_ptr->get_max_rank();
-    if(rank*nb_Ns!=nit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-    unsigned int gg = 0;
-    for(;gg<g_dim;gg++) {
-      ublas::matrix<FieldData> &mat = data[gg];
-      mat.resize(rank,rank*nb_Ns);
-      mat = ublas::zero_matrix<FieldData>(rank,rank*nb_Ns);
-      int rr = 0;
-      for(;rr<rank;rr++) {
-	if(shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-	ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
-	for(unsigned int jj = 0;jj<nb_Ns;jj++) mr(rank*jj + rr) = (shape_by_gauss_pt[gg])[jj];
+    switch (field_ptr->get_space()) {
+      case H1: {
+	vector<const double*> base_functions_by_gauss_pt;
+	ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,MBVERTEX); CHKERRQ(ierr);
+	assert(base_functions_by_gauss_pt.size()==g_dim);
+	vector< ublas::matrix<FieldData> > &data = N_Matrix_nodes[field_ptr];
+	data.resize(g_dim);
+	int rank = field_ptr->get_max_rank();
+	if(rank*nb_Ns!=nit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	unsigned int gg = 0;
+	for(;gg<g_dim;gg++) {
+	  ublas::matrix<FieldData> &mat = data[gg];
+	  mat.resize(rank,rank*nb_Ns);
+	  ublas::noalias(mat) = ublas::zero_matrix<FieldData>(rank,rank*nb_Ns);
+	  int rr = 0;
+	  for(;rr<rank;rr++) {
+	    if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	    ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
+	    for(unsigned int jj = 0;jj<nb_Ns;jj++) mr(rank*jj + rr) = (base_functions_by_gauss_pt[gg])[jj];
+	  }
+	}
       }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
   }
   // edges // faces // volumes
@@ -1144,35 +1427,100 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
     for(Indices_EntType::iterator dit = F[ss]->begin();dit!=F[ss]->end();dit++) {
       const MoFEMEntity* ent_ptr = dit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
-      vector<const double*> shape_by_gauss_pt;
-      if(ss<2) {
-	try {
-	  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
-	  ierr = get_ShapeFunction(&shape_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
-	} catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
-	}
-      } else {
-	ierr = get_ShapeFunction(&shape_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
-      }
-      vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
-      data.resize(g_dim);
-      int rank = field_ptr->get_max_rank();
-      int order = ent_ptr->get_max_order();
-      unsigned int nb_dofs = rank*ent_ptr->forder(order); 
-      if(nb_dofs!=dit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-      unsigned int gg = 0;
-      for(;gg<g_dim;gg++) {
-	if(shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-	ublas::matrix<FieldData> &mat = data[gg];
-	mat.resize(rank,nb_dofs);
-	mat = ublas::zero_matrix<FieldData>(rank,nb_dofs);
-	for(int rr = 0;rr<rank;rr++) {
-	  ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
-	  for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
-	    mr(rank*jj + rr) = (shape_by_gauss_pt[gg])[jj];
+      switch (field_ptr->get_space()) {
+	case L2: {
+	  if(ent_ptr->get_ent_type()!=MBTET) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  }
 	}
+	case H1: {
+	  vector<const double*> base_functions_by_gauss_pt;
+	  if(ss<2) {
+	    try {
+	      int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
+	      ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
+	    } catch (const char* msg) {
+	      SETERRQ(PETSC_COMM_SELF,1,msg);
+	    }
+	  } else {
+	    ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
+	  }
+	  vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
+	  data.resize(g_dim);
+	  int rank = field_ptr->get_max_rank();
+	  int order = ent_ptr->get_max_order();
+	  unsigned int nb_dofs = rank*ent_ptr->forder(order); 
+	  if(nb_dofs!=dit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	  unsigned int gg = 0;
+	  for(;gg<g_dim;gg++) {
+	    if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	    ublas::matrix<FieldData> &mat = data[gg];
+	    mat.resize(rank,nb_dofs);
+	    ublas::noalias(mat) = ublas::zero_matrix<FieldData>(rank,nb_dofs);
+	    for(int rr = 0;rr<rank;rr++) {
+	      ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
+	      for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
+		mr(rank*jj + rr) = (base_functions_by_gauss_pt[gg])[jj];
+	      }
+	    }
+	  }
+	}
+	break;
+	case Hdiv: {
+	  const string &field_name = field_ptr->get_name();
+	  unsigned int rank = field_ptr->get_max_rank();
+	  unsigned int order = ent_ptr->get_max_order();
+	  unsigned int nb_dofs = ent_ptr->forder(order);
+	  if(nb_dofs == 0) continue;
+	  vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
+	  data.resize(g_dim);
+	  unsigned int gg = 0;
+	  for(;gg<g_dim;gg++) {
+	    ublas::matrix<FieldData> &mat = data[gg];
+	    mat.resize(3*rank,nb_dofs);
+	    ublas::noalias(mat) = ublas::zero_matrix<FieldData>(3*rank,nb_dofs);
+	    for(int rr = 0;rr<rank;rr++) {
+	      ublas::matrix_row<ublas::matrix<FieldData> > mr0(mat,3*rr+0);
+	      ublas::matrix_row<ublas::matrix<FieldData> > mr1(mat,3*rr+1);
+	      ublas::matrix_row<ublas::matrix<FieldData> > mr2(mat,3*rr+2);
+	      if(ent_ptr->get_ent_type()==MBTRI) {
+		try {
+		  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
+		  if(maxOrderFaceHdiv[side_number]>0) {
+		    int shift = gg*NBFACE_Hdiv(maxOrderFaceHdiv[side_number]);
+		    for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
+		      mr0[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift+3*jj+0];
+		      mr1[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift+3*jj+1];
+		      mr2[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift+3*jj+1];
+		    }
+		  }
+		} catch (const std::exception& ex) {
+		  ostringstream ss;
+		  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+		  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+		}
+	      } else if(ent_ptr->get_ent_type()==MBTET) {
+		try {
+		  if(maxOrderElemHdiv>1) {
+		    int shift = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
+		    for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
+		      mr0[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift+3*jj+0];
+		      mr1[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift+3*jj+1];
+		      mr2[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift+3*jj+1];
+		    }
+		  }
+		} catch (const std::exception& ex) {
+		  ostringstream ss;
+		  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+		  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+		}
+	      } else SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    }
+	  }
+	}
+	break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
     }
   }
@@ -1227,9 +1575,9 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       default:
 	continue;
     }
-    vector<const double*> diff_shape_by_gauss_pt;
-    ierr = get_ShapeFunction(NULL,&diff_shape_by_gauss_pt,field_ptr,MBVERTEX); CHKERRQ(ierr);
-    assert(diff_shape_by_gauss_pt.size()==g_dim);
+    vector<const double*> diff_base_functions_by_gauss_pt;
+    ierr = get_ShapeFunction(NULL,&diff_base_functions_by_gauss_pt,field_ptr,MBVERTEX); CHKERRQ(ierr);
+    assert(diff_base_functions_by_gauss_pt.size()==g_dim);
     vector< ublas::matrix<FieldData> > &data = diffN_Matrix_nodes[field_ptr];
     data.resize(g_dim);
     if(rank*nb_Ns!=nit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
@@ -1242,10 +1590,10 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       for(;rr<rank;rr++) {
 	int dd = 0;
 	for(;dd<dim;dd++) {
-	  if(diff_shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	  if(diff_base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	  ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr*dim+dd);
 	  for(int nn = 0;nn<4;nn++) {
-	    mr(nn*rank + rr) = (diff_shape_by_gauss_pt[gg])[dim*nn+dd];
+	    mr(nn*rank + rr) = (diff_base_functions_by_gauss_pt[gg])[dim*nn+dd];
 	  }
 	}
       }
@@ -1270,11 +1618,11 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
 	default:
 	  continue;
       }
-      vector<const double*> diff_shape_by_gauss_pt;
+      vector<const double*> diff_base_functions_by_gauss_pt;
       if(ss<=1) {
 	try {
 	  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
-	  ierr = get_ShapeFunction(NULL,&diff_shape_by_gauss_pt,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
+	  ierr = get_ShapeFunction(NULL,&diff_base_functions_by_gauss_pt,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
 	} catch (const char* msg) {
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
 	}
@@ -1286,7 +1634,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
 	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	}
-	ierr = get_ShapeFunction(NULL,&diff_shape_by_gauss_pt,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
+	ierr = get_ShapeFunction(NULL,&diff_base_functions_by_gauss_pt,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
       }
       vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
       data.resize(g_dim);
@@ -1294,7 +1642,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       if(nb_dofs!=dit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       unsigned int gg = 0;
       for(;gg<g_dim;gg++) {
-	if(diff_shape_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+	if(diff_base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	ublas::matrix<FieldData> &mat = data[gg];
 	if((mat.size1()!=nb_rows)||(mat.size2()!=nb_dofs)) mat.resize(nb_rows,nb_dofs);
 	mat = ublas::zero_matrix<FieldData>(nb_rows,nb_dofs);
@@ -1302,7 +1650,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
 	  for(unsigned int dd = 0;dd<dim;dd++) {
 	    ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr*dim+dd);
 	    for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
-	      mr(jj*rank + rr) =  (diff_shape_by_gauss_pt[gg])[dim*jj + dd];     
+	      mr(jj*rank + rr) =  (diff_base_functions_by_gauss_pt[gg])[dim*jj + dd];     
 	    }
 	  }
 	}

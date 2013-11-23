@@ -29,6 +29,6 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #testing
-add_test(ComputeFibreDirection ${MPI_BIN_PATH}/mpirun -np 2 ./potential_flow_rope -my_file new_clamped_wire_coarse.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1 -log_summary)
-add_test(wireTest ${MPI_BIN_PATH}/mpirun -np 2 ./wire_interface -my_file solution.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -log_summary)
+add_test(ComputeFibreDirection ${MPI_RUN} -np 2 ./potential_flow_rope -my_file new_clamped_wire_coarse.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1 -log_summary)
+add_test(wireTest ${MPI_RUN} -np 2 ./wire_interface -my_file solution.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -log_summary)
 

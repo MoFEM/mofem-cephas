@@ -147,8 +147,8 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       }
 
       //Get displacements at Gauss points
-      Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find(field_name);
-      if(diit==data_at_gauss_pt.end()) SETERRQ1(PETSC_COMM_SELF,1,"no field_name %s !!!",field_name.c_str());
+      H1L2_Data_at_Gauss_pt::iterator diit = h1l2_data_at_gauss_pt.find(field_name);
+      if(diit==h1l2_data_at_gauss_pt.end()) SETERRQ1(PETSC_COMM_SELF,1,"no field_name %s !!!",field_name.c_str());
       vector< ublas::vector<FieldData> > &data = diit->second;
       vector< ublas::vector<FieldData> >::iterator vit = data.begin();
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
@@ -386,8 +386,8 @@ struct PostProcL2VelocitiesFieldsAndGradientOnRefMesh: public PostProcDisplaceme
       }
 
       //Get displacements at Gauss points
-      Data_at_Gauss_pt::iterator diit = data_at_gauss_pt.find(field_name);
-      if(diit==data_at_gauss_pt.end()) SETERRQ1(PETSC_COMM_SELF,1,"no field_name %s !!!",field_name.c_str());
+      H1L2_Data_at_Gauss_pt::iterator diit = h1l2_data_at_gauss_pt.find(field_name);
+      if(diit==h1l2_data_at_gauss_pt.end()) SETERRQ1(PETSC_COMM_SELF,1,"no field_name %s !!!",field_name.c_str());
       vector< ublas::vector<FieldData> > &data = diit->second;
       vector< ublas::vector<FieldData> >::iterator vit = data.begin();
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();

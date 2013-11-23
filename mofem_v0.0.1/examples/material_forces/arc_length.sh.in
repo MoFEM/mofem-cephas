@@ -103,7 +103,7 @@ DIR_PREFIX=`basename $FILE .h5m`
 DIR_NAME=arc_length_"$DIR_PREFIX"_"$DIR_SURFIX"
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
-MPIRUN="@MPI_BIN_PATH@mpirun -np 4"
+MPIRUN="@MPI_RUN@ -np 4"
 
 mkdir $DIR_NAME
 cp $FILE $DIR_NAME/
