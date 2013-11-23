@@ -62,9 +62,9 @@ inline int fNBVOLUME_Hcurl(int P) { return NBVOLUME_Hcurl(P); }
 inline int fNBVERTEX_Hdiv(int P) { (void)P; return 0; }
 /// number of approx. functions for Hdiv space on edge
 inline int fNBEDGE_Hdiv(int P) { assert(P==P); (void)P; return NBEDGE_Hdiv(P); }
-/// number of approx. functions for Hcurl space on face
+/// number of approx. functions for Hdiv space on face
 inline int fNBFACE_Hdiv(int P) { return NBFACE_Hdiv(P); }
-/// number of approx. functions for Hcurl space on voulem
+/// number of approx. functions for Hdiv space on voulem
 inline int fNBVOLUME_Hdiv(int P) { return NBVOLUME_Hdiv(P); }
 
 //MultiIndex Tags
