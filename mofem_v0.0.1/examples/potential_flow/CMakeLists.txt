@@ -27,7 +27,7 @@ file(COPY
 
 
 #testing
-add_test(SimplePotentialFlowTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/potential_flow
+add_test(SimplePotentialFlowTest ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/potential_flow
   -my_file pipe.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 5 -log_summary)
 
 install(TARGETS potential_flow DESTINATION bin)

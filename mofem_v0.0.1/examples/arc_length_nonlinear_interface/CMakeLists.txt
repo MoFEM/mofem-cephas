@@ -26,7 +26,7 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #testing
-add_test(ArcLengthInterfaceTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
+add_test(ArcLengthInterfaceTest ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
   -my_file PeelTest.cub
   -ksp_type fgmres -pc_type asm -sub_pc_type lu
   -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10
