@@ -98,6 +98,7 @@ add_library(mofem_Field
   do_not_blink/FieldCore.cpp
   FEM.c
   H1.c
+  Hdiv.c
   L2.c
 )
 

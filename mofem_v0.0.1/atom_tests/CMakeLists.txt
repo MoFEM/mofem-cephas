@@ -25,6 +25,9 @@ target_link_libraries(elasticity_atom_test mofem_student_body mofem_Field ${PROJ
 add_executable(l2_approximation l2_approximation.cpp)
 target_link_libraries(l2_approximation mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(hdiv_approximation hdiv_approximation.cpp)
+target_link_libraries(hdiv_approximation mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 add_executable(trans_isotropic_test trans_isotropic_test.cpp)
 target_link_libraries(trans_isotropic_test mofem_student_body mofem_Field ${PROJECT_LIBS})
 
