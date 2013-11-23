@@ -104,8 +104,8 @@ int main(int argc, char *argv[]) {
 
   //add ents to field and set app. order
   ierr = mField.add_ents_to_field_by_TETs(0,"FIELD_HDIV"); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"FIELD_HDIV",5); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTET,"FIELD_HDIV",5); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"FIELD_HDIV",3); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"FIELD_HDIV",3); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELEM_HDIV",MBTET); CHKERRQ(ierr);
@@ -156,6 +156,9 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
+    vector<vector<ublas::matrix<FieldData> > > rowNMatrices_Faces;
+    vector<ublas::matrix<FieldData> > rowNMatrices_Volume;
+
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
@@ -168,6 +171,16 @@ int main(int argc, char *argv[]) {
       ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
       ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
       ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
+
+      /*rowNMatrices_Faces.resize(4);
+      for(int ff = 0;ff<4;ff++) { //faces matrices
+	ierr = GetGaussRowNMatrix("FIELD_HDIV",MBTRI,rowNMatrices_Faces[ff],ff); CHKERRQ(ierr);
+      }
+      ierr = GetGaussRowNMatrix("FIELD_HDIV",MBTET,rowNMatrices_Volume); CHKERRQ(ierr);
+
+      cerr << "\n\n";
+      cerr << (rowNMatrices_Faces[0])[0] << endl;
+      cerr << (rowNMatrices_Volume)[0] << endl;*/
 
 
 
