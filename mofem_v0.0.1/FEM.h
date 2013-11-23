@@ -22,22 +22,13 @@
 #include<stdlib.h>
 #include<petscsys.h>
 
-#ifdef __APPLE__
-  #ifdef __CBLAS__
+#ifdef __cplusplus
+extern "C" {
+#endif
   #include<cblas.h>
-  #else  
-  #include <Accelerate/Accelerate.h>
-  #endif
   #include<lapack_wrap.h>
-#else 
-  #ifdef __cplusplus
-  extern "C" {
-  #endif
-    #include<cblas.h>
-    #include<lapack_wrap.h>
-  #ifdef __cplusplus
-  }
-  #endif
+#ifdef __cplusplus
+}
 #endif
 
 #define LAMBDA(E,NU) (E*NU/((1.+NU)*(1.-2.*NU)))
