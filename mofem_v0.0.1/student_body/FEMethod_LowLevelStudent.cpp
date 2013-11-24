@@ -593,7 +593,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	    }
 	  }
 	}
-	int gNTET_dim = get_dim_gNTET();
+	unsigned int gNTET_dim = get_dim_gNTET();
 	if(isH1) {
 	  int _edges_order_[6];
 	  copy(maxOrderEdgeH1.begin(),maxOrderEdgeH1.end(),&_edges_order_[0]);
@@ -691,7 +691,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  for(int ff = 0;ff<4;ff++) {
 	    Hdiv_faceN_byOrder.resize(0);
 	  }
-	  for(int gg = 0;gg<gNTET_dim;gg++) {
+	  for(unsigned int gg = 0;gg<gNTET_dim;gg++) {
 	    for(int ff = 0;ff<4;ff++) {
 
 	      int shift_e = gg*maxOrderFaceHdiv[ff];
@@ -720,7 +720,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  }
 
 	  for(int ff = 0;ff<4;ff++) {
-	    int size = Hdiv_egde_faceN[ff][0].size() + Hdiv_egde_faceN[ff][1].size() + Hdiv_egde_faceN[ff][2].size() + 
+	    unsigned int size = Hdiv_egde_faceN[ff][0].size() + Hdiv_egde_faceN[ff][1].size() + Hdiv_egde_faceN[ff][2].size() + 
 			Hdiv_face_bubbleN[ff].size();
 	    if(Hdiv_faceN_byOrder[ff].size()!=size) {
 	      SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",Hdiv_faceN_byOrder[ff].size(),size);
@@ -785,7 +785,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  }
 
 	  Hdiv_volumeN_byOrder.resize(0);
-	  for(int gg = 0;gg<gNTET_dim;gg++) {
+	  for(unsigned int gg = 0;gg<gNTET_dim;gg++) {
 	  
 	    int shift_e = gg*(maxOrderElemHdiv-1);
 	    int shift_f = gg*((maxOrderElemHdiv-2)*(maxOrderElemHdiv-2)+(maxOrderElemHdiv-2))/2;
@@ -820,7 +820,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	    }
 	  }
 
-	  int size = 
+	  unsigned int size = 
 	    Hdiv_edge_volumeN[0].size() + Hdiv_edge_volumeN[1].size() + Hdiv_edge_volumeN[2].size() +
 	    Hdiv_edge_volumeN[3].size() + Hdiv_edge_volumeN[4].size() + Hdiv_edge_volumeN[5].size() +
 	    Hdiv_face_volumeN[0].size() + Hdiv_face_volumeN[1].size() + Hdiv_face_volumeN[2].size() + Hdiv_face_volumeN[3].size() +
@@ -1221,7 +1221,7 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 		  if(ent_ptr->get_space()!=Hdiv) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
 		  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
 		  if(maxOrderFaceHdiv[side_number]>0) {
-		    int nb_dofs_ = NBFACE_Hdiv(order);
+		    unsigned int nb_dofs_ = NBFACE_Hdiv(order);
 		    if(nb_dofs!=nb_dofs_) SETERRQ2(PETSC_COMM_SELF,1,"data inconsitencies, %d != %d",nb_dofs,nb_dofs_);
 		    int shift = gg*nb_dofs;
 		    mat(rr,0) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+0],3,&dof_data[rr],rank);
@@ -1237,7 +1237,7 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 		if(ent_ptr->get_space()!=Hdiv) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
 		try {
 		  if(maxOrderElemHdiv>1) {
-		  int nb_dofs_ = NBVOLUME_Hdiv(order);
+		  unsigned int nb_dofs_ = NBVOLUME_Hdiv(order);
 		  if(nb_dofs!=nb_dofs_) {
 		      cerr << "order " << order << " " << ent_ptr->forder(order) << endl;
 		      SETERRQ2(PETSC_COMM_SELF,1,"data inconsitencies, %d != %d",nb_dofs,nb_dofs_);
@@ -1467,7 +1467,6 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 	}
 	break;
 	case Hdiv: {
-	  const string &field_name = field_ptr->get_name();
 	  unsigned int rank = field_ptr->get_max_rank();
 	  unsigned int order = ent_ptr->get_max_order();
 	  unsigned int nb_dofs = ent_ptr->forder(order);
@@ -1479,7 +1478,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 	    ublas::matrix<FieldData> &mat = data[gg];
 	    mat.resize(3*rank,nb_dofs);
 	    ublas::noalias(mat) = ublas::zero_matrix<FieldData>(3*rank,nb_dofs);
-	    for(int rr = 0;rr<rank;rr++) {
+	    for(unsigned int rr = 0;rr<rank;rr++) {
 	      ublas::matrix_row<ublas::matrix<FieldData> > mr0(mat,3*rr+0);
 	      ublas::matrix_row<ublas::matrix<FieldData> > mr1(mat,3*rr+1);
 	      ublas::matrix_row<ublas::matrix<FieldData> > mr2(mat,3*rr+2);
