@@ -4,4 +4,4 @@ MOFEM_SOURCE=@CMAKE_SOURCE_DIR@
 MOFEM_BUILD=@CMAKE_BINARY_DIR@
 
 cd $MOFEM_SOURCE
-ctest -VV -S CTestScript_live_cd.cmake
+ctest -VV -S $MOFEM_SOURCE/cmake/CTestScript_live_cd.cmake
