@@ -28,7 +28,7 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #testing
-add_test(SimpleElasticityTest ${MPI_BIN_PATH}/mpirun -np 4 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
+add_test(SimpleElasticityTest ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
   -my_file LShapeCoarse.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary)
 
 install(TARGETS elasticity DESTINATION bin)

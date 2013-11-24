@@ -117,7 +117,7 @@ if [ -z ${REF+x} ]; then
 fi
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
-MPIRUN="@MPI_BIN_PATH@mpirun -np 4" 
+MPIRUN="@MPI_RUN@ -np 4" 
 
 DIR_SURFIX=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
 DIR_PREFIX=`basename $FILE .cub`

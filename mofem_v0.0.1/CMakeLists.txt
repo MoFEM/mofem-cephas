@@ -21,6 +21,7 @@ cmake_minimum_required (VERSION 2.8)
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
 include(cmake/ExportFile.cmake)
+include(cmake/FindTAO.cmake)
 
 message(${PETSCVAR_CXX})
 
@@ -28,16 +29,12 @@ set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
 string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 message(${PETSCVAR_CXX_})
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
-
-include(cmake/ResolveCompilerPaths.cmake)
-
 #get mpipath bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
-#message(STATUS ${MPI_BIN_PATH})
+find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} PATH ${MPI_BIN_PATH})
+include(cmake/ResolveCompilerPaths.cmake)
 
-project(MoFEM C CXX)
-
-include(cmake/FindTAO.cmake)
+project(MoFEM C Fortran CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
@@ -52,7 +49,7 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 #add coverage
 if(WITHCOVERAGE) 
-  SET(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
+  set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
   add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
   set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
 endif(WITHCOVERAGE) 
@@ -67,20 +64,16 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 #message( STATUS "CGAL_USE_FILE " ${CGAL_USE_FILE} )
 #include( ${CGAL_USE_FILE} )
 
-find_library(MPI_F90_LIB mpi_f90 PATHS /usr/lib /usr/lib/openmpi/lib)
-message(STATUS ${MPI_F90_LIB})
-find_library(MPI_F77_LIB mpi_f77 PATHS /usr/lib /usr/lib/openmpi/lib)
-message(STATUS ${MPI_F77_LIB})
-
 resolve_includes(PROJECT_INCLUDE_DIRECTORIES 
-  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES}")
+  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES}"
+  )
 
 include_directories(
   ${123_configurational_forces_SOURCE_DIR}
   ${PROJECT_INCLUDE_DIRECTORIES}
   ${PETSC_DIR}/${PETSC_ARCH}/include
   ${PETSCVAR_DIR}/include
-)
+  )
 
 if(TAO_LIBRARY) 
   include_directories(${TAO_DIR}/include)
@@ -92,6 +85,8 @@ include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
 include_directories("${PROJECT_SOURCE_DIR}/student_body")
 include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
+include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
+link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
 
 add_library(mofem_Field 
   FieldInterface.cpp
@@ -122,9 +117,9 @@ add_library(mofem_complex_for_lazy
   complex_for_lazy/ConfigurationalFractureMechanics.cpp
 )
 
-#add_library(cgal_interface 
-#  cgal_interface.cpp
-#)
+add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
+add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
+add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")
 
 resolve_libraries(PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
@@ -132,20 +127,19 @@ resolve_libraries(PROJECT_LIBS "
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}
   ${MPI_F90_LIB}
-  ${MPI_F77_LIB}
-  ")
+  ${MPI_F77_LIB}")
 #message(STATUS ${PETSCVAR_BLASLAPACK_LIB})
+set(PROJECT_LIBS "mofem_cblas ${PROJECT_LIBS}")
 message(STATUS ${PROJECT_LIBS})
 
 file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/INSTALL
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+  ${CMAKE_CURRENT_SOURCE_DIR}/INSTALL
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  )
 
 #add executable library form subdirectory
 enable_testing()
 include(CTest)
-add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
-add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
 
@@ -154,14 +148,16 @@ find_package(Doxygen)
 if(DOXYGEN_FOUND)
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+  )
 set(DOXYGEN_LINE_COMMAND 
   ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
 add_custom_target(doc
   ${DOXYGEN_LINE_COMMAND}
   COMMENT "Generating API documentation with Doxygen" VERBATIM
-)
+  )
 endif(DOXYGEN_FOUND)
 
 

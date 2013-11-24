@@ -28,7 +28,7 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #testing
-add_test(LinearDynamicsElasticity ${MPI_BIN_PATH}/mpirun -np 2 ${CMAKE_CURRENT_BINARY_DIR}/linear_dynamics_elasticity
+add_test(LinearDynamicsElasticity ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/linear_dynamics_elasticity
   -my_file LShapeCoarse.cub
   -ksp_type fgmres 
   -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 
