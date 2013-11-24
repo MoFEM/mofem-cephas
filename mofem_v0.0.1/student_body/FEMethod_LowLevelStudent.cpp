@@ -691,7 +691,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  for(int ff = 0;ff<4;ff++) {
 	    Hdiv_faceN_byOrder.resize(0);
 	  }
-	  for(int gg = 0;gg<gNTET_dim;gg++) {
+	  for(unsigned int gg = 0;gg<gNTET_dim;gg++) {
 	    for(int ff = 0;ff<4;ff++) {
 
 	      int shift_e = gg*maxOrderFaceHdiv[ff];
@@ -785,7 +785,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  }
 
 	  Hdiv_volumeN_byOrder.resize(0);
-	  for(int gg = 0;gg<gNTET_dim;gg++) {
+	  for(unsigned int gg = 0;gg<gNTET_dim;gg++) {
 	  
 	    int shift_e = gg*(maxOrderElemHdiv-1);
 	    int shift_f = gg*((maxOrderElemHdiv-2)*(maxOrderElemHdiv-2)+(maxOrderElemHdiv-2))/2;
@@ -1478,7 +1478,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 	    ublas::matrix<FieldData> &mat = data[gg];
 	    mat.resize(3*rank,nb_dofs);
 	    ublas::noalias(mat) = ublas::zero_matrix<FieldData>(3*rank,nb_dofs);
-	    for(int rr = 0;rr<rank;rr++) {
+	    for(unsigned int rr = 0;rr<rank;rr++) {
 	      ublas::matrix_row<ublas::matrix<FieldData> > mr0(mat,3*rr+0);
 	      ublas::matrix_row<ublas::matrix<FieldData> > mr1(mat,3*rr+1);
 	      ublas::matrix_row<ublas::matrix<FieldData> > mr2(mat,3*rr+2);
