@@ -160,7 +160,7 @@ namespace MoFEM {
 
 //CONSTS
 
-const int max_ApproximationOrder = 5;
+const int max_ApproximationOrder = 10;
 const EntityHandle no_handle = (EntityHandle)-1;
 
 //TYPEDEFS

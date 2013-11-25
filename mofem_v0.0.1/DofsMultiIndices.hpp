@@ -34,8 +34,8 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
   static UId get_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
-    if(_dof_>=256) THROW_AT_LINE("_dof>=256");
-    UId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_unique_id())<<8);
+    if(_dof_>=512) THROW_AT_LINE("_dof>=512");
+    UId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_unique_id())<<9);
     return _uid_;
   }
   //

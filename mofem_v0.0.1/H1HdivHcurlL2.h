@@ -39,6 +39,11 @@ extern "C" {
 #define NBEDGE_Hdiv(P) (0)
 #define NBFACE_Hdiv(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
 #define NBVOLUME_Hdiv(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
+#define NBFACE_EDGE_Hdiv(P) ((P>0) ? P : 0)
+#define NBFACE_FACE_Hdiv(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
+#define NBVOLUME_EDGE_Hdiv(P) ((P>1) ? P-1 : 0)
+#define NBVOLUME_FACE_Hdiv(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
+#define NBVOLUME_VOLUME_Hdiv(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
 /** 
  * \brief Calulate Lagrange approximation basis
@@ -79,7 +84,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(int *faces_nodes,int *p,double 
 PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f[4],int GDIM);
 PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(int p,double *coords,double *N,double *PHI_v_e[6],int GDIM);
 PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(int p,double *coords,double *N,double *PHI_v_f[4],int GDIM);
-PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(int p,double *N,double *PHI_v,int GDIM);
+PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(int p,double *coords,double *N,double *PHI_v,int GDIM);
 
 #ifdef __cplusplus
 }
