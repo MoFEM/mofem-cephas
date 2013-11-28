@@ -1553,10 +1553,10 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	 switch (space) {
 	  case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
   	   adj_ents.insert(nodes.begin(),nodes.end());
-  	  case Hdiv: if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
+  	  case Hcurl: if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
   	   adj_ents.insert(edges.begin(),edges.end());
 	   for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) p.first->get_side_number_ptr(moab,*eeit);
-  	  case Hcurl: if(faces.empty()) moab.get_adjacencies(&fe_ent,1,2,false,faces);
+  	  case Hdiv: if(faces.empty()) moab.get_adjacencies(&fe_ent,1,2,false,faces);
   	   adj_ents.insert(faces.begin(),faces.end());
 	   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) p.first->get_side_number_ptr(moab,*fit);
   	  case L2:
@@ -1618,12 +1618,12 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	  switch (space) {
 	    case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
 	      adj_ents.insert(nodes.begin(),nodes.end());
-	    case Hdiv: {
+	    case Hcurl: {
 	      SideNumber_multiIndex::nth_index<2>::type::iterator
 		siit = side_table.get<2>().lower_bound(MBEDGE), hi_siit = side_table.get<2>().upper_bound(MBEDGE);
 	      for(;siit!=hi_siit;siit++) adj_ents.insert(siit->ent);
 	    }
-	    case Hcurl: {
+	    case Hdiv: {
 	      SideNumber_multiIndex::nth_index<2>::type::iterator
 		siit = side_table.get<2>().lower_bound(MBTRI), hi_siit = side_table.get<2>().upper_bound(MBTRI);
 	      for(;siit!=hi_siit;siit++) adj_ents.insert(siit->ent);
@@ -1806,9 +1806,9 @@ PetscErrorCode FieldCore::build_adjacencies(const BitRefLevel bit) {
     int ii = 0;
     UId uid = 0;
     for(;ii<size_row;ii++) {
-      if( uid == (uids_row[ii] >> 8 )) continue;
+      if( uid == (uids_row[ii] >> 9 )) continue;
       uid = uids_row[ii];
-      uid = uid >> 8; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 8 bits
+      uid = uid >> 9; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 8 bits
       ents_by_uid::iterator miit = entsMoabField.get<Unique_mi_tag>().find(uid);
       assert(dofsMoabField.get<Unique_mi_tag>().find(uids_row[ii])!=dofsMoabField.get<Unique_mi_tag>().end());
       assert(dofsMoabField.get<Unique_mi_tag>().find(uids_row[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
@@ -1820,9 +1820,9 @@ PetscErrorCode FieldCore::build_adjacencies(const BitRefLevel bit) {
     int size_col = fit->tag_col_uids_size/sizeof(UId);
     const UId *uids_col = (UId*)fit->tag_col_uids_data;
     for(ii = 0,uid = 0;ii<size_col;ii++) {
-      if( uid == (uids_col[ii] >> 8 )) continue;
+      if( uid == (uids_col[ii] >> 9 )) continue;
       uid = uids_col[ii];
-      uid = uid >> 8; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 8 bits
+      uid = uid >> 9; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 8 bits
       assert(dofsMoabField.get<Unique_mi_tag>().find(uids_col[ii])!=dofsMoabField.get<Unique_mi_tag>().end());
       assert(dofsMoabField.get<Unique_mi_tag>().find(uids_col[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       ents_by_uid::iterator miit = entsMoabField.get<Unique_mi_tag>().find(uid);
@@ -1834,9 +1834,9 @@ PetscErrorCode FieldCore::build_adjacencies(const BitRefLevel bit) {
     int size_data = fit->tag_data_uids_size/sizeof(UId);
     const UId *uids_data = (UId*)fit->tag_data_uids_data;
     for(ii = 0,uid = 0;ii<size_data;ii++) {
-      if( uid == (uids_data[ii] >> 8 )) continue;
+      if( uid == (uids_data[ii] >> 9 )) continue;
       uid = uids_data[ii];
-      uid = uid >> 8; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 8 bits
+      uid = uid >> 9; //look to DofMoFEMEntity::get_unique_id_calculate and MoFEMEntity::get_unique_id_calculate() <- uid is shifted by 8 bits
       assert(dofsMoabField.get<Unique_mi_tag>().find(uids_data[ii])!=dofsMoabField.get<Unique_mi_tag>().end());
       assert(dofsMoabField.get<Unique_mi_tag>().find(uids_data[ii])->get_MoFEMEntity_ptr()->get_unique_id()==uid);
       ents_by_uid::iterator miit = entsMoabField.get<Unique_mi_tag>().find(uid);
