@@ -374,6 +374,7 @@ int main(int argc, char *argv[]) {
 	    myfile << boost::format("%.6lf") % roundn(t[dd]) << " ";
 	  }
 	  cout << endl;
+	  myfile << endl;
 
 	  /*cerr << endl << endl;
 	  cerr << t0 << endl;
