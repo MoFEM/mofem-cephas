@@ -703,7 +703,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 
 	  Hdiv_faceN_byOrder.resize(4);
 	  for(int ff = 0;ff<4;ff++) {
-	    Hdiv_faceN_byOrder.resize(0);
+	    Hdiv_faceN_byOrder[ff].resize(0);
 	  }
 	  for(unsigned int gg = 0;gg<gNTET_dim;gg++) {
 	    for(int ff = 0;ff<4;ff++) {

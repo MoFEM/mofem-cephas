@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
 
 	for(int ff = 0;ff<4;ff++) {
 	  if(RowGlob_Volume.size()>0) {
-	    for(int gg = 0;gg<g_NTET.size()/4;gg++) { 
+	    for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) { 
 	      ublas::matrix<double> NTN;
 	      NTN = V*G_TET_W[gg]*prod(trans(rowNMatrices_Volume[gg]),colNMatrices_Faces[ff][gg]);
 	      //NTN = V*G_TET_W[gg]*prod(trans(rowDiffNMatrices_Volume[gg]),colNMatrices_Faces[ff][gg]);
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
 	  }
 	}
 
-	for(int gg = 0;gg<g_NTET.size()/4;gg++) { 
+	for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) { 
 	  if(ColGlob_Volume.size()>0) {
 	    ublas::matrix<double> NTN;
 	    NTN = V*G_TET_W[gg]*prod(trans(rowNMatrices_Volume[gg]),colNMatrices_Volume[gg]);
