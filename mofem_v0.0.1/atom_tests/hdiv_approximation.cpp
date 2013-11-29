@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTRI,"FIELD_HDIV",4); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTET,"FIELD_HDIV",4); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(0,"FIELD_L2"); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTET,"FIELD_L2",4); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"FIELD_L2",5); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELEM_HDIV",MBTET); CHKERRQ(ierr);
