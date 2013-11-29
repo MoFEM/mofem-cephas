@@ -130,6 +130,7 @@ struct PotentialElem: public FEMethod_UpLevelStudent {
 	SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
 	Range meshsets;
 	rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+	meshsets.insert(it->meshset); // check if children of preassure bc triangles are not in main cubit meshset
 	for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
 	SideNumber_multiIndex::nth_index<1>::type::iterator siit = sit;
 	for(;siit!=hi_siit;siit++) {

@@ -99,7 +99,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     R_normal[0] = normal3[0];
     R_normal[1] = normal3[1];
     R_normal[2] = normal3[2];
-    R_normal /= area3;
+    R_normal /= 2.*area3;
     ublas::matrix_row<ublas::matrix<double> > R_tangent1(R,1);
     R_tangent1[0] = tangent1[0];
     R_tangent1[1] = tangent1[1];

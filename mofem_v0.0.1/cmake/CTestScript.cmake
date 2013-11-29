@@ -64,6 +64,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   mesh_insert_interface_atom_test_compare
   nonlinear_elasticity_atom_compare
   arc_length_nonlinear_elasticity_atom_compare
+  hdiv_atom_approximation_compare
   SimpleElasticityTest
   SimpleInterfaceTest
   SimpleInterfaceTestHalfCrack

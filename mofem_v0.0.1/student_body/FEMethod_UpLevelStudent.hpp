@@ -152,18 +152,32 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
   PetscErrorCode GetDataVector(const string &field_name,EntityType type,ublas::vector<FieldData> &Data,int side_number = -1);
 
 
-  /** \brief Copy Gauss pt. values for dofs
+  /** \brief Field data at Gauss points for L2 and H1 space
    *
    * Note that size of the global vector is determined by number of gauss
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
    * \param field_name name of the approx. field 
-   * \param vector on return values of field at gauss points 
+   * \param vector of vectors on return values of field at gauss points 
+   &
    */
   PetscErrorCode GetGaussDataVector(const string &field_name,vector<ublas::vector<FieldData> > &Data);
 
-  /** \brief Copy Gauss pt. values direvatives
+
+  /** \brief Field data at Gauss points for Hcurl and Hdiv space
+   *
+   * Note that size of the global vector is determined by number of gauss
+   * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
+   * g_NTET.size()/4
+   *
+   * \param field_name name of the approx. field 
+   * \param vector of matrices on return values of field at gauss points 
+   */
+  PetscErrorCode GetGaussDataVector_HcurlHdiv(const string &field_name,vector<ublas::matrix<FieldData> > &Data);
+
+
+  /** \brief Field data direvatives at Gauss points for L2 and H1 space
    *
    * Note that size of the global vector is determined by number of gauss
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =

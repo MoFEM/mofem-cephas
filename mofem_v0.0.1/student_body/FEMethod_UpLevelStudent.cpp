@@ -433,7 +433,14 @@ PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,E
 PetscErrorCode FEMethod_UpLevelStudent::GetGaussDataVector(const string &field_name,vector< ublas::vector<FieldData> > &Data) {
   PetscFunctionBegin;
   H1L2_Data_at_Gauss_pt::iterator miit = h1l2_data_at_gauss_pt.find(field_name);
-  if(miit == h1l2_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  if(miit == h1l2_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE (top tip: if this is Hdiv or Hcrul field use)");
+  Data = miit->second;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussDataVector_HcurlHdiv(const string &field_name,vector< ublas::matrix<FieldData> > &Data) {
+  PetscFunctionBegin;
+  HcurlHdiv_Data_at_Gauss_pt::iterator miit = hcurl_hdiv_data_at_gauss_pt.find(field_name);
+  if(miit == hcurl_hdiv_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   Data = miit->second;
   PetscFunctionReturn(0);
 }
@@ -667,15 +674,6 @@ PetscErrorCode FEMethod_UpLevelStudent::MakeBMatrix3D(
     if((BMat.size1()!=6)||(BMat.size2()!=n)) BMat.resize(6,n);
     // page 30 CHAPTER 6. DISPLACEMENT METHODS, FEAP Version 7.3 Theory Manual Robert L. Taylor
     // dX/dx (0) dX/dy (1) dX/dz (2); dY/dx (3) dY/dy (4) dY/dz (5); dZ/dx (6) dZ/dy (7) dZ/dz (8)
-    /*ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,0)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,0); //dX/dx
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,1)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,4); //dY/dy
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,2)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,8); //dZ/dz
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,3)) = //dX/dy+dY/dx
-      ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,1)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,3);
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,4)) = //dY/dz+dZ/dy
-      ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,5)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,7);
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,5)) = //dX/dz+dZ/dx
-      ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,2)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,6);*/
     cblas_dcopy(BMat.size2(),&diffMat.data()[0*diffMat.size2()],1,&BMat.data()[0*BMat.size2()],1);
     cblas_dcopy(BMat.size2(),&diffMat.data()[4*diffMat.size2()],1,&BMat.data()[1*BMat.size2()],1);
     cblas_dcopy(BMat.size2(),&diffMat.data()[8*diffMat.size2()],1,&BMat.data()[2*BMat.size2()],1);

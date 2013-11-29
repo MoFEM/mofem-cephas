@@ -283,6 +283,7 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F) {
 // Approximation
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim) {
   PetscFunctionBegin;
+  assert(fabs(s)<=1);
   if(dim < 2) SETERRQ(PETSC_COMM_SELF,1,"dim < 2");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
   if(p<0) SETERRQ(PETSC_COMM_SELF,1,"p < 0");
@@ -411,6 +412,7 @@ PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_double
 }
 PetscErrorCode Spin(double *spinOmega,double *vecOmega) {
   PetscFunctionBegin;
+  bzero(spinOmega,9*sizeof(double));
   spinOmega[0*3+1] = -vecOmega[2];
   spinOmega[0*3+2] = +vecOmega[1];
   spinOmega[1*3+0] = +vecOmega[2];

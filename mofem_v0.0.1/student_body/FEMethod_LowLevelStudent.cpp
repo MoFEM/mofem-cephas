@@ -605,9 +605,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  diffH1edgeNinvJac.resize(6);
 	  double *_H1edgeN_[6],*_diffH1edgeN_[6],*_diffH1edgeNinvJac_[6];
 	  for(int ee = 0;ee<6;ee++) {
-	    H1edgeN[ee].resize(gNTET_dim*NBEDGE_H1(max_ApproximationOrder));
-	    diffH1edgeN[ee].resize(3*gNTET_dim*NBEDGE_H1(max_ApproximationOrder));
-	    diffH1edgeNinvJac[ee].resize(3*gNTET_dim*NBEDGE_H1(max_ApproximationOrder));
+	    H1edgeN[ee].resize(gNTET_dim*NBEDGE_H1(maxOrderEdgeH1[ee]));
+	    diffH1edgeN[ee].resize(3*gNTET_dim*NBEDGE_H1(maxOrderEdgeH1[ee]));
+	    diffH1edgeNinvJac[ee].resize(3*gNTET_dim*NBEDGE_H1(maxOrderEdgeH1[ee]));
 	    _H1edgeN_[ee] = &(H1edgeN[ee])[0];
 	    _diffH1edgeN_[ee] = &(diffH1edgeN[ee])[0];
 	    _diffH1edgeNinvJac_[ee] = &(diffH1edgeNinvJac[ee])[0]; 
@@ -621,9 +621,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  diffH1faceNinvJac.resize(4);
 	  double *_H1faceN_[4],*_diffH1faceN_[4],*_diffH1faceNinvJac_[4];
 	  for(int ff = 0;ff<4;ff++) {
-	    H1faceN[ff].resize(gNTET_dim*NBFACE_H1(max_ApproximationOrder));
-	    diffH1faceN[ff].resize(3*gNTET_dim*NBFACE_H1(max_ApproximationOrder));
-	    diffH1faceNinvJac[ff].resize(3*gNTET_dim*NBFACE_H1(max_ApproximationOrder));
+	    H1faceN[ff].resize(gNTET_dim*NBFACE_H1(maxOrderFaceH1[ff]));
+	    diffH1faceN[ff].resize(3*gNTET_dim*NBFACE_H1(maxOrderFaceH1[ff]));
+	    diffH1faceNinvJac[ff].resize(3*gNTET_dim*NBFACE_H1(maxOrderFaceH1[ff]));
 	    _H1faceN_[ff] = &(H1faceN[ff])[0];
 	    _diffH1faceN_[ff] = &(diffH1faceN[ff])[0];
 	    _diffH1faceNinvJac_[ff] = &(diffH1faceNinvJac[ff])[0];
@@ -631,9 +631,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  ierr = H1_FaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],diffNTET,_H1faceN_,_diffH1faceN_,gNTET_dim); CHKERRQ(ierr);
 	  ierr = H1_FaceShapeDiffMBTETinvJ(_faces_order_,_faces_order_,_diffH1faceN_,invJac,_diffH1faceNinvJac_,gNTET_dim); CHKERRQ(ierr);
 	  // vol H1
-	  H1elemN.resize(gNTET_dim*NBVOLUME_H1(max_ApproximationOrder));
-	  diffH1elemN.resize(3*gNTET_dim*NBVOLUME_H1(max_ApproximationOrder));
-	  diffH1elemNinvJac.resize(3*gNTET_dim*NBVOLUME_H1(max_ApproximationOrder));
+	  H1elemN.resize(gNTET_dim*NBVOLUME_H1(maxOrderElemH1));
+	  diffH1elemN.resize(3*gNTET_dim*NBVOLUME_H1(maxOrderElemH1));
+	  diffH1elemNinvJac.resize(3*gNTET_dim*NBVOLUME_H1(maxOrderElemH1));
 	  ierr = H1_VolumeShapeFunctions_MBTET(maxOrderElemH1,&gNTET[0],diffNTET,&H1elemN[0],&diffH1elemN[0],gNTET_dim);  CHKERRQ(ierr);
 	  ierr = H1_VolumeShapeDiffMBTETinvJ(maxOrderElemH1,maxOrderElemH1,&diffH1elemN[0],invJac,&diffH1elemNinvJac[0],gNTET_dim); CHKERRQ(ierr);
 	}
@@ -651,9 +651,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  //(p+1)*(p+2)/2 - for each face
 	  double *PHI_f_e[4][3];
 	  for(int ff = 0;ff<4;ff++) {
+	    int nb = NBFACE_EDGE_Hdiv(maxOrderFaceHdiv[ff]);
 	    for(int ee = 0;ee<3;ee++) {
 	      if(maxOrderFaceHdiv[ff]>=1) {
-		int nb = maxOrderFaceHdiv[ff];
 		((Hdiv_egde_faceN[ff])[ee]).resize(3*nb*gNTET_dim); 
 		(PHI_f_e[ff])[ee] = &*((Hdiv_egde_faceN[ff])[ee]).data().begin();
 		P_face[ff] += nb;
@@ -666,7 +666,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  double *PHI_f[4];
 	  for(int ff = 0;ff<4;ff++) {
 	    if(maxOrderFaceHdiv[ff]>=3) { 
-	      int nb = ((maxOrderFaceHdiv[ff]-2)*(maxOrderFaceHdiv[ff]-2)+maxOrderFaceHdiv[ff]-2)/2;
+	      int nb = NBFACE_FACE_Hdiv(maxOrderFaceHdiv[ff]);
 	      (Hdiv_face_bubbleN[ff]).resize(3*nb*gNTET_dim);
 	      PHI_f[ff] = &*(Hdiv_face_bubbleN[ff]).data().begin();
 	      P_face[ff] += nb;
@@ -686,38 +686,69 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  copy(maxOrderFaceHdiv.begin(),maxOrderFaceHdiv.end(),&_faces_order_[0]);
 	  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f_e,gNTET_dim); CHKERRQ(ierr);
 	  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f,gNTET_dim); CHKERRQ(ierr);
+	  /*for(int ff = 0;ff<4;ff++) {
+	    for(int ee = 0;ee<3;ee++) {
+	      fill(Hdiv_egde_faceN[ff][ee].begin(),Hdiv_egde_faceN[ff][ee].end(),0);
+	    }
+	    fill(Hdiv_face_bubbleN[ff].begin(),Hdiv_face_bubbleN[ff].end(),0);
+	  }*/
+
+	  /*cerr << endl;
+	  for(int ff = 0;ff<4;ff++) {
+	    for(int ee = 0;ee<3;ee++) {
+	      cerr << "face " << ff << " edge " << ee << endl << endl;
+	      cerr << Hdiv_egde_faceN[ff][ee] << endl;
+	    }
+	  }*/
 
 	  Hdiv_faceN_byOrder.resize(4);
 	  for(int ff = 0;ff<4;ff++) {
-	    Hdiv_faceN_byOrder.resize(0);
+	    Hdiv_faceN_byOrder[ff].resize(0);
 	  }
 	  for(unsigned int gg = 0;gg<gNTET_dim;gg++) {
 	    for(int ff = 0;ff<4;ff++) {
 
-	      int shift_e = gg*maxOrderFaceHdiv[ff];
-	      int shift_f = gg*((maxOrderFaceHdiv[ff]-2)*(maxOrderFaceHdiv[ff]-2)+(maxOrderFaceHdiv[ff]-2))/2;
+	      int shift_e = gg*NBFACE_EDGE_Hdiv(maxOrderFaceHdiv[ff]);
+	      int shift_f = gg*NBFACE_FACE_Hdiv(maxOrderFaceHdiv[ff]);
 
 	      for(int oo = 1;oo<=maxOrderFaceHdiv[ff];oo++) {
 
 		//edges
 		for(int ee = 0;ee<3;ee++) {
-		  for(int dd = 0;dd<3;dd++) {
-		    Hdiv_faceN_byOrder[ff].push_back(((Hdiv_egde_faceN[ff])[ee])(3*shift_e+3*(oo-1)+dd));
+		  int start = 3*NBFACE_EDGE_Hdiv(oo-1);
+		  int end = 3*NBFACE_EDGE_Hdiv(oo);
+		  for(int dd = start;dd<end;dd++) {
+		    Hdiv_faceN_byOrder[ff].push_back(((Hdiv_egde_faceN[ff])[ee])(3*shift_e+dd));
 		  }
 		}
 		//face
 		if(oo<3) continue;
-		int start = ((oo-1-2)*(oo-1-2)+(oo-1-2))/2;
-		int end = ((oo-2)*(oo-2)+(oo-2))/2;
+		int start = 3*NBFACE_FACE_Hdiv(oo-1);
+		int end = 3*NBFACE_FACE_Hdiv(oo);
 		for(int dd = start;dd<end;dd++) {
-		  for(int ddd = 0;ddd<3;ddd++) {
-		    Hdiv_faceN_byOrder[ff].push_back(Hdiv_face_bubbleN[ff][3*shift_f+3*dd+ddd]);
-		  }
+		  Hdiv_faceN_byOrder[ff].push_back(Hdiv_face_bubbleN[ff][3*shift_f+dd]);
 		}
 
 	      }
 	    }
 	  }
+	
+    	  /*cerr << endl;
+	  for(int ff = 0;ff<4;ff++) {
+	    for(int ee = 0;ee<3;ee++) {
+	      cerr << "face " << ff << " edge " << ee << endl << endl;
+	      cerr << Hdiv_egde_faceN[ff][ee] << endl;
+	    }
+	    if(Hdiv_faceN_byOrder[ff].size()>0) {
+	      cerr << "face" << endl;
+	      cerr << Hdiv_face_bubbleN[ff] << endl;
+	    }
+	    cerr << "all" << endl;
+	    for(int dd = 0;dd<Hdiv_faceN_byOrder[ff].size();dd++) {
+	      cerr << Hdiv_faceN_byOrder[ff][dd] << " ";
+	    }
+	    cerr << endl;
+	  }*/
 
 	  for(int ff = 0;ff<4;ff++) {
 	    unsigned int size = Hdiv_egde_faceN[ff][0].size() + Hdiv_egde_faceN[ff][1].size() + Hdiv_egde_faceN[ff][2].size() + 
@@ -736,7 +767,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  double *PHI_v_e[6];
 	  for(int ee = 0;ee<6;ee++) {
 	    if(maxOrderElemHdiv>=2) {
-	      int nb = maxOrderElemHdiv-1;
+	      int nb = NBVOLUME_EDGE_Hdiv(maxOrderElemHdiv); //maxOrderElemHdiv-1;
 	      (Hdiv_edge_volumeN[ee]).resize(3*nb*gNTET_dim); //(p-2)
 	      PHI_v_e[ee] = &*(Hdiv_edge_volumeN[ee]).data().begin();
 	      P_volume += nb;
@@ -749,7 +780,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  double *PHI_v_f[4];
 	  for(int ff = 0;ff<4;ff++) {
 	    if(maxOrderElemHdiv>=3) {
-	      int nb = 2*(((maxOrderElemHdiv-2)*(maxOrderElemHdiv-2)+(maxOrderElemHdiv-2))/2);
+	      int nb = NBVOLUME_FACE_Hdiv(maxOrderElemHdiv);
 	      (Hdiv_face_volumeN[ff]).resize(3*nb*gNTET_dim);
 	      PHI_v_f[ff] = &*Hdiv_face_volumeN[ff].data().begin(); //2*(p-2)*(p-1)/2
 	      P_volume += nb;
@@ -760,7 +791,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  }
 	  double *PHI_v;
 	  {
-	    int nb = 3*(maxOrderElemHdiv-3)*(maxOrderElemHdiv-2)*(maxOrderElemHdiv-1)/6;
+	    int nb = NBVOLUME_VOLUME_Hdiv(maxOrderElemHdiv); 
 	    if(maxOrderElemHdiv>=4) {
 	      Hdiv_volumeN.resize(3*nb*gNTET_dim);
 	      PHI_v = &*Hdiv_volumeN.data().begin();
@@ -781,40 +812,38 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	    ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v_f,gNTET_dim); CHKERRQ(ierr);
 	  }
 	  if(maxOrderElemHdiv>=4) {
-	    ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(maxOrderElemHdiv,&gNTET[0],PHI_v,gNTET_dim); CHKERRQ(ierr);
+	    ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(maxOrderElemHdiv,&*coords.begin(),&gNTET[0],PHI_v,gNTET_dim); CHKERRQ(ierr);
 	  }
 
 	  Hdiv_volumeN_byOrder.resize(0);
 	  for(unsigned int gg = 0;gg<gNTET_dim;gg++) {
 	  
-	    int shift_e = gg*(maxOrderElemHdiv-1);
-	    int shift_f = gg*((maxOrderElemHdiv-2)*(maxOrderElemHdiv-2)+(maxOrderElemHdiv-2))/2;
-	    int shift_v = gg*(maxOrderElemHdiv-3)*(maxOrderElemHdiv-2)*(maxOrderElemHdiv-1)/6;
+	    int shift_e = gg*NBVOLUME_EDGE_Hdiv(maxOrderElemHdiv);
+	    int shift_f = gg*NBVOLUME_FACE_Hdiv(maxOrderElemHdiv);
+	    int shift_v = gg*NBVOLUME_VOLUME_Hdiv(maxOrderElemHdiv);
 	  
 	    for(int oo = 2;oo<=maxOrderElemHdiv;oo++) {
 
 	      for(int ee = 0;ee<6;ee++) {
-		for(int dd = 0;dd<3;dd++) {
-		  Hdiv_volumeN_byOrder.push_back(Hdiv_edge_volumeN[ee][3*shift_e+3*(oo-2)+dd]);
+		int start = 3*NBVOLUME_EDGE_Hdiv(oo-1);
+		int end = 3*NBVOLUME_EDGE_Hdiv(oo);
+		for(int dd = start;dd<end;dd++) {
+		  Hdiv_volumeN_byOrder.push_back(Hdiv_edge_volumeN[ee][3*shift_e+dd]);
 		}
 	      }
 	      if(oo<3) continue;
 	      for(int ff = 0;ff<4;ff++) {
-		int start = ((oo-1-2)*(oo-1-2)+(oo-1-2))/2;
-		int end = ((oo-2)*(oo-2)+(oo-2))/2;
+		int start = 3*NBVOLUME_FACE_Hdiv(oo-1);
+		int end = 3*NBVOLUME_FACE_Hdiv(oo);
 		for(int dd = start;dd<end;dd++) {
-		  for(int ddd = 0;ddd<6;ddd++) {
-		    Hdiv_volumeN_byOrder.push_back(Hdiv_face_volumeN[ff][6*shift_f+6*dd+ddd]);
-		  }
+		  Hdiv_volumeN_byOrder.push_back(Hdiv_face_volumeN[ff][3*shift_f+dd]);
 		}
 	      }
 	      if(oo<4) continue;
-	      int start = (oo-1-3)*(oo-1-2)*(oo-1-1)/6;
-	      int end = (oo-3)*(oo-2)*(oo-1)/6;
+	      int start = 3*NBVOLUME_VOLUME_Hdiv(oo-1);
+	      int end = 3*NBVOLUME_VOLUME_Hdiv(oo);
 	      for(int dd = start;dd<end;dd++) {
-		for(int ddd = 0;ddd<9;ddd++) {
-		  Hdiv_volumeN_byOrder.push_back(Hdiv_volumeN[9*shift_v+9*dd+ddd]);
-		}
+		Hdiv_volumeN_byOrder.push_back(Hdiv_volumeN[3*shift_v+dd]);
 	      }
       
 	    }
@@ -835,9 +864,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	}
 	if(isL2) {
 	  // vol L2
-	  L2elemN.resize(gNTET_dim*NBVOLUME_L2(max_ApproximationOrder));
-	  diffL2elemN.resize(3*gNTET_dim*NBVOLUME_L2(max_ApproximationOrder));
-	  diffL2elemNinvJac.resize(3*gNTET_dim*NBVOLUME_L2(max_ApproximationOrder));
+	  L2elemN.resize(gNTET_dim*NBVOLUME_L2(maxOrderElemL2));
+	  diffL2elemN.resize(3*gNTET_dim*NBVOLUME_L2(maxOrderElemL2));
+	  diffL2elemNinvJac.resize(3*gNTET_dim*NBVOLUME_L2(maxOrderElemL2));
 	  ierr = L2_ShapeFunctions_MBTET(maxOrderElemL2,&gNTET[0],diffNTET,&L2elemN[0],&diffL2elemN[0],gNTET_dim); CHKERRQ(ierr);
 	  ierr = L2_VolumeShapeDiffMBTETinvJ(maxOrderElemL2,maxOrderElemL2,&diffL2elemN[0],invJac,&diffL2elemNinvJac[0],gNTET_dim); CHKERRQ(ierr);
 	}
@@ -940,12 +969,12 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	H1faceN.resize(5);
 	//face 3
 	int _face_order3_ = maxOrderFaceH1[3];
-	H1faceN[3].resize(NBFACE_H1(max_ApproximationOrder)*gNTRI_dim);
+	H1faceN[3].resize(NBFACE_H1(_face_order3_)*gNTRI_dim);
 	double *_faceN3_ = &*H1faceN[3].begin();
 	ierr = H1_FaceShapeFunctions_MBTRI(_face_nodes3_,_face_order3_,&gNTRI[0],NULL,_faceN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	//face4
 	int _face_order4_ = maxOrderFaceH1[4];
-	H1faceN[4].resize(NBFACE_H1(max_ApproximationOrder)*gNTRI_dim);
+	H1faceN[4].resize(NBFACE_H1(_face_order4_)*gNTRI_dim);
 	double *_faceN4_ = &*H1faceN[4].begin();
 	ierr = H1_FaceShapeFunctions_MBTRI(_face_nodes4_,_face_order4_,&gNTRI[0],NULL,_faceN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	cblas_dscal(gNTRI_dim*NBFACE_H1(_face_order4_),-1,_faceN4_,1);
@@ -1139,13 +1168,12 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	vector< ublas::vector<FieldData> > &data = h1l2_data_at_gauss_pt[field_name];
 	data.resize(g_dim);
 	int rank = field_ptr->get_max_rank();
-	unsigned int gg = 0;
-	for(;gg<g_dim;gg++) {
+	for(unsigned int gg = 0;gg<g_dim;gg++) {
 	  data[gg].resize(rank);
 	  int rr = 0;
 	  for(;rr<rank;rr++) {
 	    if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-	    (data[gg])[rr] += cblas_ddot(nb_Ns,base_functions_by_gauss_pt[gg],1,&dof_data[rr],rank);
+	    (data[gg])[rr] = cblas_ddot(nb_Ns,base_functions_by_gauss_pt[gg],1,&dof_data[rr],rank);
 	  }
 	}
       }
@@ -1164,7 +1192,7 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	case L2: {
 	  if(ent_ptr->get_ent_type()!=MBTET) {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  }
+	  } 
 	}
 	case H1: {
 	  const string &field_name = field_ptr->get_name();
@@ -1189,13 +1217,15 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	  if(nb_dofs == 0) continue;
 	  if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
 	  if(base_functions_by_gauss_pt.size()/g_dim > nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-	  unsigned int gg = 0;
-	  for(;gg<g_dim;gg++) {
+	  for(unsigned int gg = 0;gg<g_dim;gg++) {
 	    data[gg].resize(rank);
-	    unsigned int rr = 0;
-	    for(;rr<rank;rr++) {
+	    for(unsigned int rr = 0;rr<rank;rr++) {
 	      if(base_functions_by_gauss_pt[gg] == NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
-	      (data[gg])[rr] += cblas_ddot(nb_dofs,base_functions_by_gauss_pt[gg],1,&dof_data[rr],rank);
+	      if(field_ptr->get_space()==L2) {
+		(data[gg])[rr] = cblas_ddot(nb_dofs,base_functions_by_gauss_pt[gg],1,&dof_data[rr],rank);
+	      } else {
+		(data[gg])[rr] += cblas_ddot(nb_dofs,base_functions_by_gauss_pt[gg],1,&dof_data[rr],rank);
+	      }
 	    }
 	  }
 	}
@@ -1203,30 +1233,42 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	case Hdiv: {
 	  const string &field_name = field_ptr->get_name();
 	  ublas::vector<FieldData> &dof_data = dit->second;
-	  vector< ublas::matrix<FieldData> > &data = hcurl_hdiv_data_at_gauss_pt[field_name];
 	  unsigned int rank = field_ptr->get_max_rank();
 	  unsigned int order = ent_ptr->get_max_order();
 	  unsigned int nb_dofs = ent_ptr->forder(order);
 	  if(nb_dofs == 0) continue;
-	  if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	  if(dof_data.size()/rank != nb_dofs) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+	  }
+	  bool reset = true;
+	  if(hcurl_hdiv_data_at_gauss_pt.find(field_name)!=hcurl_hdiv_data_at_gauss_pt.end()) {
+	    reset = false;
+	  }
+	  vector< ublas::matrix<FieldData> > &data = hcurl_hdiv_data_at_gauss_pt[field_name];
 	  data.resize(g_dim);
-	  unsigned int gg = 0;
-	  for(;gg<g_dim;gg++) {
+	  if(reset) {
+	    for(unsigned int gg = 0;gg<g_dim;gg++) {
+	      ublas::matrix<FieldData>& mat = data[gg];
+	      mat = ublas::zero_matrix<FieldData>(rank,3);
+	    }
+	  }
+	  for(unsigned int gg = 0;gg<g_dim;gg++) {
 	    ublas::matrix<FieldData>& mat = data[gg];
-	    mat.resize(rank,3);
-	    unsigned int rr = 0;
-	    for(;rr<rank;rr++) {
+	    for(unsigned int rr = 0;rr<rank;rr++) {
 	      if(ent_ptr->get_ent_type()==MBTRI) {
 		try {
-		  if(ent_ptr->get_space()!=Hdiv) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+		  if(ent_ptr->get_space()!=Hdiv) {
+		    SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+		  }
 		  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
 		  if(maxOrderFaceHdiv[side_number]>0) {
-		    unsigned int nb_dofs_ = NBFACE_Hdiv(order);
-		    if(nb_dofs!=nb_dofs_) SETERRQ2(PETSC_COMM_SELF,1,"data inconsitencies, %d != %d",nb_dofs,nb_dofs_);
-		    int shift = gg*nb_dofs;
-		    mat(rr,0) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+0],3,&dof_data[rr],rank);
-		    mat(rr,1) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+1],3,&dof_data[rr],rank);
-		    mat(rr,2) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift+2],3,&dof_data[rr],rank);
+		    int shift_f = gg*NBFACE_Hdiv(maxOrderFaceHdiv[side_number]);
+		    if(NBFACE_Hdiv(maxOrderFaceHdiv[side_number])<ent_ptr->get_order_nb_dofs(order)) {
+		      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+		    }
+		    mat(rr,0) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift_f+0],3,&dof_data[rr],rank);
+		    mat(rr,1) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift_f+1],3,&dof_data[rr],rank);
+		    mat(rr,2) += cblas_ddot(nb_dofs,&(Hdiv_faceN_byOrder[side_number])[3*shift_f+2],3,&dof_data[rr],rank);
 		  }
 		} catch (const std::exception& ex) {
 		  ostringstream ss;
@@ -1234,18 +1276,18 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 		  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 		}
 	      } else if(ent_ptr->get_ent_type()==MBTET) {
-		if(ent_ptr->get_space()!=Hdiv) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+		if(ent_ptr->get_space()!=Hdiv) {
+		  SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
+		}
 		try {
 		  if(maxOrderElemHdiv>1) {
-		  unsigned int nb_dofs_ = NBVOLUME_Hdiv(order);
-		  if(nb_dofs!=nb_dofs_) {
-		      cerr << "order " << order << " " << ent_ptr->forder(order) << endl;
-		      SETERRQ2(PETSC_COMM_SELF,1,"data inconsitencies, %d != %d",nb_dofs,nb_dofs_);
+		    int shift_v = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
+		    if(NBVOLUME_Hdiv(maxOrderElemHdiv)<ent_ptr->get_order_nb_dofs(order)) {
+		      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
 		    }
-		    int shift = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
-		    mat(rr,0) += cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+0],3,&dof_data[rr],rank);
-		    mat(rr,1) += cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+1],3,&dof_data[rr],rank);
-		    mat(rr,2) += cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift+2],3,&dof_data[rr],rank);
+		    mat(rr,0) += cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift_v+0],3,&dof_data[rr],rank);
+		    mat(rr,1) += cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift_v+1],3,&dof_data[rr],rank);
+		    mat(rr,2) += cblas_ddot(nb_dofs,&Hdiv_volumeN_byOrder[3*shift_v+2],3,&dof_data[rr],rank);
 		  }
 		} catch (const std::exception& ex) {
 		  ostringstream ss;
@@ -1486,11 +1528,14 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 		try {
 		  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
 		  if(maxOrderFaceHdiv[side_number]>0) {
-		    int shift = gg*NBFACE_Hdiv(maxOrderFaceHdiv[side_number]);
-		    for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
-		      mr0[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift+3*jj+0];
-		      mr1[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift+3*jj+1];
-		      mr2[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift+3*jj+1];
+		    int shift_f = gg*NBFACE_Hdiv(maxOrderFaceHdiv[side_number]);
+		    if(NBFACE_Hdiv(maxOrderFaceHdiv[side_number])<ent_ptr->get_order_nb_dofs(order)) {
+		      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+		    }
+		    for(int jj = 0;jj<ent_ptr->get_order_nb_dofs(order);jj++) {
+		      mr0[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift_f+3*jj+0];
+		      mr1[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift_f+3*jj+1];
+		      mr2[rank*jj + rr] = (Hdiv_faceN_byOrder[side_number])[3*shift_f+3*jj+2];
 		    }
 		  }
 		} catch (const std::exception& ex) {
@@ -1501,11 +1546,14 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 	      } else if(ent_ptr->get_ent_type()==MBTET) {
 		try {
 		  if(maxOrderElemHdiv>1) {
-		    int shift = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
-		    for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
-		      mr0[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift+3*jj+0];
-		      mr1[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift+3*jj+1];
-		      mr2[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift+3*jj+1];
+		    int shift_v = gg*NBVOLUME_Hdiv(maxOrderElemHdiv);
+		    if(NBVOLUME_Hdiv(maxOrderElemHdiv)<ent_ptr->get_order_nb_dofs(order)) {
+		      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+		    }
+		    for(int jj = 0;jj<ent_ptr->get_order_nb_dofs(order);jj++) {
+		      mr0[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift_v+3*jj+0];
+		      mr1[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift_v+3*jj+1];
+		      mr2[rank*jj + rr] = Hdiv_volumeN_byOrder[3*shift_v+3*jj+2];
 		    }
 		  }
 		} catch (const std::exception& ex) {
@@ -1610,6 +1658,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       int order = ent_ptr->get_max_order();
       unsigned int dim = 0,nb_rows = 0;
       switch(field_ptr->get_space()) {
+	case L2:
 	case H1:
 	  dim = 3;
 	  nb_rows = rank*dim;
@@ -1637,7 +1686,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       }
       vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
       data.resize(g_dim);
-      unsigned int nb_dofs = rank*ent_ptr->forder(order); 
+      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
       if(nb_dofs!=dit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       unsigned int gg = 0;
       for(;gg<g_dim;gg++) {
@@ -1648,12 +1697,12 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
 	for(int rr = 0;rr<rank;rr++) {
 	  for(unsigned int dd = 0;dd<dim;dd++) {
 	    ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr*dim+dd);
-	    for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
+	    for(int jj = 0;jj<ent_ptr->get_order_nb_dofs(order);jj++) {
 	      mr(jj*rank + rr) =  (diff_base_functions_by_gauss_pt[gg])[dim*jj + dd];     
 	    }
 	  }
 	}
-	//cerr << rank << " " << dim << " " << ent_ptr->forder(order) << endl;
+	//cerr << rank << " " << dim << " " << ent_ptr->get_order_nb_dofs(order) << endl;
 	//cerr << mat << endl;
       }
     }
@@ -1835,9 +1884,9 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
       data.resize(g_dim);
       int rank = field_ptr->get_max_rank();
       int order = ent_ptr->get_max_order();
-      unsigned int nb_dofs = rank*ent_ptr->forder(order); 
+      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
       if(mit!=H1edgeN_TRI_face.end()) {
-	if(ent_ptr->forder(order)*g_dim != mit->second.size()) 
+	if(ent_ptr->get_order_nb_dofs(order)*g_dim != mit->second.size()) 
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       }
       if(nb_dofs!=eiit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
@@ -1849,8 +1898,8 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
 	if(mit==H1edgeN_TRI_face.end()) continue;
 	for(int rr = 0;rr<rank;rr++) {
 	  ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
-	  for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
-	    mr(rank*jj + rr) = (mit->second)[gg*ent_ptr->forder(order)+jj];
+	  for(int jj = 0;jj<ent_ptr->get_order_nb_dofs(order);jj++) {
+	    mr(rank*jj + rr) = (mit->second)[gg*ent_ptr->get_order_nb_dofs(order)+jj];
 	  }
 	}
       }
@@ -1868,9 +1917,9 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
       data.resize(g_dim);
       int rank = field_ptr->get_max_rank();
       int order = ent_ptr->get_max_order();
-      unsigned int nb_dofs = rank*ent_ptr->forder(order); 
+      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
       if(ent==face) {
-	if(ent_ptr->forder(order)*g_dim != H1faceN_TRI_face.size()) 
+	if(ent_ptr->get_order_nb_dofs(order)*g_dim != H1faceN_TRI_face.size()) 
 	  SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);
       }
       if(nb_dofs*g_dim!=rank*H1faceN_TRI_face.size()) SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);
@@ -1882,8 +1931,8 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
 	if(ent!=face) continue;
 	for(int rr = 0;rr<rank;rr++) {
 	  ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
-	  for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
-	    mr(rank*jj + rr) = H1faceN_TRI_face[gg*ent_ptr->forder(order)+jj];
+	  for(int jj = 0;jj<ent_ptr->get_order_nb_dofs(order);jj++) {
+	    mr(rank*jj + rr) = H1faceN_TRI_face[gg*ent_ptr->get_order_nb_dofs(order)+jj];
 	  }
 	}
       }

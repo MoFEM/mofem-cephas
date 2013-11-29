@@ -139,8 +139,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(int *face_nodes,int p,double *N,doubl
     if(diff_faceN!=NULL) {
       dd = 0;
       for(;dd<2;dd++) {
-	v2[dd] = 
-		  diffN[0*2+dd]*N[node_shift+1]*N[node_shift+2]+
+	v2[dd] = diffN[0*2+dd]*N[node_shift+1]*N[node_shift+2]+
 		  N[node_shift+0]*diffN[1*2+dd]*N[node_shift+2]+
 		  N[node_shift+0]*N[node_shift+1]*diffN[2*2+dd];
       }

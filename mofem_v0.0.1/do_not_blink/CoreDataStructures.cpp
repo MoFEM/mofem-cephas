@@ -144,7 +144,7 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
     EntityHandle face4[3] = { conn[3], conn[4], conn[5] };
     if(num_nodes == 3) {
       int sense_p1_map[3][3] = { {0,1,2}, {1,2,0}, {2,0,1} };
-      int sense_m1_map[3][3] = { {0,2,1}, {2,1,0}, {1,0,2} };
+      int sense_m1_map[3][3] = { {0,2,1}, {1,0,2}, {2,1,0} };
       EntityHandle* conn0_3_ptr = find( face3, &face3[3], conn_ent[0] );
       if( conn0_3_ptr != &face3[3] ) {
 	offset = distance( face3, conn0_3_ptr );
@@ -177,8 +177,15 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
 	    face4[ sense_m1_map[offset][2] ] == conn_ent[2] ) {
 	    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,4,-1,3+offset)).first;
 	    return const_cast<SideNumber*>(&*miit);
-	  } else THROW_AT_LINE("Huston we have problem");
-      } THROW_AT_LINE("Huston we have problem");
+	  } else {
+	    cerr << conn_ent[0] << " " << conn_ent[1] << " " << conn_ent[2] << endl;
+	    cerr << face3[0] << " " << face3[1] << " " << face3[2] << endl;
+	    cerr << face4[0] << " " << face4[1] << " " << face4[2] << endl;
+	    cerr << offset << endl;
+	    THROW_AT_LINE("Huston we have problem");
+	  }
+      } 
+      THROW_AT_LINE("Huston we have problem");
     }
     if(num_nodes == 2) {
       EntityHandle edges[6][2] = {
