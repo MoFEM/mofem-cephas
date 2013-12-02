@@ -1940,6 +1940,119 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode FEMethod_LowLevelStudent::Data_at_FaceGaussPoints(
+  EntityHandle ent,const string &field_name,
+  vector<ublas::vector<FieldData> > &Data) {
+  PetscFunctionBegin;
+  SideNumber* side = fe_ent_ptr->get_side_number_ptr(moab,ent);
+  if(side->get_ent_type()!=MBTRI) SETERRQ(PETSC_COMM_SELF,1,"entity has to be face of type MBTRI");
+  unsigned int g_dim,nb_Ns;
+  switch (fe_ent_ptr->get_ent_type()) {
+    case MBTET:
+      g_dim = get_dim_gNTRI();
+      nb_Ns = 4;
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
+  }
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
+  if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
+  Data.resize(g_dim);
+  for(int gg = 0;gg<g_dim;gg++) {
+    Data[gg] = ublas::zero_vector<FieldData>(fiit->get_max_rank());
+  }
+  unsigned int side_number = side->side_number;
+
+  switch (fiit->get_space()) {
+
+  case H1: {
+    // nodes
+    Indices_Type::iterator nit = row_nodesGlobIndices.begin();
+    for(;nit!=row_nodesGlobIndices.end();nit++) {
+      const MoFEMField* field_ptr = nit->first;
+      if(field_ptr->get_name()!=field_name) continue;
+      if(gNTRIonElem.size()<side_number) {
+        SETERRQ(PETSC_COMM_SELF,1,"data inconsitency, (top tip: have you calles ShapeFunctions_TRI(siit->ent,g_NTRI)");
+      }
+      vector<double>& gNTRIonELEM = gNTRIonElem[side_number];
+      if(nb_Ns*g_dim != gNTRIonELEM.size()) {
+        SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      }
+      int rank = field_ptr->get_max_rank();
+      if(rank*nb_Ns!=nit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      if(rank*nb_Ns!=data_nodes[field_ptr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      unsigned int gg = 0;
+      for(;gg<g_dim;gg++) {
+        int rr = 0;
+        for(;rr<rank;rr++) {
+  	for(unsigned int jj = 0;jj<nb_Ns;jj++) Data[gg][rr] += gNTRIonELEM[gg*nb_Ns + jj]*(data_nodes[field_ptr])[rank*jj+rr];
+        }
+      }
+    }
+    //edges
+    Range adj_edges;
+    rval = moab.get_adjacencies(&ent,1,1,false,adj_edges); CHKERR_PETSC(rval);
+    map<EntityHandle,vector<double> > &H1edgeN_TRI_face = H1edgeN_TRI[ent];
+    for(Indices_EntType::iterator eiit = row_edgesGlobIndices.begin();eiit!=row_edgesGlobIndices.end();eiit++) {
+      const MoFEMEntity* ent_ptr = eiit->first;
+      const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
+      if(field_ptr->get_name()!=field_name) continue;
+      EntityHandle edge = eiit->first->get_ent();
+      if(adj_edges.find(ent_ptr->get_ent())==adj_edges.end()) continue;
+      map<EntityHandle,vector<double> >::iterator mit = H1edgeN_TRI_face.find(edge);
+      int rank = field_ptr->get_max_rank();
+      int order = ent_ptr->get_max_order();
+      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
+      if(mit!=H1edgeN_TRI_face.end()) {
+        if(ent_ptr->get_order_nb_dofs(order)*g_dim != mit->second.size()) 
+  	SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      }
+      if(nb_dofs!=eiit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      if(nb_dofs!=data_edges[ent_ptr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      unsigned int gg = 0;
+      for(;gg<g_dim;gg++) {
+        if(mit==H1edgeN_TRI_face.end()) continue;
+        for(int rr = 0;rr<rank;rr++) {
+  	for(int jj = 0;jj<ent_ptr->get_order_nb_dofs(order);jj++) {
+  	  Data[gg][rr] += (mit->second)[gg*ent_ptr->get_order_nb_dofs(order)+jj]*data_edges[ent_ptr][rank*jj+rr];
+  	}
+        }
+      }
+    }
+    //faces
+    vector<double> &H1faceN_TRI_face = H1faceN_TRI[ent];
+    for(Indices_EntType::iterator fiit = row_facesGlobIndices.begin();fiit!=row_facesGlobIndices.end();fiit++) {
+      const MoFEMEntity* ent_ptr = fiit->first;
+      const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
+      if(field_ptr->get_name()!=field_name) continue;
+      EntityHandle face = fiit->first->get_ent();
+      int rank = field_ptr->get_max_rank();
+      int order = ent_ptr->get_max_order();
+      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
+      if(ent==face) {
+        if(ent_ptr->get_order_nb_dofs(order)*g_dim != H1faceN_TRI_face.size()) 
+  	SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);
+      }
+      if(nb_dofs*g_dim!=rank*H1faceN_TRI_face.size()) SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);
+      if(nb_dofs!=data_faces[ent_ptr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      unsigned int gg = 0;
+      for(;gg<g_dim;gg++) {
+        if(ent!=face) continue;
+        for(int rr = 0;rr<rank;rr++) {
+  	for(int jj = 0;jj<ent_ptr->get_order_nb_dofs(order);jj++) {
+  	  Data[gg][rr] += H1faceN_TRI_face[gg*ent_ptr->get_order_nb_dofs(order)+jj]*data_faces[ent_ptr][rank*jj+rr];
+  	}
+        }
+      }
+    }
+  }
+  break;
+  default:
+    SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
+  }
+
+  PetscFunctionReturn(0);
+}
 
 
 }

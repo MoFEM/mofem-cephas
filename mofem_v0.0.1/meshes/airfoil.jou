@@ -1,0 +1,37 @@
+reset
+
+import step "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/HSNLF-0213.stp" heal
+
+#brick x 1500 y 1500 z 1500
+create sphere radius 2000
+move Volume 1 location volume 2 include_merged
+
+chop volume 2 with volume 1 
+delete volume 3
+
+split curve 7 fraction 0.5
+split curve 9 fraction 0.5
+split surface 9  across location vertex 9  location vertex 10
+
+block 1 volume 4 
+block 1 name 'PotentialFlow'
+ 
+#nodeset 1 vertex 11
+nodeset 1 vertex 6
+nodeset 1 name 'ZeroPressure'
+
+#sideset 2 surface 4 5 7 8 9 10
+sideset 2 surface 5
+sideset 2 name 'NormalVelocity'
+
+sideset 3 surface 6 7 8 10 11 12
+sideset 3 name 'BodySurface'
+
+#volume 4 sizing function type skeleton scale 12 time_accuracy_level 1
+
+volume 4 size auto factor 10
+surface 6 7 8 9 10 11 12 size auto factor 4
+mesh surface 6 7 8 9 10 11 12
+mesh volume 4
+
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/airfoil.cub" overwrite
