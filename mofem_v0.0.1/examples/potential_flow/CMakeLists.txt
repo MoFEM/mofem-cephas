@@ -32,8 +32,10 @@ file(COPY
 
 
 #testing
+
+### this only to test algorithm, to get good results make mesh denser and increase approx. order
 add_test(SimplePotentialFlowTest ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/potential_flow
-  -my_file airfoil.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order_laplacian 3 -my_order_preassure 1 -log_summary)
+  -my_file airfoil.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order_laplacian 1 -my_order_preassure 1 -log_summary)
 
 
 add_test(SimpleLaplacianProblem ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/laplacian_problem
