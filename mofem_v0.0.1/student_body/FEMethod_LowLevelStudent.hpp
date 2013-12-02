@@ -224,6 +224,10 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
     EntityType type = MBMAXTYPE,
     EntityHandle edge_handle = no_handle);
 
+  PetscErrorCode Data_at_FaceGaussPoints(
+    EntityHandle ent,const string &field_name,
+    vector<ublas::vector<FieldData> > &Data);
+
   PetscErrorCode InitDataStructures();
 
   PetscErrorCode ierr;
