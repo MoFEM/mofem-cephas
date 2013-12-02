@@ -463,7 +463,7 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  FieldData pressure ;
 	  ierr = compute_pressure(0,0,velocities,pressure); CHKERRQ(ierr);
 	  //cerr << pressure << endl;
-	  for(int dd = 0;dd<RowGlobDofs[rr].size();dd++) {
+	  for(unsigned int dd = 0;dd<RowGlobDofs[rr].size();dd++) {
 	    f[dd] += V*G_TET_W[gg]*(RowNMatrix[rr][gg])(0,dd)*pressure;
 	  }
 	  if(f.size()!=RowGlobDofs[rr].size()) {
@@ -579,7 +579,6 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
 	  ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > normal(3);
 	  ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
-	  double area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
 
 	  vector<ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > > coords_at_gauss_points;
 	  int g_dim = get_dim_gNTRI();

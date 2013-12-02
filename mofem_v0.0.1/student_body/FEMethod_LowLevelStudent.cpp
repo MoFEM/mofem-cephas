@@ -1958,7 +1958,7 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_FaceGaussPoints(
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
   if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
   Data.resize(g_dim);
-  for(int gg = 0;gg<g_dim;gg++) {
+  for(unsigned int gg = 0;gg<g_dim;gg++) {
     Data[gg] = ublas::zero_vector<FieldData>(fiit->get_max_rank());
   }
   unsigned int side_number = side->side_number;
