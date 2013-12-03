@@ -510,7 +510,7 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
   PetscErrorCode create_totalForceVector(Vec *_total_Force) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    if(pcomm->rank()==1) {
+    if(pcomm->rank()==0) {
       ierr = VecCreateGhost(PETSC_COMM_WORLD,3,3,0,PETSC_NULL,_total_Force); CHKERRQ(ierr);
     } else {
       int ghosts[3] = {0,1,2};
@@ -526,6 +526,8 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
     PetscFunctionReturn(0);
   }
 
+  Tag th_normal;
+  EntityHandle out_meshset;
   const double *G_TET_W,*G_TRI_W;
   vector<double> g_NTET,g_NTRI;
   PetscErrorCode preProcess() {
@@ -537,6 +539,11 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
     ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
     G_TRI_W = G_TRI_W13;
     ierr = VecZeroEntries(total_Force); CHKERRQ(ierr);
+
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    double def[3] = {0,0,0};
+    rval = moab.tag_get_handle("BODY_NORMAL",3,MB_TYPE_DOUBLE,th_normal,MB_TAG_CREAT|MB_TAG_SPARSE,def); CHKERR_PETSC(rval);
+
     PetscFunctionReturn(0);
   }
 
@@ -544,11 +551,6 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
     vector<ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > > &faces_force) {
     PetscFunctionBegin;
   
-    faces_force.resize(4);
-    for(int ff = 0;ff<4;ff++) {
-      faces_force[ff] = ublas::zero_vector<FieldData>(3);
-    }
-
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
 
       string name;
@@ -579,6 +581,11 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
 	  ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > normal(3);
 	  ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
+	  double area = ublas::norm_2(normal)*0.5;
+	  normal /= ublas::norm_2(normal);
+	  //normal *= siit->sense
+	  rval = moab.tag_set_data(th_normal,&(siit->ent),1,&*normal.data().begin()); CHKERR_PETSC(rval);
+	  rval = moab.add_entities(out_meshset,&(siit->ent),1); CHKERR_PETSC(rval);
 
 	  vector<ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > > coords_at_gauss_points;
 	  int g_dim = get_dim_gNTRI();
@@ -596,7 +603,7 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  for(int gg = 0;gg<g_dim;gg++) {
 	    double w = G_TRI_W[gg];
 	    //cerr << pressure_at_gauss_points[gg] << endl;
-	    faces_force[siit->side_number] += w*pressure_at_gauss_points[gg][0]*normal*0.5;
+	    faces_force[siit->side_number] += w*pressure_at_gauss_points[gg][0]*normal*area;
 	  }
 
 	}
@@ -612,6 +619,10 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
     ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
     vector<ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > > faces_force;
+    faces_force.resize(4);
+    for(int ff = 0;ff<4;ff++) {
+      faces_force[ff] = ublas::zero_vector<FieldData>(3);
+    }
     ierr = computeResultantSurfaceForces(faces_force); CHKERRQ(ierr);
     
     int forces_idx[] = { 0,1,2 };
@@ -629,6 +640,14 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
     ierr = VecGhostUpdateEnd(total_Force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(total_Force); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(total_Force); CHKERRQ(ierr);
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    if(pcomm->rank()==0) {
+      rval = moab.write_file("body_normals.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    }
+
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+
+
     PetscFunctionReturn(0);
   }
 
