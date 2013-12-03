@@ -90,22 +90,13 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("PRESSURE_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("PRESSURE_ELEM","PRESSURE_FIELD"); CHKERRQ(ierr);
 
-  ierr = mField.add_finite_element("BERNOULLY_ELEM"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("BERNOULLY_ELEM","PRESSURE_FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("BERNOULLY_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("BERNOULLY_ELEM","PRESSURE_FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("BERNOULLY_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("BERNOULLY_ELEM","PRESSURE_FIELD"); CHKERRQ(ierr);
-
   //add problems 
   ierr = mField.add_problem("LAPLACIAN_PROBLEM"); CHKERRQ(ierr);
   ierr = mField.add_problem("PRESSURE_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.add_problem("BERNOULLY_PROBLEM"); CHKERRQ(ierr);
 
   //define problems and finite elements
   ierr = mField.modify_problem_add_finite_element("LAPLACIAN_PROBLEM","LAPLACIAN_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("PRESSURE_PROBLEM","PRESSURE_ELEM"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("BERNOULLY_PROBLEM","BERNOULLY_ELEM"); CHKERRQ(ierr);
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -139,7 +130,6 @@ int main(int argc, char *argv[]) {
   //set problem level
   ierr = mField.modify_problem_ref_level_add_bit("LAPLACIAN_PROBLEM",bit_level0); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("PRESSURE_PROBLEM",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("BERNOULLY_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //build fields
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -296,9 +286,10 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  /*if(pcomm->rank()==0) {
+  if(pcomm->rank()==0) {
     rval = moab.write_file("solution_pressure.h5m"); CHKERR_PETSC(rval);
-  }*/
+  }
+
 
   /*PostProcPotentialFlowOnRefMesh post_proc_on_ref_mesh(moab);
   ierr = mField.loop_finite_elements("PRESSURE_PROBLEM","PRESSURE_ELEM",post_proc_on_ref_mesh);  CHKERRQ(ierr);

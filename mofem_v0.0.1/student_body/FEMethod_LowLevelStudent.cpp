@@ -1994,12 +1994,12 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_FaceGaussPoints(
     rval = moab.get_adjacencies(&ent,1,1,false,adj_edges); CHKERR_PETSC(rval);
     map<EntityHandle,vector<double> > &H1edgeN_TRI_face = H1edgeN_TRI[ent];
     for(Indices_EntType::iterator eiit = row_edgesGlobIndices.begin();eiit!=row_edgesGlobIndices.end();eiit++) {
+      EntityHandle edge = eiit->first->get_ent();
+      if(adj_edges.find(edge)==adj_edges.end()) continue;
       const MoFEMEntity* ent_ptr = eiit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       if(field_ptr->get_name()!=field_name) continue;
-      EntityHandle edge = eiit->first->get_ent();
-      if(adj_edges.find(ent_ptr->get_ent())==adj_edges.end()) continue;
-      map<EntityHandle,vector<double> >::iterator mit = H1edgeN_TRI_face.find(edge);
+     map<EntityHandle,vector<double> >::iterator mit = H1edgeN_TRI_face.find(edge);
       int rank = field_ptr->get_max_rank();
       int order = ent_ptr->get_max_order();
       unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
