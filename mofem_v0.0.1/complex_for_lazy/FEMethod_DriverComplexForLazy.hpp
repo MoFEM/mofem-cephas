@@ -86,10 +86,21 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-      Range TetsOfNeumannSideSet;
-      rval = mField.get_moab().get_adjacencies(NeumannSideSet,3,false,TetsOfNeumannSideSet,Interface::UNION); CHKERR_THROW(rval);
-      rval = mField.get_moab().add_entities(it->get_meshset(),TetsOfNeumannSideSet); CHKERR_THROW(rval);
 
+      if(!NeumannSideSet.empty()) {
+	Range TetsOfNeumannSideSet;
+	rval = mField.get_moab().get_adjacencies(NeumannSideSet,3,false,TetsOfNeumannSideSet,Interface::UNION); CHKERR_THROW(rval);
+	rval = mField.get_moab().add_entities(it->get_meshset(),TetsOfNeumannSideSet); CHKERR_THROW(rval);
+      } else {
+	Range NeumannEdgeSideSet;
+	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),1,NeumannEdgeSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+	if(!NeumannEdgeSideSet.empty()) {
+	  PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	    "not implemented yet (do not apply forces on the edge, submit issue to bitbucket or write CMatGU <cmatgu@googlegroups.com>",PETSC_NULL);
+	  PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	    "not implemented yet (do not apply forces on the edge, submit issue to bitbucket or write CMatGU <cmatgu@googlegroups.com>",PETSC_NULL);
+	} else {}
+      }
     }
 
   };
@@ -97,6 +108,50 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
 
+  //FEMethod_DriverComplexForLazy_Spatial
+  PetscErrorCode addNodalForces(Vec f,double lambda) {
+    PetscFunctionBegin;
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+
+      Range NeumannSideSet;
+      ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      if(!NeumannSideSet.empty()) {
+	continue;
+      } else {
+	Range NeumannEdgeSideSet;
+	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),1,NeumannEdgeSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+	if(!NeumannEdgeSideSet.empty()) {
+	  continue;
+	} else {
+
+	  force_cubit_bc_data mydata;
+	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+
+	  double t_glob[3]; 
+	  t_glob[0] = lambda*mydata.data.value3*mydata.data.value1;
+	  t_glob[1] = lambda*mydata.data.value4*mydata.data.value1;
+	  t_glob[2] = lambda*mydata.data.value5*mydata.data.value1;
+
+	  Range NeumannNodeSideSet;
+	  ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),0,NeumannNodeSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+	  if(!NeumannNodeSideSet.empty()) {
+	    for(Range::iterator nit = NeumannNodeSideSet.begin();nit!=NeumannNodeSideSet.end();nit++) {
+	      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,"SPATIAL_POSITION",*nit,pcomm->rank(),dof)) {
+		ierr = VecSetValue(f,dof->get_petsc_gloabl_dof_idx(),t_glob[dof->get_dof_rank()],ADD_VALUES); CHKERRQ(ierr);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    
+    PetscFunctionReturn(0);
+  }
+
+  bool nodal_forces_not_added;
+  //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
@@ -105,6 +160,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
+	nodal_forces_not_added = true;
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
@@ -120,6 +176,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
+  //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode CalculateSpatialFint(Vec f) {
     PetscFunctionBegin;
 
@@ -152,6 +209,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
+  //FEMethod_DriverComplexForLazy_Spatial
   virtual PetscErrorCode CalculateSpatialTangent(Mat B) {
     PetscFunctionBegin;
 
@@ -247,6 +305,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   }
 
+  //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode ReBaseToFaceLoocalCoordSystem(const EntityHandle face,double *t,double *loc_t) {
     PetscFunctionBegin;
     const EntityHandle* conn; 
@@ -315,6 +374,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
+  //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode CalculateSpatialTangentExt(Mat B,double *t_loc,double *t_glob,Range& NeumannSideSet) {
     PetscFunctionBegin;
     if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
@@ -384,8 +444,16 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
+  //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode CalulateKFext(Mat K,Vec f,double lambda) {
     PetscFunctionBegin;
+
+    if(f!=PETSC_NULL) {
+      if(nodal_forces_not_added) {
+	ierr = addNodalForces(f,lambda); CHKERRQ(ierr);
+	nodal_forces_not_added = false;
+      }
+    }
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
 
@@ -401,17 +469,15 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
-
-      if(f!=PETSC_NULL) {
-	ierr = CaluclateSpatialFext(f,t_loc,NULL,NeumannSideSet); CHKERRQ(ierr);
+      if(!NeumannSideSet.empty()) {
+	if(f!=PETSC_NULL) {
+	  ierr = CaluclateSpatialFext(f,t_loc,NULL,NeumannSideSet); CHKERRQ(ierr);
+	}
+	if(K!=PETSC_NULL) {
+	  ierr = CalculateSpatialTangentExt(K,t_loc,NULL,NeumannSideSet); CHKERRQ(ierr);
+	}
       }
-
-      if(K!=PETSC_NULL) {
-	ierr = CalculateSpatialTangentExt(K,t_loc,NULL,NeumannSideSet); CHKERRQ(ierr);
-      }
-
     }
-
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
 
       EntityHandle tet = fe_ptr->get_ent();
@@ -435,15 +501,14 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
-
-      if(f!=PETSC_NULL) {
-	ierr = CaluclateSpatialFext(f,t_loc,t_glob,NeumannSideSet); CHKERRQ(ierr);
-      }
-
-      if(K!=PETSC_NULL) {
-	ierr = CalculateSpatialTangentExt(K,t_loc,t_glob,NeumannSideSet); CHKERRQ(ierr);
-      }
-
+      if(!NeumannSideSet.empty()) {
+	if(f!=PETSC_NULL) {
+	  ierr = CaluclateSpatialFext(f,t_loc,t_glob,NeumannSideSet); CHKERRQ(ierr);
+	}
+	if(K!=PETSC_NULL) {
+	  ierr = CalculateSpatialTangentExt(K,t_loc,t_glob,NeumannSideSet); CHKERRQ(ierr);
+	}
+      } 
     }
 
     PetscFunctionReturn(0);
@@ -477,6 +542,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
+  //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
@@ -1397,6 +1463,7 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
     }
 
   Vec tmp_snes_f;
+  //FEMethod_DriverComplexForLazy_CoupledSpatial
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
@@ -1406,6 +1473,7 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
+        nodal_forces_not_added = true;
 	ierr = VecDuplicate(snes_f,&tmp_snes_f); CHKERRQ(ierr);
 	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
 	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
@@ -1427,6 +1495,7 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
     PetscFunctionReturn(0);
   }
 
+  //FEMethod_DriverComplexForLazy_CoupledSpatial
   virtual PetscErrorCode AssembleSpatialCoupledTangent(Mat B) {
     PetscFunctionBegin;
 
@@ -1478,6 +1547,7 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
 
   }
 
+  //FEMethod_DriverComplexForLazy_CoupledSpatial
   PetscErrorCode CalulateKFint(Mat K,Vec f) {
     PetscFunctionBegin;
 
