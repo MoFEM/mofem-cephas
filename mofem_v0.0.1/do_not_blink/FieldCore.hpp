@@ -411,7 +411,10 @@ struct FieldCore: public FieldInterface {
 	  dofs_vec2.resize(0);
 	  dofs_vec2.insert(dofs_vec2.end(),dofs_vec.begin(),dofs_vec.end());
 	  vector<DofIdx>::iterator vit = find(dofs_vec2.begin(),dofs_vec2.end(),Tag::get_index(miit_row));
-	  if(vit==dofs_vec2.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(vit==dofs_vec2.end()) {
+	    continue; // matrix can have no diagonals entries
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
 	  dofs_vec2.erase(vit);
 	  j.insert(j.end(),dofs_vec2.begin(),dofs_vec2.end());
 	} else {

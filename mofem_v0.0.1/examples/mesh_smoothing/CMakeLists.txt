@@ -19,6 +19,9 @@
 add_executable(mesh_smoothing mesh_smoothing.cpp)
 target_link_libraries(mesh_smoothing mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(mesh_smoothing_lagrange_multipliers mesh_smoothing_lagrange_multipliers.cpp)
+target_link_libraries(mesh_smoothing_lagrange_multipliers mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../../meshes/chees.cub" export_files_mesh_smoothing)
 
 file(COPY
