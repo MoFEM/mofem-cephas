@@ -195,7 +195,7 @@ typedef multi_index_container<
  * \param ordered_non_unique<
  *    tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name> >,
  * \param ordered_non_unique<
- *    tag<Composite_mi_tag>, <br>
+ *    tag<Composite_Name_Type_And_Side_Number>, <br>
  *     composite_key<  
  *	FEDofMoFEMEntity,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
@@ -230,7 +230,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref> >,
     ordered_non_unique<
-      tag<Composite_mi_tag>, 
+      tag<Composite_Name_Type_And_Side_Number>, 
       composite_key<
 	FEDofMoFEMEntity,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
@@ -267,7 +267,7 @@ typedef multi_index_container<
  * \param ordered_non_unique<
  *    tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name> >,
  * \param ordered_non_unique<
- *    tag<Composite_mi_tag>, <br>
+ *    tag<Composite_Name_Type_And_Side_Number>, <br>
  *     composite_key<  
  *	FEDofMoFEMEntity,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
@@ -302,7 +302,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref> >,
     ordered_non_unique<
-      tag<Composite_mi_tag>, 
+      tag<Composite_Name_Type_And_Side_Number>, 
       composite_key<
 	FENumeredDofMoFEMEntity,
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref>,
@@ -364,7 +364,15 @@ typedef multi_index_container<
     ordered_non_unique< 
       tag<Part_mi_tag>, member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> >,
     ordered_non_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent> >
+      tag<MoABEnt_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent> >,
+    ordered_non_unique<
+      tag<Composite_Name_Ent_And_Part>, 
+      composite_key<
+	NumeredDofMoFEMEntity,
+	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
+	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent>,
+	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>
+	> >
   > > NumeredDofMoFEMEntity_multiIndex;
 
 typedef multi_index_container<
