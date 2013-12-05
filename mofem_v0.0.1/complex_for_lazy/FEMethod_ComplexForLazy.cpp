@@ -113,7 +113,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
     }
 
     SETERRQ(PETSC_COMM_SELF,1,
-      "Element is not in elestic block, however you run non-linear elastic analysis with that element\n"
+      "Element is not in elastic block, however you run non-linear elastic analysis with that element\n"
       "top tip: check if you update block sets after mesh refinments or interface insertion");
 
   }
@@ -177,7 +177,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesRow(
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -216,7 +216,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesCol(
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -309,7 +309,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -511,11 +511,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   }
   break;
   default:
-    SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
   } catch (const std::exception& ex) {
     ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -624,11 +624,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
     }
     } break;
     default:
-      SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
   } catch (const std::exception& ex) {
     ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -723,7 +723,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
   GetFaceIndicesAndData_face = face;
   } catch (const std::exception& ex) {
     ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -764,7 +764,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -840,7 +840,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -941,7 +941,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
   GetFaceIndicesAndData_face = face;
   } catch (const std::exception& ex) {
     ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -969,7 +969,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,doubl
   FExt_Material *= -1;
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -1005,7 +1005,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face
     }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
