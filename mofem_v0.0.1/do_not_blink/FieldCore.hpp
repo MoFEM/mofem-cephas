@@ -87,6 +87,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode check_number_of_ents_in_ents_field(const string& name);
 
   //cubit meshsets
+  virtual bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, const int dimension,Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false);
