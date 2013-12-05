@@ -133,7 +133,7 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-      ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+      ierr = PetscTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
@@ -168,7 +168,7 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,F); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      ierr = PetscGetTime(&v2); CHKERRQ(ierr);
+      ierr = PetscTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       PetscFunctionReturn(0);

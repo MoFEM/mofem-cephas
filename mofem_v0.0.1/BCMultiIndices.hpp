@@ -74,8 +74,8 @@ struct Mat_Elastic: public generic_attribute_data {
     struct __attribute__ ((packed)) _data_{
         double Young; // Young's modulus
         double Poisson; // Poisson's ratio
-        double User1; // User attribute 1
-        double User2; // User attribute 2
+        double Density; // User attribute 1
+        double Conductivity; // User attribute 2
         double User3; // User attribute 3
         double User4; // User attribute 4
         double User5; // User attribute 5
@@ -591,7 +591,8 @@ struct CubitMeshSets {
    *
    * MAT_ELASTIC / 10 /  (1) Young's  modulus
    *                    (2) Poisson's ratio
-   *                    (3) User attribute 1
+   *                    (3) Density
+   *                    (4) Conductivity
    *                    ...
    *                    (10) User attribute 8
    *

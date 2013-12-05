@@ -43,6 +43,10 @@ target_link_libraries(nonlinear_elasticity_atom mofem_complex_for_lazy mofem_stu
 add_executable(arc_length_nonlinear_elasticity_atom arc_length_nonlinear_elasticity_atom.cpp)
 target_link_libraries(arc_length_nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(Heat_flow Heat_flow.cpp)
+target_link_libraries(Heat_flow mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)

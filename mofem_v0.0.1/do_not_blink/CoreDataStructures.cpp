@@ -1268,8 +1268,8 @@ ostream& operator<<(ostream& os,const Mat_Elastic& e)
         os << "-------------------" << endl;
         os << "Young's modulus  = " << e.data.Young << endl;
         os << "Poisson's ratio  = " << e.data.Poisson << endl;
-        os << "User attribute 1 = " << e.data.User1 << endl;
-        os << "User attribute 2 = " << e.data.User2 << endl;
+        os << "Density = " << e.data.Density << endl;
+        os << "Thermal Conductivity = " << e.data.Conductivity << endl;
         os << "User attribute 3 = " << e.data.User3 << endl;
         os << "User attribute 4 = " << e.data.User4 << endl;
         os << "User attribute 5 = " << e.data.User5 << endl;
