@@ -171,7 +171,7 @@ typedef int EntPart;
 //typedef uint128_t UId;
 typedef checked_uint128_t UId;
 typedef bitset<6> BitRefEdges;
-typedef bitset<32/*max number of refinments*/> BitRefLevel;
+typedef bitset<128/*max number of refinments*/> BitRefLevel;
 typedef bitset<32/*max number of fields*/> BitFieldId;
 typedef PetscScalar FieldData;
 typedef bitset<32/*max number of finite elements*/> BitFEId;
