@@ -66,6 +66,14 @@ struct FieldInterface {
   virtual PetscErrorCode check_number_of_ents_in_ents_field(const string& name) = 0;
 
   /** 
+    * \brief check for CUBIT Id and CUBIT type
+    *
+    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
+    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+    */
+  virtual bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType) = 0;
+
+  /** 
     * \brief get entities form CUBIT/meshset 
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT

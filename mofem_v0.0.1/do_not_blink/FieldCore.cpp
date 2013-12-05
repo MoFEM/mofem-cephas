@@ -3721,6 +3721,14 @@ PetscErrorCode FieldCore::problem_get_FE(const string &problem_name,const string
   }
   PetscFunctionReturn(0);
 }
+bool FieldCore::check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType) {
+  moabCubitMeshSet_multiIndex::index<Composite_mi_tag>::type::iterator 
+    miit = cubit_meshsets.get<Composite_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
+  if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
+    return true;
+  } 
+  return false;
+}
 PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType,
   const int dimension,Range &entities,const bool recursive) {
   PetscFunctionBegin;
