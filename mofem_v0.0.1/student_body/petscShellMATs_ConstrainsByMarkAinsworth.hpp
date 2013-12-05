@@ -52,7 +52,8 @@ struct matPROJ_ctx {
     Cx(PETSC_NULL),CCTm1_Cx(PETSC_NULL),CT_CCTm1_Cx(PETSC_NULL),CTCx(PETSC_NULL),
     Qx(PETSC_NULL),KQx(PETSC_NULL),
     x_problem(_x_problem),y_problem(_y_problem),
-    initQorP(true),initQTKQ(true),debug(true) {
+    initQorP(true),initQTKQ(true),debug(true),
+    C(PETSC_NULL),K(PETSC_NULL),g(PETSC_NULL) {
     PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
     PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
     PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
@@ -61,6 +62,9 @@ struct matPROJ_ctx {
     PetscLogEventRegister("ProjectionCTC_QTKQ",0,&USER_EVENT_projCTC_QTKQ);
   }
 
+
+  PetscReal rtol,abstol,dtol;
+  PetscInt maxits;
   Mat C,K;
   Vec g;
 

@@ -54,8 +54,8 @@ struct FieldCore: public FieldInterface {
   //database
 
   //ref
-  RefMoFEMEntity_multiIndex refinedMofemEntities;
-  RefMoFEMElement_multiIndex refinedMofemElements;
+  RefMoFEMEntity_multiIndex refinedMoFemEntities;
+  RefMoFEMElement_multiIndex refinedMoFemElements;
   //field
   MoFEMField_multiIndex moabFields;
   MoFEMEntity_multiIndex entsMoabField;
@@ -80,7 +80,7 @@ struct FieldCore: public FieldInterface {
   BitFieldId get_field_shift();
   BitFEId get_BitFEId();
   BitProblemId get_problem_shift();
-  PetscErrorCode map_from_mesh(int verb = -1);
+  PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
   Interface& get_moab();
 
   //check consistency
@@ -178,6 +178,9 @@ struct FieldCore: public FieldInterface {
   }
 
   //refine
+  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
+  PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
+  PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit);
   PetscErrorCode add_verices_in_the_middel_of_edges(
@@ -187,7 +190,8 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode refine_TET(const Range &test,const BitRefLevel &bit,const bool respect_interface = true);
   PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
-  PetscErrorCode refine_get_finite_elements(const BitRefLevel &bit,const EntityHandle meshset);
+  PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1);
+  PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1);
   PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset);
   PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents);
   PetscErrorCode refine_get_childern(
@@ -195,8 +199,10 @@ struct FieldCore: public FieldInterface {
     const bool recursive = false, int verb = -1);
 
   //field
-  PetscErrorCode add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,int verb = -1);
-  PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,int verb = -1);
+  PetscErrorCode add_field(const string& name,const BitFieldId id,const FieldSpace space,const ApproximationRank rank,
+    enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+  PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,
+    enum MoFEMTypes bh = MF_EXCL,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
@@ -218,10 +224,21 @@ struct FieldCore: public FieldInterface {
   EntityHandle get_field_meshset(const string& name) const;
 
   //MoFEMFiniteElement
-  PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name);
+  PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
   PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
   PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
   PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
+  PetscErrorCode modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
+  PetscErrorCode modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
+  PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
+  PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const string &name);
+  PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const string &name);
+  PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name);
+  PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name);
@@ -238,6 +255,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode add_problem(const string& name);
   PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
+  PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit);
   BitProblemId get_BitProblemId(const string& name) const;
   PetscErrorCode list_problem() const;
 
@@ -308,6 +326,10 @@ struct FieldCore: public FieldInterface {
 
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name);
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name);
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent);
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent);
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type);
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType ent);
 
   EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name);
   EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name);
@@ -339,6 +361,7 @@ struct FieldCore: public FieldInterface {
     const NumeredDofMoFEMEntitys_by_unique_id &dofs_col_by_id = p_miit->numered_dofs_cols.get<Unique_mi_tag>();
     DofIdx nb_dofs_row = dofs_row_by_idx.size();
     assert(p_miit->get_nb_dofs_row()==nb_dofs_row);
+    if(nb_dofs_row == 0) SETERRQ(PETSC_COMM_SELF,1,"problem has zero rows");
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type::iterator miit_row,hi_miit_row;
     if(Tag::IamNotPartitioned) {
       DofIdx nb_dofs_row_on_proc = (DofIdx)ceil(nb_dofs_row/pcomm->size());
@@ -367,7 +390,7 @@ struct FieldCore: public FieldInterface {
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	dofs_vec.resize(0);
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row if element
+	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row of element
 	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
 	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue; // if entity is not problem refinment level
 	  int size  = adj_miit->EntMoFEMFiniteElement_ptr->tag_col_uids_size/sizeof(UId);

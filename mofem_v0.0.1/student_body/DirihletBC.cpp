@@ -54,6 +54,7 @@ PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndicies(
   }
 
 PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesFace(
+    FieldInterface::FEMethod *fe_method_ptr,
     vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
@@ -252,7 +253,8 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndicies(
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesFace(vector<DofIdx>& DirihletBC,
+PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesFace(
+    FieldInterface::FEMethod *fe_method_ptr,vector<DofIdx>& DirihletBC,
     vector<DofIdx> &FaceNodeIndices,
     vector<vector<DofIdx> > &FaceEdgeIndices,
     vector<DofIdx> &FaceIndices) {

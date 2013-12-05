@@ -43,24 +43,43 @@ static void (*tab_func_PiolaKirhoiff2[])(double lambda,double mu,__CLPK_doubleco
   PiolaKirhoiff2_Hooke,PiolaKirhoiff2_Kirchhoff,PiolaKirhoiff2_NeoHookean,PiolaKirhoiff2_EberleinHolzapfel1
 };
 //
-void StrainEnergy(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+PetscErrorCode StrainEnergy(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+  PetscFunctionBegin;
   tab_func_Strain_energy[ph_eq_vol](lambda,mu,xF,xC,xJ,xPsi,ctx);
+  PetscFunctionReturn(0);
 }
-void PiolaKirhoiff2(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+PetscErrorCode PiolaKirhoiff2(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+  PetscFunctionBegin;
   tab_func_PiolaKirhoiff2[ph_eq_vol](lambda,mu,xF,xC,xJ,xS,ctx);
+  PetscFunctionReturn(0);
 }
 //*************************//
-void PilaKirhoff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP) {
+PetscErrorCode CauchyStress(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xCauchyStress) {
+  PetscFunctionBegin;
+  if(ph_eq_vol == hooke) {
+    cblas_zcopy(9,xP,1,xCauchyStress,1);
+    PetscFunctionReturn(0);
+  } else {
+    __CLPK_doublecomplex tmp2 = {0,0};
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasTrans,3,3,3,xJ,xP,3,xF,3,&tmp2,xCauchyStress,3);
+    PetscFunctionReturn(0);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode PilaKirhoff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP) {
+  PetscFunctionBegin;
   if(ph_eq_vol == hooke) {
     cblas_zcopy(9,xS,1,xP,1);
-    return;
+    PetscFunctionReturn(0);
   } else {
     __CLPK_doublecomplex tmp1 = {1,0},tmp2 = {0,0};
     cblas_zsymm(CblasRowMajor,CblasRight,CblasUpper,3,3,&tmp1,xS,3,xF,3,&tmp2,xP,3);
-    return;
+    PetscFunctionReturn(0);
   }
+  PetscFunctionReturn(0);
 }
-void ElshebyStress(__CLPK_doublecomplex *xPsi,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xSigma) {
+PetscErrorCode ElshebyStress(__CLPK_doublecomplex *xPsi,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xSigma) {
+  PetscFunctionBegin;
   __CLPK_doublecomplex tmp1 = {-1,0},tmp2 = {0,0};
   cblas_zgemm(CblasRowMajor,CblasTrans,CblasNoTrans,3,3,3,&tmp1,xF,3,xP,3,&tmp2,xSigma,3);
   xSigma[3*0+0].r += (*xPsi).r;
@@ -69,6 +88,7 @@ void ElshebyStress(__CLPK_doublecomplex *xPsi,__CLPK_doublecomplex *xF,__CLPK_do
   xSigma[3*0+0].i += (*xPsi).i;
   xSigma[3*1+1].i += (*xPsi).i;
   xSigma[3*2+2].i += (*xPsi).i;
+  PetscFunctionReturn(0);
 }
 //*************************//
 //Hooke
@@ -159,7 +179,6 @@ static void PiolaKirhoiff2_Kirchhoff(double lambda,double mu,__CLPK_doublecomple
     xS[3*ii+ii].r += lambda*creal(tr_E);
     xS[3*ii+ii].i += lambda*cimag(tr_E);
   }
-
   return;
 }
 //Neo-Hookean form Bonet Book

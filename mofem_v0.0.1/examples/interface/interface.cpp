@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
   //We need that for code profiling
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
-  ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+  ierr = PetscTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   //Create MoFEM (Joseph) database
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 4;
+  int order = 5;
   ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
@@ -363,7 +363,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
 
-  ierr = PetscGetTime(&v2);CHKERRQ(ierr);
+  ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);

@@ -1,6 +1,6 @@
 reset
 
-create torus major radius 1 minor radius 0.1 
+create torus major radius 1 minor radius 0.2 
 webcut volume 1 with plane xplane offset 0 noimprint nomerge 
 delete volume 2
 

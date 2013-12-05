@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("POTENTIAL_PROBLEM",&A); CHKERRQ(ierr);
 
-  PotentialElem elem(mField,A,F);
+  LaplacianElem elem(mField,A,F);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("POTENTIAL_PROBLEM","POTENTIAL_ELEM",elem);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

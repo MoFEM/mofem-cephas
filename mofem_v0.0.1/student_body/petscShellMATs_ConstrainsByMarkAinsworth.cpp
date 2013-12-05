@@ -32,6 +32,7 @@ PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
       ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr); // neet to be recalculated when C is changed
       ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+      ierr = KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits); CHKERRQ(ierr);
       ierr = KSPSetUp(ksp); CHKERRQ(ierr);
       ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
       ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
@@ -189,7 +190,7 @@ PetscErrorCode matRT_mult_shell(Mat RT,Vec x,Vec f) {
   ierr = MatShellGetContext(RT,&void_ctx); CHKERRQ(ierr);
   matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projRT,0,0,0,0);
-  ierr = ctx->InitQorP(x); CHKERRQ(ierr);
+  if(ctx->initQorP) SETERRQ(PETSC_COMM_SELF,1,"you have to call first InitQorP or use Q matrix");
   ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);

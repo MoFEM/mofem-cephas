@@ -69,7 +69,7 @@ double roundn(double n)
 
 int main(int argc, char *argv[]) {
 
-  PetscInitialize(&argc,&argv,(char *)0,help);
+  PetscInitialize(&argc,&argv,PETSC_NULL,help);
 
   Core mb_instance;
   Interface& moab = mb_instance;
@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
     order = 5;
   }
     
+
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
@@ -99,7 +100,7 @@ int main(int argc, char *argv[]) {
   //We need that for code profiling
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
-  ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+  ierr = PetscTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   //Create MoFEM (Joseph) database
@@ -231,8 +232,6 @@ int main(int argc, char *argv[]) {
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-
   //Matrix View
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
   //std::string wait;
@@ -321,13 +320,14 @@ int main(int argc, char *argv[]) {
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
 
-  ierr = PetscGetTime(&v2);CHKERRQ(ierr);
+  ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
   PetscFinalize();
+  return 0;
 
 }
 

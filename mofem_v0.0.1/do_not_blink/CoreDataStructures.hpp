@@ -62,9 +62,9 @@ inline int fNBVOLUME_Hcurl(int P) { return NBVOLUME_Hcurl(P); }
 inline int fNBVERTEX_Hdiv(int P) { (void)P; return 0; }
 /// number of approx. functions for Hdiv space on edge
 inline int fNBEDGE_Hdiv(int P) { assert(P==P); (void)P; return NBEDGE_Hdiv(P); }
-/// number of approx. functions for Hcurl space on face
+/// number of approx. functions for Hdiv space on face
 inline int fNBFACE_Hdiv(int P) { return NBFACE_Hdiv(P); }
-/// number of approx. functions for Hcurl space on voulem
+/// number of approx. functions for Hdiv space on voulem
 inline int fNBVOLUME_Hdiv(int P) { return NBVOLUME_Hdiv(P); }
 
 //MultiIndex Tags
@@ -101,7 +101,8 @@ struct RefMoFEMEntity_change_add_bit {
  * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
  * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
- * \param ordered_non_unique Composite_mi_tag
+ * \param ordered_non_unique Composite_EntityType_And_ParentEntityType_mi_tag
+ * \param ordered_non_unique Composite_EntityHandle_And_ParentEntityType_mi_tag
  */
 typedef multi_index_container<
   RefMoFEMEntity,
@@ -115,13 +116,13 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<ParentEntType_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> >,
     ordered_non_unique<
-      tag<Composite_mi_tag>, 
+      tag<Composite_EntityType_And_ParentEntityType_mi_tag>, 
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
 	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
     ordered_non_unique<
-      tag<Composite_mi_tag2>, 
+      tag<Composite_EntityHandle_And_ParentEntityType_mi_tag>, 
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
@@ -145,7 +146,7 @@ struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMEleme
     assert(ref.wrapp == 1);
     (const_cast<ptrWrapperRefMoFEMElement&>(ref)).wrapp++;
   }
-  ~ptrWrapperRefMoFEMElement() { 
+  virtual ~ptrWrapperRefMoFEMElement() { 
     if(wrapp == 1) {
       delete interface_RefMoFEMEntity<RefMoFEMElement>::ref_ptr; 
     }
@@ -159,6 +160,7 @@ struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMEleme
  * \param hashed_unique MoABEnt_mi_tag 
  * \param ordered_non_unique Meshset_mi_tag 
  * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
+ * \param ordered_non_unique Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag
  */
 typedef multi_index_container<
   ptrWrapperRefMoFEMElement,
@@ -170,7 +172,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefMoFEMElement::get_ent_type> >,
     ordered_non_unique<
-      tag<Composite_mi_tag>,
+      tag<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
       composite_key<
 	ptrWrapperRefMoFEMElement,
 	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent>,
@@ -256,6 +258,22 @@ struct EntMoFEMFiniteElement_change_bit_add {
   void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
 };
 
+struct MoFEMFiniteElement_col_change_bit_off {
+  BitFieldId f_id_col;
+  MoFEMFiniteElement_col_change_bit_off(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+struct MoFEMFiniteElement_row_change_bit_off {
+  BitFieldId f_id_row;
+  MoFEMFiniteElement_row_change_bit_off(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+struct EntMoFEMFiniteElement_change_bit_off {
+  BitFieldId f_id_data;
+  EntMoFEMFiniteElement_change_bit_off(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+
 /// set uids for finite elements dofs in rows
 struct EntMoFEMFiniteElement_row_dofs_change {
   Interface &moab;
@@ -302,6 +320,12 @@ struct problem_change_ref_level_bit_add {
   BitRefLevel bit;
   problem_change_ref_level_bit_add(const BitRefLevel _bit): bit(_bit) {};
   void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) |= bit; };
+};
+/// \brief set ref level to problem
+struct problem_change_ref_level_bit_set {
+  BitRefLevel bit;
+  problem_change_ref_level_bit_set(const BitRefLevel _bit): bit(_bit) {};
+  void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) = bit; };
 };
 /// \brief add finite element to problem
 struct problem_MoFEMFiniteElement_change_bit_add {

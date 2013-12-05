@@ -121,7 +121,9 @@ PetscErrorCode ShapeDiffMBTRI(double *diffN) {
   diffN[4] = diffN_MBTRI2x; diffN[5] = diffN_MBTRI2y;
   PetscFunctionReturn(0);
 }
-PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal) {
+PetscErrorCode ShapeFaceBaseMBTRI(
+  double *diffN,const double *coords,
+  double *normal,double *s1,double *s2) {
   PetscFunctionBegin;
   double diffX_x,diffX_y,diffX_z;
   double diffY_x,diffY_y,diffY_z;
@@ -136,10 +138,27 @@ PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *n
     diffY_y += coords[3*ii + 1]*diffN[2*ii+1];
     diffY_z += coords[3*ii + 2]*diffN[2*ii+1];
   }
+  if(s1 != NULL) {
+    s1[0] = diffX_x;
+    s1[1] = diffX_y;
+    s1[2] = diffX_z;
+  }
+  if(s2 != NULL) {
+    s2[0] = diffY_x;
+    s2[1] = diffY_y;
+    s2[2] = diffY_z;
+  }
   normal[0] = diffX_y*diffY_z - diffX_z*diffY_y;
   normal[1] = diffX_z*diffY_x - diffX_x*diffY_z;
   normal[2] = diffX_x*diffY_y - diffX_y*diffY_x;
-  cblas_dscal(3,0.5,normal,1);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ShapeFaceNormalMBTRI(
+  double *diffN,const double *coords,double *normal) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = ShapeFaceBaseMBTRI(diffN,coords,normal,NULL,NULL);  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac) {
@@ -264,30 +283,41 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F) {
 // Approximation
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim) {
   PetscFunctionBegin;
+  assert(fabs(s)<=1);
   if(dim < 2) SETERRQ(PETSC_COMM_SELF,1,"dim < 2");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
-  //assert(dim >= 2);
-  //assert(dim <= 3);
-  if(p==0) PetscFunctionReturn(0);
+  if(p<0) SETERRQ(PETSC_COMM_SELF,1,"p < 0");
   L[0] = 1;
-  diffL[0*p+0] = 0;
-  diffL[1*p+0] = 0;
-  if(dim == 3) diffL[2*p+0] = 0;
-  if(p==1) PetscFunctionReturn(0);
+  if(diffL!=NULL) {
+    diffL[0*(p+1)+0] = 0;
+    diffL[1*(p+1)+0] = 0;
+    if(dim == 3) diffL[2*(p+1)+0] = 0;
+  }
+  if(p==0) PetscFunctionReturn(0);
   L[1] = s;
-  diffL[0*p+1] = diff_s[0];
-  diffL[1*p+1] = diff_s[1];
-  if(dim == 3) diffL[2*p+1] = diff_s[2];
-  if(p==2) PetscFunctionReturn(0);
-  int l = 2;
+  if(diffL!=NULL) {
+    if(diff_s==NULL) {
+      SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+    }
+    diffL[0*(p+1)+1] = diff_s[0];
+    diffL[1*(p+1)+1] = diff_s[1];
+    if(dim == 3) diffL[2*(p+1)+1] = diff_s[2];
+  }
+  if(p==1) PetscFunctionReturn(0);
+  int l = 1;
   for(;l<p;l++) {
-    double A = ( (2*(double)l-1)/((double)l) );
-    double B = ( (double)(l-1)/((double)l) );
-    L[l] = A*s*L[l-1] - B*L[l-2]; 
-    diffL[0*p+l] = A*(s*diffL[0*p+l-1] + diff_s[0]*L[l-1]) - B*diffL[0*p+l-2]; 
-    diffL[1*p+l] = A*(s*diffL[1*p+l-1] + diff_s[1]*L[l-1]) - B*diffL[1*p+l-2]; 
-    if(dim == 2) continue;
-    diffL[2*p+l] = A*(s*diffL[2*p+l-1] + diff_s[2]*L[l-1]) - B*diffL[2*p+l-2]; 
+    double A = ( (2*(double)l+1)/((double)l+1) );
+    double B = ( (double)l/((double)l+1) );
+    L[l+1] = A*s*L[l] - B*L[l-1]; 
+    if(diffL!=NULL) {
+      if(diff_s==NULL) {
+	SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+      }
+      diffL[0*(p+1)+l+1] = A*(s*diffL[0*(p+1)+l] + diff_s[0]*L[l]) - B*diffL[0*(p+1)+l-1]; 
+      diffL[1*(p+1)+l+1] = A*(s*diffL[1*(p+1)+l] + diff_s[1]*L[l]) - B*diffL[1*(p+1)+l-1]; 
+      if(dim == 2) continue;
+      diffL[2*(p+1)+l+1] = A*(s*diffL[2*(p+1)+l] + diff_s[2]*L[l]) - B*diffL[2*(p+1)+l-1];
+    }
   }
   PetscFunctionReturn(0);
 }
@@ -382,6 +412,7 @@ PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_double
 }
 PetscErrorCode Spin(double *spinOmega,double *vecOmega) {
   PetscFunctionBegin;
+  bzero(spinOmega,9*sizeof(double));
   spinOmega[0*3+1] = -vecOmega[2];
   spinOmega[0*3+2] = +vecOmega[1];
   spinOmega[1*3+0] = +vecOmega[2];

@@ -34,6 +34,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       FieldInterface& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
       Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL) {};
 
+    bool propeties_from_BlockSet_Mat_ElasticSet;
     ElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
       double _lambda,double _mu): 
@@ -65,6 +66,11 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       g_NTRI.resize(3*13);
       ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
       G_W_TRI = G_TRI_W13;
+
+      propeties_from_BlockSet_Mat_ElasticSet = false;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+	propeties_from_BlockSet_Mat_ElasticSet = true;
+      }
 
     }; 
 
@@ -112,21 +118,30 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       *_lambda = lambda;
       *_mu = mu;
 
-      EntityHandle ent = fe_ptr->get_ent();
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 
-	Mat_Elastic mydata;
-	ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      if(propeties_from_BlockSet_Mat_ElasticSet) {
+	EntityHandle ent = fe_ptr->get_ent();
+	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 
-	Range meshsets;
-	rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-	for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-	  if( moab.contains_entities(*mit,&ent,1) ) {
-	    *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
-	    *_mu = MU(mydata.data.Young,mydata.data.Poisson);
-	    break;
+	  Mat_Elastic mydata;
+	  ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+
+	  Range meshsets;
+	  rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+	  meshsets.insert(it->meshset);
+	  for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+	    if( moab.contains_entities(*mit,&ent,1) ) {
+	      *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
+	      *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+	    PetscFunctionReturn(0);  
 	  }
 	}
+
+      }
+
+      SETERRQ(PETSC_COMM_SELF,1,
+	"Element is not in elestic block, however you run linear elastic analysis with that element\n"
+	"top tip: check if you update block sets after mesh refinments or interface insertion");
 
       }
 
@@ -137,7 +152,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-      ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+      ierr = PetscTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
@@ -176,9 +192,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,F); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      ierr = PetscGetTime(&v2); CHKERRQ(ierr);
+      ierr = PetscTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       PetscFunctionReturn(0);
     }
 
@@ -229,7 +246,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
 	double normal[3];
 	ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,normal); CHKERRQ(ierr);
-	double area = cblas_dnrm2(3,normal,1);
+	double area = cblas_dnrm2(3,normal,1)*0.5;
 
 	//calulate & assemble
 
@@ -486,6 +503,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     virtual PetscErrorCode Fint() {
       PetscFunctionBegin;
 
+      try {
+
       double _lambda,_mu;
       ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
       ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
@@ -502,6 +521,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
       int gg = 0;
       for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
+	try {
 	  ublas::matrix< FieldData > GradU = *viit;
 	  ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
 	  ublas::vector< FieldData > VoightStrain(6);
@@ -523,6 +543,17 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	      f_int[rr] += prod( trans(B), VoightStress );
 	    }
 	  }
+	} catch (const std::exception& ex) {
+	  ostringstream ss;
+	  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	} 
+      }
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -530,11 +561,17 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     virtual PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
-      ierr = Fint(); CHKERRQ(ierr);
-      for(int rr = 0;rr<row_mat;rr++) {
-	if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	if(RowGlob[rr].size()==0) continue;
-	ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      try {
+	ierr = Fint(); CHKERRQ(ierr);
+	for(int rr = 0;rr<row_mat;rr++) {
+	  if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(RowGlob[rr].size()==0) continue;
+	  ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	}
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }

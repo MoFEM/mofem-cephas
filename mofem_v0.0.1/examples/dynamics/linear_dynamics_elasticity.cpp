@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   //We need that for code profiling
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
-  ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+  ierr = PetscTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   //Create MoFEM (Joseph) database
@@ -255,7 +255,8 @@ int main(int argc, char *argv[]) {
   //ierr = TSAlphaGetParams(ts,&alpha_m,&alpha_f,&gamma); CHKERRQ(ierr);
   //PetscPrintf(PETSC_COMM_WORLD,"alpha_m = %6.4e alpha_f = %6.4e gamma = %6.4e\n",alpha_m,alpha_f,gamma);
 
-  ierr = TSSolve(ts,D,&ftime); CHKERRQ(ierr);
+  ierr = TSSolve(ts,D); CHKERRQ(ierr);
+  ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
   PetscInt steps,snesfails,rejects,nonlinits,linits;
   ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
@@ -301,7 +302,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = TSDestroy(&ts);CHKERRQ(ierr);
 
-  ierr = PetscGetTime(&v2);CHKERRQ(ierr);
+  ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);

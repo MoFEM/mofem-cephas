@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   //We need that for code profiling
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
-  ierr = PetscGetTime(&v1); CHKERRQ(ierr);
+  ierr = PetscTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   //Create MoFEM (Joseph) database
@@ -236,24 +236,36 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
-
+  
   //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
 
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
-  //detroy matrices
+  //End Disp
+  /*Range ents;*/
+  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
+  //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) { 
+    //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
+      //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
+    //}
+  /*}*/
+
+  //Support stresses
+  //Range ents;
+  //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
+      
+  //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
 
-  ierr = PetscGetTime(&v2);CHKERRQ(ierr);
+  ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);

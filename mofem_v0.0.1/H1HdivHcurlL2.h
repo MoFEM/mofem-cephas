@@ -17,12 +17,8 @@
 #ifndef __H1_H__
 #define __H1_H__
 
-#ifdef __APPLE__
-  #include <Accelerate/Accelerate.h>
-  #include<lapack_wrap.h>
-#else 
-  #include<cblas.h>
-  #include<lapack_wrap.h>
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /// number of dofs for L2 space
@@ -35,16 +31,19 @@
 #define NBFACE_H1(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
 /// number of dofs on volume for H1 space
 #define NBVOLUME_H1(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
+//Hcurl
 #define NBEDGE_Hcurl(P) (P+1)
 #define NBFACE_Hcurl(P) ((P>0) ? (P-1)*(P+1) : 0)
 #define NBVOLUME_Hcurl(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
+//Hdiv
 #define NBEDGE_Hdiv(P) (0)
-#define NBFACE_Hdiv(P) ((P+1)*(P+2)/2)
+#define NBFACE_Hdiv(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
 #define NBVOLUME_Hdiv(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define NBFACE_EDGE_Hdiv(P) ((P>0) ? P : 0)
+#define NBFACE_FACE_Hdiv(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
+#define NBVOLUME_EDGE_Hdiv(P) ((P>1) ? P-1 : 0)
+#define NBVOLUME_FACE_Hdiv(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
+#define NBVOLUME_VOLUME_Hdiv(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
 /** 
  * \brief Calulate Lagrange approximation basis
@@ -78,6 +77,14 @@ PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
 PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
+
+// Hdiv shape functions
+
+PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f_e[4][3],int GDIM);
+PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f[4],int GDIM);
+PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(int p,double *coords,double *N,double *PHI_v_e[6],int GDIM);
+PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(int p,double *coords,double *N,double *PHI_v_f[4],int GDIM);
+PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(int p,double *coords,double *N,double *PHI_v,int GDIM);
 
 #ifdef __cplusplus
 }

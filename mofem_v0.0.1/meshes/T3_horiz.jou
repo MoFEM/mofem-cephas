@@ -1,0 +1,87 @@
+reset
+
+brick x 0.27 y 0.1 z 0.1
+webcut volume 1  with plane xplane offset 0.1225 noimprint merge 
+webcut volume 2  with plane xplane offset -0.1225 noimprint merge 
+webcut volume 2  with plane xplane offset 0 noimprint merge 
+webcut volume 2  with plane xplane offset 0.0025 noimprint merge 
+webcut volume 4  with plane xplane offset -0.0025 noimprint merge 
+unite volume 4 5
+sweep surface 51 perpendicular distance 0.0025
+
+#Apply displacement bcs
+create Displacement  on curve 31 dof 1 dof 2 dof 3 fix 0.0
+create displacement on curve 14 dof 2 dof 3 fix 0.0
+
+#Create notch
+brick x 0.005 y 0.0305 z 0.1
+move volume 7 x 0 y -0.03475 z 0 include_merged
+create cylinder height 0.1 radius 0.0025
+move volume 8 x 0 y -0.0195 z 0 include_merged
+unite volume 8 7
+subtract volume 8 from volume 4 keep
+delete volume 4
+unite volume 2 6 9
+set overlap max gap 0.0005 
+imprint volume all 
+merge volume all 
+
+create Cylinder height 0.3 radius 0.04
+##Change the following to adjust the length of the cut above the notch:
+move volume 10 y -0.035 include_merged
+webcut volume 10 with plane xplane imprint merge
+chop volume 2 with volume 10
+chop volume 13 with volume 11
+
+##Connect all volumes 
+#set overlap maximum gap 0.0005  
+#imprint volume all  
+#merge volume all  
+#set overlap maximum gap 0.0005  
+# 
+#color volume all win2kgray
+#
+##Material Properties 
+#block 1 volume all 
+#block 1 name "MAT_ELASTIC_Graphite"  
+#block 1 attribute count 10  
+##Elastic modulus E = 10.9GPa  
+##Poisson's ratio v = 0.2  
+#block 1 attribute index 1 1.09e+10  
+#block 1 attribute index 2 0.2  
+# 
+##Loading 
+##Apply pressure with magnitude = F/(pad_w x pad_l)  
+##F = 18kN, pad_w = 0.005m, pad_l = 0.100m  
+##P = 36MN/m2  
+#create pressure on surface 82 magnitude 36000000  
+# 
+##Create nodesets and sidesets for fracture constraints 
+##Boundary edges 
+#sideset 100 curve all
+#sideset 100 curve 134 124 29 32 30 15 16 13 185 180 187 179 176 174 149 147 173 remove
+#
+##Boundary vertices 
+#nodeset 101 vertex all 
+#nodeset 101 vertex 86 83 84 85 100 99 remove
+#
+##Boundary surfaces 
+#sideset 102 surface all 
+#sideset 102 surface 17 7 108 104 101
+#
+##Crack surface
+#sideset 200 surface 101
+#
+##Crack front
+#sideset 201 curve 173
+#
+##!Meshing
+#volume all scheme tetmesh
+#volume all size auto factor 8
+##Notch mesh
+#volume 11 size auto factor 8
+#volume 13 size auto factor 8
+#mesh volume all
+#
+#save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/T3_horiz.cub" overwrite
+#

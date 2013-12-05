@@ -43,10 +43,22 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
     ierr = LocalIndices(); CHKERRQ(ierr);
     ierr = DataOp(); CHKERRQ(ierr);
     ierr = ShapeFunctions_TET(_gNTET_); CHKERRQ(ierr);
+  try {
     ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
     ierr = DiffData_at_GaussPoints(); CHKERRQ(ierr);
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in GetColNMatrix_at_GaussPoint(): " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+  try {
     ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
     ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in GetColNMatrix_at_GaussPoint(): " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
   try {
     ierr = GetRowDiffNMatrix_at_GaussPoint(); CHKERRQ(ierr);
     ierr = GetColDiffNMatrix_at_GaussPoint(); CHKERRQ(ierr);
@@ -55,12 +67,10 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
     ss << "thorw in GetRowDiffNMatrix_at_GaussPoint(): " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
-
   EntityHandle fe_handle = fe_ptr->get_ent();
   V = Shape_intVolumeMBTET(diffNTET,&*coords.data().begin()); 
   if( V <= 0 ) SETERRQ1(PETSC_COMM_SELF,1,"V < 0 for EntityHandle = %lu\n",fe_handle);
   rval = moab.tag_set_data(th_volume,&fe_handle,1,&V); CHKERR_PETSC(rval);
-
   const int g_dim = get_dim_gNTET();
   coords_at_Gauss_nodes.resize(g_dim);
   for(int gg = 0;gg<g_dim;gg++) {
@@ -83,7 +93,6 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gN
   ierr = DataOp(); CHKERRQ(ierr);
 
   ierr = ShapeFunctions_PRISM(_gNTRI_); CHKERRQ(ierr);
-  //ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
   ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr);
   ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
 
@@ -102,11 +111,11 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gN
   //face3
   rval = moab.get_coords(conn_face3,3,coords_face3); CHKERR_PETSC(rval);
   ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face3,normal3); CHKERRQ(ierr);
-  area3 = cblas_dnrm2(3,normal3,1);
+  area3 = cblas_dnrm2(3,normal3,1)*0.5;
   //face4
   rval = moab.get_coords(conn_face4,3,coords_face4); CHKERR_PETSC(rval);
   ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face4,normal4); CHKERRQ(ierr);
-  area4 = cblas_dnrm2(3,normal4,1);
+  area4 = cblas_dnrm2(3,normal4,1)*0.5;
 
   /*copy(&normal3[0],&normal3[3],ostream_iterator<double>(cerr," "));
   cerr << " -->  ";
@@ -139,12 +148,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowGlobalIndices(const string &field_
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == row_multiIndex->get<Composite_mi_tag>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
+      eiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	if((fe_ptr->get_ent_type()==MBPRISM)&&(type==MBEDGE)&&(side_number>=6)) {
-	  eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number-6));
-	  if(eiit == row_multiIndex->get<Composite_mi_tag>().end()) {
+	  eiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number-6));
+	  if(eiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	    RowGlobDofs.resize(0);
 	    PetscFunctionReturn(0);
 	  }
@@ -200,12 +209,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowLocalIndices(const string &field_n
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == row_multiIndex->get<Composite_mi_tag>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
+      eiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	if((fe_ptr->get_ent_type()==MBPRISM)&&(type==MBEDGE)&&(side_number>=6)) {
-	  eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number-6));
-	  if(eiit == row_multiIndex->get<Composite_mi_tag>().end()) {
+	  eiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number-6));
+	  if(eiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	    RowLocalDofs.resize(0);
 	    PetscFunctionReturn(0);
 	  }
@@ -267,12 +276,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColGlobalIndices(const string &field_
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == col_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	if((fe_ptr->get_ent_type()==MBPRISM)&&(type==MBEDGE)&&(side_number>=6)) {
-	  eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number-6));
-	  if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) {
+	  eiit = col_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number-6));
+	  if(eiit == col_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	    ColGlobDofs.resize(0);
 	    PetscFunctionReturn(0);
 	  }
@@ -328,12 +337,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColLocalIndices(const string &field_n
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == col_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	  if((fe_ptr->get_ent_type()==MBPRISM)&&(type==MBEDGE)&&(side_number>=6)) {
-	  eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number-6));
-	  if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) {
+	  eiit = col_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number-6));
+	  if(eiit == col_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	    ColLocalDofs.resize(0);
 	    PetscFunctionReturn(0);
 	  }
@@ -389,11 +398,11 @@ PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,E
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == data_multiIndex->get<Composite_mi_tag>().end()) {
+      FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
+      eiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == data_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	if((fe_ptr->get_ent_type()==MBPRISM)&&(type==MBEDGE)&&(side_number>=6)) {
-	  eiit = data_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number-6));
+	  eiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number-6));
 	  if(eiit->side_number_ptr->brother_side_number!=side_number) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
 	} else SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       }
@@ -428,15 +437,22 @@ PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,E
 }
 PetscErrorCode FEMethod_UpLevelStudent::GetGaussDataVector(const string &field_name,vector< ublas::vector<FieldData> > &Data) {
   PetscFunctionBegin;
-  Data_at_Gauss_pt::iterator miit = data_at_gauss_pt.find(field_name);
-  if(miit == data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  H1L2_Data_at_Gauss_pt::iterator miit = h1l2_data_at_gauss_pt.find(field_name);
+  if(miit == h1l2_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE (top tip: if this is Hdiv or Hcrul field use)");
+  Data = miit->second;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_UpLevelStudent::GetGaussDataVector_HcurlHdiv(const string &field_name,vector< ublas::matrix<FieldData> > &Data) {
+  PetscFunctionBegin;
+  HcurlHdiv_Data_at_Gauss_pt::iterator miit = hcurl_hdiv_data_at_gauss_pt.find(field_name);
+  if(miit == hcurl_hdiv_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   Data = miit->second;
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_UpLevelStudent::GetGaussDiffDataVector(const string &field_name,vector< ublas::matrix<FieldData> > &Data) {
   PetscFunctionBegin;
-  DiffData_at_Gauss_pt::iterator miit = diff_data_at_gauss_pt.find(field_name);
-  if(miit == diff_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  H1_DiffData_at_Gauss_pt::iterator miit = h1_diff_data_at_gauss_pt.find(field_name);
+  if(miit == h1_diff_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   Data = miit->second;
   PetscFunctionReturn(0);
 }
@@ -453,12 +469,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowNMatrix(const string &field_n
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == row_multiIndex->get<Composite_mi_tag>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
+      eiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	if((fe_ptr->get_ent_type()==MBPRISM)&&(type==MBEDGE)&&(side_number>=6)) {
-	  eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number-6));
-	  if(eiit == row_multiIndex->get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
+	  eiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number-6));
+	  if(eiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
 	  if(eiit->side_number_ptr->brother_side_number!=side_number) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	} else SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       }
@@ -505,12 +521,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussColNMatrix(const string &field_n
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == col_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	if((fe_ptr->get_ent_type()==MBPRISM)&&(type==MBEDGE)&&(side_number>=6)) {
-	  eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number-6));
-	  if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
+	  eiit = col_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number-6));
+	  if(eiit == col_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
 	  if(eiit->side_number_ptr->brother_side_number!=side_number) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	} else SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       }
@@ -556,12 +572,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowDiffNMatrix(const string &fie
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == row_multiIndex->get<Composite_mi_tag>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
+      eiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	if((fe_ptr->get_ent_type()==MBPRISM)&&(type==MBEDGE)&&(side_number>=6)) {
-	  eiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number-6));
-	  if(eiit == row_multiIndex->get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+	  eiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number-6));
+	  if(eiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
 	  if(eiit->side_number_ptr->brother_side_number!=side_number) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	} else SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       }
@@ -607,12 +623,12 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussColDiffNMatrix(const string &fie
   switch(type) {
     case MBEDGE:
     case MBTRI: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiit;
-      eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number));
-      if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number));
+      if(eiit == col_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
 	if((fe_ptr->get_ent_type()==MBPRISM)&&(type==MBEDGE)&&(side_number>=6)) {
-	  eiit = col_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,type,side_number-6));
-	  if(eiit == col_multiIndex->get<Composite_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+	  eiit = col_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,type,side_number-6));
+	  if(eiit == col_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent");
 	  if(eiit->side_number_ptr->brother_side_number!=side_number) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	} else SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       }
@@ -664,15 +680,6 @@ PetscErrorCode FEMethod_UpLevelStudent::MakeBMatrix3D(
     if((BMat.size1()!=6)||(BMat.size2()!=n)) BMat.resize(6,n);
     // page 30 CHAPTER 6. DISPLACEMENT METHODS, FEAP Version 7.3 Theory Manual Robert L. Taylor
     // dX/dx (0) dX/dy (1) dX/dz (2); dY/dx (3) dY/dy (4) dY/dz (5); dZ/dx (6) dZ/dy (7) dZ/dz (8)
-    /*ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,0)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,0); //dX/dx
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,1)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,4); //dY/dy
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,2)) = ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,8); //dZ/dz
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,3)) = //dX/dy+dY/dx
-      ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,1)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,3);
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,4)) = //dY/dz+dZ/dy
-      ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,5)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,7);
-    ublas::noalias(ublas::matrix_row<ublas::matrix<FieldData> >(BMat,5)) = //dX/dz+dZ/dx
-      ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,2)+ublas::matrix_row<ublas::matrix<FieldData> >(diffMat,6);*/
     cblas_dcopy(BMat.size2(),&diffMat.data()[0*diffMat.size2()],1,&BMat.data()[0*BMat.size2()],1);
     cblas_dcopy(BMat.size2(),&diffMat.data()[4*diffMat.size2()],1,&BMat.data()[1*BMat.size2()],1);
     cblas_dcopy(BMat.size2(),&diffMat.data()[8*diffMat.size2()],1,&BMat.data()[2*BMat.size2()],1);
@@ -716,9 +723,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowFaceNMatrix(
       } catch (const char* msg) {
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
       }
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator fiiit;
-      fiiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,MBTRI,side_number));
-      if(fiiit == row_multiIndex->get<Composite_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"no such ent (side_number = %u)",side_number);
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator fiiit;
+      fiiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,MBTRI,side_number));
+      if(fiiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) SETERRQ1(PETSC_COMM_SELF,1,"no such ent (side_number = %u)",side_number);
       N_Matrix_EntType::iterator miit = N_Matrix_faces.find(fiiit->get_MoFEMEntity_ptr());
       if(miit == N_Matrix_faces.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
       NMatrix = miit->second;
@@ -731,9 +738,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowFaceNMatrix(
       } catch (const char* msg) {
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
       }
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator eiiit;
-      eiiit = row_multiIndex->get<Composite_mi_tag>().find(boost::make_tuple(field_name,MBEDGE,side_number));
-      if(eiiit == row_multiIndex->get<Composite_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"no such ent (side_number = %u)",side_number);
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiiit;
+      eiiit = row_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(field_name,MBEDGE,side_number));
+      if(eiiit == row_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) SETERRQ1(PETSC_COMM_SELF,1,"no such ent (side_number = %u)",side_number);
       N_Matrix_EntType::iterator miit = N_Matrix_edges.find(eiiit->get_MoFEMEntity_ptr());
       if(miit == N_Matrix_faces.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
       NMatrix = miit->second;
