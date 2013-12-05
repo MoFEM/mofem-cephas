@@ -159,7 +159,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       for(int rr = 0;rr<6;rr++) {
 	D_mu(rr,rr) = rr<3 ? 2 : 1;
       }
-
       ierr = VecZeroEntries(Data); CHKERRQ(ierr);
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
 
@@ -313,6 +312,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = GetRowLocalIndices("DISPLACEMENT",RowLocal[row_mat]); CHKERRQ(ierr);
       ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
       ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
+        
+        
+        
       ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
       row_mat++;
       for(int ee = 0;ee<6;ee++) { //edges matrices
@@ -420,7 +422,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    0.,&*BD.data().begin(),BD.size2());
 	  for(int cc = rr;cc<col_mat;cc++) {
 	    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
-	    if(gg == 0) {
+	    if(gg == 0) {     //for first gauss point k= BT*D*B + 0*k
 	      K(rr,cc).resize(BD.size2(),col_Mat.size2());
 	      //ublas::noalias(K(rr,cc)) = prod(trans(BD) , col_Mat ); // int BT*D*B
 	      cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
@@ -428,7 +430,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 		1.,&*BD.data().begin(),BD.size2(),
 		&*col_Mat.data().begin(),col_Mat.size2(),
 		0.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
-	    } else {
+	    } else {   // for gauss other than first  k= BT*D*B + 1*k
 	      //ublas::noalias(K(rr,cc)) += prod(trans(BTD) , col_Mat ); // int BT*D*B
 	      cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
 		BD.size2(),col_Mat.size2(),BD.size1(),
@@ -439,12 +441,13 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  }
 	}
       }
-      PetscFunctionReturn(0);
+       PetscFunctionReturn(0);
     }
 
     virtual PetscErrorCode Lhs() {
       PetscFunctionBegin;
       ierr = Stiffness(); CHKERRQ(ierr);
+        
       for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = rr;cc<col_mat;cc++) {
 	  if(ColGlob[cc].size()==0) continue;
@@ -465,10 +468,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = Fint(F); CHKERRQ(ierr);
       ublas::vector<FieldData> f[row_mat];
       int g_dim = g_NTET.size()/4;
-      for(int rr = 0;rr<row_mat;rr++) {
+        for(int rr = 0;rr<row_mat;rr++) {
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
-	  if(gg == 0) f[rr] = ublas::zero_vector<FieldData>(row_Mat.size2());
+        if(gg == 0) f[rr] = ublas::zero_vector<FieldData>(row_Mat.size2());  //cout<<"row_Mat.size2()"<<row_Mat.size2()<<endl;
 	  ///f matrices
 	  // calulate body force (f.e. garvity force
 	}
@@ -490,6 +493,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       //Gradient at Gauss points; 
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
       ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+        
+        //cout<<"GradU_at_GaussPt "<< GradU_at_GaussPt.size() << endl;
+        
       unsigned int g_dim = g_NTET.size()/4;
       assert(GradU_at_GaussPt.size() == g_dim);
       NOT_USED(g_dim);

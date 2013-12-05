@@ -68,7 +68,7 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
   map<int,Range> bc_map[3];
   map<int,double> bc_map_val[3];
 
-  PetscErrorCode Init();
+  virtual PetscErrorCode Init();
 
   PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
     FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC);
@@ -83,7 +83,40 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
   PetscErrorCode SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D);
 
 };
+    
+    
+//struct CubitTemperatureDirihletBC: public CubitDisplacementDirihletBC {
+    //CubitTemperatureDirihletBC(FieldInterface& _mField,const string _problem_name,const string _field_name);
+    
+//    virtual PetscErrorCode Init() {
+//        PetscFunctionBegin;
+//            for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|TemperatureSet,it)) {
+//
+//              temperature_cubit_bc_data mydata;
+//              ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+//              for(int dim = 0;dim<3;dim++) {
+//            Range _ents;
+//            ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,_ents,true); CHKERRQ(ierr);
+//            if(dim>1) {
+//              Range _edges;
+//              ierr = mField.get_moab().get_adjacencies(_ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+//              _ents.insert(_edges.begin(),_edges.end());
+//            }
+//            if(dim>0) {
+//              Range _nodes;
+//              rval = mField.get_moab().get_connectivity(_ents,_nodes,true); CHKERR_PETSC(rval);
+//              _ents.insert(_nodes.begin(),_nodes.end());
+//            }
+//                  
+//            if(dim>2) SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
+//            
+//              (bc_map[0])[it->get_msId()].insert(_ents.begin(),_ents.end());
+//              (bc_map_val[0])[it->get_msId()] = mydata.data.value1;
+//                  
+//              }
+//            }
+//        }
 
+//    };
 }
-
 #endif //__MOABFEMETHOD_DIRIHLETBC_HPP__

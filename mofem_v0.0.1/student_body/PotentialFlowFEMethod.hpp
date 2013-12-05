@@ -148,6 +148,7 @@ struct PotentialElem: public FEMethod_UpLevelStudent {
 	  ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,normal); CHKERRQ(ierr);
 	  double area = cblas_dnrm2(3,normal,1);
 
+        
 	  //nodes
 	  vector<DofIdx>& RowGlob_nodes = RowGlobDofs[0];
 	  vector< ublas::matrix<FieldData> > FaceNMatrix_nodes;

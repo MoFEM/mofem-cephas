@@ -33,6 +33,8 @@ FEMethod_UpLevelStudent::FEMethod_UpLevelStudent(Interface& _moab,int _verbose):
   rval = moab.tag_get_handle("Volume",1,MB_TYPE_DOUBLE,th_volume,MB_TAG_CREAT|MB_TAG_SPARSE,&def_V); CHKERR_THROW(rval);
 }
 FEMethod_UpLevelStudent::~FEMethod_UpLevelStudent() {}
+
+    
 PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTET_) {
   PetscFunctionBegin;
     fe_ent_ptr = fe_ptr->fe_ptr;
@@ -70,6 +72,9 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
 
   PetscFunctionReturn(0);
 }
+    
+    
+    
 PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_PRISM(vector<double>& _gNTRI_) {
   PetscFunctionBegin;
   fe_ent_ptr = fe_ptr->fe_ptr;
@@ -649,6 +654,7 @@ PetscErrorCode FEMethod_UpLevelStudent::MakeBMatrix3D(
   if(fiit->get_max_rank() != 3) SETERRQ(PETSC_COMM_SELF,1,"it has to be rank 3");
   const int g_dim = get_dim_gNTET();
   BMatrix.resize(g_dim);
+    
   for(int gg = 0;gg<g_dim;gg++) {
     ublas::matrix<FieldData> &diffMat = diffNMatrix[gg];
     ublas::matrix<FieldData> &BMat = BMatrix[gg];

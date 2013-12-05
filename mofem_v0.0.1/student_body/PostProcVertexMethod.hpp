@@ -36,7 +36,7 @@ struct PostProcVertexMethod: public FieldInterface::EntMethod {
     Vec V;
     string tag_name;
     PostProcVertexMethod(Interface& _moab,
-      string _field_name = "DISPLACEMENT",Vec _V = PETSC_NULL,string _tag_name = "__NotSet__"): 
+      string _field_name = "TEMPERATURE",Vec _V = PETSC_NULL,string _tag_name = "__NotSet__"):
       EntMethod(),moab(_moab),field_name(_field_name),V(_V),tag_name(_tag_name) {
     }
 

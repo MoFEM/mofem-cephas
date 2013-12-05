@@ -1424,6 +1424,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
   }
   PetscFunctionReturn(0);
 }
+    
+    
+    
 PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
     EntityHandle ent,const string& field_name,
     Indices_Type& nodesGlobIndices, 
