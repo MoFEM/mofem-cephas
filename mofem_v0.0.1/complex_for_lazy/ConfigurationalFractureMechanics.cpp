@@ -1359,7 +1359,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     ave_g /= N;
     ave_j /= N;
   }
-  PetscPrintf(PETSC_COMM_WORLD,"\naverage griffith force %6.4e / %6.4e Crasck surface area %6.4e\n",-ave_g,ave_j,aRea);
+  PetscPrintf(PETSC_COMM_WORLD,"\naverage griffith force %6.4e / %6.4e Crack surface area %6.4e\n",-ave_g,ave_j,aRea);
   PetscPrintf(PETSC_COMM_WORLD,"\n\n");
 
   PostProcVertexMethod ent_method(mField.get_moab(),"LAMBDA_CRACKFRONT_AREA");
@@ -1814,7 +1814,7 @@ PetscErrorCode ConfigurationalFractureMechanics::save_edge_lenght_in_tags(FieldI
     rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
     cblas_daxpy(3,-1,&coords[3],1,&coords[0],1);
     edges_length[ee] = cblas_dnrm2(3,coords,1);
-    if(edges_length[ee] <= 0) SETERRQ(PETSC_COMM_SELF,1,"edge lenght is 0 (or negative)");
+    if(edges_length[ee] <= 0) SETERRQ(PETSC_COMM_SELF,1,"edge length is 0 (or negative)");
   }
   rval = mField.get_moab().tag_set_data(th_edge_length,bit_level_edges,&edges_length[0]); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
@@ -1846,7 +1846,7 @@ PetscErrorCode ConfigurationalFractureMechanics::save_edge_strech_lenght_in_tags
   vector<double>::iterator vit_strech = edges_strech.begin();
   vector<double>::iterator vit_length0 = edges_length0.begin();
   for(;vit_strech != edges_strech.end();vit_strech++,vit_length0++) {
-    if(*vit_length0 <= 0) SETERRQ(PETSC_COMM_SELF,1,"edge lenght is 0 (or negative)");
+    if(*vit_length0 <= 0) SETERRQ(PETSC_COMM_SELF,1,"edge length is 0 (or negative)");
     *vit_strech /= *vit_length0;
   }
   rval = mField.get_moab().tag_set_data(th_edge_strech,bit_level_edges,&*edges_strech.begin()); CHKERR_PETSC(rval);
@@ -1939,7 +1939,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ConstrainCrackForntEdges_FEMeth
   const EntityHandle* conn; 
   int num_nodes; 
   rval = mField.get_moab().get_connectivity(edge,conn,num_nodes,true); CHKERR_PETSC(rval);
-  if(num_nodes!=2) SETERRQ(PETSC_COMM_SELF,1,"this implementation works for edges (2 nodes entities)");
+  if(num_nodes!=2) SETERRQ(PETSC_COMM_SELF,1,"this implementation works for edges (2 node entities)");
   for(int nn = 0;nn<2; nn++) {
     for(_IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(this,"MESH_NODE_POSITIONS",conn[nn],dit)) { 
       rowDofs[3*nn+dit->get_EntDofIdx()] = dit->get_petsc_gloabl_dof_idx();
