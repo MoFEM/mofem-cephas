@@ -74,6 +74,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   ArcLengthInterfaceTest
   SimpleMeshSmoothingTest
   SimplePotentialFlowTest
+  SimpleLaplacianProblem
   ComputeFibreDirection
   wireTest
 )

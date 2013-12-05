@@ -99,28 +99,6 @@ int main(int argc, char *argv[]) {
 
     }
   }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
-    if(it->get_Cubit_name() == "PotentialFlow1") {
-              
-      //add ents to field and set app. order
-      ierr = mField.add_ents_to_field_by_TETs(0,"POTENTIAL_FIELD"); CHKERRQ(ierr);
-              
-      //add finite elements entities
-      ierr = mField.add_ents_to_finite_element_by_TETs(it->meshset,"POTENTIAL_ELEM",true); CHKERRQ(ierr);
-              
-    }
-  }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
-    if(it->get_Cubit_name() == "PotentialFlow2") {
-              
-    //add ents to field and set app. order
-    ierr = mField.add_ents_to_field_by_TETs(0,"POTENTIAL_FIELD"); CHKERRQ(ierr);
-              
-    //add finite elements entities
-    ierr = mField.add_ents_to_finite_element_by_TETs(it->meshset,"POTENTIAL_ELEM",true); CHKERRQ(ierr);
-              
-    }
-  }
 
   ierr = mField.set_field_order(0,MBVERTEX,"POTENTIAL_FIELD",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
@@ -183,6 +161,11 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("POTENTIAL_PROBLEM",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
+
   Tag th_phi;
   double def_val = 0;
   rval = moab.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
@@ -200,7 +183,7 @@ int main(int argc, char *argv[]) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("POTENTIAL_PROBLEM","POTENTIAL_ELEM",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out_potential_flow.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 

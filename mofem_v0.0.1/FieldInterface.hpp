@@ -843,7 +843,7 @@ struct FieldInterface {
     enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetRHSJacobian, ctx_TSSetIFunction, ctx_TSSetIJacobian, ctx_TSTSMonitorSet, ctx_TSNone };
     //
     ts_context ts_ctx;
-    TSMethod(): ts_ctx(ctx_TSNone) {};
+    TSMethod(): ts_ctx(ctx_TSNone),ts_a(0),ts_t(0) {};
     //
     PetscErrorCode set_ts_ctx(const ts_context ctx_);
     //
@@ -1221,7 +1221,7 @@ struct FieldInterface {
       IT != MFIELD.get_dofs_by_name_end(NAME); IT++
 
   /** 
-    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
+    * \brief get begin iterator of filed dofs of given name and ent(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
     * 	...
@@ -1232,7 +1232,7 @@ struct FieldInterface {
   virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent) = 0;
 
   /** 
-    * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
+    * \brief get begin iterator of filed dofs of given name and ent (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
     * 	...
@@ -1246,6 +1246,33 @@ struct FieldInterface {
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
     DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
       IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
+
+  /** 
+    * \brief get begin iterator of filed dofs of given name and ent type (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
+    *
+    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
+    * 	...
+    * }
+    *
+    * \param field_name  
+    */
+  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type) = 0;
+
+  /** 
+    * \brief get begin iterator of filed dofs of given name end ent type(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
+    *
+    * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
+    * 	...
+    * }
+    *
+    * \param field_name  
+    */
+  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType type) = 0;
+
+  ///loop over all dofs from a moFEM field and particular field
+  #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
+    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
+      IT != MFIELD.get_dofs_by_name_and_type_end(NAME,TYPE); IT++
 
   /** \brief Get finite elements multi index
     *
