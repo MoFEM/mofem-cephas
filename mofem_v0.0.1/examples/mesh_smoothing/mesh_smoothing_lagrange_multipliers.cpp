@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING","MESH_SMOOTHER"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING","C_CORNER_ELEM"); CHKERRQ(ierr);
+  //ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING","C_CORNER_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING","C_SURFACE_ELEM"); CHKERRQ(ierr);
 
   //set refinment level for problem
@@ -111,9 +111,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_level,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
 
   //add tets on corners
+  Range CornersNodes;
   EntityHandle cornersNodesMeshset,surfacesFacesMeshset;
   {
-    Range CornersEdges,CornersNodes,SurfacesFaces;
+    Range CornersEdges,SurfacesFaces;
     ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
@@ -193,7 +194,6 @@ int main(int argc, char *argv[]) {
   Vec D;
   ierr = mField.VecCreateGhost("MESH_SMOOTHING",Col,&D); CHKERRQ(ierr);
 
-  Range CornersNodes;
   materialDirihletBC myDirihletBC(moab,CornersNodes);
   MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers MyFE(mField,&myDirihletBC);
   C_CORNER_FEMethod_ForSnes MyCornerConstrains(mField);
@@ -230,12 +230,12 @@ int main(int argc, char *argv[]) {
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyFE));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_CORNER_ELEM",&MyCornerConstrains));
+  //loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_CORNER_ELEM",&MyCornerConstrains));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_SURFACE_ELEM",&MySurfaceConstrains));
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyFE));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_CORNER_ELEM",&MyCornerConstrains));
+  //loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_CORNER_ELEM",&MyCornerConstrains));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_SURFACE_ELEM",&MySurfaceConstrains));
 
   SNES snes;
@@ -258,6 +258,8 @@ int main(int argc, char *argv[]) {
   double def_VAL[3] = { 0,0,0 };
   Tag th_res_corner;
   rval = moab.tag_get_handle("RES_LAMBDA_CORNER",3,MB_TYPE_DOUBLE,th_res_corner,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
+  Tag th_lambda_corner;
+  rval = moab.tag_get_handle("VAL_LAMBDA_CORNER",3,MB_TYPE_DOUBLE,th_lambda_corner,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
   Tag th_res_quality;
   rval = moab.tag_get_handle("RES_QUALITY",3,MB_TYPE_DOUBLE,th_res_quality,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
   Tag th_res_surface;
@@ -276,6 +278,10 @@ int main(int argc, char *argv[]) {
     rval = moab.tag_get_by_ptr(th_res_corner,&ent,1,(const void **)&data_ptr); CHKERR_PETSC(rval);
     data_ptr[dof->get_dof_rank()] = array[dof->get_petsc_local_dof_idx()];
     rval = moab.tag_set_by_ptr(th_res_corner,&ent,1,(const void **)&data_ptr); CHKERR_PETSC(rval);
+    double lambda = dof->get_FieldData();
+    rval = moab.tag_get_by_ptr(th_lambda_corner,&ent,1,(const void **)&data_ptr); CHKERR_PETSC(rval);
+    data_ptr[dof->get_dof_rank()] = lambda;
+    rval = moab.tag_set_by_ptr(th_lambda_corner,&ent,1,(const void **)&data_ptr); CHKERR_PETSC(rval);
   }
 
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_SURFACE",dof)) {

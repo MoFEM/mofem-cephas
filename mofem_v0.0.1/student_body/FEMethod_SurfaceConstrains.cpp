@@ -36,9 +36,9 @@ PetscErrorCode C_SURFACE_FEMethod::SaveConstrainOnTags() {
 void C_SURFACE_FEMethod::run_in_constructor() {
     diffNTRI.resize(6);
     ShapeDiffMBTRI(&diffNTRI[0]);
-    g_NTRI3.resize(3*3);
-    ShapeMBTRI(&g_NTRI3[0],G_TRI_X3,G_TRI_Y3,3);
-    G_TRI_W = G_TRI_W3;
+    g_NTRI3.resize(4*3);
+    ShapeMBTRI(&g_NTRI3[0],G_TRI_X4,G_TRI_Y4,4);
+    G_TRI_W = G_TRI_W4;
     double def_VAL[3*9];
     fill(&def_VAL[0],&def_VAL[3*9],0);
     rval = moab.tag_get_handle("MATERIAL_NORMAL",3,MB_TYPE_DOUBLE,th_material_normal,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
@@ -211,7 +211,11 @@ PetscErrorCode g_SURFACE_FEMethod::Assemble(bool transpose) {
         ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
         &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
   if(transpose) {
-      ierr = VecSetValues(g,
+    if(ent_global_col_indices.size()!=f_VEC_ELEM.size()) {
+      SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
+	ent_global_col_indices.size(),f_VEC_ELEM.size());
+    }
+    ierr = VecSetValues(g,
 	ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
 	&(f_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
 
@@ -237,6 +241,7 @@ PetscErrorCode C_CORNER_FEMethod::preProcess() {
 PetscErrorCode C_CORNER_FEMethod::Integrate(bool transpose) {
     PetscFunctionBegin;
     try {
+    ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,3);
     for(int nn = 0;nn<3;nn++) {
 	for(int dd = 0;dd<3;dd++) {
 	  if(nn!=dd) C_MAT_ELEM(nn,dd) = 0;
@@ -246,12 +251,12 @@ PetscErrorCode C_CORNER_FEMethod::Integrate(bool transpose) {
     ierr = MatSetValues(C,
       ent_global_row_indices.size(),&(ent_global_row_indices[0]),
       ent_global_col_indices.size(),&(ent_global_col_indices[0]),
-      &(C_MAT_ELEM.data())[0],INSERT_VALUES); CHKERRQ(ierr);
+      &(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
     if(transpose) {
       ierr = MatSetValues(C,
 	ent_global_col_indices.size(),&(ent_global_col_indices[0]),
 	ent_global_row_indices.size(),&(ent_global_row_indices[0]),
-	&(C_MAT_ELEM.data())[0],INSERT_VALUES); CHKERRQ(ierr);
+	&(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
     }
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -311,18 +316,21 @@ g_CORNER_FEMethod::g_CORNER_FEMethod(Interface& _moab,Vec _g,int _verbose):
 PetscErrorCode g_CORNER_FEMethod::Integrate(bool transpose) {
     PetscFunctionBegin;
     try {
-    for(int nn = 0;nn<3;nn++) {
-      g_VEC_ELEM[nn] = ent_dofs_data[nn] - coords[nn];
-    }
-    VecSetOption(g, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
-    ierr = VecSetValues(g,
-      ent_global_row_indices.size(),&(ent_global_row_indices[0]),
-      &(g_VEC_ELEM.data())[0],INSERT_VALUES); CHKERRQ(ierr);
-    if(transpose) {
-     ierr = VecSetValues(g,
-      ent_global_col_indices.size(),&(ent_global_col_indices[0]),
-      &(ent_lambda_data.data())[0],INSERT_VALUES); CHKERRQ(ierr);
-    }
+      for(int nn = 0;nn<3;nn++) {
+        g_VEC_ELEM[nn] = ent_dofs_data[nn] - coords[nn];
+      }
+      VecSetOption(g,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+      ierr = VecSetValues(g,
+        ent_global_row_indices.size(),&(ent_global_row_indices[0]),
+        &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+      if(transpose) {
+	if(ent_lambda_data.size()!=ent_global_col_indices.size()) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	}
+	ierr = VecSetValues(g,
+	  ent_global_col_indices.size(),&(ent_global_col_indices[0]),
+	  &(ent_lambda_data.data())[0],ADD_VALUES); CHKERRQ(ierr);
+      }
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
