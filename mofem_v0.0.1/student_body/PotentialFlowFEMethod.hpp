@@ -307,7 +307,8 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       vector<DofIdx> zero_pressure_dofs;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
 	std::size_t zeroPressureFound=it->get_Cubit_name().find("ZeroPressure");
-	if (zeroPressureFound==std::string::npos) continue;	Range nodes;
+	if (zeroPressureFound==std::string::npos) continue;
+	Range nodes;
 	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
 	Range edges;
 	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
