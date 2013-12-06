@@ -33,6 +33,7 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 
+
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
@@ -132,6 +133,9 @@ int main(int argc, char *argv[]) {
   //ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
   //ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
   
+  ierr = mField.printCubitTemperatureSet(); CHKERRQ(ierr);
+  ierr = mField.printCubitHeatFluxSet(); CHKERRQ(ierr);
+
   //print block sets with materials
   ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
       

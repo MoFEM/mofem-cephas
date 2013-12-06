@@ -217,6 +217,8 @@ struct FieldInterface {
   virtual PetscErrorCode printCubitDisplacementSet() = 0;
   virtual PetscErrorCode printCubitPressureSet() = 0;
   virtual PetscErrorCode printCubitForceSet() = 0;
+  virtual PetscErrorCode printCubitTemperatureSet() = 0;
+  virtual PetscErrorCode printCubitHeatFluxSet() = 0;
   virtual PetscErrorCode printCubitMaterials() = 0;
 
   /**

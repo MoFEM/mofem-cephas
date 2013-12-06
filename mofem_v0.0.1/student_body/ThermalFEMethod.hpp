@@ -113,16 +113,17 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
         *_Ther_Cond = Ther_Cond;
         
         EntityHandle ent = fe_ptr->get_ent();
-        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ThermalSet,it)) {
             
-            Mat_Elastic mydata;
+            Mat_Thermal mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             
             Range meshsets;
             rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
             for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
                 if( moab.contains_entities(*mit,&ent,1) ) {
-                    *_Ther_Cond = mydata.data.Young;
+                    *_Ther_Cond = mydata.data.Conductivity;
+                    //cout<< " mydata.data.Conductivity "<<mydata.data.Conductivity<<endl;
                     break;
                 }
             }

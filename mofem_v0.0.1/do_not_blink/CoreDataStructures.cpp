@@ -1083,6 +1083,8 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
     //See Cubit_BC_bitset in common.hpp
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
         type |= Mat_ElasticSet; }
+    else if (name.compare(0,11,"MAT_THERMAL") == 0) {
+        type |= Mat_ThermalSet; }
     else if (name.compare(0,12,"MAT_TRANSISO") == 0) {
         type |= Mat_TransIsoSet; }
     else if (name.compare(0,10,"MAT_INTERF") == 0) {
@@ -1268,8 +1270,24 @@ ostream& operator<<(ostream& os,const Mat_Elastic& e)
         os << "-------------------" << endl;
         os << "Young's modulus  = " << e.data.Young << endl;
         os << "Poisson's ratio  = " << e.data.Poisson << endl;
-        os << "Density = " << e.data.Density << endl;
-        os << "Thermal Conductivity = " << e.data.Conductivity << endl;
+        os << "User attribute 1 = " << e.data.User1 << endl;
+        os << "User attribute 2 = " << e.data.User2 << endl;
+        os << "User attribute 3 = " << e.data.User3 << endl;
+        os << "User attribute 4 = " << e.data.User4 << endl;
+        os << "User attribute 5 = " << e.data.User5 << endl;
+        os << "User attribute 6 = " << e.data.User6 << endl;
+        os << "User attribute 7 = " << e.data.User7 << endl;
+        os << "User attribute 8 = " << e.data.User8 << endl << endl;
+        return os;
+    }
+    
+ostream& operator<<(ostream& os,const Mat_Thermal& e)
+    {
+        os << endl << "Material Properties" << endl;
+        os << "-------------------" << endl;
+        os << "Conductivity  = " << e.data.Conductivity << endl;
+        os << "User attribute 1 = " << e.data.User1 << endl;
+        os << "User attribute 2 = " << e.data.User2 << endl;
         os << "User attribute 3 = " << e.data.User3 << endl;
         os << "User attribute 4 = " << e.data.User4 << endl;
         os << "User attribute 5 = " << e.data.User5 << endl;
@@ -1279,6 +1297,7 @@ ostream& operator<<(ostream& os,const Mat_Elastic& e)
         return os;
     }
 
+    
 ostream& operator<<(ostream& os,const Mat_TransIso& e)
 {
     os << endl << "Material Properties" << endl;

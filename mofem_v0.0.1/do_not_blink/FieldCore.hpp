@@ -135,7 +135,7 @@ struct FieldCore: public FieldInterface {
 
   PetscErrorCode printCubitDisplacementSet() {
     PetscFunctionBegin;
-    displacement_cubit_bc_data mydata;
+    temperature_cubit_bc_data mydata;
     ierr = printCubitSet(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -146,13 +146,26 @@ struct FieldCore: public FieldInterface {
     ierr = printCubitSet(mydata,SideSet|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-
+   
   PetscErrorCode printCubitForceSet() {
     PetscFunctionBegin;
     force_cubit_bc_data mydata;
     ierr = printCubitSet(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
+  PetscErrorCode printCubitTemperatureSet() {
+        PetscFunctionBegin;
+        temperature_cubit_bc_data mydata;
+        ierr = printCubitSet(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
+        PetscFunctionReturn(0);
+    }
+    
+  PetscErrorCode printCubitHeatFluxSet() {
+        PetscFunctionBegin;
+        heatflux_cubit_bc_data mydata;
+        ierr = printCubitSet(mydata,SideSet|mydata.type.to_ulong()); CHKERRQ(ierr);
+        PetscFunctionReturn(0);
+    }
 
   PetscErrorCode printCubitMaterials() {
     PetscFunctionBegin;
@@ -164,6 +177,15 @@ struct FieldCore: public FieldInterface {
       ss << *it << endl;
       ss << data;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }
+      
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BlockSet|Mat_ThermalSet,it)) {
+        Mat_Thermal data;
+        ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
+        ostringstream ss;
+        ss << *it << endl;
+        ss << data;
+        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BlockSet|Mat_TransIsoSet,it)) {
         Mat_TransIso data;
