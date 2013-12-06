@@ -3721,6 +3721,14 @@ PetscErrorCode FieldCore::problem_get_FE(const string &problem_name,const string
   }
   PetscFunctionReturn(0);
 }
+bool FieldCore::check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType) {
+  moabCubitMeshSet_multiIndex::index<Composite_mi_tag>::type::iterator 
+    miit = cubit_meshsets.get<Composite_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
+  if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
+    return true;
+  } 
+  return false;
+}
 PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType,
   const int dimension,Range &entities,const bool recursive) {
   PetscFunctionBegin;
@@ -4718,6 +4726,12 @@ DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator FieldCo
 }
 DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator FieldCore::get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent) {
   return dofsMoabField.get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(field_name,ent));
+}
+DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator FieldCore::get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type) {
+  return dofsMoabField.get<Composite_Name_And_Type>().lower_bound(boost::make_tuple(field_name,type));
+}
+DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator FieldCore::get_dofs_by_name_and_type_end(const string &field_name,const EntityType type) {
+  return dofsMoabField.get<Composite_Name_And_Type>().upper_bound(boost::make_tuple(field_name,type));
 }
 PetscErrorCode FieldCore::get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr) {
   PetscFunctionBegin;

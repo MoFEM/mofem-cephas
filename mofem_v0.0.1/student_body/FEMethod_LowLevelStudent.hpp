@@ -60,8 +60,8 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
   PetscErrorCode DataOp();
   PetscErrorCode ParentData(const string &fe_name);
 
-  typedef FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type dofs_by_Composite;
-  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type numered_dofs_by_Composite;
+  typedef FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type dofs_by_Composite;
+  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type numered_dofs_by_Composite;
 
   template <typename T> static FieldData UnaryFunction_FieldData(const T *it) { return it->get_FieldData(); }
   template <typename T> static ApproximationRank UnaryFunction_ApproxRank(const T *it) { return it->get_dof_rank(); }
@@ -223,6 +223,10 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
     N_Matrix_EntType& N_Matrix_faces,
     EntityType type = MBMAXTYPE,
     EntityHandle edge_handle = no_handle);
+
+  PetscErrorCode Data_at_FaceGaussPoints(
+    EntityHandle ent,const string &field_name,
+    vector<ublas::vector<FieldData> > &Data);
 
   PetscErrorCode InitDataStructures();
 

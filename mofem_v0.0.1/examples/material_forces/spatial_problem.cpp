@@ -94,6 +94,7 @@ int main(int argc, char *argv[]) {
   }
 
   BitRefLevel bit_level_interface;
+  if(mField.check_msId_meshset(200,SideSet)) {
   if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_add_crack)) {
 
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_add_crack);
@@ -115,8 +116,12 @@ int main(int argc, char *argv[]) {
       ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTET,true); CHKERRQ(ierr);
     }
 
+  }} else {
+    bit_level_interface.set(0);
+    ierr = mField.seed_ref_level_3D(0,bit_level_interface); CHKERRQ(ierr);
   }
 
+  if(mField.check_msId_meshset(201,SideSet)) {
   if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_refine_near_crack_tip)) {
 
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_refine_near_crack_tip);
@@ -150,9 +155,12 @@ int main(int argc, char *argv[]) {
 
     bit_level0 = last_ref;
 
-    ierr = conf_prob.save_edge_lenght_in_tags(mField,BitRefLevel().set()); CHKERRQ(ierr);
 
-  }
+  }} else {
+    bit_level0 = bit_level_interface;
+  } 
+
+  ierr = conf_prob.save_edge_lenght_in_tags(mField,BitRefLevel().set()); CHKERRQ(ierr);
 
   double *t_val;
   Tag th_t_val;
