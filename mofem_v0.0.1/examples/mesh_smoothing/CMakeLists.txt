@@ -31,11 +31,22 @@ file(COPY
 
 #testing
 add_test(SimpleMeshSmoothingTest ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing 
-  -my_file chees.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-12
-  -snes_monitor -snes_type newtonls -snes_linesearch_type bt -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason
-  -my_penalty 1e12 -my_gamma 0 -my_alpha2 1 -my_meshrefine 1
+  -my_file chees.cub  -ksp_type fgmres  
+  -pc_type lu -pc_factor_mat_solver_package superlu_dist 
+  -ksp_atol 1e-10 -ksp_rtol 1e-12
+  -snes_monitor -snes_type newtonls -snes_linesearch_type bt 
+  -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason
+  -my_penalty 1e8 -my_gamma 0 -my_alpha2 1 -my_meshrefine 1
+  -log_summary)
+
+add_test(SimpleMeshSmoothingTest_LagrangeMultipliers ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing_lagrange_multipliers
+  -my_file chees.cub -ksp_type fgmres 
+  -pc_type lu -pc_factor_mat_solver_package superlu_dist 
+  -ksp_atol 1e-14 -ksp_rtol 1e-12 -snes_monitor 
+  -snes_type newtonls -snes_linesearch_type basic 
+  -snes_max_it 500 -snes_atol 1e-8 -snes_rtol 1e-8 
+  -snes_converged_reason -my_gamma 0 -my_alpha2 1 
   -log_summary)
 
 
-   
 
