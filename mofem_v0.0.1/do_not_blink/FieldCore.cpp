@@ -314,7 +314,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
 	}
 	//PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
 	//PetscSynchronizedFlush(PETSC_COMM_WORLD); 
-	ierr = seed_ref_level_MESHSET(*mit,0); CHKERRQ(ierr);
+	//ierr = seed_ref_level_MESHSET(*mit,0); CHKERRQ(ierr);
       }
     } catch (const char* msg) {
       SETERRQ(PETSC_COMM_SELF,1,msg);
