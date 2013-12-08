@@ -70,8 +70,14 @@ PetscErrorCode C_SURFACE_FEMethod::Integrate(bool transpose) {
     double area = norm_2(ent_normal_map);
     for(unsigned int gg = 0;gg<g_NTRI3.size()/3;gg++) {
 	for(int nn = 0;nn<3;nn++) {
+	  if(ent_global_row_indices[nn]==-1) {
+	    continue;
+	  }
 	  for(int dd = 0;dd<3;dd++) {
 	    for(int nnn = 0;nnn<3;nnn++) {
+	      if(ent_global_col_indices[nnn*3+dd]==-1) {
+		continue;
+	      }
 	      C_MAT_ELEM(nn,3*nnn+dd) += 
 		G_TRI_W[gg]*
 		g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+nnn]*
