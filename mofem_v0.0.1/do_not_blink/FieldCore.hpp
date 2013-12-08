@@ -125,7 +125,17 @@ struct FieldCore: public FieldInterface {
 	ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
 	ostringstream ss;
 	ss << *it << endl;
-	ss << data;
+	ss << data << endl;
+	Range tets,tris,edges,nodes;
+	rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+	ss << "msId "<< it->get_msId() << "nb. tets " << tets.size() << endl;
+	ss << "msId "<< it->get_msId() << "nb. tris " << tris.size() << endl;
+	ss << "msId "<< it->get_msId() << "nb. edges " << edges.size() << endl;
+	ss << "msId "<< it->get_msId() << "nb. nodes " << nodes.size() << endl;
+	ss << endl;
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
     } catch (const char* msg) {
@@ -164,6 +174,10 @@ struct FieldCore: public FieldInterface {
       ostringstream ss;
       ss << *it << endl;
       ss << data;
+      Range tets;
+      rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+      ss << "MAT_ELATIC msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
+      ss << endl;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BlockSet|Mat_TransIsoSet,it)) {
@@ -172,6 +186,10 @@ struct FieldCore: public FieldInterface {
         ostringstream ss;
         ss << *it << endl;
         ss << data;
+	Range tets;
+	rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+	ss << "MAT_TRANSISO msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
+	ss << endl;
         PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
 
@@ -411,7 +429,10 @@ struct FieldCore: public FieldInterface {
 	  dofs_vec2.resize(0);
 	  dofs_vec2.insert(dofs_vec2.end(),dofs_vec.begin(),dofs_vec.end());
 	  vector<DofIdx>::iterator vit = find(dofs_vec2.begin(),dofs_vec2.end(),Tag::get_index(miit_row));
-	  if(vit==dofs_vec2.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(vit==dofs_vec2.end()) {
+	    continue; // matrix can have no diagonals entries
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
 	  dofs_vec2.erase(vit);
 	  j.insert(j.end(),dofs_vec2.begin(),dofs_vec2.end());
 	} else {
