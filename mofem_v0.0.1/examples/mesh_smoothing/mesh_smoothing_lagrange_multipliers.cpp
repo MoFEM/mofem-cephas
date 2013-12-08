@@ -43,11 +43,6 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
-  ierr = PetscTime(&v1); CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-
   FieldCore core(moab);
   FieldInterface& mField = core;
 

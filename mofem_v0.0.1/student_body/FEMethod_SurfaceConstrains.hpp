@@ -62,7 +62,9 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   ublas::vector<double,ublas::bounded_array<double,9> > coords;
 
   PetscErrorCode operator()() {
+    PetscFunctionBegin;
     ierr = operator()(false); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
   };
 
   virtual PetscErrorCode Integrate(bool transpose);
