@@ -131,10 +131,10 @@ struct FieldCore: public FieldInterface {
 	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
 	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-	ss << "msId "<< it->get_msId() << "nb. tets " << tets.size() << endl;
-	ss << "msId "<< it->get_msId() << "nb. tris " << tris.size() << endl;
-	ss << "msId "<< it->get_msId() << "nb. edges " << edges.size() << endl;
-	ss << "msId "<< it->get_msId() << "nb. nodes " << nodes.size() << endl;
+	ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
+	ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
+	ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;
+	ss << "msId "<< it->get_msId() << " nb. nodes " << nodes.size() << endl;
 	ss << endl;
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
