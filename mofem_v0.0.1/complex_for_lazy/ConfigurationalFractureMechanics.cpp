@@ -28,91 +28,7 @@ using namespace MoFEM;
 
 phisical_equation_volume eq_solid = hooke; /*stvenant_kirchhoff;*/
 
-struct materialDirihletBC: public BaseDirihletBC {
-
-  Interface& moab;
-  Range &CornersNodes;
-  string field_name;
-  materialDirihletBC(Interface &_moab,Range& _CornerNodes): moab(_moab),CornersNodes(_CornerNodes),field_name("MESH_NODE_POSITIONS") {}
-
-  PetscErrorCode SetDirihletBC_to_ElementIndicies(
-      FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
-      PetscFunctionBegin;
-      //Dirihlet form SideSet1
-      DirihletBC.resize(0);
-      Range::iterator siit1 = CornersNodes.begin();
-      for(;siit1!=CornersNodes.end();siit1++) {
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;riit!=hi_riit;riit++) {
-	    if(riit->get_name()!=field_name) continue;
-	    // all fixed
-	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
-	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-	    }
-	  }
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;ciit!=hi_ciit;ciit++) {
-	    if(ciit->get_name()!=field_name) continue;
-	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
-	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	    }
-	  }
-      }
-      PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
-    FieldInterface::FEMethod *fe_method_ptr,vector<DofIdx>& DirihletBC,
-    vector<DofIdx> &FaceNodeIndices,
-    vector<vector<DofIdx> > &FaceEdgeIndices,
-    vector<DofIdx> &FaceIndices) {
-      PetscFunctionBegin;
-      vector<DofIdx>::iterator dit = DirihletBC.begin();
-      for(;dit!=DirihletBC.end();dit++) {
-	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
-	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-	if(!FaceEdgeIndices.empty()) {
-	for(int ee = 0;ee<3;ee++) {
-	  it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
-	  if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
-	}}
-	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
-	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-      }
-      PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode SetDirihletBC_to_MatrixDiagonal(
-    FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
-    PetscFunctionBegin;
-
-    PetscErrorCode ierr;
-
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-      if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
-      ierr = MatSetValue(Aij,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1.,INSERT_VALUES); CHKERRQ(ierr);
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-      if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
-      ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
-    }
-    PetscFunctionReturn(0);
-  }
-
-};
-
+struct materialDirihletBC;
 
 struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   
@@ -360,7 +276,89 @@ struct NL_Projection: public FEMethod_DriverComplexForLazy_CoupledProjected {
   }
 
 };
-  
+
+struct materialDirihletBC: public BaseDirihletBC {
+
+  Interface& moab;
+  Range &CornersNodes;
+  string field_name;
+  materialDirihletBC(Interface &_moab,Range& _CornerNodes): moab(_moab),CornersNodes(_CornerNodes),field_name("MESH_NODE_POSITIONS") {}
+
+  PetscErrorCode SetDirihletBC_to_ElementIndicies(
+      FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
+      PetscFunctionBegin;
+      //Dirihlet form SideSet1
+      DirihletBC.resize(0);
+      Range::iterator siit1 = CornersNodes.begin();
+      for(;siit1!=CornersNodes.end();siit1++) {
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	  for(;riit!=hi_riit;riit++) {
+	    if(riit->get_name()!=field_name) continue;
+	    // all fixed
+	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
+	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+	    }
+	  }
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
+	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
+	  for(;ciit!=hi_ciit;ciit++) {
+	    if(ciit->get_name()!=field_name) continue;
+	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
+	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
+	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+	    }
+	  }
+      }
+      PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
+    FieldInterface::FEMethod *fe_method_ptr,vector<DofIdx>& DirihletBC,
+    vector<DofIdx> &FaceNodeIndices,
+    vector<vector<DofIdx> > &FaceEdgeIndices,
+    vector<DofIdx> &FaceIndices) {
+      PetscFunctionBegin;
+      vector<DofIdx>::iterator dit = DirihletBC.begin();
+      for(;dit!=DirihletBC.end();dit++) {
+	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
+	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
+	if(!FaceEdgeIndices.empty()) {
+	for(int ee = 0;ee<3;ee++) {
+	  it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
+	  if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
+	}}
+	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
+	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
+      }
+      PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode SetDirihletBC_to_MatrixDiagonal(
+    FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
+      if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
+      ierr = MatSetValue(Aij,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1.,INSERT_VALUES); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
+      if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
+      ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
 PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_ElementIndiciesRow(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
   PetscFunctionBegin;
@@ -368,6 +366,17 @@ PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Cou
   ierr = CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesRow(fe_method_ptr,RowGlobDofs,DirihletBC); CHKERRQ(ierr);
   field_name = "MESH_NODE_POSITIONS";
   ierr = CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesRow(fe_method_ptr,RowGlobDofs,DirihletBC); CHKERRQ(ierr);
+  Range::iterator siit1 = CornersNodes.begin();
+  for(;siit1!=CornersNodes.end();siit1++) {
+    for(_IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(fe_method_ptr,"MESH_NODE_POSITIONS",*siit1,riit)) {
+      // all fixed
+      DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
+      for(unsigned int rr = 0;rr<RowGlobDofs.size();rr++) {
+	vector<DofIdx>::iterator it = find(RowGlobDofs[rr].begin(),RowGlobDofs[rr].end(),riit->get_petsc_gloabl_dof_idx());
+	if( it!=RowGlobDofs[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
+      }
+    }
+  }
   PetscFunctionReturn(0);
 }
   
@@ -378,9 +387,29 @@ PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Cou
   ierr = CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesCol(fe_method_ptr,ColGlobDofs,DirihletBC); CHKERRQ(ierr);
   CubitDisplacementDirihletBC::field_name = "MESH_NODE_POSITIONS";
   ierr = CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesCol(fe_method_ptr,ColGlobDofs,DirihletBC); CHKERRQ(ierr);
+  Range::iterator siit1 = CornersNodes.begin();
+  for(;siit1!=CornersNodes.end();siit1++) {
+    for(_IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(fe_method_ptr,"MESH_NODE_POSITIONS",*siit1,ciit)) {
+      for(unsigned int cc = 0;cc<ColGlobDofs.size();cc++) {
+	vector<DofIdx>::iterator it = find(ColGlobDofs[cc].begin(),ColGlobDofs[cc].end(),ciit->get_petsc_gloabl_dof_idx());
+	if( it!=ColGlobDofs[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
+      }
+    }
+  }
   PetscFunctionReturn(0);
 }
-  
+
+PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
+  PetscFunctionBegin;
+  ierr = CubitDisplacementDirihletBC::SetDirihletBC_to_MatrixDiagonal(fe_method_ptr,Aij); CHKERRQ(ierr);
+  PetscErrorCode ierr;
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(fe_method_ptr->problem_ptr,"MESH_NODE_POSITIONS",dit)) {
+    if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
+    ierr = MatSetValue(Aij,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1.,INSERT_VALUES); CHKERRQ(ierr);
+  }
+  PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode ConfigurationalFractureMechanics::set_material_fire_wall(FieldInterface& mField) {
   PetscFunctionBegin;
@@ -650,7 +679,6 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
 
   //Fields
   ierr = mField.add_field("LAMBDA_SURFACE",H1,1,MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.add_field("LAMBDA_CORNER",H1,3,MF_ZERO); CHKERRQ(ierr);
   //CRACK
   if(cs) {
     ierr = mField.add_field("LAMBDA_CRACK_SURFACE",H1,1,MF_ZERO); CHKERRQ(ierr);
@@ -659,8 +687,6 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   //FE
   ierr = mField.add_finite_element("C_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_finite_element("CTC_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("C_CORNER_ELEM",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("CTC_CORNER_ELEM",MF_ZERO); CHKERRQ(ierr);
   //CRACK
   if(cs) {
     ierr = mField.add_finite_element("C_CRACK_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
@@ -676,15 +702,6 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   ierr = mField.modify_finite_element_add_field_row("CTC_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("CTC_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("CTC_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
-
-  ierr = mField.modify_finite_element_add_field_row("C_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("C_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("C_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("C_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-
-  ierr = mField.modify_finite_element_add_field_row("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
 
   //CRACK
   if(cs) {
@@ -703,9 +720,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   ierr = mField.add_problem("C_ALL_MATRIX"); CHKERRQ(ierr);
 
   //set finite elements for problems
-  ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_CORNER_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_SURFACE_ELEM"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_CORNER_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_SURFACE_ELEM"); CHKERRQ(ierr);
   //CRACK
   if(cs) {
@@ -759,10 +774,6 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
       CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
       rval = moab.create_meshset(MESHSET_SET,cornersNodesMeshset); CHKERR_PETSC(rval);	
       rval = moab.add_entities(cornersNodesMeshset,CornersNodes); CHKERR_PETSC(rval);
-      //add surface elements
-      ierr = mField.seed_finite_elements(CornersNodes); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"C_CORNER_ELEM"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
     }
     {
       Range SurfacesNodes;
@@ -788,7 +799,6 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
 
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_VERTICEs(surfacesFacesNodesMeshset,"LAMBDA_SURFACE"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_VERTICEs(cornersNodesMeshset,"LAMBDA_CORNER"); CHKERRQ(ierr);
   //CRACK
   if(cs) {
     ierr = mField.add_ents_to_field_by_VERTICEs(crackSurfacesFacesNodesMeshset,"LAMBDA_CRACK_SURFACE"); CHKERRQ(ierr);
@@ -796,7 +806,6 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
 
   //NOTE: always order should be 1
   ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_SURFACE",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_CORNER",1); CHKERRQ(ierr);
   if(cs) {
     ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_CRACK_SURFACE",1); CHKERRQ(ierr);
   }
@@ -1116,7 +1125,6 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
 
   C_SURFACE_FEMethod CFE_SURFACE(moab,projSurfaceCtx->C);
   C_SURFACE_FEMethod CFE_CRACK_SURFACE(moab,projSurfaceCtx->C,"LAMBDA_CRACK_SURFACE");
-  C_CORNER_FEMethod CFE_CORNER(moab,projSurfaceCtx->C);
 
   ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -1124,9 +1132,6 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   ierr = MatZeroEntries(projSurfaceCtx->C); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",CFE_SURFACE);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",CFE_CRACK_SURFACE);  CHKERRQ(ierr);
-  ierr = MatAssemblyBegin(projSurfaceCtx->C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(projSurfaceCtx->C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",CFE_CORNER);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projSurfaceCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(projSurfaceCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
@@ -1606,9 +1611,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   Mat C_crack_fornt;
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&C_crack_fornt); CHKERRQ(ierr);
 
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"COUPLED_PROBLEM");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-
   SnesCtx* snes_ctx;
   Mat Arc_CTC_QTKQ;
   ArcLengthCtx* arc_ctx = NULL;
@@ -1628,6 +1630,17 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   } else {
     snes_ctx = new SnesCtx(mField,"COUPLED_PROBLEM");
   }
+
+
+  Range CornersEdges,CornersNodes;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
+  ErrorCode rval;
+  Range CornersEdgesNodes;
+  rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
+  CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
+  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"COUPLED_PROBLEM",CornersNodes);
+  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;

@@ -114,13 +114,15 @@ struct ConfigurationalFractureMechanics {
 
   struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {
   
-    CubitDisplacementDirihletBC_Coupled (FieldInterface& _mField,const string _problem_name): 
-      CubitDisplacementDirihletBC(_mField,_problem_name,"None") {}
+    Range& CornersNodes;
+    CubitDisplacementDirihletBC_Coupled (FieldInterface& _mField,const string _problem_name,Range &_CornersNodes): 
+      CubitDisplacementDirihletBC(_mField,_problem_name,"None"),CornersNodes(_CornersNodes) {}
   
     PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC);  
     PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
+    PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
   
   };
 
