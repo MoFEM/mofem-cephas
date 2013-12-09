@@ -72,14 +72,15 @@ int main(int argc, char *argv[]) {
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_crack_front_problem_definition(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",bit_level0); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);

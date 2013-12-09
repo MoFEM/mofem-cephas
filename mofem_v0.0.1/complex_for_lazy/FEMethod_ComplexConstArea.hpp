@@ -515,18 +515,23 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
 struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
-  matPROJ_ctx &proj_ctx;
+  Mat K;
+  matPROJ_ctx *proj_ctx;
 
   Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
-    dCTgc_CONSTANT_AREA_FEMethod(_mField,_proj_all_ctx.K,_lambda_field_name,_verbose),proj_ctx(_proj_all_ctx) { }
+    dCTgc_CONSTANT_AREA_FEMethod(_mField,_proj_all_ctx.K,_lambda_field_name,_verbose),proj_ctx(&_proj_all_ctx),K(proj_ctx->K) { }
+
+  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _K,string _lambda_field_name,int _verbose = 0):
+    dCTgc_CONSTANT_AREA_FEMethod(_mField,_K,_lambda_field_name,_verbose),proj_ctx(NULL),K(_K) { }
+
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
     ierr = dCTgc_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
 
-    ierr = MatAssemblyBegin(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -536,8 +541,8 @@ struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
     ierr = dCTgc_CONSTANT_AREA_FEMethod::postProcess(); CHKERRQ(ierr);
 
-    ierr = MatAssemblyBegin(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
    
     PetscFunctionReturn(0);
   }
