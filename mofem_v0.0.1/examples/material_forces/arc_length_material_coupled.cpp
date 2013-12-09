@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
+  ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.coupled_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_crack_front_problem_definition(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
   ierr = conf_prob.arclength_problem_definition(mField); CHKERRQ(ierr);
 
@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_set_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_set_bit("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",bit_level0); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_set_bit("COUPLED_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //set refinment level for problem
@@ -141,6 +142,10 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_load_steps",&nb_load_steps,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_load_steps (what is number of load_steps ?)");
+  }
+
+  if(step == 0) {
+    ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
   }
 
   //shuld not do load steps, loop is always one

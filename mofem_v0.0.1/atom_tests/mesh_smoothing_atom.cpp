@@ -142,8 +142,6 @@ struct materialDirihletBC: public BaseDirihletBC {
 
 };
 
-
-
 int main(int argc, char *argv[]) {
 
   try {
@@ -197,29 +195,17 @@ int main(int argc, char *argv[]) {
   //Fields
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("LAMBDA_SURFACE",H1,1); CHKERRQ(ierr);
-  ierr = mField.add_field("LAMBDA_CORNER",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("RESIDUAL",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("MESH_SMOOTHER"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("C_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("CTC_SURFACE_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("C_CORNER_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("CTC_CORNER_ELEM"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-
-  ierr = mField.modify_finite_element_add_field_row("C_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("C_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("C_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("C_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-
-  ierr = mField.modify_finite_element_add_field_row("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
 
   ierr = mField.modify_finite_element_add_field_row("C_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("C_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -238,8 +224,6 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING","MESH_SMOOTHER"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_CORNER_ELEM"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_CORNER_ELEM"); CHKERRQ(ierr);
 
   ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_SURFACE_ELEM"); CHKERRQ(ierr);
@@ -278,10 +262,6 @@ int main(int argc, char *argv[]) {
       rval = moab.create_meshset(MESHSET_SET,cornersNodesMeshset); CHKERR_PETSC(rval);	
       CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
       rval = moab.add_entities(cornersNodesMeshset,CornersNodes); CHKERR_PETSC(rval);
-      //add surface elements
-      ierr = mField.seed_finite_elements(CornersNodes); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"C_CORNER_ELEM"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
     }
     {
       Range SurfacesNodes;
@@ -299,12 +279,10 @@ int main(int argc, char *argv[]) {
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_VERTICEs(surfacesFacesMeshset,"LAMBDA_SURFACE"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_VERTICEs(cornersNodesMeshset,"LAMBDA_CORNER"); CHKERRQ(ierr);
 
   //NOTE: always order should be 1
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_SURFACE",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_CORNER",1); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);

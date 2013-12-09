@@ -111,6 +111,7 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.griffith_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.griffith_g(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+
   ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
   ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
@@ -122,10 +123,12 @@ int main(int argc, char *argv[]) {
 
   ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+
   ierr = conf_prob.calculate_material_forces(mField,"MATERIAL_MECHANICS","MATERIAL"); CHKERRQ(ierr);
   ierr = conf_prob.griffith_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.griffith_g(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+
   ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
   ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 

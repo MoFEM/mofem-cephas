@@ -24,7 +24,7 @@ Block 1 Material 1
 block 1 attribute index 1 111
 
 volume all scheme Tetmesh
-volume all size auto factor 9
+volume all size auto factor 7
 mesh volume all
 
 

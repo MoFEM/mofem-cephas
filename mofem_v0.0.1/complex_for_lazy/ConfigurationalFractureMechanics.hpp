@@ -123,6 +123,7 @@ struct ConfigurationalFractureMechanics {
     PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
     PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
+    PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F);
   
   };
 
@@ -150,7 +151,6 @@ struct ConfigurationalFractureMechanics {
       K.resize(6,6);
     }
     
-    Vec tmp_snes_f;
     PetscErrorCode preProcess();
     PetscErrorCode operator()();
     PetscErrorCode postProcess();
