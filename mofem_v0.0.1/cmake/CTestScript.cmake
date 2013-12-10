@@ -73,6 +73,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   ArcLengthNonLinearElasticityTest
   ArcLengthInterfaceTest
   SimpleMeshSmoothingTest
+  SimpleMeshSmoothingTest_LagrangeMultipliers
   SimplePotentialFlowTest
   SimpleLaplacianProblem
   ComputeFibreDirection

@@ -314,7 +314,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
 	}
 	//PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
 	//PetscSynchronizedFlush(PETSC_COMM_WORLD); 
-	ierr = seed_ref_level_MESHSET(*mit,0); CHKERRQ(ierr);
+	//ierr = seed_ref_level_MESHSET(*mit,0); CHKERRQ(ierr);
       }
     } catch (const char* msg) {
       SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -3737,7 +3737,7 @@ PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,co
   if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
     ierr = miit->get_Cubit_msId_entities_by_dimension(moab,dimension,entities,recursive); CHKERRQ(ierr);
   } else {
-    SETERRQ(PETSC_COMM_SELF,1,"msId is not there");
+    SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
   }
   PetscFunctionReturn(0);
 }
@@ -3748,7 +3748,7 @@ PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,co
   if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
     ierr = miit->get_Cubit_msId_entities_by_dimension(moab,entities,recursive); CHKERRQ(ierr);
   } else {
-    SETERRQ(PETSC_COMM_SELF,1,"msId is not there");
+    SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
   }
   PetscFunctionReturn(0);
 }
@@ -3771,7 +3771,7 @@ PetscErrorCode FieldCore::get_msId_meshset(const int msId,const unsigned int Cub
   if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
     meshset = miit->meshset;
   } else {
-    SETERRQ(PETSC_COMM_SELF,1,"msId is not there");
+    SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
   }
   PetscFunctionReturn(0);
 }
