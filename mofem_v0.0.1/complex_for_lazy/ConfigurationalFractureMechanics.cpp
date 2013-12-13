@@ -1629,8 +1629,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,K,"LAMBDA_CRACKFRONT_AREA");
 
   ////******
-  //ierr = MySpatialFE.init_crack_front_data(); CHKERRQ(ierr);
-  //ierr = MyMaterialFE.init_crack_front_data(); CHKERRQ(ierr);
+  ierr = MySpatialFE.initCrackFrontData(mField); CHKERRQ(ierr);
+  ierr = MyMaterialFE.initCrackFrontData(mField); CHKERRQ(ierr);
   ierr = MyMeshSmoother.initCrackFrontData(mField); CHKERRQ(ierr);
   ////******
 

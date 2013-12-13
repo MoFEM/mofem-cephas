@@ -983,16 +983,6 @@ struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComp
   virtual PetscErrorCode AssembleMaterialCoupledTangent(Mat B) {
     PetscFunctionBegin;
     vector<DofIdx> frontColGlobMaterial = ColGlobMaterial[i_nodes];
-    if(!crackFrontNodes.empty())
-    for(_IT_GET_FECOL_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-      //if is crack front edge
-      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) != crackFrontNodes.end()) {
-	vector<DofIdx>::iterator it = find(frontColGlobMaterial.begin(),frontColGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());
-	if(it != frontColGlobMaterial.end()) {
-	  *it = -1;
-	}
-      }
-    }
     switch(snes_ctx) {
       case ctx_SNESSetJacobian:
 	ierr = MatSetValues(B,

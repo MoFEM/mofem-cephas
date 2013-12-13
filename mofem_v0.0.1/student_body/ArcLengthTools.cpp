@@ -57,7 +57,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   double res_lambda;
   ierr = MatCtx->set_lambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
   double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
-  cerr << res_lambda << " " << ddlambda << " " << db_dot_pc_x << " " << db_dot_x_lambda << " " << PCCtx->arc_ptr->diag << endl;
+  //cerr << res_lambda << " " << ddlambda << " " << db_dot_pc_x << " " << db_dot_x_lambda << " " << PCCtx->arc_ptr->diag << endl;
   if(ddlambda != ddlambda) SETERRQ(PETSC_COMM_SELF,1,"problem with constraint");
   ierr = VecAXPY(pc_x,ddlambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
   ierr = MatCtx->set_lambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
