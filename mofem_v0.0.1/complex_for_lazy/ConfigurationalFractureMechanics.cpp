@@ -1598,7 +1598,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     SETERRQ(PETSC_COMM_SELF,1,"arc length not initialised)");
   }
 
-  Mat Arc_K;
   ArcLengthCtx arc_ctx(mField,"COUPLED_PROBLEM");
   ArcLengthSnesCtx arc_snes_ctx(mField,"COUPLED_PROBLEM",&arc_ctx);
   ArcLengthMatShell arc_mat_ctx(mField,K,&arc_ctx,"COUPLED_PROBLEM");
