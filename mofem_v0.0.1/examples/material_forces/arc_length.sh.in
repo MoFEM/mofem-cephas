@@ -116,7 +116,7 @@ $MPIRUN $BIN_PATH/arc_length_material_coupled \
   -snes_type newtonls -snes_linesearch_type l2 \
   -snes_max_it 100 -snes_atol 1e-5 -snes_rtol 1e-5 -snes_stol 0 \
   -snes_monitor -snes_converged_reason -ksp_monitor \
-  -my_penalty 1e20 -my_gc $GC -my_alpha2 1e-3 -my_alpha3 1 -my_gamma 0. \
+  -my_gc $GC -my_alpha2 1e-3 -my_alpha3 1 -my_gamma 0. \
   -my_da $DA -my_load_steps $NBSTEPS | tee log
 
 cd ..

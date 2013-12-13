@@ -492,7 +492,6 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     ierr = VecAssemblyEnd(LambdaVec); CHKERRQ(ierr);
     //ierr = VecView(LambdaVec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-
     Vec _f_;
     ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Col,&_f_); CHKERRQ(ierr);
     ierr = MatMultTranspose(proj_ctx.C,LambdaVec,_f_); CHKERRQ(ierr);
@@ -500,7 +499,7 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     ierr = VecNorm(_f_, NORM_2,&_f_nrm2); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"\tfront f_nrm2 = %6.4e\n",_f_nrm2);
 
-    ierr = mField.VecScatterCreate(_f_,problem,Row,_f_,y_problem,Col,&scatter); CHKERRQ(ierr);
+    ierr = mField.VecScatterCreate(snes_f,problem,Row,_f_,y_problem,Col,&scatter); CHKERRQ(ierr);
     ierr = VecScatterBegin(scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
@@ -515,18 +514,23 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
 struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
-  matPROJ_ctx &proj_ctx;
+  Mat K;
+  matPROJ_ctx *proj_ctx;
 
   Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
-    dCTgc_CONSTANT_AREA_FEMethod(_mField,_proj_all_ctx.K,_lambda_field_name,_verbose),proj_ctx(_proj_all_ctx) { }
+    dCTgc_CONSTANT_AREA_FEMethod(_mField,_proj_all_ctx.K,_lambda_field_name,_verbose),proj_ctx(&_proj_all_ctx),K(_proj_all_ctx.K) { }
+
+  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _K,string _lambda_field_name,int _verbose = 0):
+    dCTgc_CONSTANT_AREA_FEMethod(_mField,_K,_lambda_field_name,_verbose),proj_ctx(NULL),K(_K) { }
+
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
     ierr = dCTgc_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
 
-    ierr = MatAssemblyBegin(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -536,8 +540,8 @@ struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
     ierr = dCTgc_CONSTANT_AREA_FEMethod::postProcess(); CHKERRQ(ierr);
 
-    ierr = MatAssemblyBegin(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(proj_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
    
     PetscFunctionReturn(0);
   }

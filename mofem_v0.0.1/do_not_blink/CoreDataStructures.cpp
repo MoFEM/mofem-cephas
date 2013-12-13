@@ -983,13 +983,11 @@ PetscErrorCode CubitMeshSets::print_Cubit_block_header_data(ostream& os) const {
 }
 
 string CubitMeshSets::get_Cubit_name() const {
-  PetscFunctionBegin;
   if(tag_name_data!=NULL) {
     return string(tag_name_data);
   } else {
     return "NoNameSet";
   }
-  PetscFunctionReturn(0);
 }
     
 PetscErrorCode CubitMeshSets::print_Cubit_name(ostream& os) const {

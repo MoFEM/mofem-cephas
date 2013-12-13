@@ -38,7 +38,7 @@ struct MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers: public FEMethod_Driv
 
   MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,0,_verbose) {
+    FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_verbose) {
     set_qual_ver(1);
   }
 
