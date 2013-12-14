@@ -52,29 +52,38 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
   C_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
     mField(_mField),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) { 
+    //calulate face shape functions direvatives
     diffNTRI.resize(3,2);
     ShapeDiffMBTRI(&*diffNTRI.data().begin());
+    //shape functions Gauss integration weigths
     G_TRI_W = G_TRI_W1;
-
+    //nodal material positions
     dofs_X.resize(9);
+    //noal values of Lagrange multipliers
     Lambda.resize(3);
+    //dofs indices for Lagrnage multipliers
     lambda_dofs_row_indx.resize(3);
+    //dofs indices for rows and columns
     disp_dofs_row_idx.resize(9);
     disp_dofs_col_idx.resize(9);
-
+    //face node coordinates
     coords.resize(9);
-
   }
 
+  //elem data
   ublas::matrix<double> diffNTRI;
   const double *G_TRI_W;
   ublas::vector<double> coords;
-
   ublas::vector<DofIdx> disp_dofs_col_idx,disp_dofs_row_idx,lambda_dofs_row_indx;
   ublas::vector<double,ublas::bounded_array<double,9> > dofs_X;
   ublas::vector<double,ublas::bounded_array<double,3> > Lambda;
 
-  PetscErrorCode getData(bool is_that_C_otherwise_dC) {
+  /**
+    * \brief get face data, indices and coors and nodal values
+    *
+    * \param is_that_C_otherwise_dC
+    */
+  PetscErrorCode getDataFor_C_and_dC(bool is_that_C_otherwise_dC) {
     PetscFunctionBegin;
     try {
 
@@ -87,7 +96,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
     if(num_nodes != 3) SETERRQ(PETSC_COMM_SELF,1,"face should have three nodes");
     for(int nn = 0;nn<num_nodes;nn++) {
-      if(is_that_C_otherwise_dC) { // it is C
+      if(is_that_C_otherwise_dC) { 
+	// it is C
+	// get rows which are Lagrabge multipliers
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
 	dit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	hi_dit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
@@ -97,7 +108,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  Lambda[nn] = dit->get_FieldData();
 	  lambda_dofs_row_indx[nn] = dit->get_petsc_gloabl_dof_idx();
 	}
-      } else { // it is dC
+      } else { 
+	// it is dC
+	// get rows which are material nodal positions
 	FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
 	dit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	hi_dit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
@@ -115,6 +128,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  }
 	}
       }
+      //get columns which are material nodal positions
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dit,hi_dit;
       dit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
       hi_dit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
@@ -135,8 +149,13 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief calulate direvatives
+   *
+   */
   PetscErrorCode calcDirevatives(double *diffNTRI,double *dofs_iX,double *C,double *iC) {
     PetscFunctionBegin;
+    //set complex material position vector
     __CLPK_doublecomplex x_dofs_X[9];
     for(int nn = 0;nn<3;nn++) {
       for(int dd = 0;dd<3;dd++) {
@@ -147,8 +166,10 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  x_dofs_X[nn*3+dd].i = 0;
 	}
     }}
+    //calulate complex face normal vector
     __CLPK_doublecomplex x_normal[3];
     ierr = ShapeFaceNormalMBTRI_complex(diffNTRI,x_dofs_X,x_normal); CHKERRQ(ierr);
+    //calulare complex normal length
     double __complex__ x_nrm2 = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
@@ -159,6 +180,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     double i_diffX_xi[3],i_diffX_eta[3];
     bzero(i_diffX_xi,3*sizeof(double));
     bzero(i_diffX_eta,3*sizeof(double));
+    //calulate tangent vectors
+    //those vectors are in plane of face
     for(int nn = 0; nn<3; nn++) {
       diffX_xi[0] += dofs_X[3*nn + 0]*diffNTRI[2*nn+0];
       diffX_xi[1] += dofs_X[3*nn + 1]*diffNTRI[2*nn+0];
@@ -191,6 +214,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     bzero(xNSpinX_xi,3*sizeof(__CLPK_doublecomplex));
     bzero(xNSpinX_eta,3*sizeof(__CLPK_doublecomplex));
     __CLPK_doublecomplex x_zero = { 0, 0 };
+    // calulate dA/dX 
     __CLPK_doublecomplex x_scalar = { -creal(1./x_nrm2), -cimag(1./x_nrm2) }; // unit [ 1/m^2 ]
     cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_xi,3,x_normal,1,&x_zero,xNSpinX_xi,1);
     cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_eta,3,x_normal,1,&x_zero,xNSpinX_eta,1);
@@ -226,7 +250,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     try {
-	ierr = getData(true); CHKERRQ(ierr);
+	ierr = getDataFor_C_and_dC(true); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
@@ -315,22 +339,14 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
   dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _dCT,string _lambda_field_name,int _verbose = 0):
     C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),eps(1e-10) {}
 
-  //Vec diag;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-
     ierr = C_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
-
     PetscBool flg;
     ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
     }
-
-    //ierr = mField.VecCreateGhost(problem_ptr->get_name(),Row,&diag); CHKERRQ(ierr);
-    //ierr = VecSetOption(diag,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
-    //ierr = VecZeroEntries(diag); CHKERRQ(ierr);
-
     PetscFunctionReturn(0);
   }
 
@@ -338,7 +354,7 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
     PetscFunctionBegin;
     EntityHandle face = fe_ptr->get_ent();
     try {
-	ierr = getData(false); CHKERRQ(ierr);
+	ierr = getDataFor_C_and_dC(false); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
@@ -372,12 +388,6 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	      9,&(disp_dofs_row_idx.data()[0]),
 	      1,&(disp_dofs_col_idx.data()[3*NN+dd]),
 		&dELEM_CONSTRAIN.data()[0],ADD_VALUES); CHKERRQ(ierr);
-	    /*for(int ddd = 0;ddd<9;ddd++) {
-	      if(ddd != NN*3+dd) continue;
-	      ierr = VecSetValue(diag,
-		disp_dofs_row_idx.data()[ddd],
-		dELEM_CONSTRAIN.data()[ddd],ADD_VALUES); CHKERRQ(ierr);
-	    }*/
 	  }
 	}
     } catch (const std::exception& ex) {
@@ -390,30 +400,6 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-
-    //ierr = VecAssemblyBegin(diag); CHKERRQ(ierr);
-    //ierr = VecAssemblyEnd(diag); CHKERRQ(ierr);
-
-    /*Range crack_corners_edges,crackFrontNodes;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
-    rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontNodes,true); CHKERR_PETSC(rval);
-
-    double *array_diag;
-    ierr = VecGetArray(diag,&array_diag); CHKERRQ(ierr);
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"MESH_NODE_POSITIONS",dof)) {
-      if(dof->get_part()!=pcomm->rank()) continue;
-      EntityHandle ent = dof->get_ent();
-      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),ent) != crackFrontNodes.end()) {
-	PetscPrintf(PETSC_COMM_WORLD,"dCTgc diag: ent %ld dof %d rank %d diag %6.4e\n",
-	  dof->get_ent(),
-	  dof->get_petsc_local_dof_idx(),dof->get_dof_rank(),
-	  array_diag[dof->get_petsc_local_dof_idx()]);
-      }
-    }
-    ierr = VecRestoreArray(diag,&array_diag); CHKERRQ(ierr);*/
-    //ierr = VecDestroy(&diag); CHKERRQ(ierr);
-
     PetscFunctionReturn(0);
   }
   

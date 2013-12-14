@@ -114,7 +114,7 @@ $MPIRUN $BIN_PATH/arc_length_material_coupled \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
   -ksp_atol 1e-10 -ksp_rtol 1e-10 \
   -snes_type newtonls -snes_linesearch_type l2 \
-  -snes_max_it 100 -snes_atol 1e-5 -snes_rtol 1e-5 -snes_stol 0 \
+  -snes_max_it 100 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
   -snes_monitor -snes_converged_reason -ksp_monitor \
   -my_gc $GC -my_alpha2 1e-3 -my_alpha3 1 -my_gamma 0. \
   -my_da $DA -my_load_steps $NBSTEPS | tee log

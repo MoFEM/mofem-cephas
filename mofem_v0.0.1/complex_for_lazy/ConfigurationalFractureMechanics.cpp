@@ -1259,10 +1259,17 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
 
   PetscErrorCode ierr;
 
+  double gc;
+  PetscBool flg;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+  }
+
   Vec LambdaVec,GriffithForceVec;
   ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Row,&LambdaVec); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Col,&GriffithForceVec); CHKERRQ(ierr);
-  ierr = VecSet(LambdaVec,1); CHKERRQ(ierr);
+  ierr = VecSet(LambdaVec,gc); CHKERRQ(ierr);
 
   Mat Q;
   {
@@ -1320,7 +1327,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
   }
-
 
   Vec F_Material;
   ierr = mField.VecCreateGhost(problem,Row,&F_Material); CHKERRQ(ierr);
