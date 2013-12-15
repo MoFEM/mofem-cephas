@@ -635,7 +635,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face) {
   PetscFunctionBegin;
-  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dofs_iterator;
+  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dofs_iterator;
   try {
   FaceNodeIndices.resize(9);
   FaceNodeData.resize(9);
@@ -646,10 +646,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
   for(;nn<3;nn++) {
     dofs_iterator niit,hi_niit;
     dofs_iterator col_niit,hi_col_niit;
-    niit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
-    hi_niit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
-    col_niit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
-    hi_col_niit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    niit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    hi_niit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    col_niit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
     for(;niit!=hi_niit;niit++,col_niit++,dd++) {
       assert(col_niit->get_petsc_gloabl_dof_idx() == niit->get_petsc_gloabl_dof_idx());
       FaceNodeIndices[nn*niit->get_max_rank()+niit->get_EntDofIdx()] = niit->get_petsc_gloabl_dof_idx();
@@ -660,8 +660,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET"); 
   }
   dofs_iterator fiit,hi_fiit;
-  fiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,face));
-  hi_fiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,face));
+  fiit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(spatial_field_name,face));
+  hi_fiit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(spatial_field_name,face));
   if(fiit!=hi_fiit) {
     FaceIndices.resize(distance(fiit,hi_fiit));
     FaceData.resize(distance(fiit,hi_fiit));
@@ -694,8 +694,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     int side_number,offset;
     rval = moab.side_number(face,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
     dofs_iterator eiit,hi_eiit;
-    eiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,edge));
-    hi_eiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,edge));
+    eiit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(spatial_field_name,edge));
+    hi_eiit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(spatial_field_name,edge));
     if(eiit!=hi_eiit) {
       FaceEdgeOrder[ee] = eiit->get_max_order();
       if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
@@ -847,8 +847,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHandle face) {
   PetscFunctionBegin;
-  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dofs_iterator;
-  typedef FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator data_dofs_iterator;
+  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dofs_iterator;
+  typedef FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator data_dofs_iterator;
   try {
   FaceNodeIndices_Material.resize(9);
   FaceNodeData_Material.resize(9);
@@ -859,10 +859,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
   for(;nn<3;nn++) {
     dofs_iterator niit,hi_niit;
     dofs_iterator col_niit,hi_col_niit;
-    niit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
-    hi_niit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
-    col_niit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
-    hi_col_niit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    niit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    hi_niit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    col_niit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
     for(;niit!=hi_niit;niit++,col_niit++,dd++) {
       assert(col_niit->get_petsc_gloabl_dof_idx() == niit->get_petsc_gloabl_dof_idx());
       FaceNodeIndices_Material[nn*niit->get_max_rank()+niit->get_EntDofIdx()] = niit->get_petsc_gloabl_dof_idx();
@@ -876,8 +876,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
   nn = dd = 0;
   for(;nn<3;nn++) {
     data_dofs_iterator niit,hi_niit;
-    niit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
-    hi_niit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    niit = data_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    hi_niit = data_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
     for(;niit!=hi_niit;niit++,dd++) {
       FaceNodeData[nn*niit->get_max_rank()+niit->get_EntDofIdx()] = niit->get_FieldData();
     }
@@ -886,8 +886,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
     SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET"); 
   }
   data_dofs_iterator fiit,hi_fiit;
-  fiit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,face));
-  hi_fiit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,face));
+  fiit = data_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(spatial_field_name,face));
+  hi_fiit = data_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(spatial_field_name,face));
   if(fiit!=hi_fiit) {
     FaceData.resize(distance(fiit,hi_fiit));
     face_order = fiit->get_max_order();
@@ -916,8 +916,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
     int side_number,offset;
     rval = moab.side_number(face,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
     data_dofs_iterator eiit,hi_eiit;
-    eiit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,edge));
-    hi_eiit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,edge));
+    eiit = data_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(spatial_field_name,edge));
+    hi_eiit = data_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(spatial_field_name,edge));
     if(eiit!=hi_eiit) {
       FaceEdgeOrder[ee] = eiit->get_max_order();
       if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
