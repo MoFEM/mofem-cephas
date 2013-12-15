@@ -81,7 +81,7 @@ PetscErrorCode C_SURFACE_FEMethod::Integrate(bool transpose) {
 	      C_MAT_ELEM(nn,3*nnn+dd) += 
 		G_TRI_W[gg]*
 		g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+nnn]*
-		(area0/area)*ent_normal_map[dd];
+		ent_normal_map[dd];
 	    }
 	  }
 	}
