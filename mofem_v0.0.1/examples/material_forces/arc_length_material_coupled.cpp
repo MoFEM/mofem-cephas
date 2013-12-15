@@ -81,10 +81,8 @@ int main(int argc, char *argv[]) {
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC_COUPLED",MBTET); CHKERRQ(ierr);
-  //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL_COUPLED",MBTET); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
-  //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
 
   //set refinment level for problem
@@ -116,12 +114,6 @@ int main(int argc, char *argv[]) {
 
   //caculate material forces
   ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
-
-  double alpha3_0 = 0;
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_alpha3",&alpha3_0,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_alpha3 (what is fracture energy ?)");
-  }
 
   double da_0 = 0;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_da",&da_0,&flg); CHKERRQ(ierr);
@@ -171,21 +163,17 @@ int main(int argc, char *argv[]) {
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
 
-    double alpha3 = alpha3_0;
     double reduction = 1,gamma = 1.2;
     double nrm2_front_equlibrium_i = 0;
     int its_d = 5;
-    for(int ii = 0;ii<20;ii++) {
+    for(int ii = 0;ii<1;ii++) {
 
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substep = %D\n\n",ii); CHKERRQ(ierr);
 
-      alpha3 /= reduction;
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"alpha3 = %6.4e\n",alpha3); CHKERRQ(ierr);
-
-      if(ii == 0) {
-	ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3,(aa == 0) ? 0 : da_0); CHKERRQ(ierr);
+       if(ii == 0) {
+	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da_0); CHKERRQ(ierr);
       } else {
-	ierr = conf_prob.solve_coupled_problem(mField,&snes,alpha3,0); CHKERRQ(ierr);
+	ierr = conf_prob.solve_coupled_problem(mField,&snes,0); CHKERRQ(ierr);
       }
 
       int its;

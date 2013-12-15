@@ -50,6 +50,7 @@ struct ConfigurationalFractureMechanics {
   };
 
   EntityHandle cornersNodesMeshset,surfacesFacesNodesMeshset,crackSurfacesFacesNodesMeshset,crackForntMeshset;
+  EntityHandle crackFrontTangentConstrains;
   matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
 
   BitRefLevel *ptr_bit_level0;
@@ -93,7 +94,7 @@ struct ConfigurationalFractureMechanics {
 
   double nrm2_front_equlibrium;
   double aRea,lambda;
-  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double alpha3,double da = 0);
+  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double da = 0);
 
   PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
@@ -125,36 +126,6 @@ struct ConfigurationalFractureMechanics {
     PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
     PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F);
   
-  };
-
-  struct ConstrainCrackForntEdges_FEMethod: public FieldInterface::FEMethod {
-
-    FieldInterface& mField;
-    ConfigurationalFractureMechanics *conf_prob;
-
-    double alpha3;
-    ublas::vector<DofIdx> rowDofs,colDofs;
-    ublas::vector<FieldData> dofsX,coords;
-    ublas::vector<FieldData> delta0,delta;
-    ublas::vector<FieldData> f;
-    ublas::matrix<FieldData> K;
-
-    ConstrainCrackForntEdges_FEMethod(
-      FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,double _alpha3): mField(_mField),conf_prob(_conf_prob),alpha3(_alpha3) {
-      rowDofs.resize(6);
-      colDofs.resize(6);
-      dofsX.resize(6);
-      coords.resize(6);
-      delta0.resize(3);
-      delta.resize(3);
-      f.resize(6);
-      K.resize(6,6);
-    }
-    
-    PetscErrorCode preProcess();
-    PetscErrorCode operator()();
-    PetscErrorCode postProcess();
-
   };
 
   struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
