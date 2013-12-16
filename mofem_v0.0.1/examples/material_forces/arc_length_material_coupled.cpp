@@ -160,6 +160,40 @@ int main(int argc, char *argv[]) {
     ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
     ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
+
+    //calulate initial load factor
+    if(aa == 0) {
+
+      double ave_g = conf_prob.ave_g;
+
+      Tag th_t_val;
+      rval = moab.tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
+      const EntityHandle root_meshset = moab.get_root_set();
+      double load_factor;
+      rval = moab.tag_get_data(th_t_val,&root_meshset,1,&load_factor); CHKERR_PETSC(rval);
+
+      double gc;
+      PetscBool flg;
+      ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+      if(flg != PETSC_TRUE) {
+	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+      }
+
+      double a = fabs(ave_g)/pow(load_factor,2);
+      double new_load_factor = sqrt(gc/a);
+      rval = moab.tag_set_data(th_t_val,&root_meshset,1,&new_load_factor); CHKERR_PETSC(rval);
+
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"\ncooeficient a = %6.4e\n",a); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"new load factor value = %6.4e\n\n",new_load_factor); CHKERRQ(ierr);
+
+      SNES snes;
+      //solve spatial problem
+      ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+      ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
+      ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
+    }
+
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
 
@@ -168,7 +202,7 @@ int main(int argc, char *argv[]) {
     int its_d = 5;
     for(int ii = 0;ii<1;ii++) {
 
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substep = %D\n\n",ii); CHKERRQ(ierr);
+       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substep = %D\n\n",ii); CHKERRQ(ierr);
 
        if(ii == 0) {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da_0); CHKERRQ(ierr);
