@@ -123,6 +123,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	EntityHandle ent = fe_ptr->get_ent();
 	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 
+        cout<<"\n\n\n\n\n\n\n\n\n\n";
+        cout<<"Mat_ElasticSet "<<endl;
+        cout<<"\n\n\n\n\n\n\n\n\n\n";
+
 	  Mat_Elastic mydata;
 	  ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
 
