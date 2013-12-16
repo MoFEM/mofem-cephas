@@ -34,7 +34,7 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDir
     analysis _type,
     double _lambda,double _mu, int _verbose): 
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    type_of_analysis(_type),type_of_forces(conservative),lambda(_lambda),mu(_mu), eps(1e-10),
+    type_of_analysis(_type),type_of_forces(conservative),lambda(_lambda),mu(_mu),eps(1e-10),
     spatial_field_name("SPATIAL_POSITION"),
     material_field_name("MESH_NODE_POSITIONS") {
   order_edges.resize(6);
