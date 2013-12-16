@@ -75,9 +75,6 @@ PetscErrorCode C_SURFACE_FEMethod::Integrate(bool transpose) {
 	  }
 	  for(int dd = 0;dd<3;dd++) {
 	    for(int nnn = 0;nnn<3;nnn++) {
-	      //if(ent_global_col_indices[nnn*3+dd]==-1) {
-		//continue;
-	      //}
 	      if(ent_global_row_indices[nnn]==-1) {
 		continue;
 	      }
@@ -144,11 +141,7 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose) {
   	for(;dit!=hi_dit;dit++) {
   	  int global_idx = dit->get_petsc_gloabl_dof_idx();
   	  assert(nn*3+dit->get_dof_rank()<9);
-  	  //if(ent_global_row_indices[nn] == -1) {
-  	    //ent_global_col_indices[nn*3+dit->get_dof_rank()] = -1;
-  	  //} else {
-  	    ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
-  	  //}
+  	  ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
   	  int local_idx = dit->get_petsc_local_dof_idx();
   	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
   	  ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
