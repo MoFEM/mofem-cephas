@@ -92,9 +92,8 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes);
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
 
-  double nrm2_front_equlibrium;
   double aRea,lambda;
-  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double da = 0);
+  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double da);
 
   PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);

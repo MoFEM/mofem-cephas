@@ -142,6 +142,9 @@ enable_testing()
 include(CTest)
 add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
+add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks")
+
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/benchmarks" DESTINATION mofem)
 
 # add a target to generate API documentation with Doxygen
 find_package(Doxygen)

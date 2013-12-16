@@ -66,8 +66,8 @@ PetscErrorCode C_SURFACE_FEMethod::Integrate(bool transpose) {
   PetscFunctionBegin;
   try {
     ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
-    double area0 = norm_2(ent_normal_map0);
-    double area = norm_2(ent_normal_map);
+    //double area0 = norm_2(ent_normal_map0);
+    //double area = norm_2(ent_normal_map);
     for(unsigned int gg = 0;gg<g_NTRI3.size()/3;gg++) {
 	for(int nn = 0;nn<3;nn++) {
 	  if(ent_global_row_indices[nn]==-1) {
@@ -75,7 +75,7 @@ PetscErrorCode C_SURFACE_FEMethod::Integrate(bool transpose) {
 	  }
 	  for(int dd = 0;dd<3;dd++) {
 	    for(int nnn = 0;nnn<3;nnn++) {
-	      if(ent_global_col_indices[nnn*3+dd]==-1) {
+	      if(ent_global_row_indices[nnn]==-1) {
 		continue;
 	      }
 	      C_MAT_ELEM(nn,3*nnn+dd) += 
@@ -126,6 +126,7 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose) {
   	hi_dit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
   	if(distance(dit,hi_dit)==0) {
   	  ent_global_row_indices[nn] = -1;
+	  ent_lambda_data[nn] = 0;
   	} else {
   	  if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
   	  int global_idx = dit->get_petsc_gloabl_dof_idx();
@@ -140,11 +141,7 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose) {
   	for(;dit!=hi_dit;dit++) {
   	  int global_idx = dit->get_petsc_gloabl_dof_idx();
   	  assert(nn*3+dit->get_dof_rank()<9);
-  	  if(ent_global_row_indices[nn] == -1) {
-  	    ent_global_col_indices[nn*3+dit->get_dof_rank()] = -1;
-  	  } else {
-  	    ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
-  	  }
+  	  ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
   	  int local_idx = dit->get_petsc_local_dof_idx();
   	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
   	  ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
