@@ -77,7 +77,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   SimplePotentialFlowTest
   SimpleLaplacianProblem
   ComputeFibreDirection
-  wireTest
+  Wire_Test
 )
 
 if(${DOTEST} GREATER 0)

@@ -1404,7 +1404,10 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   
   ierr = projFrontCtx->InitQorP(F_Material); CHKERRQ(ierr);
   // unit of LambdaVec [ N * 1/m = N*m/m^2 = J/m^2 ]
+  ierr = VecScale(F_Material,1./gc); CHKERRQ(ierr);
   ierr = MatMult(RT,F_Material,LambdaVec); CHKERRQ(ierr);  
+  ierr = VecScale(F_Material,gc); CHKERRQ(ierr);
+  ierr = VecScale(LambdaVec,gc); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(LambdaVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(LambdaVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -1657,6 +1660,54 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = MyMaterialFE.initCrackFrontData(mField); CHKERRQ(ierr);
   ierr = MyMeshSmoother.initCrackFrontData(mField); CHKERRQ(ierr);
   ////******
+
+
+  Vec Sl;
+  ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Row,&F); CHKERRQ(ierr);
+
+  /*struct MatVecScale: public FieldInterface::FEMethod {
+
+    FieldInterface& mField;
+    Vec Sl;
+    ArcLengthCtx *arc_ptr;
+    MatVecScale(FieldInterface& _mField,Vec _Sl,ArcLengthCtx *_arc_ptr,int rank): mField(_mField),Sl(_Sl),arc_ptr(_arc_ptr) {};
+
+    PetscErrorCode postProcess() {
+      PetscErrorCode ierr;
+      double gc;
+      PetscBool flg;
+      ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+      if(flg != PETSC_TRUE) {
+	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+      }
+      double scale = sqrt(1./gc);
+      assert(scale == scale);
+      VecSet(Sl,1);
+      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"MESH_NODE_POSITIONS",dit)) {
+	if(pcomm->rank()!=dit->get_part()) continue;
+	ierr = VecSetValue(Sl,dit->get_petsc_gloabl_dof_idx(),scale,INSERT_VALUES); CHKERRQ(ierr);
+      }
+      ierr = VecAssemblyBegin(Sl); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(Sl); CHKERRQ(ierr);
+      switch(snes_ctx) {
+	case ctx_SNESNone: {
+	  ierr = VecPointwiseMult(arc_ptr->F_lambda,arc_ptr->F_lambda,Sl); CHKERRQ(ierr);
+	}
+	case ctx_SNESSetFunction: { 
+	  ierr = VecPointwiseMult(snes_f,snes_f,Sl); CHKERRQ(ierr);
+	  ierr = VecPointwiseMult(arc_ptr->F_lambda,arc_ptr->F_lambda,Sl); CHKERRQ(ierr);
+
+	} break;
+	case ctx_SNESSetJacobian: {
+	  ierr = MatDiagonalScale(*snes_B,Sl,PETSC_NULL); CHKERRQ(ierr);
+	} break;
+	default:
+	  break;
+      }
+    }
+
+  };*/
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = arc_snes_ctx.get_loops_to_do_Rhs();
   arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyCTgc);
