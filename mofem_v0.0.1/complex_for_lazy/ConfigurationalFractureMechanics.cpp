@@ -1661,11 +1661,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = MyMeshSmoother.initCrackFrontData(mField); CHKERRQ(ierr);
   ////******
 
-
-  Vec Sl;
+  /*Vec Sl;
   ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Row,&F); CHKERRQ(ierr);
-
-  /*struct MatVecScale: public FieldInterface::FEMethod {
+  struct MatVecScale: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
     Vec Sl;
