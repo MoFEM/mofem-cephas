@@ -1,0 +1,145 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what verion of openmpi (or other MPI library) are you using
+
+
+Notes
+=====
+
+* Exteranl forces and Young modulus are rescaled by factor 1e-8
+  for better matrix conditioning. 
+* Griffith energy for graphite for is 200 * 1e-8 for units consistency
+
+Example run
+===========
+
+1) Calulation stress intensity factor K1
+
+* Calulation of Griffith energy and SIF for mode K1
+* Calulate problem for three approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (qubic)
+* Calulate problem for three refinment levels (in proximity of crack front)
+
+* convergence_study.sh NAME_OF_SCRIPT
+* -f NAME_OF_FILE 
+* -l VALUE_OF_LOAD_FACTOR 
+* -g REFERENCE_GRIFFITH_ENERGY 
+* -o APPROX_ORDERS_SEPARATED_BY_COMMAS 
+* -r REFINMENT_LEVELS_SEPARATED_BY_COMMAS
+
+./convergence_study.sh -f T3_horiz.cub -l -1 -g 2e-6 -o 1,2,3 -r 1,2
+
+
+* As result of function, directory is created, f.e. material_forces_T3_horiz_DATE-2013-12-16_TIME_13_47_56
+
+
+2) Calulation of crack propagation
+
+* out_spatial_1_1.h5m - this is 1-order 1-refinment_level
+
+./arc_length.sh -f material_forces_T3_horiz_DATE-2013-12-16_TIME_16_24_43/out_spatial_1_1.h5m -a 1e-4 -n 60 -g 2e-6
+
+* out_spatial_2_1.h5m - this is 2-order 1-refinment_level
+
+./arc_length.sh -f material_forces_T3_horiz_DATE-2013-12-16_TIME_16_24_43/out_spatial_2_1.h5m -a 1e-4 -n 60 -g 2e-6
+
+* out_spatial_1_2.h5m - this is 1-order 2-refinment_level
+
+./arc_length.sh -f material_forces_T3_horiz_DATE-2013-12-16_TIME_16_24_43/out_spatial_1_2.h5m -a 1e-4 -n 60 -g 2e-6
+
+
+3) Plotting
+
+* check if in your system you have installed awk and grep
+
+echo "0 0" | tee load_path_CrackArea_vs_Lambda | tee  && grep "load_path:" arc_length_out_spatial_1_1_DATE-2013-12-16_TIME_16_36_03/log | awk '{print $4,-$6}' | tee -a load_path_CrackArea_vs_Lambda
+
+echo "0 0" | tee load_path_DispY_vs_Lambda | tee gp && grep "load_path_disp ent 383 dim 1"  arc_length_out_spatial_1_1_DATE-2013-12-16_TIME_16_36_03/log | awk '{print -$13,-$15}' | tee -a load_path_DispY_vs_Lambda
+
+
+To Do
+=====
+
+* Refined crack area increment da = 0.25e-4, da = 0.5e-4, da = 1e-4
+* Refined mesh in cubit, how this chaneg quality of solution?
+* Plot crack area increment vs total elastic energy
+
+Unresolved issues
+=================
+
+Data to make plots
+==================
+
+* load_path_DispY_vs_Lambda
+* out_spatial_1_1.h5m - this is 1-order 1-refinment_level
+
+Lambda Disp_Y
+0 0
+0.00013581 0.89495
+0.00013551 0.87468
+0.0001353 0.85495
+0.00013517 0.83576
+0.00013512 0.81714
+0.00013518 0.79915
+0.00013531 0.78159
+0.0001355 0.7644
+0.00013574 0.74748
+0.00013603 0.73079
+0.00013637 0.71438
+0.00013673 0.69813
+0.00013715 0.68216
+0.00013759 0.66634
+0.00013809 0.65081
+0.0001386 0.63543
+0.00013918 0.62037
+0.00013978 0.60549
+0.00014045 0.59095
+0.00014116 0.57663
+0.00014194 0.56267
+0.00014276 0.54897
+0.00014367 0.53562
+0.00014463 0.52254
+0.00014568 0.50976
+0.00014678 0.49722
+0.00014797 0.48494
+0.00014921 0.47292
+0.00015054 0.46099
+0.00015193 0.44937
+0.00015342 0.43796
+0.00015495 0.42674
+0.0001566 0.41578
+0.00015831 0.40506
+0.00016014 0.39458
+0.00016203 0.38438
+0.00016405 0.37441
+0.00016615 0.36473
+0.00016839 0.35529
+0.00017071 0.34614
+0.00017318 0.33723
+0.00017575 0.32864
+0.00017847 0.32028
+0.0001813 0.31224
+0.0001843 0.30447
+0.00018743 0.29703
+0.00019072 0.28987
+0.00019418 0.28304
+0.00019781 0.27654
+0.00020163 0.27041
+0.00020565 0.26468
+0.00020989 0.25943
+0.00021437 0.25471
+0.00021911 0.25061
+0.00022413 0.24723
+0.00022947 0.24465
+0.00023516 0.24298
+0.00024124 0.24236
+0.00024779 0.24302
+0.00025487 0.24524
+0.00026259 0.24945
+
+* load_path_DispY_vs_Lambda
+* out_spatial_2_1.h5m - this is 1-order 1-refinment_level
+
+Lambda Disp_Y
+
