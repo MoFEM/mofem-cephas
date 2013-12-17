@@ -13,7 +13,8 @@ while test $# -gt 0; do
 			echo "-l, --load_factor=LOAD_FACTOR"
 			echo "-g, --gc=GRIFFITH_ENERGY"
 			echo "-o, --orders=1,2,3,4,5 (max is 5)\"" 
-			echo "-r, -ref=0,1,2,3,4 ... (memory and time is your limit)\""
+			echo "-r, --ref=0,1,2,3,4 ... (memory and time is your limit)\""
+			echo "-d, --dir=DIR_NAME"
                         exit 0
                         ;;
                 -f)
@@ -27,9 +28,24 @@ while test $# -gt 0; do
                         shift
                         ;;
                 --file_name*)
-                        export FILE_NAME=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        export FILE=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
+                -d)
+                        shift
+                        if test $# -gt 0; then
+                                export DIR_NAME=$1
+                        else
+                                echo "no file name specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --dir*)
+                        export DIR_NAME=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+
                 -l)
                         shift
                         if test $# -gt 0; then
@@ -119,12 +135,16 @@ fi
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MPI_RUN@ -np 4" 
 
-DIR_SURFIX=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
-DIR_PREFIX=`basename $FILE .cub`
-DIR_PREFIX=`basename $DIR_PREFIX .h5m`
-DIR_NAME=material_forces_"$DIR_PREFIX"_"$DIR_SURFIX"
+if [ -z ${DIR_NAME+x} ]; then 
+  DIR_SURFIX=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
+  DIR_PREFIX=`basename $FILE .cub`
+  DIR_PREFIX=`basename $DIR_PREFIX .h5m`
+  export DIR_NAME=material_forces_"$DIR_PREFIX"_"$DIR_SURFIX"
+fi
 
-mkdir $DIR_NAME
+if [ ! -d $DIR_NAME ]; then
+  mkdir $DIR_NAME
+fi
 
 for order in `echo $ORDERS | sed -e 's/,/ /g'`
 do
@@ -137,15 +157,15 @@ do
 
     $MPIRUN $BIN_PATH/spatial_problem \
       -my_file $FILE -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
-      -ksp_atol 1e-18 -ksp_rtol 1e-12 -ksp_monitor \
-      -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-5 -snes_rtol 1e-8 -snes_stol 0 \
-      -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_pot_proc_ref_level 1 | tee -a $DIR_NAME/log_solution
+      -ksp_atol 1e-14 -ksp_rtol 1e-12 -ksp_monitor \
+      -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
+      -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_pot_proc_ref_level 1 -log_summary | tee -a $DIR_NAME/log_solution
 
     $BIN_PATH/material_force \
       -my_file out_spatial.h5m \
-	-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_atol 1e-12 -ksp_rtol 1e-12 \
+	-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_atol 1e-14 -ksp_rtol 1e-12 \
 	-ksp_monitor \
-	-my_gc $GC | tee -a $DIR_NAME/log_griffith_forces
+	-my_gc $GC -log_summary | tee -a $DIR_NAME/log_griffith_forces
 
     mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
     mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
@@ -156,5 +176,4 @@ do
 
 
 done
-
 
