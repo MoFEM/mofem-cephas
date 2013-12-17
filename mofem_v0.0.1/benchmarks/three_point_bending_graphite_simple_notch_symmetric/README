@@ -57,7 +57,6 @@ or you can run that in step by step
 
 ./arc_length.sh -f material_forces_T3_horiz_DATE-2013-12-16_TIME_16_24_43/out_spatial_1_2.h5m -a 1e-4 -n 60 -g 2e-6
 
-
 3) Plotting
 
 * check if in your system you have installed awk and grep
@@ -66,6 +65,11 @@ or you can run that in step by step
 echo "0 0" | tee load_path_CrackArea_vs_Lambda | tee  && grep "load_path:" arc_length_out_spatial_1_1_DATE-2013-12-16_TIME_16_36_03/log | awk '{print $4,-$6}' | tee -a load_path_CrackArea_vs_Lambda
 
 echo "0 0" | tee load_path_DispY_vs_Lambda | tee gp && grep "load_path_disp ent 383 dim 1"  arc_length_out_spatial_1_1_DATE-2013-12-16_TIME_16_36_03/log | awk '{print -$13,-$15}' | tee -a load_path_DispY_vs_Lambda
+
+or short version,
+
+grep "load_path:" arc_length_out_spatial_1_1_DATE-2013-12-16_TIME_16_36_03/log
+grep "load_path_disp ent 383 dim 1"  arc_length_out_spatial_1_1_DATE-2013-12-16_TIME_16_36_03/log
 
 To Do
 =====
@@ -146,7 +150,7 @@ Lambda Disp_Y
 0.00026259 0.24945
 
 * load_path_DispY_vs_Lambda
-* out_spatial_2_1.h5m - this is 1-order 1-refinment_level
+* out_spatial_2_1.h5m - this is 2-order 1-refinment_level
 
 Lambda Disp_Y
 0 0
@@ -213,3 +217,61 @@ Lambda Disp_Y
 0.00037666 0.086897
 0.00040819 0.080876
 0.00044799 0.074112
+
+
+* load_path_DispY_vs_Lambda
+* out_spatial_3_1.h5m - this is 3-order 1-refinment_level (not finished yet, need update)
+
+Lambda Disp_Y
+0 0
+0.00014711 0.74416
+0.00014652 0.72605
+0.00014601 0.70834
+0.00014558 0.69102
+0.00014524 0.67407
+0.00014496 0.65749
+0.00014476 0.64122
+0.00014463 0.62527
+0.00014457 0.60961
+0.00014457 0.59424
+0.00014463 0.57914
+0.00014476 0.56429
+0.00014495 0.54967
+0.0001452 0.53531
+0.0001455 0.52117
+0.00014588 0.50728
+0.00014631 0.49361
+0.00014681 0.4802
+0.00014738 0.467
+0.00014801 0.45405
+0.00014871 0.44133
+0.00014949 0.42884
+0.00015034 0.41657
+0.00015127 0.4045
+0.00015227 0.39265
+0.00015335 0.38094
+0.00015452 0.36942
+0.00015578 0.35804
+0.00015712 0.34689
+0.00015858 0.33576
+0.00016014 0.32479
+0.00016181 0.314
+0.00016359 0.3034
+0.00016549 0.293
+0.00016752 0.28274
+0.00016969 0.27269
+0.00017201 0.26281
+0.00017449 0.25313
+0.00017714 0.24361
+0.00017997 0.23428
+0.000183 0.22511
+0.00018625 0.21612
+0.00018975 0.2073
+0.0001935 0.19862
+0.00019754 0.19011
+0.00020191 0.18171
+0.00020663 0.17347
+0.00021175 0.16527
+0.00021732 0.15723
+0.00022339 0.14915
+
