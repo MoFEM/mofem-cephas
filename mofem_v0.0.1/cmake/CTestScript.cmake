@@ -74,10 +74,9 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   ArcLengthInterfaceTest
   SimpleMeshSmoothingTest
   SimpleMeshSmoothingTest_LagrangeMultipliers
-  SimplePotentialFlowTest
   SimpleLaplacianProblem
-  ComputeFibreDirection
-  wireTest
+  Compute_Fibre_Direction
+  Wire_Test
 )
 
 if(${DOTEST} GREATER 0)

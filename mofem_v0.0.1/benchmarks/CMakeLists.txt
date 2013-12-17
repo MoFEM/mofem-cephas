@@ -16,19 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(wire_interface interface_fibre.cpp)
-target_link_libraries(wire_interface mofem_student_body mofem_Field ${PROJECT_LIBS})
-add_executable(potential_flow_rope potential_flow_rope.cpp)
-target_link_libraries(potential_flow_rope mofem_student_body mofem_Field ${PROJECT_LIBS})
+#include subdirectory
+include_directories("${PROJECT_SOURCE_DIR}/benchmarks")
 
-file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
-file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../meshes/new_clamped_wire_coarse.cub
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
-
-#testing
-add_test(Compute_Fibre_Direction ${MPI_RUN} -np 2 ./potential_flow_rope -my_file new_clamped_wire_coarse.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1 -log_summary)
-add_test(Wire_Test ${MPI_RUN} -np 2 ./wire_interface -my_file solution.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -log_summary)
+#add executable library form subdirectory
+add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_simple_notch_symmetric")
 

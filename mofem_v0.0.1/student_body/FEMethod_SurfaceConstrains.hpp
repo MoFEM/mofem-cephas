@@ -182,6 +182,11 @@ struct C_SURFACE_FEMethod_ForSnes: public C_FEMethod_ForSnes {
     MatMethod(_mField.get_moab(),PETSC_NULL),
     FMethod(_mField.get_moab(),snes_f) {}
 
+  C_SURFACE_FEMethod_ForSnes(FieldInterface& _mField,string _lambda_field_name,int _verbose = 0):
+   mField(_mField),
+    MatMethod(_mField.get_moab(),PETSC_NULL,_lambda_field_name),
+    FMethod(_mField.get_moab(),snes_f,_lambda_field_name) {}
+
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     PetscErrorCode ierr;

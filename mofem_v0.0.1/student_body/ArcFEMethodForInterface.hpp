@@ -453,7 +453,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     int g_dim = g_NTRI.size()/3;
     EntityHandle fe_ent = fe_ptr->get_ent();
     vector<double> def_kappa(g_dim,0);
-    rval = moab.tag_get_handle("_KAPPA",g_dim,MB_TYPE_DOUBLE,th_kappa,MB_TAG_CREAT|MB_TAG_SPARSE,&def_kappa[0]);  
+    rval = moab.tag_get_handle("_KAPPA",g_dim,MB_TYPE_DOUBLE,th_kappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_EXCL,&def_kappa[0]);  
     if(rval==MB_ALREADY_ALLOCATED) {
       rval = MB_SUCCESS;
     } else {

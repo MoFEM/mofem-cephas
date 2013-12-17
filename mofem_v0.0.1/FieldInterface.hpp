@@ -1062,19 +1062,19 @@ struct FieldInterface {
     } 
       ///loop over all dofs which are on a particular FE row, field and given element entity (handle from moab)
     #define _IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
-    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->row_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->row_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); IT++
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); IT++
       ///loop over all dofs which are on a particular FE column, field and given element entity (handle from moab)
     #define _IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
-    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->col_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->col_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); IT++
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); IT++
       ///loop over all dofs which are on a particular FE data, field and given element entity (handle from moab)
     #define _IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
-    FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator \
-      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->data_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); \
-      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type>(FE->data_multiIndex->get<Composite_mi_tag3>(),NAME,ENT); IT++
+    FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator \
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->data_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); \
+      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->data_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); IT++
 
   };
 

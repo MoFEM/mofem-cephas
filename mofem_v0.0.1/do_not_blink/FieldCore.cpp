@@ -3374,7 +3374,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	    break;
 	  }
 	}
-	if(ff<4) continue; //this refibed egde is contained by face of tetrahedral
+	if(ff<4) continue; //this refined egde is contained by face of tetrahedral
 	// check if ref edge is in coarse tetrahedral (i.e. that is internal edge of refined tetrahedral)
 	if(intersect(tet_nodes,ref_edges_nodes).size()==2) {
 	  rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&*tit); CHKERR_PETSC(rval);
@@ -3395,7 +3395,11 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
       }
       Range ref_faces;
       rval = moab.get_adjacencies(ref_tets,nb_new_tets,2,true,ref_faces,Interface::UNION); CHKERR_PETSC(rval);
-      // check for all ref edges
+      Tag th_interface_side;
+      const int def_side[] = {0};
+      rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
+	th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERR_PETSC(rval);
+      // check for all ref faces
       for(Range::iterator rfit = ref_faces.begin();rfit!=ref_faces.end();rfit++) {
 	Range ref_faces_nodes;
 	rval = moab.get_connectivity(&*rfit,1,ref_faces_nodes,true); CHKERR_PETSC(rval);
@@ -3406,6 +3410,10 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	  if(intersect(faces_nodes[ff],ref_faces_nodes).size()==3) {
 	    EntityHandle face = tit_faces[ff];
 	    rval = moab.tag_set_data(th_RefParentHandle,&*rfit,1,&face); CHKERR_PETSC(rval);
+	    int side = 0;
+	    //set face side if it is on inteface
+	    rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
+	    rval = moab.tag_set_data(th_interface_side,&*rfit,1,&side); CHKERR_PETSC(rval);
 	    //add face to refinedMoFemEntities
 	    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,*rfit));
 	    bool success = refinedMoFemEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
@@ -4416,12 +4424,18 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     if(miit_ref_ent == ref_ents_by_ent.end()) {
       SETERRQ(PETSC_COMM_SELF,1,"this entity (edge or tri) should be already in database");
     }
+    Tag th_interface_side;
+    const int def_side[] = {0};
+    rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
+      th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERR_PETSC(rval);
     Range new_ent; //contains all entities (edges or triangles) added to mofem database
     switch (moab.type_from_handle(*eit)) {
       case MBTRI: {
 	  //get entity based on its connectivity
 	  rval = moab.get_adjacencies(new_conn,3,2,false,new_ent); CHKERR_PETSC(rval);
 	  if(new_ent.size() != 1) SETERRQ(PETSC_COMM_SELF,1,"this tri should be in moab database"); 
+	  int new_side = 1;
+	  rval = moab.tag_set_data(th_interface_side,&*new_ent.begin(),1,&new_side); CHKERR_PETSC(rval);
 	  if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_ent %u\n",new_ent.size());
 	  //add prism element
 	  if(add_iterfece_entities) {
