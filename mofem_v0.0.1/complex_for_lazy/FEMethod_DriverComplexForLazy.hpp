@@ -378,7 +378,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode CalculateSpatialTangentExt(Mat B,double *t_loc,double *t_glob,Range& NeumannSideSet) {
     PetscFunctionBegin;
-    if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
@@ -400,7 +399,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
 	    &*(KExt_hh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  for(int ee = 0;ee<3;ee++) {
-	    if(FaceNodeIndices.size()==0) continue;
+	    if(FaceEdgeIndices_data[ee].size()==0) continue;
 	    ierr = MatSetValues(B,
 	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
@@ -410,6 +409,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 	      &*(KExt_hedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	    for(int eee = 0;eee<3;eee++) {
+	      if(FaceEdgeIndices_data[eee].size()==0) continue;
 	      ierr = MatSetValues(B,
 		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 		FaceEdgeIndices_data[eee].size(),&(FaceEdgeIndices_data[eee][0]),
@@ -664,7 +664,6 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
   //FEMethod_DriverComplexForLazy_Material
   PetscErrorCode CalculateMaterialTangentExt(Mat B,double *t_loc,double *t_glob,double lambda,Range& NeumannSideSet) {
     PetscFunctionBegin;
-    if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
