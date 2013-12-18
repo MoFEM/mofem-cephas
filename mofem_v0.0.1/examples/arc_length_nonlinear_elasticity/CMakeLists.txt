@@ -43,6 +43,3 @@ add_test(ArcLengthNonLinearElasticityTest ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINAR
   -my_sr 1e-6 -my_ms 3 -snes_converged_reason
   -log_summary)
 
-
-
-

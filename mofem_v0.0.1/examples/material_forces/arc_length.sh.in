@@ -9,7 +9,7 @@ while test $# -gt 0; do
                         echo " "
                         echo "options:"
                         echo "-h, --help"
-                        echo "-f, --file_name=FILE_NAME"
+                        echo "-f, --file_name=FILE"
 			echo "-a, --da=CRACK_AREA_INCREMENT"
 			echo "-n, --nb_steps=NUMBER_OF_STEPS"
 			echo "-g, --gc=GRIFFITH_ENERGY"
