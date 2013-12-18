@@ -77,6 +77,8 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   SimpleLaplacianProblem
   Compute_Fibre_Direction
   Wire_Test
+  ConvergenceStudy_sh
+  ArcLength_sh
 )
 
 if(${DOTEST} GREATER 0)

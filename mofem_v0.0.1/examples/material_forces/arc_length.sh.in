@@ -13,6 +13,7 @@ while test $# -gt 0; do
 			echo "-a, --da=CRACK_AREA_INCREMENT"
 			echo "-n, --nb_steps=NUMBER_OF_STEPS"
 			echo "-g, --gc=GRIFFITH_ENERGY"
+			echo "-d, --dir=DIR_NAME"
                         exit 0
                         ;;
                 -f)
@@ -26,9 +27,24 @@ while test $# -gt 0; do
                         shift
                         ;;
                 --file_name*)
-                        export FILE_NAME=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        export FILE=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
+                -d)
+                        shift
+                        if test $# -gt 0; then
+                                export DIR_NAME=$1
+                        else
+                                echo "no file name specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --dir*)
+                        export DIR_NAME=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+
 		-a)
                         shift
                         if test $# -gt 0; then
@@ -98,14 +114,19 @@ if [ -z ${GC+x} ]; then
   exit 1
 fi
 
-DIR_SURFIX=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
-DIR_PREFIX=`basename $FILE .h5m`
-DIR_NAME=arc_length_"$DIR_PREFIX"_"$DIR_SURFIX"
+if [ -z ${DIR_NAME+x} ]; then
+  DIR_SURFIX=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
+  DIR_PREFIX=`basename $FILE .h5m`
+  export DIR_NAME=arc_length_"$DIR_PREFIX"_"$DIR_SURFIX"
+fi
+
+if [ ! -d $DIR_NAME ]; then
+  mkdir $DIR_NAME
+fi
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MPI_RUN@ -np 4"
 
-mkdir $DIR_NAME
 cp $FILE $DIR_NAME/
 cd $DIR_NAME
 
@@ -117,6 +138,7 @@ $MPIRUN $BIN_PATH/arc_length_material_coupled \
   -snes_max_it 100 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
   -snes_monitor -snes_converged_reason -ksp_monitor \
   -my_gc $GC -my_alpha2 1e-3 -my_gamma 0. \
-  -my_da $DA -my_load_steps $NBSTEPS | tee log
+  -my_da $DA -my_load_steps $NBSTEPS \
+  -log_summary | tee log
 
 cd ..

@@ -4,22 +4,20 @@ Check before run
 * Check where is your mesh file
 * Check what verion of openmpi (or other MPI library) are you using
 
-
 Notes
 =====
 
-* Exteranl forces and Young modulus are rescaled by factor 1e-8
-  for better matrix conditioning. 
-* Griffith energy for graphite for is 200 * 1e-8 for units consistency
+* Exteranl forces and Young modulus are rescaled by factor 1e-8.
+* Griffith energy for graphite is 200 * 1e-8 for units consistency.
 
 Example run
 ===========
 
 1) Calulation stress intensity factor K1
 
-* Calulation of Griffith energy and SIF for mode K1
-* Calulate problem for three approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (qubic)
-* Calulate problem for three refinment levels (in proximity of crack front)
+* Calulation of Griffith energy and SIF for mode K1.
+* Calulate problem for three approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (qubic).
+* Calulate problem for three refinment levels (in proximity of crack front).
 
 * convergence_study.sh NAME_OF_SCRIPT
 * -f NAME_OF_FILE 
@@ -30,41 +28,33 @@ Example run
 
 ./convergence_study.sh -f T3_horiz.cub -l -1 -g 2e-6 -o 1,2,3 -r 1,2
 
-or you can run that in step by step
-
-./convergence_study.sh -f T3_horiz.cub -l -1 -g 2e-6 -o 2 -r 1,2
-
-./convergence_study.sh -f T3_horiz.cub -l -1 -g 2e-6 -o 2 -r 1,2
-
-./convergence_study.sh -f T3_horiz.cub -l -1 -g 2e-6 -o 1 -r 1,2
-
-* As result of function, directory is created, f.e. material_forces_T3_horiz_DATE-2013-12-16_TIME_13_47_56
-
 2) Calulation of crack propagation
 
 * Crack popagation as an input file uses preoviously obtained soltion from step (1)
-* Note that linear elements (1st) order have sheer loking, and usually give overstiff solution.
+* Note that linear elements (1st) order have sheer loking, and usually give overstiff solution
 
 * out_spatial_1_1.h5m - this is 1-order 1-refinment_level
-
-./arc_length.sh -f material_forces_T3_horiz_DATE-2013-12-16_TIME_16_24_43/out_spatial_1_1.h5m -a 1e-4 -n 60 -g 2e-6
+./arc_length.sh -f $DIRNAME/out_spatial_1_1.h5m -a 1e-4 -n 60 -g 2e-6
 
 * out_spatial_2_1.h5m - this is 2-order 1-refinment_level
-
-./arc_length.sh -f material_forces_T3_horiz_DATE-2013-12-16_TIME_16_24_43/out_spatial_2_1.h5m -a 1e-4 -n 60 -g 2e-6
+./arc_length.sh -f $DIRNAME//out_spatial_2_1.h5m -a 1e-4 -n 60 -g 2e-6
 
 * out_spatial_1_2.h5m - this is 1-order 2-refinment_level
+./arc_length.sh -f $DIRNAME/out_spatial_1_2.h5m -a 1e-4 -n 60 -g 2e-6
 
-./arc_length.sh -f material_forces_T3_horiz_DATE-2013-12-16_TIME_16_24_43/out_spatial_1_2.h5m -a 1e-4 -n 60 -g 2e-6
+* Where DIRNAME for example is 
+DIRMAME=material_forces_T3_horiz_DATE-2013-12-16_TIME_16_32_31
+
 
 3) Plotting
 
 * check if in your system you have installed awk and grep
 * copy and paste to line command
+echo "0 0" | tee load_path_CrackArea_vs_Lambda && awk '/load_path:/ {print $4,-$6}' $DIRNAME/log | tee -a load_path_CrackArea_vs_Lambda
+echo "0 0" | tee load_path_DispY_vs_Lambda && awk '/load_path_disp ent 383 dim 1/ {print -$13,-$15}' $DIRNAME/log | tee -a load_path_DispY_vs_Lambda
 
-echo "0 0" | tee load_path_CrackArea_vs_Lambda | tee  && grep "load_path:" arc_length_out_spatial_1_1_DATE-2013-12-16_TIME_16_36_03/log | awk '{print $4,-$6}' | tee -a load_path_CrackArea_vs_Lambda
-
-echo "0 0" | tee load_path_DispY_vs_Lambda | tee gp && grep "load_path_disp ent 383 dim 1"  arc_length_out_spatial_1_1_DATE-2013-12-16_TIME_16_36_03/log | awk '{print -$13,-$15}' | tee -a load_path_DispY_vs_Lambda
+* Wher DIRNAME for example is
+DIRNAME=material_forces_T3_horiz_DATE-2013-12-16_TIME_16_32_31
 
 or short version,
 
@@ -274,4 +264,80 @@ Lambda Disp_Y
 0.00021175 0.16527
 0.00021732 0.15723
 0.00022339 0.14915
+0.00023004 0.14128
+0.00023735 0.13328
+0.00024544 0.12558
+0.00025442 0.11765
+0.00026446 0.11013
+0.00027574 0.10224
+0.00028857 0.094914
+0.00030327 0.087142
+0.00032035 0.080123
+0.00034053 0.072834
+0.00036479 0.066783
+0.00039475 0.060866
+0.00043289 0.057143
+0.00048327 0.054367
+
+* load_path_DispY_vs_Lambda
+* out_spatial_2_2.h5m - this is 2-order 2-refinment_level (not finished yet, need update)
+
+Lambda Disp_Y
+0 0
+0.00014327 0.75406
+0.0001428 0.7356
+0.00014241 0.71758
+0.0001421 0.69994
+0.00014186 0.68268
+0.00014169 0.66579
+0.00014159 0.6492
+0.00014156 0.63297
+0.0001416 0.61704
+0.00014169 0.6014
+0.00014185 0.58605
+0.00014208 0.57098
+0.00014236 0.55617
+0.00014271 0.54162
+0.00014312 0.52735
+0.0001436 0.51336
+0.00014415 0.49962
+0.00014477 0.48614
+0.00014547 0.47295
+0.00014624 0.46001
+0.00014708 0.44736
+0.00014799 0.43501
+0.00014898 0.42293
+0.00015005 0.41115
+0.00015118 0.39955
+0.0001524 0.38821
+0.00015369 0.37696
+0.00015507 0.36592
+0.0001565 0.35495
+0.00015799 0.3442
+0.00015952 0.33359
+0.00016114 0.32326
+0.00016287 0.31324
+0.00016477 0.30364
+0.00016684 0.29442
+0.0001691 0.28557
+0.00017154 0.27705
+0.0001742 0.26878
+0.00017697 0.26072
+0.00017989 0.25274
+0.00018287 0.24486
+0.00018605 0.23701
+0.00018931 0.22943
+0.00019277 0.22225
+0.00019639 0.21541
+0.00020025 0.20862
+0.00020433 0.20194
+0.00020877 0.1953
+0.00021355 0.1891
+0.00021868 0.18317
+0.00022409 0.17765
+0.00022995 0.17196
+0.00023617 0.16692
+0.00024279 0.1624
+0.00024975 0.15815
+
 
