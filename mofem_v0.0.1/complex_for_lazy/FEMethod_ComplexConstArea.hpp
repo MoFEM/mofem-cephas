@@ -713,6 +713,20 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	    } else {
 	      dELEM_CONSTRAIN1 /= +r*eps;
 	    }
+	    //dC
+	    double g = 0;
+	    for(int nnn = 0;nnn<3;nnn++) {
+	      for(int ddd = 0;ddd<3;ddd++) {
+		g += dELEM_CONSTRAIN1[nnn*3+ddd]*(dofs_X[3*nnn+ddd]-coords[3*nnn+ddd]);
+	      }
+	    }
+	    for(int nnn = 0;nnn<3;nnn++) {
+	      if(lambda_dofs_row_indx[nnn] == -1) continue;
+	      ierr = MatSetValues(*snes_B,
+		1,&lambda_dofs_row_indx[nnn],1,&disp_dofs_col_idx[3*nn+dd],
+		&g,ADD_VALUES); CHKERRQ(ierr);
+	    }
+	    //dCT_lambda
 	    for(int nnn = 0;nnn<3;nnn++) {
 	      for(int ddd = 0;ddd<3;ddd++) {
 		dELEM_CONSTRAIN1[nnn*3+ddd] *= lambda[nnn];

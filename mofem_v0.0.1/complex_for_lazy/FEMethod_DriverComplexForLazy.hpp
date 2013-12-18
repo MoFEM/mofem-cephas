@@ -1080,8 +1080,6 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
     C_SURFACE_FEMethod *CFE_SURFACE;
     g_SURFACE_FEMethod *gFE_SURFACE;
-    //C_CORNER_FEMethod *CFE_CORNER;
-    //g_CORNER_FEMethod *gFE_CORNER;
     //CRACK
     C_SURFACE_FEMethod *CFE_CRACK_SURFACE;
     g_SURFACE_FEMethod *gFE_CRACK_SURFACE;
@@ -1093,11 +1091,10 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
     }
 
     try {
-      gFE_SURFACE = new g_SURFACE_FEMethod(moab,proj_all_ctx.g);
-      //gFE_CORNER = new g_CORNER_FEMethod(moab,proj_all_ctx.g);
+      gFE_SURFACE = new g_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.g);
       if(cs) {
-	  //CRACK
-	  gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
+	//CRACK
+	gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -1110,11 +1107,10 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	ierr = mField.set_global_VecCreateGhost(problem_name,Col,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 	try {
-	CFE_SURFACE = new C_SURFACE_FEMethod(moab,proj_all_ctx.C);
-	//CFE_CORNER = new C_CORNER_FEMethod(moab,proj_all_ctx.C);
+	CFE_SURFACE = new C_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.C);
 	if(cs) {
 	  //CRACK
-	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
+	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
 	}
 	} catch (const std::exception& ex) {
 	  ostringstream ss;
@@ -1130,9 +1126,6 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	if(cs) {
 	  ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",*CFE_CRACK_SURFACE);  CHKERRQ(ierr);
 	}
-	//ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	//ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	//ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*CFE_CORNER);  CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
@@ -1146,7 +1139,6 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	ierr = proj_all_ctx.InitQTKQ(); CHKERRQ(ierr);
 
 	delete CFE_SURFACE;
-	//delete CFE_CORNER;
 	if(cs) {
 	  delete CFE_CRACK_SURFACE;
 	}
@@ -1168,18 +1160,11 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
     ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
 
-    //ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*gFE_CORNER);  CHKERRQ(ierr);
-    //ierr = VecGhostUpdateBegin(proj_all_ctx.g,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    //ierr = VecGhostUpdateEnd(proj_all_ctx.g,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    //ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
-    //ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
-
     PetscReal g_nrm2;
     ierr = VecNorm(proj_all_ctx.g, NORM_2,&g_nrm2); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"\tg_nrm2 = %6.4e\n",g_nrm2);
 
     delete gFE_SURFACE;
-    //delete gFE_CORNER;
     if(cs) {
       delete gFE_CRACK_SURFACE;
     }
