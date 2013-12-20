@@ -41,10 +41,8 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 struct DirihletBCMethod_DriverComplexForLazy: public CubitDisplacementDirihletBC {
-
   DirihletBCMethod_DriverComplexForLazy(FieldInterface& _mField,const string _problem_name,const string _field_name): 
     CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
-
 };
 
 struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
@@ -73,20 +71,16 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
     
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       Range TetsOfNeumannSideSet;
       rval = mField.get_moab().get_adjacencies(NeumannSideSet,3,false,TetsOfNeumannSideSet,Interface::UNION); CHKERR_THROW(rval);
       rval = mField.get_moab().add_entities(it->get_meshset(),TetsOfNeumannSideSet); CHKERR_THROW(rval);
-
     }
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-
       if(!NeumannSideSet.empty()) {
 	Range TetsOfNeumannSideSet;
 	rval = mField.get_moab().get_adjacencies(NeumannSideSet,3,false,TetsOfNeumannSideSet,Interface::UNION); CHKERR_THROW(rval);
@@ -102,11 +96,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	} else {}
       }
     }
-
-  };
-
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
+  }
 
   //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode addNodalForces(Vec f,double lambda) {
@@ -154,9 +144,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-    ierr = PetscTime(&v1); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
@@ -540,9 +527,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-    ierr = PetscTime(&v2); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscFunctionReturn(0);
   }
 };
@@ -690,7 +674,8 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 	  cblas_dscal(9,lambda,t_loc,1);
 	  ierr = GetTangentExt_Material(siit->ent,t_loc,NULL,NULL); CHKERRQ(ierr);
 	  ierr = MatSetValues(B,
-	    frontFaceNodeIndices_Material.size(),&(frontFaceNodeIndices_Material[0]),FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),
+	    frontFaceNodeIndices_Material.size(),&(frontFaceNodeIndices_Material[0]),
+	    FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),
 	    &*(KExt_HH_Material.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	}
 	break;
@@ -758,7 +743,8 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
       dofs_x_face_data,dofs_x_face,
       dofs_x_volume,dofs_x,
       spatial_field_name); CHKERRQ(ierr);
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+      this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
@@ -792,15 +778,13 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
     PetscFunctionBegin;
     vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
     ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
-    vector<DofIdx> frontColGlobMaterial = ColGlobMaterial[i_nodes];
-    //ierr = setCrackFrontIndices(this,material_field_name,frontColGlobMaterial,false); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESSetFunction:
       case ctx_SNESSetJacobian:
 	ierr = GetTangent(); CHKERRQ(ierr);
 	ierr = MatSetValues(B,
 	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-	  frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
+	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
 	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	break;
       default:
@@ -833,7 +817,8 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
     if(op == NO) PetscFunctionReturn(0);
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+      this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
     if(op&LHS) {
       ierr = CalculateMeshSmoothingTangent(*B); CHKERRQ(ierr);
     }
@@ -889,29 +874,28 @@ struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverCompl
     PetscFunctionBegin;
     vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
     ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,true); CHKERRQ(ierr);
-    //if(c == frontRowGlobMaterial.size()) PetscFunctionReturn(0);
     switch(snes_ctx) {
       case ctx_SNESSetJacobian:
         ierr = MatSetValues(B,
-  	frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-  	ColGlobSpatial[i_nodes].size(),&*(ColGlobSpatial[i_nodes].begin()),
-  	&*(KHh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	  ColGlobSpatial[i_nodes].size(),&*(ColGlobSpatial[i_nodes].begin()),
+	  &*(KHh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
         for(int ee = 0;ee<6;ee++) {
-  	ierr = MatSetValues(B,
-  	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-  	  ColGlobSpatial[1+ee].size(),&*(ColGlobSpatial[1+ee].begin()),
-  	  &*(KHedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	    ColGlobSpatial[1+ee].size(),&*(ColGlobSpatial[1+ee].begin()),
+	    &*(KHedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
         }
         for(int ff = 0;ff<4;ff++) {
-  	ierr = MatSetValues(B,
-  	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-  	  ColGlobSpatial[1+6+ff].size(),&*(ColGlobSpatial[1+6+ff].begin()),
-  	  &*(KHface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(B,
+	    frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	    ColGlobSpatial[1+6+ff].size(),&*(ColGlobSpatial[1+6+ff].begin()),
+	    &*(KHface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
         }
         ierr = MatSetValues(B,
-  	frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-  	ColGlobSpatial[i_volume].size(),&*(ColGlobSpatial[i_volume].begin()),
-  	&*(KHvolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	  ColGlobSpatial[i_volume].size(),&*(ColGlobSpatial[i_volume].begin()),
+	  &*(KHvolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
         break;
       default:
         SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -981,28 +965,27 @@ struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComp
   //FEMethod_DriverComplexForLazy_CoupledMaterial
   virtual PetscErrorCode AssembleMaterialCoupledTangent(Mat B) {
     PetscFunctionBegin;
-    vector<DofIdx> frontColGlobMaterial = ColGlobMaterial[i_nodes];
     switch(snes_ctx) {
       case ctx_SNESSetJacobian:
 	ierr = MatSetValues(B,
 	  RowGlobSpatial[i_nodes].size(),&*(RowGlobSpatial[i_nodes].begin()),
-	  frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
+	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
 	  &*(KhH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	for(int ee = 0;ee<6;ee++) {
 	  ierr = MatSetValues(B,
 	    RowGlobSpatial[1+ee].size(),&*(RowGlobSpatial[1+ee].begin()),
-	    frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
+	    ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
 	    &*(KedgeH_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	}
 	for(int ff = 0;ff<4;ff++) {
 	  ierr = MatSetValues(B,
 	    RowGlobSpatial[1+6+ff].size(),&*(RowGlobSpatial[1+6+ff].begin()),
-	    frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
+	    ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
 	    &*(KfaceH_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	}
 	ierr = MatSetValues(B,
 	  RowGlobSpatial[i_volume].size(),&*(RowGlobSpatial[i_volume].begin()),
-	  frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
+	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
 	  &*(KvolumeH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	break;
       default:

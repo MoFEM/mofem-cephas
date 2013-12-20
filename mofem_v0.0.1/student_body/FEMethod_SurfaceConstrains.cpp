@@ -147,7 +147,7 @@ PetscErrorCode C_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
 	  ublas::noalias(ent_idofs_data) = ublas::zero_vector<double>(9);
 	  ent_idofs_data[dd] = r*eps;
 	  ierr = cOnstrain(&*ent_dofs_data.data().begin(),&*ent_idofs_data.data().begin(),NULL,&*iC_MAT_ELEM.data().begin()); CHKERRQ(ierr);
-	  ig_VEC_ELEM = prod(iC_MAT_ELEM/(r*eps),ent_dofs_data);
+	  ig_VEC_ELEM = prod(iC_MAT_ELEM/(r*eps),ent_dofs_data-coords);
 	  for(int nnn = 0;nnn<3;nnn++) {
 	    dC_MAT_ELEM(nnn,dd) += ig_VEC_ELEM[nnn];
 	  }
@@ -256,7 +256,8 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
 	  }
 	}
 	DirihletBC.clear();
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,dof_global_row_indices,dof_global_col_indices,DirihletBC); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+	  this,dof_global_row_indices,dof_global_col_indices,DirihletBC); CHKERRQ(ierr);
       }
       rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
       ierr = this->iNtegrate(transpose,nonlinear); CHKERRQ(ierr);
@@ -288,11 +289,11 @@ PetscErrorCode g_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
     try {
       C_SURFACE_FEMethod::iNtegrate(transpose,nonlinear);
       //
-      g_VEC_ELEM = prod(C_MAT_ELEM,ent_dofs_data);
+      g_VEC_ELEM = prod(C_MAT_ELEM,ent_dofs_data-coords);
       f_VEC_ELEM = prod(CT_MAT_ELEM,ent_lambda_data);
       //
-      ierr = cOnstrain(&*coords.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
-      g_VEC_ELEM = g_VEC_ELEM - prod(C_MAT_ELEM,coords);
+      //ierr = cOnstrain(&*coords.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
+      //g_VEC_ELEM = g_VEC_ELEM - prod(C_MAT_ELEM,coords);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
@@ -308,16 +309,16 @@ PetscErrorCode g_SURFACE_FEMethod::aSsemble(bool transpose,bool nonlinear) {
   }
   ierr = VecSetOption(g,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
   ierr = VecSetValues(g,
-        lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
-        &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+    lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
+    &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
   if(transpose) {
     if(dof_global_row_indices[0].size()!=f_VEC_ELEM.size()) {
       SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
 	dof_global_row_indices[0].size(),f_VEC_ELEM.size());
     }
     ierr = VecSetValues(g,
-	dof_global_row_indices[0].size(),&(dof_global_row_indices[0].data()[0]),
-	&(f_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+      dof_global_row_indices[0].size(),&(dof_global_row_indices[0].data()[0]),
+      &(f_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
 
   }
   PetscFunctionReturn(0);
