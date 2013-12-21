@@ -38,11 +38,12 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   BaseDirihletBC *dirihlet_bc_method_ptr;
   Mat C;
   string lambda_field_name;
+  bool updated;
 
   vector<double> diffNTRI;
   vector<double> g_NTRI3;
   const double *G_TRI_W;
- 
+
   C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose = 0);
   C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose = 0);
   void run_in_constructor();
@@ -78,7 +79,6 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
 };
 
 struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
-
   Vec g;
   g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,string _lambda_field_name,int _verbose = 0); 
   g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,int _verbose = 0); 
@@ -87,7 +87,6 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
   ublas::vector<double,ublas::bounded_array<double,9> > f_VEC_ELEM;
   PetscErrorCode iNtegrate(bool transpose,bool nonlinear);
   PetscErrorCode aSsemble(bool transpose,bool nonlinear);
-
 };
 
 struct C_FEMethod_ForSnes: public FieldInterface::FEMethod {

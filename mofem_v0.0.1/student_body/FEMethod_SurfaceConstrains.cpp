@@ -65,11 +65,11 @@ void C_SURFACE_FEMethod::run_in_constructor() {
   }
  
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose): 
-    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name) {
+    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name),updated(false) {
     run_in_constructor();
   }
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE") {
+    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE"),updated(false) {
     run_in_constructor();
   }
 
@@ -133,7 +133,7 @@ PetscErrorCode C_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
   cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
   double r = cblas_dnrm2(3,center,1);
   try {
-    if(nonlinear) {
+    if(nonlinear||updated) {
       ierr = cOnstrain(&*ent_dofs_data.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
     } else {
       ierr = cOnstrain(&*coords.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
@@ -151,10 +151,12 @@ PetscErrorCode C_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
 	  for(int nnn = 0;nnn<3;nnn++) {
 	    dC_MAT_ELEM(nnn,dd) += ig_VEC_ELEM[nnn];
 	  }
-	  if_VEC_ELEM = prod(trans(iC_MAT_ELEM)/(r*eps),ent_lambda_data);
-	  for(int nnn = 0;nnn<3;nnn++) {
-	    for(int ddd = 0;ddd<3;ddd++) {
-	      dCT_MAT_ELEM(3*nnn+ddd,dd) += if_VEC_ELEM[3*nnn+ddd];
+	  if(transpose) {
+	    if_VEC_ELEM = prod(trans(iC_MAT_ELEM)/(r*eps),ent_lambda_data);
+	    for(int nnn = 0;nnn<3;nnn++) {
+	      for(int ddd = 0;ddd<3;ddd++) {
+		dCT_MAT_ELEM(3*nnn+ddd,dd) += if_VEC_ELEM[3*nnn+ddd];
+	      }
 	    }
 	  }
 	}
