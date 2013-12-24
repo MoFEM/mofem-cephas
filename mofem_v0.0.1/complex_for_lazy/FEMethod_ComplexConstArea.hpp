@@ -43,6 +43,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
   FieldInterface& mField;
+  BaseDirihletBC *dirihlet_bc_method_ptr;
 
   Interface& moab;
 
@@ -50,8 +51,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   string lambda_field_name;
   int verbose;
 
-  C_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) { 
+  C_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
+    mField(_mField),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) { 
     //calulate face shape functions direvatives
     diffNTRI.resize(3,2);
     ShapeDiffMBTRI(&*diffNTRI.data().begin());
@@ -432,8 +433,8 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
   double gc;  
   const double eps;
 
-  dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _dCT,string _lambda_field_name,int _verbose = 0):
-    C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),eps(1e-10) {}
+  dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _dCT,string _lambda_field_name,int _verbose = 0):
+    C_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),eps(1e-10) {}
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -506,14 +507,18 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
 struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
   FieldInterface& mField;
+  BaseDirihletBC *dirihlet_bc_method_ptr;
+  matPROJ_ctx &proj_ctx;
   string problem;
   string lambda_field_name;
   double gc;
   int verbose;
 
-  matPROJ_ctx &proj_ctx;
-  Snes_CTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _problem,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose),proj_ctx(_proj_all_ctx) {}
+  Snes_CTgc_CONSTANT_AREA_FEMethod(
+    FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,matPROJ_ctx &_proj_all_ctx,
+    string _problem,string _lambda_field_name,int _verbose = 0):
+    mField(_mField),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),proj_ctx(_proj_all_ctx),
+    problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose) {}
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -547,7 +552,7 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     ierr = VecDestroy(&D); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
 
-    C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,proj_ctx.C,PETSC_NULL,lambda_field_name);
+    C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,dirihlet_bc_method_ptr,proj_ctx.C,PETSC_NULL,lambda_field_name);
 
     ierr = MatSetOption(proj_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
     ierr = MatSetOption(proj_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -598,14 +603,16 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
 struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
-  Mat K;
   matPROJ_ctx *proj_ctx;
+  Mat K;
 
-  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
-    dCTgc_CONSTANT_AREA_FEMethod(_mField,_proj_all_ctx.K,_lambda_field_name,_verbose),K(_proj_all_ctx.K),proj_ctx(&_proj_all_ctx) { }
+  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
+    matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
+    dCTgc_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,_proj_all_ctx.K,_lambda_field_name,_verbose),
+    proj_ctx(&_proj_all_ctx),K(_proj_all_ctx.K) { }
 
-  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _K,string _lambda_field_name,int _verbose = 0):
-    dCTgc_CONSTANT_AREA_FEMethod(_mField,_K,_lambda_field_name,_verbose),K(_K),proj_ctx(NULL) { }
+  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _K,string _lambda_field_name,int _verbose = 0):
+    dCTgc_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,_K,_lambda_field_name,_verbose),proj_ctx(NULL),K(_K) {}
 
 
   PetscErrorCode preProcess() {
@@ -635,8 +642,8 @@ struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 
   const double eps;
-  TangentFrontConstrain_FEMethod(FieldInterface& _mField,string _lambda_field_name,int _verbose = 0):
-    C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),eps(1e-10) {}
+  TangentFrontConstrain_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,string _lambda_field_name,int _verbose = 0):
+    C_CONSTANT_AREA_FEMethod(_mField,dirihlet_bc_method_ptr,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),eps(1e-10) {}
 
   Tag th_front_tangent;
   PetscErrorCode preProcess() {

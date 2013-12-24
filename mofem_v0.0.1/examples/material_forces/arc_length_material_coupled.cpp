@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     //calulate initial load factor
     if(aa == 0) {
 
-      double ave_g = conf_prob.ave_g;
+      double max_g = conf_prob.max_g;
 
       Tag th_t_val;
       rval = moab.tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
       double load_factor;
       rval = moab.tag_get_data(th_t_val,&root_meshset,1,&load_factor); CHKERR_PETSC(rval);
 
-      double a = fabs(ave_g)/pow(load_factor,2);
+      double a = fabs(max_g)/pow(load_factor,2);
       double new_load_factor = copysign(sqrt(gc/a),load_factor);
       rval = moab.tag_set_data(th_t_val,&root_meshset,1,&new_load_factor); CHKERR_PETSC(rval);
 

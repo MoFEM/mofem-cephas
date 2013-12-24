@@ -1301,7 +1301,16 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
     ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
   }
 
-  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
+  Range CornersEdges,CornersNodes;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
+  ErrorCode rval;
+  Range CornersEdgesNodes;
+  rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
+  CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
+  materialDirihletBC myDirihletBC(mField.get_moab(),CornersNodes);
+
+  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,&myDirihletBC,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -1367,12 +1376,15 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
   }
 
-  //if(projFrontCtx->C != PETSC_NULL) {
-    //ierr = MatDestroy(&projFrontCtx->C); CHKERRQ(ierr);
-  //}
-  //ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx->C); CHKERRQ(ierr);
-
-  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
+  ErrorCode rval;
+  Range CornersEdges,CornersNodes;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
+  Range CornersEdgesNodes;
+  rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
+  CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
+  materialDirihletBC myDirihletBC(mField.get_moab(),CornersNodes);
+  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,&myDirihletBC,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -1388,7 +1400,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     std::string wait;
     std::cin >> wait;
   }*/
-
 
   // R = CT*(CC^T)^(-1) [ unit m/m^(-2) = 1/m ] [ 0.5/0.25 = 2 ]
   // R^T = (CC^T)^(-T)C [ unit m/m^(-2) = 1/m ] 
@@ -1419,7 +1430,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   ierr = VecDuplicate(LambdaVec,&JVec); CHKERRQ(ierr);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
 
-  ErrorCode rval;
   ublas::vector<double> coords;
   coords.resize(3);
   PetscPrintf(PETSC_COMM_WORLD,"\n\ngriffith force\n\n");
@@ -1570,8 +1580,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
   NL_MaterialFEMethod MyMaterialFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   C_SURFACE_FEMethod_ForSnes MySurfaceConstrainsBodySurface(mField,&myDirihletBC,"LAMBDA_SURFACE");
   C_SURFACE_FEMethod_ForSnes MySurfaceConstrainsCrackSurface(mField,&myDirihletBC,"LAMBDA_CRACK_SURFACE");
-  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS","LAMBDA_CRACKFRONT_AREA");
-  Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,K,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,&myDirihletBC,*projFrontCtx,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS","LAMBDA_CRACKFRONT_AREA");
+  Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,&myDirihletBC,K,"LAMBDA_CRACKFRONT_AREA");
 
   SnesCtx snes_ctx(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS");
 
@@ -1653,9 +1663,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   NL_MeshSmootherCoupled MyMeshSmoother(mField,&myDirihletBC);
   C_SURFACE_FEMethod_ForSnes MySurfaceConstrainsBodySurface(mField,&myDirihletBC,"LAMBDA_SURFACE");
   C_SURFACE_FEMethod_ForSnes MySurfaceConstrainsCrackSurface(mField,&myDirihletBC,"LAMBDA_CRACK_SURFACE");
-  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,*projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
-  Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,K,"LAMBDA_CRACKFRONT_AREA");
-  TangentFrontConstrain_FEMethod MyTangentFrontContrain(mField,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
+  Snes_CTgc_CONSTANT_AREA_FEMethod MyCTgc(mField,&myDirihletBC,*projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
+  Snes_dCTgc_CONSTANT_AREA_FEMethod MydCTgc(mField,&myDirihletBC,K,"LAMBDA_CRACKFRONT_AREA");
+  TangentFrontConstrain_FEMethod MyTangentFrontContrain(mField,&myDirihletBC,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
 
   ////******
   ierr = MySpatialFE.initCrackFrontData(mField); CHKERRQ(ierr);
