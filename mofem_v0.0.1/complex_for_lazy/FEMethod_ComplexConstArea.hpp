@@ -78,6 +78,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   //elem data
   ublas::matrix<double> diffNTRI;
   const double *G_TRI_W;
+  vector<DofIdx> DirihletBC;
   vector<vector<DofIdx> > disp_dofs_col_idx,disp_dofs_row_idx;
   ublas::vector<DofIdx> lambda_dofs_row_indx,lambda_dofs_col_indx;
   ublas::vector<double,ublas::bounded_array<double,9> > coords;
@@ -105,16 +106,13 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       ss << "thorw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-
     const EntityHandle* conn_face; 
     int num_nodes; 
     rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
     if(num_nodes != 3) SETERRQ(PETSC_COMM_SELF,1,"face should have three nodes");
     ierr = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERRQ(ierr);
-
     for(int nn = 0;nn<num_nodes;nn++) {
       if(is_that_C_otherwise_dC) {
-
 	try { 
 	  // it is C
 	  // get rows which are Lagrabge multipliers
@@ -133,11 +131,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  ss << "thorw in method: " << ex.what() << endl;
 	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 	}
-
       }
- 
       if((!is_that_C_otherwise_dC)||(trans)) {
-
 	try {
 	  // it is dC
 	  // get rows which are material nodal positions
@@ -164,7 +159,6 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	}
 
       }
-
       try {
 	//get columns which are material nodal positions
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
@@ -182,9 +176,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	ss << "thorw in method: " << ex.what() << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-
       if(trans) {
-
 	try {
 	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
 	  dit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
@@ -199,10 +191,13 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  ss << "thorw in method: " << ex.what() << endl;
 	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 	}
-
       }
     }
-
+    DirihletBC.clear();
+    if(dirihlet_bc_method_ptr!=NULL) {
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+	this,disp_dofs_row_idx,disp_dofs_col_idx,DirihletBC); CHKERRQ(ierr);
+    }
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -459,35 +454,35 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
     try {
-	double center[3]; 
-	const EntityHandle* conn_face; 
-	int num_nodes; 
-	rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-	rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
-	tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
-	cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
-	double r = cblas_dnrm2(3,center,1);
-	for(int NN = 0;NN<3;NN++) {
-	  for(int dd = 0;dd<3;dd++) {
-	    ublas::vector<double,ublas::bounded_array<double,9> > idofs_X(9,0);
-	    idofs_X[NN*3+dd] = r*eps;
-	    ublas::vector<double,ublas::bounded_array<double,9> > dELEM_CONSTRAIN(9);
-	    ierr = calcDirevatives(&*diffNTRI.data().begin(),
-	      &*dofs_X.data().begin(),
-	      &*idofs_X.data().begin(),
-	      NULL,&*dELEM_CONSTRAIN.data().begin(),NULL,NULL); CHKERRQ(ierr);
-	    dELEM_CONSTRAIN /= r*eps;
-	    /*cerr << idofs_X << endl;
-	    cerr << dELEM_CONSTRAIN << endl;
-	    cerr << lambda_dofs_row_indx << endl;*/
-	    dELEM_CONSTRAIN *= gc;
-	    //cerr << dELEM_CONSTRAIN << endl;
-	    ierr = MatSetValues(dCT,
-	      9,&(disp_dofs_row_idx[0].data()[0]),
-	      1,&(disp_dofs_col_idx[0].data()[3*NN+dd]),
-		&dELEM_CONSTRAIN.data()[0],ADD_VALUES); CHKERRQ(ierr);
-	  }
+      double center[3]; 
+      const EntityHandle* conn_face; 
+      int num_nodes; 
+      rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+      rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+      tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
+      cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
+      double r = cblas_dnrm2(3,center,1);
+      for(int NN = 0;NN<3;NN++) {
+	for(int dd = 0;dd<3;dd++) {
+	  ublas::vector<double,ublas::bounded_array<double,9> > idofs_X(9,0);
+	  idofs_X[NN*3+dd] = r*eps;
+	  ublas::vector<double,ublas::bounded_array<double,9> > dELEM_CONSTRAIN(9);
+	  ierr = calcDirevatives(&*diffNTRI.data().begin(),
+	    &*dofs_X.data().begin(),
+	    &*idofs_X.data().begin(),
+	    NULL,&*dELEM_CONSTRAIN.data().begin(),NULL,NULL); CHKERRQ(ierr);
+	  dELEM_CONSTRAIN /= r*eps;
+	  /*cerr << idofs_X << endl;
+	  cerr << dELEM_CONSTRAIN << endl;
+	  cerr << lambda_dofs_row_indx << endl;*/
+	  dELEM_CONSTRAIN *= gc;
+	  //cerr << dELEM_CONSTRAIN << endl;
+	  ierr = MatSetValues(dCT,
+	    9,&(disp_dofs_row_idx[0].data()[0]),
+	    1,&(disp_dofs_col_idx[0].data()[3*NN+dd]),
+	    &dELEM_CONSTRAIN.data()[0],ADD_VALUES); CHKERRQ(ierr);
 	}
+      }
     } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << endl;
@@ -608,7 +603,7 @@ struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
   Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
     matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
     dCTgc_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,_proj_all_ctx.K,_lambda_field_name,_verbose),
-    proj_ctx(&_proj_all_ctx),K(_proj_all_ctx.K) { }
+    proj_ctx(&_proj_all_ctx),K(_proj_all_ctx.K) {}
 
   Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _K,string _lambda_field_name,int _verbose = 0):
     dCTgc_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,_K,_lambda_field_name,_verbose),proj_ctx(NULL),K(_K) {}
@@ -616,23 +611,17 @@ struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-
     ierr = dCTgc_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
-
     ierr = MatAssemblyBegin(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-
     ierr = dCTgc_CONSTANT_AREA_FEMethod::postProcess(); CHKERRQ(ierr);
-
     ierr = MatAssemblyBegin(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-   
     PetscFunctionReturn(0);
   }
 
@@ -642,7 +631,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 
   const double eps;
   TangentFrontConstrain_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,string _lambda_field_name,int _verbose = 0):
-    C_CONSTANT_AREA_FEMethod(_mField,dirihlet_bc_method_ptr,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),eps(1e-10) {}
+    C_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),eps(1e-10) {}
 
   Tag th_front_tangent;
   PetscErrorCode preProcess() {

@@ -155,7 +155,6 @@ int main(int argc, char *argv[]) {
     ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
     ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
-
     double gc;
     PetscBool flg;
     ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
@@ -165,54 +164,43 @@ int main(int argc, char *argv[]) {
 
     //calulate initial load factor
     if(aa == 0) {
-
       double max_g = conf_prob.max_g;
-
       Tag th_t_val;
       rval = moab.tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
       const EntityHandle root_meshset = moab.get_root_set();
       double load_factor;
       rval = moab.tag_get_data(th_t_val,&root_meshset,1,&load_factor); CHKERR_PETSC(rval);
-
       double a = fabs(max_g)/pow(load_factor,2);
       double new_load_factor = copysign(sqrt(gc/a),load_factor);
       rval = moab.tag_set_data(th_t_val,&root_meshset,1,&new_load_factor); CHKERR_PETSC(rval);
-
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\ncooeficient a = %6.4e\n",a); CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"new load factor value = %6.4e\n\n",new_load_factor); CHKERRQ(ierr);
-
       SNES snes;
       //solve spatial problem
       ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
       ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
       ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-
     }
 
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
 
     for(int ii = 0;ii<1;ii++) {
-
        ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substep = %D\n\n",ii); CHKERRQ(ierr);
        ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* da = %6.4e\n\n",da); CHKERRQ(ierr);
-
        if(ii == 0) {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da); CHKERRQ(ierr);
       } else {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,0); CHKERRQ(ierr);
       }
-
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-
       ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
       ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
-
     }
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",step,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);
@@ -260,9 +248,7 @@ int main(int argc, char *argv[]) {
 	  double coords[3];
 	  rval = moab.get_coords(&*nit,1,coords); CHKERR_PETSC(rval);
 	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
-
 	    if(dof->get_name()!="SPATIAL_POSITION") continue;
-
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,
 	      "load_path_disp ent %ld dim %d "
 	      "coords ( %8.6f %8.6f %8.6f ) "
@@ -271,7 +257,6 @@ int main(int argc, char *argv[]) {
 	      coords[0],coords[1],coords[2],
 	      dof->get_FieldData()-coords[dof->get_dof_rank()],      
 	      conf_prob.lambda); CHKERRQ(ierr);
-
 	  }
 	}
 
