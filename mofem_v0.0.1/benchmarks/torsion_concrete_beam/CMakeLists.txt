@@ -20,20 +20,16 @@ cm_export_file("../../meshes/torsion.cub" export_files_torsion)
 cm_export_file("../../meshes/torsion.jou" export_files_torsion)
 
 install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/arc_length.sh 
-  DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_symmetric
+  DESTINATION mofem/benchmarks/torsion_concrete_beam
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/convergence_study.sh 
-  DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_symmetric
+  DESTINATION mofem/benchmarks/torsion_concrete_beam
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/torsion.cub
-  DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_symmetric
+  DESTINATION mofem/benchmarks/torsion_concrete_beam
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/torsion.jou
-  DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_symmetric
+  DESTINATION mofem/benchmarks/torsion_concrete_beam
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
-
-
-
-
 

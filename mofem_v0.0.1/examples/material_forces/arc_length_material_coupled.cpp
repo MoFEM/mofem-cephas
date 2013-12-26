@@ -184,10 +184,10 @@ int main(int argc, char *argv[]) {
 
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* da = %6.4e\n\n",da); CHKERRQ(ierr);
 
     for(int ii = 0;ii<100;ii++) {
        ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substep = %D\n\n",ii); CHKERRQ(ierr);
-       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* da = %6.4e\n\n",da); CHKERRQ(ierr);
        if(ii == 0) {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da); CHKERRQ(ierr);
       } else {

@@ -26,7 +26,7 @@ Example run
 * -o APPROX_ORDERS_SEPARATED_BY_COMMAS 
 * -r REFINMENT_LEVELS_SEPARATED_BY_COMMAS
 
-./convergence_study.sh -f T3_horiz_assym.cub -l -1 -g 2e-6 -o 1,2,3 -r 1,2
+./convergence_study.sh -f T3_horiz_assym.cub -l -1 -g 2e-6 -o 2 -r 1 -d 3pb_assym
 
 2) Calulation of crack propagation
 
@@ -34,24 +34,20 @@ Example run
 * Note that linear elements (1st) order have sheer loking, and usually give overstiff solution
 
 * out_spatial_1_1.h5m - this is 1-order 1-refinment_level
-./arc_length.sh -f $DIRNAME/out_spatial_1_1.h5m -a 1e-4 -n 60 -g 2e-6
+./arc_length.sh -f 3pb_assym/out_spatial_1_1.h5m -a 1e-4 -n 60 -g 2e-6
 
 * out_spatial_2_1.h5m - this is 2-order 1-refinment_level
-./arc_length.sh -f $DIRNAME//out_spatial_2_1.h5m -a 1e-4 -n 60 -g 2e-6
+./arc_length.sh -f 3pb_assym/out_spatial_2_1.h5m -a 1e-4 -n 60 -g 2e-6
 
 * out_spatial_1_2.h5m - this is 1-order 2-refinment_level
-./arc_length.sh -f $DIRNAME/out_spatial_1_2.h5m -a 1e-4 -n 60 -g 2e-6
-
-* Where DIRNAME for example is 
-DIRMAME=material_forces_T3_horiz_DATE-2013-12-16_TIME_16_32_31
-
+./arc_length.sh -f 3pb_assym/out_spatial_1_2.h5m -a 1e-4 -n 60 -g 2e-6
 
 3) Plotting
 
 * check if in your system you have installed awk and grep
 * copy and paste to line command
 echo "0 0" | tee load_path_CrackArea_vs_Lambda && awk '/load_path:/ {print $4,-$6}' $DIRNAME/log | tee -a load_path_CrackArea_vs_Lambda
-echo "0 0" | tee load_path_DispY_vs_Lambda && awk '/load_path_disp ent 383 dim 1/ {print -$13,-$15}' $DIRNAME/log | tee -a load_path_DispY_vs_Lambda
+echo "0 0" | tee load_path_DispY_vs_Lambda && awk '/load_path_disp ent 176 dim 1/ {print -$13,-$15}' $DIRNAME/log | tee -a load_path_DispY_vs_Lambda
 
 * Wher DIRNAME for example is
 DIRNAME=material_forces_T3_horiz_DATE-2013-12-16_TIME_16_32_31
