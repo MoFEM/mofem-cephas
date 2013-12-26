@@ -131,7 +131,6 @@ struct C_FEMethod_ForSnes: public FieldInterface::FEMethod {
 
 };
 
-
 struct C_SURFACE_FEMethod_ForSnes: public C_FEMethod_ForSnes {
 
   FieldInterface& mField;

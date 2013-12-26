@@ -52,6 +52,26 @@ PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndicies(
     NOT_USED(DirihletBC);
     PetscFunctionReturn(0);
   }
+PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
+    FieldInterface::FEMethod *fe_method_ptr,
+    vector<DofIdx>& RowGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(fe_method_ptr);
+    NOT_USED(RowGlobDofs);
+    NOT_USED(DirihletBC);
+    PetscFunctionReturn(0);
+}
+PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
+    FieldInterface::FEMethod *fe_method_ptr,
+    vector<DofIdx>& ColGlobDofs,vector<DofIdx>& DirihletBC) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
+    NOT_USED(fe_method_ptr);
+    NOT_USED(ColGlobDofs);
+    NOT_USED(DirihletBC);
+    PetscFunctionReturn(0);
+}
 
 PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesFace(
     FieldInterface::FEMethod *fe_method_ptr,

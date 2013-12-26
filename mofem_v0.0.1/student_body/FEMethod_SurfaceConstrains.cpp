@@ -287,21 +287,21 @@ g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihle
   }
 
 PetscErrorCode g_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
-    PetscFunctionBegin;
-    try {
-      C_SURFACE_FEMethod::iNtegrate(transpose,nonlinear);
-      //
-      g_VEC_ELEM = prod(C_MAT_ELEM,ent_dofs_data-coords);
-      f_VEC_ELEM = prod(CT_MAT_ELEM,ent_lambda_data);
-      //
-      //ierr = cOnstrain(&*coords.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
-      //g_VEC_ELEM = g_VEC_ELEM - prod(C_MAT_ELEM,coords);
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-    }
-    PetscFunctionReturn(0);
+  PetscFunctionBegin;
+  try {
+    C_SURFACE_FEMethod::iNtegrate(transpose,nonlinear);
+    //
+    g_VEC_ELEM = prod(C_MAT_ELEM,ent_dofs_data-coords);
+    f_VEC_ELEM = prod(CT_MAT_ELEM,ent_lambda_data);
+    //
+    //ierr = cOnstrain(&*coords.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
+    //g_VEC_ELEM = g_VEC_ELEM - prod(C_MAT_ELEM,coords);
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
 }
 PetscErrorCode g_SURFACE_FEMethod::aSsemble(bool transpose,bool nonlinear) {
   PetscFunctionBegin;

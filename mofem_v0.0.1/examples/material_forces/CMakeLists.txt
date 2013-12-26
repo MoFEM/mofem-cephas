@@ -28,9 +28,6 @@ target_link_libraries(material_problem mofem_complex_for_lazy mofem_student_body
 add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
 target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(refine_strech_edges refine_strech_edges.cpp)
-target_link_libraries(refine_strech_edges mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

@@ -104,10 +104,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode delete_front_projection_data(FieldInterface& mField);
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
-  PetscErrorCode save_edge_lenght_in_tags(FieldInterface& mField,BitRefLevel mask);
-  PetscErrorCode save_edge_strech_lenght_in_tags(FieldInterface& mField);
-  PetscErrorCode refine_streched_edges(FieldInterface& mField,double strech_treshold,bool crack_crack_surface_only);
-
+  map<EntityHandle,double> map_ent_g;
   PetscScalar ave_g,min_g,max_g;
   PetscScalar ave_j,min_j,max_j;
   PetscErrorCode griffith_g(FieldInterface& mField,string problem);

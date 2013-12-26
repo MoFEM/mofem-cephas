@@ -194,10 +194,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       }
     }
     DirihletBC.clear();
-    if(dirihlet_bc_method_ptr!=NULL) {
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
-	this,disp_dofs_row_idx,disp_dofs_col_idx,DirihletBC); CHKERRQ(ierr);
-    }
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+      this,disp_dofs_row_idx,disp_dofs_col_idx,DirihletBC); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;

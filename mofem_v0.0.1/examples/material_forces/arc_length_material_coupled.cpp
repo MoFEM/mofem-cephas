@@ -267,7 +267,6 @@ int main(int argc, char *argv[]) {
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   }
-  ierr = conf_prob.save_edge_strech_lenght_in_tags(mField); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_arc_length.h5m"); CHKERR_PETSC(rval);
