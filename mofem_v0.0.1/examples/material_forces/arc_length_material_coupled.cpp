@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
 
-    for(int ii = 0;ii<1;ii++) {
+    for(int ii = 0;ii<100;ii++) {
        ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substep = %D\n\n",ii); CHKERRQ(ierr);
        ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* da = %6.4e\n\n",da); CHKERRQ(ierr);
        if(ii == 0) {
@@ -193,6 +193,9 @@ int main(int argc, char *argv[]) {
       } else {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,0); CHKERRQ(ierr);
       }
+      int its;
+      ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
+      if(its == 0) break;
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
