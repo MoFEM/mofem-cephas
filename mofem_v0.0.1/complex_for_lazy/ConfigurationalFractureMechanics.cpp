@@ -1618,9 +1618,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   SnesCtx::loops_to_do_type& loops_to_do_Mat = arc_snes_ctx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&MySurfaceConstrainsBodySurface));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&MySurfaceConstrainsCrackSurface));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&MyMaterialFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&MyTangentFrontContrain));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&MySpatialFE));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&MyMaterialFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyMeshSmoother));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("dCT_CRACKFRONT_AREA_ELEM",&MydCTgc));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_elem));

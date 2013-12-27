@@ -90,7 +90,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     *
     * \param is_that_C_otherwise_dC
     */
-  PetscErrorCode getDataFor_C_and_dC(bool is_that_C_otherwise_dC,bool trans) {
+  PetscErrorCode getData(bool is_that_C_otherwise_dC,bool trans) {
     PetscFunctionBegin;
     try {
     EntityHandle face = fe_ptr->get_ent();
@@ -290,9 +290,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       }
       if((T != NULL)||(iT != NULL)) {
  	double SpinA[9];
-	ierr = Spin(SpinA,A); CHKERRQ(ierr);
+	ierr = Spin(SpinA,A); CHKERRQ(ierr); // unit [1/m]
 	double iSpinA[9];
-	ierr = Spin(iSpinA,iA); CHKERRQ(ierr);
+	ierr = Spin(iSpinA,iA); CHKERRQ(ierr); // unit [1/m]
 	__CLPK_doublecomplex xSpinA[9];
 	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr);
 	__CLPK_doublecomplex xT[3];
@@ -340,7 +340,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     try {
-      ierr = getDataFor_C_and_dC(true,false); CHKERRQ(ierr);
+      ierr = getData(true,false); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -445,7 +445,7 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
     PetscFunctionBegin;
     EntityHandle face = fe_ptr->get_ent();
     try {
-	ierr = getDataFor_C_and_dC(false,false); CHKERRQ(ierr);
+	ierr = getData(false,false); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
@@ -662,8 +662,12 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     EntityHandle face = fe_ptr->get_ent();
+    Range tet;
+    rval = mField.get_moab().get_adjacencies(&face,1,3,false,tet); CHKERR_PETSC(rval);
+
+
     try {
-      ierr = getDataFor_C_and_dC(true,true); CHKERRQ(ierr);
+      ierr = getData(true,true); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -736,7 +740,6 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	  }
 	}
       }
-      //cerr << "ELEM_CONSTRAIN " << ELEM_CONSTRAIN << endl;
       switch(snes_ctx) {
 	case ctx_SNESSetFunction: { 
 	  ublas::vector<double,ublas::bounded_array<double,3> > g(3);
@@ -764,9 +767,6 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	  }*/
 	} break;
 	case ctx_SNESSetJacobian: {
-	  /*cerr << "lambda: " << lambda << endl;
-	  cerr << "lambda_dofs_row_indx: " << lambda_dofs_row_indx << endl;
-	  cerr << "lambda_dofs_col_indx: " << lambda_dofs_col_indx << endl;*/
 	  for(int nn = 0;nn<3;nn++) {
 	    int lambda_dof_idx = lambda_dofs_row_indx[nn];
 	    ierr = MatSetValues(*snes_B,1,&lambda_dof_idx,3,&disp_dofs_col_idx[0][3*nn],&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
