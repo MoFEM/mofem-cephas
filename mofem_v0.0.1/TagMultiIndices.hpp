@@ -73,11 +73,11 @@ namespace MoFEM {
   struct Composite_EntityType_And_ParentEntityType_mi_tag {};
   struct Composite_EntityHandle_And_ParentEntityType_mi_tag {};
   struct Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
-  struct Composite_Name_And_Ent_And_EndDofIdx {};
-  struct Composite_Name_And_Ent {};
-  struct Composite_Name_And_Type {};
-  struct Composite_Name_Type_And_Side_Number {};
-  struct Composite_Name_Ent_And_Part {};
+  struct Composite_Name_And_Ent_And_EndDofIdx_mi_tag {};
+  struct Composite_Name_And_Ent_mi_tag {};
+  struct Composite_Name_And_Type_mi_tag {};
+  struct Composite_Name_Type_And_Side_Number_mi_tag {};
+  struct Composite_Name_Ent_And_Part_mi_tag {};
 
 }
 

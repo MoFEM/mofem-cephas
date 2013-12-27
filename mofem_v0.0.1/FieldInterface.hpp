@@ -1062,19 +1062,19 @@ struct FieldInterface {
     } 
       ///loop over all dofs which are on a particular FE row, field and given element entity (handle from moab)
     #define _IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
-    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); IT++
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
       ///loop over all dofs which are on a particular FE column, field and given element entity (handle from moab)
     #define _IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
-    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); IT++
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
       ///loop over all dofs which are on a particular FE data, field and given element entity (handle from moab)
     #define _IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
-    FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator \
-      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->data_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); \
-      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type>(FE->data_multiIndex->get<Composite_Name_And_Ent>(),NAME,ENT); IT++
+    FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
+      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
 
   };
 
@@ -1237,7 +1237,7 @@ struct FieldInterface {
     *
     * \param field_name  
     */
-  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent) = 0;
+  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent) = 0;
 
   /** 
     * \brief get begin iterator of filed dofs of given name and ent (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
@@ -1248,11 +1248,11 @@ struct FieldInterface {
     *
     * \param field_name  
     */
-  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent) = 0;
+  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent) = 0;
 
   ///loop over all dofs from a moFEM field and particular field
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
-    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
+    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
       IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
 
   /** 
@@ -1264,7 +1264,7 @@ struct FieldInterface {
     *
     * \param field_name  
     */
-  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type) = 0;
+  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type) = 0;
 
   /** 
     * \brief get begin iterator of filed dofs of given name end ent type(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
@@ -1275,11 +1275,11 @@ struct FieldInterface {
     *
     * \param field_name  
     */
-  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType type) = 0;
+  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType type) = 0;
 
   ///loop over all dofs from a moFEM field and particular field
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
-    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
+    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
       IT != MFIELD.get_dofs_by_name_and_type_end(NAME,TYPE); IT++
 
   /** \brief Get finite elements multi index

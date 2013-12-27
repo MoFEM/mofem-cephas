@@ -335,7 +335,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<MoFEMFiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
     ordered_non_unique<
-      tag<Composite_Name_And_Ent>,       
+      tag<Composite_Name_And_Ent_mi_tag>,       
       composite_key<
 	NumeredMoFEMFiniteElement,
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
