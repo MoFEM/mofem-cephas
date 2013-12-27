@@ -672,9 +672,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
     try {
       //tag create
       Tag th_interface_side;
-      const int def_side[] = {0};
-      rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
-	th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERR_PETSC(rval);
+      rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
       int side;
       rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
       ublas::vector<double,ublas::bounded_array<double,9> > ELEM_CONSTRAIN1(9);
