@@ -43,6 +43,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
   FieldInterface& mField;
+  BaseDirihletBC *dirihlet_bc_method_ptr;
 
   Interface& moab;
 
@@ -50,8 +51,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   string lambda_field_name;
   int verbose;
 
-  C_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) { 
+  C_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
+    mField(_mField),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) { 
     //calulate face shape functions direvatives
     diffNTRI.resize(3,2);
     ShapeDiffMBTRI(&*diffNTRI.data().begin());
@@ -66,8 +67,10 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     //lambda_dofs_row_ents.resize(3);
     lambda_dofs_col_indx.resize(3);
     //dofs indices for rows and columns
-    disp_dofs_row_idx.resize(9);
-    disp_dofs_col_idx.resize(9);
+    disp_dofs_row_idx.resize(1+6+4+1);
+    disp_dofs_col_idx.resize(1+6+4+1);
+    disp_dofs_row_idx[0].resize(9);
+    disp_dofs_col_idx[0].resize(9);
     //face node coordinates
     coords.resize(9);
   }
@@ -75,9 +78,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   //elem data
   ublas::matrix<double> diffNTRI;
   const double *G_TRI_W;
-  ublas::vector<DofIdx> disp_dofs_col_idx,disp_dofs_row_idx;
+  vector<DofIdx> DirihletBC;
+  vector<vector<DofIdx> > disp_dofs_col_idx,disp_dofs_row_idx;
   ublas::vector<DofIdx> lambda_dofs_row_indx,lambda_dofs_col_indx;
-  //ublas::vector<EntityHandle> lambda_dofs_row_ents;
   ublas::vector<double,ublas::bounded_array<double,9> > coords;
   ublas::vector<double,ublas::bounded_array<double,9> > dofs_X;
   ublas::vector<double,ublas::bounded_array<double,3> > lambda;
@@ -87,7 +90,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     *
     * \param is_that_C_otherwise_dC
     */
-  PetscErrorCode getDataFor_C_and_dC(bool is_that_C_otherwise_dC,bool trans) {
+  PetscErrorCode getData(bool is_that_C_otherwise_dC,bool trans) {
     PetscFunctionBegin;
     try {
     EntityHandle face = fe_ptr->get_ent();
@@ -95,30 +98,27 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       fill(lambda_dofs_row_indx.begin(),lambda_dofs_row_indx.end(),-1);
       fill(lambda_dofs_col_indx.begin(),lambda_dofs_col_indx.end(),-1);
       //fill(lambda_dofs_row_ents.begin(),lambda_dofs_row_ents.end(),no_handle);
-      fill(disp_dofs_row_idx.begin(),disp_dofs_row_idx.end(),-1);
-      fill(disp_dofs_col_idx.begin(),disp_dofs_col_idx.end(),-1);
+      fill(disp_dofs_row_idx[0].begin(),disp_dofs_row_idx[0].end(),-1);
+      fill(disp_dofs_col_idx[0].begin(),disp_dofs_col_idx[0].end(),-1);
       fill(lambda.begin(),lambda.end(),0);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-
     const EntityHandle* conn_face; 
     int num_nodes; 
     rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
     if(num_nodes != 3) SETERRQ(PETSC_COMM_SELF,1,"face should have three nodes");
     ierr = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERRQ(ierr);
-
     for(int nn = 0;nn<num_nodes;nn++) {
       if(is_that_C_otherwise_dC) {
-
 	try { 
 	  // it is C
 	  // get rows which are Lagrabge multipliers
-	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-	  dit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	  dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
 	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	    if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -131,28 +131,25 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  ss << "thorw in method: " << ex.what() << endl;
 	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 	}
-
       }
- 
       if((!is_that_C_otherwise_dC)||(trans)) {
-
 	try {
 	  // it is dC
 	  // get rows which are material nodal positions
-	  FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-	  dit = data_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = data_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	  dit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
 	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	    lambda[nn] = dit->get_FieldData();
-	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator diit,hi_diit;
-	    diit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	    hi_diit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
+	    diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    hi_diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	    if(distance(diit,hi_diit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	    for(;diit!=hi_diit;diit++) {
 	      if(diit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	      assert(nn*3+diit->get_dof_rank()<9);
-	      disp_dofs_row_idx[nn*3+diit->get_dof_rank()] = diit->get_petsc_gloabl_dof_idx();
+	      disp_dofs_row_idx[0][nn*3+diit->get_dof_rank()] = diit->get_petsc_gloabl_dof_idx();
 	    }
 	  }
 	} catch (const std::exception& ex) {
@@ -162,31 +159,28 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	}
 
       }
-
       try {
 	//get columns which are material nodal positions
-	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-	dit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	hi_dit = col_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	for(;dit!=hi_dit;dit++) {
 	  if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	  dofs_X[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	  assert(nn*3+dit->get_dof_rank()<9);
-	  disp_dofs_col_idx[nn*3+dit->get_dof_rank()] = dit->get_petsc_gloabl_dof_idx();
+	  disp_dofs_col_idx[0][nn*3+dit->get_dof_rank()] = dit->get_petsc_gloabl_dof_idx();
 	}
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-
       if(trans) {
-
 	try {
-	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-	  dit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = col_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	  dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
 	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	    if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -197,10 +191,11 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  ss << "thorw in method: " << ex.what() << endl;
 	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 	}
-
       }
     }
-
+    DirihletBC.clear();
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+      this,disp_dofs_row_idx,disp_dofs_col_idx,DirihletBC); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -295,9 +290,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       }
       if((T != NULL)||(iT != NULL)) {
  	double SpinA[9];
-	ierr = Spin(SpinA,A); CHKERRQ(ierr);
+	ierr = Spin(SpinA,A); CHKERRQ(ierr); // unit [1/m]
 	double iSpinA[9];
-	ierr = Spin(iSpinA,iA); CHKERRQ(ierr);
+	ierr = Spin(iSpinA,iA); CHKERRQ(ierr); // unit [1/m]
 	__CLPK_doublecomplex xSpinA[9];
 	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr);
 	__CLPK_doublecomplex xT[3];
@@ -345,39 +340,39 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     try {
-	ierr = getDataFor_C_and_dC(true,false); CHKERRQ(ierr);
+      ierr = getData(true,false); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
-	  ostringstream ss;
-	  ss << "thorw in method: " << ex.what() << endl;
-	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
     try {
-	ublas::vector<double,ublas::bounded_array<double,9> > ELEM_CONSTRAIN(9);
-	ierr = calcDirevatives(
-	  &*diffNTRI.data().begin(),&*dofs_X.data().begin(),NULL,
-	  &*ELEM_CONSTRAIN.data().begin(),NULL,NULL,NULL); CHKERRQ(ierr);
-	for(int nn = 0;nn<3;nn++) {
-	  if(lambda_dofs_row_indx[nn]==-1) continue;
-	  for(int NN = 0;NN<3;NN++) {
-	    if(NN!=nn) continue;
-	    if(Q == PETSC_NULL) {
-	      ierr = MatSetValues(C,
-		1,&(lambda_dofs_row_indx.data()[nn]),
-		3,&(disp_dofs_col_idx.data()[3*NN]),
-		&ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
-	    }
-	    if(Q != PETSC_NULL) {
-	      if(mapV.find(lambda_dofs_row_indx[nn])==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	      ierr = VecSetValues(mapV[lambda_dofs_row_indx[nn]],
-		3,&(disp_dofs_col_idx.data()[3*NN]),
-		&ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
-	    }
-	  }	
-	}
+      ublas::vector<double,ublas::bounded_array<double,9> > ELEM_CONSTRAIN(9);
+      ierr = calcDirevatives(
+	&*diffNTRI.data().begin(),&*dofs_X.data().begin(),NULL,
+	&*ELEM_CONSTRAIN.data().begin(),NULL,NULL,NULL); CHKERRQ(ierr);
+      for(int nn = 0;nn<3;nn++) {
+	if(lambda_dofs_row_indx[nn]==-1) continue;
+	for(int NN = 0;NN<3;NN++) {
+	  if(NN!=nn) continue;
+	  if(Q == PETSC_NULL) {
+	  ierr = MatSetValues(C,
+	    1,&(lambda_dofs_row_indx.data()[nn]),
+	    3,&(disp_dofs_col_idx[0].data()[3*NN]),
+	    &ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  if(Q != PETSC_NULL) {
+	    if(mapV.find(lambda_dofs_row_indx[nn])==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    ierr = VecSetValues(mapV[lambda_dofs_row_indx[nn]],
+	      3,&(disp_dofs_col_idx[0].data()[3*NN]),
+	      &ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}	
+      }
     } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     } 
     PetscFunctionReturn(0);
   }
@@ -432,8 +427,8 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
   double gc;  
   const double eps;
 
-  dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _dCT,string _lambda_field_name,int _verbose = 0):
-    C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),eps(1e-10) {}
+  dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _dCT,string _lambda_field_name,int _verbose = 0):
+    C_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),eps(1e-10) {}
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -450,44 +445,42 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
     PetscFunctionBegin;
     EntityHandle face = fe_ptr->get_ent();
     try {
-	ierr = getDataFor_C_and_dC(false,false); CHKERRQ(ierr);
+	ierr = getData(false,false); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
 	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
     try {
-	double center[3]; 
-	const EntityHandle* conn_face; 
-	int num_nodes; 
-	rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-	rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
-	tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
-	cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
-	double r = cblas_dnrm2(3,center,1);
-	for(int NN = 0;NN<3;NN++) {
-	  for(int dd = 0;dd<3;dd++) {
-	    ublas::vector<double,ublas::bounded_array<double,9> > idofs_X(9,0);
-	    idofs_X[NN*3+dd] = r*eps;
-	    ublas::vector<double,ublas::bounded_array<double,9> > dELEM_CONSTRAIN(9);
-	    ierr = calcDirevatives(&*diffNTRI.data().begin(),
-	      &*dofs_X.data().begin(),
-	      &*idofs_X.data().begin(),
-	      NULL,&*dELEM_CONSTRAIN.data().begin(),NULL,NULL); CHKERRQ(ierr);
-	    dELEM_CONSTRAIN /= r*eps;
-	    /*cerr << idofs_X << endl;
-	    cerr << dELEM_CONSTRAIN << endl;
-	    cerr << lambda_dofs_row_indx << endl;
-	    cerr << disp_dofs_row_idx << endl;
-	    cerr << disp_dofs_col_idx << endl;*/
-	    dELEM_CONSTRAIN *= gc;
-	    //cerr << dELEM_CONSTRAIN << endl;
-	    ierr = MatSetValues(dCT,
-	      9,&(disp_dofs_row_idx.data()[0]),
-	      1,&(disp_dofs_col_idx.data()[3*NN+dd]),
-		&dELEM_CONSTRAIN.data()[0],ADD_VALUES); CHKERRQ(ierr);
-	  }
+      double center[3]; 
+      const EntityHandle* conn_face; 
+      int num_nodes; 
+      rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+      rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+      tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
+      cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
+      double r = cblas_dnrm2(3,center,1);
+      for(int NN = 0;NN<3;NN++) {
+	for(int dd = 0;dd<3;dd++) {
+	  ublas::vector<double,ublas::bounded_array<double,9> > idofs_X(9,0);
+	  idofs_X[NN*3+dd] = r*eps;
+	  ublas::vector<double,ublas::bounded_array<double,9> > dELEM_CONSTRAIN(9);
+	  ierr = calcDirevatives(&*diffNTRI.data().begin(),
+	    &*dofs_X.data().begin(),
+	    &*idofs_X.data().begin(),
+	    NULL,&*dELEM_CONSTRAIN.data().begin(),NULL,NULL); CHKERRQ(ierr);
+	  dELEM_CONSTRAIN /= r*eps;
+	  /*cerr << idofs_X << endl;
+	  cerr << dELEM_CONSTRAIN << endl;
+	  cerr << lambda_dofs_row_indx << endl;*/
+	  dELEM_CONSTRAIN *= gc;
+	  //cerr << dELEM_CONSTRAIN << endl;
+	  ierr = MatSetValues(dCT,
+	    9,&(disp_dofs_row_idx[0].data()[0]),
+	    1,&(disp_dofs_col_idx[0].data()[3*NN+dd]),
+	    &dELEM_CONSTRAIN.data()[0],ADD_VALUES); CHKERRQ(ierr);
 	}
+      }
     } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << endl;
@@ -506,14 +499,18 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
 struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
   FieldInterface& mField;
+  BaseDirihletBC *dirihlet_bc_method_ptr;
+  matPROJ_ctx &proj_ctx;
   string problem;
   string lambda_field_name;
   double gc;
   int verbose;
 
-  matPROJ_ctx &proj_ctx;
-  Snes_CTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _problem,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose),proj_ctx(_proj_all_ctx) {}
+  Snes_CTgc_CONSTANT_AREA_FEMethod(
+    FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,matPROJ_ctx &_proj_all_ctx,
+    string _problem,string _lambda_field_name,int _verbose = 0):
+    mField(_mField),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),proj_ctx(_proj_all_ctx),
+    problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose) {}
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -547,7 +544,7 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     ierr = VecDestroy(&D); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
 
-    C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,proj_ctx.C,PETSC_NULL,lambda_field_name);
+    C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,dirihlet_bc_method_ptr,proj_ctx.C,PETSC_NULL,lambda_field_name);
 
     ierr = MatSetOption(proj_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
     ierr = MatSetOption(proj_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -598,35 +595,31 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
 struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
-  Mat K;
   matPROJ_ctx *proj_ctx;
+  Mat K;
 
-  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
-    dCTgc_CONSTANT_AREA_FEMethod(_mField,_proj_all_ctx.K,_lambda_field_name,_verbose),K(_proj_all_ctx.K),proj_ctx(&_proj_all_ctx) { }
+  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
+    matPROJ_ctx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
+    dCTgc_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,_proj_all_ctx.K,_lambda_field_name,_verbose),
+    proj_ctx(&_proj_all_ctx),K(_proj_all_ctx.K) {}
 
-  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _K,string _lambda_field_name,int _verbose = 0):
-    dCTgc_CONSTANT_AREA_FEMethod(_mField,_K,_lambda_field_name,_verbose),K(_K),proj_ctx(NULL) { }
+  Snes_dCTgc_CONSTANT_AREA_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _K,string _lambda_field_name,int _verbose = 0):
+    dCTgc_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,_K,_lambda_field_name,_verbose),proj_ctx(NULL),K(_K) {}
 
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-
     ierr = dCTgc_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
-
     ierr = MatAssemblyBegin(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-
     ierr = dCTgc_CONSTANT_AREA_FEMethod::postProcess(); CHKERRQ(ierr);
-
     ierr = MatAssemblyBegin(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-   
     PetscFunctionReturn(0);
   }
 
@@ -635,8 +628,8 @@ struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 
   const double eps;
-  TangentFrontConstrain_FEMethod(FieldInterface& _mField,string _lambda_field_name,int _verbose = 0):
-    C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),eps(1e-10) {}
+  TangentFrontConstrain_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,string _lambda_field_name,int _verbose = 0):
+    C_CONSTANT_AREA_FEMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),eps(1e-10) {}
 
   Tag th_front_tangent;
   PetscErrorCode preProcess() {
@@ -657,8 +650,8 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	}*/
       } break;
       case ctx_SNESSetJacobian: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       } break;
       default: {
       } break;
@@ -669,8 +662,12 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     EntityHandle face = fe_ptr->get_ent();
+    Range tet;
+    rval = mField.get_moab().get_adjacencies(&face,1,3,false,tet); CHKERR_PETSC(rval);
+
+
     try {
-      ierr = getDataFor_C_and_dC(true,true); CHKERRQ(ierr);
+      ierr = getData(true,true); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -679,9 +676,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
     try {
       //tag create
       Tag th_interface_side;
-      const int def_side[] = {0};
-      rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
-	th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERR_PETSC(rval);
+      rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
       int side;
       rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
       ublas::vector<double,ublas::bounded_array<double,9> > ELEM_CONSTRAIN1(9);
@@ -725,7 +720,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	    for(int nnn = 0;nnn<3;nnn++) {
 	      if(lambda_dofs_row_indx[nnn] == -1) continue;
 	      ierr = MatSetValues(*snes_B,
-		1,&lambda_dofs_row_indx[nnn],1,&disp_dofs_col_idx[3*nn+dd],
+		1,&lambda_dofs_row_indx[nnn],1,&disp_dofs_col_idx[0][3*nn+dd],
 		&g,ADD_VALUES); CHKERRQ(ierr);
 	    }
 	    //dCT_lambda
@@ -737,15 +732,14 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	    for(int nnn = 0;nnn<3;nnn++) {
 	      if(lambda_dofs_row_indx[nnn] == -1) continue;
 	      ierr = MatSetValues(*snes_B,
-		3,&disp_dofs_row_idx[3*nnn],
-		1,&disp_dofs_col_idx[3*nn+dd],
+		3,&disp_dofs_row_idx[0][3*nnn],
+		1,&disp_dofs_col_idx[0][3*nn+dd],
 		&dELEM_CONSTRAIN1[3*nnn],ADD_VALUES); CHKERRQ(ierr);
 	    }
 	    // ---> calulate tangent end here
 	  }
 	}
       }
-      //cerr << "ELEM_CONSTRAIN " << ELEM_CONSTRAIN << endl;
       switch(snes_ctx) {
 	case ctx_SNESSetFunction: { 
 	  ublas::vector<double,ublas::bounded_array<double,3> > g(3);
@@ -762,7 +756,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	    }
 	  }
 	  //cerr << "f : " << f << endl;
-	  ierr = VecSetValues(snes_f,9,&*disp_dofs_row_idx.data().begin(),&*f.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = VecSetValues(snes_f,9,&disp_dofs_row_idx[0][0],&*f.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 	  /*//TAG - only for one proc analysis
 	  for(int nn = 0;nn<3;nn++) { 
 	    EntityHandle ent = lambda_dofs_row_ents[nn];
@@ -773,16 +767,11 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	  }*/
 	} break;
 	case ctx_SNESSetJacobian: {
-	  /*cerr << "lambda: " << lambda << endl;
-	  cerr << "lambda_dofs_row_indx: " << lambda_dofs_row_indx << endl;
-	  cerr << "lambda_dofs_col_indx: " << lambda_dofs_col_indx << endl;
-	  cerr << "disp_dofs_row_idx: " << disp_dofs_row_idx << endl;
-	  cerr << "disp_dofs_col_idx: " << disp_dofs_col_idx << endl;*/
 	  for(int nn = 0;nn<3;nn++) {
 	    int lambda_dof_idx = lambda_dofs_row_indx[nn];
-	    ierr = MatSetValues(*snes_B,1,&lambda_dof_idx,3,&disp_dofs_col_idx[3*nn],&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(*snes_B,1,&lambda_dof_idx,3,&disp_dofs_col_idx[0][3*nn],&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
 	    lambda_dof_idx = lambda_dofs_col_indx[nn];
-	    ierr = MatSetValues(*snes_B,3,&disp_dofs_row_idx[3*nn],1,&lambda_dof_idx,&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(*snes_B,3,&disp_dofs_row_idx[0][3*nn],1,&lambda_dof_idx,&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	} break;
 	default:
@@ -804,8 +793,8 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       } break;
       case ctx_SNESSetJacobian: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       } break;
       default: {
       } break;

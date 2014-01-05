@@ -160,8 +160,6 @@ int main(int argc, char *argv[]) {
     bit_level0 = bit_level_interface;
   } 
 
-  ierr = conf_prob.save_edge_lenght_in_tags(mField,BitRefLevel().set()); CHKERRQ(ierr);
-
   double *t_val;
   Tag th_t_val;
   double def_t_val = 0;

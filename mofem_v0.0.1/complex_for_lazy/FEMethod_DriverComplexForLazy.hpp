@@ -68,8 +68,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       rval = mField.get_moab().tag_set_data(th_t_val,&root_meshset,1,&def_t_val); CHKERR_THROW(rval);
       rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_THROW(rval);
     }
-
-    
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -102,9 +100,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   PetscErrorCode addNodalForces(Vec f,double lambda) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       if(!NeumannSideSet.empty()) {
@@ -115,15 +111,12 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	if(!NeumannEdgeSideSet.empty()) {
 	  continue;
 	} else {
-
 	  force_cubit_bc_data mydata;
 	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-
 	  double t_glob[3]; 
 	  t_glob[0] = lambda*mydata.data.value3*mydata.data.value1;
 	  t_glob[1] = lambda*mydata.data.value4*mydata.data.value1;
 	  t_glob[2] = lambda*mydata.data.value5*mydata.data.value1;
-
 	  Range NeumannNodeSideSet;
 	  ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),0,NeumannNodeSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 	  if(!NeumannNodeSideSet.empty()) {
@@ -136,7 +129,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	}
       }
     }
-    
     PetscFunctionReturn(0);
   }
 
@@ -322,11 +314,9 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   PetscErrorCode CaluclateSpatialFext(Vec f,double *t_loc,double *t_glob,Range& NeumannSideSet) {
     PetscFunctionBegin;
-
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetJacobian:
@@ -402,24 +392,28 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 		FaceEdgeIndices_data[eee].size(),&(FaceEdgeIndices_data[eee][0]),
 		&*(KExt_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	    }
-	    ierr = MatSetValues(B,
-	      FaceIndices.size(),&(FaceIndices[0]),
-	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
-	      &*(KExt_faceedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValues(B,
-	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
-	      FaceIndices.size(),&(FaceIndices[0]),
-	      &*(KExt_edgeface_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    if(FaceIndices.size()>0) {
+	      ierr = MatSetValues(B,
+		FaceIndices.size(),&(FaceIndices[0]),
+		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+		&*(KExt_faceedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	      ierr = MatSetValues(B,
+		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+		FaceIndices.size(),&(FaceIndices[0]),
+		&*(KExt_edgeface_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    }
 	  }
-	  ierr = MatSetValues(B,
-	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
-	    &*(KExt_hface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(B,
-	    FaceIndices.size(),&(FaceIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
-	    &*(KExt_faceh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(B,
-	    FaceIndices.size(),&(FaceIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
-	    &*(KExt_faceface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  if(FaceIndices.size()>0) {
+	    ierr = MatSetValues(B,
+	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
+	      &*(KExt_hface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(B,
+	      FaceIndices.size(),&(FaceIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	      &*(KExt_faceh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(B,
+	      FaceIndices.size(),&(FaceIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
+	      &*(KExt_faceface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
 	}
 	break;
       default:
@@ -431,7 +425,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   }
 
   //FEMethod_DriverComplexForLazy_Spatial
-  PetscErrorCode CalulateSpatialKFext(Mat K,Vec f,double lambda) {
+  PetscErrorCode CalculateSpatialKFext(Mat K,Vec f,double lambda) {
     PetscFunctionBegin;
     if(f!=PETSC_NULL) {
       if(nodal_forces_not_added) {
@@ -496,12 +490,12 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
-	ierr = CalulateSpatialKFext(PETSC_NULL,snes_f,*(this->t_val)); CHKERRQ(ierr);
+	ierr = CalculateSpatialKFext(PETSC_NULL,snes_f,*(this->t_val)); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
 	ierr = CalculateSpatialTangent(*snes_B); CHKERRQ(ierr);
-	ierr = CalulateSpatialKFext(*snes_B,PETSC_NULL,*(this->t_val)); CHKERRQ(ierr);
+	ierr = CalculateSpatialKFext(*snes_B,PETSC_NULL,*(this->t_val)); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -665,7 +659,6 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(this,DirihletBC,FaceNodeIndices_Material,dummy1,dummy2); CHKERRQ(ierr);
 	  vector<DofIdx> frontFaceNodeIndices_Material = FaceNodeIndices_Material;
 	  ierr = setCrackFrontIndices(this,material_field_name,frontFaceNodeIndices_Material,true); CHKERRQ(ierr);
-	  //if(c == frontFaceNodeIndices_Material.size()) continue;
 	  if(t_glob != NULL) {
 	    double _t_loc[9];
 	    ierr = ReBaseToFaceLoocalCoordSystem(siit->ent,t_glob,_t_loc); CHKERRQ(ierr);
@@ -1010,9 +1003,6 @@ struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComp
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
       }
       break;
