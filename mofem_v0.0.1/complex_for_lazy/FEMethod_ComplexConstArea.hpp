@@ -90,7 +90,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     *
     * \param is_that_C_otherwise_dC
     */
-  PetscErrorCode getDataFor_C_and_dC(bool is_that_C_otherwise_dC,bool trans) {
+  PetscErrorCode getData(bool is_that_C_otherwise_dC,bool trans) {
     PetscFunctionBegin;
     try {
     EntityHandle face = fe_ptr->get_ent();
@@ -116,9 +116,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	try { 
 	  // it is C
 	  // get rows which are Lagrabge multipliers
-	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-	  dit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	  dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
 	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	    if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -136,15 +136,15 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	try {
 	  // it is dC
 	  // get rows which are material nodal positions
-	  FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-	  dit = data_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = data_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	  dit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
 	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	    lambda[nn] = dit->get_FieldData();
-	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator diit,hi_diit;
-	    diit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	    hi_diit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
+	    diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    hi_diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	    if(distance(diit,hi_diit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	    for(;diit!=hi_diit;diit++) {
 	      if(diit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -161,9 +161,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       }
       try {
 	//get columns which are material nodal positions
-	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-	dit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	hi_dit = col_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	for(;dit!=hi_dit;dit++) {
 	  if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -178,9 +178,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       }
       if(trans) {
 	try {
-	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-	  dit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = col_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	  dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
 	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	    if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -290,9 +290,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       }
       if((T != NULL)||(iT != NULL)) {
  	double SpinA[9];
-	ierr = Spin(SpinA,A); CHKERRQ(ierr);
+	ierr = Spin(SpinA,A); CHKERRQ(ierr); // unit [1/m]
 	double iSpinA[9];
-	ierr = Spin(iSpinA,iA); CHKERRQ(ierr);
+	ierr = Spin(iSpinA,iA); CHKERRQ(ierr); // unit [1/m]
 	__CLPK_doublecomplex xSpinA[9];
 	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr);
 	__CLPK_doublecomplex xT[3];
@@ -340,7 +340,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     try {
-      ierr = getDataFor_C_and_dC(true,false); CHKERRQ(ierr);
+      ierr = getData(true,false); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -445,7 +445,7 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
     PetscFunctionBegin;
     EntityHandle face = fe_ptr->get_ent();
     try {
-	ierr = getDataFor_C_and_dC(false,false); CHKERRQ(ierr);
+	ierr = getData(false,false); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
@@ -662,8 +662,12 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     EntityHandle face = fe_ptr->get_ent();
+    Range tet;
+    rval = mField.get_moab().get_adjacencies(&face,1,3,false,tet); CHKERR_PETSC(rval);
+
+
     try {
-      ierr = getDataFor_C_and_dC(true,true); CHKERRQ(ierr);
+      ierr = getData(true,true); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -672,9 +676,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
     try {
       //tag create
       Tag th_interface_side;
-      const int def_side[] = {0};
-      rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
-	th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERR_PETSC(rval);
+      rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
       int side;
       rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
       ublas::vector<double,ublas::bounded_array<double,9> > ELEM_CONSTRAIN1(9);
@@ -738,7 +740,6 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	  }
 	}
       }
-      //cerr << "ELEM_CONSTRAIN " << ELEM_CONSTRAIN << endl;
       switch(snes_ctx) {
 	case ctx_SNESSetFunction: { 
 	  ublas::vector<double,ublas::bounded_array<double,3> > g(3);
@@ -766,9 +767,6 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	  }*/
 	} break;
 	case ctx_SNESSetJacobian: {
-	  /*cerr << "lambda: " << lambda << endl;
-	  cerr << "lambda_dofs_row_indx: " << lambda_dofs_row_indx << endl;
-	  cerr << "lambda_dofs_col_indx: " << lambda_dofs_col_indx << endl;*/
 	  for(int nn = 0;nn<3;nn++) {
 	    int lambda_dof_idx = lambda_dofs_row_indx[nn];
 	    ierr = MatSetValues(*snes_B,1,&lambda_dof_idx,3,&disp_dofs_col_idx[0][3*nn],&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
