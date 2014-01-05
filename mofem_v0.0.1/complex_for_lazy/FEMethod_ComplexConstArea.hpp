@@ -650,8 +650,8 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	}*/
       } break;
       case ctx_SNESSetJacobian: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       } break;
       default: {
       } break;
@@ -795,8 +795,8 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       } break;
       case ctx_SNESSetJacobian: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       } break;
       default: {
       } break;

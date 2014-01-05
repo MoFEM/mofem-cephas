@@ -58,7 +58,6 @@ struct BaseDirihletBC {
     FieldInterface::FEMethod *fe_method_ptr,
     vector<DofIdx>& ColGlobDofs,vector<DofIdx>& DirihletBC);
 
-
   virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
     FieldInterface::FEMethod *fe_method_ptr,
     vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs);

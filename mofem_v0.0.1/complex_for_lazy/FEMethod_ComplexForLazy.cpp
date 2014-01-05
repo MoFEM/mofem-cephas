@@ -638,6 +638,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
   typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dofs_iterator;
   try {
   FaceNodeIndices.resize(9);
+  fill(FaceNodeIndices.begin(),FaceNodeIndices.end(),-1);
   FaceNodeData.resize(9);
   const EntityHandle* conn_face; 
   int num_nodes; 
@@ -651,9 +652,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     col_niit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
     hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
     for(;niit!=hi_niit;niit++,col_niit++,dd++) {
-      assert(col_niit->get_petsc_gloabl_dof_idx() == niit->get_petsc_gloabl_dof_idx());
-      FaceNodeIndices[nn*niit->get_max_rank()+niit->get_EntDofIdx()] = niit->get_petsc_gloabl_dof_idx();
-      FaceNodeData[nn*niit->get_max_rank()+niit->get_EntDofIdx()] = niit->get_FieldData();
+      if(col_niit->get_petsc_gloabl_dof_idx() != niit->get_petsc_gloabl_dof_idx()) {
+	SETERRQ(PETSC_COMM_SELF,1,"this implementation is not working for diffrent ordering of columns and rows"); 
+      }
+      FaceNodeIndices[nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_petsc_gloabl_dof_idx();
+      FaceNodeData[nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_FieldData();
     }
   }
   if(dd != 9) {
@@ -746,6 +749,12 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
     }
   }
   FExt_face.resize(FaceIndices.size());
+  /*const EntityHandle* conn_face;
+  ublas::vector<double> coords_face;
+  coords_face.resize(9);
+  int num_nodes;
+  rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);*/
   switch(type_of_forces) {
     case conservative:
       ierr = Fext_h_hierarchical(
@@ -753,6 +762,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
 	&g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
 	t,t_edge,t_face,//11
 	&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),//14
+	//&*coords_face.data().begin(),NULL,NULL,//14
 	NULL,NULL,NULL,//17
 	&*FExt.data().begin(),FExt_edge,&*FExt_face.data().begin(),//20
 	NULL,NULL,NULL,//23
@@ -798,7 +808,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
           &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
           t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
           &*KExt_hh.data().begin(),KExt_edgeh,&*KExt_faceh.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
-      //KExt_hh = trans( KExt_hh );
       //
       KExt_hedge_data.resize(3);
       KExt_edgeedge_data.resize(3,3);
@@ -851,6 +860,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
   typedef FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator data_dofs_iterator;
   try {
   FaceNodeIndices_Material.resize(9);
+  fill(FaceNodeIndices_Material.begin(),FaceNodeIndices_Material.end(),-1);
   FaceNodeData_Material.resize(9);
   const EntityHandle* conn_face; 
   int num_nodes; 

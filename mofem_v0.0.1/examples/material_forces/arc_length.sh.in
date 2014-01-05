@@ -139,6 +139,7 @@ $MPIRUN $BIN_PATH/arc_length_material_coupled \
   -snes_monitor -snes_converged_reason -ksp_monitor \
   -my_gc $GC -my_alpha2 1e-3 -my_gamma 0. \
   -my_da $DA -my_load_steps $NBSTEPS \
+  -mat_ascii_output_large \
   -log_summary | tee log
 
 cd ..

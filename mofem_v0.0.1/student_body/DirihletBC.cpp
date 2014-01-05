@@ -266,11 +266,10 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesFace
 
 PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
     PetscFunctionBegin;
-
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-
     for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
       if(dit->get_part()!=pcomm->rank()) continue;
+      if(dit->get_name()!=field_name) continue;
       for(int ss = 0;ss<3;ss++) {
 	if(dit->get_dof_rank()==ss) {
 	  map<int,Range>::iterator bit = bc_map[ss].begin();
@@ -281,16 +280,15 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_MatrixDiagonal(Fiel
 	}
       }
     }
-
     PetscFunctionReturn(0);
 }
 
 PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-
     for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
       if(dit->get_part()!=pcomm->rank()) continue;
+      if(dit->get_name()!=field_name) continue;
       for(int ss = 0;ss<3;ss++) {
 	if(dit->get_dof_rank()==ss) {
 	  map<int,Range>::iterator bit = bc_map[ss].begin();
@@ -305,20 +303,17 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_RHS(FieldInterface:
 	}
       }
     }
-
     PetscFunctionReturn(0);
 }
 
 PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D) {
     PetscFunctionBegin;
-
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-
     ierr = mField.set_local_VecCreateGhost(problem_name,Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
     for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
       if(dit->get_part()!=pcomm->rank()) continue;
       if(dit->get_ent_type()!=MBVERTEX) continue;
+      if(dit->get_name()!=field_name) continue;
       for(int ss = 0;ss<3;ss++) {
 	if(dit->get_dof_rank()==ss) {
 	  map<int,Range>::iterator bit = bc_map[ss].begin();
@@ -329,15 +324,11 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_FieldData(FieldInte
 	}
       }
     }
-
     ierr = VecAssemblyBegin(D); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(D); CHKERRQ(ierr);
-
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
     ierr = mField.set_global_VecCreateGhost(problem_name,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
     PetscFunctionReturn(0);
 }
 
