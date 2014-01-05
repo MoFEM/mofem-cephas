@@ -314,11 +314,17 @@ PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Cou
   set<DofIdx> set_zero_rows;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
     if(dit->get_ent_type()!=MBVERTEX) continue;
-    if(dit->get_name() != "MESH_NODE_POSITIONS") continue;
+    if(
+      (dit->get_name() != "MESH_NODE_POSITIONS")&&
+      (dit->get_name() != "LAMBDA_SURFACE")
+      ) continue;
     if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
     set_zero_rows.insert(dit->get_petsc_gloabl_dof_idx());
   }
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
+    if(
+      (dit->get_name() != "SPATIAL_POSITION")
+      ) continue;
     for(int ss = 0;ss<3;ss++) {
       if(dit->get_dof_rank()==ss) {
 	map<int,Range>::iterator bit = bc_map[ss].begin();
@@ -342,12 +348,18 @@ PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Cou
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
     if(dit->get_part()!=pcomm->rank()) continue;
     if(dit->get_ent_type()!=MBVERTEX) continue;
-    if(dit->get_name() != "MESH_NODE_POSITIONS") continue;
+    if(
+      (dit->get_name() != "MESH_NODE_POSITIONS")&&
+      (dit->get_name() != "LAMBDA_SURFACE")
+      ) continue;
     if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
     ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
   }
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
     if(dit->get_part()!=pcomm->rank()) continue;
+    if(
+      (dit->get_name() != "SPATIAL_POSITION")
+      ) continue;
     for(int ss = 0;ss<3;ss++) {
       if(dit->get_dof_rank()==ss) {
 	map<int,Range>::iterator bit = bc_map[ss].begin();

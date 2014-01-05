@@ -29,6 +29,7 @@ Sideset 200  surface 19
 Sideset 201  curve 29
 
 create Displacement name '' on surface 3  dof 1 dof 2 dof 3 fix 0
+create Displacement name '' on surface 6  dof 3 fix 0 
 create pressure name '' on surface 5  magnitude 1
 
 volume all scheme Tetmesh 

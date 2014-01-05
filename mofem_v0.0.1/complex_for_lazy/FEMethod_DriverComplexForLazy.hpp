@@ -68,8 +68,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       rval = mField.get_moab().tag_set_data(th_t_val,&root_meshset,1,&def_t_val); CHKERR_THROW(rval);
       rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_THROW(rval);
     }
-
-    
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
