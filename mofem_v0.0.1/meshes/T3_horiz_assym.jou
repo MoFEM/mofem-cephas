@@ -66,8 +66,8 @@ sideset 201 curve 110
 
 #!Meshing 
 volume all scheme tetmesh    
-volume all size auto factor 9 
-volume 8 10 size auto factor 9  
+volume all size auto factor 7 
+#volume 8 10 size auto factor 8  
 #!Mesh Crack Surface (those elemenst are streched)
 surface 70  size auto factor 7
 

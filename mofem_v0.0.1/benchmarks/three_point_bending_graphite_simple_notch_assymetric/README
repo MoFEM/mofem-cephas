@@ -34,7 +34,7 @@ Example run
 * Note that linear elements (1st) order have sheer loking, and usually give overstiff solution
 
 * out_spatial_2_1.h5m - this is 2-order 1-refinment_level
-./arc_length.sh -f 3pb_assym/out_spatial_2_1.h5m -a ./arc_length.sh -f 3pb_assym/out_spatial_2_1.h5m -a 1e-5 -n 200 -g 2e-6 
+./arc_length.sh -f 3pb_assym/out_spatial_2_1.h5m -a 2e-5 -n 1200 -g 2e-6 
 
 3) Plotting
 
