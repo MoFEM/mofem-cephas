@@ -1772,39 +1772,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   PetscFunctionReturn(0);
 }
 
-
-PetscErrorCode ConfigurationalFractureMechanics::calculate_spatial_residual(FieldInterface& mField) {
-  PetscFunctionBegin;
-
-  PetscErrorCode ierr;
-
-  DirihletBCMethod_DriverComplexForLazy myDirihletBCSpatial(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-  ierr = myDirihletBCSpatial.Init(); CHKERRQ(ierr);
-
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.;
-  NL_ElasticFEMethod MySpatialFE(mField,&myDirihletBCSpatial,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  Vec F_Spatial;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F_Spatial); CHKERRQ(ierr);
-  ierr = VecZeroEntries(F_Spatial); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F_Spatial,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F_Spatial,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  MySpatialFE.snes_f = F_Spatial;
-  MySpatialFE.set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MySpatialFE);  CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F_Spatial,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F_Spatial,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(F_Spatial); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(F_Spatial); CHKERRQ(ierr);
-
-  PostProcVertexMethod ent_method_res_spatial(mField.get_moab(),"SPATIAL_POSITION",F_Spatial,"SPATIAL_RESIDUAL");
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method_res_spatial); CHKERRQ(ierr);
-
-  ierr = VecDestroy(&F_Spatial); CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
 PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(FieldInterface& mField,string problem,string fe) {
   PetscFunctionBegin;
 

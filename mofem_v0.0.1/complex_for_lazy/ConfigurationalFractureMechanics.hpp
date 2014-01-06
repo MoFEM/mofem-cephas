@@ -95,7 +95,6 @@ struct ConfigurationalFractureMechanics {
   double aRea,lambda;
   PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double da);
 
-  PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
   PetscErrorCode surface_projection_data(FieldInterface& mField,string problem);
   PetscErrorCode delete_surface_projection_data(FieldInterface& mField);
