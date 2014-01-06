@@ -1621,6 +1621,13 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   PCShellCtx pc_ctx(K,K,&arc_ctx);
   ArcLengthElemFEMethod arc_elem(mField,this,&arc_ctx);
 
+  double gc;
+  PetscBool flg;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+  }
+
   Range CornersEdges,CornersNodes;
   ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
@@ -1633,7 +1640,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   for(
     map<EntityHandle,double>::iterator mit = map_ent_g.begin();
     mit!=map_ent_g.end();mit++) {
-    double fraction = (max_g-mit->second)/max_g;
+    double fraction = (gc-mit->second)/gc;
     ierr = PetscPrintf(PETSC_COMM_WORLD,
       "front node = %d max_g = %6.4e g = %6.4e (%6.4e)\n",
       mit->first,max_g,mit->second,fraction); CHKERRQ(ierr);
