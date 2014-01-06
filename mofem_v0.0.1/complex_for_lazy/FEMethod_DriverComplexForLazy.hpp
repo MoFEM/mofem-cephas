@@ -759,18 +759,51 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 };
 
 struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComplexForLazy_Material {
+
+  Vec front_f;
+  Vec tangent_front_f;
+
   FEMethod_DriverComplexForLazy_MeshSmoothing(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,0,0,_verbose) {
+    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,0,0,_verbose),
+      front_f(PETSC_NULL),tangent_front_f(PETSC_NULL) {
       type_of_analysis = mesh_quality_analysis;
       g_NTET.resize(4*1);
       ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
       g_TET_W = G_TET_W1;
     }
+
+  //FEMethod_DriverComplexForLazy_MeshSmoothing
+  ~FEMethod_DriverComplexForLazy_MeshSmoothing() {
+    if(front_f!=PETSC_NULL) {
+      VecDestroy(&front_f);
+      front_f = PETSC_NULL;
+    }
+    if(tangent_front_f) {
+      VecDestroy(&tangent_front_f);
+      tangent_front_f = PETSC_NULL;
+    }
+  }
+
+  //FEMethod_DriverComplexForLazy_MeshSmoothing
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    ierr = FEMethod_DriverComplexForLazy_Material::preProcess(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_MeshSmoothing
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    ierr = FEMethod_DriverComplexForLazy_Material::postProcess(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_MeshSmoothing
   virtual PetscErrorCode CalculateMeshSmoothingTangent(Mat B) {
     PetscFunctionBegin;
     vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
     ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
+    vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESSetFunction:
       case ctx_SNESSetJacobian:
@@ -779,6 +812,31 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
 	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
 	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
 	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	if(!crackFrontNodes.empty()) {
+	  double *f_tangent_front_mesh_array;
+	  ierr = VecGetArray(tangent_front_f,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+	  for(int nn = 0;nn<4;nn++) {
+	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	    dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
+	    hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
+	    if(distance(dit,hi_dit)>0) {
+	      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
+	      diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(material_field_name,conn[nn]));
+	      hi_diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(material_field_name,conn[nn]));
+	      for(;diit!=hi_diit;diit++) {
+		for(int ddd = 0;ddd<ColGlobMaterial[i_nodes].size();ddd++) {
+		  if(RowGlobMaterial[i_nodes][3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
+		    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		  }
+		  double g = f_tangent_front_mesh_array[diit->get_petsc_local_dof_idx()]*KHH(3*nn+diit->get_dof_rank(),ddd);
+		  DofIdx lambda_idx = dit->get_petsc_gloabl_dof_idx();
+		  ierr = MatSetValues(B,1,&lambda_idx,1,&ColGlobMaterial[i_nodes][ddd],&g,ADD_VALUES); CHKERRQ(ierr);
+		}
+	      }
+	    }
+	  }
+	  ierr = VecRestoreArray(tangent_front_f,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+	}
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -790,12 +848,18 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
     PetscFunctionBegin;
     vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
     ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
+    vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
         ierr = GetFint(); CHKERRQ(ierr);
 	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 	//cerr << "Fint_h " << Fint_h << endl;
 	ierr = VecSetValues(f,frontRowGlobMaterial.size(),&(frontRowGlobMaterial[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	if(!crackFrontNodes.empty()) {
+	  if(front_f==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
+	  ierr = VecSetValues(front_f,frontRowGlobMaterial_front_only.size(),&(frontRowGlobMaterial_front_only[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	}
       }
       break;
       default:
