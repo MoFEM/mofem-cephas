@@ -1507,13 +1507,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   PostProcVertexMethod ent_method(mField.get_moab(),"LAMBDA_CRACKFRONT_AREA");
   ierr = mField.loop_dofs("C_CRACKFRONT_MATRIX","LAMBDA_CRACKFRONT_AREA",Row,ent_method); CHKERRQ(ierr);
 
-  /*// unit of F_Griffith [ N/m * m = N ]
-  ierr = MatMult(projFrontCtx->CT,LambdaVec,F_Griffith); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_griffith(mField.get_moab(),"MESH_NODE_POSITIONS",F_Griffith,"G");
-  ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Row,ent_method_griffith); CHKERRQ(ierr);*/
-
   ierr = MatDestroy(&Q); CHKERRQ(ierr);
   ierr = MatDestroy(&RT); CHKERRQ(ierr);
   ierr = VecDestroy(&F_Griffith); CHKERRQ(ierr);
