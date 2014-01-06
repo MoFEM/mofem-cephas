@@ -178,7 +178,8 @@ int main(int argc, char *argv[]) {
 
   materialDirihletBC myDirihletBC(moab,CornersNodes);
   MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers MyFE(mField,&myDirihletBC);
-  C_SURFACE_FEMethod_ForSnes MySurfaceConstrains(mField);
+  C_SURFACE_FEMethod_ForSnes MySurfaceConstrains(mField,&myDirihletBC);
+  MySurfaceConstrains.nonlinear = true;
 
   /*MatZeroEntries(K);
   MyFE.snes_A = &K;
@@ -203,12 +204,12 @@ int main(int argc, char *argv[]) {
   SnesCtx SnesCtx(mField,"MESH_SMOOTHING");
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_SURFACE_ELEM",&MySurfaceConstrains));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyFE));
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_SURFACE_ELEM",&MySurfaceConstrains));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyFE));
 
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);

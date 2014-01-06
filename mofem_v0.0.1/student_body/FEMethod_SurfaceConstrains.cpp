@@ -19,6 +19,16 @@
 
 #include "FEMethod_SurfaceConstrains.hpp"
 
+#include <math.h>
+#include <complex>
+extern "C" {
+#include <complex.h>
+void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
+  double circumcenter[3],double *xi,double *eta,double *zeta);
+void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
+  double circumcenter[3],double *xi,double *eta);
+}
+
 namespace MoFEM {
 
 const int debug_constrains = 1;
@@ -28,68 +38,130 @@ PetscErrorCode C_SURFACE_FEMethod::preProcess() {
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode C_SURFACE_FEMethod::SaveConstrainOnTags() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
-
 void C_SURFACE_FEMethod::run_in_constructor() {
     diffNTRI.resize(6);
     ShapeDiffMBTRI(&diffNTRI[0]);
-    g_NTRI3.resize(4*3);
+    g_NTRI3.resize(7*3);
     ShapeMBTRI(&g_NTRI3[0],G_TRI_X4,G_TRI_Y4,4);
     G_TRI_W = G_TRI_W4;
     double def_VAL[3*9];
     fill(&def_VAL[0],&def_VAL[3*9],0);
-    rval = moab.tag_get_handle("MATERIAL_NORMAL",3,MB_TYPE_DOUBLE,th_material_normal,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_THROW(rval);
-    ent_global_col_indices.resize(9);
-    ent_global_row_indices.resize(3);
+    lambda_global_row_indices.resize(3);
+    lambda_global_col_indices.resize(3);
+    dof_global_row_indices.resize(1+6+4+1);
+    dof_global_col_indices.resize(1+6+4+1);
+    dof_global_row_indices[0].resize(9);
+    dof_global_col_indices[0].resize(9);
     ent_lambda_data.resize(3);
     ent_dofs_data.resize(9);
+    ent_idofs_data.resize(9);
     coords.resize(9);
-    ent_normal_map0.resize(3);
-    ent_normal_map.resize(3);
+    //
     C_MAT_ELEM.resize(3,9);
+    iC_MAT_ELEM.resize(3,9);
     CT_MAT_ELEM.resize(9,3);
+    dC_MAT_ELEM.resize(3,9);
+    dCT_MAT_ELEM.resize(9,9);
   }
  
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,Mat _C,string _lambda_field_name,int _verbose): 
-    FEMethod(),moab(_moab),C(_C),lambda_field_name(_lambda_field_name) {
+C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose): 
+    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name),updated(false) {
     run_in_constructor();
   }
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),C(_C),lambda_field_name("LAMBDA_SURFACE") {
+C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose): 
+    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE"),updated(false) {
     run_in_constructor();
   }
 
-PetscErrorCode C_SURFACE_FEMethod::Integrate(bool transpose) {
+PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_X,double *dofs_iX,double *C,double *iC) {
   PetscFunctionBegin;
-  try {
-    ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
-    //double area0 = norm_2(ent_normal_map0);
-    //double area = norm_2(ent_normal_map);
-    for(unsigned int gg = 0;gg<g_NTRI3.size()/3;gg++) {
-	for(int nn = 0;nn<3;nn++) {
-	  if(ent_global_row_indices[nn]==-1) {
-	    continue;
+  //set complex material position vector
+  __CLPK_doublecomplex x_dofs_X[9];
+  for(int nn = 0;nn<3;nn++) {
+    for(int dd = 0;dd<3;dd++) {
+      x_dofs_X[nn*3+dd].r = dofs_X[nn*3+dd];
+      if(dofs_iX != NULL) {
+	x_dofs_X[nn*3+dd].i = dofs_iX[nn*3+dd];
+      } else {
+	x_dofs_X[nn*3+dd].i = 0;
+      }
+  }}
+  //calulate complex face normal vector
+  __CLPK_doublecomplex x_normal[3];
+  ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
+  //calulare complex normal length
+  double __complex__ area = csqrt(
+      cpow((x_normal[0].r+I*x_normal[0].i),2)+
+      cpow((x_normal[1].r+I*x_normal[1].i),2)+
+      cpow((x_normal[2].r+I*x_normal[2].i),2));
+  //scale normal vector
+  for(int dd = 0;dd<3;dd++) {
+    double __complex__ val;
+    val = (x_normal[dd].r+I*x_normal[dd].i)/area;
+    x_normal[dd].r = creal(val);
+    x_normal[dd].i = cimag(val);
+  }
+  if( C!=NULL) bzero( C,3*9*sizeof(double));
+  if(iC!=NULL) bzero(iC,3*9*sizeof(double));
+  for(unsigned int gg = 0;gg<g_NTRI3.size()/3;gg++) {
+    //->row
+    for(int nn = 0;nn<3;nn++) {
+      if(lambda_global_row_indices[nn]==-1) continue;
+      //->col
+      for(int mm = 0;mm<3;mm++) {
+	if(lambda_global_row_indices[mm]==-1) continue;
+	for(int dd = 0;dd<3;dd++) {
+	  if( C!=NULL) {
+	     C[9*nn + 3*mm+dd] += G_TRI_W[gg]*( g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+mm]*x_normal[dd].r );
 	  }
-	  for(int dd = 0;dd<3;dd++) {
-	    for(int nnn = 0;nnn<3;nnn++) {
-	      if(ent_global_row_indices[nnn]==-1) {
-		continue;
-	      }
-	      C_MAT_ELEM(nn,3*nnn+dd) += 
-		G_TRI_W[gg]*
-		g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+nnn]*
-		ent_normal_map[dd];
-	    }
+	  if(iC!=NULL) {
+	    iC[9*nn + 3*mm+dd] += G_TRI_W[gg]*( g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+mm]*x_normal[dd].i );
 	  }
 	}
+      }
+      //<-col
+    }
+    //<-row
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode C_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
+  PetscFunctionBegin;
+  const double eps = 1e-10;
+  double center[3]; 
+  tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
+  cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
+  double r = cblas_dnrm2(3,center,1);
+  try {
+    if(nonlinear||updated) {
+      ierr = cOnstrain(&*ent_dofs_data.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
+    } else {
+      ierr = cOnstrain(&*coords.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
     }
     if(transpose) {
       ublas::noalias(CT_MAT_ELEM) = trans(C_MAT_ELEM);
+      if(nonlinear) {
+	ublas::noalias(dC_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
+	ublas::noalias(dCT_MAT_ELEM) = ublas::zero_matrix<double>(9,9);
+	for(int dd = 0;dd<9;dd++) {
+	  ublas::noalias(ent_idofs_data) = ublas::zero_vector<double>(9);
+	  ent_idofs_data[dd] = r*eps;
+	  ierr = cOnstrain(&*ent_dofs_data.data().begin(),&*ent_idofs_data.data().begin(),NULL,&*iC_MAT_ELEM.data().begin()); CHKERRQ(ierr);
+	  ig_VEC_ELEM = prod(iC_MAT_ELEM/(r*eps),ent_dofs_data-coords);
+	  for(int nnn = 0;nnn<3;nnn++) {
+	    dC_MAT_ELEM(nnn,dd) += ig_VEC_ELEM[nnn];
+	  }
+	  if(transpose) {
+	    if_VEC_ELEM = prod(trans(iC_MAT_ELEM)/(r*eps),ent_lambda_data);
+	    for(int nnn = 0;nnn<3;nnn++) {
+	      for(int ddd = 0;ddd<3;ddd++) {
+		dCT_MAT_ELEM(3*nnn+ddd,dd) += if_VEC_ELEM[3*nnn+ddd];
+	      }
+	    }
+	  }
+	}
+      }
     }
-    ierr = SaveConstrainOnTags(); CHKERRQ(ierr);
   } catch (const std::exception& ex) {
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
@@ -98,22 +170,34 @@ PetscErrorCode C_SURFACE_FEMethod::Integrate(bool transpose) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode C_SURFACE_FEMethod::Assemble(bool transpose) {
+PetscErrorCode C_SURFACE_FEMethod::aSsemble(bool transpose,bool nonlinear) {
     PetscFunctionBegin;
     ierr = MatSetValues(C,
-      ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
-      ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
+      lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
+      dof_global_col_indices[0].size(),&(dof_global_col_indices[0].data()[0]),
       &(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+    if(nonlinear) {
+      ierr = MatSetValues(C,
+	lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
+	dof_global_col_indices[0].size(),&(dof_global_col_indices[0].data()[0]),
+	&(dC_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+    }
     if(transpose) {
       ierr = MatSetValues(C,
-	ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
-	ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
+	dof_global_row_indices[0].size(),&(dof_global_row_indices[0].data()[0]),
+	lambda_global_col_indices.size(),&(lambda_global_col_indices.data()[0]),
 	&CT_MAT_ELEM.data()[0],ADD_VALUES); CHKERRQ(ierr);
+      if(nonlinear) {
+	ierr = MatSetValues(C,
+	  dof_global_row_indices[0].size(),&(dof_global_row_indices[0].data()[0]),
+	  dof_global_col_indices[0].size(),&(dof_global_col_indices[0].data()[0]),
+	  &dCT_MAT_ELEM.data()[0],ADD_VALUES); CHKERRQ(ierr); 
+      }
     }
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose) {
+PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
     PetscFunctionBegin;
     try {
       EntityHandle face = fe_ptr->get_ent();
@@ -121,39 +205,65 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose) {
       int num_nodes; 
       rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       for(int nn = 0;nn<num_nodes;nn++) {
-  	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-  	dit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-  	hi_dit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+  	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+  	dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+  	hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
   	if(distance(dit,hi_dit)==0) {
-  	  ent_global_row_indices[nn] = -1;
+  	  lambda_global_row_indices[nn] = -1;
 	  ent_lambda_data[nn] = 0;
   	} else {
   	  if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
+	  ent_lambda_data[nn] = dit->get_FieldData();
   	  int global_idx = dit->get_petsc_gloabl_dof_idx();
-  	  ent_global_row_indices[nn] = global_idx;
-  	  ent_lambda_data[nn] = dit->get_FieldData();
+  	  lambda_global_row_indices[nn] = global_idx;
   	  int local_idx = dit->get_petsc_local_dof_idx();
   	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
   	}
-  	dit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-  	hi_dit = col_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+  	dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+  	hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
   	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
   	for(;dit!=hi_dit;dit++) {
+  	  ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
   	  int global_idx = dit->get_petsc_gloabl_dof_idx();
   	  assert(nn*3+dit->get_dof_rank()<9);
-  	  ent_global_col_indices[nn*3+dit->get_dof_rank()] = global_idx;
+  	  dof_global_col_indices[0][nn*3+dit->get_dof_rank()] = global_idx;
   	  int local_idx = dit->get_petsc_local_dof_idx();
   	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
-  	  ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
   	}
+	if(transpose) {
+	  dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  if(distance(dit,hi_dit)==0) {
+	    lambda_global_col_indices[nn] = -1;
+	  } else {
+	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
+	    int global_idx = dit->get_petsc_gloabl_dof_idx();
+	    lambda_global_col_indices[nn] = global_idx;
+	    int local_idx = dit->get_petsc_local_dof_idx();
+	    if(local_idx<0) {
+	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	    }
+	  }
+	  dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	  hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	  if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
+	  for(;dit!=hi_dit;dit++) {
+	    int global_idx = dit->get_petsc_gloabl_dof_idx();
+	    assert(nn*3+dit->get_dof_rank()<9);
+	    dof_global_row_indices[0][nn*3+dit->get_dof_rank()] = global_idx;
+	    int local_idx = dit->get_petsc_local_dof_idx();
+	    if(local_idx<0) {
+	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	    }
+	  }
+	}
+	DirihletBC.clear();
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+	  this,dof_global_row_indices,dof_global_col_indices,DirihletBC); CHKERRQ(ierr);
       }
       rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
-      ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&coords.data()[0],&ent_normal_map0.data()[0]); CHKERRQ(ierr);
-      ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&coords.data()[0],&ent_normal_map.data()[0]); CHKERRQ(ierr);
-      ublas::vector<double> scaled_normal = ent_normal_map0/norm_2(ent_normal_map0);
-      rval = moab.tag_set_data(th_material_normal,&face,1,&scaled_normal.data()[0]); CHKERR_PETSC(rval);
-      ierr = this->Integrate(transpose); CHKERRQ(ierr);
-      ierr = this->Assemble(transpose); CHKERRQ(ierr);
+      ierr = this->iNtegrate(transpose,nonlinear); CHKERRQ(ierr);
+      ierr = this->aSsemble(transpose,nonlinear); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
@@ -167,166 +277,55 @@ PetscErrorCode C_SURFACE_FEMethod::postProcess() {
   PetscFunctionReturn(0);
 }
 
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,Vec _g,string _lambda_field_name,int _verbose): 
-    C_SURFACE_FEMethod(_moab,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
+g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,string _lambda_field_name,int _verbose): 
+    C_SURFACE_FEMethod(_moab,_dirihlet_bc_method_ptr,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
     g_VEC_ELEM.resize(3);
   }
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,Vec _g,int _verbose): 
-    C_SURFACE_FEMethod(_moab,PETSC_NULL,_verbose),g(_g) {
+g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,int _verbose): 
+    C_SURFACE_FEMethod(_moab,_dirihlet_bc_method_ptr,PETSC_NULL,_verbose),g(_g) {
     g_VEC_ELEM.resize(3);
   }
 
-PetscErrorCode g_SURFACE_FEMethod::Integrate(bool transpose) {
-    PetscFunctionBegin;
-    try {
-      C_SURFACE_FEMethod::Integrate(transpose);
-      g_VEC_ELEM = prod(C_MAT_ELEM,ent_dofs_data-coords);
-      f_VEC_ELEM = prod(CT_MAT_ELEM,ent_lambda_data);
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-    }
-    PetscFunctionReturn(0);
-}
-PetscErrorCode g_SURFACE_FEMethod::Assemble(bool transpose) {
+PetscErrorCode g_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
   PetscFunctionBegin;
-  if(ent_global_row_indices.size()!=g_VEC_ELEM.size()) {
+  try {
+    C_SURFACE_FEMethod::iNtegrate(transpose,nonlinear);
+    //
+    g_VEC_ELEM = prod(C_MAT_ELEM,ent_dofs_data-coords);
+    f_VEC_ELEM = prod(CT_MAT_ELEM,ent_lambda_data);
+    //
+    //ierr = cOnstrain(&*coords.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
+    //g_VEC_ELEM = g_VEC_ELEM - prod(C_MAT_ELEM,coords);
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode g_SURFACE_FEMethod::aSsemble(bool transpose,bool nonlinear) {
+  PetscFunctionBegin;
+  if(lambda_global_row_indices.size()!=g_VEC_ELEM.size()) {
     SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
-	ent_global_row_indices.size(),g_VEC_ELEM.size());
+	lambda_global_row_indices.size(),g_VEC_ELEM.size());
   }
   ierr = VecSetOption(g,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
   ierr = VecSetValues(g,
-        ent_global_row_indices.size(),&(ent_global_row_indices.data()[0]),
-        &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+    lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
+    &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
   if(transpose) {
-    if(ent_global_col_indices.size()!=f_VEC_ELEM.size()) {
+    if(dof_global_row_indices[0].size()!=f_VEC_ELEM.size()) {
       SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
-	ent_global_col_indices.size(),f_VEC_ELEM.size());
+	dof_global_row_indices[0].size(),f_VEC_ELEM.size());
     }
     ierr = VecSetValues(g,
-	ent_global_col_indices.size(),&(ent_global_col_indices.data()[0]),
-	&(f_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+      dof_global_row_indices[0].size(),&(dof_global_row_indices[0].data()[0]),
+      &(f_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
 
   }
   PetscFunctionReturn(0);
 }
 
-C_CORNER_FEMethod::C_CORNER_FEMethod(Interface& _moab,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),C(_C) {
-    C_MAT_ELEM.resize(3,3);
-    ent_lambda_data.resize(3);
-    ent_dofs_data.resize(3);
-    ent_global_col_indices.resize(3);
-    ent_global_row_indices.resize(3);
-    coords.resize(3);
-}
-
-PetscErrorCode C_CORNER_FEMethod::preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
-
-PetscErrorCode C_CORNER_FEMethod::Integrate(bool transpose) {
-    PetscFunctionBegin;
-    try {
-    ublas::noalias(C_MAT_ELEM) = ublas::zero_matrix<double>(3,3);
-    for(int nn = 0;nn<3;nn++) {
-	for(int dd = 0;dd<3;dd++) {
-	  if(nn!=dd) C_MAT_ELEM(nn,dd) = 0;
-	  else C_MAT_ELEM(nn,dd) = 1;
-	}
-    }
-    ierr = MatSetValues(C,
-      ent_global_row_indices.size(),&(ent_global_row_indices[0]),
-      ent_global_col_indices.size(),&(ent_global_col_indices[0]),
-      &(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
-    if(transpose) {
-      ierr = MatSetValues(C,
-	ent_global_col_indices.size(),&(ent_global_col_indices[0]),
-	ent_global_row_indices.size(),&(ent_global_row_indices[0]),
-	&(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
-    }
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-    }
-    PetscFunctionReturn(0);
-  }
-
-PetscErrorCode C_CORNER_FEMethod::operator()(bool transpose) {
-    PetscFunctionBegin;
-    try {
-    EntityHandle node = fe_ptr->get_ent();
-    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator dit,hi_dit;
-    dit = col_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",node));
-    hi_dit = col_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",node));
-    if(distance(dit,hi_dit)!=3) {
-      SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3, but is %u",distance(dit,hi_dit));
-    }
-    for(;dit!=hi_dit;dit++) {
-      int global_idx = dit->get_petsc_gloabl_dof_idx();
-      ent_global_col_indices[dit->get_dof_rank()] = global_idx;
-      int local_idx = dit->get_petsc_local_dof_idx();
-      if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
-      ent_dofs_data[dit->get_dof_rank()] = dit->get_FieldData();
-    }
-    dit = row_multiIndex->get<Composite_Name_And_Ent>().lower_bound(boost::make_tuple("LAMBDA_CORNER",node));
-    hi_dit = row_multiIndex->get<Composite_Name_And_Ent>().upper_bound(boost::make_tuple("LAMBDA_CORNER",node));
-    if(distance(dit,hi_dit)!=3) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for LAMBDA_CORNER should be 3, but is %d",distance(dit,hi_dit));
-    for(;dit!=hi_dit;dit++) {
-      int global_idx = dit->get_petsc_gloabl_dof_idx();
-      ent_global_row_indices[dit->get_dof_rank()] = global_idx;
-      int local_idx = dit->get_petsc_local_dof_idx();
-      ent_lambda_data[dit->get_dof_rank()] = dit->get_FieldData();
-      if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
-    }
-    rval = moab.get_coords(&node,1,&*coords.data().begin()); CHKERR_PETSC(rval);
-    ierr = this->Integrate(transpose); CHKERRQ(ierr);
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-    }
-    PetscFunctionReturn(0);
-  }
-
-PetscErrorCode C_CORNER_FEMethod::postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
-
-g_CORNER_FEMethod::g_CORNER_FEMethod(Interface& _moab,Vec _g,int _verbose): 
-    C_CORNER_FEMethod(_moab,PETSC_NULL,_verbose),g(_g) {
-    g_VEC_ELEM.resize(3);
-  }
-
-PetscErrorCode g_CORNER_FEMethod::Integrate(bool transpose) {
-    PetscFunctionBegin;
-    try {
-      for(int nn = 0;nn<3;nn++) {
-        g_VEC_ELEM[nn] = ent_dofs_data[nn] - coords[nn];
-      }
-      VecSetOption(g,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
-      ierr = VecSetValues(g,
-        ent_global_row_indices.size(),&(ent_global_row_indices[0]),
-        &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
-      if(transpose) {
-	if(ent_lambda_data.size()!=ent_global_col_indices.size()) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	}
-	ierr = VecSetValues(g,
-	  ent_global_col_indices.size(),&(ent_global_col_indices[0]),
-	  &(ent_lambda_data.data())[0],ADD_VALUES); CHKERRQ(ierr);
-      }
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-    }
-    PetscFunctionReturn(0);
-  }
 
 }
 

@@ -9,7 +9,7 @@ while test $# -gt 0; do
                         echo " "
                         echo "options:"
                         echo "-h, --help"
-                        echo "-f, --file_name=FILE_NAME"
+                        echo "-f, --file_name=FILE"
 			echo "-l, --load_factor=LOAD_FACTOR"
 			echo "-g, --gc=GRIFFITH_ENERGY"
 			echo "-o, --orders=1,2,3,4,5 (max is 5)\"" 

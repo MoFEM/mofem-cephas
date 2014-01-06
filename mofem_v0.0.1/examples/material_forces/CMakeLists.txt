@@ -28,9 +28,6 @@ target_link_libraries(material_problem mofem_complex_for_lazy mofem_student_body
 add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
 target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(refine_strech_edges refine_strech_edges.cpp)
-target_link_libraries(refine_strech_edges mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
@@ -60,10 +57,4 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh DESTINATION bin P
 #testing
 add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh -f crack1.cub -l 1e-1 -g 2e-6 -o 2 -r 1 -d TEST_SIF)
 add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_2_1.h5m -a 1e-2 -n 2 -g 1e-3 -d TEST_ARC )
-
-
-
-
-
-
 

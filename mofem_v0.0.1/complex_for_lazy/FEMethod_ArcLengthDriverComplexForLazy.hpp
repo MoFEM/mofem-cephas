@@ -80,12 +80,12 @@ struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	  ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
-	  ierr = CalulateSpatialKFext(PETSC_NULL,arc_ptr->F_lambda,1); CHKERRQ(ierr);
+	  ierr = CalculateSpatialKFext(PETSC_NULL,arc_ptr->F_lambda,1); CHKERRQ(ierr);
 	}
 	break;
       case ctx_SNESSetJacobian: {
 	  ierr = CalculateSpatialTangent(*snes_B); CHKERRQ(ierr);
-	  ierr = CalulateSpatialKFext(*snes_B,PETSC_NULL,arc_ptr->get_FieldData()); CHKERRQ(ierr);
+	  ierr = CalculateSpatialKFext(*snes_B,PETSC_NULL,arc_ptr->get_FieldData()); CHKERRQ(ierr);
 	}
 	break;
       default:
