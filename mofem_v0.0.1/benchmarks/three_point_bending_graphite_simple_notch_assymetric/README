@@ -33,14 +33,8 @@ Example run
 * Crack popagation as an input file uses preoviously obtained soltion from step (1)
 * Note that linear elements (1st) order have sheer loking, and usually give overstiff solution
 
-* out_spatial_1_1.h5m - this is 1-order 1-refinment_level
-./arc_length.sh -f 3pb_assym/out_spatial_1_1.h5m -a 1e-4 -n 200 -g 2e-6
-
 * out_spatial_2_1.h5m - this is 2-order 1-refinment_level
-./arc_length.sh -f 3pb_assym/out_spatial_2_1.h5m -a 1e-4 -n 200 -g 2e-6
-
-* out_spatial_1_2.h5m - this is 1-order 2-refinment_level
-./arc_length.sh -f 3pb_assym/out_spatial_1_2.h5m -a 1e-4 -n 200 -g 2e-6
+./arc_length.sh -f 3pb_assym/out_spatial_2_1.h5m -a ./arc_length.sh -f 3pb_assym/out_spatial_2_1.h5m -a 1e-5 -n 200 -g 2e-6 
 
 3) Plotting
 
