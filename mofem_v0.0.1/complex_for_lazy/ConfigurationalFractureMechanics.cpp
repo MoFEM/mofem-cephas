@@ -333,8 +333,7 @@ PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Cou
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
     if(dit->get_ent_type()!=MBVERTEX) continue;
     if(
-      (dit->get_name() != "MESH_NODE_POSITIONS")&&
-      (dit->get_name() != "LAMBDA_SURFACE")
+      (dit->get_name() == "SPATIAL_POSITION")
       ) continue;
     if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
     set_zero_rows.insert(dit->get_petsc_gloabl_dof_idx());
@@ -367,8 +366,7 @@ PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Cou
     if(dit->get_part()!=pcomm->rank()) continue;
     if(dit->get_ent_type()!=MBVERTEX) continue;
     if(
-      (dit->get_name() != "MESH_NODE_POSITIONS")&&
-      (dit->get_name() != "LAMBDA_SURFACE")
+      (dit->get_name() == "SPATIAL_POSITION")
       ) continue;
     if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
     ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
