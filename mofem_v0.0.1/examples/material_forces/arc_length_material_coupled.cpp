@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* da = %6.4e\n\n",da); CHKERRQ(ierr);
 
     for(int ii = 0;ii<100;ii++) {
-       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substep = %D\n\n",ii); CHKERRQ(ierr);
+       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
        if(ii == 0) {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da); CHKERRQ(ierr);
       } else {
@@ -204,6 +204,13 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
       ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
+      if(aa > 0 && ii == 0) {
+	int its_d = 7;
+	double gamma = 0.5,reduction = 1;
+	reduction = pow((double)its_d/(double)(its+1),gamma);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* reduction of da = %6.4e\n",reduction); CHKERRQ(ierr);
+	da *= reduction;
+      }
     }
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",step,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);
