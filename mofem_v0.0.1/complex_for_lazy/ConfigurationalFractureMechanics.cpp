@@ -284,12 +284,12 @@ struct NL_MeshSmootherCoupled: public FEMethod_DriverComplexForLazy_MeshSmoothin
 	    ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	    ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	    if(!crackFrontNodes.empty()) {
+	      ierr = VecAssemblyBegin(front_f); CHKERRQ(ierr);
+	      ierr = VecAssemblyEnd(front_f); CHKERRQ(ierr);
 	      ierr = VecGhostUpdateBegin(front_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	      ierr = VecGhostUpdateEnd(front_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	      ierr = VecGhostUpdateBegin(front_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	      ierr = VecGhostUpdateEnd(front_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	      ierr = VecAssemblyBegin(front_f); CHKERRQ(ierr);
-	      ierr = VecAssemblyEnd(front_f); CHKERRQ(ierr);
 	    }
 	  } break;
 	  case ctx_SNESSetJacobian: {

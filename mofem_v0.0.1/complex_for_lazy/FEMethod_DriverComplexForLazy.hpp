@@ -776,11 +776,11 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
   //FEMethod_DriverComplexForLazy_MeshSmoothing
   ~FEMethod_DriverComplexForLazy_MeshSmoothing() {
     if(front_f!=PETSC_NULL) {
-      VecDestroy(&front_f);
+      ierr = VecDestroy(&front_f); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       front_f = PETSC_NULL;
     }
-    if(tangent_front_f) {
-      VecDestroy(&tangent_front_f);
+    if(tangent_front_f!=PETSC_NULL) {
+      ierr = VecDestroy(&tangent_front_f); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       tangent_front_f = PETSC_NULL;
     }
   }
@@ -814,6 +814,7 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
 	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	if(!crackFrontNodes.empty()) {
 	  double *f_tangent_front_mesh_array;
+	  if(tangent_front_f==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
 	  ierr = VecGetArray(tangent_front_f,&f_tangent_front_mesh_array); CHKERRQ(ierr);
 	  for(int nn = 0;nn<4;nn++) {
 	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
@@ -825,9 +826,10 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
 	      hi_diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(material_field_name,conn[nn]));
 	      for(;diit!=hi_diit;diit++) {
 		for(int ddd = 0;ddd<ColGlobMaterial[i_nodes].size();ddd++) {
-		  if(RowGlobMaterial[i_nodes][3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
+		  if(frontRowGlobMaterial_front_only[3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
 		    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		  }
+		  if(diit->get_petsc_local_dof_idx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		  double g = f_tangent_front_mesh_array[diit->get_petsc_local_dof_idx()]*KHH(3*nn+diit->get_dof_rank(),ddd);
 		  DofIdx lambda_idx = dit->get_petsc_gloabl_dof_idx();
 		  ierr = MatSetValues(B,1,&lambda_idx,1,&ColGlobMaterial[i_nodes][ddd],&g,ADD_VALUES); CHKERRQ(ierr);

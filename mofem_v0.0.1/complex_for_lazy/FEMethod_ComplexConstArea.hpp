@@ -693,6 +693,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
       }
       //quality 
       ublas::vector<double,ublas::bounded_array<double,9> > F_FRONT_MESH_SMOOTHING(9);
+      ublas::noalias(F_FRONT_MESH_SMOOTHING) = ublas::zero_vector<double>(9);
       double *f_front_mesh_array;
       ierr = VecGetArray(mesh_fe_ptr->front_f,&f_front_mesh_array); CHKERRQ(ierr);
       for(int nn = 0;nn<3;nn++) {
@@ -724,18 +725,18 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	      dELEM_CONSTRAIN1 /= +r*eps;
 	    }
 	    //dg -> C*q_quality
-	    double g = 0;
+	    double g[3] = {0,0,0};
 	    for(int nnn = 0;nnn<3;nnn++) {
 	      if(lambda_dofs_row_indx[nnn] == -1) continue;
 	      for(int ddd = 0;ddd<3;ddd++) {
-		g += dELEM_CONSTRAIN1[nnn*3+ddd]*F_FRONT_MESH_SMOOTHING[3*nnn+ddd];
+		g[nnn] += dELEM_CONSTRAIN1[nnn*3+ddd]*F_FRONT_MESH_SMOOTHING[3*nnn+ddd];
 	      }
 	    }
 	    for(int nnn = 0;nnn<3;nnn++) {
 	      if(lambda_dofs_row_indx[nnn] == -1) continue;
 	      ierr = MatSetValues(*snes_B,
 		1,&lambda_dofs_row_indx[nnn],1,&disp_dofs_col_idx[3*nn+dd],
-		&g,ADD_VALUES); CHKERRQ(ierr);
+		&g[nnn],ADD_VALUES); CHKERRQ(ierr);
 	    }
 	    //dCT_lambda
 	    for(int nnn = 0;nnn<3;nnn++) {
@@ -762,6 +763,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	  }
 	  //cerr << "g : " << g << endl;
 	  ierr = VecSetValues(snes_f,3,&*lambda_dofs_row_indx.data().begin(),&*g.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	  ierr = VecSetValues(mesh_fe_ptr->tangent_front_f,9,&disp_dofs_row_idx[0],&*ELEM_CONSTRAIN1.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 	  ublas::vector<double,ublas::bounded_array<double,9> > f(9);
 	  for(int nn = 0;nn<3;nn++) {
 	    for(int dd = 0;dd<3;dd++) {
@@ -770,7 +772,6 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	  }
 	  //cerr << "f : " << f << endl;
 	  ierr = VecSetValues(snes_f,9,&disp_dofs_row_idx[0],&*f.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = VecSetValues(mesh_fe_ptr->tangent_front_f,9,&disp_dofs_row_idx[0],&*ELEM_CONSTRAIN1.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 	  /*//TAG - only for one proc analysis
 	  for(int nn = 0;nn<3;nn++) { 
 	    EntityHandle ent = lambda_dofs_row_ents[nn];
@@ -782,9 +783,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 	} break;
 	case ctx_SNESSetJacobian: {
 	  for(int nn = 0;nn<3;nn++) {
-	    int lambda_dof_idx = lambda_dofs_row_indx[nn];
-	    ierr = MatSetValues(*snes_B,1,&lambda_dof_idx,3,&disp_dofs_col_idx[3*nn],&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
-	    lambda_dof_idx = lambda_dofs_col_indx[nn];
+	    int lambda_dof_idx = lambda_dofs_col_indx[nn];
 	    ierr = MatSetValues(*snes_B,3,&disp_dofs_row_idx[3*nn],1,&lambda_dof_idx,&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	} break;
@@ -803,12 +802,12 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(mesh_fe_ptr->tangent_front_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(mesh_fe_ptr->tangent_front_f); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(mesh_fe_ptr->tangent_front_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(mesh_fe_ptr->tangent_front_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(mesh_fe_ptr->tangent_front_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(mesh_fe_ptr->tangent_front_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(mesh_fe_ptr->tangent_front_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(mesh_fe_ptr->tangent_front_f); CHKERRQ(ierr);
       } break;
       case ctx_SNESSetJacobian: {
 	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
