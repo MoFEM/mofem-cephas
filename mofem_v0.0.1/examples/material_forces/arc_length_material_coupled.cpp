@@ -180,6 +180,17 @@ int main(int argc, char *argv[]) {
       ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
       ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
       ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
+      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+      ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
+      ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+
+      ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+      ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
     }
 
     SNES snes;
