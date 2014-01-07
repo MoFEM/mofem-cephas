@@ -2,45 +2,45 @@ Check before run
 ================
 
 * Check where is your mesh file
-* Check what verion of openmpi (or other MPI library) are you using
+* Check what version of openmpi (or other MPI library) you are using
 
 Notes
 =====
 
-* Exteranl forces and Young modulus are rescaled by factor 1e-8.
+* External forces and Young modulus are rescaled by factor 1e-8.
 * Griffith energy for graphite is 200 * 1e-8 for units consistency.
 
 Example run
 ===========
 
-1) Calulation stress intensity factor K1
+1) Calculation of stress intensity factor K1
 
-* Calulation of Griffith energy and SIF for mode K1.
-* Calulate problem for three approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (qubic).
-* Calulate problem for three refinment levels (in proximity of crack front).
+* Calculation of Griffith energy and SIF for mode K1.
+* Calculate problem for three approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (cubic).
+* Calculate problem for three refinement levels (in proximity of crack front).
 
 * convergence_study.sh NAME_OF_SCRIPT
 * -f NAME_OF_FILE 
 * -l VALUE_OF_LOAD_FACTOR 
 * -g REFERENCE_GRIFFITH_ENERGY 
 * -o APPROX_ORDERS_SEPARATED_BY_COMMAS 
-* -r REFINMENT_LEVELS_SEPARATED_BY_COMMAS
+* -r REFINEMENT_LEVELS_SEPARATED_BY_COMMAS
 * -d directory name
 * -p number of processors
 
 ./convergence_study.sh -f torsion.cub -l 1 -g 8e-5 -o 1 -r 1 -d torsion1 -p 4
 
 
-2) Calulation of crack propagation
+2) Calculation of crack propagation
 
-* Crack popagation as an input file uses preoviously obtained soltion from step (1)
-* Note that linear elements (1st) order have sheer loking, and usually give overstiff solution
+* Crack propagation as an input file uses previously obtained solution from step (1)
+* Note that linear elements (1st order) have sheer locking, and usually give overstiff solution
 
 ./arc_length.sh -f torsion1/out_spatial_1_1.h5m -a 1 -n 120 -g 8e-6 -d propagation_Order1_Ref1 -p 4
 
 3) Plotting
 
-* check if in your system you have installed awk and grep
+* check that you have installed awk and grep
 * copy and paste to line command
 
 To Do
