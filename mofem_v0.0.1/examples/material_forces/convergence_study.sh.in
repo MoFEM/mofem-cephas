@@ -102,6 +102,22 @@ while test $# -gt 0; do
                         export REF=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
+
+		-p)
+                        shift
+                        if test $# -gt 0; then
+                                export NB_PROC=$1
+                        else
+                                echo "no griffith energy specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --proc*)
+                        export NB_PROC=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+
                 *)
                         break
                         ;;
@@ -132,8 +148,12 @@ if [ -z ${REF+x} ]; then
   exit 1
 fi
 
+if [ -z ${NB_PROC+x} ]; then 
+  NB_PROC=4
+fi
+
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
-MPIRUN="@MPI_RUN@ -np 4" 
+MPIRUN="@MPI_RUN@ -np $NB_PROC" 
 
 if [ -z ${DIR_NAME+x} ]; then 
   DIR_SURFIX=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`

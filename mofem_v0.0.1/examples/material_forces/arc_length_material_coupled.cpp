@@ -144,16 +144,17 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n\n** number of step = %D\n\n\n",step); CHKERRQ(ierr);
 
-    ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-    ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
-    ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-    ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-    ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-    ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-    ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-
-    ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
-    ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
+    if(aa == 0) {
+      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+      ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
+      ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+      ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
+    }
 
     double gc;
     PetscBool flg;
@@ -163,7 +164,7 @@ int main(int argc, char *argv[]) {
     }
 
     //calulate initial load factor
-    if(aa == 0) {
+    if(step == 0) {
       double max_g = conf_prob.max_g;
       Tag th_t_val;
       rval = moab.tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
@@ -180,14 +181,21 @@ int main(int argc, char *argv[]) {
       ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
       ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
       ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+      ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
+      ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     }
 
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* da = %6.4e\n\n",da); CHKERRQ(ierr);
 
-    for(int ii = 0;ii<100;ii++) {
-       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substep = %D\n\n",ii); CHKERRQ(ierr);
+    for(int ii = 0;ii<5;ii++) {
+       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
        if(ii == 0) {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da); CHKERRQ(ierr);
       } else {
@@ -196,6 +204,7 @@ int main(int argc, char *argv[]) {
       int its;
       ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
       if(its == 0) break;
+      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -204,6 +213,13 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
       ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
+      if(aa > 0 && ii == 0) {
+	int its_d = 5;
+	double gamma = 0.5,reduction = 1;
+	reduction = pow((double)its_d/(double)(its+1),gamma);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* reduction of da = %6.4e\n",reduction); CHKERRQ(ierr);
+	da *= reduction;
+      }
     }
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",step,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);

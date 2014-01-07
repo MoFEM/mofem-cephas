@@ -72,7 +72,7 @@ volume all size auto factor 7
 surface 70  size auto factor 7
 
 #!Mesh All
-mesh surface 73
+mesh surface 70
 mesh volume all 
  
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/T3_horiz_assym.cub" overwrite 
