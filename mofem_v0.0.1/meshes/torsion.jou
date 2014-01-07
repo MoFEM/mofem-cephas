@@ -45,11 +45,11 @@ Compress Ids All
 
 #Boundary conditions
 merge volume all group_results
-split curve 38 61 48 53 fraction 0.5
+split curve 37 38 61 48 53 fraction 0.5
 create Displacement  on vertex 106 dof 1 dof 2 dof 3 fix 0
-create Displacement  on vertex 105 dof 1 dof 2 dof 3 fix 0
-create Displacement  on vertex 107  dof 1 dof 2 dof 3 fix 0
-create force  on vertex 108  force value 1 direction  y
+create Displacement  on vertex 105 dof 2 dof 3 fix 0
+create Displacement  on vertex 108 dof 2 fix 0
+create force  on vertex 109  force value 1 direction  y
 
 #Merge Volumes 
 imprint volume all  
@@ -69,7 +69,7 @@ block 2 attribute index 1 20
 block 2 attribute index 2 0.2   
 
 #Create Block Set with Vertices to ploat load-disp. path 
-block 3 vertex 108  
+block 3 vertex 109 
 block 3 name 'LoadPath' 
 
 #Create nodesets and sidesets for fracture constraints   
