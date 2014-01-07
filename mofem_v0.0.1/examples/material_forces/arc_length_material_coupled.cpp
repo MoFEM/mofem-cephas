@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
     }
 
     //calulate initial load factor
-    if(aa == 0) {
+    if(step == 0) {
       double max_g = conf_prob.max_g;
       Tag th_t_val;
       rval = moab.tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
       ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
       if(aa > 0 && ii == 0) {
-	int its_d = 7;
+	int its_d = 5;
 	double gamma = 0.5,reduction = 1;
 	reduction = pow((double)its_d/(double)(its+1),gamma);
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* reduction of da = %6.4e\n",reduction); CHKERRQ(ierr);
