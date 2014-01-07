@@ -146,6 +146,9 @@ struct Mat_TransIso: public generic_attribute_data {
     struct Mat_Interf: public generic_attribute_data {
         struct __attribute__ ((packed)) _data_{
             double alpha; // Elastic modulus multiplier
+						double beta;  // Damage Coupling multiplier between normal and shear (g=sqrt(gn^2 + beta(gt1^2 + gt2^2)))
+						double ft;    // Maximum stress of crack
+						double Gf;    // Fracture Energy
         };
         
         _data_ data;
