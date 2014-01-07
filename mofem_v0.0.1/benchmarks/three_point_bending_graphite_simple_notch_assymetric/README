@@ -2,44 +2,44 @@ Check before run
 ================
 
 * Check where is your mesh file
-* Check what verion of openmpi (or other MPI library) are you using
+* Check what version of openmpi (or other MPI library) you are using
 
 Notes
 =====
 
-* Exteranl forces and Young modulus are rescaled by factor 1e-8.
+* External forces and Young modulus are rescaled by factor 1e-8.
 * Griffith energy for graphite is 200 * 1e-8 for units consistency.
 
 Example run
 ===========
 
-1) Calulation stress intensity factor K1
+1) Calculation of stress intensity factor K1
 
-* Calulation of Griffith energy and SIF for mode K1.
-* Calulate problem for three approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (qubic).
-* Calulate problem for three refinment levels (in proximity of crack front).
+* Calculation of Griffith energy and SIF for mode K1.
+* Calculate problem for three approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (cubic).
+* Calculate problem for three refinement levels (in proximity of crack front).
 
 * convergence_study.sh NAME_OF_SCRIPT
 * -f NAME_OF_FILE 
 * -l VALUE_OF_LOAD_FACTOR 
 * -g REFERENCE_GRIFFITH_ENERGY 
 * -o APPROX_ORDERS_SEPARATED_BY_COMMAS 
-* -r REFINMENT_LEVELS_SEPARATED_BY_COMMAS
+* -r REFINEMENT_LEVELS_SEPARATED_BY_COMMAS
 
 ./convergence_study.sh -f T3_horiz_assym.cub -l -1 -g 2e-6 -o 3 -r 2 -d 3pb_assym
 
-2) Calulation of crack propagation
+2) Calculation of crack propagation
 
-* Crack popagation as an input file uses preoviously obtained soltion from step (1)
-* Note that linear elements (1st) order have sheer loking, and usually give overstiff solution
+* Crack propagation as an input file uses previously obtained solution from step (1)
+* Note that linear elements (1st order) have sheer locking, and usually give overstiff solution
 
-* out_spatial_2_1.h5m - this is 2-order 1-refinment_level
-/arc_length.sh -f 3pb_assym/out_spatial_2_3.h5m -a 1e-5 -n 80 -g 2e-6 -d crack_propagation
+* out_spatial_2_1.h5m - this is 2-order 1-refinement_level
+./arc_length.sh -f 3pb_assym/out_spatial_3_2.h5m -a 1e-5 -n 80 -g 2e-6 -d crack_propagation
 
 3) Plotting
 
-* check if in your system you have installed awk and grep
-* copy and paste to line command
+* check that you have installed awk and grep
+* copy and paste to line command:
 echo "0 0" | tee load_path_DispY_vs_Lambda && awk '/load_path_disp ent 108 dim 1/ {print -$13,-$15}' crack_propagation/log | tee -a load_path_DispY_vs_Lambda
 
 * Wher DIRNAME for example is
@@ -57,7 +57,7 @@ Data to make plots
 ==================
 
 * load_path_DispY_vs_Lambda
-* out_spatial_2_3.h5m - this is 2-order 3-refinment_level
+* out_spatial_2_3.h5m - this is 2-order 3-refinement_level
 
 Lambda Disp_Y
 0 0
