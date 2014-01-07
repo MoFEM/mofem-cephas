@@ -1056,7 +1056,18 @@ PetscErrorCode ConfigurationalFractureMechanics::set_coordinates_from_material_s
     coords[dof_rank] = fval;
     rval = mField.get_moab().set_coords(&ent,1,coords); CHKERR_PETSC(rval);
   }
-
+  /*for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_SURFACE",dof_ptr)) {
+    dof_ptr->get_FieldData() = 0;
+  }
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_CRACK_SURFACE",dof_ptr)) {
+    dof_ptr->get_FieldData() = 0;
+  }*/
+  /*for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_CRACKFRONT_AREA",dof_ptr)) {
+    dof_ptr->get_FieldData() = 0;
+  }*/
+  /*for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_CRACK_TANGENT_CONSTRAIN",dof_ptr)) {
+    dof_ptr->get_FieldData() = 0;
+  }*/
   PetscFunctionReturn(0);
 }
 PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInterface& mField,SNES *snes) {
@@ -1628,12 +1639,12 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   Range CornersEdgesNodes;
   rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
   CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
-  const double fraction_treshold = 1e-1;
+  const double fraction_treshold = 1e-3;
   ierr = PetscPrintf(PETSC_COMM_WORLD,"freez front nodes:\n");
   for(
     map<EntityHandle,double>::iterator mit = map_ent_g.begin();
     mit!=map_ent_g.end();mit++) {
-    double fraction = (gc-mit->second)/gc;
+    double fraction = (fmin(max_g,gc)-mit->second)/fmin(max_g,gc);
     ierr = PetscPrintf(PETSC_COMM_WORLD,
       "front node = %d max_g = %6.4e g = %6.4e (%6.4e)\n",
       mit->first,max_g,mit->second,fraction); CHKERRQ(ierr);
@@ -1836,6 +1847,10 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
     Range level_tris;
     ierr = mField.refine_get_ents(*conf_prob->ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     crackSurfacesFaces = intersect(crackSurfacesFaces,level_tris);
+    //get crack surface faces adjacenet to crack front
+    Range crack_front_edges;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    mField.get_moab().get_connectivity(crack_front_edges,crackFrontNodes,true);
 
     //get pointer to coupled problem
     ierr = mField.get_problem("COUPLED_PROBLEM",&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -1908,11 +1923,13 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
     int num_nodes; 
     rval = mField.get_moab().get_connectivity(*fit,conn,num_nodes,true); CHKERR_PETSC(rval);
     ublas::vector<double,ublas::bounded_array<double,9> > dofsX(9);
+    ierr = mField.get_moab().get_coords(conn,num_nodes,&*dofsX.data().begin()); CHKERRQ(ierr);
     ublas::vector<double,ublas::bounded_array<double,3> > normal(3);
     for(int nn = 0;nn<num_nodes; nn++) {
+      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),conn[nn])!=crackFrontNodes.end()) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"MESH_NODE_POSITIONS",conn[nn],dit)) {
 	dofsX[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
-      }
+      }}
     }
     ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&dofsX.data()[0],&normal.data()[0]); CHKERRQ(ierr);
     //crack surface area is a half of crack top and bottom body surface

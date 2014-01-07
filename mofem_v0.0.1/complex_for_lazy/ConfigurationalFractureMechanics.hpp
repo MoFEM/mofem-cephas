@@ -135,6 +135,7 @@ struct ConfigurationalFractureMechanics {
 
     Vec ghostDiag;
     Range crackSurfacesFaces;
+    Range crackFrontNodes;
     PetscInt *isIdx;
     IS isSurface;
     Vec surfaceDofs;
