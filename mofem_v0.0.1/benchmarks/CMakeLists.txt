@@ -21,7 +21,7 @@ include_directories("${PROJECT_SOURCE_DIR}/benchmarks")
 
 #add executable library form subdirectory
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_simple_notch_symmetric")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_simple_notch_assymetric")
+add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_corner_notch”)
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_concrete_beam")
 
 

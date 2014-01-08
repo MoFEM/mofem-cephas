@@ -20,17 +20,17 @@ cm_export_file("../../meshes/T3_corner_notch.cub" export_files_3pb_graphite_assy
 cm_export_file("../../meshes/T3_corner_notch.jou" export_files_3pb_graphite_assym)
 
 install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/arc_length.sh 
-  DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_assymetric
+  DESTINATION mofem/benchmarks/three_point_bending_graphite_corner_notch
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/convergence_study.sh 
-  DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_assymetric
+  DESTINATION mofem/benchmarks/three_point_bending_graphite_corner_notch
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/T3_corner_notch.cub
-  DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_assymetric
+  DESTINATION mofem/benchmarks/three_point_bending_graphite_corner_notch
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/T3_corner_notch.jou
-  DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_assymetric
+  DESTINATION mofem/benchmarks/three_point_bending_graphite_corner_notch
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
 
