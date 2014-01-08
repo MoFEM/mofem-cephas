@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-cm_export_file("../../meshes/T3_horiz_assym.cub" export_files_3pb_graphite_assym)
-cm_export_file("../../meshes/T3_horiz_assym.jou" export_files_3pb_graphite_assym)
+cm_export_file("../../meshes/T3_corner_notch.cub" export_files_3pb_graphite_assym)
+cm_export_file("../../meshes/T3_corner_notch.jou" export_files_3pb_graphite_assym)
 
 install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/arc_length.sh 
   DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_assymetric
@@ -26,10 +26,10 @@ install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/convergence_study.sh
   DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_assymetric
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/T3_horiz_assym.cub
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/T3_corner_notch.cub
   DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_assymetric
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/T3_horiz_assym.jou
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/T3_corner_notch.jou
   DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_assymetric
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 

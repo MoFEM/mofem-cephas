@@ -26,7 +26,7 @@ Example run
 * -o APPROX_ORDERS_SEPARATED_BY_COMMAS 
 * -r REFINEMENT_LEVELS_SEPARATED_BY_COMMAS
 
-./convergence_study.sh -f T3_horiz_assym.cub -l -1 -g 2e-6 -o 3 -r 2 -d 3pb_assym
+./convergence_study.sh -f T3_corner_notch.cub -l -1 -g 2e-6 -o 3 -r 2 -d 3pb_assym
 
 2) Calculation of crack propagation
 
