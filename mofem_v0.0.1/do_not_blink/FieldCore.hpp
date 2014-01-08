@@ -222,6 +222,8 @@ struct FieldCore: public FieldInterface {
     enum MoFEMTypes bh = MF_EXCL,int verb = -1);
   PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,
     enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
