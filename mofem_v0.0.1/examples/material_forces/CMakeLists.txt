@@ -56,5 +56,5 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh DESTINATION bin P
 
 #testing
 add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh -f crack1.cub -l 1e-1 -g 2e-6 -o 2 -r 1 -d TEST_SIF)
-add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_2_1.h5m -a 1e-2 -n 2 -g 1e-3 -d TEST_ARC )
+add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_2_1.h5m -a 2e-3 -n 2 -g 1e-3 -d TEST_ARC )
 

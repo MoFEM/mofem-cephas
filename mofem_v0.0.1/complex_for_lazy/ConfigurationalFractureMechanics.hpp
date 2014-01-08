@@ -49,7 +49,7 @@ struct ConfigurationalFractureMechanics {
     FW_arc_lenhghat_definition
   };
 
-  EntityHandle cornersNodesMeshset,surfacesFacesNodesMeshset,crackSurfacesFacesNodesMeshset,crackForntMeshset;
+  EntityHandle crackForntMeshset;
   EntityHandle crackFrontTangentConstrains;
   matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
 
