@@ -236,7 +236,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     //calulate tangent vectors
     //those vectors are in plane of face
     for(int nn = 0; nn<3; nn++) {
-      diffX_xi[0] += dofs_X[3*nn + 0]*diffNTRI[2*nn+0];
+      diffX_xi[0] += dofs_X[3*nn + 0]*diffNTRI[2*nn+0]; // unit [ m ]
       diffX_xi[1] += dofs_X[3*nn + 1]*diffNTRI[2*nn+0];
       diffX_xi[2] += dofs_X[3*nn + 2]*diffNTRI[2*nn+0];
       diffX_eta[0] += dofs_X[3*nn + 0]*diffNTRI[2*nn+1];
@@ -257,16 +257,16 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     ierr = Spin(iSpinX_xi,i_diffX_xi); CHKERRQ(ierr);
     ierr = Spin(iSpinX_eta,i_diffX_eta); CHKERRQ(ierr);
     __CLPK_doublecomplex xSpinX_xi[9],xSpinX_eta[9];
-    ierr = make_complex_matrix(SpinX_xi,iSpinX_xi,xSpinX_xi); CHKERRQ(ierr);
-    ierr = make_complex_matrix(SpinX_eta,iSpinX_eta,xSpinX_eta); CHKERRQ(ierr);
+    ierr = make_complex_matrix(SpinX_xi,iSpinX_xi,xSpinX_xi); CHKERRQ(ierr); // unit [ m ]
+    ierr = make_complex_matrix(SpinX_eta,iSpinX_eta,xSpinX_eta); CHKERRQ(ierr); // unit [ m ]
    __CLPK_doublecomplex xNSpinX_xi[3],xNSpinX_eta[3];
     bzero(xNSpinX_xi,3*sizeof(__CLPK_doublecomplex));
     bzero(xNSpinX_eta,3*sizeof(__CLPK_doublecomplex));
     __CLPK_doublecomplex x_zero = { 0, 0 };
     // calulate dA/dX 
     __CLPK_doublecomplex x_scalar = { -creal(1./x_nrm2), -cimag(1./x_nrm2) }; // unit [ 1/m^2 ]
-    cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_xi,3,x_normal,1,&x_zero,xNSpinX_xi,1);
-    cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_eta,3,x_normal,1,&x_zero,xNSpinX_eta,1);
+    cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_xi,3,x_normal,1,&x_zero,xNSpinX_xi,1); // unit [ 1/m^2 * m = 1/m ]
+    cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_eta,3,x_normal,1,&x_zero,xNSpinX_eta,1); // unit [ 1/m^2 * m = 1/m ]
     for(int nn = 0;nn<3;nn++) {
       double A[3],iA[3];
       A[0] = xNSpinX_xi[0].r*diffNTRI[2*nn+1]-xNSpinX_eta[0].r*diffNTRI[2*nn+0]; // unit [ 1/m ]
@@ -293,11 +293,12 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	__CLPK_doublecomplex xSpinA[9];
 	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr);
 	__CLPK_doublecomplex xT[3];
-	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinA,3,x_normal,1,&x_zero,xT,1);
-	/*cerr << "NODE : " << lambda_dofs_row_ents[nn] << endl;
-	cerr << "A : " << A[0] << " " << A[1] << " " << A[2] << endl;
-	cerr << "N : " << x_normal[0].r << " " << x_normal[1].r << " " << x_normal[2].r << endl;
-	cerr << "T : " << T[0] << " " << T[1] << " " << T[2] << endl;*/
+	__CLPK_doublecomplex x_one = { 1., 0 }; 
+	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_one,xSpinA,3,x_normal,1,&x_zero,xT,1);
+	double __complex__ xT_nrm2 = csqrt(
+	  cpow((xT[0].r+I*xT[0].i),2)+ cpow((xT[1].r+I*xT[1].i),2)+ cpow((xT[2].r+I*xT[2].i),2));
+	__CLPK_doublecomplex x_scal_T = { creal(1./xT_nrm2), cimag(1./xT_nrm2) }; 
+	cblas_zscal(3,&x_scal_T,xT,1);
 	if(T != NULL) {
 	  T[3*nn + 0] = xT[0].r;
 	  T[3*nn + 1] = xT[1].r;
