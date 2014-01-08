@@ -90,14 +90,14 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_X,double *dofs_iX,doub
   __CLPK_doublecomplex x_normal[3];
   ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
   //calulare complex normal length
-  double __complex__ area = csqrt(
+  double __complex__ xarea = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
       cpow((x_normal[2].r+I*x_normal[2].i),2));
   //scale normal vector
   for(int dd = 0;dd<3;dd++) {
     double __complex__ val;
-    val = (x_normal[dd].r+I*x_normal[dd].i)/area;
+    val = (x_normal[dd].r+I*x_normal[dd].i);// /xarea;
     x_normal[dd].r = creal(val);
     x_normal[dd].i = cimag(val);
   }

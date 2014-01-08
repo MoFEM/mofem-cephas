@@ -48,6 +48,7 @@ struct DirihletBCMethod_DriverComplexForLazy: public CubitDisplacementDirihletBC
 struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   double *t_val;
+  //set load factor
   PetscErrorCode set_t_val(double t_val_) {
       PetscFunctionBegin;
       *t_val = t_val_;
