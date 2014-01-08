@@ -3730,9 +3730,9 @@ PetscErrorCode FieldCore::problem_get_FE(const string &problem_name,const string
   PetscFunctionReturn(0);
 }
 bool FieldCore::check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType) {
-  moabCubitMeshSet_multiIndex::index<Composite_mi_tag>::type::iterator 
-    miit = cubit_meshsets.get<Composite_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
-  if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
+  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+    miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
+  if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     return true;
   } 
   return false;
@@ -3740,9 +3740,9 @@ bool FieldCore::check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCT
 PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType,
   const int dimension,Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  moabCubitMeshSet_multiIndex::index<Composite_mi_tag>::type::iterator 
-    miit = cubit_meshsets.get<Composite_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
-  if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
+  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+    miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
+  if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = miit->get_Cubit_msId_entities_by_dimension(moab,dimension,entities,recursive); CHKERRQ(ierr);
   } else {
     SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
@@ -3751,9 +3751,9 @@ PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,co
 }
 PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType,Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  moabCubitMeshSet_multiIndex::index<Composite_mi_tag>::type::iterator 
-    miit = cubit_meshsets.get<Composite_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
-  if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
+  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+    miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
+  if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = miit->get_Cubit_msId_entities_by_dimension(moab,entities,recursive); CHKERRQ(ierr);
   } else {
     SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
@@ -3774,9 +3774,9 @@ PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,co
 }
 PetscErrorCode FieldCore::get_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) {
   PetscFunctionBegin;
-  moabCubitMeshSet_multiIndex::index<Composite_mi_tag>::type::iterator 
-    miit = cubit_meshsets.get<Composite_mi_tag>().find(boost::make_tuple(msId,CubitBCType));
-  if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
+  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+    miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType));
+  if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     meshset = miit->meshset;
   } else {
     SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
@@ -4158,9 +4158,9 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
 PetscErrorCode FieldCore::get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  moabCubitMeshSet_multiIndex::index<Composite_mi_tag>::type::iterator 
-    miit = cubit_meshsets.get<Composite_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
-  if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
+  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+    miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
+  if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = FieldCore::get_msId_3dENTS_sides(miit->meshset,recursive,verb); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,1,"msId is not there");
@@ -4259,9 +4259,9 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   const int msId,const Cubit_BC_bitset CubitBCType,const bool add_iterfece_entities,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  moabCubitMeshSet_multiIndex::index<Composite_mi_tag>::type::iterator 
-    miit = cubit_meshsets.get<Composite_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
-  if(miit!=cubit_meshsets.get<Composite_mi_tag>().end()) {
+  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+    miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
+  if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = FieldCore::get_msId_3dENTS_split_sides(
       meshset,bit,miit->meshset,add_iterfece_entities,recursive,verb); CHKERRQ(ierr);
   } else {

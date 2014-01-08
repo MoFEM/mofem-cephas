@@ -673,7 +673,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_Cubit_name> >,
     hashed_unique<
-      tag<Composite_mi_tag>,       
+      tag<Composite_Cubit_msId_and_MeshSetType_mi_tag>,       
       composite_key<
 	CubitMeshSets,
 	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
