@@ -565,6 +565,7 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TRIs(const EntityHandle meshset,c
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb) {
+  PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
   EntityHandle idm = no_handle;
@@ -590,6 +591,7 @@ PetscErrorCode FieldCore::add_ents_to_field_by_VERTICEs(const Range &nodes,const
       SETERRQ(PETSC_COMM_SELF,1,"add_ents_to_field_by_TRIs this field not work for TRIs");
   }
   ierr = seed_ref_level_3D(idm,0); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb) {
   PetscFunctionBegin;
