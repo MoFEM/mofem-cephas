@@ -69,7 +69,7 @@ block 2 attribute index 1 20
 block 2 attribute index 2 0.2   
 
 #Create Block Set with Vertices to ploat load-disp. path 
-block 3 vertex 110 
+block 3 vertex 110 97 98
 block 3 name 'LoadPath' 
 
 #Create nodesets and sidesets for fracture constraints   
@@ -98,8 +98,10 @@ sideset 201 curve 143
 #!Meshing 
 volume all scheme tetmesh    
 volume all size auto factor 6
+volume 3 size auto factor 6
+volume 5 size auto factor 6
 #!Mesh Crack Surface (those elemenst are streched)
-surface 53  size auto factor 6
+surface 53  size auto factor 4
 
 #!Mesh All
 mesh surface 73
