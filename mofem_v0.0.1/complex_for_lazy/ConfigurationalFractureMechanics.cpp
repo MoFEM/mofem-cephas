@@ -1903,9 +1903,27 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = SNESSetFunction(*snes,F,SnesRhs,&arc_snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetJacobian(*snes,ShellK,K,SnesMat,&arc_snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(*snes); CHKERRQ(ierr);
+  PetscReal my_tol;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_tol",&my_tol,&flg); CHKERRQ(ierr);
+  if(flg == PETSC_TRUE) {
+    PetscReal atol,rtol,stol;
+    PetscInt maxit,maxf;
+    ierr = SNESGetTolerances(*snes,&atol,&rtol,&stol,&maxit,&maxf); CHKERRQ(ierr);
+    atol = my_tol;
+    rtol = atol*1e2;
+    ierr = SNESSetTolerances(*snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
+  }
 
   KSP ksp;
   ierr = SNESGetKSP(*snes,&ksp); CHKERRQ(ierr);
+  if(flg == PETSC_TRUE) {
+    PetscReal rtol,atol,dtol;
+    PetscInt maxits;
+    ierr = KSPGetTolerances(ksp,&rtol,&atol,&dtol,&maxits); CHKERRQ(ierr);
+    atol = my_tol*1e-2;
+    rtol = atol*1e-2;
+    ierr = KSPSetTolerances(ksp,rtol,atol,dtol,maxits); CHKERRQ(ierr);
+  }
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
