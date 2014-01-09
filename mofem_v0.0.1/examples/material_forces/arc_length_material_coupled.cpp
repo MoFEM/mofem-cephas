@@ -142,10 +142,10 @@ int main(int argc, char *argv[]) {
 
   for(int aa = 0;step<nb_load_steps;step++,aa++) {
 
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n\n** number of step = %D\n\n\n",step); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n\n** number of step = %D\n",step); CHKERRQ(ierr);
 
+    ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
     if(aa == 0) {
-      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -165,13 +165,13 @@ int main(int argc, char *argv[]) {
 
     //calulate initial load factor
     if(step == 0) {
-      double max_g = conf_prob.max_g;
+      double max_j = conf_prob.max_j;
       Tag th_t_val;
       rval = moab.tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
       const EntityHandle root_meshset = moab.get_root_set();
       double load_factor;
       rval = moab.tag_get_data(th_t_val,&root_meshset,1,&load_factor); CHKERR_PETSC(rval);
-      double a = fabs(max_g)/pow(load_factor,2);
+      double a = fabs(max_j)/pow(load_factor,2);
       double new_load_factor = copysign(sqrt(gc/a),load_factor);
       rval = moab.tag_set_data(th_t_val,&root_meshset,1,&new_load_factor); CHKERR_PETSC(rval);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\ncooeficient a = %6.4e\n",a); CHKERRQ(ierr);
@@ -181,7 +181,6 @@ int main(int argc, char *argv[]) {
       ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
       ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
       ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -192,9 +191,9 @@ int main(int argc, char *argv[]) {
 
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* da = %6.4e\n\n",da); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"* da = %6.4e\n",da); CHKERRQ(ierr);
 
-    for(int ii = 0;ii<5;ii++) {
+    for(int ii = 0;ii<20;ii++) {
        ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
        if(ii == 0) {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da); CHKERRQ(ierr);
@@ -204,7 +203,6 @@ int main(int argc, char *argv[]) {
       int its;
       ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
       if(its == 0) break;
-      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -214,7 +212,7 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
       ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
       if(aa > 0 && ii == 0) {
-	int its_d = 5;
+	int its_d = 8;
 	double gamma = 0.5,reduction = 1;
 	reduction = pow((double)its_d/(double)(its+1),gamma);
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* reduction of da = %6.4e\n",reduction); CHKERRQ(ierr);
@@ -237,10 +235,19 @@ int main(int argc, char *argv[]) {
 	ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
 	Range CrackSurfacesFaces;
 	ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
+	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+	  int msId = it->get_msId();
+	  if((msId < 10200)||(msId >= 10300)) continue;
+	  Range SurfacesFaces_msId;
+	  ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SideSet,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
+	  CrackSurfacesFaces.insert(SurfacesFaces_msId.begin(),SurfacesFaces_msId.end());
+	}
+
 	Range level_tris;
 	ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
 	SurfacesFaces = intersect(SurfacesFaces,level_tris);
 	CrackSurfacesFaces = intersect(CrackSurfacesFaces,level_tris);
+
 	EntityHandle out_meshset;
 	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
 	rval = moab.add_entities(out_meshset,CrackSurfacesFaces); CHKERR_PETSC(rval);
@@ -253,6 +260,10 @@ int main(int argc, char *argv[]) {
 	rval = moab.write_file(ss2.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
 	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
       }
+
+      ostringstream ss3;
+      ss3 << "restart_" << step << ".h5m";
+      rval = moab.write_file(ss3.str().c_str()); CHKERR_PETSC(rval);
 
       const MoFEMProblem *problem_ptr;
       ierr = mField.get_problem("COUPLED_PROBLEM",&problem_ptr); CHKERRQ(ierr);

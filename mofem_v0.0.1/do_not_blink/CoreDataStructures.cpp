@@ -1293,7 +1293,11 @@ ostream& operator<<(ostream& os,const Mat_Interf& e)
 {
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
-    os << "Elastic modulus multiplier = " << e.data.alpha << endl << endl;
+    os << "Elastic modulus multiplier        = " << e.data.alpha << endl << endl;
+	  os << "Damage Coupling multiplier        = " << e.data.beta << endl << endl;
+	  os << "Maximum resisting stress of crack = " << e.data.ft		<< endl << endl;
+	  os << "Fracture Energy                   = " << e.data.Gf << endl << endl;
+
     return os;
 }
     

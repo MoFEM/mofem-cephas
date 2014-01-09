@@ -416,6 +416,15 @@ struct FieldInterface {
     * \brief set field entities on vertices
     *
     * The lower dimension entities are added depending on the space type
+    * \param nodes contains set vertices
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const string& name,int verb = -1) = 0;
+
+  /** 
+    * \brief set field entities on vertices
+    *
+    * The lower dimension entities are added depending on the space type
     * \param meshset contains set vertices
     * \param name of the field
     */

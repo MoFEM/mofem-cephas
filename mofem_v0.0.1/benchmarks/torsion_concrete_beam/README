@@ -7,8 +7,6 @@ Check before run
 Notes
 =====
 
-* External forces and Young modulus are rescaled by factor 1e-8.
-* Griffith energy for graphite is 200 * 1e-8 for units consistency.
 
 Example run
 ===========
@@ -36,7 +34,7 @@ Example run
 * Crack propagation as an input file uses previously obtained solution from step (1)
 * Note that linear elements (1st order) have sheer locking, and usually give overstiff solution
 
-./arc_length.sh -f torsion1/out_spatial_1_1.h5m -a 1 -n 120 -g 8e-6 -d propagation_Order1_Ref1 -p 4
+./arc_length.sh -f torsion1/out_spatial_1_1.h5m -a 1 -n 500 -g 8e-6 -d propagation_Order1_Ref1 -p 4
 
 3) Plotting
 

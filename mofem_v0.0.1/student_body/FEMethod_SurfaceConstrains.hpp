@@ -41,7 +41,7 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   bool updated;
 
   vector<double> diffNTRI;
-  vector<double> g_NTRI3;
+  vector<double> g_NTRI;
   const double *G_TRI_W;
 
   C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose = 0);
@@ -70,6 +70,7 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   };
 
+  EntityHandle face;
   PetscErrorCode cOnstrain(double *dofs_X,double *dofs_iX,double *C,double *iC);
   virtual PetscErrorCode iNtegrate(bool transpose,bool nonlinear);
   virtual PetscErrorCode aSsemble(bool transpose,bool nonlinear);

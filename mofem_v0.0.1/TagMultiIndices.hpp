@@ -78,6 +78,7 @@ namespace MoFEM {
   struct Composite_Name_And_Type_mi_tag {};
   struct Composite_Name_Type_And_Side_Number_mi_tag {};
   struct Composite_Name_Ent_And_Part_mi_tag {};
+  struct Composite_Cubit_msId_and_MeshSetType_mi_tag {};
 
 }
 

@@ -41,9 +41,9 @@ PetscErrorCode C_SURFACE_FEMethod::preProcess() {
 void C_SURFACE_FEMethod::run_in_constructor() {
     diffNTRI.resize(6);
     ShapeDiffMBTRI(&diffNTRI[0]);
-    g_NTRI3.resize(7*3);
-    ShapeMBTRI(&g_NTRI3[0],G_TRI_X4,G_TRI_Y4,4);
-    G_TRI_W = G_TRI_W4;
+    g_NTRI.resize(7*3);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7);
+    G_TRI_W = G_TRI_W7;
     double def_VAL[3*9];
     fill(&def_VAL[0],&def_VAL[3*9],0);
     lambda_global_row_indices.resize(3);
@@ -86,24 +86,44 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_X,double *dofs_iX,doub
 	x_dofs_X[nn*3+dd].i = 0;
       }
   }}
+  /*
+  //get adj tet
+  Range tet;
+  rval = moab.get_adjacencies(&face,1,3,false,tet); CHKERR_PETSC(rval);
+  Range tet_nodes;
+  rval = moab.get_connectivity(&*tet.begin(),1,tet_nodes); CHKERR_PETSC(rval);
+  Range face_nodes;
+  rval = moab.get_connectivity(&face,1,face_nodes); CHKERR_PETSC(rval);
+  Range internal_node;
+  internal_node = subtract(tet_nodes,face_nodes);
+  double face_node[3];
+  rval = moab.get_coords(&*face_nodes.begin(),1,face_node); CHKERR_PETSC(rval);
+  double coord_internal_node[3];
+  rval = moab.get_coords(&*internal_node.begin(),1,coord_internal_node); CHKERR_PETSC(rval);
+  cblas_daxpy(3,-1.,coord_internal_node,1,face_node,1);
+  */
   //calulate complex face normal vector
   __CLPK_doublecomplex x_normal[3];
   ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
+  /*
+  __CLPK_doublecomplex xdot = { copysign(1,x_normal[0].r*face_node[0]+x_normal[1].r*face_node[1]+x_normal[2].r*face_node[2]), 0 };
+  cblas_zscal(3,&xdot,x_normal,1);
+  */
   //calulare complex normal length
-  double __complex__ area = csqrt(
+  double __complex__ xarea = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
       cpow((x_normal[2].r+I*x_normal[2].i),2));
   //scale normal vector
   for(int dd = 0;dd<3;dd++) {
     double __complex__ val;
-    val = (x_normal[dd].r+I*x_normal[dd].i)/area;
+    val = (x_normal[dd].r+I*x_normal[dd].i)/xarea;
     x_normal[dd].r = creal(val);
     x_normal[dd].i = cimag(val);
   }
   if( C!=NULL) bzero( C,3*9*sizeof(double));
   if(iC!=NULL) bzero(iC,3*9*sizeof(double));
-  for(unsigned int gg = 0;gg<g_NTRI3.size()/3;gg++) {
+  for(unsigned int gg = 0;gg<g_NTRI.size()/3;gg++) {
     //->row
     for(int nn = 0;nn<3;nn++) {
       if(lambda_global_row_indices[nn]==-1) continue;
@@ -112,10 +132,10 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_X,double *dofs_iX,doub
 	if(lambda_global_row_indices[mm]==-1) continue;
 	for(int dd = 0;dd<3;dd++) {
 	  if( C!=NULL) {
-	     C[9*nn + 3*mm+dd] += G_TRI_W[gg]*( g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+mm]*x_normal[dd].r );
+	     C[9*nn + 3*mm+dd] += G_TRI_W[gg]*( g_NTRI[3*gg+nn]*g_NTRI[3*gg+mm]*x_normal[dd].r );
 	  }
 	  if(iC!=NULL) {
-	    iC[9*nn + 3*mm+dd] += G_TRI_W[gg]*( g_NTRI3[3*gg+nn]*g_NTRI3[3*gg+mm]*x_normal[dd].i );
+	    iC[9*nn + 3*mm+dd] += G_TRI_W[gg]*( g_NTRI[3*gg+nn]*g_NTRI[3*gg+mm]*x_normal[dd].i );
 	  }
 	}
       }
@@ -200,7 +220,7 @@ PetscErrorCode C_SURFACE_FEMethod::aSsemble(bool transpose,bool nonlinear) {
 PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
     PetscFunctionBegin;
     try {
-      EntityHandle face = fe_ptr->get_ent();
+      face = fe_ptr->get_ent();
       const EntityHandle* conn_face; 
       int num_nodes; 
       rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
