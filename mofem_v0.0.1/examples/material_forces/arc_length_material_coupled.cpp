@@ -212,7 +212,11 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
       ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
       if(aa > 0 && ii == 0) {
-	int its_d = 8;
+	int its_d;
+	ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+	if(flg != PETSC_TRUE) {
+	  its_d = 8;
+	}
 	double gamma = 0.5,reduction = 1;
 	reduction = pow((double)its_d/(double)(its+1),gamma);
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* reduction of da = %6.4e\n",reduction); CHKERRQ(ierr);
