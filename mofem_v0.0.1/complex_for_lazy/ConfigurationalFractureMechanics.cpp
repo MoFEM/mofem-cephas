@@ -1791,7 +1791,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
   const double fraction_treshold = 5e-2;
   ierr = PetscPrintf(PETSC_COMM_WORLD,"freez front nodes:\n");
-  int nb_un_freez_nodes = 0;
+  nb_un_freez_nodes = 0;
   for(
     map<EntityHandle,double>::iterator mit = map_ent_j.begin();
     mit!=map_ent_j.end();mit++) {

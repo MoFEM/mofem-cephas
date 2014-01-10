@@ -93,6 +93,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
 
   double aRea,lambda;
+  int nb_un_freez_nodes;
   PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double da);
 
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
