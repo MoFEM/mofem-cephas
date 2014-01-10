@@ -1795,7 +1795,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   for(
     map<EntityHandle,double>::iterator mit = map_ent_j.begin();
     mit!=map_ent_j.end();mit++) {
-    double fraction = (fmin(max_j,gc)-mit->second)/fmin(max_j,gc);
+    double fraction = (max_j-mit->second)/max_j;
+    //(fmin(max_j,gc)-mit->second)/fmin(max_j,gc);
     ierr = PetscPrintf(PETSC_COMM_WORLD,
       "front node = %ld max_g = %6.4e g = %6.4e (%6.4e)",
       mit->first,max_j,mit->second,fraction); CHKERRQ(ierr);
