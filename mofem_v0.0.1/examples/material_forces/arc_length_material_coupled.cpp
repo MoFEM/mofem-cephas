@@ -224,6 +224,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
     ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",step,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
@@ -297,8 +299,6 @@ int main(int argc, char *argv[]) {
       }
 
     }
-
-    ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   }
 
