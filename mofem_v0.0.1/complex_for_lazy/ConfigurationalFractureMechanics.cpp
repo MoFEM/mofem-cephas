@@ -1136,25 +1136,24 @@ PetscErrorCode ConfigurationalFractureMechanics::set_coordinates_from_material_s
     coords[dof_rank] = fval;
     rval = mField.get_moab().set_coords(&ent,1,coords); CHKERR_PETSC(rval);
   }
-  /*Range CrackFrontEdges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,CrackFrontEdges,true); CHKERRQ(ierr);
-  Range CrackFrontNodes;
-  rval = mField.get_moab().get_connectivity(CrackFrontEdges,CrackFrontNodes,true); CHKERR_PETSC(rval);
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_SURFACE",dof_ptr)) {
-    if(find(CrackFrontNodes.begin(),CrackFrontNodes.end(),dof_ptr->get_ent())==CrackFrontNodes.end()) {
-      dof_ptr->get_FieldData() = 0;
-    }
+    dof_ptr->get_FieldData() = 0;
   }
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_CRACK_SURFACE",dof_ptr)) {
-    if(find(CrackFrontNodes.begin(),CrackFrontNodes.end(),dof_ptr->get_ent())==CrackFrontNodes.end()) {
+    dof_ptr->get_FieldData() = 0;
+  }
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_CRACK_TANGENT_CONSTRAIN",dof_ptr)) {
+    dof_ptr->get_FieldData() = 0;
+  }
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+    int msId = it->get_msId();
+    if((msId < 10200)||(msId >= 10300)) continue;
+    ostringstream ss;
+    ss << "LAMBDA_SURFACE_msId_" << msId;
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,ss.str(),dof_ptr)) {
       dof_ptr->get_FieldData() = 0;
     }
   }
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_CRACK_TANGENT_CONSTRAIN",dof_ptr)) {
-    if(find(CrackFrontNodes.begin(),CrackFrontNodes.end(),dof_ptr->get_ent())==CrackFrontNodes.end()) {
-      dof_ptr->get_FieldData() = 0;
-    }
-  }*/
   PetscFunctionReturn(0);
 }
 PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInterface& mField,SNES *snes) {
