@@ -293,12 +293,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	__CLPK_doublecomplex xSpinA[9];
 	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr);
 	__CLPK_doublecomplex xT[3];
-	__CLPK_doublecomplex x_one = { 1., 0 }; 
-	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_one,xSpinA,3,x_normal,1,&x_zero,xT,1);
-	double __complex__ xT_nrm2 = csqrt(
-	  cpow((xT[0].r+I*xT[0].i),2)+ cpow((xT[1].r+I*xT[1].i),2)+ cpow((xT[2].r+I*xT[2].i),2));
-	__CLPK_doublecomplex x_scal_T = { creal(1./xT_nrm2), cimag(1./xT_nrm2) }; 
-	cblas_zscal(3,&x_scal_T,xT,1);
+	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinA,3,x_normal,1,&x_zero,xT,1);
 	if(T != NULL) {
 	  T[3*nn + 0] = xT[0].r;
 	  T[3*nn + 1] = xT[1].r;

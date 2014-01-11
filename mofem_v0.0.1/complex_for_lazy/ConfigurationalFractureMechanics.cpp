@@ -1822,9 +1822,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     }
   }
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
-  if(nb_un_freez_nodes) {
-    CornersNodes.insert(UnFreezNodes.begin(),UnFreezNodes.end());
-  }
+  //if(nb_un_freez_nodes) {
+    //CornersNodes.insert(UnFreezNodes.begin(),UnFreezNodes.end());
+  //}
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
   CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"COUPLED_PROBLEM",CornersNodes);
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
