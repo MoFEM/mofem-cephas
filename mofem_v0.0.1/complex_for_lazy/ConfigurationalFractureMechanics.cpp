@@ -330,6 +330,14 @@ PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Cou
 PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
   PetscFunctionBegin;
   set<DofIdx> set_zero_rows;
+  if(fixAllSpatialDispacements) {
+    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
+      if(
+	(dit->get_name() != "SPATIAL_POSITION")
+      ) continue;
+      set_zero_rows.insert(dit->get_petsc_gloabl_dof_idx());
+    }
+  }
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
     if(dit->get_ent_type()!=MBVERTEX) continue;
     if(
@@ -362,6 +370,11 @@ PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Cou
 PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
   PetscFunctionBegin;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  if(fixAllSpatialDispacements) {
+    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(fe_method_ptr->problem_ptr,"SPATIAL_POSITION",dit)) {
+      ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
+    }
+  }
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
     if(dit->get_part()!=pcomm->rank()) continue;
     if(dit->get_ent_type()!=MBVERTEX) continue;

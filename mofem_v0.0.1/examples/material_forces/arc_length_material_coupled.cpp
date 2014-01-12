@@ -220,8 +220,11 @@ int main(int argc, char *argv[]) {
 	  }
 	  double gamma = 0.5,reduction = 1;
 	  reduction = pow((double)its_d/(double)(its+1),gamma);
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* reduction of da = %6.4e\n",reduction); CHKERRQ(ierr);
-	  da *= reduction;
+	  const double max_da_reduction = 100;
+	  if(reduction<1 || da < max_da_reduction*da_0) {
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* reduction of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
+	    da = fmin(da*reduction,max_da_reduction*da_0);
+	  }
 	}
 	_da_ = 0;
 	not_converged_state = false;
@@ -240,10 +243,12 @@ int main(int argc, char *argv[]) {
 	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  da = 0.5*da;
 	  _da_ = da;
+	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* field to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
 	} else {
 	  if(reason != SNES_DIVERGED_MAX_IT) {
 	    ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  }
+	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* field to converge, recalulate spatail positions only\n"); CHKERRQ(ierr);
 	  SNES snes_spatial;
 	  //solve spatial problem
 	  ierr = SNESCreate(PETSC_COMM_WORLD,&snes_spatial); CHKERRQ(ierr);  
@@ -257,6 +262,7 @@ int main(int argc, char *argv[]) {
 	  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	  if(not_converged_state) {
 	    _da_ = 0.1*da;
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* field to converge. set da = %6.4e ( 0.1 ) \n",_da_); CHKERRQ(ierr);
 	  }
 	}
       }
