@@ -2,6 +2,47 @@
    <insert_a_suppression_name_here>
    Memcheck:Leak
    fun:malloc
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   obj:/bin/dash
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:register_state
+   fun:re_acquire_state_context
+   fun:re_compile_internal
+   fun:re_compile_pattern
+   obj:/bin/sed
+   obj:/bin/sed
+   obj:/bin/sed
+   obj:/bin/sed
+   obj:/bin/sed
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
    obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
    fun:ompi_attr_create_keyval
    fun:PMPI_Keyval_create
