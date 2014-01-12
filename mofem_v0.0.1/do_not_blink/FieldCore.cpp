@@ -4466,7 +4466,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	  if(tet_nodes.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"should be only one node"); 
 	  Tag th_internal_node;
 	  const EntityHandle def_node[] = {0};
-	  rval = moab.tag_get_handle("INTERNAL_NODE",1,MB_TYPE_HANDLE,
+	  rval = moab.tag_get_handle("INTERNAL_SIDE_NODE",1,MB_TYPE_HANDLE,
 	    th_internal_node,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_internal_node,&*eit,1,&*tet_nodes.begin()); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_internal_node,&*new_ent.begin(),1,&*tet_nodes.begin()); CHKERR_PETSC(rval);

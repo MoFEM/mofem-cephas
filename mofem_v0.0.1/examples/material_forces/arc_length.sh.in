@@ -134,6 +134,10 @@ while test $# -gt 0; do
                         export ITSD=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
+		--snes_linesearch_type*) 
+                        export LINESEARCHTYPE=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
 
                 *)
                         break
@@ -182,7 +186,9 @@ if [ -z ${ITSD+x} ]; then
   TOL=1e-9
 fi
 
-
+if [ -z ${LINESEARCHTYPE+x} ]; then 
+  LINESEARCHTYPE="l2"
+fi
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MPI_RUN@ -np $NB_PROC"
@@ -193,7 +199,7 @@ cd $DIR_NAME
 $MPIRUN $BIN_PATH/arc_length_material_coupled \
   -my_file `basename $FILE` \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
-  -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor \
+  -snes_type newtonls -snes_linesearch_type $LINESEARCHTYPE -snes_linesearch_monitor \
   -ksp_atol 1e-14 -ksp_rtol 1e-12 \
   -snes_max_it 25 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
   -snes_monitor -snes_converged_reason -ksp_monitor \

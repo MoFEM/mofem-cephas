@@ -225,8 +225,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     ierr = ShapeFaceNormalMBTRI_complex(diffNTRI,x_dofs_X,x_normal); CHKERRQ(ierr);
     //set direction if crack or interface surface
     Tag th_internal_node;
-    const int def_node[] = {0};
-    rval = moab.tag_get_handle("INTERNAL_NODE",1,MB_TYPE_HANDLE,
+    const EntityHandle def_node[] = {0};
+    rval = moab.tag_get_handle("INTERNAL_SIDE_NODE",1,MB_TYPE_HANDLE,
       th_internal_node,MB_TAG_CREAT|MB_TAG_SPARSE,def_node);
     EntityHandle internal_node;
     rval = moab.tag_get_data(th_internal_node,&face,1,&internal_node); CHKERR_PETSC(rval);

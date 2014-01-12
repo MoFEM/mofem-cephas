@@ -92,7 +92,7 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_X,double *dofs_iX,doub
   //set direction if crack or interface surface
   Tag th_internal_node;
   const EntityHandle def_node[] = {0};
-  rval = moab.tag_get_handle("INTERNAL_NODE",1,MB_TYPE_HANDLE,
+  rval = moab.tag_get_handle("INTERNAL_SIDE_NODE",1,MB_TYPE_HANDLE,
       th_internal_node,MB_TAG_CREAT|MB_TAG_SPARSE,def_node);
   EntityHandle internal_node;
   rval = moab.tag_get_data(th_internal_node,&face,1,&internal_node); CHKERR_PETSC(rval);
@@ -112,11 +112,11 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_X,double *dofs_iX,doub
     cblas_zscal(3,&xdot,x_normal,1);
   };
   //calulare complex normal length
-  double __complex__ xarea = csqrt(
+  /*double __complex__ xarea = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
       cpow((x_normal[2].r+I*x_normal[2].i),2));
-  double normal[3] = { x_normal[0].r/creal(xarea), x_normal[1].r/creal(xarea), x_normal[2].r/creal(xarea) };
+  double normal[3] = { x_normal[0].r/creal(xarea), x_normal[1].r/creal(xarea), x_normal[2].r/creal(xarea) };*/
   /*const int def_normal[3] = { 0,0,0 };
   Tag th_normal;
   rval = moab.tag_get_handle("NORMAL_TEST",3,MB_TYPE_DOUBLE,

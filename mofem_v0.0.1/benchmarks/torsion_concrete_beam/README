@@ -26,7 +26,7 @@ Example run
 * -d directory name
 * -p number of processors
 
-./convergence_study.sh -f torsion.cub -l 1 -g 8e-5 -o 1 -r 1 -d torsion1 -p 4
+./convergence_study.sh -f torsion.cub -l 1 -g 8e-5 -o 1,2 -r 1 -d torsion_SIF -p 4
 
 
 2) Calculation of crack propagation
@@ -34,7 +34,9 @@ Example run
 * Crack propagation as an input file uses previously obtained solution from step (1)
 * Note that linear elements (1st order) have sheer locking, and usually give overstiff solution
 
-./arc_length.sh -f torsion1/out_spatial_1_1.h5m -a 1 -n 500 -g 8e-6 -d propagation_Order1_Ref1 -p 4
+./arc_length.sh -f torsion_SIF/out_spatial_1_1.h5m -a 1 -n 500 -g 8e-6 -d propagation_Order1_Ref1 -p 4
+./arc_length.sh -f torsion_SIF/out_spatial_2_1.h5m -a 1 -n 500 -g 8e-6 -d propagation_Order2_Ref1 -p 4
+
 
 3) Plotting
 
