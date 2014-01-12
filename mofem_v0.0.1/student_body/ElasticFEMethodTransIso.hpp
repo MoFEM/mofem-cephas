@@ -579,7 +579,7 @@ namespace MoFEM {
 			ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",phi); CHKERRQ(ierr);
 			double fibreVector[3];
 			
-			for (int gg=0; gg<phi.size(); gg++) {
+			for (unsigned int gg=0; gg<phi.size(); gg++) {
 				normalized_phi[gg].resize(1,3);
 				for (int ii=0; ii<3; ii++) {
 					normalized_phi[gg](0,ii) = -phi[gg](0,ii)/sqrt(pow(phi[gg](0,0),2)+pow(phi[gg](0,1),2)+pow(phi[gg](0,2),2));
@@ -839,7 +839,7 @@ namespace MoFEM {
 			vector< ublas::matrix< FieldData > > phi;
 			ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",phi); CHKERRQ(ierr);
 			
-			for (int gg=0; gg<phi.size(); gg++) {
+			for (unsigned int gg=0; gg<phi.size(); gg++) {
 				normalized_phi[gg].resize(1,3);
 				for (int ii=0; ii<3; ii++) {
 					normalized_phi[gg](0,ii) = -phi[gg](0,ii)/sqrt(pow(phi[gg](0,0),2)+pow(phi[gg](0,1),2)+pow(phi[gg](0,2),2));
