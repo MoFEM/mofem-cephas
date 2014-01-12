@@ -55,6 +55,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh DESTINATION bin PERMISSI
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
 #testing
-add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh -f crack1.cub -l 1e-1 -g 2e-6 -o 2 -r 1 -d TEST_SIF)
-add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_2_1.h5m -a 2e-3 -n 2 -g 1e-3 -d TEST_ARC)
+add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh -f crack1.cub -l 1e-3 -g 2e-6 -o 1 -r 1 -d TEST_SIF)
+add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_1_1.h5m 
+  -a 2e-3 -n 1 -g 1e-4 -d TEST_ARC --snes_linesearch_type=basic --my_nb_sub_steps=1)
 

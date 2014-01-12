@@ -197,9 +197,15 @@ int main(int argc, char *argv[]) {
     ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Col,&D0); CHKERRQ(ierr);
     ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     
+    int nb_sub_steps;
+    ierr = PetscOptionsGetInt("","-my_nb_sub_steps",&nb_sub_steps,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      nb_sub_steps = 20;
+    }
+
     bool not_converged_state = false;
     double _da_ = 0;
-    for(int ii = 0;ii<20;ii++) {
+    for(int ii = 0;ii<nb_sub_steps;ii++) {
        ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
        if(ii == 0) {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da); CHKERRQ(ierr);
