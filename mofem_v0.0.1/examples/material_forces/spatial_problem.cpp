@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
   //BitRefLevel bit_level0;
   //bit_level0.set(0);
 
-  PetscBool no_add_interface;
+  PetscBool no_add_interface = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_no_add_interface",&no_add_interface,&flg); CHKERRQ(ierr);
   if(no_add_interface == PETSC_TRUE) {
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_add_crack);

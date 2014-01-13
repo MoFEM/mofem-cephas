@@ -62,6 +62,7 @@ struct NL_ElasticFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledSp
     PetscFunctionBegin;
     switch(snes_ctx) {
       case ctx_SNESNone: {
+	nodal_forces_not_added = true;
 	ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

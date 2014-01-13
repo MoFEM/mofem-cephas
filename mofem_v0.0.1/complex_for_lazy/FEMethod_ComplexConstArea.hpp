@@ -717,6 +717,7 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
       ierr = VecGetArray(mesh_fe_ptr->front_f,&f_front_mesh_array); CHKERRQ(ierr);
       for(int nn = 0;nn<3;nn++) {
 	for(int dd = 0;dd<3;dd++) {
+	  if(local_disp_dofs_row_idx[3*nn+dd]==-1) continue;
 	  F_FRONT_MESH_SMOOTHING[3*nn+dd] = f_front_mesh_array[local_disp_dofs_row_idx[3*nn+dd]];
 	}
       }
