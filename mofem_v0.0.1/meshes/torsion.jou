@@ -35,75 +35,76 @@ Compress Ids All
 chop volume 1 with volume 2
 Compress Ids All
 
-create Cylinder height 200 radius 50
+create Cylinder height 400 radius 50
 rotate Volume 4 angle 90  about Y include_merged
 Compress Ids All
 move Volume 4 location surface 34  include_merged 
+rotate Volume 4 angle -45 about Y include_merged
 chop volume 3  with volume 4 
-webcut volume 5 with plane zplane offset 0 noimprint nomerge
+webcut volume 5  with general plane plane x spin axis y angle 45 noimprint nomerge
 Compress Ids All
 
-#Boundary conditions
-merge volume all group_results
-split curve 37 38 61 48 53 57 fraction 0.5
-create Displacement  on vertex 108 dof 2 fix 0
-create Displacement  on vertex 107 dof 1 dof 2 dof 3 fix 0
-create Displacement  on vertex 105 dof 2 dof 3 fix 0
-create force  on vertex 110  force value 1 direction  y
-
-#Merge Volumes 
-imprint volume all  
-merge volume all  
-
-#Material Properties  
-block 1 volume 3 4 5   
-block 1 name "MAT_ELASTIC_Concrete"    
-block 1 attribute count 10    
-block 1 attribute index 1 3.5 
-block 1 attribute index 2 0.3   
-
-block 2 volume 1 2   
-block 2 name "MAT_ELASTIC_Steel"    
-block 2 attribute count 10    
-block 2 attribute index 1 20 
-block 2 attribute index 2 0.2   
-
-#Create Block Set with Vertices to ploat load-disp. path 
-block 3 vertex 110 
-block 3 name 'LoadPath' 
-
-#Create nodesets and sidesets for fracture constraints   
-#Boundary edges   
-sideset 100 curve all  
-sideset 100 curve 156 145 143 146 154 142 144 132 131  remove
-sideset 100 curve 181 194  remove
-
-#Boundary vertices   
-nodeset 101 vertex all 
-nodeset 101 vertex 89 90 99 100 91 92 remove
-
-#Boundary surfaces   
-sideset 102 surface all   
-sideset 102 surface 61 53 54 remove    
-
-sideset 102 surface 75 remove
-sideset 10200 surface 75
-
-#Crack surface
-sideset 200 surface 53
-
-#Crack front
-sideset 201 curve 143
-
-#!Meshing 
-volume all scheme tetmesh    
-volume all size auto factor 6
-#!Mesh Crack Surface (those elemenst are streched)
-surface 53  size auto factor 6
-
-#!Mesh All
-mesh surface 73
-mesh volume all 
-
-save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/torsion.cub" overwrite 
-
+#Boundary conditions 
+merge volume all group_results 
+split curve 37 38 61 47 48 49 53 57 fraction 0.5 
+create Displacement  on vertex 110 dof 1 dof 2 dof 3 fix 0 
+create Displacement  on vertex 105 dof 1 dof 2 dof 3 fix 0 
+create Displacement  on vertex 107 dof 1 dof 2 dof 3 fix 0 
+create force  on vertex 112  force value -1 direction  y  
+ 
+#Create Block Set with Vertices to ploat load-disp. path   
+block 3 vertex 112 97 98  
+block 3 name 'LoadPath'   
+  
+#Merge Volumes   
+imprint volume all    
+merge volume all    
+  
+#Material Properties    
+block 1 volume 3 4 5     
+block 1 name "MAT_ELASTIC_Concrete"      
+block 1 attribute count 10      
+block 1 attribute index 1 3.5   
+block 1 attribute index 2 0.3     
+  
+block 2 volume 1 2     
+block 2 name "MAT_ELASTIC_Steel"      
+block 2 attribute count 10      
+block 2 attribute index 1 20   
+block 2 attribute index 2 0.2     
+  
+#Create nodesets and sidesets for fracture constraints     
+#Boundary edges     
+sideset 100 curve all    
+sideset 100 curve 156 145 143 146 154 142 144 132 131  remove  
+sideset 100 curve 185 198  remove  
+  
+#Boundary vertices     
+nodeset 101 vertex all   
+nodeset 101 vertex 89 90 99 100 91 92 remove  
+  
+#Boundary surfaces     
+sideset 102 surface all     
+sideset 102 surface 61 53 54 remove      
+  
+sideset 102 surface 75 remove  
+sideset 10200 surface 75  
+  
+#Crack surface  
+sideset 200 surface 53  
+  
+#Crack front  
+sideset 201 curve 143  
+  
+#!Meshing   
+volume all scheme tetmesh      
+volume all size auto factor 5  
+#!Mesh Crack Surface (those elemenst are streched)  
+surface 53  size auto factor 5  
+  
+#!Mesh All  
+mesh surface 53  
+mesh volume all   
+  
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/torsion.cub" overwrite   
+  

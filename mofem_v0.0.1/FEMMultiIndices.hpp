@@ -301,11 +301,11 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityType,&EntMoFEMFiniteElement::get_ent_type> >,
     ordered_non_unique<
-      tag<Composite_mi_tag>, 
+      tag<Composite_Name_And_Ent_mi_tag>, 
       composite_key<
 	EntMoFEMFiniteElement,
-	const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent>,
-	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> > >
+	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref>,
+	const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> > >
   > > EntMoFEMFiniteElement_multiIndex;
 
 /** 
@@ -334,6 +334,8 @@ typedef multi_index_container<
       tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
     ordered_non_unique<
       tag<MoFEMFiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+    ordered_non_unique<
+      tag<MoABEnt_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,       
       composite_key<

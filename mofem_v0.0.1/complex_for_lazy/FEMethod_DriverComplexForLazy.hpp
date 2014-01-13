@@ -58,7 +58,8 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   Tag th_t_val;
   FEMethod_DriverComplexForLazy_Spatial(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
   FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
-  FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { 
+  FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose),
+  nodal_forces_not_added(true) { 
     double def_t_val = 0;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
     rval = mField.get_moab().tag_get_handle("_LoadFactor_t_val",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 

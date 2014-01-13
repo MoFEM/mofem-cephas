@@ -4453,6 +4453,23 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	  int new_side = 1;
 	  rval = moab.tag_set_data(th_interface_side,&*new_ent.begin(),1,&new_side); CHKERR_PETSC(rval);
 	  if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_ent %u\n",new_ent.size());
+	  //set internal node
+	  Range tet;
+	  rval = moab.get_adjacencies(&*eit,1,3,false,tet); CHKERR_PETSC(rval);
+	  tet = intersect(tet,side_ents3d);
+	  if(tet.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one node, but is %u",tet.size()); 
+	  Range tet_nodes;
+	  rval = moab.get_connectivity(&*tet.begin(),1,tet_nodes); CHKERR_PETSC(rval);
+	  Range face_nodes;
+	  rval = moab.get_connectivity(&*eit,1,face_nodes); CHKERR_PETSC(rval);
+	  tet_nodes = subtract(tet_nodes,face_nodes);
+	  if(tet_nodes.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"should be only one node"); 
+	  Tag th_internal_node;
+	  const EntityHandle def_node[] = {0};
+	  rval = moab.tag_get_handle("INTERNAL_SIDE_NODE",1,MB_TYPE_HANDLE,
+	    th_internal_node,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
+	  rval = moab.tag_set_data(th_internal_node,&*eit,1,&*tet_nodes.begin()); CHKERR_PETSC(rval);
+	  rval = moab.tag_set_data(th_internal_node,&*new_ent.begin(),1,&*tet_nodes.begin()); CHKERR_PETSC(rval);
 	  //add prism element
 	  if(add_iterfece_entities) {
 	    //set prism connectivity

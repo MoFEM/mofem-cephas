@@ -93,6 +93,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
 
   double aRea,lambda;
+  int nb_un_freez_nodes;
   PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double da);
 
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
@@ -111,8 +112,9 @@ struct ConfigurationalFractureMechanics {
   struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {
   
     Range& CornersNodes;
+    bool fixAllSpatialDispacements;
     CubitDisplacementDirihletBC_Coupled (FieldInterface& _mField,const string _problem_name,Range &_CornersNodes): 
-      CubitDisplacementDirihletBC(_mField,_problem_name,"None"),CornersNodes(_CornersNodes) {}
+      CubitDisplacementDirihletBC(_mField,_problem_name,"None"),CornersNodes(_CornersNodes),fixAllSpatialDispacements(false) {}
   
     PetscErrorCode SetDirihletBC_to_ElementIndicies(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);

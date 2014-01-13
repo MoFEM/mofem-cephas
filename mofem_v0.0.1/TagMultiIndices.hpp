@@ -69,6 +69,7 @@ namespace MoFEM {
   struct MoFEMFiniteElement_Part_mi_tag {};
   struct BitProblemId_mi_tag {};
   struct MoFEMProblem_mi_tag {};
+  struct ParentEntType_mi_tag {};
 
   struct Composite_EntityType_And_ParentEntityType_mi_tag {};
   struct Composite_EntityHandle_And_ParentEntityType_mi_tag {};

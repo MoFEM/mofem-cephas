@@ -15,6 +15,8 @@ while test $# -gt 0; do
 			echo "-g, --gc=GRIFFITH_ENERGY"
 			echo "-d, --dir=DIR_NAME"
 			echo "-p, --proc=NB_OF_PROCESSORS"
+      			echo "-t, --rol=TOLERANCE"
+			echo "-i. --its_d=DESIRED_NUMBER_OF_ITS"
                         exit 0
                         ;;
                 -f)
@@ -95,7 +97,7 @@ while test $# -gt 0; do
                         if test $# -gt 0; then
                                 export NB_PROC=$1
                         else
-                                echo "no griffith energy specified"
+                                echo "no processors number specified"
                                 exit 1
                         fi
                         shift
@@ -104,7 +106,42 @@ while test $# -gt 0; do
                         export NB_PROC=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
-
+		-t)
+                        shift
+                        if test $# -gt 0; then
+                                export TOL=$1
+                        else
+                                echo "no tolerance specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --tol*)
+                        export TOL=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+		-i)
+                        shift
+                        if test $# -gt 0; then
+                                export ITSD=$1
+                        else
+                                echo "no disceraed number of iterations specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --its_d*)
+                        export ITSD=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+		--snes_linesearch_type*) 
+                        export LINESEARCHTYPE=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
+		--my_nb_sub_steps*) 
+                        export NBSUBSTEPS=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
                 *)
                         break
                         ;;
@@ -144,6 +181,23 @@ if [ -z ${NB_PROC+x} ]; then
   NB_PROC=4
 fi
 
+if [ -z ${TOL+x} ]; then 
+  TOL=1e-9
+fi
+
+if [ -z ${ITSD+x} ]; then 
+  TOL=1e-9
+fi
+
+if [ -z ${LINESEARCHTYPE+x} ]; then 
+  LINESEARCHTYPE="l2"
+fi
+
+if [ -z ${NBSUBSTEPS+x} ]; then 
+  NBSUBSTEPS=20
+fi
+
+
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MPI_RUN@ -np $NB_PROC"
@@ -154,12 +208,14 @@ cd $DIR_NAME
 $MPIRUN $BIN_PATH/arc_length_material_coupled \
   -my_file `basename $FILE` \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
-  -ksp_atol 1e-14 -ksp_rtol 1e-12 \
-  -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor \
-  -snes_max_it 20 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
+  -snes_type newtonls -snes_linesearch_type $LINESEARCHTYPE -snes_linesearch_monitor \
+  -ksp_atol 1e-14 -ksp_rtol 1e-12 -ksp_max_it 500\
+  -snes_max_it 25 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
   -snes_monitor -snes_converged_reason -ksp_monitor \
+  -my_tol $TOL -my_its_d $ITSD \
   -my_gc $GC -my_alpha2 1e-3 -my_gamma 0. \
   -my_da $DA -my_load_steps $NBSTEPS \
+  -my_nb_sub_steps $NBSUBSTEPS \
   -mat_ascii_output_large \
   -log_summary | tee log
 if [ $? -ne 0 ]; then
