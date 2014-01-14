@@ -2313,7 +2313,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::postProc
 	      ierr = VecSetValue(res_nrm2_vec,2,val,ADD_VALUES); CHKERRQ(ierr);
 	    }
 	  }
-	  if(dof->get_name().compare(0,4,"LAMBDA_SURFACE") == 0) {
+	  if(dof->get_name().compare(0,14,"LAMBDA_SURFACE") == 0) {
 	    ierr = VecSetValue(res_nrm2_vec,3,val,ADD_VALUES); CHKERRQ(ierr);
 	  }
 	  if(dof->get_name() == "LAMBDA_CRACK_SURFACE") {

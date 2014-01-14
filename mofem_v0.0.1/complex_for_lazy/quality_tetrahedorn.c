@@ -130,7 +130,7 @@ int get_qual_ver() { return qual_ver; }
   } \
   if( qual_ver == 3 ) { \
     /* quality gradient scaled by volume */ \
-    complex_grad = V*((xb.r+I*xb.i)/(1.-gamma)-1./((xb.r+I*xb.i)-gamma)); \
+    complex_grad = (xV.r+I*xV.i)*((xb.r+I*xb.i)/(1.-gamma)-1./((xb.r+I*xb.i)-gamma)); \
   } \
   __CLPK_doublecomplex xgrad = { creal(complex_grad), cimag(complex_grad) }; \
   cblas_zscal(9,&xgrad,xQ,1); 

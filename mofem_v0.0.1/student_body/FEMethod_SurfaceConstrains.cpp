@@ -59,6 +59,7 @@ void C_SURFACE_FEMethod::run_in_constructor() {
     //
     C_MAT_ELEM.resize(3,9);
     iC_MAT_ELEM.resize(3,9);
+    ig_VEC_ELEM.resize(3);
     CT_MAT_ELEM.resize(9,3);
     dC_MAT_ELEM.resize(3,9);
     dCT_MAT_ELEM.resize(9,9);
@@ -73,16 +74,28 @@ C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihle
     run_in_constructor();
   }
 
-PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_X,double *dofs_iX,double *C,double *iC) {
+PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *iC,double *g,double *ig) {
   PetscFunctionBegin;
   //set complex material position vector
+  __CLPK_doublecomplex x_dofs_X0[9];
   __CLPK_doublecomplex x_dofs_X[9];
   for(int nn = 0;nn<3;nn++) {
     for(int dd = 0;dd<3;dd++) {
-      x_dofs_X[nn*3+dd].r = dofs_X[nn*3+dd];
+      if(lambda_global_row_indices[nn] == -1) {
+	x_dofs_X0[nn*3+dd].r = ent_dofs_data[nn*3+dd];
+      } else {
+	x_dofs_X0[nn*3+dd].r = coords[nn*3+dd];
+      }
+      x_dofs_X[nn*3+dd].r = ent_dofs_data[nn*3+dd];
       if(dofs_iX != NULL) {
+	if(lambda_global_row_indices[nn] == -1) {
+	  x_dofs_X0[nn*3+dd].i = dofs_iX[nn*3+dd];
+	} else {
+	  x_dofs_X0[nn*3+dd].i = 0;
+	}
 	x_dofs_X[nn*3+dd].i = dofs_iX[nn*3+dd];
       } else {
+	x_dofs_X0[nn*3+dd].i = 0;
 	x_dofs_X[nn*3+dd].i = 0;
       }
   }}
@@ -96,60 +109,56 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_X,double *dofs_iX,doub
       th_internal_node,MB_TAG_CREAT|MB_TAG_SPARSE,def_node);
   EntityHandle internal_node;
   rval = moab.tag_get_data(th_internal_node,&face,1,&internal_node); CHKERR_PETSC(rval);
-  if(internal_node!=0) {
+  if(internal_node != 0) {
     Tag th_interface_side;
     rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
     int side;
     rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
     double coords_internal_node[3];
     rval = moab.get_coords(&internal_node,1,coords_internal_node); CHKERR_PETSC(rval);
-    cblas_daxpy(3,-1,dofs_X,1,coords_internal_node,1);
+    cblas_daxpy(3,-1,&*coords.data().begin(),1,coords_internal_node,1);
     if(side) cblas_dscal(3,-1,coords_internal_node,1);
+    double normal0[3];
+    ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&*coords.data().begin(),normal0); CHKERRQ(ierr);
     __CLPK_doublecomplex xdot = { 
-      copysign(1,x_normal[0].r*coords_internal_node[0]+
-      x_normal[1].r*coords_internal_node[1]+
-      x_normal[2].r*coords_internal_node[2]), 0 };
+      copysign(1,
+      normal0[0]*coords_internal_node[0]+
+      normal0[1]*coords_internal_node[1]+
+      normal0[2]*coords_internal_node[2]), 0 };
     cblas_zscal(3,&xdot,x_normal,1);
-  };
-  //calulare complex normal length
-  /*double __complex__ xarea = csqrt(
+  }
+  /*//calulare complex normal length
+  double __complex__ xarea = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
-      cpow((x_normal[2].r+I*x_normal[2].i),2));
-  double normal[3] = { x_normal[0].r/creal(xarea), x_normal[1].r/creal(xarea), x_normal[2].r/creal(xarea) };*/
-  /*const int def_normal[3] = { 0,0,0 };
-  Tag th_normal;
-  rval = moab.tag_get_handle("NORMAL_TEST",3,MB_TYPE_DOUBLE,
-    th_normal,MB_TAG_CREAT|MB_TAG_SPARSE,def_normal);
-  rval = moab.tag_set_data(th_normal,&face,1,normal); CHKERR_PETSC(rval);*/
-  //scale normal vector
-  for(int dd = 0;dd<3;dd++) {
-    double __complex__ val;
-    val = (x_normal[dd].r+I*x_normal[dd].i);///xarea;
-    x_normal[dd].r = creal(val);
-    x_normal[dd].i = cimag(val);
-  }
+      cpow((x_normal[2].r+I*x_normal[2].i),2));*/
+  //
   if( C!=NULL) bzero( C,3*9*sizeof(double));
   if(iC!=NULL) bzero(iC,3*9*sizeof(double));
+  if( g!=NULL) bzero( g,3*sizeof(double));
+  if(ig!=NULL) bzero(ig,3*sizeof(double));
   for(unsigned int gg = 0;gg<g_NTRI.size()/3;gg++) {
-    //->row
     for(int nn = 0;nn<3;nn++) {
-      if(lambda_global_row_indices[nn]==-1) continue;
-      //->col
       for(int mm = 0;mm<3;mm++) {
-	if(lambda_global_row_indices[mm]==-1) continue;
 	for(int dd = 0;dd<3;dd++) {
+	  double __complex__ c = (x_normal [dd].r+I*x_normal [dd].i)*g_NTRI[3*gg+mm];
+	  double __complex__ xg  = c*(x_dofs_X [3*mm+dd].r+I*x_dofs_X [3*mm+dd].i);
+	  double __complex__ xg0 = c*(x_dofs_X0[3*mm+dd].r+I*x_dofs_X0[3*mm+dd].i);
 	  if( C!=NULL) {
-	     C[9*nn + 3*mm+dd] += G_TRI_W[gg]*( g_NTRI[3*gg+nn]*g_NTRI[3*gg+mm]*x_normal[dd].r );
+	     C[9*nn + 3*mm+dd] += G_TRI_W[gg]*g_NTRI[3*gg+nn]*creal(c);
 	  }
 	  if(iC!=NULL) {
-	    iC[9*nn + 3*mm+dd] += G_TRI_W[gg]*( g_NTRI[3*gg+nn]*g_NTRI[3*gg+mm]*x_normal[dd].i );
+	    iC[9*nn + 3*mm+dd] += G_TRI_W[gg]*g_NTRI[3*gg+nn]*cimag(c);
+	  }
+	  if( g!=NULL) {
+	     g[nn] +=  G_TRI_W[gg]*g_NTRI[3*gg+nn]*creal(xg-xg0);
+	  }
+	  if(ig!=NULL) {
+	    ig[nn] +=  G_TRI_W[gg]*g_NTRI[3*gg+nn]*cimag(xg-xg0);
 	  }
 	}
       }
-      //<-col
     }
-    //<-row
   }
   PetscFunctionReturn(0);
 }
@@ -161,31 +170,24 @@ PetscErrorCode C_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
   cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
   double r = cblas_dnrm2(3,center,1);
   try {
-    if(nonlinear||updated) {
-      ierr = cOnstrain(&*ent_dofs_data.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
-    } else {
-      ierr = cOnstrain(&*coords.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
-    }
+    ierr = cOnstrain(NULL,&*C_MAT_ELEM.data().begin(),NULL,NULL,NULL); CHKERRQ(ierr);
     if(transpose) {
       ublas::noalias(CT_MAT_ELEM) = trans(C_MAT_ELEM);
-      if(nonlinear) {
-	ublas::noalias(dC_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
-	ublas::noalias(dCT_MAT_ELEM) = ublas::zero_matrix<double>(9,9);
-	for(int dd = 0;dd<9;dd++) {
-	  ublas::noalias(ent_idofs_data) = ublas::zero_vector<double>(9);
-	  ent_idofs_data[dd] = r*eps;
-	  ierr = cOnstrain(&*ent_dofs_data.data().begin(),&*ent_idofs_data.data().begin(),NULL,&*iC_MAT_ELEM.data().begin()); CHKERRQ(ierr);
-	  ig_VEC_ELEM = prod(iC_MAT_ELEM/(r*eps),ent_dofs_data-coords);
-	  for(int nnn = 0;nnn<3;nnn++) {
-	    dC_MAT_ELEM(nnn,dd) += ig_VEC_ELEM[nnn];
-	  }
-	  if(transpose) {
-	    if_VEC_ELEM = prod(trans(iC_MAT_ELEM)/(r*eps),ent_lambda_data);
-	    for(int nnn = 0;nnn<3;nnn++) {
-	      for(int ddd = 0;ddd<3;ddd++) {
-		dCT_MAT_ELEM(3*nnn+ddd,dd) += if_VEC_ELEM[3*nnn+ddd];
-	      }
-	    }
+    } 
+    if(nonlinear) {
+      ublas::noalias(dC_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
+      ublas::noalias(dCT_MAT_ELEM) = ublas::zero_matrix<double>(9,9);
+      for(int dd = 0;dd<9;dd++) {
+	ublas::noalias(ent_idofs_data) = ublas::zero_vector<double>(9);
+	ent_idofs_data[dd] = r*eps;
+	ierr = cOnstrain(&*ent_idofs_data.data().begin(),NULL,&*iC_MAT_ELEM.data().begin(),NULL,&*ig_VEC_ELEM.data().begin()); CHKERRQ(ierr);
+	for(int nnn = 0;nnn<3;nnn++) {
+	  dC_MAT_ELEM(nnn,dd) = ig_VEC_ELEM[nnn]/(r*eps);
+	}
+      	if_VEC_ELEM = prod(trans(iC_MAT_ELEM)/(r*eps),ent_lambda_data);
+	for(int nnn = 0;nnn<3;nnn++) {
+	  for(int ddd = 0;ddd<3;ddd++) {
+	    dCT_MAT_ELEM(3*nnn+ddd,dd) = if_VEC_ELEM[3*nnn+ddd];
 	  }
 	}
       }
@@ -200,15 +202,16 @@ PetscErrorCode C_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
 
 PetscErrorCode C_SURFACE_FEMethod::aSsemble(bool transpose,bool nonlinear) {
     PetscFunctionBegin;
-    ierr = MatSetValues(C,
-      lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
-      dof_global_col_indices[0].size(),&(dof_global_col_indices[0].data()[0]),
-      &(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
     if(nonlinear) {
       ierr = MatSetValues(C,
 	lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
 	dof_global_col_indices[0].size(),&(dof_global_col_indices[0].data()[0]),
 	&(dC_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
+    } else {
+      ierr = MatSetValues(C,
+	lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
+	dof_global_col_indices[0].size(),&(dof_global_col_indices[0].data()[0]),
+	&(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
     }
     if(transpose) {
       ierr = MatSetValues(C,
@@ -272,16 +275,22 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
 	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	    }
 	  }
-	  dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	  hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	  if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
-	  for(;dit!=hi_dit;dit++) {
-	    int global_idx = dit->get_petsc_gloabl_dof_idx();
-	    assert(nn*3+dit->get_dof_rank()<9);
-	    dof_global_row_indices[0][nn*3+dit->get_dof_rank()] = global_idx;
-	    int local_idx = dit->get_petsc_local_dof_idx();
-	    if(local_idx<0) {
-	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	  if(lambda_global_row_indices[nn] == -1) {
+	    dof_global_row_indices[0][nn*3+0] = -1;
+	    dof_global_row_indices[0][nn*3+1] = -1;
+	    dof_global_row_indices[0][nn*3+2] = -1;
+	  } else {
+	    dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
+	    for(;dit!=hi_dit;dit++) {
+	      int global_idx = dit->get_petsc_gloabl_dof_idx();
+	      assert(nn*3+dit->get_dof_rank()<9);
+	      dof_global_row_indices[0][nn*3+dit->get_dof_rank()] = global_idx;
+	      int local_idx = dit->get_petsc_local_dof_idx();
+	      if(local_idx<0) {
+		SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	      }
 	    }
 	  }
 	}
@@ -290,6 +299,9 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
 	  this,dof_global_row_indices,dof_global_col_indices,DirihletBC); CHKERRQ(ierr);
       }
       rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+      if(!nonlinear) {
+	ublas::noalias(ent_dofs_data) = coords;
+      }
       ierr = this->iNtegrate(transpose,nonlinear); CHKERRQ(ierr);
       ierr = this->aSsemble(transpose,nonlinear); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
@@ -317,13 +329,13 @@ g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihle
 PetscErrorCode g_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
   PetscFunctionBegin;
   try {
-    C_SURFACE_FEMethod::iNtegrate(transpose,nonlinear);
-    //
-    g_VEC_ELEM = prod(C_MAT_ELEM,ent_dofs_data-coords);
-    f_VEC_ELEM = prod(CT_MAT_ELEM,ent_lambda_data);
-    //
-    //ierr = cOnstrain(&*coords.data().begin(),NULL,&*C_MAT_ELEM.data().begin(),NULL); CHKERRQ(ierr);
-    //g_VEC_ELEM = g_VEC_ELEM - prod(C_MAT_ELEM,coords);
+    if(transpose) {
+      ierr = cOnstrain(NULL,&*C_MAT_ELEM.data().begin(),NULL,g_VEC_ELEM.data().begin(),NULL); CHKERRQ(ierr);
+      CT_MAT_ELEM = trans(C_MAT_ELEM);
+      f_VEC_ELEM = prod(CT_MAT_ELEM,ent_lambda_data);
+    } else {
+      ierr = cOnstrain(NULL,NULL,NULL,g_VEC_ELEM.data().begin(),NULL); CHKERRQ(ierr);
+    }
   } catch (const std::exception& ex) {
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;

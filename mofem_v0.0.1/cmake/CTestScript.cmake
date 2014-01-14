@@ -75,6 +75,8 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   SimpleMeshSmoothingTest
   SimpleMeshSmoothingTest_LagrangeMultipliers
   SimpleLaplacianProblem
+  ConvergenceStudy_sh
+  ArcLength_sh
 )
 
 if(${DOTEST} GREATER 0)
