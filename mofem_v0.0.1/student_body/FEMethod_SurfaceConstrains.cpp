@@ -117,7 +117,7 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
       cblas_zscal(3,&xdot,x_normal,1);
     }
   }
-  //
+  /*//save tag
   double normal0[3];
   ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&*coords.begin(),normal0); CHKERRQ(ierr);
   double area0 = cblas_dnrm2(3,normal0,1);
@@ -132,8 +132,7 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
       cblas_dscal(3,-1,normal0,1);
     }
   }
-  rval = moab.tag_set_data(th_normal0,&face,1,normal0); CHKERR_PETSC(rval);
-  //
+  rval = moab.tag_set_data(th_normal0,&face,1,normal0); CHKERR_PETSC(rval);*/
   //calulare complex normal length
   double __complex__ xarea = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+

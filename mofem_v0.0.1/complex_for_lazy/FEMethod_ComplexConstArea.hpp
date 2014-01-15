@@ -83,6 +83,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   ublas::vector<double,ublas::bounded_array<double,9> > coords;
   ublas::vector<double,ublas::bounded_array<double,9> > dofs_X;
   ublas::vector<double,ublas::bounded_array<double,3> > lambda;
+  //vector<EntityHandle> lambda_dofs_row_ents;
   EntityHandle face;
 
   /**
@@ -101,6 +102,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       fill(disp_dofs_col_idx.begin(),disp_dofs_col_idx.end(),-1);
       fill(local_disp_dofs_row_idx.begin(),local_disp_dofs_row_idx.end(),-1);
       fill(lambda.begin(),lambda.end(),0);
+      //fill(lambda_dofs_row_ents.begin(),lambda_dofs_row_ents.end(),no_handle);
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
@@ -220,29 +222,6 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  x_dofs_X[nn*3+dd].i = 0;
 	}
     }}
-    //calulate complex face normal vector
-    __CLPK_doublecomplex x_normal[3];
-    ierr = ShapeFaceNormalMBTRI_complex(diffNTRI,x_dofs_X,x_normal); CHKERRQ(ierr);
-    //set direction if crack or interface surface
-    Tag th_side_elem;
-    const EntityHandle def_node[] = {0};
-    rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
-      th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
-    EntityHandle side_elem;
-    rval = moab.tag_get_data(th_side_elem,&face,1,&side_elem); CHKERR_PETSC(rval);
-    if(side_elem!=0) {
-      int side_number,sense,offset;
-      rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
-      if(sense == -1) {
-	__CLPK_doublecomplex xdot = { -1,0 };
-	cblas_zscal(3,&xdot,x_normal,1);
-      }
-    }
-    //calulare complex normal length
-    double __complex__ x_nrm2 = csqrt(
-      cpow((x_normal[0].r+I*x_normal[0].i),2)+
-      cpow((x_normal[1].r+I*x_normal[1].i),2)+
-      cpow((x_normal[2].r+I*x_normal[2].i),2));
     double diffX_xi[3],diffX_eta[3];
     bzero(diffX_xi,3*sizeof(double));
     bzero(diffX_eta,3*sizeof(double));
@@ -266,6 +245,22 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       i_diffX_eta[1] += dofs_iX[3*nn + 1]*diffNTRI[2*nn+1];
       i_diffX_eta[2] += dofs_iX[3*nn + 2]*diffNTRI[2*nn+1];
     }
+    //set direction if crack or interface surface
+    Tag th_side_elem;
+    const EntityHandle def_node[] = {0};
+    rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
+      th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
+    EntityHandle side_elem;
+    rval = moab.tag_get_data(th_side_elem,&face,1,&side_elem); CHKERR_PETSC(rval);
+    if(side_elem!=0) {
+      int side_number,sense,offset;
+      rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
+      if(sense == -1) {
+	cblas_dscal(3,-1,  diffX_xi,1);
+	cblas_dscal(3,-1,i_diffX_xi,1);
+      }
+    }
+    //spins
     double SpinX_xi[9],SpinX_eta[9];
     ierr = Spin(SpinX_xi,diffX_xi); CHKERRQ(ierr);
     ierr = Spin(SpinX_eta,diffX_eta); CHKERRQ(ierr);
@@ -275,11 +270,24 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     __CLPK_doublecomplex xSpinX_xi[9],xSpinX_eta[9];
     ierr = make_complex_matrix(SpinX_xi,iSpinX_xi,xSpinX_xi); CHKERRQ(ierr); // unit [ m ]
     ierr = make_complex_matrix(SpinX_eta,iSpinX_eta,xSpinX_eta); CHKERRQ(ierr); // unit [ m ]
-   __CLPK_doublecomplex xNSpinX_xi[3],xNSpinX_eta[3];
+    //calulate complex face normal vector
+    __CLPK_doublecomplex x_one = { 1, 0 };
+    __CLPK_doublecomplex x_zero = { 0, 0 };
+    __CLPK_doublecomplex x_normal[3];
+    __CLPK_doublecomplex x_diffX_eta[3]; 
+    x_diffX_eta[0].r = diffX_eta[0]; x_diffX_eta[0].i = i_diffX_eta[0];
+    x_diffX_eta[1].r = diffX_eta[1]; x_diffX_eta[1].i = i_diffX_eta[1];
+    x_diffX_eta[2].r = diffX_eta[2]; x_diffX_eta[2].i = i_diffX_eta[2];
+    cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_one,xSpinX_xi,3,x_diffX_eta,1,&x_zero,x_normal,1); // unit [ m^2 ]
+    //calulare complex normal length
+    double __complex__ x_nrm2 = csqrt(
+      cpow((x_normal[0].r+I*x_normal[0].i),2)+
+      cpow((x_normal[1].r+I*x_normal[1].i),2)+
+      cpow((x_normal[2].r+I*x_normal[2].i),2));
+    // calulate dA/dX 
+    __CLPK_doublecomplex xNSpinX_xi[3],xNSpinX_eta[3];
     bzero(xNSpinX_xi,3*sizeof(__CLPK_doublecomplex));
     bzero(xNSpinX_eta,3*sizeof(__CLPK_doublecomplex));
-    __CLPK_doublecomplex x_zero = { 0, 0 };
-    // calulate dA/dX 
     __CLPK_doublecomplex x_scalar = { -creal(1./x_nrm2), -cimag(1./x_nrm2) }; // unit [ 1/m^2 ]
     cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_xi,3,x_normal,1,&x_zero,xNSpinX_xi,1); // unit [ 1/m^2 * m = 1/m ]
     cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_eta,3,x_normal,1,&x_zero,xNSpinX_eta,1); // unit [ 1/m^2 * m = 1/m ]
@@ -324,12 +332,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     }
     if( C != NULL) cblas_dscal(9,0.25, C,1);
     if(iC != NULL) cblas_dscal(9,0.25,iC,1);
-    if( T != NULL) {
-      cblas_dscal(9,0.25, T,1);
-    }
-    if(iT != NULL) {
-      cblas_dscal(9,0.25,iT,1);
-    }
+    if( T != NULL) cblas_dscal(9,0.25, T,1);
+    if(iT != NULL) cblas_dscal(9,0.25,iT,1);
     PetscFunctionReturn(0);
   }
 
@@ -648,10 +652,10 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     ierr = C_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
-    //TAG  - only for one proc analysis
+    /*//TAG  - only for one proc analysis
     double def[] = {0,0,0};
     rval = mField.get_moab().tag_get_handle("FRONT_TANGENT",3,MB_TYPE_DOUBLE,
-      th_front_tangent,MB_TAG_CREAT|MB_TAG_SPARSE,&def); CHKERR_THROW(rval);
+      th_front_tangent,MB_TAG_CREAT|MB_TAG_SPARSE,&def); CHKERR_THROW(rval);*/
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
