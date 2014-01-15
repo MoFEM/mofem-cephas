@@ -508,7 +508,7 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
+  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab,"DISPLACEMENT");
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
