@@ -3415,6 +3415,10 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
       const int def_side[] = {0};
       rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
 	th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERR_PETSC(rval);
+      Tag th_side_elem;
+      const EntityHandle def_node[] = {0};
+      rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
+	th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
       // check for all ref faces
       for(Range::iterator rfit = ref_faces.begin();rfit!=ref_faces.end();rfit++) {
 	Range ref_faces_nodes;
@@ -3430,6 +3434,23 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	    //set face side if it is on inteface
 	    rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
 	    rval = moab.tag_set_data(th_interface_side,&*rfit,1,&side); CHKERR_PETSC(rval);
+  	    //set face intenal side elem
+	    EntityHandle internal_side_elem;
+	    rval = moab.tag_get_data(th_side_elem,&face,1,&internal_side_elem); CHKERR_PETSC(rval);
+	    if(internal_side_elem == *tit) {
+	      Range ref_tets_;
+	      for(int tt = 0;tt<nb_new_tets;tt++) {
+		ref_tets_.insert(ref_tets[tt]);
+	      }
+	      Range adj_tets_;
+	      rval = moab.get_adjacencies(&*rfit,1,3,false,adj_tets_); CHKERR_PETSC(rval);
+	      adj_tets_ = intersect(ref_tets_,adj_tets_);
+	      if(adj_tets_.size() != 1) {
+		SETERRQ1(PETSC_COMM_SELF,1,"should be only one adj_tet_ but is %u",adj_tets_.size()); 
+	      }
+	      internal_side_elem = *adj_tets_.begin();
+	      rval = moab.tag_get_data(th_side_elem,&*rfit,1,&internal_side_elem); CHKERR_PETSC(rval);
+	    }
 	    //add face to refinedMoFemEntities
 	    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,*rfit));
 	    bool success = refinedMoFemEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
@@ -4444,6 +4465,10 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     const int def_side[] = {0};
     rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
       th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERR_PETSC(rval);
+    Tag th_side_elem;
+    const EntityHandle def_node[] = {0};
+    rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
+      th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
     Range new_ent; //contains all entities (edges or triangles) added to mofem database
     switch (moab.type_from_handle(*eit)) {
       case MBTRI: {
@@ -4456,20 +4481,14 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	  //set internal node
 	  Range tet;
 	  rval = moab.get_adjacencies(&*eit,1,3,false,tet); CHKERR_PETSC(rval);
-	  tet = intersect(tet,side_ents3d);
-	  if(tet.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one node, but is %u",tet.size()); 
-	  Range tet_nodes;
-	  rval = moab.get_connectivity(&*tet.begin(),1,tet_nodes); CHKERR_PETSC(rval);
-	  Range face_nodes;
-	  rval = moab.get_connectivity(&*eit,1,face_nodes); CHKERR_PETSC(rval);
-	  tet_nodes = subtract(tet_nodes,face_nodes);
-	  if(tet_nodes.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"should be only one node"); 
-	  Tag th_internal_node;
-	  const EntityHandle def_node[] = {0};
-	  rval = moab.tag_get_handle("INTERNAL_SIDE_NODE",1,MB_TYPE_HANDLE,
-	    th_internal_node,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
-	  rval = moab.tag_set_data(th_internal_node,&*eit,1,&*tet_nodes.begin()); CHKERR_PETSC(rval);
-	  rval = moab.tag_set_data(th_internal_node,&*new_ent.begin(),1,&*tet_nodes.begin()); CHKERR_PETSC(rval);
+	  Range tet_side = intersect(tet,side_ents3d);
+	  if(tet_side.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one node, but is %u",tet.size()); 
+	  Range tet_other_side = intersect(tet,other_ents3d);
+	  if(tet_other_side.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one node, but is %u",tet.size()); 
+	  EntityHandle ref_tet_side;
+	  rval = moab.tag_get_data(th_RefParentHandle,&*tet_side.begin(),1,&ref_tet_side); CHKERR_PETSC(rval);
+	  rval = moab.tag_set_data(th_side_elem,&*new_ent.begin(),1,&ref_tet_side); CHKERR_PETSC(rval);
+	  rval = moab.tag_set_data(th_side_elem,&*eit,1,&*tet_other_side.begin()); CHKERR_PETSC(rval);
 	  //add prism element
 	  if(add_iterfece_entities) {
 	    //set prism connectivity

@@ -224,26 +224,19 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     __CLPK_doublecomplex x_normal[3];
     ierr = ShapeFaceNormalMBTRI_complex(diffNTRI,x_dofs_X,x_normal); CHKERRQ(ierr);
     //set direction if crack or interface surface
-    Tag th_internal_node;
+    Tag th_side_elem;
     const EntityHandle def_node[] = {0};
-    rval = moab.tag_get_handle("INTERNAL_SIDE_NODE",1,MB_TYPE_HANDLE,
-      th_internal_node,MB_TAG_CREAT|MB_TAG_SPARSE,def_node);
-    EntityHandle internal_node;
-    rval = moab.tag_get_data(th_internal_node,&face,1,&internal_node); CHKERR_PETSC(rval);
-    if(internal_node!=0) {
-      Tag th_interface_side;
-      rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
-      int side;
-      rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
-      double coords_internal_node[3];
-      rval = moab.get_coords(&internal_node,1,coords_internal_node); CHKERR_PETSC(rval);
-      cblas_daxpy(3,-1,dofs_X,1,coords_internal_node,1);
-      if(side) cblas_dscal(3,-1,coords_internal_node,1);
-      __CLPK_doublecomplex xdot = { 
-	copysign(1,x_normal[0].r*coords_internal_node[0]+
-	x_normal[1].r*coords_internal_node[1]+
-	x_normal[2].r*coords_internal_node[2]), 0 };
-      cblas_zscal(3,&xdot,x_normal,1);
+    rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
+      th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
+    EntityHandle side_elem;
+    rval = moab.tag_get_data(th_side_elem,&face,1,&side_elem); CHKERR_PETSC(rval);
+    if(side_elem!=0) {
+      int side_number,sense,offset;
+      rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
+      if(sense == -1) {
+	__CLPK_doublecomplex xdot = { -1,0 };
+	cblas_zscal(3,&xdot,x_normal,1);
+      }
     }
     //calulare complex normal length
     double __complex__ x_nrm2 = csqrt(

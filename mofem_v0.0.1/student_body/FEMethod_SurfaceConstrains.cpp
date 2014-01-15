@@ -103,35 +103,35 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   __CLPK_doublecomplex x_normal[3];
   ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
   //set direction if crack or interface surface
-  Tag th_internal_node;
+  Tag th_side_elem;
   const EntityHandle def_node[] = {0};
-  rval = moab.tag_get_handle("INTERNAL_SIDE_NODE",1,MB_TYPE_HANDLE,
-      th_internal_node,MB_TAG_CREAT|MB_TAG_SPARSE,def_node);
-  EntityHandle internal_node;
-  rval = moab.tag_get_data(th_internal_node,&face,1,&internal_node); CHKERR_PETSC(rval);
-  if(internal_node != 0) {
-    Tag th_interface_side;
-    rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
-    int side;
-    rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
-    double coords_internal_node[3];
-    rval = moab.get_coords(&internal_node,1,coords_internal_node); CHKERR_PETSC(rval);
-    cblas_daxpy(3,-1,&*coords.data().begin(),1,coords_internal_node,1);
-    if(side) cblas_dscal(3,-1,coords_internal_node,1);
-    double normal0[3];
-    ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&*coords.data().begin(),normal0); CHKERRQ(ierr);
-    __CLPK_doublecomplex xdot = { 
-      copysign(1,
-      normal0[0]*coords_internal_node[0]+
-      normal0[1]*coords_internal_node[1]+
-      normal0[2]*coords_internal_node[2]), 0 };
-    cblas_zscal(3,&xdot,x_normal,1);
+  rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
+    th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
+  EntityHandle side_elem;
+  rval = moab.tag_get_data(th_side_elem,&face,1,&side_elem); CHKERR_PETSC(rval);
+  if(side_elem!=0) {
+    int side_number,sense,offset;
+    rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
+    if(sense == -1) {
+      __CLPK_doublecomplex xdot = { -1,0 };
+      cblas_zscal(3,&xdot,x_normal,1);
+    }
   }
-  /*//calulare complex normal length
+  //
+  double normal0[3];
+  ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&*coords.begin(),normal0); CHKERRQ(ierr);
+  double area0 = cblas_dnrm2(3,normal0,1);
+  cblas_dscal(3,1./area0,normal0,1);
+  double def_NORMAL[9] = { 0,0,0 };
+  Tag th_normal0;
+  rval = moab.tag_get_handle("NORMAL0",3,MB_TYPE_DOUBLE,th_normal0,MB_TAG_CREAT|MB_TAG_SPARSE,def_NORMAL); CHKERR_PETSC(rval);
+  rval = moab.tag_set_data(th_normal0,&face,1,normal0); CHKERR_PETSC(rval);
+  //
+  //calulare complex normal length
   double __complex__ xarea = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
-      cpow((x_normal[2].r+I*x_normal[2].i),2));*/
+      cpow((x_normal[2].r+I*x_normal[2].i),2));
   //
   if( C!=NULL) bzero( C,3*9*sizeof(double));
   if(iC!=NULL) bzero(iC,3*9*sizeof(double));

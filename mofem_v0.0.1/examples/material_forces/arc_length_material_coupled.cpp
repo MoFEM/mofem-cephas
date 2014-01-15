@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) {
 	  if((msId < 10200)||(msId >= 10300)) continue;
 	  Range SurfacesFaces_msId;
 	  ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SideSet,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
-	  CrackSurfacesFaces.insert(SurfacesFaces_msId.begin(),SurfacesFaces_msId.end());
+	  SurfacesFaces.insert(SurfacesFaces_msId.begin(),SurfacesFaces_msId.end());
 	}
 
 	Range level_tris;
