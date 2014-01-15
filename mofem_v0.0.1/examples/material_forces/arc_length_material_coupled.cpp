@@ -251,10 +251,9 @@ int main(int argc, char *argv[]) {
 	  _da_ = da;
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* field to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
 	} else {
-	  if(reason != SNES_DIVERGED_MAX_IT) {
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
-	    ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	  }
+	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
+	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* field to converge, recalulate spatail positions only\n"); CHKERRQ(ierr);
 	  SNES snes_spatial;
 	  //solve spatial problem
@@ -298,7 +297,7 @@ int main(int argc, char *argv[]) {
 	  if((msId < 10200)||(msId >= 10300)) continue;
 	  Range SurfacesFaces_msId;
 	  ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SideSet,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
-	  CrackSurfacesFaces.insert(SurfacesFaces_msId.begin(),SurfacesFaces_msId.end());
+	  SurfacesFaces.insert(SurfacesFaces_msId.begin(),SurfacesFaces_msId.end());
 	}
 
 	Range level_tris;

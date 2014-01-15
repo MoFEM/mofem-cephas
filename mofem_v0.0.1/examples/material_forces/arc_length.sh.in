@@ -197,6 +197,11 @@ if [ -z ${NBSUBSTEPS+x} ]; then
   NBSUBSTEPS=20
 fi
 
+if [ -z ${DESIRED_NUMBER_OF_ITS+x} ]; then 
+  DESIRED_NUMBER_OF_ITS=8
+fi
+
+
 
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"

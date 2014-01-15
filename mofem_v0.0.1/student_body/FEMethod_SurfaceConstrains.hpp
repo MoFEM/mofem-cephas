@@ -54,7 +54,7 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   ublas::bounded_matrix<double,9,3 > CT_MAT_ELEM;
   ublas::bounded_matrix<double,3,9 > dC_MAT_ELEM;
   ublas::bounded_matrix<double,9,9 > dCT_MAT_ELEM;
-  ublas::vector<double,ublas::bounded_array<double,3> > ig_VEC_ELEM;
+  ublas::vector<double,ublas::bounded_array<double,9> > ig_VEC_ELEM;
   ublas::vector<double,ublas::bounded_array<double,9> > if_VEC_ELEM;
 
   ublas::vector<DofIdx,ublas::bounded_array<DofIdx,3> > lambda_global_row_indices,lambda_global_col_indices;
@@ -71,7 +71,7 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   };
 
   EntityHandle face;
-  PetscErrorCode cOnstrain(double *dofs_X,double *dofs_iX,double *C,double *iC);
+  PetscErrorCode cOnstrain(double *dofs_iX,double *C,double *iC,double *g,double *ig);
   virtual PetscErrorCode iNtegrate(bool transpose,bool nonlinear);
   virtual PetscErrorCode aSsemble(bool transpose,bool nonlinear);
   virtual PetscErrorCode operator()(bool transpose,bool nonlinear);

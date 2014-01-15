@@ -228,6 +228,7 @@ int main(int argc, char *argv[]) {
 
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+  /*
   double def_VAL[3] = { 0,0,0 };
   Tag th_res_quality;
   rval = moab.tag_get_handle("RES_QUALITY",3,MB_TYPE_DOUBLE,th_res_quality,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
@@ -262,7 +263,7 @@ int main(int argc, char *argv[]) {
     rval = moab.tag_set_by_ptr(th_res_quality,&ent,1,(const void **)&data_ptr); CHKERR_PETSC(rval);
   }
 
-  ierr = VecRestoreArray(F,&array); CHKERRQ(ierr);
+  ierr = VecRestoreArray(F,&array); CHKERRQ(ierr);*/
 
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("MESH_SMOOTHING",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
