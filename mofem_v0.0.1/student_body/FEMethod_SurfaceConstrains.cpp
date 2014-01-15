@@ -125,6 +125,13 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   double def_NORMAL[9] = { 0,0,0 };
   Tag th_normal0;
   rval = moab.tag_get_handle("NORMAL0",3,MB_TYPE_DOUBLE,th_normal0,MB_TAG_CREAT|MB_TAG_SPARSE,def_NORMAL); CHKERR_PETSC(rval);
+  if(side_elem!=0) {
+    int side_number,sense,offset;
+    rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
+    if(sense == -1) {
+      cblas_dscal(3,-1,normal0,1);
+    }
+  }
   rval = moab.tag_set_data(th_normal0,&face,1,normal0); CHKERR_PETSC(rval);
   //
   //calulare complex normal length
