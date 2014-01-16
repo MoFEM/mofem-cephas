@@ -798,12 +798,11 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
     ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX",ss1.str()); CHKERRQ(ierr);
   }
 
-  //CRACK
+  /*//CRACK
   if(cs) {
     ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
-  }
-
+  }*/
 
   Range level_tris;
   ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
