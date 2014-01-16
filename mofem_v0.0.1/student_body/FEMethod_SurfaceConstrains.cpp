@@ -134,10 +134,10 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   }
   rval = moab.tag_set_data(th_normal0,&face,1,normal0); CHKERR_PETSC(rval);*/
   //calulare complex normal length
-  double __complex__ xarea = csqrt(
+  /*double __complex__ xarea = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
-      cpow((x_normal[2].r+I*x_normal[2].i),2));
+      cpow((x_normal[2].r+I*x_normal[2].i),2));*/
   //
   if( C!=NULL) bzero( C,3*9*sizeof(double));
   if(iC!=NULL) bzero(iC,3*9*sizeof(double));

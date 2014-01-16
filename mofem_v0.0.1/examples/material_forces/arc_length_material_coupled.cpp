@@ -203,8 +203,10 @@ int main(int argc, char *argv[]) {
       nb_sub_steps = 20;
     }
 
+    bool first_step_converged = false;
     bool not_converged_state = false;
     double _da_ = 0;
+    int last_converged = -1;
     for(int ii = 0;ii<nb_sub_steps;ii++) {
        ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
        if(ii == 0) {
@@ -226,13 +228,15 @@ int main(int argc, char *argv[]) {
 	  }
 	  double gamma = 0.5,reduction = 1;
 	  reduction = pow((double)its_d/(double)(its+1),gamma);
-	  const double max_da_reduction = 100;
+	  const double max_da_reduction = 10;
 	  if(reduction<1 || da < max_da_reduction*da_0) {
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* reduction of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
 	    da = fmin(da*reduction,max_da_reduction*da_0);
 	  }
 	}
 	_da_ = 0;
+	last_converged = ii;
+	first_step_converged = true;
 	not_converged_state = false;
 	ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
@@ -245,7 +249,7 @@ int main(int argc, char *argv[]) {
 	ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
       } else {
 	not_converged_state = true;
-	if(ii == 0) {
+	if(!first_step_converged) {
 	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  da = 0.5*da;
 	  _da_ = da;
@@ -267,7 +271,7 @@ int main(int argc, char *argv[]) {
 	  ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	  if(not_converged_state) {
-	    _da_ = 0.1*da;
+	    _da_+= 0.1*da;
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* field to converge. set da = %6.4e ( 0.1 ) \n",_da_); CHKERRQ(ierr);
 	  }
 	}

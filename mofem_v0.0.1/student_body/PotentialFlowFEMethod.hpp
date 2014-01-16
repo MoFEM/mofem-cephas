@@ -657,7 +657,7 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 struct PostProcPotentialFlowOnRefMesh: public PostProcDisplacemenysAndStarinOnRefMesh {
 
   Tag th_phi,th_p,th_u;
-  PostProcPotentialFlowOnRefMesh(Interface& _moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab) {
+  PostProcPotentialFlowOnRefMesh(Interface& _moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab,"DISPLACEMENT") {
     double def_VAL2[3] = { 0.0, 0.0, 0.0 };
     rval = moab_post_proc.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("P",1,MB_TYPE_DOUBLE,th_p,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
