@@ -227,7 +227,7 @@ $MPIRUN $BIN_PATH/arc_length_material_coupled \
   -my_da $DA -my_load_steps $NBSTEPS \
   -my_nb_sub_steps $NBSUBSTEPS \
   -mat_ascii_output_large \
-  -log_summary | tee log
+  -log_summary 2>&1 | tee log
 if [ $? -ne 0 ]; then
   exit $?
 fi

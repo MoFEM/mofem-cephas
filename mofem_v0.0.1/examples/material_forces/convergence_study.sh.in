@@ -117,7 +117,10 @@ while test $# -gt 0; do
                         export NB_PROC=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
-
+		--pc_factor_mat_solver_package*) 
+                        export PCFACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
                 *)
                         break
                         ;;
@@ -152,6 +155,10 @@ if [ -z ${NB_PROC+x} ]; then
   NB_PROC=4
 fi
 
+if [ -z ${PCFACTOR+x} ]; then 
+  PCFACTOR=superlu_dist
+fi
+
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MPI_RUN@ -np $NB_PROC" 
 
@@ -176,19 +183,19 @@ do
     echo | tee -a $DIR_NAME/log_griffith_forces
 
     $MPIRUN $BIN_PATH/spatial_problem \
-      -my_file $FILE -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+      -my_file $FILE -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package $PCFACTOR \
       -ksp_atol 1e-14 -ksp_rtol 1e-12 -ksp_monitor \
       -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
-      -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_pot_proc_ref_level 1 -log_summary | tee -a $DIR_NAME/log_solution
+      -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_pot_proc_ref_level 1 -log_summary 2>&1 | tee -a $DIR_NAME/log_solution
     if [ $? -ne 0 ]; then
       exit $?
     fi
 
     $BIN_PATH/material_force \
       -my_file out_spatial.h5m \
-	-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_atol 1e-14 -ksp_rtol 1e-12 \
+	-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package $PCFACTOR -ksp_atol 1e-14 -ksp_rtol 1e-12 \
 	-ksp_monitor \
-	-my_gc $GC -log_summary | tee -a $DIR_NAME/log_griffith_forces
+	-my_gc $GC -log_summary 2>&1 | tee -a $DIR_NAME/log_griffith_forces
     if [ $? -ne 0 ]; then
       exit $?
     fi
