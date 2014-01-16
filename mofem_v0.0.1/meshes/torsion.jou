@@ -85,7 +85,7 @@ nodeset 101 vertex 89 90 99 100 91 92 remove
   
 #Boundary surfaces     
 sideset 102 surface all     
-sideset 102 surface 61 53 54 remove      
+sideset 102 surface 61 53 54 38 39 45 44 36 37 42 43 remove      
   
 sideset 102 surface 75 remove  
 sideset 10200 surface 75  
@@ -98,9 +98,9 @@ sideset 201 curve 143
   
 #!Meshing   
 volume all scheme tetmesh      
-volume all size auto factor 5  
+volume all size auto factor 7
 #!Mesh Crack Surface (those elemenst are streched)  
-surface 53  size auto factor 5  
+surface 53  size auto factor 7  
   
 #!Mesh All  
 mesh surface 53  
