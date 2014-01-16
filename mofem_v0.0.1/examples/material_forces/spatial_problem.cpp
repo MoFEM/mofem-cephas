@@ -51,11 +51,15 @@ int main(int argc, char *argv[]) {
     nb_ref_levels = 0;
   }
  
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+  const char *option;
+  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  BARRIER_RANK_START(pcomm) 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  BARRIER_RANK_END(pcomm) 
+
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
