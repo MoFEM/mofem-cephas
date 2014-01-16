@@ -211,17 +211,6 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   PetscErrorCode calcDirevatives(double *diffNTRI,double *dofs_X,double *dofs_iX,
     double *C,double *iC,double *T,double *iT) {
     PetscFunctionBegin;
-    //set complex material position vector
-    __CLPK_doublecomplex x_dofs_X[9];
-    for(int nn = 0;nn<3;nn++) {
-      for(int dd = 0;dd<3;dd++) {
-        x_dofs_X[nn*3+dd].r = dofs_X[nn*3+dd];
-        if(dofs_iX != NULL) {
-	  x_dofs_X[nn*3+dd].i = dofs_iX[nn*3+dd];
-	} else {
-	  x_dofs_X[nn*3+dd].i = 0;
-	}
-    }}
     double diffX_xi[3],diffX_eta[3];
     bzero(diffX_xi,3*sizeof(double));
     bzero(diffX_eta,3*sizeof(double));
