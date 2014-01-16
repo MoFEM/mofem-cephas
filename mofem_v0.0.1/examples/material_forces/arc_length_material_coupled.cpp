@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   double da_0 = 0;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_da",&da_0,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_da (what is crack area increment ?)");
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_da (what is the crack area increment ?)");
   }
   double da = da_0;
 
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   PetscInt nb_load_steps = 0;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_load_steps",&nb_load_steps,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_load_steps (what is number of load_steps ?)");
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_load_steps (what is the number of load_steps ?)");
   }
 
   if(step == 0) {
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
     PetscBool flg;
     ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
     }
 
     //calulate initial load factor
@@ -256,12 +256,12 @@ int main(int argc, char *argv[]) {
 	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  da = 0.5*da;
 	  _da_ = da;
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* field to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
+	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
 	} else {
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
 	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* field to converge, recalulate spatail positions only\n"); CHKERRQ(ierr);
+	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, recalculate spatial positions only\n"); CHKERRQ(ierr);
 	  SNES snes_spatial;
 	  //solve spatial problem
 	  ierr = SNESCreate(PETSC_COMM_WORLD,&snes_spatial); CHKERRQ(ierr);  
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
 	  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	  if(not_converged_state) {
 	    _da_+= 0.1*da;
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* field to converge. set da = %6.4e ( 0.1 ) \n",_da_); CHKERRQ(ierr);
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.1 ) \n",_da_); CHKERRQ(ierr);
 	  }
 	}
       }
