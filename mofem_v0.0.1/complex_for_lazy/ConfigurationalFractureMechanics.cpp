@@ -208,7 +208,7 @@ struct NL_MaterialFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledM
 	  ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
 	  //F_lambda2
 	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tsuaqre root of reference load vector FlambdaT*Flambda = %6.4e\n",arc_ptr->F_lambda2);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tsquare root of reference load vector FlambdaT*Flambda = %6.4e\n",arc_ptr->F_lambda2);
 	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	  //Add external forces to RHS
@@ -1395,7 +1395,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   PetscBool flg;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
   }
 
   Vec LambdaVec,GriffithForceVec;
@@ -1466,7 +1466,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   PetscBool flg;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
   }
 
   Vec F_Material;
@@ -1668,7 +1668,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
   PetscBool flg;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
   }
 
   Range CornersEdges,CornersNodes;
@@ -1815,7 +1815,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
   CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
   const double fraction_treshold = 5e-2;
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"freez front nodes:\n");
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"freeze front nodes:\n");
   nb_un_freez_nodes = 0;
   for(
     map<EntityHandle,double>::iterator mit = map_ent_j.begin();
@@ -1826,7 +1826,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
       "front node = %ld max_g = %6.4e g = %6.4e (%6.4e)",
       mit->first,max_j,mit->second,fraction); CHKERRQ(ierr);
     if(fraction > fraction_treshold) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD," freez\n");
+      ierr = PetscPrintf(PETSC_COMM_WORLD," freeze\n");
       CornersNodes.insert(mit->first);
       int freez = 1;
       EntityHandle node = mit->first;
@@ -1839,7 +1839,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 	UnFreezNodes.insert(mit->first);
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
       } else if(freez == 1) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD," unfreez\n");
+	ierr = PetscPrintf(PETSC_COMM_WORLD," unfreeze\n");
 	int freez = 0;
 	rval = mField.get_moab().tag_set_data(th_freez,&node,1,&freez); CHKERR_PETSC(rval);
 	nb_un_freez_nodes++;
@@ -2102,7 +2102,7 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
       rval = mField.get_moab().get_connectivity(*fit,conn,num_nodes,true); 
       if (MB_SUCCESS != rval) { 
 	PetscAbortErrorHandler(PETSC_COMM_SELF,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,rval,PETSC_ERROR_INITIAL,
-	  "can not get connectibity",PETSC_NULL);
+	  "can not get connectibility",PETSC_NULL);
 	CHKERRABORT(PETSC_COMM_SELF,rval);
       }
       for(int nn = 0;nn<num_nodes; nn++) {
@@ -2274,7 +2274,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::operator
       ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,INSERT_VALUES); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_SELF,"\n");
       PetscPrintf(PETSC_COMM_SELF,"\t** Arc-Length residual:\n");
-      PetscPrintf(PETSC_COMM_SELF,"\t  residual of arc-lenght control res_lambda = %6.4e crack area/f_lambda_int = %6.4e ( %6.4e )\n"
+      PetscPrintf(PETSC_COMM_SELF,"\t  residual of arc-length control res_lambda = %6.4e crack area/f_lambda_int = %6.4e ( %6.4e )\n"
 	,arc_ptr->res_lambda,aRea,aRea/aRea0);
     } break; 
     case ctx_SNESSetJacobian: {
@@ -2339,14 +2339,14 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::postProc
 	ierr = VecAssemblyBegin(res_nrm2_vec); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(res_nrm2_vec); CHKERRQ(ierr);
 	if(pcomm->rank()==0) {
-	  PetscPrintf(PETSC_COMM_WORLD,"\t** Equlibrium Residuals:\n");
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  equlibrium of physical forces res_spatial_nrm2 = %6.4e\n",sqrt(res_nrm2[0]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  equlibrium of material forces res_crack_front_nrm2 = %6.4e\n",sqrt(res_nrm2[1]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\t** MeshQuaity Residuals:\n");
+	  PetscPrintf(PETSC_COMM_WORLD,"\t** Equilibrium Residuals:\n");
+	  PetscPrintf(PETSC_COMM_WORLD,"\t  equilibrium of physical forces res_spatial_nrm2 = %6.4e\n",sqrt(res_nrm2[0]));
+	  PetscPrintf(PETSC_COMM_WORLD,"\t  equilibrium of material forces res_crack_front_nrm2 = %6.4e\n",sqrt(res_nrm2[1]));
+	  PetscPrintf(PETSC_COMM_WORLD,"\t** MeshQuality Residuals:\n");
 	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of mesh smoother res_mesh_smoother_nrm2 = %6.4e\n",sqrt(res_nrm2[2]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of surface constrain res_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[3]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of crack surface constrain res_crack_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[4]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of crack front mesh smoother tangential constrain res_crack_front_tangent_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[5]));
+	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of surface constraint res_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[3]));
+	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of crack surface constraint res_crack_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[4]));
+	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of crack front mesh smoother tangential constraint res_crack_front_tangent_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[5]));
 	  PetscPrintf(PETSC_COMM_WORLD,"\n");
 	}
 	ierr = VecRestoreArray(snes_f,&array); CHKERRQ(ierr);
