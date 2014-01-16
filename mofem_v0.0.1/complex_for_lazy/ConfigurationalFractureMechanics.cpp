@@ -1758,6 +1758,19 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
   PetscFunctionReturn(0);
 }
 
+#include <petscsnes.h>
+
+PetscErrorCode MySnesConvernceTest(SNES snes,int it,double xnorm,double gnorm,double fnorm,SNESConvergedReason *reason,void *void_ctx) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = SNESConvergedDefault(snes,it,xnorm,gnorm,fnorm,reason,PETSC_NULL); CHKERRQ(ierr);
+  const PetscReal div = 10e3;
+  if(fnorm > div) {
+    *reason = SNES_DIVERGED_FUNCTION_DOMAIN;
+  }
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInterface& mField,SNES *snes,double da) {
   PetscFunctionBegin;
 
@@ -1917,6 +1930,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = SNESSetFunction(*snes,F,SnesRhs,&arc_snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetJacobian(*snes,ShellK,K,SnesMat,&arc_snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(*snes); CHKERRQ(ierr);
+  ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   PetscReal my_tol;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_tol",&my_tol,&flg); CHKERRQ(ierr);
   if(flg == PETSC_TRUE) {

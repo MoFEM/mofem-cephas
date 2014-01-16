@@ -138,6 +138,10 @@ while test $# -gt 0; do
                         export LINESEARCHTYPE=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
+		--pc_factor_mat_solver_package*) 
+                        export PCFACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
 		--my_nb_sub_steps*) 
                         export NBSUBSTEPS=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
@@ -197,12 +201,13 @@ if [ -z ${NBSUBSTEPS+x} ]; then
   NBSUBSTEPS=20
 fi
 
+if [ -z ${PCFACTOR+x} ]; then 
+  PCFACTOR=superlu_dist
+fi
+
 if [ -z ${DESIRED_NUMBER_OF_ITS+x} ]; then 
   DESIRED_NUMBER_OF_ITS=8
 fi
-
-
-
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MPI_RUN@ -np $NB_PROC"

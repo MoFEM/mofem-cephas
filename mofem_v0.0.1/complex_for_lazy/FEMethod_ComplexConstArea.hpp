@@ -291,6 +291,10 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     __CLPK_doublecomplex x_scalar = { -creal(1./x_nrm2), -cimag(1./x_nrm2) }; // unit [ 1/m^2 ]
     cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_xi,3,x_normal,1,&x_zero,xNSpinX_xi,1); // unit [ 1/m^2 * m = 1/m ]
     cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinX_eta,3,x_normal,1,&x_zero,xNSpinX_eta,1); // unit [ 1/m^2 * m = 1/m ]
+    if( C!=NULL) bzero( C,9*sizeof(double));
+    if(iC!=NULL) bzero(iC,9*sizeof(double));
+    if( T!=NULL) bzero( T,9*sizeof(double));
+    if(iT!=NULL) bzero(iT,9*sizeof(double));
     for(int nn = 0;nn<3;nn++) {
       double A[3],iA[3];
       A[0] = xNSpinX_xi[0].r*diffNTRI[2*nn+1]-xNSpinX_eta[0].r*diffNTRI[2*nn+0]; // unit [ 1/m ]
