@@ -1169,7 +1169,7 @@ PetscErrorCode ConfigurationalFractureMechanics::set_coordinates_from_material_s
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInterface& mField,SNES *snes) {
+PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInterface& mField,SNES *snes,bool postproc) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -1217,20 +1217,27 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  PostProcVertexMethod ent_method(mField.get_moab(),"SPATIAL_POSITION");
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
+  if(postproc) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Save tags with nodal postions for spatial problem\n"); CHKERRQ(ierr);
+    PostProcVertexMethod ent_method(mField.get_moab(),"SPATIAL_POSITION");
+    ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
 
-  PostProcVertexMethod ent_method_res(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method_res); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Save tags with residuals for spatial problem\n"); CHKERRQ(ierr);
+    PostProcVertexMethod ent_method_res(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
+    ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method_res); CHKERRQ(ierr);
 
-  if(fe_post_proc_stresses_method!=NULL) delete fe_post_proc_stresses_method;
-  fe_post_proc_stresses_method = new PostProcStressNonLinearElasticity(mField.get_moab(),MySpatialFE);
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",*fe_post_proc_stresses_method);  CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Save tags on refined mesh with stresses\n"); CHKERRQ(ierr);
+    if(fe_post_proc_stresses_method!=NULL) delete fe_post_proc_stresses_method;
+    fe_post_proc_stresses_method = new PostProcStressNonLinearElasticity(mField.get_moab(),MySpatialFE);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",*fe_post_proc_stresses_method);  CHKERRQ(ierr);
+  }
 
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"Spatial problem solved\n"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

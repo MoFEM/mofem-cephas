@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
       SNES snes;
       //solve spatial problem
       ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
-      ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
+      ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
       ierr = SNESDestroy(&snes); CHKERRQ(ierr);
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
 	  SNES snes_spatial;
 	  //solve spatial problem
 	  ierr = SNESCreate(PETSC_COMM_WORLD,&snes_spatial); CHKERRQ(ierr);  
-	  ierr = conf_prob.solve_spatial_problem(mField,&snes_spatial); CHKERRQ(ierr);
+	  ierr = conf_prob.solve_spatial_problem(mField,&snes_spatial,false); CHKERRQ(ierr);
 	  ierr = SNESDestroy(&snes_spatial); CHKERRQ(ierr);
 	  ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
 	  ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
