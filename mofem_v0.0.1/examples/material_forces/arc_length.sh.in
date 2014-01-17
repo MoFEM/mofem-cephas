@@ -194,7 +194,7 @@ if [ -z ${ITSD+x} ]; then
 fi
 
 if [ -z ${LINESEARCHTYPE+x} ]; then 
-  LINESEARCHTYPE="l2"
+  LINESEARCHTYPE="basic"
 fi
 
 if [ -z ${NBSUBSTEPS+x} ]; then 

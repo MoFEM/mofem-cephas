@@ -145,6 +145,11 @@ int main(int argc, char *argv[]) {
 
   for(int aa = 0;step<nb_load_steps;step++,aa++) {
 
+    PetscLogDouble t1,t2;
+    PetscLogDouble v1,v2;
+    ierr = PetscTime(&v1); CHKERRQ(ierr);
+    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n\n** number of step = %D\n",step); CHKERRQ(ierr);
 
     ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
@@ -192,9 +197,10 @@ int main(int argc, char *argv[]) {
       ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     }
 
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"* da = %6.4e\n",da); CHKERRQ(ierr);
     SNES snes;
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"* da = %6.4e\n",da); CHKERRQ(ierr);
+    ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
     
     Vec D0;
     ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Col,&D0); CHKERRQ(ierr);
@@ -209,10 +215,10 @@ int main(int argc, char *argv[]) {
     bool first_step_converged = false;
     bool not_converged_state = false;
     double _da_ = 0;
-    int last_converged = -1;
+    //int last_converged = -1;
     for(int ii = 0;ii<nb_sub_steps;ii++) {
-       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
-       if(ii == 0) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
+      if(ii == 0) {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da); CHKERRQ(ierr);
       } else {
 	ierr = conf_prob.solve_coupled_problem(mField,&snes,_da_); CHKERRQ(ierr);
@@ -238,7 +244,7 @@ int main(int argc, char *argv[]) {
 	  }
 	}
 	_da_ = 0;
-	last_converged = ii;
+	//last_converged = ii;
 	first_step_converged = true;
 	not_converged_state = false;
 	ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -278,6 +284,17 @@ int main(int argc, char *argv[]) {
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.1 ) \n",_da_); CHKERRQ(ierr);
 	  }
 	}
+      }
+      //set line sercher L2 for not converged state
+      if(reason < 0) {
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"* set L2 linesercher\n",_da_); CHKERRQ(ierr);
+	//set line sercher L2 for not converged state
+	ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+	ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
+	ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+	SNESLineSearch linesearch;
+	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
+	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
       }
     }
 
@@ -358,6 +375,10 @@ int main(int argc, char *argv[]) {
 
     }
 
+    ierr = PetscTime(&v2);CHKERRQ(ierr);
+    ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Step Time Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+
   }
 
   if(pcomm->rank()==0) {
@@ -382,7 +403,6 @@ int main(int argc, char *argv[]) {
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
 
   PetscFinalize();
