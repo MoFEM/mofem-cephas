@@ -24,6 +24,9 @@ set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} ${CTEST_BUILD_OPTIONS} -
 set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"-G${CTEST_CMAKE_GENERATOR}\"")
 set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\"")
 
+#Ctest time outr
+set(CTEST_TEST_TIMEOUT 1200)
+
 # Perform the CDashTesting
 ctest_start(${DASHBOARDTEST})
 
@@ -75,8 +78,8 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   SimpleMeshSmoothingTest
   SimpleMeshSmoothingTest_LagrangeMultipliers
   SimpleLaplacianProblem
-  ConvergenceStudy_sh
-  ArcLength_sh
+  #ConvergenceStudy_sh
+  #ArcLength_sh
 )
 
 if(${DOTEST} GREATER 0)
