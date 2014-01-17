@@ -43,6 +43,18 @@ static void (*tab_func_PiolaKirhoiff2[])(double lambda,double mu,__CLPK_doubleco
   PiolaKirhoiff2_Hooke,PiolaKirhoiff2_Kirchhoff,PiolaKirhoiff2_NeoHookean,PiolaKirhoiff2_EberleinHolzapfel1
 };
 //
+PetscErrorCode ThermalDeformationGradient(double alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
+  PetscFunctionBegin;
+  bzero(xF,sizeof(__CLPK_doublecomplex)*9);
+  double complex streach = alpha*(xT.r+I*xT.i);
+  int dd = 0;
+  for(;dd<3;dd++) {
+    xF[3*dd+dd].r = creal(streach);
+    xF[3*dd+dd].i = cimag(streach);
+  }
+  PetscFunctionReturn(0);
+}
+//
 PetscErrorCode StrainEnergy(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
   PetscFunctionBegin;
   tab_func_Strain_energy[ph_eq_vol](lambda,mu,xF,xC,xJ,xPsi,ctx);
