@@ -24,6 +24,7 @@
 #include "FieldInterface.hpp"
 #include "CoreDataStructures.hpp"
 #include "FEMethod_UpLevelStudent.hpp"
+#include "complex_for_lazy.h"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -63,6 +64,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   void *ptr_matctx;
   bool propeties_from_BlockSet_Mat_ElasticSet;
   PetscErrorCode GetMatParameters(double *_lambda,double *_mu,void *ptr_matctx);
+  ctx_EberleinHolzapfel1 EberleinHolzapfel1_mat_parameters;
 
   double eps;
 
@@ -73,6 +75,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   string material_field_name;
   FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
     analysis _type,double _lambda,double _mu,int _verbose = 0);
+  ~FEMethod_ComplexForLazy();
 
   int g_TRI_dim;
   vector<double> g_NTET,g_NTRI;

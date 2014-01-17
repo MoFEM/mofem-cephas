@@ -34,7 +34,9 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDir
     analysis _type,
     double _lambda,double _mu, int _verbose): 
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    type_of_analysis(_type),type_of_forces(conservative),lambda(_lambda),mu(_mu),eps(1e-10),
+    type_of_analysis(_type),type_of_forces(conservative),
+    lambda(_lambda),mu(_mu),ptr_matctx(NULL),
+    eps(1e-10),
     spatial_field_name("SPATIAL_POSITION"),
     material_field_name("MESH_NODE_POSITIONS") {
   order_edges.resize(6);
@@ -86,6 +88,8 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDir
   }
 
 }
+FEMethod_ComplexForLazy::~FEMethod_ComplexForLazy() {
+}
 PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double *_mu,void *ptr_matctx) {
   PetscFunctionBegin;
 
@@ -97,7 +101,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 
       Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);     
 
       Range meshsets;
       rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
@@ -106,6 +110,41 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 	if( moab.contains_entities(*mit,&ent,1) ) {
 	  *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
 	  *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+	  int material_type = (int)mydata.data.User1;
+	  if(material_type>=10) {
+	    switch(material_type) {
+	      case 10:
+	      set_PhysicalEquationNumber(hooke);
+	      break;
+	    case 11:
+	      set_PhysicalEquationNumber(stvenant_kirchhoff);
+	      break;
+	    case 12:
+	      set_PhysicalEquationNumber(neohookean);
+	      break;
+	    case 13:
+	      set_PhysicalEquationNumber(eberleinholzapfel1);
+	      ptr_matctx = &EberleinHolzapfel1_mat_parameters;
+	      EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
+	      EberleinHolzapfel1_mat_parameters.k1 = mydata.data.User2;
+	      EberleinHolzapfel1_mat_parameters.k2 = mydata.data.User2;
+	      EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.User3;
+	      EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.User4;
+	      EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.User5;
+	      EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.User6;
+	      EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.User7;
+	      EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.User8;
+	      break;
+	    defualt:
+	      SETERRQ(PETSC_COMM_SELF,1,
+	      "Materail not defined (Attribute 3):\n"
+	      "\t10 = hooke\n"
+	      "\t11 = stvenant_kirchhoff\n"
+	      "\t12 = neohookean\n"
+	      "\t13 = eberleinholzapfel1\n");
+	    }
+	  }
+
 	  PetscFunctionReturn(0);  
 	}
       }
