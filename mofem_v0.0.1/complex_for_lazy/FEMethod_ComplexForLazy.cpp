@@ -126,11 +126,14 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 	      set_PhysicalEquationNumber(eberleinholzapfel1);
 	      ptr_matctx = &EberleinHolzapfel1_mat_parameters;
 	      EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
+	      //stiffnes of two fiberes families is equal
 	      EberleinHolzapfel1_mat_parameters.k1 = mydata.data.User2;
 	      EberleinHolzapfel1_mat_parameters.k2 = mydata.data.User2;
+	      //direction of fibre 1
 	      EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.User3;
 	      EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.User4;
 	      EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.User5;
+	      //direction of finre 2
 	      EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.User6;
 	      EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.User7;
 	      EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.User8;
