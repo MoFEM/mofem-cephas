@@ -4,6 +4,18 @@ Check before run
 * Check where is your mesh file
 * Check what version of openmpi (or other MPI library) you are using
 
+Papers
+======
+
+Jeffersion, Barr, Bennett and Hee
+Three dimensional fracture finite element simulation of fracture test using the Craft computer model
+Computers and concrete, 2004
+
+Note
+====
+
+* Pleas note that E,gc and F_external is scaled such that, lambda*F_eternal has unit [ 0.1 kN ] !!!
+* Mesh dimenion are in milimiters
 
 Example run
 ===========
@@ -39,22 +51,5 @@ Example run
 
 * check that you have installed awk and grep
 * copy and paste to line command
-
-Notes
-=====
-
-* arc_length.sh can be run with opetion --snes_linesearch_type=basic,
-  then, numer of desicer dumber of iterations should be smaller. With that 
-  option, propgram works much fuster, however from time to time it can 
-  diverge and need manual restart.
-  
-  ./arc_length.sh -f torsion_SIF/out_spatial_2_1.h5m -a 1 -n 500 -g 8e-6 -d propagation_Order2_Ref1 -p 4 -t 1e-8 -i 5 --snes_linesearch_type=basic
-
-
-To Do
-=====
-
-Data to make plots
-==================
 
 
