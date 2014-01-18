@@ -1,0 +1,10 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what verion of openmoi (or other MPI library) are you using
+
+Example run
+===========
+mpirun -np 1 ./RVE_Try -my_file PeelTest.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -ksp_monitor 
+
