@@ -78,7 +78,7 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
   ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr); \
   ierr = StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); CHKERRQ(ierr); \
   ierr = PiolaKirhoiff2(lambda,mu,xF,xC,&det_xF,xS,matctx); CHKERRQ(ierr); \
-  ierr = PilaKirhoff1(lambda,mu,xF,xS,xP); CHKERRQ(ierr); \
+  ierr = PiolaKirhoiff1(lambda,mu,xF,xS,xP); CHKERRQ(ierr); \
   ierr = PiolaKrihoff1_PullBack(&det_xH,inv_xH,xP,xP_PullBack); \
   ierr = ElshebyStress(&xPsi,xF,xP,xSigma); \
   ierr = ElshebyStress_PullBack(&det_xH,inv_xH,xSigma,xSigma_PullBack);
@@ -138,7 +138,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,i
   ierr = StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); CHKERRQ(ierr); 
 
   ierr = PiolaKirhoiff2(lambda,mu,xF,xC,&det_xF,xS,matctx); CHKERRQ(ierr); 
-  ierr = PilaKirhoff1(lambda,mu,xF,xS,xP); CHKERRQ(ierr); 
+  ierr = PiolaKirhoiff1(lambda,mu,xF,xS,xP); CHKERRQ(ierr); 
   ierr = ElshebyStress(&xPsi,xF,xP,xSigma); 
   ierr = CauchyStress(xF,&det_xF,xP,xCauchyStress); CHKERRQ(ierr);
 

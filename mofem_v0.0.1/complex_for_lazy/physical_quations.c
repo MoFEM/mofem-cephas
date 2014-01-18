@@ -66,7 +66,7 @@ PetscErrorCode CauchyStress(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xJ,__
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode PilaKirhoff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP) {
+PetscErrorCode PiolaKirhoiff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP) {
   PetscFunctionBegin;
   if(ph_eq_vol == hooke) {
     cblas_zcopy(9,xS,1,xP,1);

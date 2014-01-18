@@ -143,6 +143,13 @@ int main(int argc, char *argv[]) {
     ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
   }
 
+  Tag th_t_val;
+  rval = moab.tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
+  double *load_factor_ptr;
+  rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&load_factor_ptr); CHKERR_THROW(rval);
+  double& load_factor = *load_factor_ptr;
+
+
   for(int aa = 0;step<nb_load_steps;step++,aa++) {
 
     PetscLogDouble t1,t2;
@@ -174,16 +181,11 @@ int main(int argc, char *argv[]) {
     //calulate initial load factor
     if(step == 0) {
       double max_j = conf_prob.max_j;
-      Tag th_t_val;
-      rval = moab.tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
-      const EntityHandle root_meshset = moab.get_root_set();
-      double load_factor;
-      rval = moab.tag_get_data(th_t_val,&root_meshset,1,&load_factor); CHKERR_PETSC(rval);
       double a = fabs(max_j)/pow(load_factor,2);
       double new_load_factor = copysign(sqrt(gc/a),load_factor);
-      rval = moab.tag_set_data(th_t_val,&root_meshset,1,&new_load_factor); CHKERR_PETSC(rval);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\ncooeficient a = %6.4e\n",a); CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"new load factor value = %6.4e\n\n",new_load_factor); CHKERRQ(ierr);
+      load_factor = new_load_factor;
       SNES snes;
       //solve spatial problem
       ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
@@ -205,6 +207,7 @@ int main(int argc, char *argv[]) {
     Vec D0;
     ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Col,&D0); CHKERRQ(ierr);
     ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    double load_factor0 = load_factor;
     
     int nb_sub_steps;
     ierr = PetscOptionsGetInt("","-my_nb_sub_steps",&nb_sub_steps,&flg); CHKERRQ(ierr);
@@ -248,6 +251,7 @@ int main(int argc, char *argv[]) {
 	first_step_converged = true;
 	not_converged_state = false;
 	ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	load_factor0 = load_factor;
 	ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
 	ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -260,12 +264,14 @@ int main(int argc, char *argv[]) {
 	not_converged_state = true;
 	if(!first_step_converged) {
 	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  load_factor = load_factor0;
 	  da = 0.5*da;
 	  _da_ = da;
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
 	} else {
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
 	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  load_factor = load_factor0;
 	  ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, recalculate spatial positions only\n"); CHKERRQ(ierr);
 	  SNES snes_spatial;
