@@ -123,10 +123,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	EntityHandle ent = fe_ptr->get_ent();
 	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 
-        cout<<"\n\n\n\n\n\n\n\n\n\n";
-        cout<<"Mat_ElasticSet "<<endl;
-        cout<<"\n\n\n\n\n\n\n\n\n\n";
-
 	  Mat_Elastic mydata;
 	  ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
 
@@ -570,6 +566,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	for(int rr = 0;rr<row_mat;rr++) {
 	  if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(RowGlob[rr].size()==0) continue;
+        
+        
 	  ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	}
       } catch (const std::exception& ex) {

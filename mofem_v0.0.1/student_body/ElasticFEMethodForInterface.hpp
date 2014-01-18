@@ -83,7 +83,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 
   virtual PetscErrorCode CalcR() {
     PetscFunctionBegin;
-    bzero(tangent1,3*sizeof(double));
+    bzero(tangent1,3*sizeof(double));  // initialize to zero
     bzero(tangent2,3*sizeof(double));
     int ii = 0;
     for(; ii<3; ii++) {
@@ -95,11 +95,11 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 	tangent2[2] += coords_face3[3*ii + 2]*diffNTRI[2*ii+1];
     }
     R = ublas::zero_matrix<double>(3,3);
-    ublas::matrix_row<ublas::matrix<double> > R_normal(R,0);
+    ublas::matrix_row<ublas::matrix<double> > R_normal(R,0);   // first row of the R (rotation) matrix
     R_normal[0] = normal3[0];
     R_normal[1] = normal3[1];
     R_normal[2] = normal3[2];
-    R_normal /= 2.*area3;
+    R_normal /= 2.*area3;           // due to cross product so area is 2 times
     ublas::matrix_row<ublas::matrix<double> > R_tangent1(R,1);
     R_tangent1[0] = tangent1[0];
     R_tangent1[1] = tangent1[1];
@@ -130,6 +130,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
   virtual PetscErrorCode LhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
+    //ublas::matrix<ublas::matrix<FieldData> > K;   already defined in ElasticFEMethod.hpp
     K.resize(row_mat,col_mat);
     for(int rr = 0;rr<row_mat;rr++) {
 	for(int cc = 0;cc<col_mat;cc++) {
@@ -159,31 +160,35 @@ struct InterfaceFEMethod: public ElasticFEMethod {
   virtual PetscErrorCode Matrices() {
     PetscFunctionBegin;
     //rows
-    RowGlob.resize(1+6+2);
+    RowGlob.resize(1+6+2);      // 1 for nodes, 6 edges and 2 faces
     rowNMatrices.resize(1+6+2);
     row_mat = 0;
     ierr = GetRowGlobalIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
     ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
     row_mat++;
-    for(int ee = 0;ee<3;ee++) { //edges matrices
+    for(int ee = 0;ee<3;ee++) { //edges matrices for prisim interface element edges 0, 1, 2
 	ierr = GetRowGlobalIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
 	  row_mat++;
 	}
     }
-    for(int ee = 0;ee<3;ee++) { //edges matrices
+    for(int ee = 0;ee<3;ee++) { //edges matrices for prisim interface element edges 6, 7, 8
 	ierr = GetRowGlobalIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee+6); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee+6); CHKERRQ(ierr);
 	  row_mat++;
 	}
     }
+    
+    //faces matrices for prisim interface element face 3
     ierr = GetRowGlobalIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],3); CHKERRQ(ierr);
     if(RowGlob[row_mat].size()!=0) {
 	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],3); CHKERRQ(ierr);
 	row_mat++;
     }
+    
+    //faces matrices for prisim interface element face 4
     ierr = GetRowGlobalIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],4); CHKERRQ(ierr);
     if(RowGlob[row_mat].size()!=0) {
 	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],4); CHKERRQ(ierr);
@@ -424,7 +429,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
       //Rotation matrix
       ierr = CalcR(); CHKERRQ(ierr);
 
-      //Dglob
+      //Dglob (in the global coordinate system)
       ierr = CalcDglob(); CHKERRQ(ierr);
 
       //cerr << Dglob << endl;

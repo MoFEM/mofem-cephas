@@ -308,23 +308,23 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       vector<DofIdx> zero_pressure_dofs;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
 	if(it->get_Cubit_name() != "ZeroPressure") continue;
-	Range nodes;
-	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-	Range edges;
-	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
-	Range tris;
-	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-	Range adj;
-	rval = moab.get_connectivity(tris,adj,true); CHKERR_PETSC(rval);
-	nodes.insert(adj.begin(),adj.end());
-	rval = moab.get_connectivity(edges,adj,true); CHKERR_PETSC(rval);
-	nodes.insert(adj.begin(),adj.end());
-	rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
-	for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
-	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
-	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
-	    zero_pressure_dofs.push_back(dof->get_petsc_gloabl_dof_idx());
-	}}
+          Range nodes;
+          rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+          Range edges;
+          rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+          Range tris;
+          rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+          Range adj;
+          rval = moab.get_connectivity(tris,adj,true); CHKERR_PETSC(rval);
+          nodes.insert(adj.begin(),adj.end());
+          rval = moab.get_connectivity(edges,adj,true); CHKERR_PETSC(rval);
+          nodes.insert(adj.begin(),adj.end());
+          rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
+          for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
+              for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
+                  ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
+                  zero_pressure_dofs.push_back(dof->get_petsc_gloabl_dof_idx());
+              }}
 	for(Range::iterator eit = edges.begin();eit!=edges.end();eit++) {
 	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*eit,dof)) {
 	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);

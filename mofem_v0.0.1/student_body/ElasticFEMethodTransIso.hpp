@@ -431,6 +431,7 @@ struct TranIsotropicFibreDirRotElasticFEMethod: public ElasticFEMethod {
     ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), E_p(_E_p), E_z(_E_z), nu_p(_nu_p), nu_pz(_nu_pz), G_zp(_G_zp)  {
             
         double def_VAL2[3] = {0,0,0};
+        // create a new tag th_fibre_dir
         rval = moab.tag_get_handle( "POT_FLOW_FIBRE_DIR",3,MB_TYPE_DOUBLE,th_fibre_dir,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
     };
         
@@ -575,11 +576,17 @@ struct TranIsotropicFibreDirRotElasticFEMethod: public ElasticFEMethod {
         Range tetNodes;
         rval = moab.get_connectivity(&fe_handle,1,tetNodes); CHKERR_THROW(rval);
         
-        vector< ublas::matrix< FieldData > > phi;
-        ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",phi); CHKERRQ(ierr);  
-        for (int ii=0; ii<3; ii++) fibreVector[ii] = -phi[0](0,ii)/sqrt(pow(phi[0](0,0),2)+pow(phi[0](0,1),2)+pow(phi[0](0,2),2));
+        vector< ublas::matrix< FieldData > > phi;  // size is 45<3>
         
-        for(Range::iterator niit1 = tetNodes.begin();niit1!=tetNodes.end();niit1++){
+        ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",phi); CHKERRQ(ierr);  // calculate the derivatives for potential field for all the gauss points of one element
+        //cout<<"\n\n";
+        //cout<<"phi.size() "<<phi.size();
+        //cout<<phi[0] <<"\n";
+        //cout<<"\n\n";
+        
+        for (int ii=0; ii<3; ii++) fibreVector[ii] = -phi[0](0,ii)/sqrt(pow(phi[0](0,0),2)+pow(phi[0](0,1),2)+pow(phi[0](0,2),2)); //normalizing the vector (to find a unit vector)
+        
+        for(Range::iterator niit1 = tetNodes.begin();niit1!=tetNodes.end();niit1++){   // this is to just save the fiber dirction data on the elements
             rval = moab.tag_set_data(th_fibre_dir,&*niit1,1,&fibreVector[0]); CHKERR_PETSC(rval);  
         }
         

@@ -41,9 +41,9 @@ struct MyBC: public DynamicNeumannBC {
       if(ts_t > 10.) scale = 0;
 
       //Set Direction of Traction On SideSet2
-      traction[0] = 0; //X
+      traction[0] = scale; //X
       traction[1] = 0; //Y 
-      traction[2] = scale; //Z*/
+      traction[2] = 0; //Z*/
 
       PetscFunctionReturn(0);
     }
