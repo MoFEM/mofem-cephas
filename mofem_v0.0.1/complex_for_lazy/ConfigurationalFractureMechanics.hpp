@@ -92,7 +92,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes,bool postproc = true);
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
 
-  double aRea,lambda;
+  double aRea,lambda,energy;
   int nb_un_freez_nodes;
   PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double da);
 

@@ -4192,6 +4192,57 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::field_axpy(const double alpha,const string& field_name_x,const string& field_name_y,bool creat_if_missing) {
+  PetscFunctionBegin;
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = moabFields.get<FieldName_mi_tag>().find(field_name_x);
+  if(x_fit==moabFields.get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"x field < %s > not found, (top tip: check spelling)",field_name_x.c_str());
+  }
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator y_fit = moabFields.get<FieldName_mi_tag>().find(field_name_y);
+  if(y_fit==moabFields.get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"y field < %s > not found, (top tip: check spelling)",field_name_y.c_str());
+  }
+  if(x_fit->get_space() != y_fit->get_space()) {
+    SETERRQ2(PETSC_COMM_SELF,1,"space for field < %s > and field <%s> are not compatibile",field_name_x.c_str(),field_name_y.c_str());
+  }
+  if(x_fit->get_max_rank() != y_fit->get_max_rank()) {
+    SETERRQ2(PETSC_COMM_SELF,1,"rank for field < %s > and field <%s> are not compatibile",field_name_x.c_str(),field_name_y.c_str());
+  }
+  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator x_eit;
+  x_eit = entsMoabField.get<FieldName_mi_tag>().lower_bound(field_name_x.c_str());
+  for(;x_eit!=entsMoabField.get<FieldName_mi_tag>().upper_bound(field_name_x.c_str());x_eit++) {
+    int nb_dofs_on_x_entity = x_eit->tag_FieldData_size/sizeof(FieldData);
+    for(int dd = 0;dd<nb_dofs_on_x_entity;dd++) {
+      ApproximationOrder dof_order = x_eit->tag_dof_order_data[dd];
+      ApproximationRank dof_rank = x_eit->tag_dof_rank_data[dd];
+      FieldData data = x_eit->tag_FieldData[dd];
+      DofMoFEMEntity_multiIndex::index<Composite_Name_Ent_Order_And_Rank_mi_tag>::type::iterator dit;
+      dit = dofsMoabField.get<Composite_Name_Ent_Order_And_Rank_mi_tag>().find(
+	boost::make_tuple(field_name_y.c_str(),x_eit->get_ent(),dof_order,dof_rank));
+      if(dit == dofsMoabField.get<Composite_Name_Ent_Order_And_Rank_mi_tag>().end()) {
+	if(creat_if_missing) {
+	  SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
+	} else {
+	  ostringstream ss;
+	  ss << "dof on ent " << x_eit->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
+	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	}
+      }
+      dit->get_FieldData() += alpha*data;
+    }
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::set_field(const double val,const EntityType type,const string& field_name) {
+  PetscFunctionBegin;
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
+  dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
+  hi_dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
+  for(;dit!=hi_dit;dit++) {
+    dit->get_FieldData() = val;
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -4781,10 +4832,10 @@ MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::get_e
 MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::get_ent_moabfield_by_name_end(const string &field_name) {
   return entsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
 }
-DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::get_dofs_by_name_begin(const string &field_name) {
+DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::get_dofs_by_name_begin(const string &field_name) const {
   return dofsMoabField.get<FieldName_mi_tag>().lower_bound(field_name);
 }
-DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::get_dofs_by_name_end(const string &field_name) {
+DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator FieldCore::get_dofs_by_name_end(const string &field_name) const {
   return dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
 }
 DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator FieldCore::get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent) {

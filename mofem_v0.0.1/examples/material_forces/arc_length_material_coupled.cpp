@@ -307,7 +307,7 @@ int main(int argc, char *argv[]) {
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e\n",step,conf_prob.aRea,conf_prob.lambda); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"load_path: %4D Area %6.4e Lambda %6.4e Energy %6.4e\n",step,conf_prob.aRea,conf_prob.lambda,conf_prob.energy); CHKERRQ(ierr);
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
