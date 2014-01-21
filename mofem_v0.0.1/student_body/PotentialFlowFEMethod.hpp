@@ -151,8 +151,8 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       for(int rr = 0;rr<(1+6+4+1); rr++) {
 	if(RowGlobDofs[rr].size()==0) continue;
 	for(int cc = 0;cc<(1+6+4+1);cc++) {
-	  if(ColGlobDofs[cc].size()==0) continue;
-	  K.resize(ColGlobDofs[rr].size(),ColGlobDofs[cc].size());
+	  if(RowGlobDofs[cc].size()==0) continue;
+	  K.resize(RowGlobDofs[rr].size(),ColGlobDofs[cc].size());
 	  for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) {
 	    ublas::noalias(K) = prod( trans(diffRowNMatrix[rr][gg]),diffColNMatrix[cc][gg] ); 
 	    K *= a*V*G_TET_W[gg];
