@@ -76,6 +76,8 @@ namespace MoFEM {
   struct Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
   struct Composite_Name_And_Ent_And_EndDofIdx_mi_tag {};
   struct Composite_Name_And_Ent_mi_tag {};
+  struct Composite_Name_Ent_And_Rank_mi_tag {};
+  struct Composite_Name_Ent_Order_And_Rank_mi_tag {};
   struct Composite_Name_And_Type_mi_tag {};
   struct Composite_Name_Type_And_Side_Number_mi_tag {};
   struct Composite_Name_Ent_And_Part_mi_tag {};

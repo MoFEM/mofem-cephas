@@ -52,4 +52,8 @@ Example run
 * check that you have installed awk and grep
 * copy and paste to line command
 
+For exampple:
+
+./make_plot.sh propagation_Order2_Ref2_m1/log Order3Ref2_m1
+
 
