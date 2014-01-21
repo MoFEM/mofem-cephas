@@ -431,6 +431,9 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
   //Fields
   ierr = mField.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_field("SPATIAL_DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_field("MESH_NODE_DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
+
 
   //FE
   ierr = mField.add_finite_element("ELASTIC",MF_ZERO); CHKERRQ(ierr);
@@ -448,8 +451,10 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
 
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_DISPLACEMENT"); CHKERRQ(ierr);
 
   PetscInt order;
   PetscBool flg = PETSC_TRUE;
@@ -462,8 +467,14 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
   ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_DISPLACEMENT",1); CHKERRQ(ierr);
   //NOTE: always order should be 1
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_DISPLACEMENT",1); CHKERRQ(ierr);
+
 
   /*PetscInt nb_ref_levels;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ref",&nb_ref_levels,&flg); CHKERRQ(ierr);
@@ -649,9 +660,6 @@ PetscErrorCode ConfigurationalFractureMechanics::arclength_problem_definition(Fi
   ierr = mField.modify_finite_element_add_field_data("MESH_SMOOTHER","LAMBDA"); CHKERRQ(ierr);
 
   ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","ARC_LENGTH"); CHKERRQ(ierr);
-
-  //Field for ArcLength
-  ierr = mField.add_field("X0_MATERIAL_POSITION",H1,3); CHKERRQ(ierr);
 
   //this entity will carray data for this finite element
   EntityHandle meshset_FE_ARC_LENGTH;
@@ -2007,6 +2015,24 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_res_mat); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_res_spat(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
   ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_res_spat); CHKERRQ(ierr);
+
+  ierr = mField.set_field(0,MBVERTEX,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.set_field(0,MBEDGE,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.set_field(0,MBTRI,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.set_field(0,MBTET,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.field_axpy(+1.,"SPATIAL_POSITION","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.field_axpy(-1.,"MESH_NODE_POSITIONS","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+
+  Vec DISP;
+  ierr = VecDuplicate(D,&DISP); CHKERRQ(ierr);
+  ierr = VecZeroEntries(DISP); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost(
+    "COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",Col,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method_disp_spat(mField.get_moab(),"SPATIAL_POSITION",DISP,"SPATIAL_DISPLACEMENT");
+  ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_disp_spat); CHKERRQ(ierr);
+  ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
+  energy = 0.5*lambda*energy;
+  ierr = VecDestroy(&DISP); CHKERRQ(ierr);
 
   ierr = MatDestroy(&ShellK); CHKERRQ(ierr);
   ierr = MatDestroy(&K); CHKERRQ(ierr);
