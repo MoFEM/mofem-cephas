@@ -21,6 +21,7 @@
 #define __ElasticFEMethod_RVE_CalStress_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
+#include <boost/numeric/ublas/storage.hpp>
 #include "ElasticFEMethod.hpp"
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
@@ -34,7 +35,7 @@ struct ElasticFEMethod_RVE_CalStress: public ElasticFEMethod{
     Vec F_stress;
     Interface& moab;
     string field_name;
-    
+    double RVE_volume;
     
     ElasticFEMethod_RVE_CalStress(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
           double _lambda,double _mu, Interface& _moab, string _field_name = "DISPLACEMENT" ):
@@ -68,6 +69,7 @@ struct ElasticFEMethod_RVE_CalStress: public ElasticFEMethod{
             D_mu(rr,rr) = rr<3 ? 2 : 1;
         }
         
+        RVE_volume=0.0;
         ierr = VecDuplicate(F,&F_stress); CHKERRQ(ierr);
         ierr = VecZeroEntries(F_stress); CHKERRQ(ierr);
         ierr = VecGhostUpdateBegin(F_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -124,15 +126,20 @@ struct ElasticFEMethod_RVE_CalStress: public ElasticFEMethod{
 //        cout<<"Sigma_bar.size2() "<<Sigma_bar.size2()<<endl;
 //        cout<<"F_stress_vec.size2() "<<F_stress_vec.size2()<<endl;
 //        cout<<"F_stress_vec.size2() "<<*F_stress_vec.data().begin()<<endl;
-        cout<<"Sigma_bar "<<Sigma_bar<<endl;
         
+        // Homogenized stress
         cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
                     Sigma_bar.size1(),Sigma_bar.size2(),F_stress_vec.size2(),
                     1.,&*F_stress_vec.data().begin(),F_stress_vec.size2(),
                     &*coord_stress.data().begin(),coord_stress.size2(),
                     0.,&*Sigma_bar.data().begin(),Sigma_bar.size2());
         
+        
+        
+        
+        Sigma_bar=(1.0/(2.0*RVE_volume))*(Sigma_bar+trans(Sigma_bar));
         cout<<"Sigma_bar "<<Sigma_bar<<endl;
+        
         
         //cout<<"coord_stress "<<coord_stress<<endl;
         ierr = PetscTime(&v2); CHKERRQ(ierr);
@@ -208,9 +215,10 @@ struct ElasticFEMethod_RVE_CalStress: public ElasticFEMethod{
         ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
         ierr = GetMatrices(); CHKERRQ(ierr);
         
+        //volume of RVE
+        RVE_volume+=V;
+        
         //Assembly F_stress
-        //cout<<"\nBefore\n";
-        //ierr = VecView(F_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
         ierr = Fint(F_stress); CHKERRQ(ierr);
         //cout<<"\nAfter\n";
         //ierr = VecView(F_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);

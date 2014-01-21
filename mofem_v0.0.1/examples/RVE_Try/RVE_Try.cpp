@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
    //Applied strain (specified by the user)
     ublas::matrix<double> strain_app;
     strain_app.resize(3,3);
-    strain_app(0,0) = 0.1; strain_app(0,1)=0.0; strain_app(0,2)=0.0;
+    strain_app(0,0) = 0.4; strain_app(0,1)=0.0; strain_app(0,2)=0.0;
     strain_app(1,0) = 0.0; strain_app(1,1)=0.0; strain_app(1,2)=0.0;
     strain_app(2,0) = 0.0; strain_app(2,1)=0.0; strain_app(2,2)=0.0;
     
@@ -279,14 +279,9 @@ int main(int argc, char *argv[]) {
    ElasticFEMethod_RVE_CalStress MyRVEStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), moab);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEStress);  CHKERRQ(ierr);
     
-    cout<<" 11 "<<endl;
-    
-    
    PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
     
-    cout<<" 22 "<<endl;
-
     
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -295,7 +290,6 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
-    cout<<" 33 "<<endl;
 
   //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
@@ -304,7 +298,6 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
-    cout<<" 44 "<<endl;
 
   //End Disp
   /*Range ents;*/
