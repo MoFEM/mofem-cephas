@@ -89,8 +89,8 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    vector<vector<DofIdx> > RowGlobDofs;
-    vector<vector< ublas::matrix<FieldData> > > diffRowNMatrix;
+    vector<vector<DofIdx> > RowGlobDofs,ColGlobDofs;
+    vector<vector< ublas::matrix<FieldData> > > diffRowNMatrix,diffColNMatrix;
 
     PetscErrorCode get_ShapeFunctionsAndIndices() {
       PetscFunctionBegin;
@@ -118,6 +118,29 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	ierr = GetGaussRowDiffNMatrix("POTENTIAL_FIELD",MBTET,diffRowNMatrix[1+6+4]); CHKERRQ(ierr);
       }
 
+      ColGlobDofs.resize(1+6+4+1);
+      diffColNMatrix.resize(1+6+4+1);
+      ierr = GetColGlobalIndices("POTENTIAL_FIELD",ColGlobDofs[0]); CHKERRQ(ierr);
+      ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",diffColNMatrix[0]); CHKERRQ(ierr);
+      ee = 0;
+      for(;ee<6;ee++) {
+	ierr = GetColGlobalIndices("POTENTIAL_FIELD",MBEDGE,ColGlobDofs[1+ee],ee); CHKERRQ(ierr);
+	if(ColGlobDofs[1+ee].size()>0) {
+	  ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",MBEDGE,diffColNMatrix[1+ee],ee); CHKERRQ(ierr);
+	} 
+      }
+      ff = 0;
+      for(;ff<4;ff++) {
+	ierr = GetColGlobalIndices("POTENTIAL_FIELD",MBTRI,ColGlobDofs[1+6+ff],ff); CHKERRQ(ierr);
+	if(ColGlobDofs[1+6+ff].size()>0) {
+	  ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",MBTRI,diffColNMatrix[1+6+ff],ff); CHKERRQ(ierr);
+	}
+      }
+      ierr = GetColGlobalIndices("POTENTIAL_FIELD",MBTET,ColGlobDofs[1+6+4]); CHKERRQ(ierr);
+      if(ColGlobDofs[1+6+4].size()>0) {
+	ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",MBTET,diffColNMatrix[1+6+4]); CHKERRQ(ierr);
+      }
+
       PetscFunctionReturn(0);
     }
 
@@ -128,14 +151,14 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       for(int rr = 0;rr<(1+6+4+1); rr++) {
 	if(RowGlobDofs[rr].size()==0) continue;
 	for(int cc = 0;cc<(1+6+4+1);cc++) {
-	  if(RowGlobDofs[cc].size()==0) continue;
-	  K.resize(RowGlobDofs[rr].size(),RowGlobDofs[cc].size());
+	  if(ColGlobDofs[cc].size()==0) continue;
+	  K.resize(ColGlobDofs[rr].size(),ColGlobDofs[cc].size());
 	  for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) {
-	    ublas::noalias(K) = prod( trans(diffRowNMatrix[rr][gg]),diffRowNMatrix[cc][gg] ); 
+	    ublas::noalias(K) = prod( trans(diffRowNMatrix[rr][gg]),diffColNMatrix[cc][gg] ); 
 	    K *= a*V*G_TET_W[gg];
 	    ierr = MatSetValues(A,
 	      RowGlobDofs[rr].size(),&(RowGlobDofs[rr])[0],
-	      RowGlobDofs[cc].size(),&(RowGlobDofs[cc])[0],
+	      ColGlobDofs[cc].size(),&(ColGlobDofs[cc])[0],
 	      &(K.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	}
