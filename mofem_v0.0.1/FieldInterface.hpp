@@ -795,6 +795,29 @@ struct FieldInterface {
   virtual PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
+  /** \brief axpy fields 
+    *
+    * field_y = field_y + alpha*field_x
+    *
+    * \param alpha
+    * \param field_name_x name of field_x
+    * \param field_name_y name of field_y
+    * \param create_if_missing creat dof in field_y from fiedl_x if it is not database
+    *
+    */
+  virtual PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool creat_if_missing = false) = 0;
+
+  /** \brief set field 
+    *
+    * field_y = val
+    *
+    * \param val
+    * \param entity type
+    * \param field_name
+    *
+    */
+  virtual PetscErrorCode set_field(const double val,const EntityType type,const string& field_name) = 0;
+
   //topologity
   /** \brief create two children meshsets in the meshset containing terahedrals on two sides of faces
    *
@@ -1232,7 +1255,7 @@ struct FieldInterface {
     *
     * \param field_name  
     */
-  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name) = 0;
+  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name) const = 0;
 
   /** 
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -1243,7 +1266,7 @@ struct FieldInterface {
     *
     * \param field_name  
     */
-  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) = 0;
+  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) const = 0;
 
   ///loop over all dofs from a moFEM field and particular field
   #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \

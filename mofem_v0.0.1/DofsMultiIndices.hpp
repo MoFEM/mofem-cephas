@@ -174,6 +174,15 @@ typedef multi_index_container<
 	DofMoFEMEntity,
 	const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
 	const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type>
+      > >,
+    ordered_non_unique<
+      tag<Composite_Name_Ent_Order_And_Rank_mi_tag>, 
+      composite_key<
+	DofMoFEMEntity,
+	const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
+	const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
+	const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order>,
+	const_mem_fun<DofMoFEMEntity,ApproximationRank,&DofMoFEMEntity::get_dof_rank>
       > >
   > > DofMoFEMEntity_multiIndex;
 
