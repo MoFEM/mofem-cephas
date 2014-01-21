@@ -1,5 +1,8 @@
 #!/bin/sh
 
+echo "Line command ..."
+echo $0 $@
+
 while test $# -gt 0; do
         case "$1" in
                 -h|--help)
@@ -190,7 +193,7 @@ if [ -z ${TOL+x} ]; then
 fi
 
 if [ -z ${ITSD+x} ]; then 
-  TOL=1e-9
+  ITSD=6
 fi
 
 if [ -z ${LINESEARCHTYPE+x} ]; then 
@@ -215,7 +218,7 @@ MPIRUN="@MPI_RUN@ -np $NB_PROC"
 cp $FILE $DIR_NAME/
 cd $DIR_NAME
 
-$MPIRUN $BIN_PATH/arc_length_material_coupled \
+COMMAND="$MPIRUN $BIN_PATH/arc_length_material_coupled \
   -my_file `basename $FILE` \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package $PCFACTOR \
   -snes_type newtonls -snes_linesearch_type $LINESEARCHTYPE -snes_linesearch_monitor \
@@ -227,7 +230,15 @@ $MPIRUN $BIN_PATH/arc_length_material_coupled \
   -my_da $DA -my_load_steps $NBSTEPS \
   -my_nb_sub_steps $NBSUBSTEPS \
   -mat_ascii_output_large \
-  -log_summary 2>&1 | tee log
+  -log_summary 2>&1 | tee log"
+
+echo 
+echo "Start calulations ..."
+echo $COMMAND
+echo 
+
+exec $COMMAND
+
 if [ $? -ne 0 ]; then
   exit $?
 fi
