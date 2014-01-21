@@ -566,8 +566,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	for(int rr = 0;rr<row_mat;rr++) {
 	  if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(RowGlob[rr].size()==0) continue;
-        
-        
 	  ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	}
       } catch (const std::exception& ex) {

@@ -24,7 +24,7 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod_RVE_Try.hpp"
-//#include "ElasticFEMethod.hpp"
+#include "ElasticFEMethod_RVE_CalStress.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -128,10 +128,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
-    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT_1",order); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT_1",order); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT_1",order); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT_1",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT_1",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT_1",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT_1",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT_1",1); CHKERRQ(ierr);
   
   /****/
   //build database
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
    //Applied strain (specified by the user)
     ublas::matrix<double> strain_app;
     strain_app.resize(3,3);
-    strain_app(0,0) = 10; strain_app(0,1)=0.0; strain_app(0,2)=0.0;
+    strain_app(0,0) = 0.1; strain_app(0,1)=0.0; strain_app(0,2)=0.0;
     strain_app(1,0) = 0.0; strain_app(1,1)=0.0; strain_app(1,2)=0.0;
     strain_app(2,0) = 0.0; strain_app(2,1)=0.0; strain_app(2,2)=0.0;
     
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D_star,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D_star,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
     
     
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -248,15 +248,11 @@ int main(int argc, char *argv[]) {
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     
-    ierr = VecGhostUpdateBegin(D_star,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(D_star,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(D_star); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(D_star); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D_star,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D_star,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(D_star); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(D_star); CHKERRQ(ierr);
 
-    
-    
-    
-    
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
     
     
@@ -271,22 +267,27 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+//    ierr = VecView(D_star,  PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    ierr = VecAXPY(D,1,D_star); CHKERRQ(ierr);   // D=D+1*D_star (total displacement start+fluctuation)
+//    ierr = VecView(D,  PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  //ierr = VecView(D,  PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  ierr = VecAXPY(D,1,D_star); CHKERRQ(ierr);   // D=D+1*D_star (total displacement start+fluctuation)
-  ierr = VecView(D,  PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  
-  ///ierr = VecAXPY(D,-1,D_star); CHKERRQ(ierr);
-  //ierr = VecView(D,  PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    
+   ElasticFEMethod_RVE_CalStress MyRVEStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), moab);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEStress);  CHKERRQ(ierr);
+    
+    cout<<" 11 "<<endl;
     
     
-    
-  PostProcVertexMethod ent_method(moab);
+   PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
+    
+    cout<<" 22 "<<endl;
 
+    
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -294,7 +295,8 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
-  
+    cout<<" 33 "<<endl;
+
   //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
@@ -302,6 +304,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
+    cout<<" 44 "<<endl;
 
   //End Disp
   /*Range ents;*/
