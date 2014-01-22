@@ -33,7 +33,7 @@ file(COPY
 add_test(SimpleMeshSmoothingTest ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing 
   -my_file chees.cub  -ksp_type fgmres  
   -pc_type lu -pc_factor_mat_solver_package superlu_dist 
-  -ksp_atol 1e-10 -ksp_rtol 1e-12
+  -ksp_atol 1e-10 -ksp_rtol 1e-12 -ksp_monitor
   -snes_monitor -snes_type newtonls -snes_linesearch_type bt 
   -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason
   -my_penalty 1e8 -my_gamma 0 -my_alpha2 1 -my_meshrefine 1
