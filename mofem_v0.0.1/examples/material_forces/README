@@ -1,8 +1,8 @@
 Check before run
 ================
 
-* Check where is your mesh file
-* Check what verion of openmoi (or other MPI library) are you using
+* Check the location of your mesh file
+* Check what version of openmpi (or other MPI library) you are using
 
 Example run
 ===========

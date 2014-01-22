@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
       double max_j = conf_prob.max_j;
       double a = fabs(max_j)/pow(load_factor,2);
       double new_load_factor = copysign(sqrt(gc/a),load_factor);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"\ncooeficient a = %6.4e\n",a); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"\ncoefficient a = %6.4e\n",a); CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"new load factor value = %6.4e\n\n",new_load_factor); CHKERRQ(ierr);
       load_factor = new_load_factor;
       SNES snes;
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
 	  reduction = pow((double)its_d/(double)(its+1),gamma);
 	  const double max_da_reduction = 10;
 	  if(reduction<1 || da < max_da_reduction*da_0) {
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* reduction of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
 	    da = fmin(da*reduction,max_da_reduction*da_0);
 	  }
 	}

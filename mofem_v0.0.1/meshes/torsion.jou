@@ -65,13 +65,13 @@ block 1 volume 3 4 5
 block 1 name "MAT_ELASTIC_Concrete"      
 block 1 attribute count 10      
 block 1 attribute index 1 3.5   
-block 1 attribute index 2 0.3     
+block 1 attribute index 2 0.2     
   
 block 2 volume 1 2     
 block 2 name "MAT_ELASTIC_Steel"      
 block 2 attribute count 10      
 block 2 attribute index 1 20   
-block 2 attribute index 2 0.2     
+block 2 attribute index 2 0.3     
   
 #Create nodesets and sidesets for fracture constraints     
 #Boundary edges     

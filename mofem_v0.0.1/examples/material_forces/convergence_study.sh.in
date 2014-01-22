@@ -3,7 +3,7 @@
 while test $# -gt 0; do
         case "$1" in
                 -h|--help)
-                        echo "converence_study"
+                        echo "convergence_study"
                         echo " "
                         echo "convergence_study [arguments]"
                         echo " "
@@ -147,7 +147,7 @@ if [ -z ${ORDERS+x} ]; then
 fi
 
 if [ -z ${REF+x} ]; then 
-  echo "Refinment levels is unset, convergence_study --help"
+  echo "Refinement levels is unset, convergence_study --help"
   exit 1
 fi
 
