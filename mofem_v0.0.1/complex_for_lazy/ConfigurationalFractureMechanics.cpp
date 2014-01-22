@@ -1815,7 +1815,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   PetscBool flg;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
   }
 
   ErrorCode rval;
@@ -2374,7 +2374,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::postProc
 	  PetscPrintf(PETSC_COMM_WORLD,"\t** Equilibrium Residuals:\n");
 	  PetscPrintf(PETSC_COMM_WORLD,"\t  equilibrium of physical forces res_spatial_nrm2 = %6.4e\n",sqrt(res_nrm2[0]));
 	  PetscPrintf(PETSC_COMM_WORLD,"\t  equilibrium of material forces res_crack_front_nrm2 = %6.4e\n",sqrt(res_nrm2[1]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\t** MeshQuality Residuals:\n");
+	  PetscPrintf(PETSC_COMM_WORLD,"\t** Mesh Quality Residuals:\n");
 	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of mesh smoother res_mesh_smoother_nrm2 = %6.4e\n",sqrt(res_nrm2[2]));
 	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of surface constraint res_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[3]));
 	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of crack surface constraint res_crack_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[4]));

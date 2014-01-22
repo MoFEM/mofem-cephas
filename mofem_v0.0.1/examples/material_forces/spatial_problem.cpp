@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscOptionsGetReal(PETSC_NULL,"-my_load",t_val,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_WORLD,1,"*** ERROR -my_load (what is load factor?)");
+      SETERRQ(PETSC_COMM_WORLD,1,"*** ERROR -my_load (what is the load factor?)");
     }
 
   }

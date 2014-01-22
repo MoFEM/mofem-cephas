@@ -113,38 +113,42 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 	  int material_type = (int)mydata.data.User1;
 	  if(material_type>=10) {
 	    switch(material_type) {
-	      case 10:
-	      set_PhysicalEquationNumber(hooke);
-	      break;
-	    case 11:
-	      set_PhysicalEquationNumber(stvenant_kirchhoff);
-	      break;
-	    case 12:
-	      set_PhysicalEquationNumber(neohookean);
-	      break;
-	    case 13:
-	      set_PhysicalEquationNumber(eberleinholzapfel1);
-	      ptr_matctx = &EberleinHolzapfel1_mat_parameters;
-	      EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
-	      EberleinHolzapfel1_mat_parameters.k1 = mydata.data.User2;
-	      EberleinHolzapfel1_mat_parameters.k2 = mydata.data.User2;
-	      EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.User3;
-	      EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.User4;
-	      EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.User5;
-	      EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.User6;
-	      EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.User7;
-	      EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.User8;
-	      break;
-	    defualt:
-	      SETERRQ(PETSC_COMM_SELF,1,
-	      "Materail not defined (Attribute 3):\n"
-	      "\t10 = hooke\n"
-	      "\t11 = stvenant_kirchhoff\n"
-	      "\t12 = neohookean\n"
-	      "\t13 = eberleinholzapfel1\n");
+	      case 10: {
+		set_PhysicalEquationNumber(hooke);
+		}
+		break;
+	      case 11: {
+		set_PhysicalEquationNumber(stvenant_kirchhoff);
+		}
+		break;
+	      case 12: {
+		set_PhysicalEquationNumber(neohookean);
+		}
+		break;
+	      case 13: {
+		set_PhysicalEquationNumber(eberleinholzapfel1);
+		ptr_matctx = &EberleinHolzapfel1_mat_parameters;
+		EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
+		EberleinHolzapfel1_mat_parameters.k1 = mydata.data.User2;
+		EberleinHolzapfel1_mat_parameters.k2 = mydata.data.User2;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.User3;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.User4;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.User5;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.User6;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.User7;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.User8;
+		}
+		break;
+	      default: {
+		SETERRQ(PETSC_COMM_SELF,1,
+		  "Materail not defined (Attribute 3):\n"
+		  "\t10 = hooke\n"
+		  "\t11 = stvenant_kirchhoff\n"
+		  "\t12 = neohookean\n"
+		  "\t13 = eberleinholzapfel1\n");
+	      }
 	    }
 	  }
-
 	  PetscFunctionReturn(0);  
 	}
       }
