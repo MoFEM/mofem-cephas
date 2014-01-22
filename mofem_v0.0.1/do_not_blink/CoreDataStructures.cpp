@@ -318,7 +318,7 @@ SideNumber* RefMoFEMElement_EDGE::get_side_number_ptr(Interface &moab,EntityHand
   ErrorCode rval;
   int side_number,sense,offset;
   rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
-  if(side_number==-1) THROW_AT_LINE("this not working");
+  if(side_number==-1) THROW_AT_LINE("this is not working");
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
@@ -332,7 +332,7 @@ RefMoFEMElement_VERTEX::RefMoFEMElement_VERTEX(Interface &moab,const RefMoFEMEnt
     case MBVERTEX:
     break;
     default:
-      THROW_AT_LINE("this work only for TRIs");
+      THROW_AT_LINE("this works only for TRIs");
   }
 }
 SideNumber* RefMoFEMElement_VERTEX::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
@@ -853,10 +853,10 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
   PetscFunctionBegin;
   //tets type
   EntityType type = (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
-  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,1,"incositencies with type_from_handle"); 
+  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,1,"incosistencies with type_from_handle");
   //tets id
   EntityID id = (EntityType)(ent&MB_ID_MASK);
-  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,1,"incositencies with id_from_handle"); 
+  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,1,"incosistencies with id_from_handle");
   PetscFunctionReturn(0);
 }
 
@@ -1294,9 +1294,9 @@ ostream& operator<<(ostream& os,const Mat_Interf& e)
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
     os << "Elastic modulus multiplier        = " << e.data.alpha << endl << endl;
-	  os << "Damage Coupling multiplier        = " << e.data.beta << endl << endl;
+	  os << "Damage coupling multiplier        = " << e.data.beta << endl << endl;
 	  os << "Maximum resisting stress of crack = " << e.data.ft		<< endl << endl;
-	  os << "Fracture Energy                   = " << e.data.Gf << endl << endl;
+	  os << "Fracture energy                   = " << e.data.Gf << endl << endl;
 
     return os;
 }
