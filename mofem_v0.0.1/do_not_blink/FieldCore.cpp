@@ -187,6 +187,13 @@ EntityHandle FieldCore::get_field_meshset(const BitFieldId id) const {
 EntityHandle FieldCore::get_field_meshset(const string& name) const {
   return get_field_meshset(get_BitFieldId(name));
 }
+bool FieldCore::check_field(const string &name) const {
+  typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
+  const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
+  field_set_by_name::iterator miit = set.find(name);
+  if(miit==set.end()) return false;
+  return true;
+}
 BitFieldId FieldCore::get_field_shift() {
   assert((unsigned int)*f_shift<BitFieldId().set().to_ulong());
   return (BitFieldId)(1<<(((*f_shift)++)-1)); 
@@ -4240,6 +4247,16 @@ PetscErrorCode FieldCore::set_field(const double val,const EntityType type,const
   hi_dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
   for(;dit!=hi_dit;dit++) {
     dit->get_FieldData() = val;
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::field_scale(const double alpha,const string& field_name) {
+  PetscFunctionBegin;
+  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+  dit = dofsMoabField.get<FieldName_mi_tag>().lower_bound(field_name);
+  hi_dit = dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
+  for(;dit!=hi_dit;dit++) {
+    dit->get_FieldData() *= alpha;
   }
   PetscFunctionReturn(0);
 }

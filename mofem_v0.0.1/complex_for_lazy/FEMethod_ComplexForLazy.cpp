@@ -529,7 +529,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	    //temperature
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
-	    NULL,NULL,NULL, NULL,NULL,NULL,NULL,
+	    NULL,NULL,NULL, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
 	    &*Khh.data().begin(),&*KHh.data().begin(),Kedgeh,Kfaceh,&*Kvolumeh.data().begin(),
 	    g_dim,g_TET_W); CHKERRQ(ierr);
@@ -538,7 +538,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	    //temperature
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
-	    NULL,NULL,NULL, NULL,NULL,NULL,NULL,
+	    NULL,NULL,NULL, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
 	    &Khedge[0],&KHedge[0],Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
 	    g_dim,g_TET_W); CHKERRQ(ierr);
@@ -547,7 +547,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	    //temperature
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
-	    NULL,NULL,NULL, NULL,NULL,NULL,NULL,
+	    NULL,NULL,NULL, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
 	    &Khface[0],&KHface[0],Khh_edgeface,Khh_faceface,Khh_volumeface, 
 	    g_dim,g_TET_W); CHKERRQ(ierr);
@@ -556,7 +556,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	    //temperature
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
-	    NULL,NULL,NULL, NULL,NULL,NULL,NULL,
+	    NULL,NULL,NULL, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
 	    &*Khvolume.data().begin(),&*KHvolume.data().begin(),Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(), 
 	    g_dim,g_TET_W); CHKERRQ(ierr);
@@ -568,7 +568,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	    //temperature
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
-	    NULL,NULL,NULL, NULL,NULL,NULL,NULL,
+	    NULL,NULL,NULL, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
 	    &*KHH.data().begin(),&*KhH.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),
 	    g_dim,g_TET_W); CHKERRQ(ierr);
@@ -677,7 +677,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	      //temperature
 	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
-	      NULL,NULL,NULL, NULL,NULL,NULL,NULL,
+	      NULL,NULL,NULL, &dofs_temp.data()[0],NULL,NULL,NULL,
 	      //
 	      NULL,&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
 	      NULL,NULL,NULL,NULL,NULL,
@@ -691,7 +691,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	      //temperature
 	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
-	      NULL,NULL,NULL, NULL,NULL,NULL,NULL,
+	      NULL,NULL,NULL, &dofs_temp.data()[0],NULL,NULL,NULL,
 	      //
 	      &*Fint_H.data().begin(),NULL,NULL,NULL,NULL,
 	      NULL,NULL,NULL,NULL,NULL,

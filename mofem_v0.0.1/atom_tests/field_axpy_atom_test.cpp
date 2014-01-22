@@ -130,12 +130,12 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field(+1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
   ierr = mField.set_field(-2,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
 
-  ierr = mField.field_axpy(0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
+  ierr = mField.field_axpy(+0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
+  ierr = mField.field_scale(-0.5,"FIELD_B"); CHKERRQ(ierr);
 
   //Open mesh_file_name.txt for writing
   ofstream myfile;
   myfile.open("field_axpy_test.txt");
-
 
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_A",dof_ptr))
     {
