@@ -75,13 +75,35 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
       int ee = 0;
       for(;ee<6;ee++) {
-  	fe_method.diff_edgeNinvJac[ee] = &(fe_method.diffH1edgeNinvJac[ee])[0]; 
+	if(fe_method.diffH1edgeNinvJac[ee].size()==0) {
+	  fe_method.diff_edgeNinvJac[ee] = NULL;
+	} else {
+	 fe_method.diff_edgeNinvJac[ee] = &(fe_method.diffH1edgeNinvJac[ee])[0]; 
+	}
+	if(fe_method.H1edgeN[ee].size()==0) {
+	  fe_method.edgeN[ee] = NULL;
+	} else {
+	  fe_method.edgeN[ee] = &(fe_method.H1edgeN[ee])[0]; 
+	}
       }
       int ff = 0;
+      if(fe_method.H1faceN.size() != 4) {
+	SETERRQ1(PETSC_COMM_SELF,1,"size of should be 4 but is %u",fe_method.H1faceN.size());
+      }
       for(;ff<4;ff++) {
-        fe_method.diff_faceNinvJac[ff] = &(fe_method.diffH1faceNinvJac[ff])[0];
+	if(fe_method.diffH1faceNinvJac[ff].size() == 0) {
+	  fe_method.diff_faceNinvJac[ff] = NULL;
+	} else {
+	  fe_method.diff_faceNinvJac[ff] = &(fe_method.diffH1faceNinvJac[ff])[0];
+	}
+	if(fe_method.H1faceN[ff].size()==0) {
+	  fe_method.faceN[ff] = NULL;
+	} else {
+	  fe_method.faceN[ff] = &(fe_method.H1faceN[ff])[0]; 
+	}
       }
       fe_method.diff_volumeNinvJac = &fe_method.diffH1elemNinvJac[0];
+      fe_method.volumeN = &fe_method.H1elemN[0];
 
       ierr = fe_method.GetDofs_X_FromElementData(); CHKERRQ(ierr);
 
@@ -97,12 +119,13 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	ublas::matrix< double > EshelbyStress(3,3);
 	double Psi,J;
 
-	ierr = Calulate_Stresses_at_GaussPoint(&fe_method.order_edges[0],&fe_method.order_faces[0],fe_method.order_volume,fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 
-	      &fe_method.diffNTETinvJac[0],&fe_method.diff_edgeNinvJac[0],&fe_method.diff_faceNinvJac[0],&fe_method.diff_volumeNinvJac[0], 
+	ierr = Calulate_Stresses_at_GaussPoint(
+	      &fe_method.order_edges[0],&fe_method.order_faces[0],fe_method.order_volume,fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 
+	      &fe_method.diffNTETinvJac[0],&fe_method.diff_edgeNinvJac[0],&fe_method.diff_faceNinvJac[0],fe_method.diff_volumeNinvJac, 
 	      &fe_method.dofs_X.data()[0],&*fe_method.dofs_x.data().begin(),
 	      &fe_method.dofs_x_edge[0],&fe_method.dofs_x_face[0],&*fe_method.dofs_x_volume.data().begin(), 
 	      //temperature
-	      NULL,NULL,NULL,NULL,
+	      &g_NTET[0],&fe_method.edgeN[0],&fe_method.faceN[0],fe_method.volumeN,
 	      NULL,NULL,NULL, NULL,NULL,NULL,NULL,
 	      &*Piola1Stress.data().begin(),&*CauhyStress.data().begin(),&*EshelbyStress.data().begin(),&Psi,&J,gg); CHKERRQ(ierr);
 	gg++;

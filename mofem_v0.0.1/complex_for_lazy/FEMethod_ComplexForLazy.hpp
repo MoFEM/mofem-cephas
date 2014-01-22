@@ -84,12 +84,12 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   ErrorCode rval;  
   PetscErrorCode ierr;
 
-  vector<double*> edgeNinvJac;
-  vector<double*> faceNinvJac;
-  double *volumeN;
   vector<double*> diff_edgeNinvJac;
   vector<double*> diff_faceNinvJac;
   double *diff_volumeNinvJac;
+  vector<double*> edgeN;
+  vector<double*> faceN;
+  double *volumeN;
 
   //Tangent_HH_hierachical
   ublas::matrix<double> KHH,KhH,KvolumeH;
