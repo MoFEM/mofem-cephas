@@ -84,6 +84,7 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
   ierr = ElshebyStress_PullBack(&det_xH,inv_xH,xSigma,xSigma_PullBack);
 
 #define HIERARHICAL_DEFORMATION_GRADIENT_APPROX \
+  { \
   int ee = 0; \
   for(;ee<6;ee++) { \
     if(NBEDGE_H1(order_edge[ee])==0) continue; \
@@ -105,7 +106,8 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
     bzero(volume_h,9*sizeof(double)); \
     double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)]); \
     ierr = H1_VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_x_volume,volume_h); CHKERRQ(ierr); \
-    cblas_daxpy(9,1,volume_h,1,h,1); }
+    cblas_daxpy(9,1,volume_h,1,h,1); } \
+  } 
 
 PetscErrorCode Calulate_Stresses_at_GaussPoint(
   int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
@@ -262,7 +264,7 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
 	Fint_ih[3*node + 1] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
 	Fint_ih[3*node + 2] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
     }
-    ee = 0;
+    int ee = 0;
     for(;ee<6;ee++) {
       int pp = 0;
       for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
@@ -278,7 +280,7 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
 	  (Fint_ih_edge[ee])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	  (Fint_ih_edge[ee])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
     } 
-    ff = 0;
+    int ff = 0;
     for(;ff<4;ff++) {
       int pp = 0;
       for(;pp<NBFACE_H1(order_face[ff]);pp++) {
@@ -590,7 +592,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
-        ff = 0;
+        int ff = 0;
         for(;ff<4;ff++) {
           int pp = 0;
           for(;pp<NBFACE_H1(order_face[ff]);pp++) {
@@ -685,7 +687,7 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
 	    (Koff[FF])[3*node*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
 	    (Koff[FF])[3*node*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }}
 	}
-        ee = 0;
+        int ee = 0;
         for(;ee<6;ee++) {
           int pp = 0;
           for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
