@@ -5,7 +5,7 @@ ARGS=$@
 while test $# -gt 0; do
         case "$1" in
                 -h|--help)
-                        echo "converence_study"
+                        echo "convergence_study"
                         echo " "
                         echo "convergence_study [arguments]"
                         echo " "
@@ -127,7 +127,7 @@ while test $# -gt 0; do
                         if test $# -gt 0; then
                                 export ITSD=$1
                         else
-                                echo "no disceraed number of iterations specified"
+                                echo "no desired number of iterations specified"
                                 exit 1
                         fi
                         shift
@@ -235,7 +235,7 @@ COMMAND="$MPIRUN $BIN_PATH/arc_length_material_coupled \
   -log_summary"
 
 echo | tee -a log
-echo "Start calulations ..." | tee -a log
+echo "Start calculations ..." | tee -a log
 echo $COMMAND | tee -a log
 echo | tee -a log
 
