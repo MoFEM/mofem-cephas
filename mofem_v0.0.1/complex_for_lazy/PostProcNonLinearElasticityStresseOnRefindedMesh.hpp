@@ -106,6 +106,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       fe_method.volumeN = &fe_method.H1elemN[0];
 
       ierr = fe_method.GetDofs_X_FromElementData(); CHKERRQ(ierr);
+      ierr = fe_method.GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
 
       double _lambda,_mu;
       ierr = fe_method.GetMatParameters(&_lambda,&_mu,fe_method.ptr_matctx); CHKERRQ(ierr);

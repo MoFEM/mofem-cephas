@@ -72,7 +72,8 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double alpha2,gamma;
 
   string spatial_field_name;
-  string material_field_name;
+  string material_field_name;	
+  string termal_field_name;
   FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
     analysis _type,double _lambda,double _mu,int _verbose = 0);
   ~FEMethod_ComplexForLazy();
@@ -163,7 +164,11 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   vector<double*> dofs_X_edge,dofs_X_face;
   PetscErrorCode GetIndicesMaterial();
 
+  //temperature
+  ublas::vector<double> dofs_temp;
+
   PetscErrorCode GetDofs_X_FromElementData();
+  PetscErrorCode GetDofs_Termal_FromElementData();
 
   Tag th_quality0,th_quality,th_b;
   double *quality0,*quality,*b;
