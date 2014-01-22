@@ -18,9 +18,9 @@ Material Properties
 -------------------
 Elastic modulus multiplier        = 0.555
 
-Damage Coupling multiplier        = 0.444
+Damage coupling multiplier        = 0.444
 
 Maximum resisting stress of crack = 0.333
 
-Fracture Energy                   = 0.222
+Fracture energy                   = 0.222
 
