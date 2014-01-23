@@ -73,6 +73,16 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
 
 #define COMP_STRESSES \
   ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); \
+  if(dofs_T!=NULL) { \
+    double temperature = 0; \
+    temperature = cblas_ddot(4,&N[4*gg],1,dofs_T,1); \
+    __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.}; \
+    __CLPK_doublecomplex xT = { temperature, 0 }; \
+    __CLPK_doublecomplex xF_themp[9]; \
+    ierr = ThermalDeformationGradient(alpha,0,xT,xF_themp); CHKERRQ(ierr); \
+    cblas_zcopy(9,xF,1,xF_tmp,1); \
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,xF_themp,3,&tmp2,xF,3); \
+  } \
   cblas_zcopy(9,xF,1,xF_tmp,1); \
   ierr = DeterminantComplexGradient(xF_tmp,&det_xF); CHKERRQ(ierr); \
   ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr); \
