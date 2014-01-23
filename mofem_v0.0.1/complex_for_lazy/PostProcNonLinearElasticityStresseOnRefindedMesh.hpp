@@ -108,8 +108,8 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       ierr = fe_method.GetDofs_X_FromElementData(); CHKERRQ(ierr);
       ierr = fe_method.GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
 
-      double _lambda,_mu;
-      ierr = fe_method.GetMatParameters(&_lambda,&_mu,fe_method.ptr_matctx); CHKERRQ(ierr);
+      double _lambda,_mu,_termal_expansion;
+      ierr = fe_method.GetMatParameters(&_lambda,&_mu,&_termal_expansion,fe_method.ptr_matctx); CHKERRQ(ierr);
 
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
       int gg =0;
@@ -126,6 +126,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	      &fe_method.dofs_X.data()[0],&*fe_method.dofs_x.data().begin(),
 	      &fe_method.dofs_x_edge[0],&fe_method.dofs_x_face[0],&*fe_method.dofs_x_volume.data().begin(), 
 	      //temperature
+	      _termal_expansion,
 	      &g_NTET[0],&fe_method.edgeN[0],&fe_method.faceN[0],fe_method.volumeN,
 	      NULL,NULL,NULL, &fe_method.dofs_temp.data()[0],NULL,NULL,NULL,
 	      &*Piola1Stress.data().begin(),&*CauhyStress.data().begin(),&*EshelbyStress.data().begin(),&Psi,&J,gg); CHKERRQ(ierr);

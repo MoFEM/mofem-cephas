@@ -107,13 +107,15 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
     double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)]); \
     ierr = H1_VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_x_volume,volume_h); CHKERRQ(ierr); \
     cblas_daxpy(9,1,volume_h,1,h,1); } \
-  } 
+  }
 
 PetscErrorCode Calulate_Stresses_at_GaussPoint(
-  int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
+  int *order_edge,int *order_face,int order_volume,
+  double alpha,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
+  double termal_expansion,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -124,6 +126,11 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
 
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
+
+  double temperature = 0;
+  if(dofs_T!=NULL) {
+    temperature = cblas_ddot(4,N,1,dofs_T,1);
+  }
 
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
@@ -165,6 +172,7 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
   double *dofs_X,double *dofs_x_node,double *dofs_iX,double *dofs_ix_node,
   double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
+  double termal_expansion,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -315,6 +323,7 @@ PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
+  double termal_expansion,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -422,6 +431,7 @@ PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
+  double termal_expansion,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -515,6 +525,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
+  double termal_expansion,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -615,6 +626,7 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
+  double termal_expansion,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -719,6 +731,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
+  double termal_expansion,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,

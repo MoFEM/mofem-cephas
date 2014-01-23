@@ -60,10 +60,10 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   enum forces { conservative = 1, nonconservative = 2};
   forces type_of_forces;
 
-  double lambda,mu;
+  double lambda,mu,termal_expansion;
   void *ptr_matctx;
   bool propeties_from_BlockSet_Mat_ElasticSet;
-  PetscErrorCode GetMatParameters(double *_lambda,double *_mu,void *ptr_matctx);
+  PetscErrorCode GetMatParameters(double *_lambda,double *_mu,double *_termal_epansion,void *ptr_matctx);
   ctx_EberleinHolzapfel1 EberleinHolzapfel1_mat_parameters;
 
   double eps;
@@ -75,7 +75,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   string material_field_name;	
   string termal_field_name;
   FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
-    analysis _type,double _lambda,double _mu,int _verbose = 0);
+    analysis _type,double _lambda,double _mu,double _termal_expansion,int _verbose);
   ~FEMethod_ComplexForLazy();
 
   int g_TRI_dim;
