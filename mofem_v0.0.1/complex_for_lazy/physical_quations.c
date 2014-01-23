@@ -43,10 +43,10 @@ static void (*tab_func_PiolaKirhoiff2[])(double lambda,double mu,__CLPK_doubleco
   PiolaKirhoiff2_Hooke,PiolaKirhoiff2_Kirchhoff,PiolaKirhoiff2_NeoHookean,PiolaKirhoiff2_EberleinHolzapfel1
 };
 //
-PetscErrorCode ThermalDeformationGradient(double alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
+PetscErrorCode ThermalDeformationGradient(const double alpha,const double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
   PetscFunctionBegin;
   bzero(xF,sizeof(__CLPK_doublecomplex)*9);
-  double complex streach = alpha*(xT.r+I*xT.i);
+  double complex streach = cexp((alpha+I*i_alpha)*(xT.r+I*xT.i));
   int dd = 0;
   for(;dd<3;dd++) {
     xF[3*dd+dd].r = creal(streach);

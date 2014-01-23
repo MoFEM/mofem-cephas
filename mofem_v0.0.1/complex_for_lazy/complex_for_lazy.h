@@ -46,7 +46,7 @@ PetscErrorCode CauchyGreenDeformation(__CLPK_doublecomplex *xF,__CLPK_doublecomp
 PetscErrorCode PiolaKrihoff1_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xP_PullBack);
 PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xStress,__CLPK_doublecomplex *xStress_PullBack);
 
-PetscErrorCode ThermalDeformationGradient(double alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF);
+PetscErrorCode ThermalDeformationGradient(double alpha,double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF);
 
 PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,

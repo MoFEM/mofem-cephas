@@ -73,8 +73,8 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
 
 #define COMP_STRESSES \
   ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); \
-  ierr = DeterminantComplexGradient(xF,&det_xF); CHKERRQ(ierr); \
-  ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); \
+  cblas_zcopy(9,xF,1,xF_tmp,1); \
+  ierr = DeterminantComplexGradient(xF_tmp,&det_xF); CHKERRQ(ierr); \
   ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr); \
   ierr = StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); CHKERRQ(ierr); \
   ierr = PiolaKirhoiff2(lambda,mu,xF,xC,&det_xF,xS,matctx); CHKERRQ(ierr); \
@@ -127,14 +127,9 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
 
-  double temperature = 0;
-  if(dofs_T!=NULL) {
-    temperature = cblas_ddot(4,N,1,dofs_T,1);
-  }
-
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xSigma[9],xCauchyStress[9],xPsi,det_xF,det_xH;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xSigma[9],xCauchyStress[9],xPsi,det_xF,det_xH;
   ierr = MakeComplexTensor(H,ZERO,xH); CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
   ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
@@ -144,11 +139,23 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
   HIERARHICAL_DEFORMATION_GRADIENT_APPROX
   ierr = MakeComplexTensor(h,ZERO,xh); CHKERRQ(ierr);
-
   ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); 
-  ierr = DeterminantComplexGradient(xF,&det_xF); CHKERRQ(ierr); 
-  ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr);
-  
+
+  //temperature
+  if(dofs_T!=NULL) {
+    double temperature = 0;
+    temperature = cblas_ddot(4,&N[4*gg],1,dofs_T,1);
+    __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.};
+    __CLPK_doublecomplex xT = { temperature, 0 };
+    __CLPK_doublecomplex xF_themp[9];
+    ierr = ThermalDeformationGradient(alpha,0,xT,xF_themp); CHKERRQ(ierr);
+    cblas_zcopy(9,xF,1,xF_tmp,1);
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,xF_themp,3,&tmp2,xF,3);
+  }
+
+  cblas_zcopy(9,xF,1,xF_tmp,1);
+  ierr = DeterminantComplexGradient(xF_tmp,&det_xF); CHKERRQ(ierr); 
+
   ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr); 
   ierr = StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); CHKERRQ(ierr); 
 
@@ -187,7 +194,7 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
   bzero(ZERO,sizeof(double)*9);
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],xPsi,det_xF,det_xH;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],xPsi,det_xF,det_xH;
   double reP[9],reSigma[9],imP[9],imSigma[9];
   if(dofs_iX == NULL) {
     ierr = MakeComplexTensor(H,ZERO,xH); CHKERRQ(ierr);
@@ -334,7 +341,7 @@ PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _idofs_X[12],_iH[9],imP[9],imSigma[9];
   if(K!=NULL) bzero(K,12*12*sizeof(double));
   if(Koff!=NULL) bzero(Koff,12*12*sizeof(double));
@@ -442,7 +449,7 @@ PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _idofs_x[12],_ih[9],imP[9],imSigma[9];
   ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
@@ -538,7 +545,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _ih[9],imP[9],imSigma[9];
   ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
@@ -639,7 +646,7 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _ih[9],imP[9],imSigma[9];
   ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
@@ -742,7 +749,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _ih[9],imP[9],imSigma[9];
   ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
