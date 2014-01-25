@@ -120,6 +120,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	ublas::matrix< double > CauhyStress(3,3);
 	ublas::matrix< double > EshelbyStress(3,3);
 	double Psi,J,themp;
+	int order_T_volume = 0;
 
 	ierr = Calulate_Stresses_at_GaussPoint(
 	      &fe_method.order_edges[0],&fe_method.order_faces[0],fe_method.order_volume,fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 
@@ -129,7 +130,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	      //temperature
 	      _thermal_expansion,
 	      &g_NTET[0],&fe_method.edgeN[0],&fe_method.faceN[0],fe_method.volumeN,
-	      NULL,NULL,NULL, &fe_method.dofs_temp.data()[0],NULL,NULL,NULL,
+	      NULL,NULL,order_T_volume, &fe_method.dofs_temp.data()[0],NULL,NULL,NULL,
 	      &*Piola1Stress.data().begin(),&*CauhyStress.data().begin(),&*EshelbyStress.data().begin(),&Psi,&J,&themp,gg); CHKERRQ(ierr);
 	gg++;
 
