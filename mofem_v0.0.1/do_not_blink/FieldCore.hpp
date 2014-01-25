@@ -243,6 +243,7 @@ struct FieldCore: public FieldInterface {
   string get_BitFieldId_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const string& name) const;
+  bool check_field(const string& name) const;
 
   //MoFEMFiniteElement
   PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
@@ -359,6 +360,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
   PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool creat_if_missing = false);
+  PetscErrorCode field_scale(const double alpha,const string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const string& fiel_name);
 
   //constructor

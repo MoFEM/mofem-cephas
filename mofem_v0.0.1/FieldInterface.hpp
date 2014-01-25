@@ -475,9 +475,16 @@ struct FieldInterface {
    * Example:\code
    EntityHandle disp_files_meshset = mField.get_field_meshset("DISPLACEMENT");
    * \endcode
-   */
-    
+   */    
   virtual EntityHandle get_field_meshset(const string& name) const = 0;
+
+  /** \brief check if field is in database
+   *
+   * \param name field name
+   * \return true if field exist
+   *
+   */
+  virtual bool check_field(const string& name) const = 0;
 
   /**
     * \brief add finite element
@@ -806,6 +813,14 @@ struct FieldInterface {
     *
     */
   virtual PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool creat_if_missing = false) = 0;
+
+  /** \brief scale field 
+    * 
+    * \param alpha is a scaling factor
+    * \field_name  is a field name
+    *
+    */
+  virtual PetscErrorCode field_scale(const double alpha,const string& field_name) = 0;
 
   /** \brief set field 
     *

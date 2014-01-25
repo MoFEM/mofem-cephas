@@ -73,8 +73,23 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
 
 #define COMP_STRESSES \
   ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); \
-  ierr = DeterminantComplexGradient(xF,&det_xF); CHKERRQ(ierr); \
-  ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); \
+  if(dofs_T!=NULL) { \
+    double temperature = 0; \
+    temperature = cblas_ddot(4,&N[4*gg],1,dofs_T,1); \
+    /*fprintf(stderr,"%f %f %f %f %f\n",temperature,dofs_T[0],dofs_T[1],dofs_T[2],dofs_T[3]);*/ \
+    __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.}; \
+    __CLPK_doublecomplex xT = { temperature, 0 }; \
+    __CLPK_doublecomplex inv_xF_themp[9]; \
+    ierr = ThermalDeformationGradient(thermal_expansion,0,xT,inv_xF_themp); CHKERRQ(ierr); \
+    ierr = InvertComplexGradient(inv_xF_themp); CHKERRQ(ierr); \
+    /*print_mat_complex(xF_themp,3,3); fprintf(stdout,"xF_themp\n");*/ \
+    /*print_mat_complex(xF,3,3); fprintf(stdout,"xF\n");*/ \
+    cblas_zcopy(9,xF,1,xF_tmp,1); \
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,inv_xF_themp,3,&tmp2,xF,3); \
+    /*print_mat_complex(xF,3,3); fprintf(stdout,"xF\n");*/ \
+  } \
+  cblas_zcopy(9,xF,1,xF_tmp,1); \
+  ierr = DeterminantComplexGradient(xF_tmp,&det_xF); CHKERRQ(ierr); \
   ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr); \
   ierr = StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); CHKERRQ(ierr); \
   ierr = PiolaKirhoiff2(lambda,mu,xF,xC,&det_xF,xS,matctx); CHKERRQ(ierr); \
@@ -83,7 +98,8 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
   ierr = ElshebyStress(&xPsi,xF,xP,xSigma); \
   ierr = ElshebyStress_PullBack(&det_xH,inv_xH,xSigma,xSigma_PullBack);
 
-#define HIERARHICAL_APPROX \
+#define HIERARHICAL_DEFORMATION_GRADIENT_APPROX \
+  { \
   int ee = 0; \
   for(;ee<6;ee++) { \
     if(NBEDGE_H1(order_edge[ee])==0) continue; \
@@ -105,12 +121,21 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
     bzero(volume_h,9*sizeof(double)); \
     double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)]); \
     ierr = H1_VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_x_volume,volume_h); CHKERRQ(ierr); \
-    cblas_daxpy(9,1,volume_h,1,h,1); }
+    cblas_daxpy(9,1,volume_h,1,h,1); } \
+  }
 
-PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
+PetscErrorCode Calulate_Stresses_at_GaussPoint(
+  int *order_edge,int *order_face,int order_volume,
+  double alpha,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
-  double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,
+  //temperature
+  double thermal_expansion,
+  double *N,double *N_edge[],double *N_face[],double *N_volume,
+  int *order_T_edge,int *order_T_face,int order_T_volume,
+  double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
+  //
+  double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,double *themp,
   int gg) {
   PetscFunctionBegin;
 
@@ -119,7 +144,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,i
 
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xSigma[9],xCauchyStress[9],xPsi,det_xF,det_xH;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xSigma[9],xCauchyStress[9],xPsi,det_xF,det_xH;
   ierr = MakeComplexTensor(H,ZERO,xH); CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
   ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
@@ -127,13 +152,26 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,i
 
   double h[9];
   ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
-  HIERARHICAL_APPROX
+  HIERARHICAL_DEFORMATION_GRADIENT_APPROX
   ierr = MakeComplexTensor(h,ZERO,xh); CHKERRQ(ierr);
-
   ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); 
-  ierr = DeterminantComplexGradient(xF,&det_xF); CHKERRQ(ierr); 
-  ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr);
-  
+
+  //temperature
+  *themp = 0;
+  if(dofs_T!=NULL) {
+    *themp = cblas_ddot(4,&N[4*gg],1,dofs_T,1);
+    __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.};
+    __CLPK_doublecomplex xT = { *themp, 0 };
+    __CLPK_doublecomplex inv_xF_themp[9];
+    ierr = ThermalDeformationGradient(thermal_expansion,0,xT,inv_xF_themp); CHKERRQ(ierr);
+    ierr = InvertComplexGradient(inv_xF_themp); CHKERRQ(ierr);
+    cblas_zcopy(9,xF,1,xF_tmp,1);
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,inv_xF_themp,3,&tmp2,xF,3);
+  }
+
+  cblas_zcopy(9,xF,1,xF_tmp,1);
+  ierr = DeterminantComplexGradient(xF_tmp,&det_xF); CHKERRQ(ierr); 
+
   ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr); 
   ierr = StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); CHKERRQ(ierr); 
 
@@ -156,6 +194,12 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_iX,double *dofs_ix_node,
   double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  //temperature
+  double thermal_expansion,double i_thermal_expansion,
+  double *N,double *N_edge[],double *N_face[],double *N_volume,
+  int *order_T_edge,int *order_T_face,int order_T_volume,
+  double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
+  //
   double *Fint_H,double *Fint_h,
   double *Fint_h_edge[],double *Fint_h_face[],double *Fint_h_volume,
   double *Fint_iH,double *Fint_ih,
@@ -166,7 +210,7 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
   bzero(ZERO,sizeof(double)*9);
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],xPsi,det_xF,det_xH;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],xPsi,det_xF,det_xH;
   double reP[9],reSigma[9],imP[9],imSigma[9];
   if(dofs_iX == NULL) {
     ierr = MakeComplexTensor(H,ZERO,xH); CHKERRQ(ierr);
@@ -225,7 +269,7 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
     } else {
       bzero(ih,9*sizeof(double));
     }
-    HIERARHICAL_APPROX
+    HIERARHICAL_DEFORMATION_GRADIENT_APPROX
     ierr = MakeComplexTensor(h,ih,xh); CHKERRQ(ierr);
     COMP_STRESSES
     TakeRe(xP_PullBack,reP);
@@ -251,7 +295,7 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
 	Fint_ih[3*node + 1] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[3],1);
 	Fint_ih[3*node + 2] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }
     }
-    ee = 0;
+    int ee = 0;
     for(;ee<6;ee++) {
       int pp = 0;
       for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
@@ -267,7 +311,7 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
 	  (Fint_ih_edge[ee])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	  (Fint_ih_edge[ee])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}
     } 
-    ff = 0;
+    int ff = 0;
     for(;ff<4;ff++) {
       int pp = 0;
       for(;pp<NBFACE_H1(order_face[ff]);pp++) {
@@ -301,13 +345,19 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
 PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  //temperature
+  double thermal_expansion,
+  double *N,double *N_edge[],double *N_face[],double *N_volume,
+  int *order_T_edge,int *order_T_face,int order_T_volume,
+  double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
+  //
   double *K,double *Koff,double *Koff_edge[6],double *Koff_face[4],double *Koff_volume,int G_DIM,const double *G_W) {
   PetscFunctionBegin;
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _idofs_X[12],_iH[9],imP[9],imSigma[9];
   if(K!=NULL) bzero(K,12*12*sizeof(double));
   if(Koff!=NULL) bzero(Koff,12*12*sizeof(double));
@@ -349,7 +399,7 @@ PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_
     for(;gg<G_DIM;gg++) {
       double h[9];
       ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
-      HIERARHICAL_APPROX
+      HIERARHICAL_DEFORMATION_GRADIENT_APPROX
       ierr = MakeComplexTensor(h,ZERO,xh);  CHKERRQ(ierr);
       COMP_STRESSES
       TakeIm(xP_PullBack,imP);
@@ -403,13 +453,19 @@ PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_
 PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  //temperature
+  double thermal_expansion,
+  double *N,double *N_edge[],double *N_face[],double *N_volume,
+  int *order_T_edge,int *order_T_face,int order_T_volume,
+  double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
+  //
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W) {
   PetscFunctionBegin;
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _idofs_x[12],_ih[9],imP[9],imSigma[9];
   ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
@@ -438,7 +494,7 @@ PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_
   for(;gg<G_DIM;gg++) {
     double h[9];
     ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
-    HIERARHICAL_APPROX
+    HIERARHICAL_DEFORMATION_GRADIENT_APPROX
     int dd = 0;
     for(;dd<12;dd++) {
       bzero(_idofs_x,sizeof(double)*12);
@@ -491,6 +547,12 @@ PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_
 PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  //temperature
+  double thermal_expansion,
+  double *N,double *N_edge[],double *N_face[],double *N_volume,
+  int *order_T_edge,int *order_T_face,int order_T_volume,
+  double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
+  //
   double *K[6],double *Koff[6],
   double *K_edge[6][6],double *K_face[4][6],double *K_volume[6],
   int G_DIM,const double *G_W) {
@@ -499,7 +561,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _ih[9],imP[9],imSigma[9];
   ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
@@ -532,7 +594,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
     for(;gg<G_DIM;gg++) {
       double h[9];
       ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
-      HIERARHICAL_APPROX
+      HIERARHICAL_DEFORMATION_GRADIENT_APPROX
       int dd = 0;
       for(;dd<nb_edge_dofs;dd++) {
 	bzero(_idofs_x,sizeof(double)*nb_edge_dofs);
@@ -564,7 +626,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
-        ff = 0;
+        int ff = 0;
         for(;ff<4;ff++) {
           int pp = 0;
           for(;pp<NBFACE_H1(order_face[ff]);pp++) {
@@ -586,6 +648,12 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
 PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  //temperature
+  double thermal_expansion,
+  double *N,double *N_edge[],double *N_face[],double *N_volume,
+  int *order_T_edge,int *order_T_face,int order_T_volume,
+  double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
+  //
   double *K[4],double *Koff[4],
   double *K_edge[6][4],double *K_face[4][4],double *K_volume[4],
   int G_DIM,const double *G_W) {
@@ -594,7 +662,7 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _ih[9],imP[9],imSigma[9];
   ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
@@ -633,7 +701,7 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
       for(;gg<G_DIM;gg++) {
 	double h[9];
 	ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
-        HIERARHICAL_APPROX
+        HIERARHICAL_DEFORMATION_GRADIENT_APPROX
 	double *diff_face = &(diffN_face[FF])[gg*3*NBFACE_H1(order_face[FF])];
 	H1_FaceGradientOfDeformation_hierachical(order_face[FF],diff_face,_idofs_x,_ih); 
         ierr = MakeComplexTensor(h,_ih,xh);  CHKERRQ(ierr);
@@ -654,7 +722,7 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
 	    (Koff[FF])[3*node*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[3],1);
 	    (Koff[FF])[3*node*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imSigma[6],1); }}
 	}
-        ee = 0;
+        int ee = 0;
         for(;ee<6;ee++) {
           int pp = 0;
           for(;pp<NBEDGE_H1(order_edge[ee]);pp++) {
@@ -685,13 +753,19 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
 PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  //temperature
+  double thermal_expansion,
+  double *N,double *N_edge[],double *N_face[],double *N_volume,
+  int *order_T_edge,int *order_T_face,int order_T_volume,
+  double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
+  //
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W) {
   PetscFunctionBegin;
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
   bzero(ZERO,sizeof(double)*9);
-  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
+  __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _ih[9],imP[9],imSigma[9];
   ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
@@ -723,7 +797,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int
   for(;gg<G_DIM;gg++) {
     double h[9];
     ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
-    HIERARHICAL_APPROX
+    HIERARHICAL_DEFORMATION_GRADIENT_APPROX
     int dd = 0;
     for(;dd<nb_dofs_volume;dd++) {
       bzero(_idofs_x,sizeof(double)*nb_dofs_volume);
