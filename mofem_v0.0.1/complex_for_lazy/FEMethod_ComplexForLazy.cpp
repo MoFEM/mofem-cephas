@@ -719,6 +719,35 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &*Fint_H.data().begin(),NULL); CHKERRQ(ierr);
 	  }
 	  break;
+	  case scaled_themp_direvative_spatial: {
+	    ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,_lambda,_mu,ptr_matctx, 
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
+	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      //temperature
+	      _thermal_expansion,eps,
+	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	      NULL,NULL,NULL, &dofs_temp.data()[0],NULL,NULL,NULL,
+	      //
+	      NULL,&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
+	      NULL,NULL,NULL,NULL,NULL,
+	      g_dim,g_TET_W); CHKERRQ(ierr);
+	  }
+	  break;
+	  case scaled_themp_direvative_material: {
+	    ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,_lambda,_mu,ptr_matctx, 
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
+	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      //temperature
+	      _thermal_expansion,eps,
+	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	      NULL,NULL,NULL, &dofs_temp.data()[0],NULL,NULL,NULL,
+	      //
+	      &*Fint_H.data().begin(),NULL,NULL,NULL,NULL,
+	      NULL,NULL,NULL,NULL,NULL,
+	      g_dim,g_TET_W); CHKERRQ(ierr);
+	  }
 	  default: 
 	    continue;
       }
