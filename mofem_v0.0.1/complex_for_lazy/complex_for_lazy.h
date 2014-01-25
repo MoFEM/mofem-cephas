@@ -33,6 +33,10 @@ enum phisical_equation_volume { hooke = 0, stvenant_kirchhoff = 1,neohookean = 2
 void set_PhysicalEquationNumber(enum phisical_equation_volume eq);
 enum phisical_equation_volume get_PhysicalEquationNumber();
 
+enum thremal_deformation_equation { linear_expanison = 0, linear_expansion_true_volume = 1 };
+void set_ThermalDeformationEquationNumber(enum thremal_deformation_equation eq);
+enum thremal_deformation_equation get_ThermalDeformationEquationNumber();
+
 PetscErrorCode StrainEnergy(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
 PetscErrorCode PiolaKirhoiff2(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
 PetscErrorCode PiolaKirhoiff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP);
