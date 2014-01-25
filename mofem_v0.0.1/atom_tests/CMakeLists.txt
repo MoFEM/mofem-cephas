@@ -157,10 +157,15 @@ add_test(arc_length_nonlinear_elasticity_atom_compare ${CMAKE_COMMAND} -E compar
 add_test(hdiv_atom_approximation ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hdiv_approximation -my_file elasticity_atom_test_01X.cub -my_max_pot_proc_ref_level 2 -ksp_type fgmres -ksp_atol 1e-16 -ksp_rtol 0 -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -log_summary)
 add_test(hdiv_atom_approximation_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/hdiv_approximation.txt ${CMAKE_BINARY_DIR}/atom_tests/hdiv_approximation.txt)
 
-
 #field axpy
 add_test(field_axpy ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.cub -log_summary)
 add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
+
+#thermal test
+add_test(nonlinear_elasticity_atom_thermal ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_thremal_expansion_atom -my_file cube_for_thermal_expansion.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 4 -log_summary)
+add_test(nonlinear_elasticity_atom_thermal_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_thermal_expansion_cube_for_thermal_expansion.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_thermal_expansion_cube_for_thermal_expansion.cub.txt)
+
 
 
 

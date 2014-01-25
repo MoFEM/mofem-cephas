@@ -39,8 +39,8 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   NL_ElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
-    set_PhysicalEquationNumber(neohookean);
-    //set_PhysicalEquationNumber(hooke);
+    //set_PhysicalEquationNumber(neohookean);
+    set_PhysicalEquationNumber(hooke);
   }
 
 };
