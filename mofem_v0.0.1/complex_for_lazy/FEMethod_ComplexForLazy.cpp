@@ -389,13 +389,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetDofs_X_FromElementData() {
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetDofs_Termal_FromElementData() {
   PetscFunctionBegin;
-  dofs_temp.resize(12);
+  dofs_temp.resize(4);
   fill(dofs_temp.begin(),dofs_temp.end(),0);
   FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator niit,hi_niit;
   niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(termal_field_name,MBVERTEX,0));
   hi_niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(termal_field_name,MBVERTEX,4));
   for(;niit!=hi_niit;niit++) {
-    dofs_temp[3*niit->side_number_ptr->side_number+niit->get_EntDofIdx()] = niit->get_FieldData();
+    dofs_temp[niit->side_number_ptr->side_number] = niit->get_FieldData();
   }
   PetscFunctionReturn(0);
 }

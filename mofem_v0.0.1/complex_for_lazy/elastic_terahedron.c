@@ -76,12 +76,17 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
   if(dofs_T!=NULL) { \
     double temperature = 0; \
     temperature = cblas_ddot(4,&N[4*gg],1,dofs_T,1); \
+    /*fprintf(stderr,"%f %f %f %f %f\n",temperature,dofs_T[0],dofs_T[1],dofs_T[2],dofs_T[3]);*/ \
     __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.}; \
     __CLPK_doublecomplex xT = { temperature, 0 }; \
-    __CLPK_doublecomplex xF_themp[9]; \
-    ierr = ThermalDeformationGradient(alpha,0,xT,xF_themp); CHKERRQ(ierr); \
+    __CLPK_doublecomplex inv_xF_themp[9]; \
+    ierr = ThermalDeformationGradient(thermal_expansion,0,xT,inv_xF_themp); CHKERRQ(ierr); \
+    ierr = InvertComplexGradient(inv_xF_themp); CHKERRQ(ierr); \
+    /*print_mat_complex(xF_themp,3,3); fprintf(stdout,"xF_themp\n");*/ \
+    /*print_mat_complex(xF,3,3); fprintf(stdout,"xF\n");*/ \
     cblas_zcopy(9,xF,1,xF_tmp,1); \
-    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,xF_themp,3,&tmp2,xF,3); \
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,inv_xF_themp,3,&tmp2,xF,3); \
+    /*print_mat_complex(xF,3,3); fprintf(stdout,"xF\n");*/ \
   } \
   cblas_zcopy(9,xF,1,xF_tmp,1); \
   ierr = DeterminantComplexGradient(xF_tmp,&det_xF); CHKERRQ(ierr); \
@@ -130,7 +135,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //
-  double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,
+  double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,double *themp,
   int gg) {
   PetscFunctionBegin;
 
@@ -152,15 +157,16 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); 
 
   //temperature
+  *themp = 0;
   if(dofs_T!=NULL) {
-    double temperature = 0;
-    temperature = cblas_ddot(4,&N[4*gg],1,dofs_T,1);
+    *themp = cblas_ddot(4,&N[4*gg],1,dofs_T,1);
     __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.};
-    __CLPK_doublecomplex xT = { temperature, 0 };
-    __CLPK_doublecomplex xF_themp[9];
-    ierr = ThermalDeformationGradient(alpha,0,xT,xF_themp); CHKERRQ(ierr);
+    __CLPK_doublecomplex xT = { *themp, 0 };
+    __CLPK_doublecomplex inv_xF_themp[9];
+    ierr = ThermalDeformationGradient(thermal_expansion,0,xT,inv_xF_themp); CHKERRQ(ierr);
+    ierr = InvertComplexGradient(inv_xF_themp); CHKERRQ(ierr);
     cblas_zcopy(9,xF,1,xF_tmp,1);
-    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,xF_themp,3,&tmp2,xF,3);
+    cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,inv_xF_themp,3,&tmp2,xF,3);
   }
 
   cblas_zcopy(9,xF,1,xF_tmp,1);

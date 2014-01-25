@@ -57,7 +57,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,i
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //
-  double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,
+  double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,double *themp,
   int gg);
 PetscErrorCode Fint_Hh_hierarchical(
   int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,

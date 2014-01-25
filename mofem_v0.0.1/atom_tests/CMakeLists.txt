@@ -46,6 +46,9 @@ target_link_libraries(arc_length_nonlinear_elasticity_atom mofem_complex_for_laz
 add_executable(field_axpy_atom_test field_axpy_atom_test.cpp)
 target_link_libraries(field_axpy_atom_test mofem_Field ${PROJECT_LIBS})
 
+add_executable(nonlinear_elasticity_thremal_expansion_atom nonlinear_elasticity_thremal_expansion_atom.cpp)
+target_link_libraries(nonlinear_elasticity_thremal_expansion_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)
@@ -69,6 +72,7 @@ cm_export_file("../meshes/cub_with_interface.cub" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01X_pressure.cub" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_sheer_force.cub" export_atom_tests)
 cm_export_file("../meshes/templar.cub" export_atom_tests)
+cm_export_file("../meshes/cube_for_thermal_expansion.cub" export_atom_tests)
 
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)

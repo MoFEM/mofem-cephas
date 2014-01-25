@@ -31,7 +31,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
   FEMethod_ComplexForLazy &fe_method;
 
-  Tag th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j;
+  Tag th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp;
   PostProcStressNonLinearElasticity(Interface& _moab,FEMethod_ComplexForLazy &_fe_method): 
     PostProcDisplacementsOnRefMesh(_moab,"SPATIAL_POSITION"),fe_method(_fe_method) {
 
@@ -41,6 +41,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
     rval = moab_post_proc.tag_get_handle("ESHELBY_STRESS_VAL",9,MB_TYPE_DOUBLE,th_eshelby_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("PSI_VAL",1,MB_TYPE_DOUBLE,th_psi,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("J_VAL",1,MB_TYPE_DOUBLE,th_j,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("TEMPERATURE_VAL",1,MB_TYPE_DOUBLE,th_themp,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
   }
 
@@ -118,7 +119,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	ublas::matrix< double > Piola1Stress(3,3);
 	ublas::matrix< double > CauhyStress(3,3);
 	ublas::matrix< double > EshelbyStress(3,3);
-	double Psi,J;
+	double Psi,J,themp;
 
 	ierr = Calulate_Stresses_at_GaussPoint(
 	      &fe_method.order_edges[0],&fe_method.order_faces[0],fe_method.order_volume,fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 
@@ -129,7 +130,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	      _thermal_expansion,
 	      &g_NTET[0],&fe_method.edgeN[0],&fe_method.faceN[0],fe_method.volumeN,
 	      NULL,NULL,NULL, &fe_method.dofs_temp.data()[0],NULL,NULL,NULL,
-	      &*Piola1Stress.data().begin(),&*CauhyStress.data().begin(),&*EshelbyStress.data().begin(),&Psi,&J,gg); CHKERRQ(ierr);
+	      &*Piola1Stress.data().begin(),&*CauhyStress.data().begin(),&*EshelbyStress.data().begin(),&Psi,&J,&themp,gg); CHKERRQ(ierr);
 	gg++;
 
 	rval = moab_post_proc.tag_set_data(th_cauchy_stress,&mit->second,1,&(CauhyStress.data()[0])); CHKERR_PETSC(rval);
@@ -137,7 +138,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	rval = moab_post_proc.tag_set_data(th_eshelby_stress,&mit->second,1,&(EshelbyStress.data()[0])); CHKERR_PETSC(rval);
 	rval = moab_post_proc.tag_set_data(th_psi,&mit->second,1,&Psi); CHKERR_PETSC(rval);
 	rval = moab_post_proc.tag_set_data(th_j,&mit->second,1,&J); CHKERR_PETSC(rval);
-
+	rval = moab_post_proc.tag_set_data(th_themp,&mit->second,1,&themp); CHKERR_PETSC(rval);
 
       }
 
