@@ -49,6 +49,9 @@ target_link_libraries(field_axpy_atom_test mofem_Field ${PROJECT_LIBS})
 add_executable(nonlinear_elasticity_thremal_expansion_atom nonlinear_elasticity_thremal_expansion_atom.cpp)
 target_link_libraries(nonlinear_elasticity_thremal_expansion_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(arc_length_nonlinear_elasticity_thermal_atom arc_length_nonlinear_elasticity_thermal_atom.cpp)
+target_link_libraries(arc_length_nonlinear_elasticity_thermal_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)
@@ -159,13 +162,20 @@ add_test(hdiv_atom_approximation_compare ${CMAKE_COMMAND} -E compare_files ${CMA
 
 #field axpy
 add_test(field_axpy ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.cub -log_summary)
-add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
+add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt 
+  ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
 
 #thermal test
 add_test(nonlinear_elasticity_atom_thermal ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_thremal_expansion_atom -my_file cube_for_thermal_expansion.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 4 -log_summary)
 add_test(nonlinear_elasticity_atom_thermal_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_thermal_expansion_cube_for_thermal_expansion.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_thermal_expansion_cube_for_thermal_expansion.cub.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_thermal_expansion_cube_for_thermal_expansion.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_thermal_expansion_cube_for_thermal_expansion.cub.txt)
 
-
+#arc length elasticty thermal expansion
+add_test(arc_length_nonlinear_elasticity_thermal_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity_thermal_atom -my_file cube_for_thermal_expansion.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_linesearch_monitor -snes_max_it 10 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 2e-2 -my_ms 3 -ksp_monitor -snes_converged_reason -log_summary)
+add_test(arc_length_nonlinear_elasticity_thermal_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/arc_length_nonlinear_elasticity_thermal_atom.txt 
+  ${CMAKE_BINARY_DIR}/atom_tests/arc_length_nonlinear_elasticity_thermal_atom.txt)
 
 

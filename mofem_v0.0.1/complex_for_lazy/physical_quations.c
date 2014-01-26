@@ -51,10 +51,11 @@ static void (*tab_func_PiolaKirhoiff2[])(double lambda,double mu,__CLPK_doubleco
   PiolaKirhoiff2_Hooke,PiolaKirhoiff2_Kirchhoff,PiolaKirhoiff2_NeoHookean,PiolaKirhoiff2_EberleinHolzapfel1
 };
 //
-static PetscErrorCode ThermalDeformationGradient_linear_expanison(const double alpha,const double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
+static PetscErrorCode ThermalDeformationGradient_linear_expanison(const double alpha,
+  const double lambda,const double i_lambda,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
   PetscFunctionBegin;
   bzero(xF,sizeof(__CLPK_doublecomplex)*9);
-  double complex streach = 1 + (alpha+I*i_alpha)*(xT.r+I*xT.i);
+  double complex streach = 1 + alpha*( (lambda+I*i_lambda)*(xT.r+I*xT.i) );
   int dd = 0;
   for(;dd<3;dd++) {
     xF[3*dd+dd].r = creal(streach);
@@ -62,10 +63,11 @@ static PetscErrorCode ThermalDeformationGradient_linear_expanison(const double a
   }
   PetscFunctionReturn(0);
 }
-static PetscErrorCode ThermalDeformationGradient_linear_expansion_true_volume(const double alpha,const double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
+static PetscErrorCode ThermalDeformationGradient_linear_expansion_true_volume(const double alpha,
+  const double lambda,const double i_lambda,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
   PetscFunctionBegin;
   bzero(xF,sizeof(__CLPK_doublecomplex)*9);
-  double complex streach = cexp((alpha+I*i_alpha)*(xT.r+I*xT.i));
+  double complex streach = cexp( alpha*(lambda+I*i_lambda)*(xT.r+I*xT.i) );
   int dd = 0;
   for(;dd<3;dd++) {
     xF[3*dd+dd].r = creal(streach);
@@ -73,13 +75,14 @@ static PetscErrorCode ThermalDeformationGradient_linear_expansion_true_volume(co
   }
   PetscFunctionReturn(0);
 }
-static PetscErrorCode (*tab_func_ThermalDeformationGradient[])(const double alpha,const double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF)  = { 
+static PetscErrorCode (*tab_func_ThermalDeformationGradient[])(
+  const double alpha,const double lambda,const double i_lambda,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF)  = { 
   ThermalDeformationGradient_linear_expanison, ThermalDeformationGradient_linear_expansion_true_volume
 };
-PetscErrorCode ThermalDeformationGradient(const double alpha,const double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
+PetscErrorCode ThermalDeformationGradient(const double alpha,const double lambda,const double i_lambda,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = tab_func_ThermalDeformationGradient[themp_eq_deformation](alpha,i_alpha,xT,xF); CHKERRQ(ierr);
+  ierr = tab_func_ThermalDeformationGradient[themp_eq_deformation](alpha,lambda,i_lambda,xT,xF); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 //

@@ -36,7 +36,7 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDir
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     type_of_analysis(_type),type_of_forces(conservative),
     lambda(_lambda),mu(_mu),thermal_expansion(_thermal_expansion),ptr_matctx(NULL),
-    eps(1e-10),
+    eps(1e-10),thermal_load_factor(1),
     spatial_field_name("SPATIAL_POSITION"),
     material_field_name("MESH_NODE_POSITIONS"),
     termal_field_name("TEMPERATURE") {
@@ -523,7 +523,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     }
     ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
     ierr = GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
-    unsigned int sub_analysis_type[3] = { spatail_analysis, material_analysis, mesh_quality_analysis };
+    unsigned int sub_analysis_type[3] = { 
+      spatail_analysis, material_analysis, mesh_quality_analysis };
     double _lambda,_mu,_thermal_expansion;
     if( (spatail_analysis|material_analysis)&type_of_analysis ) {
       ierr = GetMatParameters(&_lambda,&_mu,&_thermal_expansion,ptr_matctx); CHKERRQ(ierr);
@@ -536,7 +537,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	    //temperature
-	    _thermal_expansion,
+	    _thermal_expansion,thermal_load_factor,
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
@@ -546,7 +547,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	    //temperature
-	    _thermal_expansion,
+	    _thermal_expansion,thermal_load_factor,
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
@@ -556,7 +557,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	    //temperature
-	    _thermal_expansion,
+	    _thermal_expansion,thermal_load_factor,
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
@@ -566,7 +567,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],diff_volumeNinvJac, 
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	    //temperature
-	    _thermal_expansion,
+	    _thermal_expansion,thermal_load_factor,
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
@@ -579,7 +580,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	    //temperature
-	    _thermal_expansion,
+	    _thermal_expansion,thermal_load_factor,
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
@@ -654,7 +655,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	    Fint_h_edge_data[ee].resize(dofs_x_edge_data[ee].size());
 	    Fint_h_edge[ee] = &Fint_h_edge_data[ee].data()[0];
 	    iFint_h_edge_data[ee].resize(dofs_x_edge_data[ee].size());
-	    iFint_h_edge[ee] = &Fint_h_edge_data[ee].data()[0];
+	    iFint_h_edge[ee] = &iFint_h_edge_data[ee].data()[0];
 	  } else {
 	    Fint_h_edge[ee] = NULL;
 	    iFint_h_edge[ee] = NULL;
@@ -669,7 +670,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	    Fint_h_face_data[ff].resize(dofs_x_face_data[ff].size());
 	    Fint_h_face[ff] = &Fint_h_face_data[ff].data()[0];
 	    iFint_h_face_data[ff].resize(dofs_x_face_data[ff].size());
-	    iFint_h_face[ff] = &Fint_h_face_data[ff].data()[0];
+	    iFint_h_face[ff] = &iFint_h_face_data[ff].data()[0];
 	  } else {
 	    Fint_h_face[ff] = NULL;
 	    iFint_h_face[ff] = NULL;
@@ -683,13 +684,15 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
       }
       ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
       ierr = GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
-      unsigned int sub_analysis_type[3] = { spatail_analysis, material_analysis, mesh_quality_analysis };
+      unsigned int sub_analysis_type[5] = { 
+	spatail_analysis, material_analysis, mesh_quality_analysis, scaled_themp_direvative_spatial, scaled_themp_direvative_material 
+      };
       double _lambda,_mu,_thermal_expansion;
-      if( (spatail_analysis|material_analysis)&type_of_analysis ) {
+      if( (spatail_analysis|material_analysis|scaled_themp_direvative_spatial|scaled_themp_direvative_material)&type_of_analysis ) {
 	ierr = GetMatParameters(&_lambda,&_mu,&_thermal_expansion,ptr_matctx); CHKERRQ(ierr);
       }
       int _order_T_volume = 0;
-      for(int ss = 0;ss<3;ss++) {
+      for(int ss = 0;ss<5;ss++) {
 	switch(sub_analysis_type[ss]&type_of_analysis) {
 	  case spatail_analysis: {
 	    ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,_lambda,_mu,ptr_matctx, 
@@ -697,7 +700,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
 	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	      //temperature
-	      _thermal_expansion,0,
+	      _thermal_expansion,thermal_load_factor,eps,
 	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	      //
@@ -712,7 +715,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
 	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	      //temperature
-	      _thermal_expansion,0,
+	      _thermal_expansion,thermal_load_factor,0,
 	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	      //
@@ -738,9 +741,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
 	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	      //temperature
-	      _thermal_expansion,eps,
+	      _thermal_expansion,thermal_load_factor,eps,
 	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
-	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	      NULL,NULL,_order_T_volume,
+	      &dofs_temp.data()[0],NULL,NULL,NULL,
 	      //
 	      NULL,NULL,NULL,NULL,NULL,
 	      NULL,&*iFint_h.data().begin(),iFint_h_edge,iFint_h_face,&*iFint_h_volume.data().begin(),
@@ -753,14 +757,16 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
 	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	      //temperature
-	      _thermal_expansion,eps,
+	      _thermal_expansion,thermal_load_factor,eps,
 	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
-	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	      NULL,NULL,_order_T_volume,
+	      &dofs_temp.data()[0],NULL,NULL,NULL,
 	      //
 	      NULL,NULL,NULL,NULL,NULL,
 	      &*iFint_H.data().begin(),NULL,NULL,NULL,NULL,
 	      g_dim,g_TET_W); CHKERRQ(ierr);
 	  }
+	  break;
 	  default: 
 	    continue;
       }

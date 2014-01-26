@@ -77,7 +77,7 @@ struct ArcLengthCtx {
   double dlambda;
   //dx2 - dot product of 
   double diag,dx2,F_lambda2,res_lambda;
-  Vec F_lambda,dF_lambda,db,x_lambda,x0,dx;
+  Vec F_lambda,db,x_lambda,x0,dx;
 
   NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit;
   DofIdx get_petsc_gloabl_dof_idx() { return dit->get_petsc_gloabl_dof_idx(); };
@@ -85,16 +85,11 @@ struct ArcLengthCtx {
   FieldData& get_FieldData() { return dit->get_FieldData(); }
   int get_part() { return dit->get_part(); };
 
-  bool use_F_lambda;
-  ArcLengthCtx(FieldInterface &mField,const string &problem_name): use_F_lambda(true) {
+  ArcLengthCtx(FieldInterface &mField,const string &problem_name,bool _use_F_lambda = true) {
     PetscErrorCode ierr;
 
     ierr = mField.VecCreateGhost(problem_name,Row,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     ierr = VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    if(!use_F_lambda) {
-      ierr = VecDuplicate(F_lambda,&dF_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr); 
-      ierr = VecSetOption(dF_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    }
     ierr = mField.VecCreateGhost(problem_name,Row,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     ierr = mField.VecCreateGhost(problem_name,Row,&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     ierr = mField.VecCreateGhost(problem_name,Row,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -119,9 +114,6 @@ struct ArcLengthCtx {
   ~ArcLengthCtx() {
     PetscErrorCode ierr;
     ierr = VecDestroy(&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    if(!use_F_lambda) {
-      ierr = VecDestroy(&dF_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    }
     ierr = VecDestroy(&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     ierr = VecDestroy(&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     ierr = VecDestroy(&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -220,7 +212,7 @@ struct PCShellCtx {
 /**
  * apply oppertor for Arc Length precoditionet
  * solves K*pc_x = pc_f
- * solves K*x_lambda = F_lambda
+ * solves K*x_lambda = dF_lambda
  * solves ddlambda = ( res_lambda - db*x_lambda )/( diag + db*pc_x )
  * calulate pc_x = pc_x + ddlambda*x_lambda
  */

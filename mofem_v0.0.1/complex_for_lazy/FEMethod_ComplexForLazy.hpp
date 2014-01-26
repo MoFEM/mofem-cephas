@@ -57,7 +57,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
     i_face0=1+6+0, i_face1=1+6+1, i_face2=1+6+2, i_face3=1+6+3, i_volume=1+6+4, i_last=1+6+4+1 };
   enum analysis { 
     spatail_analysis = 1, material_analysis = 1<<1, mesh_quality_analysis = 1<<2, 
-    scaled_themp_direvative_spatial = 1<<3, scaled_themp_direvative_material = 1<<5, analaysis_none = 1<<6 };
+    scaled_themp_direvative_spatial = 1<<3, scaled_themp_direvative_material = 1<<4, analaysis_none = 1<<5 };
   analysis type_of_analysis;
   enum forces { conservative = 1, nonconservative = 2};
   forces type_of_forces;
@@ -69,6 +69,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   ctx_EberleinHolzapfel1 EberleinHolzapfel1_mat_parameters;
 
   double eps;
+  double thermal_load_factor;
 
   PetscBool flg_alpha2,flg_gamma;
   double alpha2,gamma;
