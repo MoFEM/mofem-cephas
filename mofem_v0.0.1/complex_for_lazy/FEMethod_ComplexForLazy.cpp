@@ -71,8 +71,12 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDir
   Fint_h.resize(12);
   Fint_h_edge_data.resize(6);
   Fint_h_face_data.resize(4);
+  iFint_h.resize(12);
+  iFint_h_edge_data.resize(6);
+  iFint_h_face_data.resize(4);
   //
   Fint_H.resize(12);
+  iFint_H.resize(12);
   //
   g_NTET.resize(4*45);
   ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
@@ -649,8 +653,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	  if(dofs_x_edge_data[ee].size()!=0) {
 	    Fint_h_edge_data[ee].resize(dofs_x_edge_data[ee].size());
 	    Fint_h_edge[ee] = &Fint_h_edge_data[ee].data()[0];
+	    iFint_h_edge_data[ee].resize(dofs_x_edge_data[ee].size());
+	    iFint_h_edge[ee] = &Fint_h_edge_data[ee].data()[0];
 	  } else {
 	    Fint_h_edge[ee] = NULL;
+	    iFint_h_edge[ee] = NULL;
 	  }
 	}
       }
@@ -661,14 +668,18 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	  if(dofs_x_face_data[ff].size()!=0) {
 	    Fint_h_face_data[ff].resize(dofs_x_face_data[ff].size());
 	    Fint_h_face[ff] = &Fint_h_face_data[ff].data()[0];
+	    iFint_h_face_data[ff].resize(dofs_x_face_data[ff].size());
+	    iFint_h_face[ff] = &Fint_h_face_data[ff].data()[0];
 	  } else {
 	    Fint_h_face[ff] = NULL;
+	    iFint_h_face[ff] = NULL;
 	  }
 	}
       }
       if(dofs_x_volume.size()!=0) {
 	  assert(RowGlobSpatial[i_volume].size() == (unsigned int)3*NBVOLUME_H1(order_volume));
 	  Fint_h_volume.resize(dofs_x_volume.size());
+	  iFint_h_volume.resize(dofs_x_volume.size());
       }
       ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
       ierr = GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
@@ -731,8 +742,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	      //
-	      NULL,&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
 	      NULL,NULL,NULL,NULL,NULL,
+	      NULL,&*iFint_h.data().begin(),iFint_h_edge,iFint_h_face,&*iFint_h_volume.data().begin(),
 	      g_dim,g_TET_W); CHKERRQ(ierr);
 	  }
 	  break;
@@ -746,8 +757,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	      //
-	      &*Fint_H.data().begin(),NULL,NULL,NULL,NULL,
 	      NULL,NULL,NULL,NULL,NULL,
+	      &*iFint_H.data().begin(),NULL,NULL,NULL,NULL,
 	      g_dim,g_TET_W); CHKERRQ(ierr);
 	  }
 	  default: 

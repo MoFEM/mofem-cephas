@@ -132,6 +132,12 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   vector<ublas::vector<double> > Fint_h_face_data;
   double* Fint_h_edge[6];
   double* Fint_h_face[4];
+  ublas::vector<double,ublas::bounded_array<double,12> > iFint_h,iFint_h_volume,iFint_H;
+  vector<ublas::vector<double> > iFint_h_edge_data;
+  vector<ublas::vector<double> > iFint_h_face_data;
+  double* iFint_h_edge[6];
+  double* iFint_h_face[4];
+
 
   PetscErrorCode GetIndicesRow(
     vector<vector<DofIdx> >& RowGlob,
