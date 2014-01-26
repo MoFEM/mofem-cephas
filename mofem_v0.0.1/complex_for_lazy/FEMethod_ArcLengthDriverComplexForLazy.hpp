@@ -30,13 +30,13 @@ namespace MoFEM {
 ErrorCode rval;
 PetscErrorCode ierr;
 
-struct MyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
+struct ArcElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
   ArcLengthCtx* arc_ptr;
 
   Range& NodeSet1;
 
-  MyElasticFEMethod(
+  ArcElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
       ArcLengthCtx *_arc_ptr,Range &_NodeSet1,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_ptr,_verbose), 
