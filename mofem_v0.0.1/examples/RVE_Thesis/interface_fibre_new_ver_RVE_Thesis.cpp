@@ -23,10 +23,13 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
-#include "ElasticFEMethodTransIso.hpp"
+#include "ElasticFEMethod_RVE_HomoStress.hpp"
+#include "ElasticFEMethodTransIsoRVE_HomoStress.hpp"
+
+#include "ElasticFEMethod_RVE_Try.hpp"
+#include "ElasticFEMethodTransIsoRVE.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-
 #include "ElasticFEMethodForInterface.hpp"
 
 using namespace MoFEM;
@@ -166,6 +169,7 @@ int main(int argc, char *argv[]) {
     
     //Fields
     ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+    ierr = mField.add_field("DISPLACEMENT_FROM_APP_STRAIN",H1,3); CHKERRQ(ierr);
     
     //FE
     ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -179,12 +183,19 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_row("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+    
     //FE Interface
     ierr = mField.modify_finite_element_add_field_row("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-    
+
     ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","POTENTIAL_FIELD"); CHKERRQ(ierr);
+    
+    
+    ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT_FROM_APP_STRAIN"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT_FROM_APP_STRAIN"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("INTERFACE","DISPLACEMENT_FROM_APP_STRAIN"); CHKERRQ(ierr);
+
     
     //define problems
     ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -202,7 +213,8 @@ int main(int argc, char *argv[]) {
     
     //add entitities (by tets) to the field
     ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
-    
+    ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT_FROM_APP_STRAIN"); CHKERRQ(ierr);
+
     //add finite elements entities
     ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Elastic,"ELASTIC",true); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Trans_ISO,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
@@ -213,6 +225,13 @@ int main(int argc, char *argv[]) {
     ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+    
+    //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT_FROM_APP_STRAIN",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT_FROM_APP_STRAIN",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT_FROM_APP_STRAIN",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT_FROM_APP_STRAIN",1); CHKERRQ(ierr);
+    
     
     /****/
     //build database
@@ -239,30 +258,57 @@ int main(int argc, char *argv[]) {
     ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     
     //create matrices
-    Vec F,D;
+    Vec F,D,D_star,F_stress,coord_stress;
     ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
     ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
-
+    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D_star); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F_stress); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&coord_stress); CHKERRQ(ierr);
+    
     Mat Aij;
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-    struct MyElasticFEMethod: public ElasticFEMethod {
-        MyElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
-                          Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
-        ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
-        
-        PetscErrorCode Fint(Vec F_int) {
-            PetscFunctionBegin;
-            ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
-            for(int rr = 0;rr<row_mat;rr++) {
-                if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-                if(RowGlob[rr].size()==0) continue;
-                f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
-                ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-            }
-            PetscFunctionReturn(0);
+    
+       //Applied strain (specified by the user)
+    ublas::matrix<double> strain_app;
+    strain_app.resize(3,3);
+    strain_app(0,0) = 0.01; strain_app(0,1)=0.0; strain_app(0,2)=0.0;
+    strain_app(1,0) = 0.0; strain_app(1,1)=0.0; strain_app(1,2)=0.0;
+    strain_app(2,0) = 0.0; strain_app(2,1)=0.0; strain_app(2,2)=0.0;
+    
+    //Apply the linear displacement to all nodes in the mesh
+    Tag th_disp_1;
+    double defaultval[3]={1,0,0};
+    rval = moab.tag_get_handle("DISPLACEMENT_FROM_APP_STRAIN",3,MB_TYPE_DOUBLE,th_disp_1,MB_TAG_CREAT|MB_TAG_SPARSE,&defaultval); CHKERR_THROW(rval);
+    
+    EntityHandle node = 0;
+    double coords[3], disp_applied[3];
+    int count=0;
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT_FROM_APP_STRAIN",dof_ptr)) {
+        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+        EntityHandle ent = dof_ptr->get_ent();
+        int dof_rank = dof_ptr->get_dof_rank();
+        double &fval = dof_ptr->get_FieldData();
+        if(node!=ent) {    // to get coordinates only for 1 out of 3 ranks for disp field
+            rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+            //cout<<"\n\n coord = " << coords[0]<<" "<< coords[1]<<" " << coords[2]<<" rank "<< dof_rank << "\n\n";
+            for(int ii=0; ii<3; ii++) disp_applied[ii]=strain_app(ii,0)*coords[0] + strain_app(ii,1)*coords[1] + strain_app(ii,2)*coords[2];
+            rval=moab.tag_set_data(th_disp_1,&ent,1,&disp_applied); CHKERR_PETSC(rval);
+            node = ent;
         }
-    };
+        fval = disp_applied[dof_rank];
+    }
+    
+    //save the mesh to see in the paraview
+    if(pcomm->rank()==0) {
+        EntityHandle out_meshset;
+        rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+        //ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+        ierr = mField.refine_get_ents(problem_bit_level,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+        rval = moab.write_file("Zahur_out_disp_from_app_strain.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+        rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    }
+
     
     CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
     ierr = myDirihletBC.Init(); CHKERRQ(ierr);
@@ -325,9 +371,10 @@ int main(int argc, char *argv[]) {
     }
         
     InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
-    MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-    TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+    ElasticFEMethod_RVE_Try MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),D_star,strain_app);
     
+    ElasticFEMethodTransIsoRVE MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -347,13 +394,7 @@ int main(int argc, char *argv[]) {
     ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   
-    
-    cout<<"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n interface_fibre_new_ver_RVE";
-    ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    
-    
-    
-    
+
     //Matrix View
     //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
     //std::string wait;
@@ -370,6 +411,7 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     
+    ierr = VecAXPY(D,1,D_star); CHKERRQ(ierr);   // D=D+1*D_star (total displacement U_total=U_start+U_fluctuation)
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
@@ -382,28 +424,101 @@ int main(int argc, char *argv[]) {
         rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
         ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
         ierr = mField.problem_get_FE("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",out_meshset); CHKERRQ(ierr);
-//        ierr = mField.problem_get_FE("ELASTIC_MECHANICS","INTERFACE",out_meshset); CHKERRQ(ierr);
+        ierr = mField.problem_get_FE("ELASTIC_MECHANICS","INTERFACE",out_meshset); CHKERRQ(ierr);
         rval = moab.write_file(outName,"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
         rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     }
     
-    TranIso_PostProc_FibreDirRot_OnRefMesh fe_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
     
-//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+    ierr = VecZeroEntries(F_stress); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    double RVE_volume_Elastic, RVE_volume_TransIso, RVE_volume_total; RVE_volume_Elastic=0.0; RVE_volume_TransIso=0.0;
+    ublas::matrix<double> Sigma_homo;
     
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    if(pcomm->rank()==0) {
-        rval = fe_post_proc_method.moab_post_proc.write_file(outName2,"VTK",""); CHKERR_PETSC(rval);
+    ElasticFEMethod_RVE_HomoStress MyRVEFEStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), moab, F_stress, coord_stress, &RVE_volume_Elastic);
+    
+    ElasticFEMethodTransIsoRVE_HomoStress MyRVETransIsoStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP, moab, F_stress, coord_stress,&RVE_volume_TransIso);
+    
+//    cout<<"\n RVE_volume_Elastic Before "<<RVE_volume_Elastic<<endl;
+//    cout<<"\n RVE_volume_TransIso Before "<<RVE_volume_TransIso<<endl;
+  
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEFEStress);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyRVETransIsoStress);  CHKERRQ(ierr);
+
+    ierr = VecGhostUpdateBegin(F_stress,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F_stress,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F_stress); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F_stress); CHKERRQ(ierr);
+
+//    cout<<"\n RVE_volume_Elastic After "<<RVE_volume_Elastic<<endl;
+//    cout<<"\n RVE_volume_TransIso After "<<RVE_volume_TransIso<<endl;
+    RVE_volume_total=RVE_volume_Elastic+RVE_volume_TransIso;
+    
+    
+//    cout<<"\n\n\n\n\n\n\n F_stress \n\n\n\n\n\n\\n\n\n\n\n";
+//    ierr = VecView(F_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//    cout<<"\n\n\n\n\n\n\n coord_stress \n\n\n\n\n\n\\n\n\n\n\n";
+//    ierr = VecView(coord_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+
+    ublas::matrix< double > F_stress_mat;
+    ublas::matrix< double > coord_stress_mat;
+    Range nodes;
+    rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+    F_stress_mat.resize(3,nodes.size()); coord_stress_mat.resize(nodes.size(),3); Sigma_homo.resize(3,3);
+    F_stress_mat.clear();  coord_stress_mat.clear(); Sigma_homo.clear();
+    
+    int array_indices[3];
+    double array_output[3];
+    
+    for(int ii=0; ii<nodes.size(); ii++){
+        array_indices[0]=3*ii;  array_indices[1]=3*ii+1;  array_indices[2]=3*ii+2;
+        ierr = VecGetValues(F_stress,3,array_indices,array_output); CHKERRQ(ierr);
+        F_stress_mat(0,ii)=array_output[0]; F_stress_mat(1,ii)=array_output[1],  F_stress_mat(2,ii)=array_output[2];
+        
+        ierr = VecGetValues(coord_stress,3,array_indices,array_output); CHKERRQ(ierr);
+        coord_stress_mat(ii,0)=array_output[0]; coord_stress_mat(ii,1)=array_output[1], coord_stress_mat(ii,2)=array_output[2];
     }
     
-    PostProcCohesiveForces fe_post_proc_prisms(mField,YoungModulus*alpha);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    if(pcomm->rank()==0) {
-        rval = fe_post_proc_prisms.moab_post_proc.write_file("out_post_proc_prisms.vtk","VTK",""); CHKERR_PETSC(rval);
-    }
     
+    // Homogenized stress
+    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
+                Sigma_homo.size1(),Sigma_homo.size2(),F_stress_mat.size2(),
+                1.,&*F_stress_mat.data().begin(),F_stress_mat.size2(),
+                &*coord_stress_mat.data().begin(),coord_stress_mat.size2(),
+                0.,&*Sigma_homo.data().begin(),Sigma_homo.size2());
+    
+    Sigma_homo=(1.0/RVE_volume_total)*(Sigma_homo+trans(Sigma_homo));
+    
+    //if(pcomm->rank()==1){
+    //            cout<<"coord_stress_mat "<<coord_stress_mat<<endl;
+    //            cout<<"F_stress_mat "<<F_stress_mat<<endl;  (1.0/RVE_volume)*
+    cout<<"\n\n\nSigma_bar "<<Sigma_homo<<endl<<endl<<endl;
+
+    
+    
+    
+    
+    
+ //    TranIso_PostProc_FibreDirRot_OnRefMesh fe_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+//    
+////    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+//    
+//    PetscSynchronizedFlush(PETSC_COMM_WORLD);
+//    if(pcomm->rank()==0) {
+//        rval = fe_post_proc_method.moab_post_proc.write_file(outName2,"VTK",""); CHKERR_PETSC(rval);
+//    }
+//    
+//    PostProcCohesiveForces fe_post_proc_prisms(mField,YoungModulus*alpha);
+//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
+//    PetscSynchronizedFlush(PETSC_COMM_WORLD);
+//    if(pcomm->rank()==0) {
+//        rval = fe_post_proc_prisms.moab_post_proc.write_file("out_post_proc_prisms.vtk","VTK",""); CHKERR_PETSC(rval);
+//    }
+//    
     
     //detroy matrices
     ierr = VecDestroy(&F); CHKERRQ(ierr);

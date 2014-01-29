@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* Copyright (C) 2013, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -41,8 +41,11 @@ int main(int argc, char *argv[]) {
 
   Core mb_instance;
   Interface& moab = mb_instance;
-  int rank;
+  int rank, num_processors;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  MPI_Comm_size(PETSC_COMM_WORLD,&num_processors);
+    
+  //cout<<"/n/n Number of processors "<<num_processors<<endl<<endl;
 
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
@@ -166,11 +169,13 @@ int main(int argc, char *argv[]) {
   ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
 
   //create matrices
-  Vec F,D,D_star;
+  Vec F,D,D_star,F_stress, coord_stress, F_stress_col;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D_star); CHKERRQ(ierr);
-
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F_stress); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&coord_stress); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F_stress_col); CHKERRQ(ierr);
     
    Mat Aij;
    ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
@@ -179,8 +184,8 @@ int main(int argc, char *argv[]) {
     ublas::matrix<double> strain_app;
     strain_app.resize(3,3);
     strain_app(0,0) = 0.4; strain_app(0,1)=0.0; strain_app(0,2)=0.0;
-    strain_app(1,0) = 0.0; strain_app(1,1)=0.0; strain_app(1,2)=0.0;
-    strain_app(2,0) = 0.0; strain_app(2,1)=0.0; strain_app(2,2)=0.0;
+    strain_app(1,0) = 0.0; strain_app(1,1)=0.4; strain_app(1,2)=0.0;
+    strain_app(2,0) = 0.0; strain_app(2,1)=0.0; strain_app(2,2)=0.4;
     
     //cout<<"\n\n strain_app "<<strain_app[0][0]<<"\n\n";
     //cout<<"\n\n strain_app "<<strain_app[1][1]<<"\n\n";
@@ -276,8 +281,117 @@ int main(int argc, char *argv[]) {
 //  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
     
-   ElasticFEMethod_RVE_CalStress MyRVEStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), moab);
+   //cout<<"pcomm->rank()  in "<<pcomm->rank()<<endl;
+   //if(pcomm->rank()==0) {
+  // calculate the homogenised stress
+    
+    
+  ierr = VecZeroEntries(F_stress); CHKERRQ(ierr);
+  ierr = VecZeroEntries(coord_stress); CHKERRQ(ierr);
+  ierr = VecZeroEntries(F_stress); CHKERRQ(ierr);
+  
+    
+   double RVE_volume;
+   ublas::matrix<double> Sigma_homo;
+    
+   ElasticFEMethod_RVE_CalStress MyRVEStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), moab, F_stress, coord_stress, RVE_volume, Sigma_homo);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEStress);  CHKERRQ(ierr);
+    
+//    int size_F_stress;
+//    ierr =  VecGetSize(coord_stress, &size_F_stress); CHKERRQ(ierr);
+//    cout<<"size_F_stress "<<size_F_stress<<endl;
+//    int MPI_Reduce(&F_stress, &F_stress_col, size_F_stress, mpi_double, mpi_sum, 0, pcomm)
+//
+//   
+//    call mpi_reduce(fint,fint_col,3*nodes,mpi_double_precision,mpi_sum,0,comm,err)
+//    
+//    if (rank==0) then
+//        fint_col=0.0d0  !fint_col is the collection of all the fint from all the processos
+//        endif
+//        
+//        
+//        if(rank==0)then
+//            oobf=react-fint_col; oobfnorm=sqrt(sum(oobf*oobf))
+//    write(*,*)oobfnorm
+//    endif
+//    !Send oobfnorm to all the processor so that they repeat the while loop
+//        call mpi_bcast(oobfnorm,1,mpi_double_precision,0,comm,err)
+
+    
+    
+    
+    
+    
+    //ierr = VecView(F_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    ///ierr = VecView(coord_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    
+    
+//    ublas::matrix<double> F_stress_vec, coord_stress, Sigma_bar;    //Sigma_bar=F_stress_vec*coord_stress
+//    PetscScalar *F_stress_array;
+//    
+//    Range nodes;
+//    double coords[3], disp_applied[3];
+//    EntityHandle node = 0;
+//    rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+//    
+//    F_stress_vec.resize(3,nodes.size());  F_stress_vec.clear();
+//    coord_stress.resize(nodes.size(),3);  coord_stress.clear();
+//    Sigma_bar.resize(3,3);  Sigma_bar.clear();
+//    
+//    ierr = VecGetArray(F_stress,&F_stress_array); CHKERRQ(ierr);
+//    
+//    for(int ii=0; ii<nodes.size(); ii++){
+//        F_stress_vec(0,ii)=F_stress_array[3*ii+0];
+//        F_stress_vec(1,ii)=F_stress_array[3*ii+1];
+//        F_stress_vec(2,ii)=F_stress_array[3*ii+2];
+//    }
+//    
+//    for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
+//        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
+//            EntityHandle ent = dof->get_ent();
+//            if(node!=ent) {
+//                rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+//                //cout<<"\n\n coord = " << coords[0]<<" "<< coords[1]<<" " << coords[2] << "\n\n";
+//                int nn=dof->get_petsc_gloabl_dof_idx(); nn=nn/3;
+//                //cout<< " \n n ="<< nn << endl;
+//                coord_stress(nn,0)=coords[0];  coord_stress(nn,1)=coords[1];  coord_stress(nn,2)=coords[2];
+//                node = ent;
+//            }
+//        }
+//    }
+//    
+//    // Homogenized stress
+//    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
+//                Sigma_bar.size1(),Sigma_bar.size2(),F_stress_vec.size2(),
+//                1.,&*F_stress_vec.data().begin(),F_stress_vec.size2(),
+//                &*coord_stress.data().begin(),coord_stress.size2(),
+//                0.,&*Sigma_bar.data().begin(),Sigma_bar.size2());
+//    
+//    Sigma_bar=(1.0/(2.0*RVE_volume))*(Sigma_bar+trans(Sigma_bar));
+//    cout<<"Sigma_bar "<<Sigma_bar<<endl;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+   //}
+   //cout<<"pcomm->rank() out "<<pcomm->rank()<<endl;
+    
     
    PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
@@ -291,6 +405,7 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
+    
   //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);

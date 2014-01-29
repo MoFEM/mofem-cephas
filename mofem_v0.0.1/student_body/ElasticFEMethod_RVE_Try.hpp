@@ -46,7 +46,6 @@ struct ElasticFEMethod_RVE_Try: public ElasticFEMethod {
         EntityHandle node = 0;
         int index_D_star[3];
         rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-        
         for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
             //cout<<"\n New postProcess \n";
             int jj=0;
@@ -138,7 +137,7 @@ struct ElasticFEMethod_RVE_Try: public ElasticFEMethod {
             
             //Gradient at Gauss points;
             vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-            ierr = GetGaussDiffDataVector("DISPLACEMENT_1",GradU_at_GaussPt); CHKERRQ(ierr);
+            ierr = GetGaussDiffDataVector("DISPLACEMENT_FROM_APP_STRAIN",GradU_at_GaussPt); CHKERRQ(ierr);
             
             //cout<<"GradU_at_GaussPt "<< GradU_at_GaussPt.size() << endl;
             
