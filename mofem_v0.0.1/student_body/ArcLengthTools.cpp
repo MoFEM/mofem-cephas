@@ -35,11 +35,7 @@ PetscErrorCode arc_length_mult_shell(Mat A,Vec x,Vec f) {
   double f_lambda;
   f_lambda = ctx->arc_ptr->diag*lambda + db_dot_x;
   ierr = ctx->set_lambda(f,&f_lambda,SCATTER_REVERSE); CHKERRQ(ierr);
-  if(ctx->arc_ptr->use_F_lambda) {
-    ierr = VecAXPY(f,-lambda,ctx->arc_ptr->F_lambda); CHKERRQ(ierr);
-  } else {
-    ierr = VecAXPY(f,-lambda,ctx->arc_ptr->dF_lambda); CHKERRQ(ierr);
-  }
+  ierr = VecAXPY(f,-lambda,ctx->arc_ptr->F_lambda); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -53,11 +49,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   MatShellGetContext(PCCtx->ShellAij,&void_MatCtx);
   ArcLengthMatShell *MatCtx = (ArcLengthMatShell*)void_MatCtx;
   ierr = PCApply(PCCtx->pc,pc_f,pc_x); CHKERRQ(ierr);
-  if(PCCtx->arc_ptr->use_F_lambda) {
-    ierr = PCApply(PCCtx->pc,PCCtx->arc_ptr->F_lambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
-  } else {
-    ierr = PCApply(PCCtx->pc,PCCtx->arc_ptr->dF_lambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
-  }
+  ierr = PCApply(PCCtx->pc,PCCtx->arc_ptr->F_lambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);
   double db_dot_pc_x,db_dot_x_lambda;
   ierr = VecDot(PCCtx->arc_ptr->db,pc_x,&db_dot_pc_x); CHKERRQ(ierr);
   ierr = VecDot(PCCtx->arc_ptr->db,PCCtx->arc_ptr->x_lambda,&db_dot_x_lambda); CHKERRQ(ierr);
@@ -68,6 +60,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   if(ddlambda != ddlambda) {
     ostringstream ss;
     ss << "problem with ddlambda: " << res_lambda << " " << ddlambda << " " << db_dot_pc_x << " " << db_dot_x_lambda << " " << PCCtx->arc_ptr->diag;
+    //cerr << ss.str() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
   ierr = VecAXPY(pc_x,ddlambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);

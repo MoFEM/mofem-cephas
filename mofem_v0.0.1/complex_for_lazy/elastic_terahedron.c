@@ -76,13 +76,13 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
   if(dofs_T!=NULL) { \
     double temperature = 0; \
     temperature = cblas_ddot(4,&N[4*gg],1,dofs_T,1); \
-    /*fprintf(stderr,"%f %f %f %f %f\n",temperature,dofs_T[0],dofs_T[1],dofs_T[2],dofs_T[3]);*/ \
+    /*fprintf(stdout,"temp %f %f %f %f %f\n",temperature,dofs_T[0],dofs_T[1],dofs_T[2],dofs_T[3]);*/ \
     __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.}; \
     __CLPK_doublecomplex xT = { temperature, 0 }; \
     __CLPK_doublecomplex inv_xF_themp[9]; \
-    ierr = ThermalDeformationGradient(thermal_expansion,0,xT,inv_xF_themp); CHKERRQ(ierr); \
+    ierr = ThermalDeformationGradient(thermal_expansion,thermal_load_factor,i_thermal_load_factor,xT,inv_xF_themp); CHKERRQ(ierr); \
     ierr = InvertComplexGradient(inv_xF_themp); CHKERRQ(ierr); \
-    /*print_mat_complex(xF_themp,3,3); fprintf(stdout,"xF_themp\n");*/ \
+    /*{ print_mat_complex(inv_xF_themp,3,3); fprintf(stdout,"inv_xF_themp\n"); }*/ \
     /*print_mat_complex(xF,3,3); fprintf(stdout,"xF\n");*/ \
     cblas_zcopy(9,xF,1,xF_tmp,1); \
     cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,inv_xF_themp,3,&tmp2,xF,3); \
@@ -130,7 +130,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
-  double thermal_expansion,
+  double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -163,7 +163,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
     __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.};
     __CLPK_doublecomplex xT = { *themp, 0 };
     __CLPK_doublecomplex inv_xF_themp[9];
-    ierr = ThermalDeformationGradient(thermal_expansion,0,xT,inv_xF_themp); CHKERRQ(ierr);
+    ierr = ThermalDeformationGradient(thermal_expansion,thermal_load_factor,0,xT,inv_xF_themp); CHKERRQ(ierr);
     ierr = InvertComplexGradient(inv_xF_themp); CHKERRQ(ierr);
     cblas_zcopy(9,xF,1,xF_tmp,1);
     cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,inv_xF_themp,3,&tmp2,xF,3);
@@ -195,7 +195,7 @@ PetscErrorCode Fint_Hh_hierarchical(int *order_edge,int *order_face,int order_vo
   double *dofs_X,double *dofs_x_node,double *dofs_iX,double *dofs_ix_node,
   double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
-  double thermal_expansion,double i_thermal_expansion,
+  double thermal_expansion,double thermal_load_factor,double i_thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -346,13 +346,14 @@ PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
-  double thermal_expansion,
+  double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //
   double *K,double *Koff,double *Koff_edge[6],double *Koff_face[4],double *Koff_volume,int G_DIM,const double *G_W) {
   PetscFunctionBegin;
+  double i_thermal_load_factor = 0;
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
@@ -454,13 +455,14 @@ PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
-  double thermal_expansion,
+  double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W) {
   PetscFunctionBegin;
+  double i_thermal_load_factor = 0;
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
@@ -548,7 +550,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
-  double thermal_expansion,
+  double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -557,6 +559,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
   double *K_edge[6][6],double *K_face[4][6],double *K_volume[6],
   int G_DIM,const double *G_W) {
   PetscFunctionBegin;
+  double i_thermal_load_factor = 0;
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
@@ -649,7 +652,7 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
-  double thermal_expansion,
+  double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
@@ -658,6 +661,7 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
   double *K_edge[6][4],double *K_face[4][4],double *K_volume[4],
   int G_DIM,const double *G_W) {
   PetscFunctionBegin;
+  double i_thermal_load_factor = 0;
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];
@@ -754,13 +758,14 @@ PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
-  double thermal_expansion,
+  double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W) {
   PetscFunctionBegin;
+  double i_thermal_load_factor = 0;
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X,H);  CHKERRQ(ierr);
   double ZERO[9];

@@ -128,7 +128,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	      &fe_method.dofs_X.data()[0],&*fe_method.dofs_x.data().begin(),
 	      &fe_method.dofs_x_edge[0],&fe_method.dofs_x_face[0],&*fe_method.dofs_x_volume.data().begin(), 
 	      //temperature
-	      _thermal_expansion,
+	      _thermal_expansion,1,
 	      &g_NTET[0],&fe_method.edgeN[0],&fe_method.faceN[0],fe_method.volumeN,
 	      NULL,NULL,order_T_volume, &fe_method.dofs_temp.data()[0],NULL,NULL,NULL,
 	      &*Piola1Stress.data().begin(),&*CauhyStress.data().begin(),&*EshelbyStress.data().begin(),&Psi,&J,&themp,gg); CHKERRQ(ierr);
