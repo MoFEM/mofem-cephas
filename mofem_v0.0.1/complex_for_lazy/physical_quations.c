@@ -26,6 +26,14 @@ enum phisical_equation_volume get_PhysicalEquationNumber() {
   return ph_eq_vol;
 }
 
+static enum thremal_deformation_equation themp_eq_deformation = linear_expanison;
+void set_ThermalDeformationEquationNumber(enum thremal_deformation_equation eq) {
+  themp_eq_deformation = eq;
+}
+enum thremal_deformation_equation get_ThermalDeformationEquationNumber() {
+  return themp_eq_deformation;
+}
+
 //Phusical Equations
 static void StrainEnergy_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
 static void PiolaKirhoiff2_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
@@ -42,6 +50,38 @@ static void (*tab_func_Strain_energy[])(double,double,__CLPK_doublecomplex*,__CL
 static void (*tab_func_PiolaKirhoiff2[])(double lambda,double mu,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,void*) = {
   PiolaKirhoiff2_Hooke,PiolaKirhoiff2_Kirchhoff,PiolaKirhoiff2_NeoHookean,PiolaKirhoiff2_EberleinHolzapfel1
 };
+//
+static PetscErrorCode ThermalDeformationGradient_linear_expanison(const double alpha,const double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
+  PetscFunctionBegin;
+  bzero(xF,sizeof(__CLPK_doublecomplex)*9);
+  double complex streach = 1 + (alpha+I*i_alpha)*(xT.r+I*xT.i);
+  int dd = 0;
+  for(;dd<3;dd++) {
+    xF[3*dd+dd].r = creal(streach);
+    xF[3*dd+dd].i = cimag(streach);
+  }
+  PetscFunctionReturn(0);
+}
+static PetscErrorCode ThermalDeformationGradient_linear_expansion_true_volume(const double alpha,const double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
+  PetscFunctionBegin;
+  bzero(xF,sizeof(__CLPK_doublecomplex)*9);
+  double complex streach = cexp((alpha+I*i_alpha)*(xT.r+I*xT.i));
+  int dd = 0;
+  for(;dd<3;dd++) {
+    xF[3*dd+dd].r = creal(streach);
+    xF[3*dd+dd].i = cimag(streach);
+  }
+  PetscFunctionReturn(0);
+}
+static PetscErrorCode (*tab_func_ThermalDeformationGradient[])(const double alpha,const double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF)  = { 
+  ThermalDeformationGradient_linear_expanison, ThermalDeformationGradient_linear_expansion_true_volume
+};
+PetscErrorCode ThermalDeformationGradient(const double alpha,const double i_alpha,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = tab_func_ThermalDeformationGradient[themp_eq_deformation](alpha,i_alpha,xT,xF); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 //
 PetscErrorCode StrainEnergy(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
   PetscFunctionBegin;
@@ -66,7 +106,7 @@ PetscErrorCode CauchyStress(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xJ,__
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode PilaKirhoff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP) {
+PetscErrorCode PiolaKirhoiff1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xS,__CLPK_doublecomplex *xP) {
   PetscFunctionBegin;
   if(ph_eq_vol == hooke) {
     cblas_zcopy(9,xS,1,xP,1);

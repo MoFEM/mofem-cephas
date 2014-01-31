@@ -45,11 +45,14 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
  
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+  const char *option;
+  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  BARRIER_RANK_START(pcomm) 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  BARRIER_RANK_END(pcomm) 
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -72,8 +75,8 @@ int main(int argc, char *argv[]) {
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_crack_front_problem_definition(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
 
   //add finite elements entities
@@ -81,6 +84,7 @@ int main(int argc, char *argv[]) {
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_set_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",bit_level0); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_set_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);

@@ -17,114 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include <petscksp.h>
-
-#include "SnesCtx.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-
-#include "FEMethod_DriverComplexForLazy.hpp"
-
-using namespace MoFEM;
-
-ErrorCode rval;
-PetscErrorCode ierr;
-
-static char help[] = "...\n\n";
-
-struct MyMeshSmoothing_ElasticFEMethod: public FEMethod_DriverComplexForLazy_MeshSmoothingProjected {
-
-  MyMeshSmoothing_ElasticFEMethod(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_MeshSmoothingProjected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_verbose) {
-    set_qual_ver(1);
-  }
-
-};
-
-struct materialDirihletBC: public BaseDirihletBC {
-
-  Interface& moab;
-  Range &CornersNodes;
-  string field_name;
-  materialDirihletBC(Interface &_moab,Range& _CornerNodes): moab(_moab),CornersNodes(_CornerNodes),field_name("MESH_NODE_POSITIONS") {}
-
-  PetscErrorCode SetDirihletBC_to_ElementIndicies(
-      FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
-      PetscFunctionBegin;
-      //Dirihlet form SideSet1
-      DirihletBC.resize(0);
-      Range::iterator siit1 = CornersNodes.begin();
-      for(;siit1!=CornersNodes.end();siit1++) {
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;riit!=hi_riit;riit++) {
-	    if(riit->get_name()!=field_name) continue;
-	    // all fixed
-	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
-	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-	    }
-	  }
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;ciit!=hi_ciit;ciit++) {
-	    if(ciit->get_name()!=field_name) continue;
-	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
-	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	    }
-	  }
-      }
-      PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(vector<DofIdx>& DirihletBC,
-      vector<DofIdx> &FaceNodeIndices,
-      vector<vector<DofIdx> > &FaceEdgeIndices,
-      vector<DofIdx> &FaceIndices) {
-      PetscFunctionBegin;
-      vector<DofIdx>::iterator dit = DirihletBC.begin();
-      for(;dit!=DirihletBC.end();dit++) {
-	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
-	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-	for(int ee = 0;ee<3;ee++) {
-	  it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
-	  if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
-	}
-	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
-	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-      }
-      PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode SetDirihletBC_to_MatrixDiagonal(
-    FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
-    PetscFunctionBegin;
-
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-      if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
-      ierr = MatSetValue(Aij,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1.,INSERT_VALUES); CHKERRQ(ierr);
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
-    PetscFunctionBegin;
-    for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-      if(find(CornersNodes.begin(),CornersNodes.end(),dit->get_ent()) == CornersNodes.end()) continue;
-      ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
-    }
-    PetscFunctionReturn(0);
-  }
-
-};
-
-
+#include "mesh_smoothing.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -199,7 +92,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
     ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
 
-
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
       EntityHandle cubit_meshset = cubit_it->meshset; 
@@ -230,29 +122,17 @@ int main(int argc, char *argv[]) {
   //Fields
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("LAMBDA_SURFACE",H1,1); CHKERRQ(ierr);
-  ierr = mField.add_field("LAMBDA_CORNER",H1,3); CHKERRQ(ierr);
   ierr = mField.add_field("RESIDUAL",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("MESH_SMOOTHER"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("C_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("CTC_SURFACE_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("C_CORNER_ELEM"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("CTC_CORNER_ELEM"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-
-  ierr = mField.modify_finite_element_add_field_row("C_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("C_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("C_CORNER_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("C_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-
-  ierr = mField.modify_finite_element_add_field_row("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("CTC_CORNER_ELEM","LAMBDA_CORNER"); CHKERRQ(ierr);
 
   ierr = mField.modify_finite_element_add_field_row("C_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("C_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -271,8 +151,6 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING","MESH_SMOOTHER"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_CORNER_ELEM"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_CORNER_ELEM"); CHKERRQ(ierr);
 
   ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_SURFACE_ELEM"); CHKERRQ(ierr);
@@ -290,8 +168,9 @@ int main(int argc, char *argv[]) {
 
   //add tets on corners
   EntityHandle cornersNodesMeshset,surfacesFacesMeshset;
+  Range CornersNodes;
   {
-    Range CornersEdges,CornersNodes,SurfacesFaces;
+    Range CornersEdges,SurfacesFaces;
     ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
@@ -303,24 +182,18 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
 
     if(SurfacesFaces.empty()) SETERRQ(PETSC_COMM_SELF,1,"no surface elements");
-    Range SurfacesTets;
-    rval = moab.get_adjacencies(SurfacesFaces,3,false,SurfacesTets,Interface::UNION); CHKERR_PETSC(rval);
+    Range CornersEdgesNodes;
+    rval = moab.get_adjacencies(CornersEdges,0,false,CornersEdgesNodes,Interface::UNION); CHKERR_PETSC(rval);
     {
-      Range CornersEdgesNodes;
-      rval = moab.get_adjacencies(CornersEdges,0,false,CornersEdgesNodes,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.create_meshset(MESHSET_SET,cornersNodesMeshset); CHKERR_PETSC(rval);	
       CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
       rval = moab.add_entities(cornersNodesMeshset,CornersNodes); CHKERR_PETSC(rval);
       //add surface elements
-      ierr = mField.seed_finite_elements(CornersNodes); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"C_CORNER_ELEM"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_VERTICEs(CornersNodes,"CTC_CORNER_ELEM"); CHKERRQ(ierr);
+      //ierr = mField.seed_finite_elements(CornersNodes); CHKERRQ(ierr);
     }
     {
       Range SurfacesNodes;
       rval = moab.get_adjacencies(SurfacesFaces,0,false,SurfacesNodes,Interface::UNION); CHKERR_PETSC(rval);
-      Range CornersEdgesNodes;
-      rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
       SurfacesNodes = subtract(SurfacesNodes,CornersNodes);
       SurfacesNodes = subtract(SurfacesNodes,CornersEdgesNodes);
       rval = moab.create_meshset(MESHSET_SET,surfacesFacesMeshset); CHKERR_PETSC(rval);
@@ -332,12 +205,10 @@ int main(int argc, char *argv[]) {
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_VERTICEs(surfacesFacesMeshset,"LAMBDA_SURFACE"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_VERTICEs(cornersNodesMeshset,"LAMBDA_CORNER"); CHKERRQ(ierr);
 
   //NOTE: always order should be 1
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_SURFACE",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"LAMBDA_CORNER",1); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -396,17 +267,7 @@ int main(int argc, char *argv[]) {
   Vec F;
   ierr = mField.VecCreateGhost("MESH_SMOOTHING",Row,&F); CHKERRQ(ierr);
 
-  Range CornersNodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
-  //Fix all edge nodes
-  Range SideSet101;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,SideSet101,true); CHKERRQ(ierr);
-  Range SideSet101Nodes;
-  rval = moab.get_connectivity(SideSet101,SideSet101Nodes,true); CHKERR_PETSC(rval);
-  CornersNodes.insert(SideSet101Nodes.begin(),SideSet101Nodes.end());
-
   materialDirihletBC myDirihletBC(moab,CornersNodes);
-
   MyMeshSmoothing_ElasticFEMethod MyFE(mField,proj_all_ctx,&myDirihletBC);
 
   SnesCtx SnesCtx(mField,"MESH_SMOOTHING");

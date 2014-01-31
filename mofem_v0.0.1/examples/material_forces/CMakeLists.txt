@@ -25,14 +25,8 @@ target_link_libraries(material_force mofem_complex_for_lazy mofem_student_body m
 add_executable(material_problem material_problem.cpp)
 target_link_libraries(material_problem mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(material_coupled material_coupled.cpp)
-target_link_libraries(material_coupled mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
 add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
 target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
-add_executable(refine_strech_edges refine_strech_edges.cpp)
-target_link_libraries(refine_strech_edges mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -40,7 +34,6 @@ file(COPY
 
 install(TARGETS spatial_problem DESTINATION bin)
 install(TARGETS material_force DESTINATION bin)
-install(TARGETS material_coupled DESTINATION bin)
 install(TARGETS arc_length_material_coupled DESTINATION bin)
 
 cm_export_file("../../meshes/crack1.cub" export_files_material_mechanics)
@@ -61,6 +54,8 @@ configure_file(
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
-
-
+#testing
+add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh -f crack1.cub -l 1e-3 -g 2e-6 -o 1 -r 1 -d TEST_SIF)
+add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_1_1.h5m 
+  -a 2e-3 -n 1 -g 1e-4 -d TEST_ARC --snes_linesearch_type=basic --my_nb_sub_steps=1)
 

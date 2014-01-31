@@ -83,7 +83,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 
     DynamicElasticFEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,FieldInterface& _mField,
       Mat &_Aij,Vec _D,Vec& _F,double _lambda,double _mu,double _rho,DynamicNeumannBC *_bc): 
-      ElasticFEMethod(_mField,_dirihlet_bc_method_ptr,_Aij,_D,_F,_lambda,_mu),fe_post_proc_method(moab,_lambda,_mu),rho(_rho),debug(1),
+      ElasticFEMethod(_mField,_dirihlet_bc_method_ptr,_Aij,_D,_F,_lambda,_mu),fe_post_proc_method(moab,"DISPLACEMENT",_lambda,_mu),rho(_rho),debug(1),
       bc(_bc) {
 
       PetscInt ghosts[1] = { 0 };

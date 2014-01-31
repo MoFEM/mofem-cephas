@@ -32,7 +32,7 @@ using namespace MoFEM;
 struct ConfigurationalFractureMechanics {
  
   Tag th_MaterialFireWall;
-  typedef bitset<16> Material_FirelWall_def;
+  typedef bitset<17> Material_FirelWall_def;
   Material_FirelWall_def *material_FirelWall;
 
   enum FirWall {
@@ -46,10 +46,12 @@ struct ConfigurationalFractureMechanics {
     FW_constrains_crack_front_problem_definition,
     FW_set_spatial_positions,
     FW_set_material_positions,
-    FW_arc_lenhghat_definition
+    FW_arc_lenhghat_definition,
+    FW_thermal_field
   };
 
-  EntityHandle cornersNodesMeshset,surfacesFacesNodesMeshset,crackSurfacesFacesNodesMeshset,crackForntMeshset;
+  EntityHandle crackForntMeshset;
+  EntityHandle crackFrontTangentConstrains;
   matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
 
   BitRefLevel *ptr_bit_level0;
@@ -72,6 +74,7 @@ struct ConfigurationalFractureMechanics {
   }
   
   PetscErrorCode set_material_fire_wall(FieldInterface& mField);
+  PetscErrorCode thermal_field(FieldInterface& mField);
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
   PetscErrorCode material_problem_definition(FieldInterface& mField);
   PetscErrorCode coupled_problem_definition(FieldInterface& mField);
@@ -88,14 +91,13 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode set_coordinates_from_material_solution(FieldInterface& mField);
 
   PostProcStressNonLinearElasticity *fe_post_proc_stresses_method;
-  PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes);
+  PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes,bool postproc = true);
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
 
-  double nrm2_front_equlibrium;
-  double aRea,lambda;
-  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double alpha3,double da = 0);
+  double aRea,lambda,energy;
+  int nb_un_freez_nodes;
+  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double da);
 
-  PetscErrorCode calculate_spatial_residual(FieldInterface& mField);
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
   PetscErrorCode surface_projection_data(FieldInterface& mField,string problem);
   PetscErrorCode delete_surface_projection_data(FieldInterface& mField);
@@ -104,58 +106,32 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode delete_front_projection_data(FieldInterface& mField);
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
-  PetscErrorCode save_edge_lenght_in_tags(FieldInterface& mField,BitRefLevel mask);
-  PetscErrorCode save_edge_strech_lenght_in_tags(FieldInterface& mField);
-  PetscErrorCode refine_streched_edges(FieldInterface& mField,double strech_treshold,bool crack_crack_surface_only);
-
+  map<EntityHandle,double> map_ent_g,map_ent_j;
   PetscScalar ave_g,min_g,max_g;
   PetscScalar ave_j,min_j,max_j;
   PetscErrorCode griffith_g(FieldInterface& mField,string problem);
 
   struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {
   
-    CubitDisplacementDirihletBC_Coupled (FieldInterface& _mField,const string _problem_name): 
-      CubitDisplacementDirihletBC(_mField,_problem_name,"None") {}
+    Range& CornersNodes;
+    bool fixAllSpatialDispacements;
+    CubitDisplacementDirihletBC_Coupled (FieldInterface& _mField,const string _problem_name,Range &_CornersNodes): 
+      CubitDisplacementDirihletBC(_mField,_problem_name,"None"),CornersNodes(_CornersNodes),fixAllSpatialDispacements(false) {}
   
+    PetscErrorCode SetDirihletBC_to_ElementIndicies(
+      FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
     PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC);  
     PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
+    PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
+    PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F);
+    PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(FieldInterface::FEMethod *fe_method_ptr,
+      vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs);
   
   };
 
-  struct ConstrainCrackForntEdges_FEMethod: public FieldInterface::FEMethod {
-
-    FieldInterface& mField;
-    ConfigurationalFractureMechanics *conf_prob;
-
-    double alpha3;
-    ublas::vector<DofIdx> rowDofs,colDofs;
-    ublas::vector<FieldData> dofsX,coords;
-    ublas::vector<FieldData> delta0,delta;
-    ublas::vector<FieldData> f;
-    ublas::matrix<FieldData> K;
-
-    ConstrainCrackForntEdges_FEMethod(
-      FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,double _alpha3): mField(_mField),conf_prob(_conf_prob),alpha3(_alpha3) {
-      rowDofs.resize(6);
-      colDofs.resize(6);
-      dofsX.resize(6);
-      coords.resize(6);
-      delta0.resize(3);
-      delta.resize(3);
-      f.resize(6);
-      K.resize(6,6);
-    }
-    
-    Vec tmp_snes_f;
-    PetscErrorCode preProcess();
-    PetscErrorCode operator()();
-    PetscErrorCode postProcess();
-
-  };
-
-  struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
+ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
     ConfigurationalFractureMechanics *conf_prob;
@@ -163,6 +139,7 @@ struct ConfigurationalFractureMechanics {
 
     Vec ghostDiag;
     Range crackSurfacesFaces;
+    Range crackFrontNodes;
     PetscInt *isIdx;
     IS isSurface;
     Vec surfaceDofs;
@@ -172,7 +149,7 @@ struct ConfigurationalFractureMechanics {
     ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
     ~ArcLengthElemFEMethod();
 
-    double aRea,lambda_int;
+    double aRea,aRea0,lambda_int;
 
     PetscErrorCode set_dlambda_to_x(Vec x,double dlambda);
     PetscErrorCode calulate_area();

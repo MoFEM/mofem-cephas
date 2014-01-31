@@ -51,11 +51,15 @@ int main(int argc, char *argv[]) {
     nb_ref_levels = 0;
   }
  
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+  const char *option;
+  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  BARRIER_RANK_START(pcomm) 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  BARRIER_RANK_END(pcomm) 
+
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -87,13 +91,14 @@ int main(int argc, char *argv[]) {
   //BitRefLevel bit_level0;
   //bit_level0.set(0);
 
-  PetscBool no_add_interface;
+  PetscBool no_add_interface = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_no_add_interface",&no_add_interface,&flg); CHKERRQ(ierr);
   if(no_add_interface == PETSC_TRUE) {
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_add_crack);
   }
 
   BitRefLevel bit_level_interface;
+  if(mField.check_msId_meshset(200,SideSet)) {
   if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_add_crack)) {
 
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_add_crack);
@@ -115,8 +120,12 @@ int main(int argc, char *argv[]) {
       ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTET,true); CHKERRQ(ierr);
     }
 
+  }} else {
+    bit_level_interface.set(0);
+    ierr = mField.seed_ref_level_3D(0,bit_level_interface); CHKERRQ(ierr);
   }
 
+  if(mField.check_msId_meshset(201,SideSet)) {
   if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_refine_near_crack_tip)) {
 
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_refine_near_crack_tip);
@@ -150,9 +159,10 @@ int main(int argc, char *argv[]) {
 
     bit_level0 = last_ref;
 
-    ierr = conf_prob.save_edge_lenght_in_tags(mField,BitRefLevel().set()); CHKERRQ(ierr);
 
-  }
+  }} else {
+    bit_level0 = bit_level_interface;
+  } 
 
   double *t_val;
   Tag th_t_val;
@@ -172,7 +182,7 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscOptionsGetReal(PETSC_NULL,"-my_load",t_val,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_WORLD,1,"*** ERROR -my_load (what is load factor?)");
+      SETERRQ(PETSC_COMM_WORLD,1,"*** ERROR -my_load (what is the load factor?)");
     }
 
   }
@@ -210,6 +220,7 @@ int main(int argc, char *argv[]) {
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Save results in out_spatial.h5m\n"); CHKERRQ(ierr);
     rval = moab.write_file("out_spatial.h5m"); CHKERR_PETSC(rval);
   }
 
@@ -217,9 +228,11 @@ int main(int argc, char *argv[]) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Save results in VTK mesh out.vtk\n"); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     if(conf_prob.fe_post_proc_stresses_method!=NULL) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save stresses in post-processing mesh out_stresses.vtk\n"); CHKERRQ(ierr);
       rval = conf_prob.fe_post_proc_stresses_method->moab_post_proc.write_file("out_stresses.vtk","VTK",""); CHKERR_PETSC(rval);
     }
   }

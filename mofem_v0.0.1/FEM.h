@@ -63,6 +63,8 @@ PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *n
 PetscErrorCode ShapeFaceBaseMBTRI(
   double *diffN,const double *coords,
   double *normal,double *s1,double *s2);
+/// calulate direvative of normal in respect to nodal positions
+PetscErrorCode ShapeFaceDiffNormal_MBTRI(double *diffN,const double *coords,double *diff_normal);
 /// calulate jacobioan 
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
 /// calulate direvatives of shape functions in space
@@ -89,6 +91,17 @@ PetscErrorCode Spin(double *spinOmega,double *vecOmega);
 
 /// Compose complex matrix (3x3) from two real matrices
 PetscErrorCode make_complex_matrix(double *reA,double *imA,__CLPK_doublecomplex *xA);
+/// Complex normal
+PetscErrorCode Normal_hierarchical(int order,int *order_edge,
+  double *diffN,double *diffN_face,double *diffN_edge[],
+  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
+    __CLPK_doublecomplex *xnormal,
+    __CLPK_doublecomplex *s1,
+    __CLPK_doublecomplex *s2,
+    int gg);
+PetscErrorCode Base_scale(
+  __CLPK_doublecomplex *xnormal,__CLPK_doublecomplex *xs1,__CLPK_doublecomplex *xs2);
 
 /** 
  * \brief calculate local coordinates for given global coordinates

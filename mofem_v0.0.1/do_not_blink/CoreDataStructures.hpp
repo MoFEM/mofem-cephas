@@ -67,9 +67,6 @@ inline int fNBFACE_Hdiv(int P) { return NBFACE_Hdiv(P); }
 /// number of approx. functions for Hdiv space on voulem
 inline int fNBVOLUME_Hdiv(int P) { return NBVOLUME_Hdiv(P); }
 
-//MultiIndex Tags
-struct ParentEntType_mi_tag {};
-
 struct ltstr
 { inline bool operator()(const string &s1, const string& s2) const
   { return strcmp(s1.c_str(), s2.c_str()) < 0; } };
@@ -91,43 +88,6 @@ struct RefMoFEMEntity_change_add_bit {
     *e.tag_BitRefLevel = bit;
   }
 };
-
-/**
- * \typedef RefMoFEMEntity_multiIndex
- * type multiIndex container for RefMoFEMEntity
- *
- * \param hashed_unique MoABEnt_mi_tag 
- * \param ordered_non_unique Meshset_mi_tag 
- * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
- * \param ordered_non_unique EntType_mi_tag
- * \param ordered_non_unique ParentEntType_mi_tag
- * \param ordered_non_unique Composite_EntityType_And_ParentEntityType_mi_tag
- * \param ordered_non_unique Composite_EntityHandle_And_ParentEntityType_mi_tag
- */
-typedef multi_index_container<
-  RefMoFEMEntity,
-  indexed_by<
-    hashed_unique<
-      tag<MoABEnt_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::ent> >,
-    ordered_non_unique<
-      tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
-    ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> >,
-    ordered_non_unique<
-      tag<ParentEntType_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> >,
-    ordered_non_unique<
-      tag<Composite_EntityType_And_ParentEntityType_mi_tag>, 
-      composite_key<
-	RefMoFEMEntity,
-	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
-	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
-    ordered_non_unique<
-      tag<Composite_EntityHandle_And_ParentEntityType_mi_tag>, 
-      composite_key<
-	RefMoFEMEntity,
-	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
-	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
-  > > RefMoFEMEntity_multiIndex;
 
 typedef multi_index_container<
   const RefMoFEMEntity*,

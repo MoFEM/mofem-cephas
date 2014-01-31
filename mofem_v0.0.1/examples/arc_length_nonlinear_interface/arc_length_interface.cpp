@@ -256,15 +256,6 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  //Get SideSet 1 and SideSet 2 defined in CUBIT
-  Range SideSet1,SideSet2,SideSet3;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,SideSet,2,SideSet1,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(2,SideSet,2,SideSet2,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(3,SideSet,2,SideSet3,true); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 1 : %u\n",SideSet1.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 2 : %u\n",SideSet2.size());
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. faces in SideSet 3 : %u\n",SideSet3.size());
-
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
@@ -517,7 +508,7 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
+  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab,"DISPLACEMENT");
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {

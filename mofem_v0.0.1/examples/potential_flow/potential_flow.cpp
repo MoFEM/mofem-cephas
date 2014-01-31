@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver_laplacian,F_Laplacian,D_Laplacian); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D_Laplacian,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D_Laplacian,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("LAPLACIAN_PROBLEM",Row,D_Laplacian,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("LAPLACIAN_PROBLEM",Col,D_Laplacian,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = KSPDestroy(&solver_laplacian); CHKERRQ(ierr);
   ierr = VecDestroy(&F_Laplacian); CHKERRQ(ierr);
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver_pressure,F_Preassure,D_Preassure); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D_Preassure,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D_Preassure,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("PRESSURE_PROBLEM",Row,D_Preassure,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("PRESSURE_PROBLEM",Col,D_Preassure,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = KSPDestroy(&solver_pressure); CHKERRQ(ierr);
   ierr = VecDestroy(&F_Preassure); CHKERRQ(ierr);

@@ -41,15 +41,14 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 struct DirihletBCMethod_DriverComplexForLazy: public CubitDisplacementDirihletBC {
-
   DirihletBCMethod_DriverComplexForLazy(FieldInterface& _mField,const string _problem_name,const string _field_name): 
     CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
-
 };
 
 struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   double *t_val;
+  //set load factor
   PetscErrorCode set_t_val(double t_val_) {
       PetscFunctionBegin;
       *t_val = t_val_;
@@ -59,7 +58,8 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   Tag th_t_val;
   FEMethod_DriverComplexForLazy_Spatial(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
   FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
-  FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,_verbose) { 
+  FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),
+  nodal_forces_not_added(true) { 
     double def_t_val = 0;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
     rval = mField.get_moab().tag_get_handle("_LoadFactor_t_val",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
@@ -70,23 +70,17 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       rval = mField.get_moab().tag_set_data(th_t_val,&root_meshset,1,&def_t_val); CHKERR_THROW(rval);
       rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_THROW(rval);
     }
-
-    
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       Range TetsOfNeumannSideSet;
       rval = mField.get_moab().get_adjacencies(NeumannSideSet,3,false,TetsOfNeumannSideSet,Interface::UNION); CHKERR_THROW(rval);
       rval = mField.get_moab().add_entities(it->get_meshset(),TetsOfNeumannSideSet); CHKERR_THROW(rval);
-
     }
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-
       if(!NeumannSideSet.empty()) {
 	Range TetsOfNeumannSideSet;
 	rval = mField.get_moab().get_adjacencies(NeumannSideSet,3,false,TetsOfNeumannSideSet,Interface::UNION); CHKERR_THROW(rval);
@@ -102,19 +96,13 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	} else {}
       }
     }
-
-  };
-
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
+  }
 
   //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode addNodalForces(Vec f,double lambda) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       if(!NeumannSideSet.empty()) {
@@ -125,15 +113,12 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	if(!NeumannEdgeSideSet.empty()) {
 	  continue;
 	} else {
-
 	  force_cubit_bc_data mydata;
 	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-
 	  double t_glob[3]; 
 	  t_glob[0] = lambda*mydata.data.value3*mydata.data.value1;
 	  t_glob[1] = lambda*mydata.data.value4*mydata.data.value1;
 	  t_glob[2] = lambda*mydata.data.value5*mydata.data.value1;
-
 	  Range NeumannNodeSideSet;
 	  ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),0,NeumannNodeSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 	  if(!NeumannNodeSideSet.empty()) {
@@ -146,7 +131,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	}
       }
     }
-    
     PetscFunctionReturn(0);
   }
 
@@ -154,9 +138,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-    ierr = PetscTime(&v1); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
@@ -335,13 +316,12 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 
   PetscErrorCode CaluclateSpatialFext(Vec f,double *t_loc,double *t_glob,Range& NeumannSideSet) {
     PetscFunctionBegin;
-
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-
     switch(snes_ctx) {
       case ctx_SNESNone:
+      case ctx_SNESSetJacobian:
       case ctx_SNESSetFunction: { 
 	for(;siit!=hi_siit;siit++) {
 	  VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
@@ -377,12 +357,9 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode CalculateSpatialTangentExt(Mat B,double *t_loc,double *t_glob,Range& NeumannSideSet) {
     PetscFunctionBegin;
-    if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
-  
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-
     switch(snes_ctx) {
       case ctx_SNESSetFunction:
       case ctx_SNESSetJacobian:
@@ -401,7 +378,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
 	    &*(KExt_hh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	  for(int ee = 0;ee<3;ee++) {
-	    if(FaceNodeIndices.size()==0) continue;
+	    if(FaceEdgeIndices_data[ee].size()==0) continue;
 	    ierr = MatSetValues(B,
 	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),
@@ -411,29 +388,34 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 	      &*(KExt_hedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	    for(int eee = 0;eee<3;eee++) {
+	      if(FaceEdgeIndices_data[eee].size()==0) continue;
 	      ierr = MatSetValues(B,
 		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
 		FaceEdgeIndices_data[eee].size(),&(FaceEdgeIndices_data[eee][0]),
 		&*(KExt_edgeedge_data(ee,eee).data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	    }
-	    ierr = MatSetValues(B,
-	      FaceIndices.size(),&(FaceIndices[0]),
-	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
-	      &*(KExt_faceedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValues(B,
-	      FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
-	      FaceIndices.size(),&(FaceIndices[0]),
-	      &*(KExt_edgeface_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    if(FaceIndices.size()>0) {
+	      ierr = MatSetValues(B,
+		FaceIndices.size(),&(FaceIndices[0]),
+		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+		&*(KExt_faceedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	      ierr = MatSetValues(B,
+		FaceEdgeIndices_data[ee].size(),&(FaceEdgeIndices_data[ee][0]),
+		FaceIndices.size(),&(FaceIndices[0]),
+		&*(KExt_edgeface_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    }
 	  }
-	  ierr = MatSetValues(B,
-	    FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
-	    &*(KExt_hface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(B,
-	    FaceIndices.size(),&(FaceIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
-	    &*(KExt_faceh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = MatSetValues(B,
-	    FaceIndices.size(),&(FaceIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
-	    &*(KExt_faceface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  if(FaceIndices.size()>0) {
+	    ierr = MatSetValues(B,
+	      FaceNodeIndices.size(),&(FaceNodeIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
+	      &*(KExt_hface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(B,
+	      FaceIndices.size(),&(FaceIndices[0]),FaceNodeIndices.size(),&(FaceNodeIndices[0]),
+	      &*(KExt_faceh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(B,
+	      FaceIndices.size(),&(FaceIndices[0]),FaceIndices.size(),&(FaceIndices[0]),
+	      &*(KExt_faceface.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	  }
 	}
 	break;
       default:
@@ -445,28 +427,21 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   }
 
   //FEMethod_DriverComplexForLazy_Spatial
-  PetscErrorCode CalulateKFext(Mat K,Vec f,double lambda) {
+  PetscErrorCode CalculateSpatialKFext(Mat K,Vec f,double lambda) {
     PetscFunctionBegin;
-
     if(f!=PETSC_NULL) {
       if(nodal_forces_not_added) {
 	ierr = addNodalForces(f,lambda); CHKERRQ(ierr);
 	nodal_forces_not_added = false;
       }
     }
-
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-
       EntityHandle tet = fe_ptr->get_ent();
       if(!mField.get_moab().contains_entities(it->get_meshset(),&tet,1)) continue;
-
-
       pressure_cubit_bc_data mydata;
       ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-
       double t_val_ = lambda*mydata.data.value1;
       double t_loc[] = { 0,0,-t_val_, 0,0,-t_val_, 0,0,-t_val_ };
-
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
       if(!NeumannSideSet.empty()) {
@@ -479,18 +454,14 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       }
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-
       EntityHandle tet = fe_ptr->get_ent();
       if(!mField.get_moab().contains_entities(it->get_meshset(),&tet,1)) continue;
-	
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
-
       force_cubit_bc_data mydata;
       ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
       //cerr << mydata << endl;
       Range faces;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,faces,true); CHKERRQ(ierr);
-
       double t_glob[9],t_loc[9]; 
       bzero(t_loc,9*sizeof(double));
       for(int nn = 0;nn<3;nn++) {
@@ -498,7 +469,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	t_glob[3*nn+1] = lambda*mydata.data.value4*mydata.data.value1;
 	t_glob[3*nn+2] = lambda*mydata.data.value5*mydata.data.value1;
       }
-  
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
       if(!NeumannSideSet.empty()) {
@@ -510,38 +480,30 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
 	}
       } 
     }
-
     PetscFunctionReturn(0);
   }
-
   vector<DofIdx> DirihletBC;
   //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
-
     ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
-
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
-	ierr = CalulateKFext(PETSC_NULL,snes_f,*(this->t_val)); CHKERRQ(ierr);
+	ierr = CalculateSpatialKFext(PETSC_NULL,snes_f,*(this->t_val)); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
 	ierr = CalculateSpatialTangent(*snes_B); CHKERRQ(ierr);
-	ierr = CalulateKFext(*snes_B,PETSC_NULL,*(this->t_val)); CHKERRQ(ierr);
+	ierr = CalculateSpatialKFext(*snes_B,PETSC_NULL,*(this->t_val)); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-
-    
     PetscFunctionReturn(0);
   }
-
   //FEMethod_DriverComplexForLazy_Spatial
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
@@ -561,53 +523,53 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-
-    ierr = PetscTime(&v2); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscFunctionReturn(0);
   }
-
 };
 
-struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForLazy_Spatial {
-
-  bool add_diag;
-  FEMethod_DriverComplexForLazy_Material(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
-      type_of_analysis = material_analysis;
-      add_diag = false;
-    }
-
+struct InitCrackFrontNodes {
   Range crackFrontNodes; 
-  PetscErrorCode init_crack_front_data(bool _add_diag = false) {
+  PetscErrorCode initCrackFrontData(FieldInterface& mField) {
       PetscFunctionBegin;
-      add_diag = _add_diag;
+      ErrorCode rval;
+      PetscErrorCode ierr;
       Range crack_corners_edges;
       ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
       rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontNodes,true); CHKERR_PETSC(rval);
       PetscFunctionReturn(0);
     }
+  PetscErrorCode setCrackFrontIndices(FieldInterface::FEMethod *fem_ptr,string &material_field_name,vector<DofIdx>& GlobIndices,bool not_at_crack_front) {
+    PetscFunctionBegin;
+    if(!crackFrontNodes.empty()) {
+    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(fem_ptr,material_field_name,dof)) {
+      Range::iterator nit = find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent());
+      if(not_at_crack_front) {
+	//if nit is not a part of crack front set
+	if(nit != crackFrontNodes.end()) continue;
+      } else {
+	//if nit is part of crack front set
+	if(nit == crackFrontNodes.end()) continue;
+      }
+      vector<DofIdx>::iterator it = find(GlobIndices.begin(),GlobIndices.end(),dof->get_petsc_gloabl_dof_idx());
+      if(it != GlobIndices.end()) {
+	*it = -1;
+      }
+    }}
+    PetscFunctionReturn(0);
+  }
+};
 
-
+struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForLazy_Spatial,InitCrackFrontNodes {
+  FEMethod_DriverComplexForLazy_Material(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
+      type_of_analysis = material_analysis;
+    }
+  //FEMethod_DriverComplexForLazy_Material
   virtual PetscErrorCode AssembleMaterialTangent(Mat B) {
     PetscFunctionBegin;
-
-    unsigned int c = 0;
     vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
-    if(!crackFrontNodes.empty())
-    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-      //if is not crack front edge
-      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) == crackFrontNodes.end()) {
-	vector<DofIdx>::iterator it = find(frontRowGlobMaterial.begin(),frontRowGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());
-	if(it != frontRowGlobMaterial.end()) {
-	  *it = -1;
-	  c++;
-	}
-      }
-    }
-    
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,true); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction:
@@ -620,56 +582,39 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-
     PetscFunctionReturn(0);
   }
-
+  //FEMethod_DriverComplexForLazy_Material
   virtual PetscErrorCode CalculateMaterialFint(Vec f) {
     PetscFunctionBegin;
-
-    unsigned int c = 0;
     vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
-    if(!crackFrontNodes.empty())
-    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-      //if is not crack front edge
-      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) == crackFrontNodes.end()) {
-	vector<DofIdx>::iterator it = find(frontRowGlobMaterial.begin(),frontRowGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());
-	if(it != frontRowGlobMaterial.end()) {
-	  *it = -1;
-	  c++;
-	}
-      }
-    }
-    //if(c == frontRowGlobMaterial.size()) PetscFunctionReturn(0);
-
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,true); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
         ierr = GetFint(); CHKERRQ(ierr);
 	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
-	//cerr << "Fint_h " << Fint_h << endl;
 	ierr = VecSetValues(f,frontRowGlobMaterial.size(),&(frontRowGlobMaterial[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-
     PetscFunctionReturn(0);
   }
-
-  virtual PetscErrorCode CaluclateMaterialFext(Vec f,double *t_loc,double *t_glob,Range& NeumannSideSet) {
+  //FEMethod_DriverComplexForLazy_Material
+  virtual PetscErrorCode CaluclateMaterialFext(Vec f,double *t_loc,double *t_glob,double lambda,Range& NeumannSideSet) {
     PetscFunctionBegin;
-
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-
+    //material has dof only in nodes
+    //that way dummy vecrors are used
     vector<vector<DofIdx> > dummy1;
     vector<DofIdx> dummy2;
-
     switch(snes_ctx) {
       case ctx_SNESNone:
+      case ctx_SNESSetJacobian: 
       case ctx_SNESSetFunction: { 
 	for(;siit!=hi_siit;siit++) {
 	  VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
@@ -677,28 +622,14 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData_Material(siit->ent); CHKERRQ(ierr);
 	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(this,DirihletBC,FaceNodeIndices_Material,dummy1,dummy2); CHKERRQ(ierr);
-
-	  unsigned int c = 0;
 	  vector<DofIdx> frontFaceNodeIndices_Material = FaceNodeIndices_Material;
-	  if(!crackFrontNodes.empty())
-	  for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-	    //if is not crack front edge
-	    if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) == crackFrontNodes.end()) {
-	      vector<DofIdx>::iterator it = find(frontFaceNodeIndices_Material.begin(),frontFaceNodeIndices_Material.end(),dof->get_petsc_gloabl_dof_idx());
-	      if(it != frontFaceNodeIndices_Material.end()) {
-		*it = -1;
-		c++;
-	      }
-	    }
-	  }
-	  //if(c == frontFaceNodeIndices_Material.size()) continue;
-
+	  ierr = setCrackFrontIndices(this,material_field_name,frontFaceNodeIndices_Material,true); CHKERRQ(ierr);
 	  if(t_glob != NULL) {
 	    double _t_loc[9];
 	    ierr = ReBaseToFaceLoocalCoordSystem(siit->ent,t_glob,_t_loc); CHKERRQ(ierr);
 	    cblas_daxpy(9,1.,_t_loc,1,t_loc,1);
 	  }
-
+	  cblas_dscal(9,lambda,t_loc,1);
 	  ierr = GetFExt_Material(siit->ent,t_loc,NULL,NULL); CHKERRQ(ierr);
 	  ierr = VecSetValues(f,frontFaceNodeIndices_Material.size(),&(frontFaceNodeIndices_Material[0]),&*FExt_Material.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 	}
@@ -710,18 +641,16 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 
     PetscFunctionReturn(0);
   }
-
-  PetscErrorCode CalculateMaterialTangentExt(Mat B,double *t_loc,double *t_glob,Range& NeumannSideSet) {
+  //FEMethod_DriverComplexForLazy_Material
+  PetscErrorCode CalculateMaterialTangentExt(Mat B,double *t_loc,double *t_glob,double lambda,Range& NeumannSideSet) {
     PetscFunctionBegin;
-    if(get_PhysicalEquationNumber()==hooke) PetscFunctionReturn(0);
-  
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-
+    //material has dof only in nodes
+    //that way dummy vecrors are used
     vector<vector<DofIdx> > dummy1;
     vector<DofIdx> dummy2;
-
     switch(snes_ctx) {
       case ctx_SNESSetFunction:
       case ctx_SNESSetJacobian:
@@ -730,142 +659,98 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
 	  if(fit==NeumannSideSet.end()) continue;
 	  ierr = GetFaceIndicesAndData_Material(siit->ent); CHKERRQ(ierr);
 	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesFace(this,DirihletBC,FaceNodeIndices_Material,dummy1,dummy2); CHKERRQ(ierr);
-
-	  unsigned int c = 0;
 	  vector<DofIdx> frontFaceNodeIndices_Material = FaceNodeIndices_Material;
-	  if(!crackFrontNodes.empty())
-	  for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-	    //if is not crack front edge
-	    if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) == crackFrontNodes.end()) {
-	      vector<DofIdx>::iterator it = find(frontFaceNodeIndices_Material.begin(),frontFaceNodeIndices_Material.end(),dof->get_petsc_gloabl_dof_idx());
-	      if(it != frontFaceNodeIndices_Material.end()) {
-		*it = -1;
-		c++;
-	      }
-	    }
-	  }
-	  //if(c == frontFaceNodeIndices_Material.size()) continue;
-
+	  ierr = setCrackFrontIndices(this,material_field_name,frontFaceNodeIndices_Material,true); CHKERRQ(ierr);
 	  if(t_glob != NULL) {
 	    double _t_loc[9];
 	    ierr = ReBaseToFaceLoocalCoordSystem(siit->ent,t_glob,_t_loc); CHKERRQ(ierr);
 	    cblas_daxpy(9,1.,_t_loc,1,t_loc,1);
 	  }
-
+	  cblas_dscal(9,lambda,t_loc,1);
 	  ierr = GetTangentExt_Material(siit->ent,t_loc,NULL,NULL); CHKERRQ(ierr);
 	  ierr = MatSetValues(B,
-	    frontFaceNodeIndices_Material.size(),&(frontFaceNodeIndices_Material[0]),FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),
+	    frontFaceNodeIndices_Material.size(),&(frontFaceNodeIndices_Material[0]),
+	    FaceNodeIndices_Material.size(),&(FaceNodeIndices_Material[0]),
 	    &*(KExt_HH_Material.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	}
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-
     PetscFunctionReturn(0);
   }
-
-  enum op_ctx { NO = 0, LHS = 1<<0,RHS = 1<<1,TANGENT = 1<<2,FINT = 1<<3,FEXT = 1<<4 }; 
   //FEMethod_DriverComplexForLazy_Material
-  virtual PetscErrorCode operator()(Mat *B,Vec f,const int op) {
+  PetscErrorCode CaluclateMaterialKFext(Mat K,Vec f,double lambda) {
     PetscFunctionBegin;
-
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+      EntityHandle tet = fe_ptr->get_ent();
+      if(!mField.get_moab().contains_entities(it->get_meshset(),&tet,1)) continue;
+      pressure_cubit_bc_data mydata;
+      ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+      /*ostringstream ss;
+      ss << *it << endl;
+      ss << mydata;
+      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
+      double t_val_ = *(this->t_val)*mydata.data.value1;
+      double t[] = { 0,0,-t_val_, 0,0,-t_val_, 0,0,-t_val_ };
+      Range NeumannSideSet;
+      ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
+      if(K!=PETSC_NULL) {
+	ierr = CalculateMaterialTangentExt(K,t,NULL,lambda,NeumannSideSet); CHKERRQ(ierr);
+      }
+      if(f!=PETSC_NULL) {
+	ierr = CaluclateMaterialFext(f,t,NULL,lambda,NeumannSideSet) ; CHKERRQ(ierr);
+      }
+    }
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+      EntityHandle tet = fe_ptr->get_ent();
+      if(!mField.get_moab().contains_entities(it->get_meshset(),&tet,1)) continue;	
+      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
+      force_cubit_bc_data mydata;
+      ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+      //cerr << mydata << endl;
+      Range faces;
+      ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,faces,true); CHKERRQ(ierr);
+      double t_glob[9],t_loc[9]; 
+      bzero(t_loc,9*sizeof(double));
+      for(int nn = 0;nn<3;nn++) {
+	t_glob[3*nn+0] = lambda*mydata.data.value3*mydata.data.value1;
+	t_glob[3*nn+1] = lambda*mydata.data.value4*mydata.data.value1;
+	t_glob[3*nn+2] = lambda*mydata.data.value5*mydata.data.value1;
+      }
+      Range NeumannSideSet;
+      ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
+      if(K!=PETSC_NULL) {
+	ierr = CalculateMaterialTangentExt(K,t_loc,t_glob,lambda,NeumannSideSet); CHKERRQ(ierr);
+      }
+      if(f!=PETSC_NULL) {
+	ierr = CaluclateMaterialFext(f,t_loc,t_glob,lambda,NeumannSideSet) ; CHKERRQ(ierr);
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_Material
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
     ierr = GetData(dofs_x_edge_data,dofs_x_edge,
       dofs_x_face_data,dofs_x_face,
       dofs_x_volume,dofs_x,
       spatial_field_name); CHKERRQ(ierr);
-
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
-
-    if(op&TANGENT) {
-      ierr = GetTangent(); CHKERRQ(ierr);
-    }
-    if(op&LHS) {
-      ierr = AssembleMaterialTangent(*B); CHKERRQ(ierr);
-    }
-    if((op&RHS)&&(op&FINT)) {
-      ierr = CalculateMaterialFint(f); CHKERRQ(ierr);
-    }
-
-    if(op&(LHS|RHS)) {
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-
-	EntityHandle tet = fe_ptr->get_ent();
-	if(!mField.get_moab().contains_entities(it->get_meshset(),&tet,1)) continue;
-
-	pressure_cubit_bc_data mydata;
-	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-	/*ostringstream ss;
-	ss << *it << endl;
-	ss << mydata;
-	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
-
-	double t_val_ = *(this->t_val)*mydata.data.value1;
-	double t[] = { 0,0,-t_val_, 0,0,-t_val_, 0,0,-t_val_ };
-
-	Range NeumannSideSet;
-	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
-
-	if(op&LHS) {
-	  ierr = CalculateMaterialTangentExt(*B,t,NULL,NeumannSideSet); CHKERRQ(ierr);
-	}
-	if((op&RHS)&&(FEXT)) {
-	  ierr = CaluclateMaterialFext(f,t,NULL,NeumannSideSet) ; CHKERRQ(ierr);
-	}
-
-      }
-
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-
-	EntityHandle tet = fe_ptr->get_ent();
-	if(!mField.get_moab().contains_entities(it->get_meshset(),&tet,1)) continue;
-	
-	ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
-
-	force_cubit_bc_data mydata;
-	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-	//cerr << mydata << endl;
-	Range faces;
-	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,faces,true); CHKERRQ(ierr);
-
-	double t_glob[9],t_loc[9]; 
-	bzero(t_loc,9*sizeof(double));
-	for(int nn = 0;nn<3;nn++) {
-	  t_glob[3*nn+0] = lambda*mydata.data.value3*mydata.data.value1;
-	  t_glob[3*nn+1] = lambda*mydata.data.value4*mydata.data.value1;
-	  t_glob[3*nn+2] = lambda*mydata.data.value5*mydata.data.value1;
-	}
-  
-	Range NeumannSideSet;
-	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRQ(ierr);
-
-	if(op&LHS) {
-	  ierr = CalculateMaterialTangentExt(*B,t_loc,t_glob,NeumannSideSet); CHKERRQ(ierr);
-	}
-	if((op&RHS)&&(FEXT)) {
-	  ierr = CaluclateMaterialFext(f,t_loc,t_glob,NeumannSideSet) ; CHKERRQ(ierr);
-	}
-
-      }
-
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  //FEMethod_DriverComplexForLazy_Material
-  PetscErrorCode operator()() {
-    PetscFunctionBegin;
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+      this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
-	ierr = operator()(snes_B,snes_f,RHS|FEXT|FINT); CHKERRQ(ierr);
+	ierr = CalculateMaterialFint(snes_f); CHKERRQ(ierr);
+	ierr = CaluclateMaterialKFext(PETSC_NULL,snes_f,*(this->t_val)); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = operator()(snes_B,snes_f,LHS|TANGENT); CHKERRQ(ierr);
+	ierr = GetTangent(); CHKERRQ(ierr);
+	ierr = AssembleMaterialTangent(*snes_B); CHKERRQ(ierr);
+	ierr = CaluclateMaterialKFext(*snes_B,PETSC_NULL,*(this->t_val)); CHKERRQ(ierr);
       }
       break;
       default:
@@ -873,166 +758,136 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     }
     PetscFunctionReturn(0);
   }
-
 };
 
 struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComplexForLazy_Material {
 
-  bool add_diag,scale_front;
-  double alpha3;
-  FEMethod_DriverComplexForLazy_MeshSmoothing(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _alpha3,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,0,0,_verbose) {
-      type_of_analysis = mesh_quality_analysis;
+  Vec front_f;
+  Vec tangent_front_f;
 
+  FEMethod_DriverComplexForLazy_MeshSmoothing(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,0,0,_verbose),
+      front_f(PETSC_NULL),tangent_front_f(PETSC_NULL) {
+      type_of_analysis = mesh_quality_analysis;
       g_NTET.resize(4*1);
       ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
       g_TET_W = G_TET_W1;
-
-      add_diag = false;
-      scale_front = false;
-      alpha3 = _alpha3;
-
     }
 
-
-  Range crackFrontNodes; 
-  PetscErrorCode init_crack_front_data(bool _add_diag = false,bool _scale_front = false) {
-      PetscFunctionBegin;
-      add_diag = _add_diag;
-      scale_front = _scale_front;
-      Range crack_corners_edges;
-      ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
-      rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontNodes,true); CHKERR_PETSC(rval);
-      PetscFunctionReturn(0);
+  //FEMethod_DriverComplexForLazy_MeshSmoothing
+  ~FEMethod_DriverComplexForLazy_MeshSmoothing() {
+    if(front_f!=PETSC_NULL) {
+      ierr = VecDestroy(&front_f); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      front_f = PETSC_NULL;
     }
+    if(tangent_front_f!=PETSC_NULL) {
+      ierr = VecDestroy(&tangent_front_f); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      tangent_front_f = PETSC_NULL;
+    }
+  }
 
+  //FEMethod_DriverComplexForLazy_MeshSmoothing
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    ierr = FEMethod_DriverComplexForLazy_Material::preProcess(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_MeshSmoothing
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    ierr = FEMethod_DriverComplexForLazy_Material::postProcess(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_MeshSmoothing
   virtual PetscErrorCode CalculateMeshSmoothingTangent(Mat B) {
     PetscFunctionBegin;
-
     vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
-    if(!scale_front) 
-    if(!crackFrontNodes.empty())
-    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-      //if is crack front edge
-      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) != crackFrontNodes.end()) {
-	vector<DofIdx>::iterator it = find(frontRowGlobMaterial.begin(),frontRowGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());
-	if(it != frontRowGlobMaterial.end()) {
-	  *it = -1;
-	}
-      }
-    }
-    vector<DofIdx> frontColGlobMaterial = ColGlobMaterial[i_nodes];
-    if(add_diag) 
-    if(!crackFrontNodes.empty())
-    for(_IT_GET_FECOL_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-      //if is crack front edge
-      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) != crackFrontNodes.end()) {
-	vector<DofIdx>::iterator it = find(frontColGlobMaterial.begin(),frontColGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());  
-	if(it != frontColGlobMaterial.end()) {
-	  *it = -1;
-	}
-      }
-    }
-    //if(c == frontRowGlobMaterial.size()) PetscFunctionReturn(0);
-
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
+    vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
     switch(snes_ctx) {
-      case ctx_SNESNone:
       case ctx_SNESSetFunction:
       case ctx_SNESSetJacobian:
 	ierr = GetTangent(); CHKERRQ(ierr);
-      
-	if(scale_front)
-	if(!crackFrontNodes.empty())
-	for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-	  //if is crack front edge
-	  if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) != crackFrontNodes.end()) {
-	    vector<DofIdx>::iterator it = find(frontRowGlobMaterial.begin(),frontRowGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());
-	    if(it != frontRowGlobMaterial.end()) {
-	      for(int dd = 0;dd<12;dd++) {
-		KHH(distance(frontRowGlobMaterial.begin(),it),dd) *= alpha3;
+	ierr = MatSetValues(B,
+	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	if(!crackFrontNodes.empty()) {
+	  double *f_tangent_front_mesh_array;
+	  if(tangent_front_f==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
+	  ierr = VecGetArray(tangent_front_f,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+	  for(int nn = 0;nn<4;nn++) {
+	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	    dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
+	    hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
+	    if(distance(dit,hi_dit)>0) {
+	      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
+	      diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(material_field_name,conn[nn]));
+	      hi_diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(material_field_name,conn[nn]));
+	      for(;diit!=hi_diit;diit++) {
+		for(unsigned int ddd = 0;ddd<ColGlobMaterial[i_nodes].size();ddd++) {
+		  if(frontRowGlobMaterial_front_only[3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
+		    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		  }
+		  if(diit->get_petsc_local_dof_idx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		  double g = f_tangent_front_mesh_array[diit->get_petsc_local_dof_idx()]*KHH(3*nn+diit->get_dof_rank(),ddd);
+		  DofIdx lambda_idx = dit->get_petsc_gloabl_dof_idx();
+		  ierr = MatSetValues(B,1,&lambda_idx,1,&ColGlobMaterial[i_nodes][ddd],&g,ADD_VALUES); CHKERRQ(ierr);
+		}
 	      }
 	    }
 	  }
+	  ierr = VecRestoreArray(tangent_front_f,&f_tangent_front_mesh_array); CHKERRQ(ierr);
 	}
-
-	ierr = MatSetValues(B,
-	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-	  frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
-	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-
     PetscFunctionReturn(0);
   }
-
+  //FEMethod_DriverComplexForLazy_MeshSmoothing
   virtual PetscErrorCode CalculateMeshSmoothingFint(Vec f) {
     PetscFunctionBegin;
-
     vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
-    if(!scale_front)
-    if(!crackFrontNodes.empty())
-    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-      //if is crack front edge
-      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) != crackFrontNodes.end()) {
-	vector<DofIdx>::iterator it = find(frontRowGlobMaterial.begin(),frontRowGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());
-	if(it != frontRowGlobMaterial.end()) {
-	  *it = -1;
-	}
-      }
-    }
-
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
+    vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
     switch(snes_ctx) {
-      case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
         ierr = GetFint(); CHKERRQ(ierr);
-
-	if(scale_front)
-	if(!crackFrontNodes.empty())
-	for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-	  //if is crack front edge
-	  if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) != crackFrontNodes.end()) {
-	    vector<DofIdx>::iterator it = find(frontRowGlobMaterial.begin(),frontRowGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());
-	    if(it != frontRowGlobMaterial.end()) {
-	      Fint_H[distance(frontRowGlobMaterial.begin(),it)] *= alpha3;
-	    }
-	  }
-	}
 	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 	//cerr << "Fint_h " << Fint_h << endl;
 	ierr = VecSetValues(f,frontRowGlobMaterial.size(),&(frontRowGlobMaterial[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	if(!crackFrontNodes.empty()) {
+	  if(front_f==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
+	  ierr = VecSetValues(front_f,frontRowGlobMaterial_front_only.size(),&(frontRowGlobMaterial_front_only[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	}
       }
       break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-
     PetscFunctionReturn(0);
   }
-
   enum op_ctx { NO = 0, LHS = 1<<0,RHS = 1<<1 }; 
   //FEMethod_DriverComplexForLazy_MeshSmoothing
   PetscErrorCode operator()(Mat *B,const int op) {
     PetscFunctionBegin;
     if(op == NO) PetscFunctionReturn(0);
-
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
-
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
-
+    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
+      this,RowGlobMaterial,ColGlobMaterial,DirihletBC); CHKERRQ(ierr);
     if(op&LHS) {
       ierr = CalculateMeshSmoothingTangent(*B); CHKERRQ(ierr);
     }
     if(op&RHS) {
       ierr = CalculateMeshSmoothingFint(snes_f); CHKERRQ(ierr);
     }
-  
     PetscFunctionReturn(0);
   }
-
   //FEMethod_DriverComplexForLazy_MeshSmoothing
   PetscErrorCode operator()() {
     PetscFunctionBegin;
@@ -1048,8 +903,191 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
     }
     PetscFunctionReturn(0);
   }
-
 };
+
+struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverComplexForLazy_Spatial,InitCrackFrontNodes {
+  FEMethod_DriverComplexForLazy_CoupledSpatial(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {}
+  //FEMethod_DriverComplexForLazy_CoupledSpatial
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+        nodal_forces_not_added = true;
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+        ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      }
+      break;
+      default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_CoupledSpatial
+  virtual PetscErrorCode AssembleSpatialCoupledTangent(Mat B) {
+    PetscFunctionBegin;
+    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,true); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESSetJacobian:
+        ierr = MatSetValues(B,
+	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	  ColGlobSpatial[i_nodes].size(),&*(ColGlobSpatial[i_nodes].begin()),
+	  &*(KHh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+        for(int ee = 0;ee<6;ee++) {
+	  ierr = MatSetValues(B,
+	    frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	    ColGlobSpatial[1+ee].size(),&*(ColGlobSpatial[1+ee].begin()),
+	    &*(KHedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+        }
+        for(int ff = 0;ff<4;ff++) {
+	  ierr = MatSetValues(B,
+	    frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	    ColGlobSpatial[1+6+ff].size(),&*(ColGlobSpatial[1+6+ff].begin()),
+	    &*(KHface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+        }
+        ierr = MatSetValues(B,
+	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	  ColGlobSpatial[i_volume].size(),&*(ColGlobSpatial[i_volume].begin()),
+	  &*(KHvolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_CoupledSpatial
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_CoupledSpatial
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESNone:     
+	break;
+      case ctx_SNESSetFunction: { 
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+        ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*snes_B); CHKERRQ(ierr);
+      }
+      break;
+      default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+};
+
+struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComplexForLazy_Material {
+  FEMethod_DriverComplexForLazy_CoupledMaterial(
+    FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {}
+  //FEMethod_DriverComplexForLazy_CoupledMaterial
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+	break;
+      case ctx_SNESSetFunction:  
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	break;
+      case ctx_SNESSetJacobian: 
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    ierr = FEMethod_DriverComplexForLazy_Spatial::preProcess(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_CoupledMaterial
+  virtual PetscErrorCode AssembleMaterialCoupledTangent(Mat B) {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESSetJacobian:
+	ierr = MatSetValues(B,
+	  RowGlobSpatial[i_nodes].size(),&*(RowGlobSpatial[i_nodes].begin()),
+	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+	  &*(KhH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	for(int ee = 0;ee<6;ee++) {
+	  ierr = MatSetValues(B,
+	    RowGlobSpatial[1+ee].size(),&*(RowGlobSpatial[1+ee].begin()),
+	    ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+	    &*(KedgeH_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	for(int ff = 0;ff<4;ff++) {
+	  ierr = MatSetValues(B,
+	    RowGlobSpatial[1+6+ff].size(),&*(RowGlobSpatial[1+6+ff].begin()),
+	    ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+	    &*(KfaceH_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	}
+	ierr = MatSetValues(B,
+	  RowGlobSpatial[i_volume].size(),&*(RowGlobSpatial[i_volume].begin()),
+	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+	  &*(KvolumeH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_CoupledMaterial
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    PetscFunctionReturn(0);
+  }
+  //FEMethod_DriverComplexForLazy_CoupledMaterial
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESNone:     
+	break;
+      case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*snes_B); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+};
+
+//// **** MATRIX PROJECTION ****
 
 struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexForLazy_Data {
 
@@ -1083,8 +1121,6 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
     C_SURFACE_FEMethod *CFE_SURFACE;
     g_SURFACE_FEMethod *gFE_SURFACE;
-    C_CORNER_FEMethod *CFE_CORNER;
-    g_CORNER_FEMethod *gFE_CORNER;
     //CRACK
     C_SURFACE_FEMethod *CFE_CRACK_SURFACE;
     g_SURFACE_FEMethod *gFE_CRACK_SURFACE;
@@ -1096,11 +1132,10 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
     }
 
     try {
-      gFE_SURFACE = new g_SURFACE_FEMethod(moab,proj_all_ctx.g);
-      gFE_CORNER = new g_CORNER_FEMethod(moab,proj_all_ctx.g);
+      gFE_SURFACE = new g_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.g);
       if(cs) {
-	  //CRACK
-	  gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
+	//CRACK
+	gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -1113,11 +1148,10 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	ierr = mField.set_global_VecCreateGhost(problem_name,Col,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 	try {
-	CFE_SURFACE = new C_SURFACE_FEMethod(moab,proj_all_ctx.C);
-	CFE_CORNER = new C_CORNER_FEMethod(moab,proj_all_ctx.C);
+	CFE_SURFACE = new C_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.C);
 	if(cs) {
 	  //CRACK
-	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
+	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
 	}
 	} catch (const std::exception& ex) {
 	  ostringstream ss;
@@ -1133,9 +1167,6 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	if(cs) {
 	  ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",*CFE_CRACK_SURFACE);  CHKERRQ(ierr);
 	}
-	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*CFE_CORNER);  CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(proj_all_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
@@ -1149,7 +1180,6 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	ierr = proj_all_ctx.InitQTKQ(); CHKERRQ(ierr);
 
 	delete CFE_SURFACE;
-	delete CFE_CORNER;
 	if(cs) {
 	  delete CFE_CRACK_SURFACE;
 	}
@@ -1171,18 +1201,11 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
     ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
 
-    ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CORNER_ELEM",*gFE_CORNER);  CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(proj_all_ctx.g,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(proj_all_ctx.g,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(proj_all_ctx.g); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(proj_all_ctx.g); CHKERRQ(ierr);
-
     PetscReal g_nrm2;
     ierr = VecNorm(proj_all_ctx.g, NORM_2,&g_nrm2); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"\tg_nrm2 = %6.4e\n",g_nrm2);
 
     delete gFE_SURFACE;
-    delete gFE_CORNER;
     if(cs) {
       delete gFE_CRACK_SURFACE;
     }
@@ -1195,8 +1218,8 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
     switch(snes_ctx) {
       case ctx_SNESNone:
+	break;
       case ctx_SNESSetFunction: { 
-
 	ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
@@ -1291,83 +1314,11 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 
 };
 
-struct FEMethod_DriverComplexForLazy_MaterialProjected: public FEMethod_DriverComplexForLazy_Material,FEMethod_DriverComplexForLazy_Projected {
-
-  FEMethod_DriverComplexForLazy_MaterialProjected(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),
-    FEMethod_DriverComplexForLazy_Projected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,"MATERIAL_MECHANICS") {
-      type_of_analysis = material_analysis;
-    }
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction: { 
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetJacobian: {
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-
-  PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
-	ierr = FEMethod_DriverComplexForLazy_Material::operator()(&(proj_all_ctx.K),snes_f,RHS|LHS|TANGENT|FEXT|FINT); CHKERRQ(ierr);
-      break;
-      case ctx_SNESSetJacobian:
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetJacobian: {
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-
-};
-
 struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_DriverComplexForLazy_MeshSmoothing,FEMethod_DriverComplexForLazy_Projected {
 
   FEMethod_DriverComplexForLazy_MeshSmoothingProjected(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _alpha3,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_alpha3,_verbose),
+    FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_verbose),
     FEMethod_DriverComplexForLazy_Projected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,"MESH_SMOOTHING") {
     cs = false;
   }
@@ -1441,513 +1392,6 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothingProjected: public FEMethod_Dri
     }
     PetscFunctionReturn(0);
   }
-
-
-};
-
-struct FEMethod_DriverComplexForLazy_CoupledSpatial: public FEMethod_DriverComplexForLazy_Spatial {
-
-  matPROJ_ctx& proj_all_ctx;
-  FEMethod_DriverComplexForLazy_CoupledSpatial(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),
-    proj_all_ctx(_proj_all_ctx) {}
-
-  Range crackFrontNodes; 
-    PetscErrorCode init_crack_front_data() {
-      PetscFunctionBegin;
-      Range crack_corners_edges;
-      ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
-      rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontNodes,true); CHKERR_PETSC(rval);
-      PetscFunctionReturn(0);
-    }
-
-  Vec tmp_snes_f;
-  //FEMethod_DriverComplexForLazy_CoupledSpatial
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-    //ierr = PetscTime(&v1); CHKERRQ(ierr);
-    //ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-    switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction: { 
-        nodal_forces_not_added = true;
-	ierr = VecDuplicate(snes_f,&tmp_snes_f); CHKERRQ(ierr);
-	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
-	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetJacobian: {
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  //FEMethod_DriverComplexForLazy_CoupledSpatial
-  virtual PetscErrorCode AssembleSpatialCoupledTangent(Mat B) {
-    PetscFunctionBegin;
-
-    unsigned int c = 0;
-    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
-    if(!crackFrontNodes.empty())
-    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-      //if is not crack front edge
-      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) == crackFrontNodes.end()) {
-	vector<DofIdx>::iterator it = find(frontRowGlobMaterial.begin(),frontRowGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());
-	if(it != frontRowGlobMaterial.end()) {
-	  *it = -1;
-	  c++;
-	}
-      }
-    }
-    //if(c == frontRowGlobMaterial.size()) PetscFunctionReturn(0);
-    
-    switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction:
-      case ctx_SNESSetJacobian:
-	ierr = MatSetValues(B,
-	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-	  ColGlobSpatial[i_nodes].size(),&*(ColGlobSpatial[i_nodes].begin()),
-	  &*(KHh.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	for(int ee = 0;ee<6;ee++) {
-	  ierr = MatSetValues(B,
-	    frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-	    ColGlobSpatial[1+ee].size(),&*(ColGlobSpatial[1+ee].begin()),
-	    &*(KHedge_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	}
-	for(int ff = 0;ff<4;ff++) {
-	  ierr = MatSetValues(B,
-	    frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-	    ColGlobSpatial[1+6+ff].size(),&*(ColGlobSpatial[1+6+ff].begin()),
-	    &*(KHface_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	}
-	ierr = MatSetValues(B,
-	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-	  ColGlobSpatial[i_volume].size(),&*(ColGlobSpatial[i_volume].begin()),
-	  &*(KHvolume.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-
-  }
-
-  //FEMethod_DriverComplexForLazy_CoupledSpatial
-  PetscErrorCode CalulateKFint(Mat K,Vec f) {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
-	ierr = CalculateSpatialFint(f); CHKERRQ(ierr);
-	ierr = CalculateSpatialTangent(K); CHKERRQ(ierr);
-	ierr = GetIndicesRow(RowGlobMaterial,material_field_name); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesRow(this,RowGlobMaterial,DirihletBC); CHKERRQ(ierr);
-	ierr = AssembleSpatialCoupledTangent(K); CHKERRQ(ierr);
-	break;
-      case ctx_SNESSetJacobian:
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  //FEMethod_DriverComplexForLazy_CoupledSpatial
-  PetscErrorCode operator()() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
-
-      ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
-      ierr = GetIndicesSpatial(); CHKERRQ(ierr);
-
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlobSpatial,ColGlobSpatial,DirihletBC); CHKERRQ(ierr);
-      ierr = CalulateKFint(proj_all_ctx.K,snes_f); CHKERRQ(ierr);
-      ierr = CalulateKFext(proj_all_ctx.K,snes_f,(*(this->t_val))); CHKERRQ(ierr);
-
-      case ctx_SNESSetJacobian:
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  //FEMethod_DriverComplexForLazy_CoupledSpatial
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	PetscReal snes_f_nrm2;
-	ierr = VecNorm(snes_f, NORM_2,&snes_f_nrm2); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tspatial f_nrm2 = %6.4e\n",snes_f_nrm2);
-	ierr = VecAXPY(tmp_snes_f,1,snes_f); CHKERRQ(ierr);
-	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
-	ierr = VecDestroy(&tmp_snes_f); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetJacobian: {
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-
-};
-
-struct FEMethod_DriverComplexForLazy_CoupledMaterial: public FEMethod_DriverComplexForLazy_Material {
-
-  matPROJ_ctx& proj_all_ctx;
-  FEMethod_DriverComplexForLazy_CoupledMaterial(
-    FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose),
-    proj_all_ctx(_proj_all_ctx) {}
-
-  Vec tmp_snes_f;
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction:  
-	ierr = VecDuplicate(snes_f,&tmp_snes_f); CHKERRQ(ierr);
-	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
-	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	break;
-      case ctx_SNESSetJacobian: 
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    ierr = FEMethod_DriverComplexForLazy_Spatial::preProcess(); CHKERRQ(ierr);
-
-    PetscFunctionReturn(0);
-  }
-
-  virtual PetscErrorCode AssembleMaterialCoupledTangent(Mat B) {
-    PetscFunctionBegin;
-
-    vector<DofIdx> frontColGlobMaterial = ColGlobMaterial[i_nodes];
-    if(add_diag)
-    if(!crackFrontNodes.empty())
-    for(_IT_GET_FECOL_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-      //if is crack front edge
-      if(find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent()) != crackFrontNodes.end()) {
-	vector<DofIdx>::iterator it = find(frontColGlobMaterial.begin(),frontColGlobMaterial.end(),dof->get_petsc_gloabl_dof_idx());
-	if(it != frontColGlobMaterial.end()) {
-	  *it = -1;
-	}
-      }
-    }
-
-    switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction:  
-      case ctx_SNESSetJacobian:
-	ierr = MatSetValues(B,
-	  RowGlobSpatial[i_nodes].size(),&*(RowGlobSpatial[i_nodes].begin()),
-	  frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
-	  &*(KhH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	for(int ee = 0;ee<6;ee++) {
-	  ierr = MatSetValues(B,
-	    RowGlobSpatial[1+ee].size(),&*(RowGlobSpatial[1+ee].begin()),
-	    frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
-	    &*(KedgeH_data[ee].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	}
-	for(int ff = 0;ff<4;ff++) {
-	  ierr = MatSetValues(B,
-	    RowGlobSpatial[1+6+ff].size(),&*(RowGlobSpatial[1+6+ff].begin()),
-	    frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
-	    &*(KfaceH_data[ff].data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	}
-	ierr = MatSetValues(B,
-	  RowGlobSpatial[i_volume].size(),&*(RowGlobSpatial[i_volume].begin()),
-	  frontColGlobMaterial.size(),&*(frontColGlobMaterial.begin()),
-	  &*(KvolumeH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-
-  }
-
-  PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
-	ierr = FEMethod_DriverComplexForLazy_Material::operator()(&(proj_all_ctx.K),snes_f,RHS|LHS|TANGENT|FEXT|FINT); CHKERRQ(ierr);
-	ierr = GetIndicesRow(RowGlobSpatial,spatial_field_name); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesRow(this,RowGlobSpatial,DirihletBC); CHKERRQ(ierr);
-	ierr = AssembleMaterialCoupledTangent(proj_all_ctx.K); CHKERRQ(ierr);
-      break;
-      case ctx_SNESSetJacobian:
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	PetscReal snes_f_nrm2;
-	ierr = VecNorm(snes_f, NORM_2,&snes_f_nrm2); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tmaterial f_nrm2 = %6.4e\n",snes_f_nrm2);
-	ierr = VecAXPY(tmp_snes_f,1,snes_f); CHKERRQ(ierr);
-	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
-	ierr = VecDestroy(&tmp_snes_f); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetJacobian: {
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-};
-
-struct FEMethod_DriverComplexForLazy_CoupledMeshSmoother: public FEMethod_DriverComplexForLazy_MeshSmoothing {
-
-  matPROJ_ctx& proj_all_ctx;
-  FEMethod_DriverComplexForLazy_CoupledMeshSmoother(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,double _alpha3,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_MeshSmoothing(_mField,_dirihlet_bc_method_ptr,_alpha3,_verbose),
-    proj_all_ctx(_proj_all_ctx) {}
-
-  Vec tmp_snes_f;
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction: 
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = VecDuplicate(snes_f,&tmp_snes_f); CHKERRQ(ierr);
-	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
-	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	break;
-      case ctx_SNESSetJacobian: 
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
-	ierr = FEMethod_DriverComplexForLazy_MeshSmoothing::operator()(&(proj_all_ctx.K),LHS|RHS); CHKERRQ(ierr);
-      break;
-      case ctx_SNESSetJacobian:
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction: {
-
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	PetscReal snes_f_nrm2;
-	ierr = VecNorm(snes_f, NORM_2,&snes_f_nrm2); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tsmoother f_nrm2 = %6.4e\n",snes_f_nrm2);
-	ierr = VecAXPY(tmp_snes_f,1,snes_f); CHKERRQ(ierr);
-	ierr = VecSwap(snes_f,tmp_snes_f); CHKERRQ(ierr);
-	ierr = VecDestroy(&tmp_snes_f); CHKERRQ(ierr);
-
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-
-	if(add_diag) {
-	  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"MESH_NODE_POSITIONS",dof)) {
-	    if(dof->get_part()!=pcomm->rank()) continue;
-	    EntityHandle ent = dof->get_ent();
-	    if(find(crackFrontNodes.begin(),crackFrontNodes.end(),ent) != crackFrontNodes.end()) {
-	      ierr = MatSetValue(proj_all_ctx.K,dof->get_petsc_gloabl_dof_idx(),dof->get_petsc_gloabl_dof_idx(),1,INSERT_VALUES); CHKERRQ(ierr);
-	      ierr = VecSetValue(snes_f,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
-	    }
-	  }
-	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	  ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	}
-
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
-	} break;
-      case ctx_SNESSetJacobian: 
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-};
-
-struct FEMethod_DriverComplexForLazy_CoupledProjected: public FEMethod_DriverComplexForLazy_Projected {
-
-  FEMethod_DriverComplexForLazy_CoupledProjected(FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,BaseDirihletBC *_dirihlet_bc_method_ptr,string _problem_name,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    FEMethod_DriverComplexForLazy_Projected(_mField,_proj_all_ctx,_dirihlet_bc_method_ptr,_problem_name) {} 
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
-	ierr = _preProcess_ctx_SNESSetFunction(snes_x,snes_f); CHKERRQ(ierr);
-	break;
-      case ctx_SNESSetJacobian: 
-	break;
-      default:
-	break;
-    }
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
-	ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-	ierr = MatZeroEntries(proj_all_ctx.K); CHKERRQ(ierr);
-	break;
-      case ctx_SNESSetJacobian:
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
-
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-	Range crack_corners_edges,crackFrontNodes;
-	ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
-	rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontNodes,true); CHKERR_PETSC(rval);
-
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,proj_all_ctx.K); CHKERRQ(ierr);
-
-	ierr = MatAssemblyBegin(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(proj_all_ctx.K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	
-	ierr = _postProcess_ctx_SNESSetFunction(snes_f); CHKERRQ(ierr);
-	/*{
-	  MatView(proj_all_ctx.K,PETSC_VIEWER_DRAW_WORLD);
-	  std::string wait;
-	  std::cin >> wait;
-	}*/
-      }
-      break;
-      case ctx_SNESSetJacobian:
-	ierr = _postProcess_ctx_SNESSetJacobian(snes_B); CHKERRQ(ierr);
-	break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
 };
 
 }

@@ -44,6 +44,12 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
+	
+	PetscInt order;
+	ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+	if(flg != PETSC_TRUE) {
+		order = 4;
+	}
 
   PetscScalar step_size_reduction;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRQ(ierr);
@@ -159,9 +165,9 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGTH,"ARC_LENGTH"); CHKERRQ(ierr);
 
     //set app. order
-    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",4); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",4); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",4); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
   }
 
@@ -226,8 +232,26 @@ int main(int argc, char *argv[]) {
   DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.25;
+	double YoungModulus = 1;
+	double PoissonRatio = 0.25;
+	
+	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+	{
+		cout << endl << *it << endl;
+		
+		//Get block name
+		string name = it->get_Cubit_name();
+		
+		if (name.compare(0,11,"MAT_ELASTIC") == 0)
+		{
+			Mat_Elastic mydata;
+			ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+			cout << mydata;
+			YoungModulus=mydata.data.Young;
+			PoissonRatio=mydata.data.Poisson;
+		}
+	}
+	
   Range NodeSet1;
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
@@ -373,8 +397,18 @@ int main(int argc, char *argv[]) {
 	sss << "restart_" << step << ".h5m";
 	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
       }
+      PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
+      ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
+      if(pcomm->rank()==0) {
+	EntityHandle out_meshset;
+	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+	ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+	ostringstream sss;
+	sss << "out_" << step << ".vtk";
+	rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+      }
     }
-
   }
   
   PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");

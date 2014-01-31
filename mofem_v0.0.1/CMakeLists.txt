@@ -107,13 +107,13 @@ add_library(mofem_student_body
   student_body/FEMethod_UpLevelStudent.cpp
   student_body/DirihletBC.cpp
   student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
-  student_body/FEMethod_SurfaceConstrains.cpp
   student_body/ArcLengthTools.cpp
 )
 
 add_library(mofem_complex_for_lazy
   complex_for_lazy/complex_for_lazy.c
   complex_for_lazy/FEMethod_ComplexForLazy.cpp
+  complex_for_lazy/FEMethod_SurfaceConstrains.cpp
   complex_for_lazy/ConfigurationalFractureMechanics.cpp
 )
 
@@ -142,6 +142,9 @@ enable_testing()
 include(CTest)
 add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
+add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks")
+
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/benchmarks" DESTINATION mofem)
 
 # add a target to generate API documentation with Doxygen
 find_package(Doxygen)

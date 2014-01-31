@@ -223,23 +223,23 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	gap[gg] = ublas::zero_vector<FieldData>(3);
 	//nodes
 	double *nodeNTRI = &g_NTRI[gg*3];
-	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator 
-	  dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,0));
-	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator 
-	  hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,2));
+	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator 
+	  dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,0));
+	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator 
+	  hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,2));
 	for(;dit!=hi_dit;dit++) {
 	  (gap[gg])[dit->get_dof_rank()] += nodeNTRI[dit->side_number_ptr->side_number]*dit->get_FieldData();
 	}
-	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,3));
-	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,5));
+	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,3));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBVERTEX,5));
 	for(;dit!=hi_dit;dit++) {
 	  assert(dit->side_number_ptr->side_number>=3);
 	  assert(dit->side_number_ptr->side_number<=5);
 	  (gap[gg])[dit->get_dof_rank()] -= nodeNTRI[dit->side_number_ptr->side_number-3]*dit->get_FieldData();
 	}
 	//edges
-	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,0));
-	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,2));
+	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,0));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,2));
 	for(;dit!=hi_dit;dit++) {
 	  int side_number = dit->side_number_ptr->side_number;	
 	  assert(side_number >= 0);
@@ -250,8 +250,8 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
 	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
-	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,6));
-	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,8));
+	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,6));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBEDGE,8));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
@@ -260,8 +260,8 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	} 
 	//faces
-	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
-	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
+	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,3));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderFaceH1[dit->side_number_ptr->side_number]);
@@ -269,8 +269,8 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
 	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
 	}
- 	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
-	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+ 	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",MBTRI,4));
 	for(;dit!=hi_dit;dit++) {
 	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
 	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderFaceH1[dit->side_number_ptr->side_number]);
@@ -453,7 +453,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     int g_dim = g_NTRI.size()/3;
     EntityHandle fe_ent = fe_ptr->get_ent();
     vector<double> def_kappa(g_dim,0);
-    rval = moab.tag_get_handle("_KAPPA",g_dim,MB_TYPE_DOUBLE,th_kappa,MB_TAG_CREAT|MB_TAG_SPARSE,&def_kappa[0]);  
+    rval = moab.tag_get_handle("_KAPPA",g_dim,MB_TYPE_DOUBLE,th_kappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_EXCL,&def_kappa[0]);  
     if(rval==MB_ALREADY_ALLOCATED) {
       rval = MB_SUCCESS;
     } else {

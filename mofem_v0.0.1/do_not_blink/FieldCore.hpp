@@ -87,6 +87,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode check_number_of_ents_in_ents_field(const string& name);
 
   //cubit meshsets
+  virtual bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, const int dimension,Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false);
@@ -124,7 +125,17 @@ struct FieldCore: public FieldInterface {
 	ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
 	ostringstream ss;
 	ss << *it << endl;
-	ss << data;
+	ss << data << endl;
+	Range tets,tris,edges,nodes;
+	rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+	ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
+	ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
+	ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;
+	ss << "msId "<< it->get_msId() << " nb. nodes " << nodes.size() << endl;
+	ss << endl;
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
     } catch (const char* msg) {
@@ -176,6 +187,10 @@ struct FieldCore: public FieldInterface {
       ostringstream ss;
       ss << *it << endl;
       ss << data;
+      Range tets;
+      rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+      ss << "MAT_ELATIC msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
+      ss << endl;
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
       
@@ -193,6 +208,10 @@ struct FieldCore: public FieldInterface {
         ostringstream ss;
         ss << *it << endl;
         ss << data;
+	Range tets;
+	rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+	ss << "MAT_TRANSISO msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
+	ss << endl;
         PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
 
@@ -225,6 +244,8 @@ struct FieldCore: public FieldInterface {
     enum MoFEMTypes bh = MF_EXCL,int verb = -1);
   PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,
     enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
@@ -244,6 +265,7 @@ struct FieldCore: public FieldInterface {
   string get_BitFieldId_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const string& name) const;
+  bool check_field(const string& name) const;
 
   //MoFEMFiniteElement
   PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
@@ -346,12 +368,12 @@ struct FieldCore: public FieldInterface {
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const string &field_name);
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const string &field_name);
 
-  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name);
-  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name);
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent);
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent);
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type);
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType ent);
+  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name) const;
+  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) const;
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent);
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent);
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type);
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType ent);
 
   EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name);
   EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name);
@@ -359,6 +381,9 @@ struct FieldCore: public FieldInterface {
   //Copy Vector of Field to Another
   PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
+  PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool creat_if_missing = false);
+  PetscErrorCode field_scale(const double alpha,const string& fiel_name);
+  PetscErrorCode set_field(const double val,const EntityType type,const string& fiel_name);
 
   //constructor
   FieldCore(Interface& _moab,int _verbose = 1);
@@ -432,7 +457,10 @@ struct FieldCore: public FieldInterface {
 	  dofs_vec2.resize(0);
 	  dofs_vec2.insert(dofs_vec2.end(),dofs_vec.begin(),dofs_vec.end());
 	  vector<DofIdx>::iterator vit = find(dofs_vec2.begin(),dofs_vec2.end(),Tag::get_index(miit_row));
-	  if(vit==dofs_vec2.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  if(vit==dofs_vec2.end()) {
+	    continue; // matrix can have no diagonals entries
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
 	  dofs_vec2.erase(vit);
 	  j.insert(j.end(),dofs_vec2.begin(),dofs_vec2.end());
 	} else {

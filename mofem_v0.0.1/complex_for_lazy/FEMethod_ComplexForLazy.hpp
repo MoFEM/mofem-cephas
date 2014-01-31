@@ -24,6 +24,7 @@
 #include "FieldInterface.hpp"
 #include "CoreDataStructures.hpp"
 #include "FEMethod_UpLevelStudent.hpp"
+#include "complex_for_lazy.h"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -54,15 +55,18 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
 
   enum eRowGlob { i_nodes = 0, i_edge0=1+0, i_edge1=1+1, i_edge2=1+2, i_edge3=1+3, i_edge4=1+4, i_edge5=1+5, 
     i_face0=1+6+0, i_face1=1+6+1, i_face2=1+6+2, i_face3=1+6+3, i_volume=1+6+4, i_last=1+6+4+1 };
-  enum analysis { spatail_analysis = 1, material_analysis = 1<<1, mesh_quality_analysis = 1<<2, analaysis_none = 1<<3 };
+  enum analysis { 
+    spatail_analysis = 1, material_analysis = 1<<1, mesh_quality_analysis = 1<<2, 
+    scaled_themp_direvative_spatial = 1<<3, scaled_themp_direvative_material = 1<<5, analaysis_none = 1<<6 };
   analysis type_of_analysis;
   enum forces { conservative = 1, nonconservative = 2};
   forces type_of_forces;
 
-  double lambda,mu;
+  double lambda,mu,thermal_expansion;
   void *ptr_matctx;
   bool propeties_from_BlockSet_Mat_ElasticSet;
-  PetscErrorCode GetMatParameters(double *_lambda,double *_mu,void *ptr_matctx);
+  PetscErrorCode GetMatParameters(double *_lambda,double *_mu,double *_termal_epansion,void *ptr_matctx);
+  ctx_EberleinHolzapfel1 EberleinHolzapfel1_mat_parameters;
 
   double eps;
 
@@ -70,9 +74,11 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double alpha2,gamma;
 
   string spatial_field_name;
-  string material_field_name;
+  string material_field_name;	
+  string termal_field_name;
   FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
-    analysis _type,double _lambda,double _mu,int _verbose = 0);
+    analysis _type,double _lambda,double _mu,double _thermal_expansion,int _verbose);
+  ~FEMethod_ComplexForLazy();
 
   int g_TRI_dim;
   vector<double> g_NTET,g_NTRI;
@@ -81,12 +87,12 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   ErrorCode rval;  
   PetscErrorCode ierr;
 
-  vector<double*> edgeNinvJac;
-  vector<double*> faceNinvJac;
-  double *volumeN;
   vector<double*> diff_edgeNinvJac;
   vector<double*> diff_faceNinvJac;
   double *diff_volumeNinvJac;
+  vector<double*> edgeN;
+  vector<double*> faceN;
+  double *volumeN;
 
   //Tangent_HH_hierachical
   ublas::matrix<double> KHH,KhH,KvolumeH;
@@ -160,7 +166,11 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   vector<double*> dofs_X_edge,dofs_X_face;
   PetscErrorCode GetIndicesMaterial();
 
+  //temperature
+  ublas::vector<double> dofs_temp;
+
   PetscErrorCode GetDofs_X_FromElementData();
+  PetscErrorCode GetDofs_Termal_FromElementData();
 
   Tag th_quality0,th_quality,th_b;
   double *quality0,*quality,*b;

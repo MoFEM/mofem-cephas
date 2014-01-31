@@ -1,6 +1,7 @@
 reset
 
 create sphere radius 1 
+#brick x 1 y 1 z 1
 brick x 2 y 0.5 z 2
 move Volume 2 x 0 y 0.75 z 0 include_merged
 brick x 2 y 0.5 z 2
@@ -23,10 +24,11 @@ Block 1 Material 1
 block 1 attribute index 1 111
 
 volume all scheme Tetmesh
-volume all size auto factor 6
+volume all size auto factor 7
 mesh volume all
 
 
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.0.1/meshes/chees.cub" overwrite
+
 
 

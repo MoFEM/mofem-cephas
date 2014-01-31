@@ -32,17 +32,20 @@ namespace MoFEM {
 
 FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
     analysis _type,
-    double _lambda,double _mu, int _verbose): 
+    double _lambda,double _mu,double _thermal_expansion,int _verbose): 
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    type_of_analysis(_type),type_of_forces(conservative),lambda(_lambda),mu(_mu), eps(1e-10),
+    type_of_analysis(_type),type_of_forces(conservative),
+    lambda(_lambda),mu(_mu),thermal_expansion(_thermal_expansion),ptr_matctx(NULL),
+    eps(1e-10),
     spatial_field_name("SPATIAL_POSITION"),
-    material_field_name("MESH_NODE_POSITIONS") {
+    material_field_name("MESH_NODE_POSITIONS"),
+    termal_field_name("TEMPERATURE") {
   order_edges.resize(6);
   order_faces.resize(4);
-  edgeNinvJac.resize(6);
-  faceNinvJac.resize(4);
   diff_edgeNinvJac.resize(6);
   diff_faceNinvJac.resize(4);
+  edgeN.resize(6);
+  faceN.resize(4);
   //Tangent_HH_hierachical
   KedgeH_data.resize(6);
   KfaceH_data.resize(4);
@@ -86,18 +89,21 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDir
   }
 
 }
-PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double *_mu,void *ptr_matctx) {
+FEMethod_ComplexForLazy::~FEMethod_ComplexForLazy() {
+}
+PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double *_mu,double *_thermal_expansion,void *ptr_matctx) {
   PetscFunctionBegin;
 
   *_lambda = lambda;
   *_mu = mu;
+  *_thermal_expansion = thermal_expansion;
 
   if(propeties_from_BlockSet_Mat_ElasticSet) {
     EntityHandle ent = fe_ptr->get_ent();
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 
       Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);     
 
       Range meshsets;
       rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
@@ -106,6 +112,46 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 	if( moab.contains_entities(*mit,&ent,1) ) {
 	  *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
 	  *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+	  int material_type = (int)mydata.data.User1;
+	  if(material_type>=10) {
+	    switch(material_type) {
+	      case 10: {
+		set_PhysicalEquationNumber(hooke);
+		}
+		break;
+	      case 11: {
+		set_PhysicalEquationNumber(stvenant_kirchhoff);
+		}
+		break;
+	      case 12: {
+		set_PhysicalEquationNumber(neohookean);
+		}
+		break;
+	      case 13: {
+		set_PhysicalEquationNumber(eberleinholzapfel1);
+		ptr_matctx = &EberleinHolzapfel1_mat_parameters;
+		EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
+		EberleinHolzapfel1_mat_parameters.k1 = mydata.data.User2;
+		EberleinHolzapfel1_mat_parameters.k2 = mydata.data.User2;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.User3;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.User4;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.User5;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.User6;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.User7;
+		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.User8;
+		}
+		break;
+	      default: {
+		SETERRQ(PETSC_COMM_SELF,1,
+		  "Materail not defined (Attribute 3):\n"
+		  "\t10 = hooke\n"
+		  "\t11 = stvenant_kirchhoff\n"
+		  "\t12 = neohookean\n"
+		  "\t13 = eberleinholzapfel1\n");
+	      }
+	    }
+	  }
+
 	  PetscFunctionReturn(0);  
 	}
       }
@@ -113,7 +159,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
     }
 
     SETERRQ(PETSC_COMM_SELF,1,
-      "Element is not in elestic block, however you run non-linear elastic analysis with that element\n"
+      "Element is not in elastic block, however you run non-linear elastic analysis with that element\n"
       "top tip: check if you update block sets after mesh refinments or interface insertion");
 
   }
@@ -177,7 +223,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesRow(
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -216,7 +262,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesCol(
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -247,9 +293,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       //data edge
       int ee = 0;
       for(;ee<6;ee++) {
-	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit,hi_eiit;
-	eiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple(field_name,MBEDGE,ee));
-	hi_eiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple(field_name,MBEDGE,ee));
+	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator eiit,hi_eiit;
+	eiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBEDGE,ee));
+	hi_eiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBEDGE,ee));
 	if(eiit!=hi_eiit) {
 	  assert(eiit->side_number_ptr->side_number==ee);
 	  dofs_edge_data[ee].resize(distance(eiit,hi_eiit));
@@ -266,9 +312,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       //data face
       int ff = 0;
       for(;ff<4;ff++) {
-	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator fiit,hi_fiit;
-	fiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple(field_name,MBTRI,ff));
-	hi_fiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple(field_name,MBTRI,ff));
+	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator fiit,hi_fiit;
+	fiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBTRI,ff));
+	hi_fiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBTRI,ff));
 	if(fiit!=hi_fiit) {
 	  dofs_face_data[ff].resize(distance(fiit,hi_fiit));
 	  order_faces[ff] = fiit->get_max_order();
@@ -293,9 +339,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	order_volume = 0;
       }
       //data nodes
-      FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator niit,hi_niit;
-      niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple(field_name,MBVERTEX,0));
-      hi_niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple(field_name,MBVERTEX,4));
+      FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator niit,hi_niit;
+      niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX,0));
+      hi_niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX,4));
       if(distance(niit,hi_niit)!=12) SETERRQ(PETSC_COMM_SELF,1,"I can not find dofs on vertices, it should be 12 dofs (i.e. 4 nodes and 3 dofs for each node)");
       for(int dd = 0;niit!=hi_niit;niit++,dd++) {
 	dofs_nodes[3*niit->side_number_ptr->side_number+niit->get_EntDofIdx()] = niit->get_FieldData(); 
@@ -309,7 +355,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -333,11 +379,23 @@ PetscErrorCode FEMethod_ComplexForLazy::GetDofs_X_FromElementData() {
   PetscFunctionBegin;
   dofs_X.resize(12);
   copy(coords.begin(),coords.end(),dofs_X.begin());
-  FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator niit,hi_niit;
-  niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().lower_bound(boost::make_tuple(material_field_name,MBVERTEX,0));
-  hi_niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().upper_bound(boost::make_tuple(material_field_name,MBVERTEX,4));
+  FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator niit,hi_niit;
+  niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(material_field_name,MBVERTEX,0));
+  hi_niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(material_field_name,MBVERTEX,4));
   for(;niit!=hi_niit;niit++) {
     dofs_X[3*niit->side_number_ptr->side_number+niit->get_EntDofIdx()] = niit->get_FieldData();
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FEMethod_ComplexForLazy::GetDofs_Termal_FromElementData() {
+  PetscFunctionBegin;
+  dofs_temp.resize(4);
+  fill(dofs_temp.begin(),dofs_temp.end(),0);
+  FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator niit,hi_niit;
+  niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(termal_field_name,MBVERTEX,0));
+  hi_niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(termal_field_name,MBVERTEX,4));
+  for(;niit!=hi_niit;niit++) {
+    dofs_temp[niit->side_number_ptr->side_number] = niit->get_FieldData();
   }
   PetscFunctionReturn(0);
 }
@@ -349,12 +407,15 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     int ee = 0;
     for(;ee<6;ee++) {
       diff_edgeNinvJac[ee] = &*diffH1edgeNinvJac[ee].begin(); 
+      edgeN[ee] = &*H1edgeN[ee].begin(); 
     }
     int ff = 0;
     for(;ff<4;ff++) {
       diff_faceNinvJac[ff] = &*diffH1faceNinvJac[ff].begin();
+      faceN[ff] = &*H1faceN[ff].begin(); 
     }
     diff_volumeNinvJac = &*diffH1elemNinvJac.begin();
+    volumeN = &*H1elemN.begin();
     double center[3]; 
     tetcircumcenter_tp(&coords[0],&coords[3],&coords[6],&coords[9],center,NULL,NULL,NULL); 
     cblas_daxpy(3,-1,&coords[0],1,center,1);
@@ -420,9 +481,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
       KhH.resize(12,12);
       ee = 0;
       for(;ee<6;ee++) {
-	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator eiit;
-	eiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(spatial_field_name,MBEDGE,ee));
-	if(eiit==data_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
+	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator eiit;
+	eiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().find(boost::make_tuple(spatial_field_name,MBEDGE,ee));
+	if(eiit==data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().end()) {
 	  order_edges[ee] = 0;
 	} else {
 	  order_edges[ee] = eiit->get_max_order();
@@ -436,9 +497,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
       }
       ff = 0;
       for(;ff<4;ff++) {
-	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number>::type::iterator fiit;
-	fiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number>().find(boost::make_tuple(spatial_field_name,MBTRI,ff));
-	if(fiit==data_multiIndex->get<Composite_Name_Type_And_Side_Number>().end()) {
+	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator fiit;
+	fiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().find(boost::make_tuple(spatial_field_name,MBTRI,ff));
+	if(fiit==data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().end()) {
 	  order_faces[ff] = 0; 
 	} else {
 	  order_faces[ff] = fiit->get_max_order();
@@ -457,42 +518,69 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
       KvolumeH.resize(dofs_x_volume.size(),12);
     }
     ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
+    ierr = GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
     unsigned int sub_analysis_type[3] = { spatail_analysis, material_analysis, mesh_quality_analysis };
-    double _lambda,_mu;
+    double _lambda,_mu,_thermal_expansion;
     if( (spatail_analysis|material_analysis)&type_of_analysis ) {
-      ierr = GetMatParameters(&_lambda,&_mu,ptr_matctx); CHKERRQ(ierr);
+      ierr = GetMatParameters(&_lambda,&_mu,&_thermal_expansion,ptr_matctx); CHKERRQ(ierr);
     }
+    int _order_T_volume = 0;
     for(int ss = 0;ss<3;ss++) {
       switch(sub_analysis_type[ss]&type_of_analysis) {
 	case spatail_analysis: {
 	  ierr = Tangent_hh_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,_lambda,_mu,ptr_matctx,
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	    //temperature
+	    _thermal_expansion,
+	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	    //
 	    &*Khh.data().begin(),&*KHh.data().begin(),Kedgeh,Kfaceh,&*Kvolumeh.data().begin(),
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	  ierr = Tangent_hh_hierachical_edge(&order_edges[0],&order_faces[0],order_volume,V,eps*r,_lambda,_mu,ptr_matctx, 
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	    //temperature
+	    _thermal_expansion,
+	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	    //
 	    &Khedge[0],&KHedge[0],Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	  ierr = Tangent_hh_hierachical_face(&order_edges[0],&order_faces[0],order_volume,V,eps*r,_lambda,_mu,ptr_matctx, 
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	    //temperature
+	    _thermal_expansion,
+	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	    //
 	    &Khface[0],&KHface[0],Khh_edgeface,Khh_faceface,Khh_volumeface, 
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	  ierr = Tangent_hh_hierachical_volume(&order_edges[0],&order_faces[0],order_volume,V,eps*r,_lambda,_mu,ptr_matctx, 
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],diff_volumeNinvJac, 
 	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	    //temperature
+	    _thermal_expansion,
+	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	    //
 	    &*Khvolume.data().begin(),&*KHvolume.data().begin(),Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(), 
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	}
 	break;
 	case material_analysis: {
-	ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,_lambda,_mu,ptr_matctx,
-	  &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	  &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
-	  &*KHH.data().begin(),&*KhH.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),
-	  g_dim,g_TET_W); CHKERRQ(ierr);
+	  ierr = Tangent_HH_hierachical(&order_edges[0],&order_faces[0],order_volume,V,eps*r,_lambda,_mu,ptr_matctx,
+	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	    &dofs_X.data()[0],&dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
+	    //temperature
+	    _thermal_expansion,
+	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	    //
+	    &*KHH.data().begin(),&*KhH.data().begin(),KedgeH,KfaceH,&*KvolumeH.data().begin(),
+	    g_dim,g_TET_W); CHKERRQ(ierr);
 	}
 	break;
 	case mesh_quality_analysis: {
@@ -511,11 +599,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   }
   break;
   default:
-    SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
   } catch (const std::exception& ex) {
     ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -544,12 +632,15 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
       int ee = 0;
       for(;ee<6;ee++) {
   	diff_edgeNinvJac[ee] = &(diffH1edgeNinvJac[ee])[0]; 
+	edgeN[ee] = &*H1edgeN[ee].begin(); 
       }
       int ff = 0;
       for(;ff<4;ff++) {
         diff_faceNinvJac[ff] = &(diffH1faceNinvJac[ff])[0];
+	faceN[ff] = &*H1faceN[ff].begin(); 
       }
       diff_volumeNinvJac = &diffH1elemNinvJac[0];
+      volumeN = &*H1elemN.begin();
       int g_dim = get_dim_gNTET();
       if(!dofs_x_edge_data.empty()) {
 	if(dofs_x_edge_data.size()!=6) SETERRQ(PETSC_COMM_SELF,1,"data vectors are not set");
@@ -580,11 +671,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	  Fint_h_volume.resize(dofs_x_volume.size());
       }
       ierr = GetDofs_X_FromElementData(); CHKERRQ(ierr);
+      ierr = GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
       unsigned int sub_analysis_type[3] = { spatail_analysis, material_analysis, mesh_quality_analysis };
-      double _lambda,_mu;
+      double _lambda,_mu,_thermal_expansion;
       if( (spatail_analysis|material_analysis)&type_of_analysis ) {
-	ierr = GetMatParameters(&_lambda,&_mu,ptr_matctx); CHKERRQ(ierr);
+	ierr = GetMatParameters(&_lambda,&_mu,&_thermal_expansion,ptr_matctx); CHKERRQ(ierr);
       }
+      int _order_T_volume = 0;
       for(int ss = 0;ss<3;ss++) {
 	switch(sub_analysis_type[ss]&type_of_analysis) {
 	  case spatail_analysis: {
@@ -592,6 +685,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
 	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      //temperature
+	      _thermal_expansion,0,
+	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	      //
 	      NULL,&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
 	      NULL,NULL,NULL,NULL,NULL,
 	      g_dim,g_TET_W); CHKERRQ(ierr);
@@ -602,6 +700,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
 	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
 	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      //temperature
+	      _thermal_expansion,0,
+	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	      //
 	      &*Fint_H.data().begin(),NULL,NULL,NULL,NULL,
 	      NULL,NULL,NULL,NULL,NULL,
 	      g_dim,g_TET_W); CHKERRQ(ierr);
@@ -618,26 +721,56 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &*Fint_H.data().begin(),NULL); CHKERRQ(ierr);
 	  }
 	  break;
+	  case scaled_themp_direvative_spatial: {
+	    ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,_lambda,_mu,ptr_matctx, 
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
+	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      //temperature
+	      _thermal_expansion,eps,
+	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	      //
+	      NULL,&*Fint_h.data().begin(),Fint_h_edge,Fint_h_face,&*Fint_h_volume.data().begin(),
+	      NULL,NULL,NULL,NULL,NULL,
+	      g_dim,g_TET_W); CHKERRQ(ierr);
+	  }
+	  break;
+	  case scaled_themp_direvative_material: {
+	    ierr = Fint_Hh_hierarchical(&order_edges[0],&order_faces[0],order_volume,V,_lambda,_mu,ptr_matctx, 
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	      &dofs_X.data()[0],&*dofs_x.data().begin(),NULL,NULL,
+	      &dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      //temperature
+	      _thermal_expansion,eps,
+	      &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
+	      NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
+	      //
+	      &*Fint_H.data().begin(),NULL,NULL,NULL,NULL,
+	      NULL,NULL,NULL,NULL,NULL,
+	      g_dim,g_TET_W); CHKERRQ(ierr);
+	  }
 	  default: 
 	    continue;
       }
     }
     } break;
     default:
-      SETERRQ(PETSC_COMM_SELF,1,"no implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
   } catch (const std::exception& ex) {
     ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face) {
   PetscFunctionBegin;
-  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dofs_iterator;
+  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
   try {
   FaceNodeIndices.resize(9);
+  fill(FaceNodeIndices.begin(),FaceNodeIndices.end(),-1);
   FaceNodeData.resize(9);
   const EntityHandle* conn_face; 
   int num_nodes; 
@@ -646,22 +779,24 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
   for(;nn<3;nn++) {
     dofs_iterator niit,hi_niit;
     dofs_iterator col_niit,hi_col_niit;
-    niit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
-    hi_niit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
-    col_niit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
-    hi_col_niit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    hi_niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
     for(;niit!=hi_niit;niit++,col_niit++,dd++) {
-      assert(col_niit->get_petsc_gloabl_dof_idx() == niit->get_petsc_gloabl_dof_idx());
-      FaceNodeIndices[nn*niit->get_max_rank()+niit->get_EntDofIdx()] = niit->get_petsc_gloabl_dof_idx();
-      FaceNodeData[nn*niit->get_max_rank()+niit->get_EntDofIdx()] = niit->get_FieldData();
+      if(col_niit->get_petsc_gloabl_dof_idx() != niit->get_petsc_gloabl_dof_idx()) {
+	SETERRQ(PETSC_COMM_SELF,1,"this implementation is not working for diffrent ordering of columns and rows"); 
+      }
+      FaceNodeIndices[nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_petsc_gloabl_dof_idx();
+      FaceNodeData[nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_FieldData();
     }
   }
   if(dd != 9) {
     SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET"); 
   }
   dofs_iterator fiit,hi_fiit;
-  fiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,face));
-  hi_fiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,face));
+  fiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(spatial_field_name,face));
+  hi_fiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(spatial_field_name,face));
   if(fiit!=hi_fiit) {
     FaceIndices.resize(distance(fiit,hi_fiit));
     FaceData.resize(distance(fiit,hi_fiit));
@@ -694,8 +829,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     int side_number,offset;
     rval = moab.side_number(face,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
     dofs_iterator eiit,hi_eiit;
-    eiit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,edge));
-    hi_eiit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,edge));
+    eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(spatial_field_name,edge));
+    hi_eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(spatial_field_name,edge));
     if(eiit!=hi_eiit) {
       FaceEdgeOrder[ee] = eiit->get_max_order();
       if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
@@ -723,7 +858,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
   GetFaceIndicesAndData_face = face;
   } catch (const std::exception& ex) {
     ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -746,6 +881,12 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
     }
   }
   FExt_face.resize(FaceIndices.size());
+  /*const EntityHandle* conn_face;
+  ublas::vector<double> coords_face;
+  coords_face.resize(9);
+  int num_nodes;
+  rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+  rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);*/
   switch(type_of_forces) {
     case conservative:
       ierr = Fext_h_hierarchical(
@@ -753,6 +894,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
 	&g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
 	t,t_edge,t_face,//11
 	&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),//14
+	//&*coords_face.data().begin(),NULL,NULL,//14
 	NULL,NULL,NULL,//17
 	&*FExt.data().begin(),FExt_edge,&*FExt_face.data().begin(),//20
 	NULL,NULL,NULL,//23
@@ -764,7 +906,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
   }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -798,7 +940,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
           &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
           t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
           &*KExt_hh.data().begin(),KExt_edgeh,&*KExt_faceh.data().begin(),g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
-      //KExt_hh = trans( KExt_hh );
       //
       KExt_hedge_data.resize(3);
       KExt_edgeedge_data.resize(3,3);
@@ -840,17 +981,18 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
     }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHandle face) {
   PetscFunctionBegin;
-  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator dofs_iterator;
-  typedef FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag3>::type::iterator data_dofs_iterator;
+  typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
+  typedef FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator data_dofs_iterator;
   try {
   FaceNodeIndices_Material.resize(9);
+  fill(FaceNodeIndices_Material.begin(),FaceNodeIndices_Material.end(),-1);
   FaceNodeData_Material.resize(9);
   const EntityHandle* conn_face; 
   int num_nodes; 
@@ -859,10 +1001,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
   for(;nn<3;nn++) {
     dofs_iterator niit,hi_niit;
     dofs_iterator col_niit,hi_col_niit;
-    niit = row_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
-    hi_niit = row_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
-    col_niit = col_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
-    hi_col_niit = col_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    hi_niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(material_field_name,conn_face[nn]));
+    hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(material_field_name,conn_face[nn]));
     for(;niit!=hi_niit;niit++,col_niit++,dd++) {
       assert(col_niit->get_petsc_gloabl_dof_idx() == niit->get_petsc_gloabl_dof_idx());
       FaceNodeIndices_Material[nn*niit->get_max_rank()+niit->get_EntDofIdx()] = niit->get_petsc_gloabl_dof_idx();
@@ -876,8 +1018,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
   nn = dd = 0;
   for(;nn<3;nn++) {
     data_dofs_iterator niit,hi_niit;
-    niit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
-    hi_niit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    niit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
+    hi_niit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
     for(;niit!=hi_niit;niit++,dd++) {
       FaceNodeData[nn*niit->get_max_rank()+niit->get_EntDofIdx()] = niit->get_FieldData();
     }
@@ -886,8 +1028,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
     SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET"); 
   }
   data_dofs_iterator fiit,hi_fiit;
-  fiit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,face));
-  hi_fiit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,face));
+  fiit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(spatial_field_name,face));
+  hi_fiit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(spatial_field_name,face));
   if(fiit!=hi_fiit) {
     FaceData.resize(distance(fiit,hi_fiit));
     face_order = fiit->get_max_order();
@@ -916,8 +1058,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
     int side_number,offset;
     rval = moab.side_number(face,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
     data_dofs_iterator eiit,hi_eiit;
-    eiit = data_multiIndex->get<Composite_mi_tag3>().lower_bound(boost::make_tuple(spatial_field_name,edge));
-    hi_eiit = data_multiIndex->get<Composite_mi_tag3>().upper_bound(boost::make_tuple(spatial_field_name,edge));
+    eiit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(spatial_field_name,edge));
+    hi_eiit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(spatial_field_name,edge));
     if(eiit!=hi_eiit) {
       FaceEdgeOrder[ee] = eiit->get_max_order();
       if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
@@ -941,7 +1083,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
   GetFaceIndicesAndData_face = face;
   } catch (const std::exception& ex) {
     ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -969,7 +1111,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,doubl
   FExt_Material *= -1;
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);
@@ -1005,7 +1147,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face
     }
   } catch (const std::exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
+      ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   } 
   PetscFunctionReturn(0);

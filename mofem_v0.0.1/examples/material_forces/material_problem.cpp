@@ -72,14 +72,15 @@ int main(int argc, char *argv[]) {
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
+  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
   ierr = conf_prob.constrains_crack_front_problem_definition(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",bit_level0); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
@@ -106,11 +107,11 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
   ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-
   ierr = conf_prob.calculate_material_forces(mField,"MATERIAL_MECHANICS","MATERIAL"); CHKERRQ(ierr);
   ierr = conf_prob.griffith_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.griffith_g(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+
   ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
   ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
@@ -120,11 +121,16 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.solve_material_problem(mField,&snes); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-  /*ierr = conf_prob.calculate_material_forces(mField,"MATERIAL_MECHANICS","MATERIAL"); CHKERRQ(ierr);
-  ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+
+  ierr = conf_prob.calculate_material_forces(mField,"MATERIAL_MECHANICS","MATERIAL"); CHKERRQ(ierr);
   ierr = conf_prob.griffith_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.griffith_g(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.calculate_spatial_residual(mField); CHKERRQ(ierr);*/
+
+  ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+  ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
   rval = moab.write_file("out_material_problem.h5m"); CHKERR_PETSC(rval);
 

@@ -49,7 +49,7 @@ struct PostProcVertexMethod: public FieldInterface::EntMethod {
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscPrintf(PETSC_COMM_WORLD,"Start postporcess\n");
+      PetscPrintf(PETSC_COMM_WORLD,"Start postprocess\n");
 
       MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it = moabfields->get<FieldName_mi_tag>().find(field_name);
       if(field_it==moabfields->get<FieldName_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"field < %s > not found (top tip: check spelling)",field_name.c_str());
@@ -110,7 +110,7 @@ struct PostProcVertexMethod: public FieldInterface::EntMethod {
 	ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
 	ierr = VecDestroy(&V_glob); CHKERRQ(ierr);
       }
-      PetscPrintf(PETSC_COMM_WORLD,"End postporcess\n");
+      PetscPrintf(PETSC_COMM_WORLD,"End postprocess\n");
       PetscFunctionReturn(0);
     }
 

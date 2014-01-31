@@ -100,6 +100,43 @@ struct RefMoFEMEntity: public BasicMoFEMEntity {
   friend ostream& operator<<(ostream& os,const RefMoFEMEntity& e);
 };
 
+/**
+ * \typedef RefMoFEMEntity_multiIndex
+ * type multiIndex container for RefMoFEMEntity
+ *
+ * \param hashed_unique MoABEnt_mi_tag 
+ * \param ordered_non_unique Meshset_mi_tag 
+ * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
+ * \param ordered_non_unique EntType_mi_tag
+ * \param ordered_non_unique ParentEntType_mi_tag
+ * \param ordered_non_unique Composite_EntityType_And_ParentEntityType_mi_tag
+ * \param ordered_non_unique Composite_EntityHandle_And_ParentEntityType_mi_tag
+ */
+typedef multi_index_container<
+  RefMoFEMEntity,
+  indexed_by<
+    hashed_unique<
+      tag<MoABEnt_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::ent> >,
+    ordered_non_unique<
+      tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
+    ordered_non_unique<
+      tag<EntType_mi_tag>, const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> >,
+    ordered_non_unique<
+      tag<ParentEntType_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> >,
+    ordered_non_unique<
+      tag<Composite_EntityType_And_ParentEntityType_mi_tag>, 
+      composite_key<
+	RefMoFEMEntity,
+	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
+	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
+    ordered_non_unique<
+      tag<Composite_EntityHandle_And_ParentEntityType_mi_tag>, 
+      composite_key<
+	RefMoFEMEntity,
+	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
+	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
+  > > RefMoFEMEntity_multiIndex;
+
 /** 
  * \brief interface to RefMoFEMEntity
  */
@@ -116,7 +153,6 @@ struct interface_RefMoFEMEntity {
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return ref_ptr->get_RefMoFEMEntity_ptr(); }
   virtual ~interface_RefMoFEMEntity() {}
 };
-
 
 /**
  * \brief struct keeps handle to entity in the field.

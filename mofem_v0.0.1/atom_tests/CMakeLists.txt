@@ -43,17 +43,11 @@ target_link_libraries(nonlinear_elasticity_atom mofem_complex_for_lazy mofem_stu
 add_executable(arc_length_nonlinear_elasticity_atom arc_length_nonlinear_elasticity_atom.cpp)
 target_link_libraries(arc_length_nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(Heat_flow Heat_flow.cpp)
-target_link_libraries(Heat_flow mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(field_axpy_atom_test field_axpy_atom_test.cpp)
+target_link_libraries(field_axpy_atom_test mofem_Field ${PROJECT_LIBS})
 
-add_executable(Lin_Elas_Zahur Lin_Elas_Zahur.cpp)
-target_link_libraries(Lin_Elas_Zahur mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
-add_executable(potential_flow_int_rope potential_flow_int_rope.cpp)
-target_link_libraries(potential_flow_int_rope mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
-add_executable(interface_fibre_new_ver interface_fibre_new_ver.cpp)
-target_link_libraries(interface_fibre_new_ver mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(nonlinear_elasticity_thremal_expansion_atom nonlinear_elasticity_thremal_expansion_atom.cpp)
+target_link_libraries(nonlinear_elasticity_thremal_expansion_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
@@ -78,6 +72,7 @@ cm_export_file("../meshes/cub_with_interface.cub" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01X_pressure.cub" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_sheer_force.cub" export_atom_tests)
 cm_export_file("../meshes/templar.cub" export_atom_tests)
+cm_export_file("../meshes/cube_for_thermal_expansion.cub" export_atom_tests)
 
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
@@ -161,6 +156,16 @@ add_test(arc_length_nonlinear_elasticity_atom_compare ${CMAKE_COMMAND} -E compar
 #hdiv approximation atom test
 add_test(hdiv_atom_approximation ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hdiv_approximation -my_file elasticity_atom_test_01X.cub -my_max_pot_proc_ref_level 2 -ksp_type fgmres -ksp_atol 1e-16 -ksp_rtol 0 -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -log_summary)
 add_test(hdiv_atom_approximation_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/hdiv_approximation.txt ${CMAKE_BINARY_DIR}/atom_tests/hdiv_approximation.txt)
+
+#field axpy
+add_test(field_axpy ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.cub -log_summary)
+add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
+
+#thermal test
+add_test(nonlinear_elasticity_atom_thermal ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_thremal_expansion_atom -my_file cube_for_thermal_expansion.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 4 -log_summary)
+add_test(nonlinear_elasticity_atom_thermal_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_thermal_expansion_cube_for_thermal_expansion.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_thermal_expansion_cube_for_thermal_expansion.cub.txt)
+
 
 
 

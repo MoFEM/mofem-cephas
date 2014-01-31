@@ -89,8 +89,8 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    vector<vector<DofIdx> > RowGlobDofs;
-    vector<vector< ublas::matrix<FieldData> > > diffRowNMatrix;
+    vector<vector<DofIdx> > RowGlobDofs,ColGlobDofs;
+    vector<vector< ublas::matrix<FieldData> > > diffRowNMatrix,diffColNMatrix;
 
     PetscErrorCode get_ShapeFunctionsAndIndices() {
       PetscFunctionBegin;
@@ -118,6 +118,29 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	ierr = GetGaussRowDiffNMatrix("POTENTIAL_FIELD",MBTET,diffRowNMatrix[1+6+4]); CHKERRQ(ierr);
       }
 
+      ColGlobDofs.resize(1+6+4+1);
+      diffColNMatrix.resize(1+6+4+1);
+      ierr = GetColGlobalIndices("POTENTIAL_FIELD",ColGlobDofs[0]); CHKERRQ(ierr);
+      ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",diffColNMatrix[0]); CHKERRQ(ierr);
+      ee = 0;
+      for(;ee<6;ee++) {
+	ierr = GetColGlobalIndices("POTENTIAL_FIELD",MBEDGE,ColGlobDofs[1+ee],ee); CHKERRQ(ierr);
+	if(ColGlobDofs[1+ee].size()>0) {
+	  ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",MBEDGE,diffColNMatrix[1+ee],ee); CHKERRQ(ierr);
+	} 
+      }
+      ff = 0;
+      for(;ff<4;ff++) {
+	ierr = GetColGlobalIndices("POTENTIAL_FIELD",MBTRI,ColGlobDofs[1+6+ff],ff); CHKERRQ(ierr);
+	if(ColGlobDofs[1+6+ff].size()>0) {
+	  ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",MBTRI,diffColNMatrix[1+6+ff],ff); CHKERRQ(ierr);
+	}
+      }
+      ierr = GetColGlobalIndices("POTENTIAL_FIELD",MBTET,ColGlobDofs[1+6+4]); CHKERRQ(ierr);
+      if(ColGlobDofs[1+6+4].size()>0) {
+	ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",MBTET,diffColNMatrix[1+6+4]); CHKERRQ(ierr);
+      }
+
       PetscFunctionReturn(0);
     }
 
@@ -129,13 +152,13 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	if(RowGlobDofs[rr].size()==0) continue;
 	for(int cc = 0;cc<(1+6+4+1);cc++) {
 	  if(RowGlobDofs[cc].size()==0) continue;
-	  K.resize(RowGlobDofs[rr].size(),RowGlobDofs[cc].size());
+	  K.resize(RowGlobDofs[rr].size(),ColGlobDofs[cc].size());
 	  for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) {
-	    ublas::noalias(K) = prod( trans(diffRowNMatrix[rr][gg]),diffRowNMatrix[cc][gg] ); 
+	    ublas::noalias(K) = prod( trans(diffRowNMatrix[rr][gg]),diffColNMatrix[cc][gg] ); 
 	    K *= a*V*G_TET_W[gg];
 	    ierr = MatSetValues(A,
 	      RowGlobDofs[rr].size(),&(RowGlobDofs[rr])[0],
-	      RowGlobDofs[cc].size(),&(RowGlobDofs[cc])[0],
+	      ColGlobDofs[cc].size(),&(ColGlobDofs[cc])[0],
 	      &(K.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	}
@@ -221,7 +244,6 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	    //cerr << flux << endl;
 	  }
 
-        
 	  //nodes
 	  vector<DofIdx>& RowGlob_nodes = RowGlobDofs[0];
 	  vector< ublas::matrix<FieldData> > FaceNMatrix_nodes;
@@ -307,24 +329,25 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       vector<DofIdx> zero_pressure_dofs;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
-	if(it->get_Cubit_name() != "ZeroPressure") continue;
-          Range nodes;
-          rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-          Range edges;
-          rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
-          Range tris;
-          rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-          Range adj;
-          rval = moab.get_connectivity(tris,adj,true); CHKERR_PETSC(rval);
-          nodes.insert(adj.begin(),adj.end());
-          rval = moab.get_connectivity(edges,adj,true); CHKERR_PETSC(rval);
-          nodes.insert(adj.begin(),adj.end());
-          rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
-          for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
-              for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
-                  ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
-                  zero_pressure_dofs.push_back(dof->get_petsc_gloabl_dof_idx());
-              }}
+	std::size_t zeroPressureFound=it->get_Cubit_name().find("ZeroPressure");
+	if (zeroPressureFound==std::string::npos) continue;
+	Range nodes;
+	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+	Range edges;
+	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+	Range tris;
+	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+	Range adj;
+	rval = moab.get_connectivity(tris,adj,true); CHKERR_PETSC(rval);
+	nodes.insert(adj.begin(),adj.end());
+	rval = moab.get_connectivity(edges,adj,true); CHKERR_PETSC(rval);
+	nodes.insert(adj.begin(),adj.end());
+	rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
+	for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
+	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
+	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
+	    zero_pressure_dofs.push_back(dof->get_petsc_gloabl_dof_idx());
+	}}
 	for(Range::iterator eit = edges.begin();eit!=edges.end();eit++) {
 	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*eit,dof)) {
 	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
@@ -657,7 +680,7 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 struct PostProcPotentialFlowOnRefMesh: public PostProcDisplacemenysAndStarinOnRefMesh {
 
   Tag th_phi,th_p,th_u;
-  PostProcPotentialFlowOnRefMesh(Interface& _moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab) {
+  PostProcPotentialFlowOnRefMesh(Interface& _moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab,"DISPLACEMENT") {
     double def_VAL2[3] = { 0.0, 0.0, 0.0 };
     rval = moab_post_proc.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("P",1,MB_TYPE_DOUBLE,th_p,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
