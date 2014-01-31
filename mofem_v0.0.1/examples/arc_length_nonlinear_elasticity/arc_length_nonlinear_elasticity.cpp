@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
 
-  MyElasticFEMethod MyFE(mField,&myDirihletBC,
+  ArcElasticFEMethod MyFE(mField,&myDirihletBC,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
     ArcCtx,NodeSet1);
 

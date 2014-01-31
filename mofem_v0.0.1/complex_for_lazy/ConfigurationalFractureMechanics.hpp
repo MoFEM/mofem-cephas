@@ -32,7 +32,7 @@ using namespace MoFEM;
 struct ConfigurationalFractureMechanics {
  
   Tag th_MaterialFireWall;
-  typedef bitset<16> Material_FirelWall_def;
+  typedef bitset<17> Material_FirelWall_def;
   Material_FirelWall_def *material_FirelWall;
 
   enum FirWall {
@@ -46,7 +46,8 @@ struct ConfigurationalFractureMechanics {
     FW_constrains_crack_front_problem_definition,
     FW_set_spatial_positions,
     FW_set_material_positions,
-    FW_arc_lenhghat_definition
+    FW_arc_lenhghat_definition,
+    FW_thermal_field
   };
 
   EntityHandle crackForntMeshset;
@@ -73,6 +74,7 @@ struct ConfigurationalFractureMechanics {
   }
   
   PetscErrorCode set_material_fire_wall(FieldInterface& mField);
+  PetscErrorCode thermal_field(FieldInterface& mField);
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
   PetscErrorCode material_problem_definition(FieldInterface& mField);
   PetscErrorCode coupled_problem_definition(FieldInterface& mField);

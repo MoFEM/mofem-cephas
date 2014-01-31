@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
 
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+    ierr = mField.add_field("TEMPERATURE",H1,1); CHKERRQ(ierr);
     ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
 
     //Field for ArcLength
@@ -140,6 +141,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ELASTIC","LAMBDA"); CHKERRQ(ierr); //this is for parmetis
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ELASTIC","TEMPERATURE"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","LAMBDA"); CHKERRQ(ierr);
 
     //Define rows/cols and element data
@@ -160,6 +162,7 @@ int main(int argc, char *argv[]) {
 
     //add entitities (by tets) to the field
     ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_TETs(0,"TEMPERATURE"); CHKERRQ(ierr);
 
     //add finite elements entities
     ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
@@ -177,10 +180,17 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGTH,"ARC_LENGTH"); CHKERRQ(ierr);
 
     //set app. order
-    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+    const int order = 2;
+    ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+
+    ierr = mField.set_field_order(0,MBTET,"TEMPERATURE",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"TEMPERATURE",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"TEMPERATURE",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBVERTEX,"TEMPERATURE",1); CHKERRQ(ierr);
+
   }
 
 
@@ -214,7 +224,7 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
     
-  ArcLengthCtx* ArcCtx = new ArcLengthCtx(mField,"ELASTIC_MECHANICS");
+  ArcLengthCtx* ArcCtx = new ArcLengthCtx(mField,"ELASTIC_MECHANICS",false);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
@@ -239,6 +249,20 @@ int main(int argc, char *argv[]) {
       }
       fval = coords[dof_rank];
     }
+    {
+      EntityHandle node = 0;
+      double coords[3];
+      for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"TEMPERATURE",dof_ptr)) {
+	if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+	EntityHandle ent = dof_ptr->get_ent();
+	if(node!=ent) {
+	  rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	  node = ent;
+	}
+	double &fval = dof_ptr->get_FieldData();
+	fval = coords[0];
+      }
+    }
   }
 
   DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
@@ -250,7 +274,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
 
-  ArcElasticFEMethod MyFE(mField,&myDirihletBC,
+  ArcElasticThermalFEMethod MyFE(mField,&myDirihletBC,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
     ArcCtx,NodeSet1);
 
@@ -288,7 +312,10 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
 
-  ierr = MyFE.set_t_val(-1); CHKERRQ(ierr);
+  ierr = MyFE.set_t_val(0); CHKERRQ(ierr);
+  ArcCtx->get_FieldData() = 1e-2;
+  ierr = MyFE.set_thermal_load_factor(ArcCtx->get_FieldData()); CHKERRQ(ierr);
+  MyFE.thermal_expansion = 1;
 
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
@@ -313,6 +340,7 @@ int main(int argc, char *argv[]) {
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
+      MyFE.snes_ctx = FieldInterface::SnesMethod::ctx_SNESNone;
       MyFE.snes_x = D; MyFE.snes_f = F;
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
       MyArcMethod.snes_x = D; MyArcMethod.snes_f = F;
@@ -371,13 +399,22 @@ int main(int argc, char *argv[]) {
     //
     ierr = MyFE.potsProcessLoadPath(); CHKERRQ(ierr);
     //
-    if(step % 1 == 0) {
+    /*if(step % 1 == 0) {
       if(pcomm->rank()==0) {
 	ostringstream sss;
 	sss << "restart_" << step << ".h5m";
 	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
       }
-    }
+
+      PostProcFieldsAndGradientOnRefMesh fe_post_proc_method(moab);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+      PetscSynchronizedFlush(PETSC_COMM_WORLD);
+      if(pcomm->rank()==0) {
+	ostringstream sss;
+	sss << "out_post_proc_" << step << ".vtk";
+	rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
+      }
+    }*/
 
   }
 
@@ -386,7 +423,7 @@ int main(int argc, char *argv[]) {
 
     //Open mesh_file_name.txt for writing
     ofstream myfile;
-    myfile.open("arc_length_nonlinear_elasticity_atom.txt");
+    myfile.open("arc_length_nonlinear_elasticity_thermal_atom.txt");
     
     //Output displacements
     cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;

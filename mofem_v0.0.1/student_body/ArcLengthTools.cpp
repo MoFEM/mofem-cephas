@@ -60,6 +60,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x) {
   if(ddlambda != ddlambda) {
     ostringstream ss;
     ss << "problem with ddlambda: " << res_lambda << " " << ddlambda << " " << db_dot_pc_x << " " << db_dot_x_lambda << " " << PCCtx->arc_ptr->diag;
+    //cerr << ss.str() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
   ierr = VecAXPY(pc_x,ddlambda,PCCtx->arc_ptr->x_lambda); CHKERRQ(ierr);

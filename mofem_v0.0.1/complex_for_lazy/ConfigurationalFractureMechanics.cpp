@@ -420,6 +420,25 @@ PetscErrorCode ConfigurationalFractureMechanics::set_material_fire_wall(FieldInt
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode ConfigurationalFractureMechanics::thermal_field(FieldInterface& mField) {
+  PetscFunctionBegin;
+  if(material_FirelWall->operator[](FW_thermal_field)) PetscFunctionReturn(0);
+  material_FirelWall->set(FW_thermal_field);
+
+  PetscErrorCode ierr;
+
+  ierr = mField.add_field("TEMPERATURE",H1,1,MF_ZERO); CHKERRQ(ierr);
+
+  ierr = mField.add_ents_to_field_by_TETs(0,"TEMPERATURE"); CHKERRQ(ierr);
+
+  ierr = mField.set_field_order(0,MBTET,"TEMPERATURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"TEMPERATURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"TEMPERATURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"TEMPERATURE",1); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(FieldInterface& mField) {
   PetscFunctionBegin;
 
@@ -443,6 +462,9 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
   ierr = mField.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  if(mField.check_field("TEMPERATURE")) {
+    ierr = mField.modify_finite_element_add_field_data("ELASTIC","TEMPERATURE"); CHKERRQ(ierr);
+  }
 
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -544,6 +566,9 @@ PetscErrorCode ConfigurationalFractureMechanics::material_problem_definition(Fie
   ierr = mField.modify_finite_element_off_field_row("MATERIAL","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("MATERIAL","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("MATERIAL","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  if(mField.check_field("TEMPERATURE")) {
+    ierr = mField.modify_finite_element_add_field_data("MATERIAL","TEMPERATURE"); CHKERRQ(ierr);
+  }
 
   //define problems
   ierr = mField.add_problem("MATERIAL_MECHANICS"); CHKERRQ(ierr);
@@ -591,12 +616,20 @@ PetscErrorCode ConfigurationalFractureMechanics::coupled_problem_definition(Fiel
   ierr = mField.modify_finite_element_add_field_row("ELASTIC_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  if(mField.check_field("TEMPERATURE")) {
+    ierr = mField.modify_finite_element_add_field_data("ELASTIC_COUPLED","TEMPERATURE"); CHKERRQ(ierr);
+  }
+
   //
   ierr = mField.modify_finite_element_add_field_row("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("MATERIAL_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("MATERIAL_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
+  if(mField.check_field("TEMPERATURE")) {
+    ierr = mField.modify_finite_element_add_field_data("MATERIAL_COUPLED","TEMPERATURE"); CHKERRQ(ierr);
+  }
+
   //
   ierr = mField.modify_finite_element_add_field_row("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
