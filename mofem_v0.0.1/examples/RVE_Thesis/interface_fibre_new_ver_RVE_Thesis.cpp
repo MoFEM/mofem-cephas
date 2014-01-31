@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
         double &fval = dof_ptr->get_FieldData();
         if(node!=ent) {    // to get coordinates only for 1 out of 3 ranks for disp field
             rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-            //cout<<"\n\n coord = " << coords[0]<<" "<< coords[1]<<" " << coords[2]<<" rank "<< dof_rank << "\n\n";
+//            cout<<"\n\n coord = " << coords[0]<<" "<< coords[1]<<" " << coords[2]<<" rank "<< dof_rank << "\n\n";
             for(int ii=0; ii<3; ii++) disp_applied[ii]=strain_app(ii,0)*coords[0] + strain_app(ii,1)*coords[1] + strain_app(ii,2)*coords[2];
             rval=moab.tag_set_data(th_disp_1,&ent,1,&disp_applied); CHKERR_PETSC(rval);
             node = ent;
@@ -411,6 +411,7 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     
+    
     ierr = VecAXPY(D,1,D_star); CHKERRQ(ierr);   // D=D+1*D_star (total displacement U_total=U_start+U_fluctuation)
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -434,16 +435,17 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateBegin(F_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    double RVE_volume_Elastic, RVE_volume_TransIso, RVE_volume_total; RVE_volume_Elastic=0.0; RVE_volume_TransIso=0.0;
-    ublas::matrix<double> Sigma_homo;
+    ierr = VecZeroEntries(coord_stress); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(coord_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(coord_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    double RVE_volume; RVE_volume=0;
+//    ublas::matrix<double> Sigma_homo;
     
-    ElasticFEMethod_RVE_HomoStress MyRVEFEStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), moab, F_stress, coord_stress, &RVE_volume_Elastic);
+    ElasticFEMethod_RVE_HomoStress MyRVEFEStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), moab, F_stress, coord_stress, &RVE_volume);
+
+    ElasticFEMethodTransIsoRVE_HomoStress MyRVETransIsoStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP, moab, F_stress, coord_stress,&RVE_volume);
     
-    ElasticFEMethodTransIsoRVE_HomoStress MyRVETransIsoStress(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP, moab, F_stress, coord_stress,&RVE_volume_TransIso);
-    
-//    cout<<"\n RVE_volume_Elastic Before "<<RVE_volume_Elastic<<endl;
-//    cout<<"\n RVE_volume_TransIso Before "<<RVE_volume_TransIso<<endl;
-  
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEFEStress);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyRVETransIsoStress);  CHKERRQ(ierr);
 
@@ -451,10 +453,8 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateEnd(F_stress,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F_stress); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(F_stress); CHKERRQ(ierr);
-
-//    cout<<"\n RVE_volume_Elastic After "<<RVE_volume_Elastic<<endl;
-//    cout<<"\n RVE_volume_TransIso After "<<RVE_volume_TransIso<<endl;
-    RVE_volume_total=RVE_volume_Elastic+RVE_volume_TransIso;
+//    cout<<"\n RVE_volume 2  ="<<RVE_volume<<endl;
+    
     
     
 //    cout<<"\n\n\n\n\n\n\n F_stress \n\n\n\n\n\n\\n\n\n\n\n";
@@ -463,40 +463,45 @@ int main(int argc, char *argv[]) {
 //    ierr = VecView(coord_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
 
-    ublas::matrix< double > F_stress_mat;
-    ublas::matrix< double > coord_stress_mat;
-    Range nodes;
-    rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-    F_stress_mat.resize(3,nodes.size()); coord_stress_mat.resize(nodes.size(),3); Sigma_homo.resize(3,3);
-    F_stress_mat.clear();  coord_stress_mat.clear(); Sigma_homo.clear();
-    
-    int array_indices[3];
-    double array_output[3];
-    
-    for(int ii=0; ii<nodes.size(); ii++){
-        array_indices[0]=3*ii;  array_indices[1]=3*ii+1;  array_indices[2]=3*ii+2;
-        ierr = VecGetValues(F_stress,3,array_indices,array_output); CHKERRQ(ierr);
-        F_stress_mat(0,ii)=array_output[0]; F_stress_mat(1,ii)=array_output[1],  F_stress_mat(2,ii)=array_output[2];
-        
-        ierr = VecGetValues(coord_stress,3,array_indices,array_output); CHKERRQ(ierr);
-        coord_stress_mat(ii,0)=array_output[0]; coord_stress_mat(ii,1)=array_output[1], coord_stress_mat(ii,2)=array_output[2];
-    }
-    
-    
-    // Homogenized stress
-    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
-                Sigma_homo.size1(),Sigma_homo.size2(),F_stress_mat.size2(),
-                1.,&*F_stress_mat.data().begin(),F_stress_mat.size2(),
-                &*coord_stress_mat.data().begin(),coord_stress_mat.size2(),
-                0.,&*Sigma_homo.data().begin(),Sigma_homo.size2());
-    
-    Sigma_homo=(1.0/RVE_volume_total)*(Sigma_homo+trans(Sigma_homo));
-    
-    //if(pcomm->rank()==1){
-    //            cout<<"coord_stress_mat "<<coord_stress_mat<<endl;
-    //            cout<<"F_stress_mat "<<F_stress_mat<<endl;  (1.0/RVE_volume)*
-    cout<<"\n\n\nSigma_bar "<<Sigma_homo<<endl<<endl<<endl;
 
+    
+//    ublas::matrix< double > F_stress_mat;
+//    ublas::matrix< double > coord_stress_mat;
+//    
+//    Range nodes;
+//    rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+//    F_stress_mat.resize(3,nodes.size()); coord_stress_mat.resize(nodes.size(),3); Sigma_homo.resize(3,3);
+//    F_stress_mat.clear();  coord_stress_mat.clear(); Sigma_homo.clear();
+//    
+//    int array_indices[3];
+//    double array_output[3];
+//    
+//    for(int ii=0; ii<nodes.size(); ii++){
+//        array_indices[0]=3*ii;  array_indices[1]=3*ii+1;  array_indices[2]=3*ii+2;
+//        ierr = VecGetValues(F_stress,3,array_indices,array_output); CHKERRQ(ierr);
+//        F_stress_mat(0,ii)=array_output[0]; F_stress_mat(1,ii)=array_output[1],  F_stress_mat(2,ii)=array_output[2];
+//        
+//        ierr = VecGetValues(coord_stress,3,array_indices,array_output); CHKERRQ(ierr);
+//        coord_stress_mat(ii,0)=array_output[0]; coord_stress_mat(ii,1)=array_output[1], coord_stress_mat(ii,2)=array_output[2];
+//    }
+//    
+//    
+//    // Homogenized stress
+//    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
+//                Sigma_homo.size1(),Sigma_homo.size2(),F_stress_mat.size2(),
+//                1.,&*F_stress_mat.data().begin(),F_stress_mat.size2(),
+//                &*coord_stress_mat.data().begin(),coord_stress_mat.size2(),
+//                0.,&*Sigma_homo.data().begin(),Sigma_homo.size2());
+//    
+//    Sigma_homo=(1.0/RVE_volume_total)*(Sigma_homo+trans(Sigma_homo));
+//    
+//    //if(pcomm->rank()==1){
+//    //            cout<<"coord_stress_mat "<<coord_stress_mat<<endl;
+//    //            cout<<"F_stress_mat "<<F_stress_mat<<endl;  (1.0/RVE_volume)*
+//    cout<<"\n\n\nSigma_bar "<<Sigma_homo<<endl<<endl<<endl;
+
+    
+    
     
     
     

@@ -35,12 +35,12 @@ struct ElasticFEMethod_RVE_HomoStress: public ElasticFEMethod{
     Vec F_stress, coord_stress;
     Interface& moab;
     string field_name;
-    double *RVE_volume_Elastic;
+    double *RVE_volume;
     
 
     ElasticFEMethod_RVE_HomoStress(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
-          double _lambda,double _mu, Interface& _moab, Vec&_F_stress, Vec&_coord_stress, double *_RVE_volume_Elastic, string _field_name = "DISPLACEMENT"):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), moab(_moab), F_stress(_F_stress), coord_stress(_coord_stress), RVE_volume_Elastic(_RVE_volume_Elastic), field_name(_field_name){};
+          double _lambda,double _mu, Interface& _moab, Vec&_F_stress, Vec&_coord_stress, double *_RVE_volume, string _field_name = "DISPLACEMENT"):
+    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), moab(_moab), F_stress(_F_stress), coord_stress(_coord_stress), RVE_volume(_RVE_volume), field_name(_field_name){};
     
   
     PetscErrorCode postProcess() {
@@ -149,9 +149,7 @@ struct ElasticFEMethod_RVE_HomoStress: public ElasticFEMethod{
         ierr = GetMatrices(); CHKERRQ(ierr);
         
         //volume of RVE
-        *RVE_volume_Elastic+=V;
-//        cout<< "V ="<<V<<endl;
-//        cout<< "RVE_volume_Elastic ="<<*RVE_volume_Elastic<<endl;
+        *RVE_volume+=V;
         
         //Assembly F_stress
         ierr = Fint(F_stress); CHKERRQ(ierr);

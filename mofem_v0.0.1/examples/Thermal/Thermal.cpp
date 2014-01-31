@@ -25,7 +25,7 @@
 #include <petscksp.h>
 
 #include "ThermalFEMethod.hpp"
-#include "PostProcVertexMethod.hpp"
+#include "PostProcVertexMethodTemp.hpp"
 
 using namespace MoFEM;
 
@@ -217,7 +217,7 @@ ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
     
-    PostProcVertexMethod ent_method(moab);
+    PostProcVertexMethodTemp ent_method(moab);
     ierr = mField.loop_dofs("THERMAL_PROBLEM","TEMPERATURE",Row,ent_method); CHKERRQ(ierr);
     
     if(pcomm->rank()==0) {

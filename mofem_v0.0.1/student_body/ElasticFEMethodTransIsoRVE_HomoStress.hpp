@@ -31,17 +31,85 @@ namespace MoFEM {
         Vec F_stress, coord_stress;
         Interface& moab;
         string field_name;
-        double *RVE_volume_TransIso;
+        double *RVE_volume;
 
-        ElasticFEMethodTransIsoRVE_HomoStress(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F, double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, Interface& _moab, Vec&_F_stress, Vec&_coord_stress, double *_RVE_volume_TransIso, string _field_name = "DISPLACEMENT"):
+        ElasticFEMethodTransIsoRVE_HomoStress(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F, double _lambda,double _mu,double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp, Interface& _moab, Vec&_F_stress, Vec&_coord_stress, double *_RVE_volume, string _field_name = "DISPLACEMENT"):
         
-        TranIsotropicFibreDirRotElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu,_E_p, _E_z, _nu_p, _nu_pz, _G_zp), moab(_moab), F_stress(_F_stress), coord_stress(_coord_stress), RVE_volume_TransIso(_RVE_volume_TransIso), field_name(_field_name)  {
+        TranIsotropicFibreDirRotElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu,_E_p, _E_z, _nu_p, _nu_pz, _G_zp), moab(_moab), F_stress(_F_stress), coord_stress(_coord_stress), RVE_volume(_RVE_volume), field_name(_field_name)  {
             
             double def_VAL2[3] = {0,0,0};
             // create a new tag th_fibre_dir
             rval = moab.tag_get_handle( "POT_FLOW_FIBRE_DIR",3,MB_TYPE_DOUBLE,th_fibre_dir,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
         };
         
+        
+        PetscErrorCode postProcess() {
+            PetscFunctionBegin;
+            // Note MAT_FLUSH_ASSEMBLY
+            ierr = VecAssemblyBegin(F_stress); CHKERRQ(ierr);
+            ierr = VecAssemblyEnd(F_stress); CHKERRQ(ierr);
+            ierr = VecAssemblyBegin(coord_stress); CHKERRQ(ierr);
+            ierr = VecAssemblyEnd(coord_stress); CHKERRQ(ierr);
+            
+//            cout<<"\n\n\n\n\n\n\n F_stress \n\n\n\n\n\n\\n\n\n\n\n";
+//            ierr = VecView(F_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//            cout<<"\n\n\n\n\n\n\n coord_stress \n\n\n\n\n\n\\n\n\n\n\n";
+//            ierr = VecView(coord_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+            
+            ublas::matrix< double > F_stress_mat, coord_stress_mat, Sigma_homo;
+            int array_indices[3];
+            double array_output[3];
+
+            for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
+                std::size_t BoundNodesFound=it->get_Cubit_name().find("BoundNodes");
+                if (BoundNodesFound==std::string::npos) continue;
+                    Range tris, nodes;
+                    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+                    rval = moab.get_connectivity(tris,nodes,true); CHKERR_PETSC(rval);
+                    
+                    F_stress_mat.resize(3,nodes.size()); coord_stress_mat.resize(nodes.size(),3);
+                    F_stress_mat.clear();  coord_stress_mat.clear();
+                    
+                    int ii=0;
+                    for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
+                        
+                        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
+//                            cout<<"\n\ndof->get_petsc_gloabl_dof_idx();"<<dof->get_petsc_gloabl_dof_idx()<<endl;
+                            int nn=dof->get_petsc_gloabl_dof_idx();
+                            array_indices[0]=nn; array_indices[1]=nn+1;  array_indices[2]=nn+2;
+                            
+                            ierr = VecGetValues(F_stress,3,array_indices,array_output); CHKERRQ(ierr);
+                            F_stress_mat(0,ii)=array_output[0]; F_stress_mat(1,ii)=array_output[1],  F_stress_mat(2,ii)=array_output[2];
+                            
+                            ierr = VecGetValues(coord_stress,3,array_indices,array_output); CHKERRQ(ierr);
+                            coord_stress_mat(ii,0)=array_output[0]; coord_stress_mat(ii,1)=array_output[1], coord_stress_mat(ii,2)=array_output[2];
+                        }
+                        ii++;
+                    }
+            }
+            
+            Sigma_homo.resize(3,3);  Sigma_homo.clear();
+            
+            
+            // Homogenized stress
+            cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
+                        Sigma_homo.size1(),Sigma_homo.size2(),F_stress_mat.size2(),
+                        1.,&*F_stress_mat.data().begin(),F_stress_mat.size2(),
+                        &*coord_stress_mat.data().begin(),coord_stress_mat.size2(),
+                        0.,&*Sigma_homo.data().begin(),Sigma_homo.size2());
+
+            cout<<"\n\n\nRVE_volume "<<*RVE_volume<<endl<<endl<<endl;
+            Sigma_homo=(1.0/ *RVE_volume)*(Sigma_homo+trans(Sigma_homo));
+            cout<<"\n\n\nSigma_bar "<<Sigma_homo<<endl<<endl<<endl;
+            
+            
+            ierr = PetscTime(&v2); CHKERRQ(ierr);
+            ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
+            PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+            PetscSynchronizedFlush(PETSC_COMM_WORLD);
+            PetscFunctionReturn(0);
+        }
+
         
         vector< ublas::matrix<FieldData> > D_At_GaussPoint;
          PetscErrorCode Fint() {
@@ -131,9 +199,7 @@ namespace MoFEM {
             }
             PetscFunctionReturn(0);
         }
-        
-        
-        
+
         
         PetscErrorCode operator()() {
             PetscFunctionBegin;
@@ -152,56 +218,55 @@ namespace MoFEM {
             ///Rotating the Stiffness matrix according a set of axes of rotations and their respective angle
             
             D_At_GaussPoint.resize(coords_at_Gauss_nodes.size());
-            
-            for(unsigned int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
-                
-                double fVec[3];
-                ierr = ComputeFibreDirection(&fVec[0]); CHKERRQ(ierr);
-                
-                int noOfRotations = 1; //Number of Rotations
-                
-                double zVec[3]={0.0,0.0,1.0};
-                double AxVector[3]={fVec[1]*zVec[2]-fVec[2]*zVec[1] , fVec[2]*zVec[0]-fVec[0]*zVec[2] , fVec[0]*zVec[1]-fVec[1]*zVec[0]};
-                double AxAngle[1]= {asin((sqrt(pow(AxVector[0],2)+pow(AxVector[1],2)+pow(AxVector[2],2)))/(sqrt(pow(fVec[0],2)+pow(fVec[1],2)+pow(fVec[2],2)))*(sqrt(pow(zVec[0],2)+pow(zVec[1],2)+pow(zVec[2],2))))};
-                
-                double negAxAngle[noOfRotations];
-                for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
-                
-                ublas::matrix<double> DummyMatrix,DummyMatrix2;
-                DummyMatrix = ublas::zero_matrix<FieldData>(6,6);
-                DummyMatrix = StiffnessMatrix;
-                
-                ///Rotating Stiffness over a number of axis/angle rotations
-                for (int aa=0; aa<noOfRotations; aa++) {
-                    
-                    StressTransformation StressRotMat(&AxVector[3*aa], AxAngle[aa]);
-                    StrainTransformation invStrainRotMat(&AxVector[3*aa], negAxAngle[aa]);
-                    
-                    ublas::matrix<double> TrpMatrixStress;
-                    TrpMatrixStress = ublas::zero_matrix<FieldData>(6,6);
-                    TrpMatrixStress=StressRotMat.StressRotMat;
-                    
-                    ublas::matrix<double> TrpMatrixInvStrain;
-                    TrpMatrixInvStrain = ublas::zero_matrix<FieldData>(6,6); 
-                    TrpMatrixInvStrain=invStrainRotMat.StrainRotMat;
-                    
-                    DummyMatrix2 = ublas::zero_matrix<FieldData>(6,6); 
-                    ublas::matrix< FieldData > dummyA = prod( DummyMatrix , TrpMatrixInvStrain );
-                    DummyMatrix2 = prod(TrpMatrixStress,dummyA);
-                    DummyMatrix = ublas::zero_matrix<FieldData>(6,6); 
-                    DummyMatrix = DummyMatrix2;
-                }
-                
-                D_At_GaussPoint[gg].resize(6,6);
-                D_At_GaussPoint[gg].clear();
-                D_At_GaussPoint[gg] = DummyMatrix;
-//                cout<<"\n\n\n D_At_GaussPoint "<<D_At_GaussPoint[gg] << endl;
-            }
+            vector< ublas::matrix< double > > normalized_phi;
+			normalized_phi.resize(coords_at_Gauss_nodes.size());
+			ierr = ComputeFibreDirection(normalized_phi); CHKERRQ(ierr);
+
+			for(unsigned int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
+				
+				int noOfRotations = 1; //Number of Rotations
+				
+				double zVec[3]={0.0,0.0,1.0};
+				double AxVector[3]={normalized_phi[gg](0,1)*zVec[2]-normalized_phi[gg](0,2)*zVec[1] , normalized_phi[gg](0,2)*zVec[0]-normalized_phi[gg](0,0)*zVec[2] , normalized_phi[gg](0,0)*zVec[1]-normalized_phi[gg](0,1)*zVec[0]};
+				double AxAngle[1]= {asin((sqrt(pow(AxVector[0],2)+pow(AxVector[1],2)+pow(AxVector[2],2)))/(sqrt(pow(normalized_phi[gg](0,0),2)+pow(normalized_phi[gg](0,1),2)+pow(normalized_phi[gg](0,2),2)))*(sqrt(pow(zVec[0],2)+pow(zVec[1],2)+pow(zVec[2],2))))};
+				
+				double negAxAngle[noOfRotations];
+				for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
+				
+				ublas::matrix<double> DummyMatrix,DummyMatrix2;
+				DummyMatrix = ublas::zero_matrix<FieldData>(6,6);
+				DummyMatrix = StiffnessMatrix;
+				
+				///Rotating Stiffness over a number of axis/angle rotations
+				for (int aa=0; aa<noOfRotations; aa++) {
+					
+					StressTransformation StressRotMat(&AxVector[3*aa], AxAngle[aa]);
+					StrainTransformation invStrainRotMat(&AxVector[3*aa], negAxAngle[aa]);
+					
+					ublas::matrix<double> TrpMatrixStress;
+					TrpMatrixStress = ublas::zero_matrix<FieldData>(6,6);
+					TrpMatrixStress=StressRotMat.StressRotMat;
+					
+					ublas::matrix<double> TrpMatrixInvStrain;
+					TrpMatrixInvStrain = ublas::zero_matrix<FieldData>(6,6);
+					TrpMatrixInvStrain=invStrainRotMat.StrainRotMat;
+					
+					DummyMatrix2 = ublas::zero_matrix<FieldData>(6,6);
+					ublas::matrix< FieldData > dummyA = prod( DummyMatrix , TrpMatrixInvStrain );
+					DummyMatrix2 = prod(TrpMatrixStress,dummyA);
+					DummyMatrix = ublas::zero_matrix<FieldData>(6,6);
+					DummyMatrix = DummyMatrix2;
+				}
+				
+				D_At_GaussPoint[gg].resize(6,6);
+				D_At_GaussPoint[gg].clear();
+				D_At_GaussPoint[gg] = DummyMatrix;
+			}
 
             //Assembly Aij and F
             ierr = Fint(F_stress); CHKERRQ(ierr);
-            ierr = store_coord(coord_stress);
-            *RVE_volume_TransIso+=V;
+            ierr = store_coord(coord_stress);  CHKERRQ(ierr);
+            *RVE_volume+=V;
             
 
             ierr = OpStudentEnd(); CHKERRQ(ierr);
