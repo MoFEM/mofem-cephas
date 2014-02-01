@@ -1,7 +1,3 @@
 // the configured options and settings for MoFEM
-#define MoFEM_VERSION_MAJOR @MoFEM_VERSION_MAJOR@
-#define MoFEM_VERSION_MINOR @MoFEM_VERSION_MINOR@
-#define MoFEM_VERSION_MINOR @MoFEM_VERSION_BUILD@
-
 #define ADD_
 

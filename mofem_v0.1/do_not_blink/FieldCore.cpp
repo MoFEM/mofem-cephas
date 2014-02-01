@@ -23,6 +23,7 @@
 
 #include<FieldCore.hpp>
 #include<FEM.h>
+#include<version.h>
 
 namespace MoFEM {
 
@@ -298,9 +299,6 @@ PetscErrorCode FieldCore::add_field(const string& name,const FieldSpace space,co
   ierr = add_field(name,id,space,rank,bh,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-#define STR_VALUE(arg) #arg
-#define SHA1_NAME(name) STR_VALUE(name)
-#define GIT_SHA1_NAME SHA1_NAME(GIT_SHA1)
 PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionBegin;
   PetscPrintf(PETSC_COMM_WORLD,"version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);

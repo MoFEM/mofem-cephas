@@ -40,18 +40,22 @@ set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
 set(MoFEM_VERSION_BUILD 1)
 
+#git revision
+include(cmake/GetGitRevisionDescription.cmake)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+#add_definitions("-DGIT_SHA1=${GIT_SHA1}")
+
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file(
   "${PROJECT_SOURCE_DIR}/config.h.in"
   "${PROJECT_BINARY_DIR}/config.h"
   )
+configure_file(
+  "${PROJECT_SOURCE_DIR}/version.h.in"
+  "${PROJECT_BINARY_DIR}/version.h"
+  )
 include_directories("${PROJECT_BINARY_DIR}")
-
-#git revision
-include(cmake/GetGitRevisionDescription.cmake)
-get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-add_definitions("-DGIT_SHA1=${GIT_SHA1}")
 
 #add coverage
 if(WITHCOVERAGE) 
