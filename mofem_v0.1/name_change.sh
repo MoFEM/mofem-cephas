@@ -6,6 +6,7 @@ find . -name "*.hpp" -exec sed -i .org "s/$1/$2/g" {} \;
 find . -name "*.cpp" -exec sed -i .org "s/$1/$2/g" {} \;
 find . -name "*.txt" -exec sed -i .org "s/$1/$2/g" {} \;
 find . -name "*.jou" -exec sed -i .org "s/$1/$2/g" {} \;
+find . -name "*.sh" -exec sed -i .org "s/$1/$2/g" {} \;
 find . -name "README" -exec sed -i .org "s/$1/$2/g" {} \;
 
 
