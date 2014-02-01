@@ -1,5 +1,5 @@
 set(GID_SOURCE_REPO "$ENV{HOME}/tmp/mofem/source")
-set(CTEST_SOURCE_DIRECTORY "${GID_SOURCE_REPO}/mofem_v0.0.1")
+set(CTEST_SOURCE_DIRECTORY "${GID_SOURCE_REPO}/mofem_v0.1")
 set(CTEST_BINARY_DIRECTORY "$ENV{HOME}/tmp/mofem/build")
 
 set(CTEST_PROJECT_NAME "MoFEM")
