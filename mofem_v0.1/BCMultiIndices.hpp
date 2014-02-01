@@ -51,6 +51,7 @@ enum Cubit_BC {
   Mat_TransIsoSet = 1<<14,
   Mat_InterfSet = 1 <<15,
   Mat_ThermalSet = 1<<16,
+  Block_BodyForcesSet = 1<<17,
   LastSet
 };
 
@@ -111,46 +112,85 @@ struct Mat_Elastic: public generic_attribute_data {
 };
     
     
-    /*! \struct Mat_Thermal
-     *  \brief Thermal material data structure
-     */
-    struct Mat_Thermal: public generic_attribute_data {
-        struct __attribute__ ((packed)) _data_{
-            double Conductivity; // Thermal conductivity
-            double User1; // User attribute 1
-            double User2; // User attribute 2
-            double User3; // User attribute 3
-            double User4; // User attribute 4
-            double User5; // User attribute 5
-            double User6; // User attribute 6
-            double User7; // User attribute 7
-            double User8; // User attribute 8
-        };
+/*! \struct Mat_Thermal
+*  \brief Thermal material data structure
+*/
+struct Mat_Thermal: public generic_attribute_data {
+  struct __attribute__ ((packed)) _data_{
+    double Conductivity; // Thermal conductivity
+    double User1; // User attribute 1
+    double User2; // User attribute 2
+    double User3; // User attribute 3
+    double User4; // User attribute 4
+    double User5; // User attribute 5
+    double User6; // User attribute 6
+    double User7; // User attribute 7
+    double User8; // User attribute 8
+  };
+
+  _data_ data;
         
+  const Cubit_BC_bitset type;
+  const unsigned int min_number_of_atributes;
+  Mat_Thermal(): type(Mat_ThermalSet),min_number_of_atributes(1) {};
         
-        _data_ data;
+  virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+    PetscFunctionBegin;
+    if(attributes.size()<min_number_of_atributes) {
+      SETERRQ(PETSC_COMM_SELF,1,"Thermal conductivity is not defined. (top tip: check number of THERMAL block atributes)");
+    }
+    if(8*attributes.size()>sizeof(data)) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+    }
+    bzero(&data,sizeof(data));
+    memcpy(&data, &attributes[0],8*attributes.size());
+    PetscFunctionReturn(0);
+  }
         
-        const Cubit_BC_bitset type;
-        const unsigned int min_number_of_atributes;
-        Mat_Thermal(): type(Mat_ThermalSet),min_number_of_atributes(1) {};
+  /*! \brief Print Mat_Elastic data
+  */
+  friend ostream& operator<<(ostream& os,const Mat_Thermal& e);
+};
+
+/*! \struct Body forces block
+*  \brief Thermal material data structure
+*/
+struct Block_BodyForces: public generic_attribute_data {
+  struct __attribute__ ((packed)) _data_{
+    double density; // Thermal conductivity
+    double acceleration_x; // User attribute 1
+    double acceleration_y; // User attribute 2
+    double acceleration_z; // User attribute 3
+    double User4; // User attribute 4
+    double User5; // User attribute 5
+    double User6; // User attribute 6
+    double User7; // User attribute 7
+    double User8; // User attribute 8
+  };
+
+  _data_ data;
         
-        virtual PetscErrorCode fill_data(const vector<double>& attributes) {
-            PetscFunctionBegin;
-            if(attributes.size()<min_number_of_atributes) {
-                SETERRQ(PETSC_COMM_SELF,1,"Thermal conductivity is not defined. (top tip: check number of THERMAL block atributes)");
-            }
-            if(8*attributes.size()>sizeof(data)) {
-                SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
-            }
-            bzero(&data,sizeof(data));
-            memcpy(&data, &attributes[0],8*attributes.size());
-            PetscFunctionReturn(0);
-        }
+  const Cubit_BC_bitset type;
+  const unsigned int min_number_of_atributes;
+  Block_BodyForces(): type(Block_BodyForcesSet),min_number_of_atributes(5) {};
         
-        /*! \brief Print Mat_Elastic data
-         */
-        friend ostream& operator<<(ostream& os,const Mat_Thermal& e);
-    };
+  virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+    PetscFunctionBegin;
+    if(attributes.size()<min_number_of_atributes) {
+      SETERRQ(PETSC_COMM_SELF,1,"Material density and/or acceleration is not defined. (top tip: check number of THERMAL block atributes)");
+    }
+    if(8*attributes.size()>sizeof(data)) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+    }
+    bzero(&data,sizeof(data));
+    memcpy(&data, &attributes[0],8*attributes.size());
+    PetscFunctionReturn(0);
+  }
+        
+  /*! \brief Print Mat_Elastic data
+  */
+  friend ostream& operator<<(ostream& os,const Block_BodyForces& e);
+};
     
     
     

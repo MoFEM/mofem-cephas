@@ -1087,6 +1087,8 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
         type |= Mat_TransIsoSet; }
     else if (name.compare(0,10,"MAT_INTERF") == 0) {
         type |= Mat_InterfSet; }
+    else if (name.compare(0,11,"BODY_FORCES") == 0) {
+	type |= Block_BodyForcesSet; }
     
         //To be extended as appropriate
     
@@ -1287,6 +1289,22 @@ ostream& operator<<(ostream& os,const Mat_Thermal& e)
         os << "User attribute 1 = " << e.data.User1 << endl;
         os << "User attribute 2 = " << e.data.User2 << endl;
         os << "User attribute 3 = " << e.data.User3 << endl;
+        os << "User attribute 4 = " << e.data.User4 << endl;
+        os << "User attribute 5 = " << e.data.User5 << endl;
+        os << "User attribute 6 = " << e.data.User6 << endl;
+        os << "User attribute 7 = " << e.data.User7 << endl;
+        os << "User attribute 8 = " << e.data.User8 << endl << endl;
+        return os;
+    }
+
+ostream& operator<<(ostream& os,const Block_BodyForces& e)
+    {
+        os << endl << "Block Body Forces" << endl;
+        os << "-------------------" << endl;
+        os << "density  = " << e.data.density << endl;
+        os << "acceleration_x = " << e.data.acceleration_x << endl;
+        os << "acceleration_y = " << e.data.acceleration_y << endl;
+        os << "acceleration_z = " << e.data.acceleration_z << endl;
         os << "User attribute 4 = " << e.data.User4 << endl;
         os << "User attribute 5 = " << e.data.User5 << endl;
         os << "User attribute 6 = " << e.data.User6 << endl;
