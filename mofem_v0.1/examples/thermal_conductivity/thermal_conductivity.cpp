@@ -145,9 +145,21 @@ int main(int argc, char *argv[]) {
   ierr = mField.MatCreateMPIAIJWithArrays("THERMAL_PROBLEM",&Aij); CHKERRQ(ierr);
 
   struct MyThermalFEMethod: public ThermalFEMethod {
-      MyThermalFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
+    MyThermalFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
                         Mat &_Aij,Vec &_D,Vec& _F,double _Ther_Cond):   //class constructor
 	ThermalFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_Ther_Cond) {};
+    //This is for KSP solver, residual is on the RHS
+    PetscErrorCode Rhs(Vec F) {
+      PetscFunctionBegin;
+      ierr = Fint(); CHKERRQ(ierr);
+      for(int rr = 0;rr<row_mat;rr++) {
+	if(RowGlob[rr].size()==0) continue;
+	if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	f_int[rr] *= -1;
+	ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&*f_int[rr].data().begin(),ADD_VALUES); CHKERRQ(ierr);
+      }
+      PetscFunctionReturn(0);
+    }
 
    };
     
@@ -202,22 +214,22 @@ ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-    PostProcVertexMethodTemp ent_method(moab);
-    ierr = mField.loop_dofs("THERMAL_PROBLEM","TEMPERATURE",Row,ent_method); CHKERRQ(ierr);
+  PostProcVertexMethodTemp ent_method(moab);
+  ierr = mField.loop_dofs("THERMAL_PROBLEM","TEMPERATURE",Row,ent_method); CHKERRQ(ierr);
     
-    if(pcomm->rank()==0) {
-        EntityHandle out_meshset;
-        rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-        ierr = mField.problem_get_FE("THERMAL_PROBLEM","THERMAL",out_meshset); CHKERRQ(ierr);
-        rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-        rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-    }
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("THERMAL_PROBLEM","THERMAL",out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
     
     //Display the temperature vector and Aij matrices
     //cout<<"D "<<endl<<endl;
-    //PetscViewer    viewer;
-    //VecView(D,viewer);
-    //cout<<endl<<endl;
+    PetscViewer    viewer;
+    VecView(D,viewer);
+    cout<<endl<<endl;
     //cout<<"Aij "<<endl<<endl;
     //MatView(Aij, viewer);
     //cout<<endl<<endl<<endl<<endl;

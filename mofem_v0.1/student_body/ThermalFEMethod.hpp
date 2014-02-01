@@ -330,7 +330,6 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("TEMPERATURE",MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
 	  ierr = GetGaussRowDiffNMatrix("TEMPERATURE",MBEDGE,rowDiffNMatrices[row_mat],ee); CHKERRQ(ierr);
-	  //ierr = MakeBMatrix3D("TEMPERATURE",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
 	  row_mat++;
 	}
       }
@@ -340,7 +339,6 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
 	if(RowGlob[row_mat].size()!=0) {
 	  ierr = GetGaussRowNMatrix("TEMPERATURE",MBTRI,rowNMatrices[row_mat],ff); CHKERRQ(ierr);
 	  ierr = GetGaussRowDiffNMatrix("TEMPERATURE",MBTRI,rowDiffNMatrices[row_mat],ff); CHKERRQ(ierr);
-	  //ierr = MakeBMatrix3D("TEMPERATURE",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
 	  row_mat++;
 	}
       }
@@ -349,7 +347,6 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
       if(RowGlob[row_mat].size() != 0) { //volume matrices
 	ierr = GetGaussRowNMatrix("TEMPERATURE",MBTET,rowNMatrices[row_mat]); CHKERRQ(ierr);
 	ierr = GetGaussRowDiffNMatrix("TEMPERATURE",MBTET,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
-	//ierr = MakeBMatrix3D("TEMPERATURE",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
 	row_mat++;
       }
       PetscFunctionReturn(0);
@@ -461,11 +458,54 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
+    ublas::vector<ublas::vector<FieldData> > f_int;
+    ublas::vector<double,ublas::bounded_array<double,3> > D_GradT;
+    vector< ublas::matrix<FieldData> > TemperatureGradient_at_Gauss_Pts;
+    virtual PetscErrorCode Fint() {
+      PetscFunctionBegin;
+
+      double Ther_Cond;
+      ierr = GetMatParameters(&Ther_Cond); CHKERRQ(ierr);
+      //cout<< "Ther_Cond "<<Ther_Cond<<endl;
+      ierr = calulateD(Ther_Cond); CHKERRQ(ierr);
+      //cout<< "D "<<D<<endl;
+
+      f_int.resize(row_mat);
+      D_GradT.resize(3);
+      ierr = GetGaussDiffDataVector("TEMPERATURE",TemperatureGradient_at_Gauss_Pts); CHKERRQ(ierr);
+
+      int g_dim = g_NTET.size()/4;
+      for(int rr = 0;rr<row_mat;rr++) {
+
+	for(int gg = 0;gg<g_dim;gg++) {
+	  ublas::matrix<FieldData> &row_Mat = (rowDiffNMatrices[rr])[gg];
+	  double w = V*G_W_TET[gg];
+      
+	  double s = 1;
+	  if(gg == 0) s = 0;
+        
+	  cblas_dgemv(CblasRowMajor,CblasNoTrans,
+	    3,3,w,&*D.data().begin(),3,
+	    &*TemperatureGradient_at_Gauss_Pts[gg].data().begin(),1,
+	    0.,&*D_GradT.data().begin(),1);
+	  f_int[rr].resize(row_Mat.size2());
+	  cblas_dgemv(CblasRowMajor,CblasTrans,
+	    3,row_Mat.size2(),1,&*row_Mat.data().begin(),row_Mat.size2(),
+	    &*D_GradT.data().begin(),1,
+	    s,&*f_int[rr].data().begin(),1);
+
+	}
+      }
+
+      PetscFunctionReturn(0);
+    }
+
     virtual PetscErrorCode Lhs() {
       PetscFunctionBegin;
       //cout<<"Lhs "<<endl;
       ierr = Stiffness(); CHKERRQ(ierr);
       for(int rr = 0;rr<row_mat;rr++) {
+	if(RowGlob[rr].size()==0) continue;
 	for(int cc = rr;cc<col_mat;cc++) {
 	  if(ColGlob[cc].size()==0) continue;
 	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -481,6 +521,17 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
+    virtual PetscErrorCode Rhs(Vec F) {
+      PetscFunctionBegin;
+      ierr = Fint(); CHKERRQ(ierr);
+      for(int rr = 0;rr<row_mat;rr++) {
+	if(RowGlob[rr].size()==0) continue;
+	if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&*f_int[rr].data().begin(),ADD_VALUES); CHKERRQ(ierr);
+      }
+      PetscFunctionReturn(0);
+    }
+
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
@@ -491,6 +542,8 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
         
       //Assembly Aij
       ierr = Lhs(); CHKERRQ(ierr);
+      //Assemble Internal Forces
+      ierr = Rhs(F); CHKERRQ(ierr);
 
       //Neumann Boundary Conditions
       ierr = NeumannBC(F); CHKERRQ(ierr);
