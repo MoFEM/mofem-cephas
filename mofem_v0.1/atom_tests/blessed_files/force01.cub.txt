@@ -1,0 +1,36 @@
+
+F o r c e 
+ 
+Force magnitude: 10.55
+Moment magnitude: -0.5
+Force direction vector (X-component): 0
+Force direction vector (Y-component): -1
+Force direction vector (Z-component): 0
+Moment direction vector (X-component): 0
+Moment direction vector (Y-component): -1
+Moment direction vector (Z-component): 0
+ 
+
+F o r c e 
+ 
+Force magnitude: 10.33
+Moment magnitude: 0
+Force direction vector (X-component): 0
+Force direction vector (Y-component): 0
+Force direction vector (Z-component): -1
+Moment direction vector (X-component): 0
+Moment direction vector (Y-component): 0
+Moment direction vector (Z-component): 0
+ 
+
+F o r c e 
+ 
+Force magnitude: 0
+Moment magnitude: 50
+Force direction vector (X-component): 0
+Force direction vector (Y-component): 0
+Force direction vector (Z-component): 0
+Moment direction vector (X-component): 0
+Moment direction vector (Y-component): 0
+Moment direction vector (Z-component): 1
+ 

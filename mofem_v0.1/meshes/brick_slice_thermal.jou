@@ -1,0 +1,80 @@
+reset
+
+create Cylinder height 40 radius 260
+create Cylinder height 40 radius 131.50
+subtract volume 2 from volume 1
+brick x 460 y 460 z 765 
+intersect volume all 
+Compress Ids All
+rotate Volume 1 angle 22.5  about Z include_merged
+brick x 460 y 460 z 765 
+intersect volume all 
+Compress Ids All
+rotate Volume 1 angle 22.5  about Z include_merged
+brick x 460 y 460 z 765 
+intersect volume all 
+Compress Ids All
+rotate Volume 1 angle 22.5  about Z include_merged
+brick x 460 y 460 z 765 
+intersect volume all 
+Compress Ids All
+
+#bigkeyways
+brick x 32.85 y 38 z 765
+align Volume 2  surface 24  with surface 18  
+Volume 2  copy rotate 90 about z
+Volume 3  copy rotate 90 about z
+Volume 4  copy rotate 90 about z
+subtract volume 2 3 4 5 from volume 1
+Compress Ids All
+
+#crack
+create Cylinder height 80 radius 10
+move Volume 2 midpoint location curve 90  include_merged 
+chop volume 1 with volume 2 
+webcut volume 3 with plane surface 42
+
+#Merge Volumes   
+imprint volume all    
+merge volume all  
+
+#material
+block 1 volume all  
+block 1 name 'MAT_ELASTIC' 
+block 1 attribute count 2 
+block 1 attribute index 1 10.0 
+block 1 attribute index 2 0.3 
+
+#disp bcs
+create Displacement  on vertex 47  dof 1 dof 2 dof 3 fix 0 
+create Displacement  on vertex 36  dof 2 dof 3 fix 0 
+create Displacement  on vertex 36  dof 2 fix 0
+
+#Create nodesets and sidesets for fracture constraints     
+#Boundary edges     
+sideset 100 curve all    
+sideset 100 curve 120 125 117 121 118 123 119 104 102   remove  
+
+#Boundary vertices     
+nodeset 101 vertex all   
+nodeset 101 vertex 77 70 71 72 69 78  vertex  remove  
+
+#Boundary surfaces     
+sideset 102 surface all     
+sideset 102 surface 54 50  49 remove     
+
+#Crack surface  
+sideset 200 surface 49  
+  
+#Crack front  
+sideset 201 curve 118
+
+#!Meshing   
+volume all scheme tetmesh      
+volume all size auto factor 5
+
+#!Mesh All   
+mesh volume all  
+
+
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/brick_slice_thermal.cub" overwrite  

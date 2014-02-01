@@ -1,0 +1,17 @@
+#example how to run
+
+mpirun -np 3 ./interface -my_file PeelTest.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -ksp_monitor 
+
+#input
+
+PeelTest.cub - input mesh consisting SideSet 1 (consiting faces where dirihlet
+bc. are applied), SideSet2 (faces where tractions t = [0,1,0], are applied),
+SideSet 3 (faces where tractions t = [0,-1,0], are applied).  SideSet 4 consist
+faces where interfaces element should be inserted.
+
+
+#Output
+
+out.vtk - computational mesh
+out_post_proc.vtk - refinded mesh of TETs for prostrocesing
+out_post_proc_prisms.vtk - refinded mesh of PRISMs for prostrocesing
