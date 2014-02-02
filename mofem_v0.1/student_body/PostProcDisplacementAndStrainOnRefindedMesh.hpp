@@ -69,7 +69,7 @@ struct PostProcOnRefMesh_Base {
       rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
 
       //
-      FieldCore core_ref(moab_ref);
+      FieldCore core_ref(moab_ref,-1);
       FieldInterface& mField_ref = core_ref;
       ierr = mField_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 

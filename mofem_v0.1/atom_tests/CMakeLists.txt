@@ -55,6 +55,9 @@ target_link_libraries(nonlinear_elasticity_thremal_expansion_atom mofem_complex_
 add_executable(arc_length_nonlinear_elasticity_thermal_atom arc_length_nonlinear_elasticity_thermal_atom.cpp)
 target_link_libraries(arc_length_nonlinear_elasticity_thermal_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(thermal_conductivity_atom thermal_conductivity_atom.cpp)
+target_link_libraries(thermal_conductivity_atom mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)
@@ -79,7 +82,7 @@ cm_export_file("../meshes/elasticity_atom_test_01X_pressure.cub" export_atom_tes
 cm_export_file("../meshes/elasticity_atom_test_sheer_force.cub" export_atom_tests)
 cm_export_file("../meshes/templar.cub" export_atom_tests)
 cm_export_file("../meshes/cube_for_thermal_expansion.cub" export_atom_tests)
-
+cm_export_file("../meshes/cub_thermal_problem.cub" export_atom_tests)
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
@@ -184,4 +187,9 @@ add_test(arc_length_nonlinear_elasticity_thermal_atom_compare ${CMAKE_COMMAND} -
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/arc_length_nonlinear_elasticity_thermal_atom.txt 
   ${CMAKE_BINARY_DIR}/atom_tests/arc_length_nonlinear_elasticity_thermal_atom.txt)
 
+#thermal problem
+add_test(thermal_conductivity_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_conductivity_atom -my_file cub_thermal_problem.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -my_max_pot_proc_ref_level 1 -log_summary)
+add_test(thermal_conductivity_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_problem.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/thermal_problem.txt)
 

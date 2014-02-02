@@ -33,7 +33,38 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-
+//Rounding
+#define RND_EPS 1e-6
+double roundn(double n)
+{
+	//break n into fractional part (fract) and integral part (intp)
+    double fract, intp;
+    fract = modf(n,&intp);
+    
+//    //round up
+//    if (fract>=.5)
+//    {
+//        n*=10;
+//        ceil(n);
+//        n/=10;
+//    }
+//	//round down
+//    if (fract<=.5)
+//    {
+//		n*=10;
+//        floor(n);
+//        n/=10;
+//    }
+    // case where n approximates zero, set n to "positive" zero
+    if (abs(intp)==0)
+    {
+        if(abs(fract)<=RND_EPS)
+           {
+               n=0.000;
+           }
+    }
+    return n;
+}
 
 static char help[] = "...\n\n";
 
@@ -218,20 +249,21 @@ ierr = VecZeroEntries(F); CHKERRQ(ierr);
   PostProcVertexMethodTemp ent_method(moab);
   ierr = mField.loop_dofs("THERMAL_PROBLEM","TEMPERATURE",Row,ent_method); CHKERRQ(ierr);
     
-  if(pcomm->rank()==0) {
+  /*if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("THERMAL_PROBLEM","THERMAL",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-
-  }
+  }*/
 
   PostProcTemperatureOnRefMesh post_proc_on_ref_mesh(moab);
   ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL",post_proc_on_ref_mesh); CHKERRQ(ierr);
-  if(pcomm->rank()==0) {
-    rval = post_proc_on_ref_mesh.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }
+  //if(pcomm->rank()==0) {
+    //rval = post_proc_on_ref_mesh.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
+  //}
+
+
 
   //Display the temperature vector and Aij matrices
   //cout<<"D "<<endl<<endl;
@@ -241,6 +273,29 @@ ierr = VecZeroEntries(F); CHKERRQ(ierr);
   //cout<<"Aij "<<endl<<endl;
   //MatView(Aij, viewer);
   //cout<<endl<<endl<<endl<<endl;
+
+    //Open mesh_file_name.txt for writing
+    ofstream myfile;
+    myfile.open("thermal_problem.txt");
+    
+    //Output displacements
+    cout << "<<<< Temperature >>>>>" << endl;
+    myfile << "<<<< Temperature >>>>>" << endl;
+    
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"TEMPERATURE",dof_ptr))
+    {
+        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+
+        //Round and truncate to 3 decimal places
+        double fval = dof_ptr->get_FieldData();
+        cout << boost::format("%.3lf") % roundn(fval) << endl;
+        myfile << boost::format("%.3lf") % roundn(fval) << endl;
+        
+    }
+    
+    //Close mesh_file_name.txt
+    myfile.close();
+
  
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
