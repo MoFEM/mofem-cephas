@@ -39,6 +39,26 @@ struct PostProcTemperatureOnRefMesh: public PostProcOnRefMesh_Base,FEMethod_UpLe
 
     }
 
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscPrintf(PETSC_COMM_WORLD,"Start Temperature PostProc on refined mesh\n");
+      if(init_ref) PetscFunctionReturn(0);
+      
+      ierr = do_preprocess(); CHKERRQ(ierr);
+
+      init_ref = true;
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      ierr = do_postproc(); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"End Tempereatutre PostProc on refined mesh\n");
+      PetscFunctionReturn(0);
+    }
+
+
 
     map<EntityHandle,EntityHandle> node_map;
 
@@ -75,8 +95,7 @@ struct PostProcTemperatureOnRefMesh: public PostProcOnRefMesh_Base,FEMethod_UpLe
       //Get displacements at Gauss points
       {
 
-	string filed_name("TEMPERATURE");
-	H1L2_Data_at_Gauss_pt::iterator diit = h1l2_data_at_gauss_pt.find("TEMPEREATURE");
+	H1L2_Data_at_Gauss_pt::iterator diit = h1l2_data_at_gauss_pt.find("TEMPERATURE");
 	if(diit==h1l2_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no field_name TEMPERATURE !!!");
 	vector< ublas::vector<FieldData> > &data = diit->second;
 	vector< ublas::vector<FieldData> >::iterator vit = data.begin();
@@ -89,7 +108,7 @@ struct PostProcTemperatureOnRefMesh: public PostProcOnRefMesh_Base,FEMethod_UpLe
 
       {
   
-	H1_DiffData_at_Gauss_pt::iterator  giit = h1_diff_data_at_gauss_pt.find("TEMPEREATURE");
+	H1_DiffData_at_Gauss_pt::iterator  giit = h1_diff_data_at_gauss_pt.find("TEMPERATURE");
 	if(giit == h1_diff_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no field_name TEMPERATURE !!!");
 	vector< ublas::matrix<FieldData> > &data = giit->second;
 	vector< ublas::matrix<FieldData> >::iterator m_dit = data.begin();

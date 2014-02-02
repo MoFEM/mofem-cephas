@@ -26,6 +26,7 @@
 
 #include "ThermalFEMethod.hpp"
 #include "PostProcVertexMethodTemp.hpp"
+#include "PostProcTemperatureOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 
@@ -223,8 +224,15 @@ ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = mField.problem_get_FE("THERMAL_PROBLEM","THERMAL",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+
   }
-    
+
+  PostProcTemperatureOnRefMesh post_proc_on_ref_mesh(moab);
+  ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL",post_proc_on_ref_mesh); CHKERRQ(ierr);
+  if(pcomm->rank()==0) {
+    rval = post_proc_on_ref_mesh.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
+  }
+
     //Display the temperature vector and Aij matrices
     //cout<<"D "<<endl<<endl;
     PetscViewer    viewer;

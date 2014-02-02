@@ -301,10 +301,12 @@ PetscErrorCode FieldCore::add_field(const string& name,const FieldSpace space,co
 }
 PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionBegin;
-  PetscPrintf(PETSC_COMM_WORLD,"version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
-  PetscPrintf(PETSC_COMM_WORLD,"git commit id %s\n",GIT_SHA1_NAME);
-  //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(verb==-1) verb = verbose;
+  if(verb > 0) {
+    PetscPrintf(PETSC_COMM_WORLD,"version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
+    PetscPrintf(PETSC_COMM_WORLD,"git commit id %s\n",GIT_SHA1_NAME);
+  }
+  //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   ierr = clear_map(); CHKERRQ(ierr);
   Range meshsets;
   rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,false);  CHKERR_PETSC(rval);
