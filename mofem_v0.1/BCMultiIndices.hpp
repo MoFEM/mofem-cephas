@@ -126,6 +126,7 @@ struct Mat_Thermal: public generic_attribute_data {
     double User6; // User attribute 6
     double User7; // User attribute 7
     double User8; // User attribute 8
+    double User9; // User attribute 9
   };
 
   _data_ data;

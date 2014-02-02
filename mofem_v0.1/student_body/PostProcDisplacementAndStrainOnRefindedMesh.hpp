@@ -46,30 +46,14 @@ struct PostProcOnRefMesh_Base {
       PetscOptionsGetInt(PETSC_NULL,"-my_max_pot_proc_ref_level",&max_level,&flg);
       meshset_level.resize(max_level+1);
     }
-};
 
-struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOnRefMesh_Base {
-    ParallelComm* pcomm;
-    PetscLogDouble t1,t2;
-    PetscLogDouble v1,v2;
-
-    string field_name;
-    PostProcDisplacementsOnRefMesh(Interface& _moab,string _field_name = "DISPLACEMENT"): 
-      FEMethod_UpLevelStudent(_moab),PostProcOnRefMesh_Base(), field_name(_field_name) {
-      pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    }
-
-    Tag th_disp;
     vector<double> g_NTET;
-
-    PetscErrorCode preProcess() {
+    PetscErrorCode do_preprocess() {
       PetscFunctionBegin;
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
-      ierr = PetscTime(&v1); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
-      if(init_ref) PetscFunctionReturn(0);
-      
+      ErrorCode rval;
+      PetscErrorCode ierr;
+
       double base_coords[] = {
 	0,0,0,
 	1,0,0,
@@ -85,7 +69,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
 
       //
-      FieldCore core_ref(moab_ref);
+      FieldCore core_ref(moab_ref,-1);
       FieldInterface& mField_ref = core_ref;
       ierr = mField_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
@@ -103,6 +87,48 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       rval = moab_ref.get_vertex_coordinates(ref_coords); CHKERR_PETSC(rval);
       g_NTET.resize(4*ref_coords.size()/3);
       ShapeMBTET(&g_NTET[0],&ref_coords[0],&ref_coords[ref_coords.size()/3],&ref_coords[2*ref_coords.size()/3],ref_coords.size()/3);
+
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode do_postproc() {
+      PetscFunctionBegin;
+      ErrorCode rval;
+      ParallelComm* pcomm_post_proc = ParallelComm::get_pcomm(&moab_post_proc,MYPCOMM_INDEX);
+      if(pcomm_post_proc == NULL) pcomm_post_proc =  new ParallelComm(&moab_post_proc,PETSC_COMM_WORLD);
+      for(unsigned int rr = 1; rr<pcomm_post_proc->size();rr++) {
+	Range tets;
+	rval = moab_post_proc.get_entities_by_type(0,MBTET,tets); CHKERR_PETSC(rval);
+	rval = pcomm_post_proc->broadcast_entities(rr,tets); CHKERR(rval);
+      }
+      PetscFunctionReturn(0);
+    }
+
+};
+
+struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOnRefMesh_Base {
+    ParallelComm* pcomm;
+    PetscLogDouble t1,t2;
+    PetscLogDouble v1,v2;
+
+    string field_name;
+    PostProcDisplacementsOnRefMesh(Interface& _moab,string _field_name = "DISPLACEMENT"): 
+      FEMethod_UpLevelStudent(_moab),PostProcOnRefMesh_Base(), field_name(_field_name) {
+      pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    }
+
+    Tag th_disp;
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
+      ierr = PetscTime(&v1); CHKERRQ(ierr);
+      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+
+      if(init_ref) PetscFunctionReturn(0);
+      
+      ierr = do_preprocess(); CHKERRQ(ierr);
 
       double def_VAL[3] = {0,0,0};
       // create TAG
@@ -158,6 +184,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
 
       PetscFunctionReturn(0);
     }
+
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = do_operator(); CHKERRQ(ierr);
@@ -167,16 +194,10 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
+      ierr = do_postproc(); CHKERRQ(ierr);
       ierr = PetscTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-      ParallelComm* pcomm_post_proc = ParallelComm::get_pcomm(&moab_post_proc,MYPCOMM_INDEX);
-      if(pcomm_post_proc == NULL) pcomm_post_proc =  new ParallelComm(&moab_post_proc,PETSC_COMM_WORLD);
-      for(unsigned int rr = 1; rr<pcomm_post_proc->size();rr++) {
-	Range tets;
-	rval = moab_post_proc.get_entities_by_type(0,MBTET,tets); CHKERR_PETSC(rval);
-	rval = pcomm_post_proc->broadcast_entities(rr,tets); CHKERR(rval);
-      }
+      PetscPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       PetscFunctionReturn(0);
     }
 

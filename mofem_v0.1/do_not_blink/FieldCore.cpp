@@ -29,13 +29,23 @@ namespace MoFEM {
 
 const static int debug = 1;
 
+PetscErrorCode print_MoFem_verison() {
+  PetscFunctionBegin;
+  PetscPrintf(PETSC_COMM_WORLD,"version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
+  PetscPrintf(PETSC_COMM_WORLD,"git commit id %s\n",GIT_SHA1_NAME);
+  PetscFunctionReturn(0);
+}
+
 FieldCore::FieldCore(Interface& _moab,int _verbose): 
   moab(_moab),verbose(_verbose) {
   const EntityHandle root_meshset = moab.get_root_set();
+  if(verbose>0) {
+    print_MoFem_verison();
+  }
   // Version
-  stringstream strs_version;
-  strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR;
   Tag th_version;
+  stringstream strs_version;
+  strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
   string version = strs_version.str();
   rval = moab.tag_get_handle("_MoFEM_VERSION",version.size()*sizeof(char),MB_TYPE_OPAQUE,
     th_version,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,NULL); CHKERR_THROW(rval);
@@ -301,10 +311,8 @@ PetscErrorCode FieldCore::add_field(const string& name,const FieldSpace space,co
 }
 PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionBegin;
-  PetscPrintf(PETSC_COMM_WORLD,"version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
-  PetscPrintf(PETSC_COMM_WORLD,"git commit id %s\n",GIT_SHA1_NAME);
-  //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(verb==-1) verb = verbose;
+  //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   ierr = clear_map(); CHKERRQ(ierr);
   Range meshsets;
   rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,false);  CHKERR_PETSC(rval);

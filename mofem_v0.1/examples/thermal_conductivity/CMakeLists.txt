@@ -18,5 +18,9 @@
 
 add_executable(thermal_conductivity thermal_conductivity.cpp)
 target_link_libraries(thermal_conductivity mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../../meshes/Thermal_Exp1.cub" export_thermal_conductivity)
+cm_export_file("../../meshes/cub_thermal_problem.cub" export_thermal_conductivity)
+
+install(TARGETS thermal_conductivity DESTINATION bin)
 
