@@ -37,6 +37,9 @@ target_link_libraries(mesh_smoothing_atom mofem_complex_for_lazy mofem_student_b
 add_executable(mesh_insert_interface_atom mesh_insert_interface_atom.cpp)
 target_link_libraries(mesh_insert_interface_atom mofem_Field ${PROJECT_LIBS})
 
+add_executable(mesh_refine_atom mesh_refine_atom.cpp)
+target_link_libraries(mesh_refine_atom mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 add_executable(nonlinear_elasticity_atom nonlinear_elasticity_atom.cpp)
 target_link_libraries(nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
@@ -142,6 +145,9 @@ add_test(mesh_smoothing_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CM
 
 add_test(mesh_insert_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub -log_summary)
 add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
+
+add_test(mesh_refine_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub -log_summary)
+add_test(mesh_refine_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt)
 
 #nonlinear elasticty
 add_test(nonlinear_elasticity_atom_pressure ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-8 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 4 -log_summary)
