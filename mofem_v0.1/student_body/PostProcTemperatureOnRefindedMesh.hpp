@@ -28,7 +28,7 @@ struct PostProcTemperatureOnRefMesh: public PostProcOnRefMesh_Base,FEMethod_UpLe
 
     Tag th_themp,th_grad_themp;
     PostProcTemperatureOnRefMesh(Interface& _moab): 
-      FEMethod_UpLevelStudent(_moab),PostProcOnRefMesh_Base() 
+      PostProcOnRefMesh_Base(),FEMethod_UpLevelStudent(_moab)
       {
 
       double def_VAL[3] = {0,0,0};

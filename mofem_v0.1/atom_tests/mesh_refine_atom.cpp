@@ -44,7 +44,6 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST";//;DEBUG_IO";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR(rval); 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,0);
 
   FieldCore core(moab);
   FieldInterface& mField = core;
