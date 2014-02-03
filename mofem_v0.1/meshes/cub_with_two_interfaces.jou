@@ -1,0 +1,14 @@
+reset
+
+brick x 1 y 1 z 1
+webcut volume all with plane xplane offset 0.05 imprint merge 
+webcut volume all with plane yplane offset 0.05 imprint merge
+
+Sideset 1 surface 17 27
+Sideset 2 surface 20 24
+
+volume all scheme Tetmesh
+volume all size auto factor 6
+mesh volume all
+
+save as "/Users/likask/MyBuild/mofem/trunk/mofem_v0.1/meshes/cub_with_two_interfaces.cub" overwrite
