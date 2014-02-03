@@ -866,7 +866,7 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
 CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
   meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),
   tag_block_header_data(NULL),tag_block_attributes(NULL),tag_block_attributes_size(0),tag_name_data(NULL),
-  meshsets_mask(NodeSet|SideSet|BlockSet) {
+  meshsets_mask(NodeSet|SideSet|BlockSet|UnknownCubitName) {
   ErrorCode rval;
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR(rval);CHKERR_THROW(rval);
@@ -878,7 +878,6 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle("Block_Attributes",block_attribs); CHKERR(rval); CHKERR_THROW(rval);
   rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR(rval);CHKERR_THROW(rval);
-
   vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {
     if(
@@ -924,11 +923,27 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       //}
     }
     if(*tit == entityNameTag) {
-        rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR(rval); CHKERR_THROW(rval);
+      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR(rval); CHKERR_THROW(rval);
       PetscErrorCode ierr;
       ierr = get_type_from_Cubit_name(CubitBCType); if(ierr>0) throw("unrecognised Cubit name type");
     }
   }
+
+  //If BC set has name, unset UnknownCubitName
+  if(CubitBCType.to_ulong() & (	  
+      DisplacementSet|
+      ForceSet|
+      PressureSet|
+      VelocitySet|
+      AccelerationSet|
+      TemperatureSet|
+      HeatfluxSet|
+      InterfaceSet) ) {
+      
+     CubitBCType = CubitBCType & (~Cubit_BC_bitset(UnknownCubitName));  
+    
+  }
+
 }
 PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
@@ -1077,7 +1092,7 @@ PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
 
 PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_BC_bitset &type) const {
     PetscFunctionBegin;
-    
+
     //See Cubit_BC_bitset in common.hpp
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
         type |= Mat_ElasticSet; }
@@ -1093,7 +1108,7 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
         //To be extended as appropriate
     
     else { type |= UnknownCubitName; }
-        
+
     PetscFunctionReturn(0);
 }
 
