@@ -44,6 +44,7 @@ endif(FORCETESTING)
 
 set(CTEST_CUSTOM_MEMCHECK_IGNORE
   ${CTEST_CUSTOM_MEMCHECK_IGNORE}
+  #compare
   cubit_bc_atom_test_disp01_compare
   cubit_bc_atom_test_force01_compare
   cubit_bc_atom_test_velocity01_compare
@@ -65,9 +66,16 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   l2_atom_approximation_compare
   mesh_smoothing_atom_test_compare
   mesh_insert_interface_atom_test_compare
-  nonlinear_elasticity_atom_compare
+  mesh_refine_atom_test_compare
+  nonlinear_elasticity_atom_pressure_compare
+  nonlinear_elasticity_atom_sheer_force_compare
   arc_length_nonlinear_elasticity_atom_compare
   hdiv_atom_approximation_compare
+  field_axpy_compare
+  nonlinear_elasticity_atom_thermal_compare
+  arc_length_nonlinear_elasticity_thermal_atom_compare
+  thermal_conductivity_atom_compare
+  #this stuff is too big
   SimpleElasticityTest
   SimpleInterfaceTest
   SimpleInterfaceTestHalfCrack
