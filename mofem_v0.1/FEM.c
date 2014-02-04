@@ -586,7 +586,6 @@ PetscErrorCode Base_scale(
   PetscFunctionReturn(0);
 }
 
-/*
 //HO
 //MBTRIQ
 #define N_MBTRIQ0(x, y) ( (1.-x-y)*(2*(1.-x-y)-1.) )
@@ -607,7 +606,7 @@ PetscErrorCode Base_scale(
 #define diffN_MBTRIQ4y(x, y) ( 4.*x )
 #define diffN_MBTRIQ5x(x, y) ( -4.*y )
 #define diffN_MBTRIQ5y(x, y) ( 4.*((1.-x-y)-y) )
-PetscErrorCod ShapeMBTRIQ_GAUSS(double *N,const double *X,const double *Y,const int G_DIM) {
+PetscErrorCode ShapeMBTRIQ_GAUSS(double *N,const double *X,const double *Y,const int G_DIM) {
   PetscFunctionBegin;
   int ii = 0;
   for(; ii<G_DIM; ii++) {
@@ -689,7 +688,7 @@ PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double x,const double y) {
 #define diffN_MBTETQ9x(x, y, z) ( 0. )
 #define diffN_MBTETQ9y(x, y, z) ( 4.*z )
 #define diffN_MBTETQ9z(x, y, z) ( 4.*y )
-void ShapeMBTETQ(double *N,const double x,const double y,const double z) {
+PetscErrorCode ShapeMBTETQ(double *N,const double x,const double y,const double z) {
   PetscFunctionBegin;
   N[0] = N_MBTETQ0(x,y,z);
   N[1] = N_MBTETQ1(x,y,z);
@@ -760,42 +759,21 @@ PetscErrorCode ShapeDiffMBTETQ_GAUSS(double *diffN,const double *X,const double 
   int ii = 0;
   for(; ii<G_DIM; ii++) {
     double x = X[ii],y = Y[ii],z = Z[ii];
-    diffN[30*ii+0] = diffN_MBTETQ0x(x,y,z);
-    diffN[30*ii+1] = diffN_MBTETQ0y(x,y,z);
-    diffN[30*ii+2] = diffN_MBTETQ0z(x,y,z);
-    diffN[30*ii+3] = diffN_MBTETQ1x(x,y,z);
-    diffN[30*ii+4] = diffN_MBTETQ1y(x,y,z);
-    diffN[30*ii+5] = diffN_MBTETQ1z(x,y,z);
-    diffN[30*ii+6] = diffN_MBTETQ2x(x,y,z);
-    diffN[30*ii+7] = diffN_MBTETQ2y(x,y,z);
-    diffN[30*ii+8] = diffN_MBTETQ2z(x,y,z);
-    diffN[30*ii+9] = diffN_MBTETQ3x(x,y,z);
-    diffN[30*ii+10] = diffN_MBTETQ3y(x,y,z);
-    diffN[30*ii+11] = diffN_MBTETQ3z(x,y,z);
-    diffN[30*ii+12] = diffN_MBTETQ4x(x,y,z);
-    diffN[30*ii+13] = diffN_MBTETQ4y(x,y,z);
-    diffN[30*ii+14] = diffN_MBTETQ4z(x,y,z);
-    diffN[30*ii+15] = diffN_MBTETQ5x(x,y,z);
-    diffN[30*ii+16] = diffN_MBTETQ5y(x,y,z);
-    diffN[30*ii+17] = diffN_MBTETQ5z(x,y,z);
-    diffN[30*ii+18] = diffN_MBTETQ6x(x,y,z);
-    diffN[30*ii+19] = diffN_MBTETQ6y(x,y,z);
-    diffN[30*ii+20] = diffN_MBTETQ6z(x,y,z);
-    diffN[30*ii+21] = diffN_MBTETQ7x(x,y,z);
-    diffN[30*ii+22] = diffN_MBTETQ7y(x,y,z);
-    diffN[30*ii+23] = diffN_MBTETQ7z(x,y,z);
-    diffN[30*ii+24] = diffN_MBTETQ8x(x,y,z);
-    diffN[30*ii+25] = diffN_MBTETQ8y(x,y,z);
-    diffN[30*ii+26] = diffN_MBTETQ8z(x,y,z);
-    diffN[30*ii+27] = diffN_MBTETQ9x(x,y,z);
-    diffN[30*ii+28] = diffN_MBTETQ9y(x,y,z);
-    diffN[30*ii+29] = diffN_MBTETQ9z(x,y,z);
+    diffN[30*ii+0] = diffN_MBTETQ0x(x,y,z); diffN[30*ii+1] = diffN_MBTETQ0y(x,y,z); diffN[30*ii+2] = diffN_MBTETQ0z(x,y,z);
+    diffN[30*ii+3] = diffN_MBTETQ1x(x,y,z); diffN[30*ii+4] = diffN_MBTETQ1y(x,y,z); diffN[30*ii+5] = diffN_MBTETQ1z(x,y,z);
+    diffN[30*ii+6] = diffN_MBTETQ2x(x,y,z); diffN[30*ii+7] = diffN_MBTETQ2y(x,y,z); diffN[30*ii+8] = diffN_MBTETQ2z(x,y,z);
+    diffN[30*ii+9] = diffN_MBTETQ3x(x,y,z); diffN[30*ii+10] = diffN_MBTETQ3y(x,y,z); diffN[30*ii+11] = diffN_MBTETQ3z(x,y,z);
+    diffN[30*ii+12] = diffN_MBTETQ4x(x,y,z); diffN[30*ii+13] = diffN_MBTETQ4y(x,y,z); diffN[30*ii+14] = diffN_MBTETQ4z(x,y,z);
+    diffN[30*ii+15] = diffN_MBTETQ5x(x,y,z); diffN[30*ii+16] = diffN_MBTETQ5y(x,y,z); diffN[30*ii+17] = diffN_MBTETQ5z(x,y,z);
+    diffN[30*ii+18] = diffN_MBTETQ6x(x,y,z); diffN[30*ii+19] = diffN_MBTETQ6y(x,y,z); diffN[30*ii+20] = diffN_MBTETQ6z(x,y,z);
+    diffN[30*ii+21] = diffN_MBTETQ7x(x,y,z); diffN[30*ii+22] = diffN_MBTETQ7y(x,y,z); diffN[30*ii+23] = diffN_MBTETQ7z(x,y,z);
+    diffN[30*ii+24] = diffN_MBTETQ8x(x,y,z); diffN[30*ii+25] = diffN_MBTETQ8y(x,y,z); diffN[30*ii+26] = diffN_MBTETQ8z(x,y,z);
+    diffN[30*ii+27] = diffN_MBTETQ9x(x,y,z); diffN[30*ii+28] = diffN_MBTETQ9y(x,y,z); diffN[30*ii+29] = diffN_MBTETQ9z(x,y,z);
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ShapeJacMBTETQ(double *diffN,const double *coords,double *Jac) {
+PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *Jac) {
   PetscFunctionBegin;
-
   int ii,jj,kk;
   bzero(Jac,sizeof(double)*9);
   for(ii = 0; ii<10; ii++) 	//shape func.
@@ -803,42 +781,31 @@ PetscErrorCode ShapeJacMBTETQ(double *diffN,const double *coords,double *Jac) {
       for(kk = 0; kk<3; kk++) 	//direvative of shape func.
 	Jac[ jj*3+kk ] += 
 	  diffN[ ii*3+kk ]*coords[ ii*3+jj ];
-
-
-  int nb_nodes = (*data).nb_nodes;
-  double *diffN = (*data).diffN;
-  double *Jac = (*data).Jac;
-  int ii,jj,kk;
-  bzero(Jac,sizeof(double)*9);
-  for(ii = 0; ii<nb_nodes; ii++) //shape func.
-    for(jj = 0; jj<3; jj++) 	 //space
-      for(kk = 0; kk<3; kk++) 	 //derivative of shape func.
-	Jac[ jj*3+kk ] += diffN[ ii*3+kk ]*coords[ ii*3+jj ];
-
   PetscFunctionReturn(0);
 }
-PestcErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points,double *diffN,double const double *coords) {
+PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points,const double *diffN,const double *coords,int G_DIM) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
+  double Jac[9];
   int ii = 0;
-  
-  for(; ii<G_TETQ_DIM; ii++) {
-    ShapeJac(data,coords);
-    Shape_detJac(data);
-    detJac_at_Gauss_Points[ii] = (*data).detJac;
+  for(; ii<G_DIM; ii++) {
+    ierr = ShapeJacMBTETQ(&diffN[30*ii],coords,Jac); CHKERRQ(ierr);
+    detJac_at_Gauss_Points[ii] = Shape_detJac(Jac);
   }
   PetscFunctionReturn(0);
 }
-double Shape_intVolumeMBTETQ(ShapeData *data,const double *coords) {
+double Shape_intVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W) {
+  PetscErrorCode ierr;
   int ii = 0;
   double vol = 0;
-  assert(G_TETQ_DIM <= (*data).maximal_number_of_nb_gauss_points);
-  ShapeMBTETQ_detJac_at_Gauss_Points(data,coords);
-  for(; ii<G_TETQ_DIM; ii++) {
-    vol += G_TETQ_W[ii]*(*data).detJac_at_Gauss_Points[ii];
+  double detJac_at_Gauss_Points[G_DIM];
+  ierr = ShapeMBTETQ_detJac_at_Gauss_Points(detJac_at_Gauss_Points,diffN,coords,G_DIM); CHKERRQ(ierr);
+  for(; ii<G_DIM; ii++) {
+    vol += G_TET_W[ii]*(detJac_at_Gauss_Points[ii]);
   }
   return vol;
 }
-PetscErrorCode ShapeMBTETQ_inverse(ShapeData *data,const double *elem_coords,const double *glob_coords,double *loc_coords,const double eps) {
+/*PetscErrorCode ShapeMBTETQ_inverse(ShapeData *data,const double *elem_coords,const double *glob_coords,double *loc_coords,const double eps) {
   PetscFunctionBegin;
   double A[3*3];  
   double R[3];  

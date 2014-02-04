@@ -124,6 +124,19 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
  */
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
 
+//10 Node Tet
+
+PetscErrorCode ShapeMBTRIQ_GAUSS(double *N,const double *X,const double *Y,const int G_DIM);
+PetscErrorCode ShapeMBTRIQ(double *N,const double x,const double y);
+PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double x,const double y);
+PetscErrorCode ShapeMBTETQ(double *N,const double x,const double y,const double z);
+PetscErrorCode ShapeDiffMBTETQ(double *diffN,const double x,const double y,const double z);
+PetscErrorCode ShapeMBTETQ_GAUSS(double *N,const double *X,const double *Y,const double *Z,const int G_DIM);
+PetscErrorCode ShapeDiffMBTETQ_GAUSS(double *diffN,const double *X,const double *Y,const double *Z,const int G_DIM);
+PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *Jac);
+PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points,const double *diffN,const double *coords,int G_DIM);
+double Shape_intVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W);
+
 //complex part
 void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLPK_doublecomplex *diffNinvJac,const enum CBLAS_TRANSPOSE Trans);
 PetscErrorCode ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *xcoords,__CLPK_doublecomplex *xnormal);
