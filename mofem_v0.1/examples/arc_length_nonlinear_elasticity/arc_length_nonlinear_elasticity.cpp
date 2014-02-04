@@ -193,8 +193,16 @@ int main(int argc, char *argv[]) {
   //print bcs
   ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
   ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
+  ierr = mField.printCubitForceSet(); CHKERRQ(ierr);
+
   //print block sets with materials
   ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+
+  /*for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it)) {
+    cout << "name " << it->get_Cubit_name() << endl;
+    cout << *it << endl;
+    it->print_Cubit_bc_data(cout);
+  }*/
 
   //create matrices
   Vec F;
@@ -316,7 +324,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
   }
 
-  int its_d = 6;
+  int its_d = 4;
   double gamma = 0.5,reduction = 1;
   //step = 1;
   if(step == 1) {
@@ -326,7 +334,15 @@ int main(int argc, char *argv[]) {
     step++;
   }
 
+  Vec D0,x00;
+  ierr = VecDuplicate(D,&D0); CHKERRQ(ierr);
+  ierr = VecDuplicate(ArcCtx->x0,&x00); CHKERRQ(ierr);
+  bool converged_state = false;
+
   for(;step<max_steps;step++) {
+
+    ierr = VecCopy(D,D0); CHKERRQ(ierr);
+    ierr = VecCopy(ArcCtx->x0,x00); CHKERRQ(ierr);
 
     if(step == 1) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
@@ -340,6 +356,7 @@ int main(int argc, char *argv[]) {
       double dlambda;
       ierr = MyArcMethod.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);
       ierr = MyArcMethod.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+      ierr = MyFE.potsProcessLoadPath(); CHKERRQ(ierr);
     } else if(step == 2) {
       ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
       ierr = MyArcMethod.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
@@ -375,15 +392,39 @@ int main(int argc, char *argv[]) {
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
 
-    if(step > 1) {
-      reduction = pow((double)its_d/(double)(its+1),gamma);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
-    }
+    SNESConvergedReason reason;
+    ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+    if(reason < 0) {
 
-    //Save data on mesh
-    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = mField.set_other_global_VecCreateGhost(
-      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",Col,ArcCtx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecCopy(D0,D); CHKERRQ(ierr);
+      ierr = VecCopy(x00,ArcCtx->x0); CHKERRQ(ierr);
+
+      double x0_nrm;
+      ierr = VecNorm(ArcCtx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,ArcCtx->dlambda);
+      ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+      MyFE.snes_x = D; MyFE.snes_f = F;
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+      MyArcMethod.snes_x = D; MyArcMethod.snes_f = F;
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
+      
+      reduction = 0.1;
+      converged_state = false;
+      
+      continue;
+
+    } else {
+      if(step > 1 && converged_state) {
+	reduction = pow((double)its_d/(double)(its+1),gamma);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
+      }
+      //Save data on mesh
+      ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_other_global_VecCreateGhost(
+	"ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",Col,ArcCtx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      converged_state = true;
+      
+    }
     
     //
     PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
@@ -410,6 +451,9 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+
+  ierr = VecDestroy(&D0); CHKERRQ(ierr);
+  ierr = VecDestroy(&x00); CHKERRQ(ierr);
   
   PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);

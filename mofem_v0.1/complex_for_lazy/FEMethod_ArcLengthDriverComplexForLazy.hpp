@@ -35,13 +35,14 @@ struct ArcElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   ArcLengthCtx* arc_ptr;
 
   Range& NodeSet1;
+  bool nodal_forces_not_added_and_imperfection;
 
   ArcElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
       ArcLengthCtx *_arc_ptr,Range &_NodeSet1,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_ptr,_verbose), 
       FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_ptr,_lambda,_mu,_verbose), 
-      arc_ptr(_arc_ptr),NodeSet1(_NodeSet1) {
+      arc_ptr(_arc_ptr),NodeSet1(_NodeSet1),nodal_forces_not_added_and_imperfection(true) {
 
     set_PhysicalEquationNumber(neohookean);
 
@@ -53,6 +54,7 @@ struct ArcElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
+	nodal_forces_not_added_and_imperfection = true;
 	//F_lambda
       	ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -80,12 +82,18 @@ struct ArcElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	  ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
-	  ierr = CalculateSpatialKFext(PETSC_NULL,arc_ptr->F_lambda,1); CHKERRQ(ierr);
+	  ierr = CalculateSpatialKFext(PETSC_NULL,arc_ptr->F_lambda,1.); CHKERRQ(ierr);
+	  if(nodal_forces_not_added_and_imperfection) {
+	    nodal_forces_not_added = true;
+	  }
+	  ierr = CalculateSpatialKFext(PETSC_NULL,snes_f,1.,"Imperfection"); CHKERRQ(ierr);
+	  nodal_forces_not_added_and_imperfection = false;
 	}
 	break;
       case ctx_SNESSetJacobian: {
 	  ierr = CalculateSpatialTangent(*snes_B); CHKERRQ(ierr);
 	  ierr = CalculateSpatialKFext(*snes_B,PETSC_NULL,arc_ptr->get_FieldData()); CHKERRQ(ierr);
+	  ierr = CalculateSpatialKFext(*snes_B,PETSC_NULL,1.,"Imperfection"); CHKERRQ(ierr);
 	}
 	break;
       default:
