@@ -95,7 +95,7 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDir
 }
 FEMethod_ComplexForLazy::~FEMethod_ComplexForLazy() {
 }
-PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double *_mu,double *_thermal_expansion,void *ptr_matctx) {
+PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double *_mu,double *_thermal_expansion,void **ptr_matctx) {
   PetscFunctionBegin;
 
   *_lambda = lambda;
@@ -133,7 +133,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 		break;
 	      case 13: {
 		set_PhysicalEquationNumber(eberleinholzapfel1);
-		ptr_matctx = &EberleinHolzapfel1_mat_parameters;
 		EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
 		EberleinHolzapfel1_mat_parameters.k1 = mydata.data.User2;
 		EberleinHolzapfel1_mat_parameters.k2 = mydata.data.User2;
@@ -143,6 +142,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.User6;
 		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.User7;
 		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.User8;
+		*ptr_matctx = &EberleinHolzapfel1_mat_parameters;
 		}
 		break;
 	      default: {
@@ -527,7 +527,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
       spatail_analysis, material_analysis, mesh_quality_analysis };
     double _lambda,_mu,_thermal_expansion;
     if( (spatail_analysis|material_analysis)&type_of_analysis ) {
-      ierr = GetMatParameters(&_lambda,&_mu,&_thermal_expansion,ptr_matctx); CHKERRQ(ierr);
+      ierr = GetMatParameters(&_lambda,&_mu,&_thermal_expansion,&ptr_matctx); CHKERRQ(ierr);
     }
     int _order_T_volume = 0;
     for(int ss = 0;ss<3;ss++) {
@@ -689,7 +689,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
       };
       double _lambda,_mu,_thermal_expansion;
       if( (spatail_analysis|material_analysis|scaled_themp_direvative_spatial|scaled_themp_direvative_material)&type_of_analysis ) {
-	ierr = GetMatParameters(&_lambda,&_mu,&_thermal_expansion,ptr_matctx); CHKERRQ(ierr);
+	ierr = GetMatParameters(&_lambda,&_mu,&_thermal_expansion,&ptr_matctx); CHKERRQ(ierr);
       }
       int _order_T_volume = 0;
       for(int ss = 0;ss<5;ss++) {

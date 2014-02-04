@@ -34,20 +34,22 @@ enum thremal_deformation_equation get_ThermalDeformationEquationNumber() {
   return themp_eq_deformation;
 }
 
+static PetscErrorCode ierr;
+
 //Phusical Equations
-static void StrainEnergy_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
-static void PiolaKirhoiff2_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
-static void StrainEnergy_Kirchhoff(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
-static void PiolaKirhoiff2_Kirchhoff(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
-static void StrainEnergy_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
-static void PiolaKirhoiff2_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
-static void Strain_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
-static void PiolaKirhoiff2_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
+static PetscErrorCode StrainEnergy_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
+static PetscErrorCode PiolaKirhoiff2_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
+static PetscErrorCode StrainEnergy_Kirchhoff(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
+static PetscErrorCode PiolaKirhoiff2_Kirchhoff(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
+static PetscErrorCode StrainEnergy_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
+static PetscErrorCode PiolaKirhoiff2_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
+static PetscErrorCode StrainEnergy_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx);
+static PetscErrorCode PiolaKirhoiff2_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx);
 //
-static void (*tab_func_Strain_energy[])(double,double,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,void*) = {
-  StrainEnergy_Hooke,StrainEnergy_Kirchhoff,StrainEnergy_NeoHookean,Strain_EberleinHolzapfel1
+static PetscErrorCode (*tab_func_Strain_energy[])(double,double,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,void*) = {
+  StrainEnergy_Hooke,StrainEnergy_Kirchhoff,StrainEnergy_NeoHookean,StrainEnergy_EberleinHolzapfel1
 };
-static void (*tab_func_PiolaKirhoiff2[])(double lambda,double mu,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,void*) = {
+static PetscErrorCode (*tab_func_PiolaKirhoiff2[])(double lambda,double mu,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,__CLPK_doublecomplex*,void*) = {
   PiolaKirhoiff2_Hooke,PiolaKirhoiff2_Kirchhoff,PiolaKirhoiff2_NeoHookean,PiolaKirhoiff2_EberleinHolzapfel1
 };
 //
@@ -88,12 +90,12 @@ PetscErrorCode ThermalDeformationGradient(const double alpha,const double lambda
 //
 PetscErrorCode StrainEnergy(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
   PetscFunctionBegin;
-  tab_func_Strain_energy[ph_eq_vol](lambda,mu,xF,xC,xJ,xPsi,ctx);
+  ierr = tab_func_Strain_energy[ph_eq_vol](lambda,mu,xF,xC,xJ,xPsi,ctx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode PiolaKirhoiff2(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
   PetscFunctionBegin;
-  tab_func_PiolaKirhoiff2[ph_eq_vol](lambda,mu,xF,xC,xJ,xS,ctx);
+  ierr = tab_func_PiolaKirhoiff2[ph_eq_vol](lambda,mu,xF,xC,xJ,xS,ctx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 //*************************//
@@ -135,7 +137,8 @@ PetscErrorCode ElshebyStress(__CLPK_doublecomplex *xPsi,__CLPK_doublecomplex *xF
 }
 //*************************//
 //Hooke
-static void StrainEnergy_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+static PetscErrorCode StrainEnergy_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+  PetscFunctionBegin;
   double complex Psi = 0,tr_epsilon = 0;
   int ii = 0;
   for(;ii<3;ii++) {
@@ -153,9 +156,10 @@ static void StrainEnergy_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,
   Psi += 0.5*lambda*tr_epsilon*tr_epsilon;
   (*xPsi).r = creal(Psi);
   (*xPsi).i = cimag(Psi);
-  return;
+  PetscFunctionReturn(0);
 }
-static void PiolaKirhoiff2_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+static PetscErrorCode PiolaKirhoiff2_Hooke(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+  PetscFunctionBegin;
   bzero(xS,sizeof(__CLPK_doublecomplex)*9);
   double complex tr_epsilon = 0;
   int ii = 0;
@@ -179,10 +183,11 @@ static void PiolaKirhoiff2_Hooke(double lambda,double mu,__CLPK_doublecomplex *x
     xS[3*ii+ii].r += lambda*creal(tr_epsilon);
     xS[3*ii+ii].i += lambda*cimag(tr_epsilon);
   }
-  return;
+  PetscFunctionReturn(0);
 }
 //Kirchhoff
-static void StrainEnergy_Kirchhoff(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+static PetscErrorCode StrainEnergy_Kirchhoff(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+  PetscFunctionBegin;
   double complex Psi = 0,tr_E = 0;
   int ii = 0;
   for(;ii<3;ii++) {
@@ -198,9 +203,10 @@ static void StrainEnergy_Kirchhoff(double lambda,double mu,__CLPK_doublecomplex 
   Psi += 0.5*lambda*tr_E*tr_E;
   (*xPsi).r = creal(Psi);
   (*xPsi).i = cimag(Psi);
-  return;
+  PetscFunctionReturn(0);
 }
-static void PiolaKirhoiff2_Kirchhoff(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+static PetscErrorCode PiolaKirhoiff2_Kirchhoff(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+  PetscFunctionBegin;
   bzero(xS,sizeof(__CLPK_doublecomplex)*9);
   double complex tr_E = 0;
   int ii = 0;
@@ -222,11 +228,12 @@ static void PiolaKirhoiff2_Kirchhoff(double lambda,double mu,__CLPK_doublecomple
     xS[3*ii+ii].r += lambda*creal(tr_E);
     xS[3*ii+ii].i += lambda*cimag(tr_E);
   }
-  return;
+  PetscFunctionReturn(0);
 }
 //Neo-Hookean form Bonet Book
 //Wc = (mu/2)*(Ic-3) + (lambda/2)*(ln(J))^2
-static void StrainEnergy_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+static PetscErrorCode StrainEnergy_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+  PetscFunctionBegin;
   int ii = 0;
   double complex Ic = 0;
   for(;ii<3;ii++) {
@@ -236,9 +243,11 @@ static void StrainEnergy_NeoHookean(double lambda,double mu,__CLPK_doublecomplex
   double complex Psi = (mu/2.)*(Ic-3.) - mu*logJ + (lambda/2.)*cpow(logJ,2.);
   (*xPsi).r = creal(Psi);
   (*xPsi).i = cimag(Psi);
+  PetscFunctionReturn(0);
 }
 //S= 2*dPsi/dC = mu*(I-invC) + lambda*ln(J)*invC
-static void PiolaKirhoiff2_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+static PetscErrorCode PiolaKirhoiff2_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+  PetscFunctionBegin;
   __CLPK_doublecomplex inv_xC[9];
   cblas_zcopy(9,xC,1,inv_xC,1);
   InvertComplexGradient(inv_xC);
@@ -252,12 +261,14 @@ static void PiolaKirhoiff2_NeoHookean(double lambda,double mu,__CLPK_doublecompl
   double complex xtmp2 = lambda*logJ;
   __CLPK_doublecomplex tmp2 = {creal(xtmp2),cimag(xtmp2)};
   cblas_zaxpy(9,&tmp2,inv_xC,1,xS,1);
+  PetscFunctionReturn(0);
 }
 //Fibres, by R. Eberlein, G.A. Holzapfel, and C.A.J. Schulze-Bauer. 
 //An anisotropic model for annulus tissue and enhanced finite element analyses of intact lumbar disc bodies. 
 //Computer Methods in Biomechanics and Biomedical Engineering, 4(3):209–229, 2001. ISSN 1025-5842.
-static void preProc_EberleinHolzapfel1(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,void *ctx,
+static PetscErrorCode preProc_EberleinHolzapfel1(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,void *ctx,
   __CLPK_doublecomplex *xA1,__CLPK_doublecomplex *xA2,__CLPK_doublecomplex *xI1,__CLPK_doublecomplex *xI2) {
+  PetscFunctionBegin;
   ctx_EberleinHolzapfel1 *my_ctx = (ctx_EberleinHolzapfel1*)ctx;
   double A1[9],A2[9];
   bzero(A1,sizeof(double)*9);
@@ -285,10 +296,12 @@ static void preProc_EberleinHolzapfel1(__CLPK_doublecomplex *xF,__CLPK_doublecom
       (*xI2).r += creal(t2);
       (*xI2).i += cimag(t2);
   }}
+  PetscFunctionReturn(0);
 }
-static void Strain_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+static PetscErrorCode StrainEnergy_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
+  PetscFunctionBegin;
   ctx_EberleinHolzapfel1 *my_ctx = (ctx_EberleinHolzapfel1*)ctx;
-  tab_func_Strain_energy[(*my_ctx).eq_solid](lambda,mu,xF,xC,xJ,xPsi,NULL);
+  ierr = tab_func_Strain_energy[(*my_ctx).eq_solid](lambda,mu,xF,xC,xJ,xPsi,ctx); CHKERRQ(ierr);
   __CLPK_doublecomplex xA1[9],xA2[9],xI1,xI2;
   preProc_EberleinHolzapfel1(xF,xC,xJ,ctx,xA1,xA2,&xI1,&xI2);
   double k1 = (*my_ctx).k1;
@@ -302,10 +315,12 @@ static void Strain_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecompl
   }
   (*xPsi).r += creal(Psi_f);
   (*xPsi).i += cimag(Psi_f);
+  PetscFunctionReturn(0);
 }
-static void PiolaKirhoiff2_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+static PetscErrorCode PiolaKirhoiff2_EberleinHolzapfel1(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xS,void *ctx) {
+  PetscFunctionBegin;
   ctx_EberleinHolzapfel1 *my_ctx = (ctx_EberleinHolzapfel1*)ctx;
-  tab_func_PiolaKirhoiff2[(*my_ctx).eq_solid](lambda,mu,xF,xC,xJ,xS,NULL);
+  ierr = tab_func_PiolaKirhoiff2[(*my_ctx).eq_solid](lambda,mu,xF,xC,xJ,xS,ctx); CHKERRQ(ierr);
   __CLPK_doublecomplex xA1[9],xA2[9],xI1,xI2;
   preProc_EberleinHolzapfel1(xF,xC,xJ,ctx,xA1,xA2,&xI1,&xI2);
   double k1 = (*my_ctx).k1;
@@ -320,6 +335,7 @@ static void PiolaKirhoiff2_EberleinHolzapfel1(double lambda,double mu,__CLPK_dou
    __CLPK_doublecomplex xc = { creal(c), cimag(c) }; 
     cblas_zaxpy(9,&xc,xA2,1,xS,1);
   }
+  PetscFunctionReturn(0);
 }
 
 
