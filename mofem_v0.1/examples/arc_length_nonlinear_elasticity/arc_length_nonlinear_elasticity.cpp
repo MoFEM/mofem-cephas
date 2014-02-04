@@ -69,6 +69,17 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
+  Range tets;
+  rval = moab.get_entities_by_type(0,MBTET,tets,true);  CHKERR_PETSC(rval);
+  for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
+    cout << "tet: " << *tit << " conn: ";
+    Range conn;
+    rval = moab.get_connectivity(&*tit,1,conn);  CHKERR_PETSC(rval);
+    ostream_iterator<EntityHandle> out_it (std::cout,", ");
+    copy ( conn.begin(), conn.end(), out_it ); 
+    cout << endl;
+  }
+
   //data stored on mesh for restart
   Tag th_step_size,th_step;
   double def_step_size = 1;
