@@ -110,7 +110,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       ierr = fe_method.GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
 
       double _lambda,_mu,_thermal_expansion;
-      ierr = fe_method.GetMatParameters(&_lambda,&_mu,&_thermal_expansion,fe_method.ptr_matctx); CHKERRQ(ierr);
+      ierr = fe_method.GetMatParameters(&_lambda,&_mu,&_thermal_expansion,&fe_method.ptr_matctx); CHKERRQ(ierr);
 
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
       int gg =0;

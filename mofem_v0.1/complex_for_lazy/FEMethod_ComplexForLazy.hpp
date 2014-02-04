@@ -65,7 +65,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double lambda,mu,thermal_expansion;
   void *ptr_matctx;
   bool propeties_from_BlockSet_Mat_ElasticSet;
-  PetscErrorCode GetMatParameters(double *_lambda,double *_mu,double *_termal_epansion,void *ptr_matctx);
+  PetscErrorCode GetMatParameters(double *_lambda,double *_mu,double *_termal_epansion,void **ptr_matctx);
   ctx_EberleinHolzapfel1 EberleinHolzapfel1_mat_parameters;
 
   double eps;
