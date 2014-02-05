@@ -1,0 +1,10 @@
+// the configured options and settings for MoFEM
+#define MoFEM_VERSION_MAJOR @MoFEM_VERSION_MAJOR@
+#define MoFEM_VERSION_MINOR @MoFEM_VERSION_MINOR@
+#define MoFEM_VERSION_BUILD @MoFEM_VERSION_BUILD@
+#define GIT_SHA1 @GIT_SHA1@
+
+#define STR_VALUE(arg) #arg
+#define SHA1_NAME(name) STR_VALUE(name)
+#define GIT_SHA1_NAME SHA1_NAME(GIT_SHA1)
+

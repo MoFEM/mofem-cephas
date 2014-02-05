@@ -1,0 +1,34 @@
+reset
+
+create sphere radius 1 
+#brick x 1 y 1 z 1
+brick x 2 y 0.5 z 2
+move Volume 2 x 0 y 0.75 z 0 include_merged
+brick x 2 y 0.5 z 2
+move Volume 3 x 0 y -0.75 z 0 include_merged
+subtract volume 2,3 from volume 1 
+
+Sideset 1 surface 14
+Sideset 2 surface 16
+
+Sideset 100  curve all 
+nodeset 101 vertex all 
+Sideset 102  surface all
+
+create Displacement  on surface 14  dof 1 dof 2 dof 3 fix 0
+create pressure  on surface 16  magnitude 1
+
+create material 1 name "Elastic" elastic_modulus 1.22222 poisson_ratio 0.334455
+block 1 volume 1 
+Block 1 Material 1
+block 1 attribute index 1 111
+
+volume all scheme Tetmesh
+volume all size auto factor 7
+mesh volume all
+
+
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/chees.cub" overwrite
+
+
+

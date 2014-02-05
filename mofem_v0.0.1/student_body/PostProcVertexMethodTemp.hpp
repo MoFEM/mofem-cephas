@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __POSTPROCVERTEXMETHOD_HPP__
-#define __POSTPROCVERTEXMETHOD_HPP__
+#ifndef __POSTPROCVERTEXMETHODTEMP_HPP__
+#define __POSTPROCVERTEXMETHODTEMP_HPP__
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
@@ -117,4 +117,4 @@ struct PostProcVertexMethodTemp: public FieldInterface::EntMethod {
     
 };
 
-#endif // __POSTPROCVERTEXMETHOD_HPP__
+#endif // __POSTPROCVERTEXMETHOD_HPPTEMP__
