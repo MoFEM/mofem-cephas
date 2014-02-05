@@ -178,4 +178,3 @@ add_test(arc_length_nonlinear_elasticity_thermal_atom_compare ${CMAKE_COMMAND} -
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/arc_length_nonlinear_elasticity_thermal_atom.txt 
   ${CMAKE_BINARY_DIR}/atom_tests/arc_length_nonlinear_elasticity_thermal_atom.txt)
 
-

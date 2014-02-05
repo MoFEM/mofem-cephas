@@ -586,4 +586,264 @@ PetscErrorCode Base_scale(
   PetscFunctionReturn(0);
 }
 
+//FIXME: NOT PROPERLY TESTED YET
+//HO 
+//MBTRIQ
+#define N_MBTRIQ0(x, y) ( (1.-x-y)*(2*(1.-x-y)-1.) )
+#define N_MBTRIQ1(x, y) ( x*(2.*x-1.) )
+#define N_MBTRIQ2(x, y) ( y*(2.*y-1.) )
+#define N_MBTRIQ3(x, y) ( 4.*(1.-x-y)*x )
+#define N_MBTRIQ4(x, y) ( 4.*x*y )
+#define N_MBTRIQ5(x, y) ( 4.*(1.-x-y)*y )
+#define diffN_MBTRIQ0x(x, y) ( x+y-3.*(1.-x-y) )
+#define diffN_MBTRIQ0y(x, y) ( x+y-3.*(1.-x-y) )
+#define diffN_MBTRIQ1x(x, y) ( -1.+4.*x )
+#define diffN_MBTRIQ1y(x, y) ( 0. )
+#define diffN_MBTRIQ2x(x, y) ( 0. )
+#define diffN_MBTRIQ2y(x, y) ( -1.+4.*y )
+#define diffN_MBTRIQ3x(x, y) ( 4.*((1.-x-y)-x) )
+#define diffN_MBTRIQ3y(x, y) ( -4.*x )
+#define diffN_MBTRIQ4x(x, y) ( 4.*y )
+#define diffN_MBTRIQ4y(x, y) ( 4.*x )
+#define diffN_MBTRIQ5x(x, y) ( -4.*y )
+#define diffN_MBTRIQ5y(x, y) ( 4.*((1.-x-y)-y) )
+PetscErrorCode ShapeMBTRIQ_GAUSS(double *N,const double *X,const double *Y,const int G_DIM) {
+  PetscFunctionBegin;
+  int ii = 0;
+  for(; ii<G_DIM; ii++) {
+    double x = X[ii],y = Y[ii];
+    N[6*ii+0] = N_MBTRIQ0(x,y);
+    N[6*ii+1] = N_MBTRIQ1(x,y);
+    N[6*ii+2] = N_MBTRIQ2(x,y);
+    N[6*ii+3] = N_MBTRIQ3(x,y);
+    N[6*ii+4] = N_MBTRIQ4(x,y);
+    N[6*ii+5] = N_MBTRIQ5(x,y);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ShapeMBTRIQ(double *N,const double x,const double y) {
+  PetscFunctionBegin;
+  N[0] = N_MBTRIQ0(x,y);
+  N[1] = N_MBTRIQ1(x,y);
+  N[2] = N_MBTRIQ2(x,y);
+  N[3] = N_MBTRIQ3(x,y);
+  N[4] = N_MBTRIQ4(x,y);
+  N[5] = N_MBTRIQ5(x,y);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double x,const double y) {
+  PetscFunctionBegin;
+  diffN[0] = diffN_MBTRIQ0x(x,y);
+  diffN[1] = diffN_MBTRIQ0y(x,y);
+  diffN[2] = diffN_MBTRIQ1x(x,y);
+  diffN[3] = diffN_MBTRIQ1y(x,y);
+  diffN[4] = diffN_MBTRIQ2x(x,y);
+  diffN[5] = diffN_MBTRIQ2y(x,y);
+  diffN[6] = diffN_MBTRIQ3x(x,y);
+  diffN[7] = diffN_MBTRIQ3y(x,y);
+  diffN[8] = diffN_MBTRIQ4x(x,y);
+  diffN[9] = diffN_MBTRIQ4y(x,y);
+  diffN[10] = diffN_MBTRIQ5x(x,y);
+  diffN[11] = diffN_MBTRIQ5y(x,y);
+  PetscFunctionReturn(0);
+}
 
+//MBTETQ (JULIEN WORK)
+#define N_MBTETQ0(x, y, z) ( (2.*(1.-x-y-z)-1.)*(1.-x-y-z) )
+#define N_MBTETQ1(x, y, z) ( (2.*x-1.)*x )
+#define N_MBTETQ2(x, y, z) ( (2.*y-1.)*y )
+#define N_MBTETQ3(x, y, z) ( (2.*z-1.)*z )
+#define N_MBTETQ4(x, y, z) ( 4.*(1.-x-y-z)*x )
+#define N_MBTETQ5(x, y, z) ( 4.*x*y )
+#define N_MBTETQ6(x, y, z) ( 4.*(1.-x-y-z)*y )
+#define N_MBTETQ7(x, y, z) ( 4.*(1.-x-y-z)*z )
+#define N_MBTETQ8(x, y, z) ( 4.*x*z )
+#define N_MBTETQ9(x, y, z) ( 4.*y*z )
+#define diffN_MBTETQ0x(x, y, z) ( -3.+4.*x+4.*y+4.*z )
+#define diffN_MBTETQ0y(x, y, z) ( -3.+4.*x+4.*y+4.*z )
+#define diffN_MBTETQ0z(x, y, z) ( -3.+4.*x+4.*y+4.*z )
+#define diffN_MBTETQ1x(x, y, z) ( 4.*x-1. )
+#define diffN_MBTETQ1y(x, y, z) ( 0. )
+#define diffN_MBTETQ1z(x, y, z) ( 0. )
+#define diffN_MBTETQ2x(x, y, z) ( 0. )
+#define diffN_MBTETQ2y(x, y, z) ( 4.*y-1. )
+#define diffN_MBTETQ2z(x, y, z) ( 0. )
+#define diffN_MBTETQ3x(x, y, z) ( 0. )
+#define diffN_MBTETQ3y(x, y, z) ( 0. )
+#define diffN_MBTETQ3z(x, y, z) ( 4.*z-1. )
+#define diffN_MBTETQ4x(x, y, z) ( -8.*x+4.-4.*y-4.*z )
+#define diffN_MBTETQ4y(x, y, z) ( -4.*x )
+#define diffN_MBTETQ4z(x, y, z) ( -4.*x )
+#define diffN_MBTETQ5x(x, y, z) ( 4.*y )
+#define diffN_MBTETQ5y(x, y, z) ( 4.*x)
+#define diffN_MBTETQ5z(x, y, z) ( 0. )
+#define diffN_MBTETQ6x(x, y, z) ( -4.*y )
+#define diffN_MBTETQ6y(x, y, z) ( -8.*y+4.-4.*x-4.*z )
+#define diffN_MBTETQ6z(x, y, z) ( -4.*y )
+#define diffN_MBTETQ7x(x, y, z) ( -4.*z )
+#define diffN_MBTETQ7y(x, y, z) ( -4.*z )
+#define diffN_MBTETQ7z(x, y, z) ( -8.*z+4.-4.*x-4.*y )
+#define diffN_MBTETQ8x(x, y, z) ( 4.*z )
+#define diffN_MBTETQ8y(x, y, z) ( 0. )
+#define diffN_MBTETQ8z(x, y, z) ( 4.*x )
+#define diffN_MBTETQ9x(x, y, z) ( 0. )
+#define diffN_MBTETQ9y(x, y, z) ( 4.*z )
+#define diffN_MBTETQ9z(x, y, z) ( 4.*y )
+PetscErrorCode ShapeMBTETQ(double *N,const double x,const double y,const double z) {
+  PetscFunctionBegin;
+  N[0] = N_MBTETQ0(x,y,z);
+  N[1] = N_MBTETQ1(x,y,z);
+  N[2] = N_MBTETQ2(x,y,z);
+  N[3] = N_MBTETQ3(x,y,z);
+  N[4] = N_MBTETQ4(x,y,z);
+  N[5] = N_MBTETQ5(x,y,z);
+  N[6] = N_MBTETQ6(x,y,z);
+  N[7] = N_MBTETQ7(x,y,z);
+  N[8] = N_MBTETQ8(x,y,z);
+  N[9] = N_MBTETQ9(x,y,z);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ShapeDiffMBTETQ(double *diffN,const double x,const double y,const double z) {
+  PetscFunctionBegin;
+  diffN[0] = diffN_MBTETQ0x(x,y,z);
+  diffN[1] = diffN_MBTETQ0y(x,y,z);
+  diffN[2] = diffN_MBTETQ0z(x,y,z);
+  diffN[3] = diffN_MBTETQ1x(x,y,z);
+  diffN[4] = diffN_MBTETQ1y(x,y,z);
+  diffN[5] = diffN_MBTETQ1z(x,y,z);
+  diffN[6] = diffN_MBTETQ2x(x,y,z);
+  diffN[7] = diffN_MBTETQ2y(x,y,z);
+  diffN[8] = diffN_MBTETQ2z(x,y,z);
+  diffN[9] = diffN_MBTETQ3x(x,y,z);
+  diffN[10] = diffN_MBTETQ3y(x,y,z);
+  diffN[11] = diffN_MBTETQ3z(x,y,z);
+  diffN[12] = diffN_MBTETQ4x(x,y,z);
+  diffN[13] = diffN_MBTETQ4y(x,y,z);
+  diffN[14] = diffN_MBTETQ4z(x,y,z);
+  diffN[15] = diffN_MBTETQ5x(x,y,z);
+  diffN[16] = diffN_MBTETQ5y(x,y,z);
+  diffN[17] = diffN_MBTETQ5z(x,y,z);
+  diffN[18] = diffN_MBTETQ6x(x,y,z);
+  diffN[19] = diffN_MBTETQ6y(x,y,z);
+  diffN[20] = diffN_MBTETQ6z(x,y,z);
+  diffN[21] = diffN_MBTETQ7x(x,y,z);
+  diffN[22] = diffN_MBTETQ7y(x,y,z);
+  diffN[23] = diffN_MBTETQ7z(x,y,z);
+  diffN[24] = diffN_MBTETQ8x(x,y,z);
+  diffN[25] = diffN_MBTETQ8y(x,y,z);
+  diffN[26] = diffN_MBTETQ8z(x,y,z);
+  diffN[27] = diffN_MBTETQ9x(x,y,z);
+  diffN[28] = diffN_MBTETQ9y(x,y,z);
+  diffN[29] = diffN_MBTETQ9z(x,y,z);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ShapeMBTETQ_GAUSS(double *N,const double *X,const double *Y,const double *Z,const int G_DIM) {
+  PetscFunctionBegin;
+  int ii = 0;
+  for(; ii<G_DIM; ii++) {
+    double x = X[ii],y = Y[ii],z = Z[ii];
+    N[10*ii+0] = N_MBTETQ0(x,y,z);
+    N[10*ii+1] = N_MBTETQ1(x,y,z);
+    N[10*ii+2] = N_MBTETQ2(x,y,z);
+    N[10*ii+3] = N_MBTETQ3(x,y,z);
+    N[10*ii+4] = N_MBTETQ4(x,y,z);
+    N[10*ii+5] = N_MBTETQ5(x,y,z);
+    N[10*ii+6] = N_MBTETQ6(x,y,z);
+    N[10*ii+7] = N_MBTETQ7(x,y,z);
+    N[10*ii+8] = N_MBTETQ8(x,y,z);
+    N[10*ii+9] = N_MBTETQ9(x,y,z);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ShapeDiffMBTETQ_GAUSS(double *diffN,const double *X,const double *Y,const double *Z,const int G_DIM) {
+  PetscFunctionBegin;
+  int ii = 0;
+  for(; ii<G_DIM; ii++) {
+    double x = X[ii],y = Y[ii],z = Z[ii];
+    diffN[30*ii+0] = diffN_MBTETQ0x(x,y,z); diffN[30*ii+1] = diffN_MBTETQ0y(x,y,z); diffN[30*ii+2] = diffN_MBTETQ0z(x,y,z);
+    diffN[30*ii+3] = diffN_MBTETQ1x(x,y,z); diffN[30*ii+4] = diffN_MBTETQ1y(x,y,z); diffN[30*ii+5] = diffN_MBTETQ1z(x,y,z);
+    diffN[30*ii+6] = diffN_MBTETQ2x(x,y,z); diffN[30*ii+7] = diffN_MBTETQ2y(x,y,z); diffN[30*ii+8] = diffN_MBTETQ2z(x,y,z);
+    diffN[30*ii+9] = diffN_MBTETQ3x(x,y,z); diffN[30*ii+10] = diffN_MBTETQ3y(x,y,z); diffN[30*ii+11] = diffN_MBTETQ3z(x,y,z);
+    diffN[30*ii+12] = diffN_MBTETQ4x(x,y,z); diffN[30*ii+13] = diffN_MBTETQ4y(x,y,z); diffN[30*ii+14] = diffN_MBTETQ4z(x,y,z);
+    diffN[30*ii+15] = diffN_MBTETQ5x(x,y,z); diffN[30*ii+16] = diffN_MBTETQ5y(x,y,z); diffN[30*ii+17] = diffN_MBTETQ5z(x,y,z);
+    diffN[30*ii+18] = diffN_MBTETQ6x(x,y,z); diffN[30*ii+19] = diffN_MBTETQ6y(x,y,z); diffN[30*ii+20] = diffN_MBTETQ6z(x,y,z);
+    diffN[30*ii+21] = diffN_MBTETQ7x(x,y,z); diffN[30*ii+22] = diffN_MBTETQ7y(x,y,z); diffN[30*ii+23] = diffN_MBTETQ7z(x,y,z);
+    diffN[30*ii+24] = diffN_MBTETQ8x(x,y,z); diffN[30*ii+25] = diffN_MBTETQ8y(x,y,z); diffN[30*ii+26] = diffN_MBTETQ8z(x,y,z);
+    diffN[30*ii+27] = diffN_MBTETQ9x(x,y,z); diffN[30*ii+28] = diffN_MBTETQ9y(x,y,z); diffN[30*ii+29] = diffN_MBTETQ9z(x,y,z);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *Jac) {
+  PetscFunctionBegin;
+  int ii,jj,kk;
+  bzero(Jac,sizeof(double)*9);
+  for(ii = 0; ii<10; ii++) 	//shape func.
+    for(jj = 0; jj<3; jj++) 	//space
+      for(kk = 0; kk<3; kk++) 	//direvative of shape func.
+	Jac[ jj*3+kk ] += 
+	  diffN[ ii*3+kk ]*coords[ ii*3+jj ];
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points,const double *diffN,const double *coords,int G_DIM) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  double Jac[9];
+  int ii = 0;
+  for(; ii<G_DIM; ii++) {
+    ierr = ShapeJacMBTETQ(&diffN[30*ii],coords,Jac); CHKERRQ(ierr);
+    detJac_at_Gauss_Points[ii] = Shape_detJac(Jac);
+  }
+  PetscFunctionReturn(0);
+}
+double Shape_intVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W) {
+  PetscErrorCode ierr;
+  int ii = 0;
+  double vol = 0;
+  double detJac_at_Gauss_Points[G_DIM];
+  ierr = ShapeMBTETQ_detJac_at_Gauss_Points(detJac_at_Gauss_Points,diffN,coords,G_DIM); CHKERRQ(ierr);
+  for(; ii<G_DIM; ii++) {
+    vol += G_TET_W[ii]*(detJac_at_Gauss_Points[ii]);
+  }
+  return vol;
+}
+/*PetscErrorCode ShapeMBTETQ_inverse(ShapeData *data,const double *elem_coords,const double *glob_coords,double *loc_coords,const double eps) {
+  PetscFunctionBegin;
+  double A[3*3];  
+  double R[3];  
+  double *N = (*data).N;
+  double *diffN = (*data).diffN;
+  int IPIV[3];
+  float NORM_dR = 1000.;
+  float NORM_R0;
+  ShapeMBTETQ(data,0.1,0.1,0.1);
+  ShapeDiffMBTETQ(data,0.1,0.1,0.1);
+  R[0] = glob_coords[0] - cblas_ddot(10,&N[0],1,&elem_coords[0],3);
+  R[1] = glob_coords[1] - cblas_ddot(10,&N[0],1,&elem_coords[1],3);
+  R[2] = glob_coords[2] - cblas_ddot(10,&N[0],1,&elem_coords[2],3);
+  NORM_R0 = cblas_dnrm2(3,&R[0],1);
+  while ( (NORM_dR/NORM_R0)>eps){
+    //COL MAJOR
+    //X
+    A[0+3*0] = cblas_ddot(10,&diffN[0*3+0],3,&elem_coords[0],3);
+    A[0+3*1] = cblas_ddot(10,&diffN[0*3+1],3,&elem_coords[0],3);
+    A[0+3*2] = cblas_ddot(10,&diffN[0*3+2],3,&elem_coords[0],3);
+    R[0] = glob_coords[0] - cblas_ddot(10,&N[0],1,&elem_coords[0],3);
+    //Y 
+    A[1+3*0] = cblas_ddot(10,&diffN[0*3+0],3,&elem_coords[1],3);
+    A[1+3*1] = cblas_ddot(10,&diffN[0*3+1],3,&elem_coords[1],3);
+    A[1+3*2] = cblas_ddot(10,&diffN[0*3+2],3,&elem_coords[1],3);
+    R[1] = glob_coords[1] - cblas_ddot(10,&N[0],1,&elem_coords[1],3);
+    //Z
+    A[2+3*0] = cblas_ddot(10,&diffN[0*3+0],3,&elem_coords[0*3+2],3);
+    A[2+3*1] = cblas_ddot(10,&diffN[0*3+1],3,&elem_coords[0*3+2],3);
+    A[2+3*2] = cblas_ddot(10,&diffN[0*3+2],3,&elem_coords[0*3+2],3);
+    R[2] = glob_coords[2] - cblas_ddot(10,&N[0],1,&elem_coords[2],3);
+    assert( lapack_dgesv(3,1,&A[0],3,(__CLPK_integer*)IPIV,R,3) == 0 );
+    cblas_daxpy(3,1.,R,1,loc_coords,1);
+    NORM_dR = cblas_dnrm2(3,&R[0],1);
+    ShapeMBTETQ(data,loc_coords[0],loc_coords[1],loc_coords[2]);
+    ShapeDiffMBTETQ(data,loc_coords[0],loc_coords[1],loc_coords[2]);
+ }
+ PetscFunctionReturn(0);
+}
+*/

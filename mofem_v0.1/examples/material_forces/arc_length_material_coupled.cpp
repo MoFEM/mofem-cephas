@@ -149,7 +149,6 @@ int main(int argc, char *argv[]) {
   rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&load_factor_ptr); CHKERR_THROW(rval);
   double& load_factor = *load_factor_ptr;
 
-
   for(int aa = 0;step<nb_load_steps;step++,aa++) {
 
     PetscLogDouble t1,t2;
