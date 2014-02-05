@@ -246,7 +246,7 @@ struct FieldInterface {
   virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
 
   /**
-  * \brief seed 2D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+  * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjencies) in a particular BitRefLevel
   * 
   * \param EntityHandle MeshSet
   * \param BitRefLevel bitLevel
