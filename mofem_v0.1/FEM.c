@@ -586,7 +586,8 @@ PetscErrorCode Base_scale(
   PetscFunctionReturn(0);
 }
 
-//HO
+//FIXME: NOT PROPERLY TESTED YET
+//HO 
 //MBTRIQ
 #define N_MBTRIQ0(x, y) ( (1.-x-y)*(2*(1.-x-y)-1.) )
 #define N_MBTRIQ1(x, y) ( x*(2.*x-1.) )
