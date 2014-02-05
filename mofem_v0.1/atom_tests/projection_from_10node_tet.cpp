@@ -185,12 +185,12 @@ int main(int argc, char *argv[]) {
         
     }
 
-  PostProcDisplacementsOnRefMesh fe_postproc(moab,"MESH_NODE_POSITIONS");
+  /*PostProcDisplacementsOnRefMesh fe_postproc(moab,"MESH_NODE_POSITIONS");
   ierr = mField.loop_finite_elements("TET_PROBLEM","TET_ELEM",fe_postproc);  CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }
+  }*/
 
   PetscFinalize();
 
