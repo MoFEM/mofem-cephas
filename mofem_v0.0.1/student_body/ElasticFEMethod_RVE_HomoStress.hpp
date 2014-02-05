@@ -42,6 +42,38 @@ struct ElasticFEMethod_RVE_HomoStress: public ElasticFEMethod{
           double _lambda,double _mu, Interface& _moab, Vec&_F_stress, Vec&_coord_stress, double *_RVE_volume, string _field_name = "DISPLACEMENT"):
     ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), moab(_moab), F_stress(_F_stress), coord_stress(_coord_stress), RVE_volume(_RVE_volume), field_name(_field_name){};
     
+    
+      PetscErrorCode preProcess() {
+        PetscFunctionBegin;
+        PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+        PetscSynchronizedFlush(PETSC_COMM_WORLD);
+        ierr = PetscTime(&v1); CHKERRQ(ierr);
+        ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+        g_NTET.resize(4*45);
+        ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+        G_W_TET = G_TET_W45;
+        g_NTRI.resize(3*13);
+        ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13);
+        G_W_TRI = G_TRI_W13;
+        
+        // See FEAP - - A Finite Element Analysis Program
+        D_lambda.resize(6,6);
+        D_lambda.clear();
+        for(int rr = 0;rr<3;rr++) {
+            for(int cc = 0;cc<3;cc++) {
+                D_lambda(rr,cc) = 1;
+            }
+        }
+        D_mu.resize(6,6);
+        D_mu.clear();
+        for(int rr = 0;rr<6;rr++) {
+            D_mu(rr,rr) = rr<3 ? 2 : 1;
+        }
+        
+        PetscFunctionReturn(0);
+    }
+
+    
   
     PetscErrorCode postProcess() {
         PetscFunctionBegin;
@@ -116,15 +148,12 @@ struct ElasticFEMethod_RVE_HomoStress: public ElasticFEMethod{
     
     virtual PetscErrorCode store_coord(Vec coord_stress) {
         PetscFunctionBegin;
-        
         double coords[3];
         int coord_pos[3];
         EntityHandle fe_handle = fe_ptr->get_ent();
         Range tetNodes;
         EntityHandle node = 0;
         rval = moab.get_connectivity(&fe_handle,1,tetNodes); CHKERR_THROW(rval);
-        
-        
         for(Range::iterator nit = tetNodes.begin(); nit!=tetNodes.end(); nit++) {
             for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
                 EntityHandle ent = dof->get_ent();
@@ -154,9 +183,6 @@ struct ElasticFEMethod_RVE_HomoStress: public ElasticFEMethod{
         //Assembly F_stress
         ierr = Fint(F_stress); CHKERRQ(ierr);
         ierr = store_coord(coord_stress);
-        
-        //cout<<"\nAfter\n";
-        //ierr = VecView(F_stress,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
         
         ierr = OpStudentEnd(); CHKERRQ(ierr);
         PetscFunctionReturn(0);

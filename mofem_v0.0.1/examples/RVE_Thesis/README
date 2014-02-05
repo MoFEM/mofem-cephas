@@ -4,7 +4,7 @@ make && mpirun -np 1 ./potential_flow_int_RVE_Thesis -my_file ~/Desktop/RVE_Cubi
 
 #example how to run the actual problem
 
-make && mpirun -np 1 ./interface_fibre_new_ver_RVE_Thesis -my_file solution.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor
+make && mpirun -np 1 ./interface_fibre_new_ver_RVE_Thesis -my_file solution.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
 #Output
 

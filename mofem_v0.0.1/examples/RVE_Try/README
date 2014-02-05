@@ -6,5 +6,4 @@ Check before run
 
 Example run
 ===========
-mpirun -np 1 ./RVE_Try -my_file PeelTest.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -ksp_monitor 
-
+make && mpirun -np 1 ./RVE_Try -my_file ~/Desktop/RVE_Cubit/TryRVE/Try_RVE.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -ksp_monitor

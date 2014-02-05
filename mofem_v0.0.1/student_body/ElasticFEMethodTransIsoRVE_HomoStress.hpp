@@ -43,7 +43,39 @@ namespace MoFEM {
         };
         
         
-        PetscErrorCode postProcess() {
+           PetscErrorCode preProcess() {
+            PetscFunctionBegin;
+            PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+            PetscSynchronizedFlush(PETSC_COMM_WORLD);
+            ierr = PetscTime(&v1); CHKERRQ(ierr);
+            ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+            g_NTET.resize(4*45);
+            ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+            G_W_TET = G_TET_W45;
+            g_NTRI.resize(3*13);
+            ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13);
+            G_W_TRI = G_TRI_W13;
+            
+            // See FEAP - - A Finite Element Analysis Program
+            D_lambda.resize(6,6);
+            D_lambda.clear();
+            for(int rr = 0;rr<3;rr++) {
+                for(int cc = 0;cc<3;cc++) {
+                    D_lambda(rr,cc) = 1;
+                }
+            }
+            D_mu.resize(6,6);
+            D_mu.clear();
+            for(int rr = 0;rr<6;rr++) {
+                D_mu(rr,rr) = rr<3 ? 2 : 1;
+            }
+//            cout<<"============================================================================================================"<<endl;
+            PetscFunctionReturn(0);
+        }
+
+        
+        
+          PetscErrorCode postProcess() {
             PetscFunctionBegin;
             // Note MAT_FLUSH_ASSEMBLY
             ierr = VecAssemblyBegin(F_stress); CHKERRQ(ierr);
@@ -69,37 +101,33 @@ namespace MoFEM {
                     
                     F_stress_mat.resize(3,nodes.size()); coord_stress_mat.resize(nodes.size(),3);
                     F_stress_mat.clear();  coord_stress_mat.clear();
-                    
-                    int ii=0;
-                    for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
-                        
-                        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
-//                            cout<<"\n\ndof->get_petsc_gloabl_dof_idx();"<<dof->get_petsc_gloabl_dof_idx()<<endl;
-                            int nn=dof->get_petsc_gloabl_dof_idx();
-                            array_indices[0]=nn; array_indices[1]=nn+1;  array_indices[2]=nn+2;
-                            
-                            ierr = VecGetValues(F_stress,3,array_indices,array_output); CHKERRQ(ierr);
-                            F_stress_mat(0,ii)=array_output[0]; F_stress_mat(1,ii)=array_output[1],  F_stress_mat(2,ii)=array_output[2];
-                            
-                            ierr = VecGetValues(coord_stress,3,array_indices,array_output); CHKERRQ(ierr);
-                            coord_stress_mat(ii,0)=array_output[0]; coord_stress_mat(ii,1)=array_output[1], coord_stress_mat(ii,2)=array_output[2];
-                        }
-                        ii++;
+                
+                
+                
+                int ii=0;
+                for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
+                    int jj=0;
+                    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
+                        array_indices[jj]=dof->get_petsc_gloabl_dof_idx(); jj++;
                     }
+                    ierr = VecGetValues(F_stress,3,array_indices,array_output); CHKERRQ(ierr);
+                    F_stress_mat(0,ii)=array_output[0]; F_stress_mat(1,ii)=array_output[1],  F_stress_mat(2,ii)=array_output[2];
+                    ierr = VecGetValues(coord_stress,3,array_indices,array_output); CHKERRQ(ierr);
+                    coord_stress_mat(ii,0)=array_output[0]; coord_stress_mat(ii,1)=array_output[1], coord_stress_mat(ii,2)=array_output[2];
+                    ii++;
+                }
             }
             
+//            cout<<"\n\n\n\n\n\n\n F_stress_mat \n\n\n\n\n\n\\n\n\n\n\n";
+//            cout<<F_stress_mat;
+//            cout<<"\n\n\n\n\n\n\n coord_stress_mat \n\n\n\n\n\n\\n\n\n\n\n";
+//            cout<<coord_stress_mat;
+
             Sigma_homo.resize(3,3);  Sigma_homo.clear();
             
             
-            // Homogenized stress
-            cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
-                        Sigma_homo.size1(),Sigma_homo.size2(),F_stress_mat.size2(),
-                        1.,&*F_stress_mat.data().begin(),F_stress_mat.size2(),
-                        &*coord_stress_mat.data().begin(),coord_stress_mat.size2(),
-                        0.,&*Sigma_homo.data().begin(),Sigma_homo.size2());
-
-            cout<<"\n\n\nRVE_volume "<<*RVE_volume<<endl<<endl<<endl;
-            Sigma_homo=(1.0/ *RVE_volume)*(Sigma_homo+trans(Sigma_homo));
+            Sigma_homo=prod(F_stress_mat, coord_stress_mat);
+            Sigma_homo=(1.0/ *RVE_volume)*(Sigma_homo);
             cout<<"\n\n\nSigma_bar "<<Sigma_homo<<endl<<endl<<endl;
             
             
@@ -160,7 +188,7 @@ namespace MoFEM {
             for(int rr = 0;rr<row_mat;rr++) {
                 if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
                 if(RowGlob[rr].size()==0) continue;
-                f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+                //f_int[rr] *= -1; //This is not SNES we solve K*D = -RES    // for stress we don't need negative
                 ierr = VecSetValues(F_stress,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
                 
             }

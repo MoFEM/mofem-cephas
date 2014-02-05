@@ -134,6 +134,7 @@ int main(int argc, char *argv[]) {
 		}
 		
 	}
+    //cout<<"====================ll=================="<<ll<<endl;
       
 	//Saving tets in tet.vtk
 	EntityHandle out_meshset;
@@ -144,7 +145,7 @@ int main(int argc, char *argv[]) {
     Range LatestRefinedTets;
 	rval = moab.get_entities_by_type(out_meshset, MBTET,LatestRefinedTets,true); CHKERR_PETSC(rval);
 
-     //Saving prisms in interface.vtk
+//     //Saving prisms in interface.vtk
 //      EntityHandle out_meshset1;
 //      rval = moab.create_meshset(MESHSET_SET,out_meshset1); CHKERR_PETSC(rval);
 //      ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBPRISM,out_meshset1); CHKERRQ(ierr);

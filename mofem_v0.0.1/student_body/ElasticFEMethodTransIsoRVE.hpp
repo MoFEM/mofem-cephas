@@ -47,6 +47,9 @@ struct ElasticFEMethodTransIsoRVE: public TranIsotropicFibreDirRotElasticFEMetho
         //Gradient at Gauss points;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
         ierr = GetGaussDiffDataVector("DISPLACEMENT_FROM_APP_STRAIN",GradU_at_GaussPt); CHKERRQ(ierr);
+        
+//        cout<<"GradU_at_GaussPt "<< GradU_at_GaussPt[0] << endl;
+        
         unsigned int g_dim = g_NTET.size()/4;
         assert(GradU_at_GaussPt.size() == g_dim);
         NOT_USED(g_dim);
@@ -78,7 +81,24 @@ struct ElasticFEMethodTransIsoRVE: public TranIsotropicFibreDirRotElasticFEMetho
         
         PetscFunctionReturn(0);
     }
+    
+    
+    
+    
+    PetscErrorCode Fint(Vec F_int) {
+        PetscFunctionBegin;
+        ierr = ElasticFEMethodTransIsoRVE::Fint(); CHKERRQ(ierr);
+        for(int rr = 0;rr<row_mat;rr++) {
+            if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+            if(RowGlob[rr].size()==0) continue;
+            f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+            ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+            
+        }
+        PetscFunctionReturn(0);
+    }
 
+    
     
 };
 

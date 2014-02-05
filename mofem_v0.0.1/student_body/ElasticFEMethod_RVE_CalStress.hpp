@@ -37,7 +37,6 @@ struct ElasticFEMethod_RVE_CalStress: public ElasticFEMethod{
     string field_name;
     double RVE_volume;
     ublas::matrix<double> Sigma_homo;
-    
 
     
     ElasticFEMethod_RVE_CalStress(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
@@ -85,54 +84,48 @@ struct ElasticFEMethod_RVE_CalStress: public ElasticFEMethod{
         ierr = VecAssemblyBegin(coord_stress); CHKERRQ(ierr);
         ierr = VecAssemblyEnd(coord_stress); CHKERRQ(ierr);
         
-//        ierr = VecGhostUpdateBegin(F_stress,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//        ierr = VecGhostUpdateEnd(F_stress,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//        ierr = VecAssemblyBegin(F_stress); CHKERRQ(ierr);
-//        ierr = VecAssemblyEnd(F_stress); CHKERRQ(ierr);
-//        ierr = VecGhostUpdateBegin(F_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//        ierr = VecGhostUpdateEnd(F_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        
-//        ierr = VecGhostUpdateBegin(coord_stress,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//        ierr = VecGhostUpdateEnd(coord_stress,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//        ierr = VecAssemblyBegin(coord_stress); CHKERRQ(ierr);
-//        ierr = VecAssemblyEnd(coord_stress); CHKERRQ(ierr);
-//        ierr = VecGhostUpdateBegin(coord_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//        ierr = VecGhostUpdateEnd(coord_stress,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-        ublas::matrix< double > F_stress_mat;
-        ublas::matrix< double > coord_stress_mat;
-        Range nodes;
-        rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-        F_stress_mat.resize(3,nodes.size()); coord_stress_mat.resize(nodes.size(),3); Sigma_homo.resize(3,3);
-        F_stress_mat.clear();  coord_stress_mat.clear(); Sigma_homo.clear();
-        
-        
+        ublas::matrix< double > F_stress_mat, coord_stress_mat, Sigma_homo;
         int array_indices[3];
         double array_output[3];
         
-        for(int ii=0; ii<nodes.size(); ii++){
-            array_indices[0]=3*ii;  array_indices[1]=3*ii+1;  array_indices[2]=3*ii+2;
-            ierr = VecGetValues(F_stress,3,array_indices,array_output); CHKERRQ(ierr);
-            F_stress_mat(0,ii)=array_output[0]; F_stress_mat(1,ii)=array_output[1],  F_stress_mat(2,ii)=array_output[2];
+        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
+            std::size_t BoundNodesFound=it->get_Cubit_name().find("BoundNodes");
+            if (BoundNodesFound==std::string::npos) continue;
+            Range tris, nodes;
+            rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+            rval = moab.get_connectivity(tris,nodes,true); CHKERR_PETSC(rval);
             
-            ierr = VecGetValues(coord_stress,3,array_indices,array_output); CHKERRQ(ierr);
-            coord_stress_mat(ii,0)=array_output[0]; coord_stress_mat(ii,1)=array_output[1], coord_stress_mat(ii,2)=array_output[2];
+            F_stress_mat.resize(3,nodes.size()); coord_stress_mat.resize(nodes.size(),3);
+            F_stress_mat.clear();  coord_stress_mat.clear();
+            
+            int ii=0;
+            for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
+                int jj=0;
+                for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
+                    array_indices[jj]=dof->get_petsc_gloabl_dof_idx(); jj++;
+                }
+                ierr = VecGetValues(F_stress,3,array_indices,array_output); CHKERRQ(ierr);
+                F_stress_mat(0,ii)=array_output[0]; F_stress_mat(1,ii)=array_output[1],  F_stress_mat(2,ii)=array_output[2];
+                ierr = VecGetValues(coord_stress,3,array_indices,array_output); CHKERRQ(ierr);
+                coord_stress_mat(ii,0)=array_output[0]; coord_stress_mat(ii,1)=array_output[1], coord_stress_mat(ii,2)=array_output[2];
+                ii++;
+            }
         }
         
+//        cout<<"\n\n\n\n\n\n\n F_stress_mat \n\n\n\n\n\n\\n\n\n\n\n";
+//        cout<<F_stress_mat;
+//        cout<<"\n\n\n\n\n\n\n coord_stress_mat \n\n\n\n\n\n\\n\n\n\n\n";
+//        cout<<coord_stress_mat;
+//        cout<<"\n\n\n\n\n\n\n RVE_volume \n\n\n\n\n\n\\n\n\n\n\n";
+        cout<<RVE_volume;
+        Sigma_homo.resize(3,3);  Sigma_homo.clear();
         
-        // Homogenized stress
-        cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
-                    Sigma_homo.size1(),Sigma_homo.size2(),F_stress_mat.size2(),
-                    1.,&*F_stress_mat.data().begin(),F_stress_mat.size2(),
-                    &*coord_stress_mat.data().begin(),coord_stress_mat.size2(),
-                    0.,&*Sigma_homo.data().begin(),Sigma_homo.size2());
+        Sigma_homo=prod(F_stress_mat, coord_stress_mat);
+        Sigma_homo=(1.0/ RVE_volume)*(Sigma_homo);
+        cout<<"\n\n\nSigma_bar "<<Sigma_homo<<endl<<endl<<endl;
+      
         
-        //if(pcomm->rank()==1){
-//            cout<<"coord_stress_mat "<<coord_stress_mat<<endl;
-//            cout<<"F_stress_mat "<<F_stress_mat<<endl;  (1.0/RVE_volume)*
-            cout<<"Sigma_bar "<<Sigma_homo<<endl;
-
-        //}
+        
 
         ierr = PetscTime(&v2); CHKERRQ(ierr);
         ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
@@ -154,7 +147,6 @@ struct ElasticFEMethod_RVE_CalStress: public ElasticFEMethod{
             ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
             
             //cout<<"GradU_at_GaussPt "<< GradU_at_GaussPt.size() << endl;
-            //cout<<"GradU_at_GaussPt "<< GradU_at_GaussPt[0] << endl;
         
             unsigned int g_dim = g_NTET.size()/4;
             assert(GradU_at_GaussPt.size() == g_dim);
@@ -164,6 +156,9 @@ struct ElasticFEMethod_RVE_CalStress: public ElasticFEMethod{
             for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
                     ublas::matrix< FieldData > GradU = *viit;
                     ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+                
+//                    cout<<"Strain "<< Strain << endl;
+
                     ublas::vector< FieldData > VoightStrain(6);
                     VoightStrain[0] = Strain(0,0);
                     VoightStrain[1] = Strain(1,1);
@@ -199,38 +194,6 @@ struct ElasticFEMethod_RVE_CalStress: public ElasticFEMethod{
             }
         PetscFunctionReturn(0);
     }
-  
-
-    
-    virtual PetscErrorCode store_coord(Vec coord_stress) {
-        PetscFunctionBegin;
-        
-        double coords[3];
-        int coord_pos[3];
-        EntityHandle fe_handle = fe_ptr->get_ent();
-        Range tetNodes;
-        EntityHandle node = 0;
-        rval = moab.get_connectivity(&fe_handle,1,tetNodes); CHKERR_THROW(rval);
-        
-        
-        for(Range::iterator nit = tetNodes.begin(); nit!=tetNodes.end(); nit++) {
-            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
-                EntityHandle ent = dof->get_ent();
-                if(node!=ent) {
-                    //cout<<"coord "<<endl;
-                    rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-                    //cout<<"\n\n coord = " << coords[0]<<" "<< coords[1]<<" " << coords[2] << "\n\n";
-                    int nn=dof->get_petsc_gloabl_dof_idx(); nn=nn/3;
-                    //cout<< " \n n ="<< nn << endl;
-                    coord_pos[0]=3*nn;  coord_pos[1]=3*nn+1;  coord_pos[2]=3*nn+2;
-                    ierr = VecSetValues(coord_stress,3, coord_pos ,coords,INSERT_VALUES); CHKERRQ(ierr);
-                    node = ent;
-                }
-            }
-        }
-        PetscFunctionReturn(0);
-    }
-
     
     
     virtual PetscErrorCode store_coord(Vec coord_stress) {

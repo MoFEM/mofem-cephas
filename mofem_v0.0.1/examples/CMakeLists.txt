@@ -32,4 +32,6 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/potential_flow")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_Thesis")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/Thermal")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_Try")
+
 

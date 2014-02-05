@@ -141,6 +141,14 @@ int main(int argc, char *argv[]) {
 
     BitRefLevel problem_bit_level = bit_levels.back();
     
+    
+//    //Saving prisms in interface.vtk
+//      EntityHandle out_meshset1;
+//      rval = moab.create_meshset(MESHSET_SET,out_meshset1); CHKERR_PETSC(rval);
+//      ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBPRISM,out_meshset1); CHKERRQ(ierr);
+//      rval = moab.write_file("interface.vtk","VTK","",&out_meshset1,1); CHKERR_PETSC(rval);
+
+    
     EntityHandle meshset_Elastic, meshset_Trans_ISO;
     rval = moab.create_meshset(MESHSET_SET,meshset_Elastic); CHKERR_PETSC(rval);
     rval = moab.create_meshset(MESHSET_SET,meshset_Trans_ISO); CHKERR_PETSC(rval);
@@ -282,8 +290,7 @@ int main(int argc, char *argv[]) {
     rval = moab.tag_get_handle("DISPLACEMENT_FROM_APP_STRAIN",3,MB_TYPE_DOUBLE,th_disp_1,MB_TAG_CREAT|MB_TAG_SPARSE,&defaultval); CHKERR_THROW(rval);
     
     EntityHandle node = 0;
-    double coords[3], disp_applied[3];
-    int count=0;
+    double coords[3], disp_applied[3]; int node_count=0;
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT_FROM_APP_STRAIN",dof_ptr)) {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
         EntityHandle ent = dof_ptr->get_ent();
@@ -294,10 +301,11 @@ int main(int argc, char *argv[]) {
 //            cout<<"\n\n coord = " << coords[0]<<" "<< coords[1]<<" " << coords[2]<<" rank "<< dof_rank << "\n\n";
             for(int ii=0; ii<3; ii++) disp_applied[ii]=strain_app(ii,0)*coords[0] + strain_app(ii,1)*coords[1] + strain_app(ii,2)*coords[2];
             rval=moab.tag_set_data(th_disp_1,&ent,1,&disp_applied); CHKERR_PETSC(rval);
-            node = ent;
+            node = ent; node_count++;
         }
         fval = disp_applied[dof_rank];
     }
+    cout<<"\n\n\n\nNumber of nodes "<< node_count <<"\n\n\n\n";
     
     //save the mesh to see in the paraview
     if(pcomm->rank()==0) {
@@ -411,12 +419,16 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     
-    
+//    cout<<"\n\n\n\n\n\n\n D_star \n\n\n\n\n\n\\n\n\n\n\n";
+//    ierr = VecView(D_star,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//    cout<<"\n\n\n\n\n\n\n D \n\n\n\n\n\n\\n\n\n\n\n";
+//    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
     ierr = VecAXPY(D,1,D_star); CHKERRQ(ierr);   // D=D+1*D_star (total displacement U_total=U_start+U_fluctuation)
+    
+    
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
     PostProcVertexMethod ent_method(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
     
@@ -449,10 +461,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEFEStress);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyRVETransIsoStress);  CHKERRQ(ierr);
 
-    ierr = VecGhostUpdateBegin(F_stress,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F_stress,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F_stress); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F_stress); CHKERRQ(ierr);
 //    cout<<"\n RVE_volume 2  ="<<RVE_volume<<endl;
     
     

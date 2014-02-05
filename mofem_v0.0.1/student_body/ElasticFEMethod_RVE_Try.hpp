@@ -41,11 +41,18 @@ struct ElasticFEMethod_RVE_Try: public ElasticFEMethod {
         PetscSynchronizedFlush(PETSC_COMM_WORLD);
         ierr = PetscTime(&v1); CHKERRQ(ierr);
         ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+        
+        
         Range nodes;
         double coords[3], disp_applied[3];
         EntityHandle node = 0;
         int index_D_star[3];
+        
+        
         rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+        
+//        cout<<"\n\n\n\nnodes.size() "<<nodes.size()<<"\n\n\n\n";
+        
         for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
             //cout<<"\n New postProcess \n";
             int jj=0;
@@ -64,6 +71,8 @@ struct ElasticFEMethod_RVE_Try: public ElasticFEMethod {
             ierr = VecSetValues(D_star,3,&(index_D_star[0]),&(disp_applied[0]),INSERT_VALUES); CHKERRQ(ierr);
         }
 
+        
+        
         g_NTET.resize(4*45);
         ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
         G_W_TET = G_TET_W45;
@@ -139,7 +148,8 @@ struct ElasticFEMethod_RVE_Try: public ElasticFEMethod {
             vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
             ierr = GetGaussDiffDataVector("DISPLACEMENT_FROM_APP_STRAIN",GradU_at_GaussPt); CHKERRQ(ierr);
             
-            //cout<<"GradU_at_GaussPt "<< GradU_at_GaussPt.size() << endl;
+             
+//            cout<<"GradU_at_GaussPt "<< GradU_at_GaussPt[0] << endl;
             
             unsigned int g_dim = g_NTET.size()/4;
             assert(GradU_at_GaussPt.size() == g_dim);
@@ -157,6 +167,9 @@ struct ElasticFEMethod_RVE_Try: public ElasticFEMethod {
                     VoightStrain[3] = 2*Strain(0,1);
                     VoightStrain[4] = 2*Strain(1,2);
                     VoightStrain[5] = 2*Strain(2,0);
+                    
+                    //cout<<"Strain "<< Strain << endl;
+                    
                     double w = V*G_W_TET[gg];
                     ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
                     //BT * VoigtStress
