@@ -69,10 +69,19 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       fe_method.g_NTET = g_NTET;
 
       ierr = fe_method.OpComplexForLazyStart(); CHKERRQ(ierr);
-      ierr = fe_method.GetData(fe_method.dofs_x_edge_data,fe_method.dofs_x_edge,
+      ierr = fe_method.GetData(
+	fe_method.order_x_edges,fe_method.order_x_faces,fe_method.order_x_volume,
+	fe_method.dofs_x_edge_data,fe_method.dofs_x_edge,
 	fe_method.dofs_x_face_data,fe_method.dofs_x_face,
 	fe_method.dofs_x_volume,fe_method.dofs_x,
 	fe_method.spatial_field_name); CHKERRQ(ierr);
+      ierr = fe_method.GetData(
+	fe_method.order_X_edges,fe_method.order_X_faces,fe_method.order_X_volume,
+	fe_method.dofs_X_edge_data,fe_method.dofs_X_edge,
+	fe_method.dofs_X_face_data,fe_method.dofs_X_face,
+	fe_method.dofs_X_volume,fe_method.dofs_X,
+	fe_method.material_field_name); CHKERRQ(ierr);
+
 
       int ee = 0;
       for(;ee<6;ee++) {
@@ -106,7 +115,8 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       fe_method.diff_volumeNinvJac = &fe_method.diffH1elemNinvJac[0];
       fe_method.volumeN = &fe_method.H1elemN[0];
 
-      ierr = fe_method.GetDofs_X_FromElementData(); CHKERRQ(ierr);
+
+
       ierr = fe_method.GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
 
       double _lambda,_mu,_thermal_expansion;
@@ -123,10 +133,12 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	int order_T_volume = 0;
 
 	ierr = Calulate_Stresses_at_GaussPoint(
-	      &fe_method.order_edges[0],&fe_method.order_faces[0],fe_method.order_volume,fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 
+	      &fe_method.order_X_edges[0],&fe_method.order_X_faces[0],fe_method.order_X_volume,
+	      &fe_method.order_x_edges[0],&fe_method.order_x_faces[0],fe_method.order_x_volume,
+	      fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 
 	      &fe_method.diffNTETinvJac[0],&fe_method.diff_edgeNinvJac[0],&fe_method.diff_faceNinvJac[0],fe_method.diff_volumeNinvJac, 
-	      &fe_method.dofs_X.data()[0],&*fe_method.dofs_x.data().begin(),
-	      &fe_method.dofs_x_edge[0],&fe_method.dofs_x_face[0],&*fe_method.dofs_x_volume.data().begin(), 
+	      &fe_method.dofs_X.data()[0],&fe_method.dofs_X_edge[0],&fe_method.dofs_X_face[0],&*fe_method.dofs_X_volume.data().begin(), 
+	      &*fe_method.dofs_x.data().begin(),&fe_method.dofs_x_edge[0],&fe_method.dofs_x_face[0],&*fe_method.dofs_x_volume.data().begin(), 
 	      //temperature
 	      _thermal_expansion,1,
 	      &g_NTET[0],&fe_method.edgeN[0],&fe_method.faceN[0],fe_method.volumeN,

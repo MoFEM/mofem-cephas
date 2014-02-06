@@ -146,8 +146,8 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TET_PROBLEM"); CHKERRQ(ierr);
 
-  Projection10NodeCoordsOnField fe(mField,"MESH_NODE_POSITIONS");
-  ierr = mField.loop_finite_elements("EDGE_PROJECTOR_PROBLEM","EDGE_PROJECTOR",fe);  CHKERRQ(ierr);
+  Projection10NodeCoordsOnField ent_method(mField,"MESH_NODE_POSITIONS");
+  ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
     //Open mesh_file_name.txt for writing
     ofstream myfile;

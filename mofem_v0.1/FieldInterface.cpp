@@ -154,10 +154,16 @@ PetscErrorCode FieldInterface::EntMethod::operator()() {
   SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::EntMethod::set_dof(const NumeredDofMoFEMEntity *_dof_ptr) {
+PetscErrorCode FieldInterface::EntMethod::set_dof(const DofMoFEMEntity *_dof_ptr) {
   PetscFunctionBegin;
   if(_dof_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
   dof_ptr = _dof_ptr;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldInterface::EntMethod::set_numered_dof(const NumeredDofMoFEMEntity *_dof_ptr) {
+  PetscFunctionBegin;
+  //if(_dof_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  dof_numered_ptr = _dof_ptr;
   PetscFunctionReturn(0);
 }
 

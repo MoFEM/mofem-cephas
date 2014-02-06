@@ -26,6 +26,7 @@ static char help[] = "\
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "FEMethod_DriverComplexForLazy.hpp"
 #include "FEMethod_ArcLengthDriverComplexForLazy.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 
@@ -124,6 +125,8 @@ int main(int argc, char *argv[]) {
 
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+    ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+
     ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
 
     //Field for ArcLength
@@ -140,6 +143,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_col("ELASTIC","LAMBDA"); CHKERRQ(ierr); //this is for parmetis
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
     //Define rows/cols and element data
     ierr = mField.modify_finite_element_add_field_row("ARC_LENGTH","LAMBDA"); CHKERRQ(ierr);
@@ -233,19 +237,28 @@ int main(int argc, char *argv[]) {
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
 
   if(step==1) {
-    EntityHandle node = 0;
-    double coords[3];
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
-      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
-      double &fval = dof_ptr->get_FieldData();
-      if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
+    /*if(mField.check_field("MESH_NODE_POSITIONS")) {
+      ierr = mField.set_field(0,MBVERTEX,"SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = mField.set_field(0,MBEDGE,"SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = mField.set_field(0,MBTRI,"SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = mField.set_field(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = mField.field_axpy(1.,"MESH_NODE_POSITIONS","SPATIAL_POSITION"); CHKERRQ(ierr);
+
+    } else {
+      EntityHandle node = 0;
+      double coords[3];
+      for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
+	if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+	EntityHandle ent = dof_ptr->get_ent();
+	int dof_rank = dof_ptr->get_dof_rank();
+	double &fval = dof_ptr->get_FieldData();
+	if(node!=ent) {
+	  rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	  node = ent;
+	}
+	fval = coords[dof_rank];
       }
-      fval = coords[dof_rank];
-    }
+    }*/
   }
 
   DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");

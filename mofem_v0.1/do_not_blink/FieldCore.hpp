@@ -360,6 +360,7 @@ struct FieldCore: public FieldInterface {
     int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
+  PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);

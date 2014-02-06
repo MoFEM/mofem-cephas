@@ -1146,9 +1146,11 @@ struct FieldInterface {
     PetscErrorCode preProcess();
     PetscErrorCode operator()();
     PetscErrorCode postProcess();
-    
-    PetscErrorCode set_dof(const NumeredDofMoFEMEntity *_dof_ptr);
-    const NumeredDofMoFEMEntity *dof_ptr;
+ 
+    PetscErrorCode set_dof(const DofMoFEMEntity *_dof_ptr);
+    const DofMoFEMEntity *dof_ptr;
+    PetscErrorCode set_numered_dof(const NumeredDofMoFEMEntity *_dof_ptr);
+    const NumeredDofMoFEMEntity *dof_numered_ptr;
   };
 
   /** \brief Set data for BasicMethod 
@@ -1225,6 +1227,12 @@ struct FieldInterface {
     *
     */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1) = 0;
+
+  /** \brief Make a loop over entities
+    *
+    */
+  virtual PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1) = 0;
+
 
   /** \brief Get problem database (datastructure) 
     *

@@ -4828,7 +4828,35 @@ PetscErrorCode FieldCore::loop_dofs(const string &problem_name,const string &fie
   dofs_by_name::iterator hi_miit = dofs->upper_bound(field_name);
   ierr = method.preProcess(); CHKERRQ(ierr);
   for(;miit!=hi_miit;miit++) {
+    ierr = method.set_dof(miit->get_DofMoFEMEntity_ptr()); CHKERRQ(ierr);
+    ierr = method.set_numered_dof(&*miit); CHKERRQ(ierr);
+    try {
+      ierr = method(); CHKERRQ(ierr);
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "throw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+  }
+  ierr = method.postProcess(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::loop_dofs(const string &field_name,EntMethod &method,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  ierr = method.set_fields(&moabFields); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&entsMoabField); CHKERRQ(ierr);
+  ierr = method.set_dofs_multiIndex(&dofsMoabField); CHKERRQ(ierr);
+  ierr = method.set_fes_multiIndex(&finiteElements); CHKERRQ(ierr);
+  ierr = method.set_fes_data_multiIndex(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
+  ierr = method.set_adjacencies(&entFEAdjacencies); CHKERRQ(ierr);
+  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator miit,hi_miit;
+  miit = dofsMoabField.get<FieldName_mi_tag>().lower_bound(field_name);
+  hi_miit = dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
+  ierr = method.preProcess(); CHKERRQ(ierr);
+  for(;miit!=hi_miit;miit++) {
     ierr = method.set_dof(&*miit); CHKERRQ(ierr);
+    ierr = method.set_numered_dof(NULL); CHKERRQ(ierr);
     try {
       ierr = method(); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
