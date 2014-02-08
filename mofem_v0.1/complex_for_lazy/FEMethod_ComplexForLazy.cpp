@@ -306,9 +306,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	if(eiit!=hi_eiit) {
 	  assert(eiit->side_number_ptr->side_number==ee);
 	  dofs_edge_data[ee].resize(distance(eiit,hi_eiit));
-	  order_x_edges[ee] = eiit->get_max_order();
+	  order_edges[ee] = eiit->get_max_order();
 	  dofs_edge[ee] = &dofs_edge_data[ee].data()[0];
-	  assert(dofs_edge_data[ee].size() == 3*(unsigned int)NBEDGE_H1(order_x_edges[ee]));
+	  assert(dofs_edge_data[ee].size() == 3*(unsigned int)NBEDGE_H1(order_edges[ee]));
 	  map<UId,FieldData> map_edge_dofs;
 	  for(;eiit!=hi_eiit;eiit++) dofs_edge_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData(); 
 	} else {
@@ -324,9 +324,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	hi_fiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBTRI,ff));
 	if(fiit!=hi_fiit) {
 	  dofs_face_data[ff].resize(distance(fiit,hi_fiit));
-	  order_x_faces[ff] = fiit->get_max_order();
+	  order_faces[ff] = fiit->get_max_order();
 	  dofs_face[ff] = &dofs_face_data[ff].data()[0];
-	  assert(dofs_face_data[ff].size() == 3*(unsigned int)NBFACE_H1(order_x_faces[ff]));
+	  assert(dofs_face_data[ff].size() == 3*(unsigned int)NBFACE_H1(order_faces[ff]));
 	  for(;fiit!=hi_fiit;fiit++) dofs_face_data[ff][fiit->get_EntDofIdx()] = fiit->get_FieldData(); 
 	} else {
 	  order_faces[ff] = 0;
@@ -338,9 +338,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       viit = data_multiIndex->get<Composite_mi_tag2>().lower_bound(boost::make_tuple(field_name,MBTET));
       hi_viit = data_multiIndex->get<Composite_mi_tag2>().upper_bound(boost::make_tuple(field_name,MBTET));
       if(viit!=hi_viit) {
-	order_x_volume = viit->get_max_order();
+	order_volume = viit->get_max_order();
 	dofs_volume.resize(distance(viit,hi_viit));
-	assert(dofs_volume.size() == (unsigned int)3*NBVOLUME_H1(order_x_volume));
+	assert(dofs_volume.size() == (unsigned int)3*NBVOLUME_H1(order_volume));
 	for(;viit!=hi_viit;viit++) dofs_volume[viit->get_EntDofIdx()] = viit->get_FieldData(); 
       } else {
 	order_volume = 0;
@@ -581,7 +581,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	    V,eps*r,_lambda,_mu,ptr_matctx, 
 	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],diff_volumeNinvJac, 
-	    &dofs_X[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
+	    &dofs_X[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
 	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
 	    //temperature
 	    _thermal_expansion,thermal_load_factor,

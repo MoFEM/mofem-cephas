@@ -4210,7 +4210,8 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::field_axpy(const double alpha,const string& field_name_x,const string& field_name_y,bool creat_if_missing) {
+PetscErrorCode FieldCore::field_axpy(const double alpha,const string& field_name_x,const string& field_name_y,
+  bool error_if_missing,bool creat_if_missing) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = moabFields.get<FieldName_mi_tag>().find(field_name_x);
   if(x_fit==moabFields.get<FieldName_mi_tag>().end()) {
@@ -4241,9 +4242,11 @@ PetscErrorCode FieldCore::field_axpy(const double alpha,const string& field_name
 	if(creat_if_missing) {
 	  SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
 	} else {
-	  ostringstream ss;
-	  ss << "dof on ent " << x_eit->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
-	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  if(error_if_missing) {
+	    ostringstream ss;
+	    ss << "dof on ent " << x_eit->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
+	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  }
 	}
       }
       dit->get_FieldData() += alpha*data;

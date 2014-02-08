@@ -59,18 +59,18 @@ struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod { //Field
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-    if(dof_ptr->get_ent_type() != MBEDGE) {
-      if(dof_ptr->get_ent_type() == MBVERTEX) {
-	EntityHandle node = dof_ptr->get_ent();
-	coords.resize(3);
-	rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR(rval);
-	dof_ptr->get_FieldData() = coords[0*3+dof_ptr->get_dof_rank()];
-      }
+    if(dof_ptr->get_name() != field_name) PetscFunctionReturn(0);
+    if(dof_ptr->get_ent_type() == MBVERTEX) {
+      EntityHandle node = dof_ptr->get_ent();
+      coords.resize(3);
+      rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR(rval);
+      dof_ptr->get_FieldData() = coords[dof_ptr->get_dof_rank()];
       PetscFunctionReturn(0);
     }
-    if(dof_ptr->get_name() != field_name) PetscFunctionReturn(0);
+    if(dof_ptr->get_ent_type() != MBEDGE) {
+      PetscFunctionReturn(0);
+    }
     EntityHandle edge = dof_ptr->get_ent();
-
     if(mField.get_moab().type_from_handle(edge)!=MBEDGE) {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only elements which are type of MBEDGE"); 
     }

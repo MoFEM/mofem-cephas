@@ -27,7 +27,7 @@
 #include<FEM.h>
 #include<H1HdivHcurlL2.h>
 
-#define EPS 1.e-12
+#define EPS 1e-12
 void print_mat(double *M,int m,int n) {
   int ii,jj;
   for(ii = 0; ii<m; ii++) {
@@ -60,6 +60,8 @@ void print_mat_complex(__CLPK_doublecomplex *M,int m,int n) {
     for(; jj<n; jj++) {
       double val_re = M[ii*n+jj].r;
       double val_im = M[ii*n+jj].i;
+      if( fabs(val_re) < EPS ) val_re = 0; 
+      if( fabs(val_im) < EPS ) val_im = 0; 
       printf("%+8.7e%+8.7ei ",val_re,val_im);
     }; printf("\n");
   }; 
