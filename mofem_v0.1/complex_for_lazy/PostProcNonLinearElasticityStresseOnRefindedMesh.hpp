@@ -138,6 +138,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	int order_T_volume = 0;
 
 	ierr = Calulate_Stresses_at_GaussPoint(
+	      &fe_method.maxOrderEdgeH1[0],&fe_method.maxOrderFaceH1[0],fe_method.maxOrderElemH1,
 	      &fe_method.order_X_edges[0],&fe_method.order_X_faces[0],fe_method.order_X_volume,
 	      &fe_method.order_x_edges[0],&fe_method.order_x_faces[0],fe_method.order_x_volume,
 	      fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 

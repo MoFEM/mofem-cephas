@@ -99,6 +99,7 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
   ierr = ElshebyStress_PullBack(&det_xH,inv_xH,xSigma,xSigma_PullBack);
 
 PetscErrorCode HierarhicalDeformationGradient(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_edge,int *order_face,int order_volume,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
   double *dofs_edge[],double *dofs_face[],double *dofs_volume,
@@ -109,7 +110,7 @@ PetscErrorCode HierarhicalDeformationGradient(
     if(NBEDGE_H1(order_edge[ee])==0) continue; 
     double edge_grad[9]; 
     bzero(edge_grad,9*sizeof(double)); 
-    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_edge[ee])]); 
+    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])]); 
     ierr = H1_EdgeGradientOfDeformation_hierachical(order_edge[ee],diff,dofs_edge[ee],edge_grad); CHKERRQ(ierr); 
     cblas_daxpy(9,1,edge_grad,1,GRAD,1); } 
   int ff = 0; 
@@ -117,19 +118,20 @@ PetscErrorCode HierarhicalDeformationGradient(
     if(NBFACE_H1(order_face[ff])==0) continue; 
     double face_grad[9]; 
     bzero(face_grad,9*sizeof(double)); 
-    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_face[ff])]); 
+    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])]); 
     ierr = H1_FaceGradientOfDeformation_hierachical(order_face[ff],diff,dofs_face[ff],face_grad); CHKERRQ(ierr); 
     cblas_daxpy(9,1,face_grad,1,GRAD,1); } 
   if(NBVOLUME_H1(order_volume)>0) { 
     double volume_grad[9]; 
     bzero(volume_grad,9*sizeof(double)); 
-    double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_volume)]); 
+    double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)]); 
     ierr = H1_VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_volume,volume_grad); CHKERRQ(ierr); 
     cblas_daxpy(9,1,volume_grad,1,GRAD,1); } 
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode Calulate_Stresses_at_GaussPoint(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double lambda,double mu,void *matctx,
@@ -154,6 +156,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X_node,H);  CHKERRQ(ierr);
   ierr = HierarhicalDeformationGradient(
+    order_max_edge,order_max_face,order_max_volume,
     order_X_edge,order_X_face,order_X_volume,
     diffN,diffN_edge,diffN_face,diffN_volume,
     dofs_X_edge,dofs_X_face,dofs_X_volume,
@@ -167,6 +170,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   double h[9];
   ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
   ierr = HierarhicalDeformationGradient(
+    order_max_edge,order_max_face,order_max_volume,
     order_x_edge,order_x_face,order_x_volume,
     diffN,diffN_edge,diffN_face,diffN_volume,
     dofs_x_edge,dofs_x_face,dofs_x_volume,
@@ -194,7 +198,6 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   //print_mat_complex(xF,3,3); fprintf(stdout,"xF tmp\n"); 
   ierr = DeterminantComplexGradient(xF_tmp,&det_xF); CHKERRQ(ierr); 
   //printf("det_xF %6.4e+%6.4ei\n", det_xF.r,det_xF.i);
-  //fflush(stdout);
   //printf("\n\n\n");
 
   ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr); 
@@ -239,6 +242,7 @@ PetscErrorCode bzero_Fint(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Fint_Hh_hierarchical(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double lambda,double mu,void *matctx,
@@ -276,6 +280,7 @@ PetscErrorCode Fint_Hh_hierarchical(
     double H[9],iH[9];
     ierr = GradientOfDeformation(diffN,dofs_X_node,H);  CHKERRQ(ierr);
     ierr = HierarhicalDeformationGradient(
+      order_max_edge,order_max_face,order_max_volume,
       order_X_edge,order_X_face,order_X_volume,
       diffN,diffN_edge,diffN_face,diffN_volume,
       dofs_X_edge,dofs_X_face,dofs_X_volume,
@@ -299,6 +304,7 @@ PetscErrorCode Fint_Hh_hierarchical(
       bzero(ih,9*sizeof(double));
     }
     ierr = HierarhicalDeformationGradient(
+      order_max_edge,order_max_face,order_max_volume,
       order_x_edge,order_x_face,order_x_volume,
       diffN,diffN_edge,diffN_face,diffN_volume,
       dofs_x_edge,dofs_x_face,dofs_x_volume,
@@ -334,7 +340,7 @@ PetscErrorCode Fint_Hh_hierarchical(
     for(;ee<6;ee++) {
       int pp = 0;
       for(;pp<NBEDGE_H1(order_x_edge[ee]);pp++) {
-	double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_x_edge[ee])+3*pp]);
+	double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp]);
 	if(Fint_h_edge!=NULL)
 	if(Fint_h_edge[ee]!=NULL) {
 	  (Fint_h_edge[ee])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[0],1);
@@ -347,7 +353,7 @@ PetscErrorCode Fint_Hh_hierarchical(
 	  (Fint_ih_edge[ee])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }
       }
       for(;pp<NBEDGE_H1(order_X_edge[ee]);pp++) {
-	double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_X_edge[ee])+3*pp]);
+	double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp]);
 	if(Fint_H_edge!=NULL)
 	if(Fint_H_edge[ee]!=NULL) {
 	  (Fint_H_edge[ee])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[0],1);
@@ -364,7 +370,7 @@ PetscErrorCode Fint_Hh_hierarchical(
     for(;ff<4;ff++) {
       int pp = 0;
       for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_x_face[ff])+3*pp]);
+	double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
 	if(Fint_h_face!=NULL) 
 	if(Fint_h_face[ff]!=NULL) {
 	  (Fint_h_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[0],1);
@@ -377,7 +383,7 @@ PetscErrorCode Fint_Hh_hierarchical(
 	  (Fint_ih_face[ff])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }
       }
       for(;pp<NBFACE_H1(order_X_face[ff]);pp++) {
-	double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_X_face[ff])+3*pp]);
+	double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
 	if(Fint_H_face!=NULL) 
 	if(Fint_H_face[ff]!=NULL) {
 	  (Fint_H_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[0],1);
@@ -392,7 +398,7 @@ PetscErrorCode Fint_Hh_hierarchical(
     }
     int pp = 0;
     for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-      double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_x_volume)+3*pp]);
+      double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
       if(Fint_h_volume!=NULL) {
 	(Fint_h_volume)[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[0],1);
 	(Fint_h_volume)[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[3],1);
@@ -403,7 +409,7 @@ PetscErrorCode Fint_Hh_hierarchical(
 	(Fint_ih_volume)[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }
     }
     for(;pp<NBVOLUME_H1(order_X_volume);pp++) {
-      double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_X_volume)+3*pp]);
+      double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
       if(Fint_H_volume!=NULL) {
 	(Fint_H_volume)[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[0],1);
 	(Fint_H_volume)[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[3],1);
@@ -417,6 +423,7 @@ PetscErrorCode Fint_Hh_hierarchical(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Tangent_HH_hierachical(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,
@@ -472,6 +479,7 @@ PetscErrorCode Tangent_HH_hierachical(
       double H[9];
       ierr = GradientOfDeformation(diffN,dofs_X_node,H);  CHKERRQ(ierr);
       ierr = HierarhicalDeformationGradient(
+	order_max_edge,order_max_face,order_max_volume,
 	order_X_edge,order_X_face,order_X_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_X_edge,dofs_X_face,dofs_X_volume,
@@ -484,6 +492,7 @@ PetscErrorCode Tangent_HH_hierachical(
       double h[9];
       ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
       ierr = HierarhicalDeformationGradient(
+	order_max_edge,order_max_face,order_max_volume,
 	order_x_edge,order_x_face,order_x_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_x_edge,dofs_x_face,dofs_x_volume,
@@ -509,7 +518,7 @@ PetscErrorCode Tangent_HH_hierachical(
 	for(;ee<6;ee++) {		
 	  int pp = 0;
 	  for(;pp<NBEDGE_H1(order_x_edge[ee]);pp++) {
-	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_x_edge[ee])+3*pp]);
+	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp]);
 	    if(Koff_edge[ee]!=NULL) {
 	      (Koff_edge[ee])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (Koff_edge[ee])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -520,7 +529,7 @@ PetscErrorCode Tangent_HH_hierachical(
 	for(;ff<4;ff++) {		
 	  int pp = 0;
 	  for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_x_face[ff])+3*pp]);
+	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
 	    if(Koff_face[ff]!=NULL) {
 	      (Koff_face[ff])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (Koff_face[ff])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -529,7 +538,7 @@ PetscErrorCode Tangent_HH_hierachical(
       if(Koff_volume!=NULL) {
 	int pp = 0;
 	for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_x_volume)+3*pp]);
+	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
 	  if(Koff_volume!=NULL) {
 	    (Koff_volume)[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (Koff_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -539,6 +548,7 @@ PetscErrorCode Tangent_HH_hierachical(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Tangent_hh_hierachical(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,
@@ -582,6 +592,7 @@ PetscErrorCode Tangent_hh_hierachical(
     double H[9];
     ierr = GradientOfDeformation(diffN,dofs_X_node,H);  CHKERRQ(ierr);
     ierr = HierarhicalDeformationGradient(
+	order_max_edge,order_max_face,order_max_volume,
 	order_X_edge,order_X_face,order_X_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_X_edge,dofs_X_face,dofs_X_volume,
@@ -593,6 +604,7 @@ PetscErrorCode Tangent_hh_hierachical(
     double h[9];
     ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
     ierr = HierarhicalDeformationGradient(
+	order_max_edge,order_max_face,order_max_volume,
 	order_x_edge,order_x_face,order_x_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_x_edge,dofs_x_face,dofs_x_volume,
@@ -622,7 +634,7 @@ PetscErrorCode Tangent_hh_hierachical(
       for(;ee<6;ee++) {
         int pp = 0;
         for(;pp<NBEDGE_H1(order_x_edge[ee]);pp++) {
-	  double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_x_edge[ee])+3*pp]);
+	  double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp]);
 	  if(K_edge[ee]!=NULL) {
 	    (K_edge[ee])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_edge[ee])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -631,14 +643,14 @@ PetscErrorCode Tangent_hh_hierachical(
       for(;ff<4;ff++) {
         int pp = 0;
         for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_x_face[ff])+3*pp]);
+	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
 	  if(K_face[ff]!=NULL) {
 	    (K_face[ff])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_face[ff])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	    (K_face[ff])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
       int pp = 0;
       for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_x_volume)+3*pp]);
+	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
 	if(K_volume!=NULL) {
 	  (K_volume)[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
   	  (K_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -647,6 +659,7 @@ PetscErrorCode Tangent_hh_hierachical(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Tangent_hh_hierachical_edge(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,
@@ -696,6 +709,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(
       double H[9];
       ierr = GradientOfDeformation(diffN,dofs_X_node,H);  CHKERRQ(ierr);
       ierr = HierarhicalDeformationGradient(
+	order_max_edge,order_max_face,order_max_volume,
 	order_X_edge,order_X_face,order_X_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_X_edge,dofs_X_face,dofs_X_volume,
@@ -707,6 +721,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(
       double h[9];
       ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
       ierr = HierarhicalDeformationGradient(
+	order_max_edge,order_max_face,order_max_volume,
 	order_x_edge,order_x_face,order_x_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_x_edge,dofs_x_face,dofs_x_volume,
@@ -737,7 +752,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(
         for(;ee<6;ee++) {
           int pp = 0;
           for(;pp<NBEDGE_H1(order_x_edge[ee]);pp++) {
-	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_x_edge[ee])+3*pp]);
+	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp]);
 	    if(K_edge[ee][EE]!=NULL) {
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
@@ -746,14 +761,14 @@ PetscErrorCode Tangent_hh_hierachical_edge(
         for(;ff<4;ff++) {
           int pp = 0;
           for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_x_face[ff])+3*pp]);
+	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
 	    if(K_face[ff][EE]!=NULL) {
 	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
 	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
 	int pp = 0;
 	for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_x_volume)+3*pp]);
+	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
 	  if(K_volume!=NULL) {
 	    (K_volume[EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_volume[EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -762,6 +777,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Tangent_hh_hierachical_face(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,
@@ -817,6 +833,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
 	double H[9];
 	ierr = GradientOfDeformation(diffN,dofs_X_node,H);  CHKERRQ(ierr);
 	ierr = HierarhicalDeformationGradient(
+	  order_max_edge,order_max_face,order_max_volume,
 	  order_X_edge,order_X_face,order_X_volume,
 	  diffN,diffN_edge,diffN_face,diffN_volume,
 	  dofs_X_edge,dofs_X_face,dofs_X_volume,
@@ -828,6 +845,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
 	double h[9];
 	ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
 	ierr = HierarhicalDeformationGradient(
+	  order_max_edge,order_max_face,order_max_volume,
 	  order_x_edge,order_x_face,order_x_volume,
 	  diffN,diffN_edge,diffN_face,diffN_volume,
 	  dofs_x_edge,dofs_x_face,dofs_x_volume,
@@ -856,7 +874,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
         for(;ee<6;ee++) {
           int pp = 0;
           for(;pp<NBEDGE_H1(order_x_edge[ee]);pp++) {
-	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_x_edge[ee])+3*pp+0]);
+	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp+0]);
 	    if(K_edge[ee][FF]!=NULL) {
 	      (K_edge[ee][FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (K_edge[ee][FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
@@ -865,14 +883,14 @@ PetscErrorCode Tangent_hh_hierachical_face(
         for(;ff<4;ff++) {
           int pp = 0;
           for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_x_face[ff])+3*pp+0]);
+	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp+0]);
 	    if(K_face[ff][FF]!=NULL) {
 	      (K_face[ff][FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (K_face[ff][FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
 	      (K_face[ff][FF])[3*pp*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
 	int pp = 0;
 	for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_x_volume)+3*pp]);
+	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
 	  if(K_volume!=NULL) {
 	    (K_volume[FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_volume[FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -881,6 +899,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Tangent_hh_hierachical_volume(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,
@@ -927,6 +946,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(
     double H[9];
     ierr = GradientOfDeformation(diffN,dofs_X_node,H);  CHKERRQ(ierr);
     ierr = HierarhicalDeformationGradient(
+	order_max_edge,order_max_face,order_max_volume,
 	order_X_edge,order_X_face,order_X_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_X_edge,dofs_X_face,dofs_X_volume,
@@ -938,6 +958,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(
     double h[9];
     ierr = GradientOfDeformation(diffN,dofs_x_node,h);  CHKERRQ(ierr);
     ierr = HierarhicalDeformationGradient(
+	order_max_edge,order_max_face,order_max_volume,
 	order_x_edge,order_x_face,order_x_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_x_edge,dofs_x_face,dofs_x_volume,
@@ -968,7 +989,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(
       for(;ee<6;ee++) {
         int pp = 0;
         for(;pp<NBEDGE_H1(order_x_edge[ee]);pp++) {
-	  double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_x_edge[ee])+3*pp]);
+	  double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp]);
 	  if(K_edge[ee]!=NULL) {
 	    (K_edge[ee])[3*pp*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_edge[ee])[3*pp*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -977,14 +998,14 @@ PetscErrorCode Tangent_hh_hierachical_volume(
       for(;ff<4;ff++) {
         int pp = 0;
         for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_x_face[ff])+3*pp]);
+	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
 	  if(K_face[ff]!=NULL) {
 	    (K_face[ff])[3*pp*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_face[ff])[3*pp*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	    (K_face[ff])[3*pp*nb_dofs_volume + 2*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
       int pp = 0;
       for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_x_volume)+3*pp]);
+	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
 	if(K_volume!=NULL) {
 	  (K_volume)[3*pp*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
   	  (K_volume)[3*pp*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);

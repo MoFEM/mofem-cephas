@@ -53,6 +53,7 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
 PetscErrorCode ThermalDeformationGradient(const double alpha,const double lambda,const double i_lambda,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF);
 
 PetscErrorCode Calulate_Stresses_at_GaussPoint(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double lambda,double mu,void *matctx,
@@ -68,6 +69,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,double *themp,
   int gg);
 PetscErrorCode Fint_Hh_hierarchical(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double lambda,double mu,void *matctx,
@@ -87,6 +89,7 @@ PetscErrorCode Fint_Hh_hierarchical(
   double *Fint_ih,double *Fint_ih_edge[],double *Fint_ih_face[],double *Fint_ih_volume,
   int G_DIM,const double *G_W);
 PetscErrorCode Tangent_HH_hierachical(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,
@@ -101,6 +104,7 @@ PetscErrorCode Tangent_HH_hierachical(
   //
   double *K,double *Koff,double *Koff_edge[6],double *Koff_face[4],double *Koff_volume,int G_DIM,const double *G_W);
 PetscErrorCode Tangent_hh_hierachical(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,
@@ -115,6 +119,7 @@ PetscErrorCode Tangent_hh_hierachical(
   //
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W);
 PetscErrorCode Tangent_hh_hierachical_edge(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,
@@ -131,6 +136,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(
   double *K_edge[6][6],double *K_face[4][6],double *K_volume[6],
   int G_DIM,const double *G_W);
 PetscErrorCode Tangent_hh_hierachical_face(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,
@@ -147,6 +153,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
   double *K_edge[6][4],double *K_face[4][4],double *K_volume[4],
   int G_DIM,const double *G_W);
 PetscErrorCode Tangent_hh_hierachical_volume(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,
   double alpha,double eps,double lambda,double mu,void *matctx,

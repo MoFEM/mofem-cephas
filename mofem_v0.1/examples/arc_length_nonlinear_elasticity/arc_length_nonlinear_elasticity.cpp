@@ -359,6 +359,15 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(ArcCtx->x0,&x00); CHKERRQ(ierr);
   bool converged_state = false;
 
+      PostProcStressNonLinearElasticity fe_post_proc_method(moab,MyFE);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+      if(pcomm->rank()==0) {
+	ostringstream sss;
+	sss << "out_post_proc_AAA.vtk";
+	rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
+      }
+
+
   for(;step<max_steps;step++) {
 
     ierr = VecCopy(D,D0); CHKERRQ(ierr);

@@ -4246,6 +4246,8 @@ PetscErrorCode FieldCore::field_axpy(const double alpha,const string& field_name
 	    ostringstream ss;
 	    ss << "dof on ent " << x_eit->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
 	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  } else {
+	    continue;
 	  }
 	}
       }

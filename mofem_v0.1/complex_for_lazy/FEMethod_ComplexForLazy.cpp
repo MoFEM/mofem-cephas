@@ -311,6 +311,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	  assert(dofs_edge_data[ee].size() == 3*(unsigned int)NBEDGE_H1(order_edges[ee]));
 	  map<UId,FieldData> map_edge_dofs;
 	  for(;eiit!=hi_eiit;eiit++) dofs_edge_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData(); 
+	  if(diffH1edgeNinvJac[ee].size() < (unsigned int)NBEDGE_H1(order_edges[ee])) {
+	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
+	  }
 	} else {
 	  order_edges[ee] = 0;
 	  dofs_edge[ee] = NULL;
@@ -328,6 +331,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	  dofs_face[ff] = &dofs_face_data[ff].data()[0];
 	  assert(dofs_face_data[ff].size() == 3*(unsigned int)NBFACE_H1(order_faces[ff]));
 	  for(;fiit!=hi_fiit;fiit++) dofs_face_data[ff][fiit->get_EntDofIdx()] = fiit->get_FieldData(); 
+	  if(diffH1faceNinvJac[ff].size() < (unsigned int)NBFACE_H1(order_faces[ff])) {
+	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
+	  }
 	} else {
 	  order_faces[ff] = 0;
 	  dofs_face[ff] = 0;
@@ -342,6 +348,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	dofs_volume.resize(distance(viit,hi_viit));
 	assert(dofs_volume.size() == (unsigned int)3*NBVOLUME_H1(order_volume));
 	for(;viit!=hi_viit;viit++) dofs_volume[viit->get_EntDofIdx()] = viit->get_FieldData(); 
+	if(diffH1elemNinvJac.size() < (unsigned int)NBVOLUME_H1(order_volume)) {
+	  SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
+	}
       } else {
 	order_volume = 0;
       }
@@ -535,6 +544,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
       switch(sub_analysis_type[ss]&type_of_analysis) {
 	case spatail_analysis: {
 	  ierr = Tangent_hh_hierachical(
+	    &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	    V,eps*r,_lambda,_mu,ptr_matctx,
@@ -549,6 +559,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &*Khh.data().begin(),&*KHh.data().begin(),Kedgeh,Kfaceh,&*Kvolumeh.data().begin(),
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	  ierr = Tangent_hh_hierachical_edge(
+	    &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	    V,eps*r,_lambda,_mu,ptr_matctx, 
@@ -563,6 +574,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &Khedge[0],&KHedge[0],Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	  ierr = Tangent_hh_hierachical_face(
+	    &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	    V,eps*r,_lambda,_mu,ptr_matctx, 
@@ -577,6 +589,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &Khface[0],&KHface[0],Khh_edgeface,Khh_faceface,Khh_volumeface, 
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	  ierr = Tangent_hh_hierachical_volume(
+	    &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	    V,eps*r,_lambda,_mu,ptr_matctx, 
@@ -594,6 +607,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	break;
 	case material_analysis: {
 	  ierr = Tangent_HH_hierachical(
+	    &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	    V,eps*r,_lambda,_mu,ptr_matctx,
@@ -722,6 +736,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	switch(sub_analysis_type[ss]&type_of_analysis) {
 	  case spatail_analysis: {
 	    ierr = Fint_Hh_hierarchical(
+	      &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	      &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	      &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	      V,_lambda,_mu,ptr_matctx, 
@@ -743,6 +758,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	  break;
 	  case material_analysis: {
 	    ierr = Fint_Hh_hierarchical(
+	      &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	      &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	      &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	      V,_lambda,_mu,ptr_matctx, 
@@ -784,6 +800,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	  break;
 	  case scaled_themp_direvative_spatial: {
 	    ierr = Fint_Hh_hierarchical(
+	      &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	      &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	      &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	      V,_lambda,_mu,ptr_matctx, 
@@ -806,6 +823,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	  break;
 	  case scaled_themp_direvative_material: {
 	    ierr = Fint_Hh_hierarchical(
+	      &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	      &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	      &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	      V,_lambda,_mu,ptr_matctx, 
