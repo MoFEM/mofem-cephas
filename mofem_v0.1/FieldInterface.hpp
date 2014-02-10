@@ -811,10 +811,11 @@ struct FieldInterface {
     * \param alpha
     * \param field_name_x name of field_x
     * \param field_name_y name of field_y
+    * \param error_if_missing throw error if entity/dof exist in field_x but not on field_y
     * \param create_if_missing creat dof in field_y from fiedl_x if it is not database
     *
     */
-  virtual PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool creat_if_missing = false) = 0;
+  virtual PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false) = 0;
 
   /** \brief scale field 
     * 
@@ -1146,9 +1147,11 @@ struct FieldInterface {
     PetscErrorCode preProcess();
     PetscErrorCode operator()();
     PetscErrorCode postProcess();
-    
-    PetscErrorCode set_dof(const NumeredDofMoFEMEntity *_dof_ptr);
-    const NumeredDofMoFEMEntity *dof_ptr;
+ 
+    PetscErrorCode set_dof(const DofMoFEMEntity *_dof_ptr);
+    const DofMoFEMEntity *dof_ptr;
+    PetscErrorCode set_numered_dof(const NumeredDofMoFEMEntity *_dof_ptr);
+    const NumeredDofMoFEMEntity *dof_numered_ptr;
   };
 
   /** \brief Set data for BasicMethod 
@@ -1225,6 +1228,12 @@ struct FieldInterface {
     *
     */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1) = 0;
+
+  /** \brief Make a loop over entities
+    *
+    */
+  virtual PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1) = 0;
+
 
   /** \brief Get problem database (datastructure) 
     *

@@ -23,9 +23,10 @@ static char help[] = "\
 -my_ms maximal number of steps\n\n";
 
 #include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
 #include "FEMethod_DriverComplexForLazy.hpp"
 #include "FEMethod_ArcLengthDriverComplexForLazy.hpp"
+#include "Projection10NodeCoordsOnField.hpp"
 
 using namespace MoFEM;
 
@@ -124,6 +125,8 @@ int main(int argc, char *argv[]) {
 
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+    ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+
     ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
 
     //Field for ArcLength
@@ -139,6 +142,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ELASTIC","LAMBDA"); CHKERRQ(ierr); //this is for parmetis
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","LAMBDA"); CHKERRQ(ierr);
 
     //Define rows/cols and element data
@@ -159,6 +163,7 @@ int main(int argc, char *argv[]) {
 
     //add entitities (by tets) to the field
     ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
     //add finite elements entities
     ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
@@ -180,6 +185,12 @@ int main(int argc, char *argv[]) {
     ierr = mField.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+    //
+    ierr = mField.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
   }
 
 
@@ -233,19 +244,17 @@ int main(int argc, char *argv[]) {
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
 
   if(step==1) {
-    EntityHandle node = 0;
-    double coords[3];
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
-      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
-      double &fval = dof_ptr->get_FieldData();
-      if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
-      }
-      fval = coords[dof_rank];
-    }
+    //10 node tets
+    Projection10NodeCoordsOnField ent_method_material(mField,"MESH_NODE_POSITIONS");
+    ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+    //Projection10NodeCoordsOnField ent_method_spatial(mField,"SPATIAL_POSITION");
+    //ierr = mField.loop_dofs("SPATIAL_POSITION",ent_method_spatial); CHKERRQ(ierr);
+    ierr = mField.set_field(0,MBVERTEX,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.set_field(0,MBEDGE,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.field_axpy(1.,"MESH_NODE_POSITIONS","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.set_field(0,MBTRI,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.set_field(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
+
   }
 
   DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
@@ -349,6 +358,15 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(D,&D0); CHKERRQ(ierr);
   ierr = VecDuplicate(ArcCtx->x0,&x00); CHKERRQ(ierr);
   bool converged_state = false;
+
+      /*PostProcStressNonLinearElasticity fe_post_proc_method(moab,MyFE);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+      if(pcomm->rank()==0) {
+	ostringstream sss;
+	sss << "out_post_proc_AAA.vtk";
+	rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
+      }*/
+
 
   for(;step<max_steps;step++) {
 
@@ -460,30 +478,19 @@ int main(int argc, char *argv[]) {
 	rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
 	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
       }
+      PostProcStressNonLinearElasticity fe_post_proc_method(moab,MyFE);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+      if(pcomm->rank()==0) {
+	ostringstream sss;
+	sss << "out_post_proc_" << step << ".vtk";
+	rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
+      }
     }
   }
 
   ierr = VecDestroy(&D0); CHKERRQ(ierr);
   ierr = VecDestroy(&x00); CHKERRQ(ierr);
   
-  PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
-
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
-
-  PostProcFieldsAndGradientOnRefMesh fe_post_proc_method(moab);
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-  if(pcomm->rank()==0) {
-    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }
-
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);

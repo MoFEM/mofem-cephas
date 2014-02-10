@@ -737,7 +737,9 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     PetscFunctionBegin;
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
-    ierr = GetData(dofs_x_edge_data,dofs_x_edge,
+    ierr = GetData(
+      order_x_edges,order_x_faces,order_x_volume,
+      dofs_x_edge_data,dofs_x_edge,
       dofs_x_face_data,dofs_x_face,
       dofs_x_volume,dofs_x,
       spatial_field_name); CHKERRQ(ierr);

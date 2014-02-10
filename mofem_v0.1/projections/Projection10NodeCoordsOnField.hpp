@@ -33,7 +33,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-struct Projection10NodeCoordsOnField: public FieldInterface::FEMethod {
+struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod { //FieldInterface::FEMethod {
 
   FieldInterface& mField;
   string field_name;
@@ -59,7 +59,18 @@ struct Projection10NodeCoordsOnField: public FieldInterface::FEMethod {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-    EntityHandle edge = fe_ptr->get_ent();
+    if(dof_ptr->get_name() != field_name) PetscFunctionReturn(0);
+    if(dof_ptr->get_ent_type() == MBVERTEX) {
+      EntityHandle node = dof_ptr->get_ent();
+      coords.resize(3);
+      rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR(rval);
+      dof_ptr->get_FieldData() = coords[dof_ptr->get_dof_rank()];
+      PetscFunctionReturn(0);
+    }
+    if(dof_ptr->get_ent_type() != MBEDGE) {
+      PetscFunctionReturn(0);
+    }
+    EntityHandle edge = dof_ptr->get_ent();
     if(mField.get_moab().type_from_handle(edge)!=MBEDGE) {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only elements which are type of MBEDGE"); 
     }
@@ -76,7 +87,11 @@ struct Projection10NodeCoordsOnField: public FieldInterface::FEMethod {
     mid_node_coord.resize(3);
     for(int dd = 0;dd<3;dd++) {
       ave_mid_coord[dd] = (coords[0*3+dd]+coords[1*3+dd])*0.5;
-      mid_node_coord[dd] = coords[2*3+dd];
+      if(num_nodes == 3) {
+	mid_node_coord[dd] = coords[2*3+dd];
+      } else {
+	mid_node_coord[dd] = ave_mid_coord[dd];
+      }
     }
     diff_node_coord.resize(3);
     ublas::noalias(diff_node_coord) = mid_node_coord-ave_mid_coord;
@@ -85,27 +100,13 @@ struct Projection10NodeCoordsOnField: public FieldInterface::FEMethod {
     // Dof = (mid_node_coord-ave_mid_coord)/edge_shape_function_val
     Dof.resize(3);
     ublas::noalias(Dof) = diff_node_coord/edge_shape_function_val;
-    //cerr << "Dof: " << Dof << endl;
-    for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,field_name,dof)) {
-      if(dof->get_ent() == conn[0]) {
-	dof->get_FieldData() = coords[0*3+dof->get_dof_rank()];
-	continue;
-      }
-      if(dof->get_ent() == conn[1]) {
-	dof->get_FieldData() = coords[1*3+dof->get_dof_rank()];
-      }
-      if(dof->get_ent() == edge) {
-	if(dof->get_dof_order() != 2) {
-	  SETERRQ(PETSC_COMM_SELF,1,"this method works only fileds which are order 2"); 
-	}
-	if(dof->get_max_rank() != 3) {
-	  SETERRQ(PETSC_COMM_SELF,1,"this method works only fields which are rank 3"); 
-	}
-	dof->get_FieldData() = Dof[dof->get_dof_rank()];
-	continue;
-	SETERRQ(PETSC_COMM_SELF,1,"this method works only for vertices and edges"); 
-      }
+    if(dof_ptr->get_dof_order() != 2) {
+      SETERRQ(PETSC_COMM_SELF,1,"this method works only fileds which are order 2"); 
     }
+    if(dof_ptr->get_max_rank() != 3) {
+      SETERRQ(PETSC_COMM_SELF,1,"this method works only fields which are rank 3"); 
+    }
+    dof_ptr->get_FieldData() = Dof[dof_ptr->get_dof_rank()];
     PetscFunctionReturn(0);
   }
 

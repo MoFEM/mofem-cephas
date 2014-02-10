@@ -277,6 +277,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
   if(fe_ptr==NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   FENumeredDofMoFEMEntity_multiIndex &rows_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*row_multiIndex);
   FENumeredDofMoFEMEntity_multiIndex &cols_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*col_multiIndex);
+  FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(*data_multiIndex);
   //EntityHandle ent = fe_ptr->get_ent();
   switch (fe_ptr->get_ent_type()) {
     case MBTET: {
@@ -351,6 +352,35 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, col_nodesGlobIndices, col_edgesGlobIndices,
 	      col_facesGlobIndices, col_elemGlobIndices); CHKERRQ(ierr);
+	}
+	FEDofMoFEMEntity_multiIndex::iterator data_miit = data_dofs.begin();
+	for(;data_miit!=data_dofs.end();data_miit++) {
+	  switch(data_miit->get_space()) {
+	    case H1: {
+	      isH1 = true;
+	      ierr = SetMaxOrder(data_miit, &(maxOrderEdgeH1), &(maxOrderFaceH1), &(maxOrderElemH1) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hcurl: {
+	      isHcurl = true;
+	      ierr = SetMaxOrder(data_miit, &(maxOrderEdgeHcurl), &(maxOrderFaceHcurl), &(maxOrderElemHcurl) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case Hdiv: {
+	      isHdiv = true;
+	      ierr = SetMaxOrder(data_miit, NULL, &(maxOrderFaceHdiv), &(maxOrderElemHdiv) ); CHKERRQ(ierr);
+	    }
+	    break;
+	    case L2: {
+	      ierr = SetMaxOrder(data_miit, NULL, NULL, &(maxOrderElemL2) ); CHKERRQ(ierr);
+	      isL2 = true;
+	    }
+	    break;
+	    case NoField:
+	    break;
+	    default:
+	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+	  }
 	}
       }
       break;

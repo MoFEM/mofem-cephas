@@ -83,22 +83,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
   //add finite elements
-  ierr = mField.add_finite_element("EDGE_PROJECTOR"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("EDGE_PROJECTOR","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("EDGE_PROJECTOR","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("EDGE_PROJECTOR","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-
   ierr = mField.add_finite_element("TET_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("TET_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("TET_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("TET_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //add problems 
-  ierr = mField.add_problem("EDGE_PROJECTOR_PROBLEM"); CHKERRQ(ierr);
+  //ierr = mField.add_problem("EDGE_PROJECTOR_PROBLEM"); CHKERRQ(ierr);
   ierr = mField.add_problem("TET_PROBLEM"); CHKERRQ(ierr);
 
   //define problems and finite elements
-  ierr = mField.modify_problem_add_finite_element("EDGE_PROJECTOR_PROBLEM","EDGE_PROJECTOR"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("TET_PROBLEM","TET_ELEM"); CHKERRQ(ierr);
 
   BitRefLevel bit_level0;
@@ -119,11 +113,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_by_EDGEs(edges,"EDGE_PROJECTOR"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TETs(tets,"TET_ELEM"); CHKERRQ(ierr);
 
   //set problem level
-  ierr = mField.modify_problem_ref_level_add_bit("EDGE_PROJECTOR_PROBLEM",bit_level0); CHKERRQ(ierr);
   ierr = mField.modify_problem_ref_level_add_bit("TET_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //build fields
@@ -136,18 +128,13 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //partition
-  ierr = mField.partition_problem("EDGE_PROJECTOR_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("EDGE_PROJECTOR_PROBLEM"); CHKERRQ(ierr);
-  //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("EDGE_PROJECTOR_PROBLEM"); CHKERRQ(ierr);
-
   ierr = mField.partition_problem("TET_PROBLEM"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("TET_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TET_PROBLEM"); CHKERRQ(ierr);
 
-  Projection10NodeCoordsOnField fe(mField,"MESH_NODE_POSITIONS");
-  ierr = mField.loop_finite_elements("EDGE_PROJECTOR_PROBLEM","EDGE_PROJECTOR",fe);  CHKERRQ(ierr);
+  Projection10NodeCoordsOnField ent_method(mField,"MESH_NODE_POSITIONS");
+  ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
     //Open mesh_file_name.txt for writing
     ofstream myfile;
@@ -185,10 +172,10 @@ int main(int argc, char *argv[]) {
         
     }
 
-  /*PostProcDisplacementsOnRefMesh fe_postproc(moab,"MESH_NODE_POSITIONS");
+  PostProcDisplacementsOnRefMesh fe_postproc(moab,"MESH_NODE_POSITIONS");
   ierr = mField.loop_finite_elements("TET_PROBLEM","TET_ELEM",fe_postproc);  CHKERRQ(ierr);
 
-  if(pcomm->rank()==0) {
+  /*if(pcomm->rank()==0) {
     rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }*/
 

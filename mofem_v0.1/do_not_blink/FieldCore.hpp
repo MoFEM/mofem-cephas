@@ -360,6 +360,7 @@ struct FieldCore: public FieldInterface {
     int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
+  PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
@@ -382,7 +383,7 @@ struct FieldCore: public FieldInterface {
   //Copy Vector of Field to Another
   PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
-  PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool creat_if_missing = false);
+  PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
   PetscErrorCode field_scale(const double alpha,const string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const string& fiel_name);
 

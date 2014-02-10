@@ -52,9 +52,14 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
 
 PetscErrorCode ThermalDeformationGradient(const double alpha,const double lambda,const double i_lambda,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF);
 
-PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
+PetscErrorCode Calulate_Stresses_at_GaussPoint(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
+  int *order_X_edge,int *order_X_face,int order_X_volume,
+  int *order_x_edge,int *order_x_face,int order_x_volume,
+  double alpha,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
-  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *dofs_X_node,double *dofs_X_edge[],double *dofs_X_face[],double *dofs_X_volume,
+  double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
   double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
@@ -64,24 +69,33 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(int *order_edge,int *order_face,i
   double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,double *themp,
   int gg);
 PetscErrorCode Fint_Hh_hierarchical(
-  int *order_edge,int *order_face,int order_volume,double alpha,double lambda,double mu,void *matctx,
+  int *order_max_edge,int *order_max_face,int order_max_volume,
+  int *order_X_edge,int *order_X_face,int order_X_volume,
+  int *order_x_edge,int *order_x_face,int order_x_volume,
+  double alpha,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
-  double *dofs_X,double *dofs_x_node,double *dofs_iX,double *dofs_ix_node,
-  double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *dofs_X_node,double *dofs_X_edge[],double *dofs_X_face[],double *dofs_X_volume,
+  double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *dofs_iX,double *dofs_ix_node,
   //temperature
   double thermal_expansion,double thermal_load_factor,double i_thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //rhs
-  double *Fint_H,double *Fint_h,
-  double *Fint_h_edge[],double *Fint_h_face[],double *Fint_h_volume,
-  double *Fint_iH,double *Fint_ih,
-  double *Fint_ih_edge[],double *Fint_ih_face[],double *Fint_ih_volume,
+  double *Fint_H,double *Fint_H_edge[],double *Fint_H_face[],double *Fint_H_volume,
+  double *Fint_h,double *Fint_h_edge[],double *Fint_h_face[],double *Fint_h_volume,
+  double *Fint_iH,double *Fint_iH_edge[],double *Fint_iH_face[],double *Fint_iH_volume,
+  double *Fint_ih,double *Fint_ih_edge[],double *Fint_ih_face[],double *Fint_ih_volume,
   int G_DIM,const double *G_W);
-PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_HH_hierachical(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
+  int *order_X_edge,int *order_X_face,int order_X_volume,
+  int *order_x_edge,int *order_x_face,int order_x_volume,
+  double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
-  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *dofs_X_node,double *dofs_X_edge[],double *dofs_X_face[],double *dofs_X_volume,
+  double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
   double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
@@ -89,9 +103,14 @@ PetscErrorCode Tangent_HH_hierachical(int *order_edge,int *order_face,int order_
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //
   double *K,double *Koff,double *Koff_edge[6],double *Koff_face[4],double *Koff_volume,int G_DIM,const double *G_W);
-PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
+  int *order_X_edge,int *order_X_face,int order_X_volume,
+  int *order_x_edge,int *order_x_face,int order_x_volume,
+  double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
-  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *dofs_X_node,double *dofs_X_edge[],double *dofs_X_face[],double *dofs_X_volume,
+  double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
   double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
@@ -99,9 +118,14 @@ PetscErrorCode Tangent_hh_hierachical(int *order_edge,int *order_face,int order_
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W);
-PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical_edge(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
+  int *order_X_edge,int *order_X_face,int order_X_volume,
+  int *order_x_edge,int *order_x_face,int order_x_volume,
+  double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
-  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *dofs_X_node,double *dofs_X_edge[],double *dofs_X_face[],double *dofs_X_volume,
+  double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
   double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
@@ -111,9 +135,14 @@ PetscErrorCode Tangent_hh_hierachical_edge(int *order_edge,int *order_face,int o
   double *K[6],double *Koff[6],
   double *K_edge[6][6],double *K_face[4][6],double *K_volume[6],
   int G_DIM,const double *G_W);
-PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical_face(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
+  int *order_X_edge,int *order_X_face,int order_X_volume,
+  int *order_x_edge,int *order_x_face,int order_x_volume,
+  double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
-  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *dofs_X_node,double *dofs_X_edge[],double *dofs_X_face[],double *dofs_X_volume,
+  double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
   double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
@@ -123,9 +152,14 @@ PetscErrorCode Tangent_hh_hierachical_face(int *order_edge,int *order_face,int o
   double *K[4],double *Koff[4],
   double *K_edge[6][4],double *K_face[4][4],double *K_volume[4],
   int G_DIM,const double *G_W);
-PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int order_volume,double alpha,double eps,double lambda,double mu,void *matctx,
+PetscErrorCode Tangent_hh_hierachical_volume(
+  int *order_max_edge,int *order_max_face,int order_max_volume,
+  int *order_X_edge,int *order_X_face,int order_X_volume,
+  int *order_x_edge,int *order_x_face,int order_x_volume,
+  double alpha,double eps,double lambda,double mu,void *matctx,
   double *diffN,double *diffN_edge[],double *diffN_face[],double *diffN_volume,
-  double *dofs_X,double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
+  double *dofs_X_node,double *dofs_X_edge[],double *dofs_X_face[],double *dofs_X_volume,
+  double *dofs_x_node,double *dofs_x_edge[],double *dofs_x_face[],double *dofs_x_volume,
   //temperature
   double thermal_expansion,double thermal_load_factor,
   double *N,double *N_edge[],double *N_face[],double *N_volume,
@@ -133,6 +167,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(int *order_edge,int *order_face,int
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //
   double *K,double *Koff,double *K_edge[6],double *K_face[4],double *K_volume,int G_DIM,const double *G_W);
+//External Forces Space
 PetscErrorCode Traction_hierarchical(int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *t,double *t_edge[],double *t_face,
@@ -167,20 +202,19 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
   double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
   double *KExt_hface,double *KExt_egdeface[3],double *KExt_faceface,
   int g_dim,const double *g_w);
-PetscErrorCode Fext_H(int order,int *order_edge,
+//External Forces Material
+PetscErrorCode Fext_H_hierarchical(int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
-  double *dofs_X,double *idofs_X,
-  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
-  double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
+  double *dofs_X,double *dofs_X_edge[],double *dofs_X_face,
+  double *idofs_X,
   double *Fext,double *iFext,int g_dim,const double *g_w);
-PetscErrorCode KExt_HH(double eps,int order,int *order_edge,
+PetscErrorCode KExt_HH_hierarchical(double eps,int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
-  double *dofs_X,
-  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
+  double *dofs_X,double *dofs_X_edge[],double *dofs_X_face,
   double *KExt_HH,int g_dim,const double *g_w);
 
 //quality
