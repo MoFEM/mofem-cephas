@@ -159,16 +159,16 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	rval = moab_post_proc.tag_set_data(th_j,&mit->second,1,&J); CHKERR_PETSC(rval);
 	rval = moab_post_proc.tag_set_data(th_themp,&mit->second,1,&themp); CHKERR_PETSC(rval);
 
-	//Get displacements at Gauss points
+	//Get mesh nodal positions at Gauss points
 	H1L2_Data_at_Gauss_pt::iterator diit = h1l2_data_at_gauss_pt.find(fe_method.material_field_name.c_str());
-	if(diit==h1l2_data_at_gauss_pt.end()) SETERRQ1(PETSC_COMM_SELF,1,"no field_name %s !!!",fe_method.material_field_name.c_str());
-	vector< ublas::vector<FieldData> > &data = diit->second;
-	vector< ublas::vector<FieldData> >::iterator vit = data.begin();
-	map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
-	for(;vit!=data.end();vit++,mit++) {
-	  rval = moab_post_proc.tag_set_data(th_positions,&mit->second,1,&vit->data()[0]); CHKERR_PETSC(rval);
+	if(diit!=h1l2_data_at_gauss_pt.end()) {
+	  vector< ublas::vector<FieldData> > &data = diit->second;
+	  vector< ublas::vector<FieldData> >::iterator vit = data.begin();
+	  map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+	  for(;vit!=data.end();vit++,mit++) {
+	    rval = moab_post_proc.tag_set_data(th_positions,&mit->second,1,&vit->data()[0]); CHKERR_PETSC(rval);
+	  }
 	}
-
 
       }
 
