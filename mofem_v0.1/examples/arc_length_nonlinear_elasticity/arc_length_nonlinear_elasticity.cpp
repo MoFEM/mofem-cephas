@@ -299,6 +299,17 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetJacobian(snes,ShellAij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
+  PetscReal my_tol;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_tol",&my_tol,&flg); CHKERRQ(ierr);
+  if(flg == PETSC_TRUE) {
+    PetscReal atol,rtol,stol;
+    PetscInt maxit,maxf;
+    ierr = SNESGetTolerances(snes,&atol,&rtol,&stol,&maxit,&maxf); CHKERRQ(ierr);
+    atol = my_tol;
+    rtol = atol*1e2;
+    ierr = SNESSetTolerances(snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
+  }
+
   //
   /*ierr = SNESSetType(snes,SNESSHELL); CHKERRQ(ierr);
   ierr = SNESShellSetContext(snes,&SnesCtx); CHKERRQ(ierr);
@@ -314,6 +325,16 @@ int main(int argc, char *argv[]) {
   ierr = PCShellSetContext(pc,PCCtx); CHKERRQ(ierr);
   ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
   ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
+
+  if(flg == PETSC_TRUE) {
+    PetscReal rtol,atol,dtol;
+    PetscInt maxits;
+    ierr = KSPGetTolerances(ksp,&rtol,&atol,&dtol,&maxits); CHKERRQ(ierr);
+    atol = my_tol*1e-2;
+    rtol = atol*1e-2;
+    ierr = KSPSetTolerances(ksp,rtol,atol,dtol,maxits); CHKERRQ(ierr);
+  }
+
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
@@ -344,7 +365,12 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
   }
 
-  int its_d = 4;
+  int its_d;
+  ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    its_d = 6;
+  }
+
   double gamma = 0.5,reduction = 1;
   //step = 1;
   if(step == 1) {
@@ -467,7 +493,7 @@ int main(int argc, char *argv[]) {
 	sss << "restart_" << step << ".h5m";
 	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
       }
-      PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
+      /*PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
       ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
       if(pcomm->rank()==0) {
 	EntityHandle out_meshset;
@@ -477,7 +503,7 @@ int main(int argc, char *argv[]) {
 	sss << "out_" << step << ".vtk";
 	rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
 	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-      }
+      }*/
       PostProcStressNonLinearElasticity fe_post_proc_method(moab,MyFE);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
       if(pcomm->rank()==0) {

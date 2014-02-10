@@ -48,8 +48,15 @@ struct ArcElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
   }
 
+  PetscScalar imperfection_factor;
+
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+    PetscBool flg = PETSC_TRUE;
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-my_if",&imperfection_factor,&flg); CHKERRQ(ierr);
+    if(flg!=PETSC_TRUE) {
+      imperfection_factor = 1;
+    }
     ierr = FEMethod_DriverComplexForLazy_Spatial::preProcess(); CHKERRQ(ierr);
     switch(snes_ctx) {
       case ctx_SNESNone:
@@ -86,14 +93,14 @@ struct ArcElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 	  if(nodal_forces_not_added_and_imperfection) {
 	    nodal_forces_not_added = true;
 	  }
-	  ierr = CalculateSpatialKFext(PETSC_NULL,snes_f,1.,"Imperfection"); CHKERRQ(ierr);
+	  ierr = CalculateSpatialKFext(PETSC_NULL,snes_f,imperfection_factor,"Imperfection"); CHKERRQ(ierr);
 	  nodal_forces_not_added_and_imperfection = false;
 	}
 	break;
       case ctx_SNESSetJacobian: {
 	  ierr = CalculateSpatialTangent(*snes_B); CHKERRQ(ierr);
 	  ierr = CalculateSpatialKFext(*snes_B,PETSC_NULL,arc_ptr->get_FieldData()); CHKERRQ(ierr);
-	  ierr = CalculateSpatialKFext(*snes_B,PETSC_NULL,1.,"Imperfection"); CHKERRQ(ierr);
+	  ierr = CalculateSpatialKFext(*snes_B,PETSC_NULL,imperfection_factor,"Imperfection"); CHKERRQ(ierr);
 	}
 	break;
       default:
