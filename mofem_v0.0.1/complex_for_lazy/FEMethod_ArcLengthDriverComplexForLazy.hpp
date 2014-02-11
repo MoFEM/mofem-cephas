@@ -30,13 +30,13 @@ namespace MoFEM {
 ErrorCode rval;
 PetscErrorCode ierr;
 
-struct ArcElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
+struct ArcComplexForLazyElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
   ArcLengthCtx* arc_ptr;
 
   Range& NodeSet1;
 
-  ArcElasticFEMethod(
+  ArcComplexForLazyElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
       ArcLengthCtx *_arc_ptr,Range &_NodeSet1,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_ptr,_verbose), 
@@ -157,7 +157,7 @@ struct ArcElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 };
 
 
-struct ArcElasticThermalFEMethod: public ArcElasticFEMethod {
+struct ArcElasticThermalFEMethod: public ArcComplexForLazyElasticFEMethod {
 
 
   double *t_thermal_load_factor_val;
@@ -173,7 +173,7 @@ struct ArcElasticThermalFEMethod: public ArcElasticFEMethod {
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,
       ArcLengthCtx *_arc_ptr,Range &_NodeSet1,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_dirihlet_ptr,_verbose), 
-      ArcElasticFEMethod(_mField,_dirihlet_ptr,_lambda,_mu,_arc_ptr,_NodeSet1,_verbose) {
+      ArcComplexForLazyElasticFEMethod(_mField,_dirihlet_ptr,_lambda,_mu,_arc_ptr,_NodeSet1,_verbose) {
 
     set_PhysicalEquationNumber(neohookean);
     //set_PhysicalEquationNumber(hooke);
