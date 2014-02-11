@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  ArcElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),ArcCtx);
+  ArcInterfaceElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),ArcCtx);
   ArcInterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus,h,beta,ft,Gf,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
 
   PetscInt M,N;
