@@ -29,12 +29,12 @@
 
 namespace MoFEM {
 
-struct ArcElasticFEMethod: public ElasticFEMethod {
+struct ArcInterfaceElasticFEMethod: public ElasticFEMethod {
 
-  ArcElasticFEMethod(FieldInterface& _mField): ElasticFEMethod(_mField) {};
+  ArcInterfaceElasticFEMethod(FieldInterface& _mField): ElasticFEMethod(_mField) {};
 
   ArcLengthCtx *arc_ptr;
-  ArcElasticFEMethod(
+  ArcInterfaceElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
       double _lambda,double _mu,ArcLengthCtx *_arc_ptr): 
       ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu),arc_ptr(_arc_ptr) {};
