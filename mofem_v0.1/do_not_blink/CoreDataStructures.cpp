@@ -866,7 +866,7 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
 CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
   meshset(_meshset),CubitBCType(UnknownSet),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),
   tag_block_header_data(NULL),tag_block_attributes(NULL),tag_block_attributes_size(0),tag_name_data(NULL),
-  meshsets_mask(NodeSet|SideSet|BlockSet|UnknownCubitName) {
+  meshsets_mask(NodeSet|SideSet|BlockSet) {
   ErrorCode rval;
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR(rval);CHKERR_THROW(rval);
@@ -939,9 +939,10 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       TemperatureSet|
       HeatfluxSet|
       InterfaceSet) ) {
-      
-     CubitBCType = CubitBCType & (~Cubit_BC_bitset(UnknownCubitName));  
-    
+     
+      if( (CubitBCType & Cubit_BC_bitset(UnknownCubitName)).any() ) {
+	CubitBCType = CubitBCType & (~Cubit_BC_bitset(UnknownCubitName));  
+      }
   }
 
 }
