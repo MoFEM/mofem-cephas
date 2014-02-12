@@ -2087,5 +2087,73 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_FaceGaussPoints(
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode FEMethod_LowLevelStudent::FaceData(EntityHandle ent,
+    string field_name,
+    vector< int > &DataEdgesOrder,int &DataFaceOrder,
+    ublas::vector<FieldData> &DataNodes,
+    vector< ublas::vector<FieldData> > &DataEdges,
+    ublas::vector<FieldData> &DataFace,
+    bool throw_error_if_no_field) {
+  PetscFunctionBegin;
+  typedef SideNumber_multiIndex::nth_index<1>::type SideNumber_multiIndex_by_CompositeTag;
+  SideNumber_multiIndex_by_CompositeTag& side_table = const_cast<SideNumber_multiIndex_by_CompositeTag&>(fe_ent_ptr->get_side_number_table().get<1>());
+  SideNumber* side = fe_ent_ptr->get_side_number_ptr(moab,ent);
+  if(side->get_ent_type()!=MBTRI) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+  typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
+  const field_set_by_name &fields = moabfields->get<FieldName_mi_tag>();
+  field_set_by_name::iterator field_it = fields.find(field_name);
+  if(field_it==fields.end()) {
+    if(throw_error_if_no_field) {
+      SETERRQ1(PETSC_COMM_SELF,1,"field %s not found",field_name.c_str());
+    } else {
+      PetscFunctionReturn(0);
+    }
+  }
+  if(field_it->get_space()!=H1) {
+    SETERRQ(PETSC_COMM_SELF,1,"this function working only for H1 space");
+  }
+  if(fe_ent_ptr->get_ent_type()!=MBTET) {
+    SETERRQ(PETSC_COMM_SELF,1,"this function working only for TETs");
+  }
+  //nodes
+  const EntityHandle *conn_face;
+  int num_nodes;
+  rval = moab.get_connectivity(side->ent,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+  assert(num_nodes==3);
+  DataNodes.resize(field_it->get_max_rank()*3);
+  for(int nn = 0;nn<3;nn++) {
+    for(_IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(this,field_name,conn_face[nn],dof)) {
+      DataNodes[nn*dof->get_max_rank() + dof->get_dof_rank()] = dof->get_FieldData();
+    }
+  }
+  //edges
+  DataEdgesOrder.resize(3);
+  fill(DataEdgesOrder.begin(),DataEdgesOrder.end(),0);
+  DataEdges.resize(3);
+  Range edges;
+  rval = moab.get_adjacencies(&ent,1,1,false,edges); CHKERR_PETSC(rval);
+  for(Range::iterator eit = edges.begin();eit!=edges.end();eit++) {
+    int face_side,face_sense,face_offset;
+    rval = moab.side_number(ent,*eit,face_side,face_sense,face_offset); CHKERR(rval);
+    for(_IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(this,field_name,*eit,dof)) {
+      DataEdgesOrder[face_side] = dof->get_max_order();
+      DataEdges[face_side].resize(dof->get_nb_dofs_on_ent());
+      if(dof->get_nb_dofs_on_ent() <= dof->get_EntDofIdx()) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      }
+      DataEdges[face_side][dof->get_EntDofIdx()] = dof->get_FieldData();
+    }
+  }
+  //face
+  DataFaceOrder = 0;
+  for(_IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(this,field_name,ent,dof)) {
+    DataFaceOrder = dof->get_max_order();
+    DataFace.resize(dof->get_nb_dofs_on_ent());
+    DataFace[dof->get_EntDofIdx()] = dof->get_FieldData();
+  }
+  PetscFunctionReturn(0);
+}
+
+
 
 }

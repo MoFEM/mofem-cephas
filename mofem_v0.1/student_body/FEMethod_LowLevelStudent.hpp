@@ -229,9 +229,34 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
     EntityType type = MBMAXTYPE,
     EntityHandle edge_handle = no_handle);
 
+  /**
+   * get face data at Gauss points 
+   *
+   * \param ent face entity
+   * \param field_name
+   * \Data vector with data at Gauss pts
+   *
+   */
   PetscErrorCode Data_at_FaceGaussPoints(
     EntityHandle ent,const string &field_name,
     vector<ublas::vector<FieldData> > &Data);
+
+  /**
+   * get face data on entities
+   *
+   * \param ent face entity (in)
+   * \param field_name (in)
+   * \param DataNodes (out)
+   * \param DataEdges (out)
+   * \param DataFaces (out)
+   *
+   */
+  PetscErrorCode FaceData(EntityHandle ent,
+    string field_name,
+    vector< int > &DataEdgesOrder,int &DataFaceOrder,
+    ublas::vector<FieldData> &DataNodes,
+    vector< ublas::vector<FieldData> > &DataEdges,
+    ublas::vector<FieldData> &DataFace,bool throw_error_if_no_field = true);
 
   PetscErrorCode InitDataStructures();
 

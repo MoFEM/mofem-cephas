@@ -488,6 +488,14 @@ struct FieldInterface {
    */
   virtual bool check_field(const string& name) const = 0;
 
+  /** \brief get field structure
+   *
+   * \param name field name
+   * \return const MoFEMField*
+   *
+   */
+  virtual const MoFEMField* get_field_structure(const string& name) = 0;
+
   /**
     * \brief add finite element
     * \param name finite element name

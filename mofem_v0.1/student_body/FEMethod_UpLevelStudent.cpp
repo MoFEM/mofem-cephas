@@ -747,6 +747,118 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowFaceNMatrix(
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation(
+  vector< ublas::matrix<FieldData> > &invH,vector< FieldData > &detH) {
+  PetscFunctionBegin;
+  invH.resize(0);
+  detH.resize(0);
+  /*{
+    //debug
+    ublas::vector<FieldData> DataNodes;
+    ierr = GetDataVector("MESH_NODE_POSITIONS",DataNodes); CHKERRQ(ierr);
+    cout << "DataNodes " << DataNodes << endl;
+  }*/
+  H1_DiffData_at_Gauss_pt::iterator miit = h1_diff_data_at_gauss_pt.find("MESH_NODE_POSITIONS");
+  if(miit == h1_diff_data_at_gauss_pt.end()) PetscFunctionReturn(0);
+  invH = miit->second;
+  detH.resize( invH.size() );
+  ublas::matrix<FieldData> H(3,3);
+  //cout << "H size " << invH.size() << endl << endl;
+  for(unsigned int gg = 0;gg<invH.size();gg++) {
+    ublas::noalias(H) = invH[gg];
+    //cout << H << endl << endl;
+    detH[gg] = Shape_detJac(&*H.data().begin());
+    ierr = Shape_invJac(&*invH[gg].data().begin()); CHKERRQ(ierr);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(
+  int rank,vector< ublas::matrix<FieldData> > &invH,vector< ublas::matrix<FieldData> > &diffNMatrix) {
+  PetscFunctionBegin;
+  if(invH.size() == 0) PetscFunctionReturn(0);
+  if(invH.size() != diffNMatrix.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  unsigned int gg = 0;
+  ublas::matrix<FieldData> diffNMatrix__;
+  for(;gg<diffNMatrix.size();gg++) {
+    ublas::matrix<FieldData> &invH_ = invH[gg];
+    ublas::matrix<FieldData> &diffNMatrix_ = diffNMatrix[gg];
+    diffNMatrix__.resize(diffNMatrix_.size1(),diffNMatrix_.size2());
+    //cout << "invH " << invH_ << endl;
+    //cout << "diffNMatrix_ " << diffNMatrix_ << endl;	
+    //cout << diffNMatrix_.size1() << " " << diffNMatrix_.size2() << endl;
+    for(int rr = 0;rr<rank;rr++) {
+      cblas_dgemm(
+	CblasRowMajor,CblasTrans,CblasNoTrans,
+	3,diffNMatrix_.size2(),3,1.,
+	&*invH_.data().begin(),3,&diffNMatrix_.data()[diffNMatrix_.size2()*rr],rank*diffNMatrix_.size2(),
+	0.,&diffNMatrix__.data()[diffNMatrix__.size2()*rr],rank*diffNMatrix__.size2()); 
+    }
+    //cout << "diffNMatrix__ " << diffNMatrix__ << endl;
+    //cout << "Delta diffNMatrix__ " << diffNMatrix_ - diffNMatrix__ << endl;
+    //cout << endl << endl;
+    ublas::noalias(diffNMatrix_) = diffNMatrix__;
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_FaceNormal(
+    EntityHandle ent,vector< ublas::vector<FieldData> > &Normals) {
+  PetscFunctionBegin;
+  vector<int> DataEdgesOrder;
+  int DataFaceOrder;
+  ublas::vector<FieldData> DataNodes;
+  vector< ublas::vector<FieldData> > DataEdges;
+  ublas::vector<FieldData> DataFace;
+  ierr = FaceData(ent,string("MESH_NODE_POSITIONS"),
+    DataEdgesOrder,DataFaceOrder,
+    DataNodes,DataEdges,DataFace,false); CHKERRQ(ierr);
+  if(DataNodes.empty()) PetscFunctionReturn(0);
+  double *diffNTRI_face = NULL;
+  if(DataFaceOrder>2) {
+    diffNTRI_face = &*diffH1faceN_TRI[ent].begin();
+  }
+  double* diffNTRI_edges[3] = { NULL,NULL,NULL };
+  Range edges;
+  rval = moab.get_adjacencies(&ent,1,1,false,edges); CHKERR_PETSC(rval);
+  map<EntityHandle,vector<double> >& diffH1edgeN_TRI_face = diffH1edgeN_TRI[ent];
+  for(Range::iterator eit = edges.begin();eit!=edges.end();eit++) {
+    int face_side,face_sense,face_offset;
+    rval = moab.side_number(ent,*eit,face_side,face_sense,face_offset); CHKERR(rval);
+    if(DataEdgesOrder[face_side]<=1) continue;
+    map<EntityHandle,vector<double> >::iterator diff = diffH1edgeN_TRI_face.find(*eit);
+    if(diff == diffH1edgeN_TRI_face.end()) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    }
+    diffNTRI_edges[face_side] = &*diff->second.begin();
+  }
+  double* data_edges[3];    
+  for(int ee = 0;ee<3;ee++) {
+    data_edges[ee] = &*DataEdges[ee].data().begin();
+  }
+  int nb_Gauss_pts = get_dim_gNTRI();
+  Normals.resize(nb_Gauss_pts);
+  //cout << "DataFaceOrder " << DataFaceOrder << endl;
+  //cout << "DataEdgesOrder " << DataEdgesOrder[0] << " " << DataEdgesOrder[1] << " " << DataEdgesOrder[2] << endl;
+  //cout << "DataNodes " << DataNodes << endl;
+  //cout << "DataEdges " << DataEdges[0] << " " << DataEdges[1] << " " << DataEdges[2] << endl;
+  for(int gg = 0;gg<nb_Gauss_pts;gg++) {
+    __CLPK_doublecomplex xnormal[3];
+   ierr = Normal_hierarchical(
+      DataFaceOrder,&*DataEdgesOrder.begin(),
+      diffNTRI,diffNTRI_face,diffNTRI_edges,
+      &*DataNodes.data().begin(),data_edges,&*DataFace.data().begin(),
+      NULL,NULL,NULL,
+      xnormal,NULL,NULL,
+      gg); CHKERRQ(ierr);
+    Normals[gg].resize(3);
+    Normals[gg][0] = xnormal[0].r;
+    Normals[gg][1] = xnormal[1].r;
+    Normals[gg][2] = xnormal[2].r;
+  }
+  PetscFunctionReturn(0);
+}
+
 
 }
 
