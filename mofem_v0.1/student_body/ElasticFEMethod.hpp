@@ -276,7 +276,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  } else {
 	    w = area*G_W_TRI[gg];
 	    if(pressure!=0) {
-	      traction_at_Gauss_pt += pressure*Normals_at_Gauss_pts[gg]/(2*area_at_Gauss_pt);
+	      traction_at_Gauss_pt += pressure*normal/(2*area);
 	    }
 	  }
 
