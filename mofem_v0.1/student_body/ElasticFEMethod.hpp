@@ -256,7 +256,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
 	//higher order face shape
 	vector< ublas::vector<FieldData> > Normals_at_Gauss_pts;
-	//ierr = GetHierarchicalGeometryApproximation_FaceNormal(siit->ent,Normals_at_Gauss_pts);  CHKERRQ(ierr);
+	ierr = GetHierarchicalGeometryApproximation_FaceNormal(siit->ent,Normals_at_Gauss_pts);  CHKERRQ(ierr);
 	cout << "Normals_at_Gauss_pts size = " << Normals_at_Gauss_pts.size() << endl;
 	for(int gg = 0;gg < Normals_at_Gauss_pts.size();gg++) {
 	  cout << "Normal [ " << gg << " ] " << Normals_at_Gauss_pts[gg] << endl;
@@ -586,9 +586,25 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
 	try {
 	  ublas::matrix< FieldData > GradU = *viit;
-	  //if(!invH.empty()) {
-	    //GradU = prod( trans( invH[gg] ), GradU ); 
-	  //}
+	  if(!invH.empty()) {
+	    //GradU = 
+	      //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
+	      //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
+	      //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
+	    //H = 
+	      //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
+	      //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
+	      //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]    
+	    //invH = 
+	      //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
+	      //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
+	      //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
+	    //GradU = 
+	      //[ dU/dX1 dU/dX2 dU/dX3 ]
+	      //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
+	      //[ dW/dX1 dW/dX2 dW/dX3 ] 
+	    GradU = prod( GradU, invH[gg] ); 
+	  }
 	  ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
 	  ublas::vector< FieldData > VoightStrain(6);
 	  VoightStrain[0] = Strain(0,0);

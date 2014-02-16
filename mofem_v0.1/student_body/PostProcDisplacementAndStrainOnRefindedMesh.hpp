@@ -321,7 +321,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       ierr = do_operator(); CHKERRQ(ierr);
 
       //Higher order approximation of geometry
-      //ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
+      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
 
       //Strains to Nodes in PostProc Mesh: create vector containing matrices
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -334,7 +334,23 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
         ublas::matrix< FieldData > GradU = *viit;
 	if(!invH.empty()) {
-	  GradU = prod( trans( invH[gg] ), GradU ); 
+	  //GradU = 
+	  //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
+	  //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
+	  //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
+	  //H = 
+	  //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
+ 	  //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
+ 	  //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]    
+	  //invH = 
+	  //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
+	  //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
+	  //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
+	  //GradU = 
+	  //[ dU/dX1 dU/dX2 dU/dX3 ]
+	  //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
+	  //[ dW/dX1 dW/dX2 dW/dX3 ] 
+	  GradU = prod( GradU, invH[gg] ); 
 	}
         ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
         rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);

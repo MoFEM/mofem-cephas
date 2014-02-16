@@ -1789,6 +1789,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
   SideNumber_multiIndex_by_CompositeTag& side_table = const_cast<SideNumber_multiIndex_by_CompositeTag&>(fe_ent_ptr->get_side_number_table().get<1>());
   SideNumber* side = fe_ent_ptr->get_side_number_ptr(moab,ent);
   if(side->get_ent_type()!=MBTRI) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+  last_face = ent;
   gNTRI = _gNTRI_;
   int gNTRI_dim = get_dim_gNTRI();
   if(isH1) {
@@ -1796,15 +1797,15 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
       case MBTET: {
 	//sense and edge order
 	const int _faces_edges_[4][3] = { {0,4,3}, {1,5,4}, {3,5,2}, { 0,1,2 } };
-	EntityHandle edges[3];
 	int _face_edge_sense_[3],_face_edge_offse_[3],_face_edge_side_number_[3];
 	int _elem_face_edge_side_number_[3];
 	int _face_edge_order_H1[3];
 	for(int ee = 0;ee<3;ee++) {
 	  _elem_face_edge_side_number_[ee] = _faces_edges_[side->side_number][ee];
 	  SideNumber_multiIndex_by_CompositeTag::iterator siit = side_table.find(boost::make_tuple(MBEDGE, _elem_face_edge_side_number_[ee] ));
-	  edges[ee] = siit->ent;
-	  rval = moab.side_number(side->ent,siit->ent,_face_edge_side_number_[ee],_face_edge_sense_[ee],_face_edge_offse_[ee]); CHKERR_PETSC(rval);
+	  face_edges[ee] = siit->ent;
+	  rval = moab.side_number(ent,siit->ent,_face_edge_side_number_[ee],_face_edge_sense_[ee],_face_edge_offse_[ee]); CHKERR_PETSC(rval);
+	  assert(_face_edge_side_number_ == ee);
 	  assert(_face_edge_side_number_[ee] >= 0); 
 	  assert(_face_edge_side_number_[ee] <= 2); 
 	  _face_edge_order_H1[ee] = maxOrderEdgeH1[_elem_face_edge_side_number_[ee]];
@@ -1853,11 +1854,11 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
 	map<EntityHandle,vector<double> >& H1edgeN_TRI_face = H1edgeN_TRI[ent];
 	map<EntityHandle,vector<double> >& diffH1edgeN_TRI_face = diffH1edgeN_TRI[ent];
 	for(int ee = 0;ee<3;ee++) {
-	  H1edgeN_TRI_face[edges[ee]].resize(NBEDGE_H1(_face_edge_order_H1[ee])*gNTRI_dim);
-	  diffH1edgeN_TRI_face[edges[ee]].resize(2*NBEDGE_H1(_face_edge_order_H1[ee])*gNTRI_dim);
+	  H1edgeN_TRI_face[face_edges[ee]].resize(NBEDGE_H1(_face_edge_order_H1[ee])*gNTRI_dim);
+	  diffH1edgeN_TRI_face[face_edges[ee]].resize(2*NBEDGE_H1(_face_edge_order_H1[ee])*gNTRI_dim);
 	}
-	double *_edgeN_[] = { &((H1edgeN_TRI_face[edges[0]])[0]), &((H1edgeN_TRI_face[edges[1]])[0]), &((H1edgeN_TRI_face[edges[2]])[0]) };
-	double *_diff_edgeN_[] = { &((diffH1edgeN_TRI_face[edges[0]])[0]), &((diffH1edgeN_TRI_face[edges[1]])[0]), &((diffH1edgeN_TRI_face[edges[2]])[0]) };
+	double *_edgeN_[] = { &((H1edgeN_TRI_face[face_edges[0]])[0]), &((H1edgeN_TRI_face[face_edges[1]])[0]), &((H1edgeN_TRI_face[face_edges[2]])[0]) };
+	double *_diff_edgeN_[] = { &((diffH1edgeN_TRI_face[face_edges[0]])[0]), &((diffH1edgeN_TRI_face[face_edges[1]])[0]), &((diffH1edgeN_TRI_face[face_edges[2]])[0]) };
 	ierr = H1_EdgeShapeFunctions_MBTRI(_face_edge_sense_,_face_edge_order_H1,&gNTRI[0],diffNTRI,_edgeN_,_diff_edgeN_,gNTRI_dim); CHKERRQ(ierr);
 	//face
 	int _face_order_ = maxOrderFaceH1[side->side_number];
@@ -2137,6 +2138,9 @@ PetscErrorCode FEMethod_LowLevelStudent::FaceData(EntityHandle ent,
   }
   if(fe_ent_ptr->get_ent_type()!=MBTET) {
     SETERRQ(PETSC_COMM_SELF,1,"this function working only for TETs");
+  }
+  if(ent != last_face) {
+    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   }
   //nodes
   const EntityHandle *conn_face;
