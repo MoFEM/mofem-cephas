@@ -824,92 +824,31 @@ PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_Fac
   if(ent != last_face) {
     SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   }
-  Range edges;
   DataEdgesOrderMax.resize(3);
-  rval = moab.get_adjacencies(&ent,1,1,false,edges); CHKERR_PETSC(rval);
   map<EntityHandle,vector<double> >& diffH1edgeN_TRI_face = diffH1edgeN_TRI[ent];
-  for(Range::iterator eit = edges.begin();eit!=edges.end();eit++) {
+  for(int ee = 0;ee<3;ee++) {
+    EntityHandle edge;
+    rval = moab.side_element(ent,1,ee,edge); CHKERR_PETSC(rval);
     int face_side,face_sense,face_offset;
-    rval = moab.side_number(ent,*eit,face_side,face_sense,face_offset); CHKERR(rval);
+    rval = moab.side_number(ent,edge,face_side,face_sense,face_offset); CHKERR(rval);
+    if(ee != face_side) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    }
     if(DataEdgesOrder[face_side]<=1) continue;
-    map<EntityHandle,vector<double> >::iterator diff = diffH1edgeN_TRI_face.find(*eit);
+    map<EntityHandle,vector<double> >::iterator diff = diffH1edgeN_TRI_face.find(edge);
     if(diff == diffH1edgeN_TRI_face.end()) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    diffNTRI_edges[face_side] = &*diff->second.begin();
-    DataEdgesOrderMax[face_side] = maxOrderEdgeH1[fe_ent_ptr->get_side_number_ptr(moab,*eit)->side_number];
+    diffNTRI_edges[ee] = &*diff->second.begin();
+    DataEdgesOrderMax[ee] = maxOrderEdgeH1[fe_ent_ptr->get_side_number_ptr(moab,edge)->side_number];
   }
   double* data_edges[3] = { NULL,NULL,NULL };    
   for(int ee = 0;ee<3;ee++) {
     data_edges[ee] = &*DataEdges[ee].data().begin();
   }
-
-
-
-  /*vector<vector<double> > N_edge_data(3);
-  vector<ublas::vector<double> > diffN_edge_data(3);
-  vector<int> FaceEdgeSense(3);
-
-  double* N_edge[3];
-  double* diffN_edge[3];
-  vector<int> FaceEdgeOrder(3);
-  vector<ublas::vector<double> > FaceEdgeData_data(3);
-
-
-  typedef FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
-
-  for(int ee = 0;ee<3;ee++) {
-    EntityHandle edge;
-    rval = moab.side_element(ent,1,ee,edge); CHKERR_PETSC(rval);
-    int side_number,offset;
-    rval = moab.side_number(ent,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
-    dofs_iterator eiit,hi_eiit;
-    eiit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge));
-    hi_eiit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge));
-    if(eiit!=hi_eiit) {
-      FaceEdgeOrder[ee] = eiit->get_max_order();
-      if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
-	assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(eiit,hi_eiit));
-	N_edge_data[ee].resize(get_dim_gNTRI()*NBEDGE_H1(FaceEdgeOrder[ee]));
-	diffN_edge_data[ee].resize(2*get_dim_gNTRI()*NBEDGE_H1(FaceEdgeOrder[ee]));
-	N_edge[ee] = &(N_edge_data[ee][0]);
-	diffN_edge[ee] = &(diffN_edge_data[ee][0]);
-	FaceEdgeData_data[ee].resize(3*NBEDGE_H1(FaceEdgeOrder[ee]));
-	assert(distance(eiit,hi_eiit) == 3*NBEDGE_H1(FaceEdgeOrder[ee]));
-	for(;eiit!=hi_eiit;eiit++) {
-	  FaceEdgeData_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData();
-	}
-      }
-    } else {
-      FaceEdgeOrder[ee] = 0;
-      N_edge[ee] = NULL;
-      diffN_edge[ee] = NULL;
-    }
-  }
-  ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&gNTRI[0],&diffNTRI[0],N_edge,diffN_edge,get_dim_gNTRI()); CHKERRQ(ierr);
-
-  for(int ee = 0;ee<3;ee++) {
-    data_edges[ee] = &*FaceEdgeData_data[ee].data().begin();
-  }*/
-
-
-
+  //Calculate Normals
   int nb_Gauss_pts = get_dim_gNTRI();
   Normals.resize(nb_Gauss_pts);
-  cout << "DataFaceOrderMax " << DataFaceOrderMax << endl;
-  cout << "DataEdgesOrderMax " << DataEdgesOrderMax[0] << " " << DataEdgesOrderMax[1] << " " << DataEdgesOrderMax[2] << endl;
-
-  cout << "DataFaceOrder " << DataFaceOrder << endl;
-  cout << "DataEdgesOrder " << DataEdgesOrder[0] << " " << DataEdgesOrder[1] << " " << DataEdgesOrder[2] << endl;
-  //cout << "FaceEdgeOrder " << FaceEdgeOrder[0] << " " << FaceEdgeOrder[1] << " " << FaceEdgeOrder[2] << endl;
-
-  cout << "DataNodes " << DataNodes << endl;
-  cout << "DataEdges " << DataEdges[0] << " " << DataEdges[1] << " " << DataEdges[2] << endl;
-  //cout << "FaceEdgeData_data " << FaceEdgeData_data[0] << " " << FaceEdgeData_data[1] << " " << FaceEdgeData_data[2] << endl;
-
-  cout << "DataFace " << DataFace << endl;
-  //cout << "diffN_edge_data \n" << diffN_edge_data[0] << "\n" << diffN_edge_data[1] << "\n" << diffN_edge_data[2] << endl;
-
   for(int gg = 0;gg<nb_Gauss_pts;gg++) {
     __CLPK_doublecomplex xnormal[3];
    ierr = Normal_hierarchical(

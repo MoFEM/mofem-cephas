@@ -257,10 +257,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	//higher order face shape
 	vector< ublas::vector<FieldData> > Normals_at_Gauss_pts;
 	ierr = GetHierarchicalGeometryApproximation_FaceNormal(siit->ent,Normals_at_Gauss_pts);  CHKERRQ(ierr);
-	cout << "Normals_at_Gauss_pts size = " << Normals_at_Gauss_pts.size() << endl;
-	for(int gg = 0;gg < Normals_at_Gauss_pts.size();gg++) {
-	  cout << "Normal [ " << gg << " ] " << Normals_at_Gauss_pts[gg] << endl;
-	}
 
 	//calulate & assemble
 	int g_dim = get_dim_gNTRI();
