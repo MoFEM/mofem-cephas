@@ -321,7 +321,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       ierr = do_operator(); CHKERRQ(ierr);
 
       //Higher order approximation of geometry
-      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
+      //ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
 
       //Strains to Nodes in PostProc Mesh: create vector containing matrices
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;

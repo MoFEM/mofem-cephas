@@ -204,8 +204,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     }
 
     virtual PetscErrorCode NeumannBC_Faces(Vec F_ext,
-      double pressure,
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction,Range& faces) {
+      double pressure,ublas::vector<FieldData,ublas::bounded_array<double,3> > traction,
+      Range& faces) {
       PetscFunctionBegin;
 
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
@@ -231,7 +231,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  if(RowGlob[1+siiit->side_number].size()>0) {
 	    ierr = GetGaussRowFaceNMatrix(siit->ent,"DISPLACEMENT",FaceNMatrix_edges[siiit->side_number],MBEDGE,siiit->ent); CHKERRQ(ierr);
 	    //cerr << "ee ";
-	    //copy(FaceNMatrix_face.begin(),FaceNMatrix_face.end(),ostream_iterator<ublas::matrix<FieldData> >(cerr," \n")); cerr << endl;
+	    //copy(FaceNMatrix_edges[siiit->side_number].begin(),FaceNMatrix_edges[siiit->side_number].end(),ostream_iterator<ublas::matrix<FieldData> >(cerr," \n")); cerr << endl;
 	  }
 	}
 
@@ -256,11 +256,11 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
 	//higher order face shape
 	vector< ublas::vector<FieldData> > Normals_at_Gauss_pts;
-	ierr = GetHierarchicalGeometryApproximation_FaceNormal(siit->ent,Normals_at_Gauss_pts);  CHKERRQ(ierr);
-	//cout << "Normals_at_Gauss_pts size = " << Normals_at_Gauss_pts.size() << endl;
-	///for(int gg = 0;gg < Normals_at_Gauss_pts.size();gg++) {
-	  //cout << "Normal [ " << gg << " ] " << Normals_at_Gauss_pts[gg] << endl;
-	//}
+	//ierr = GetHierarchicalGeometryApproximation_FaceNormal(siit->ent,Normals_at_Gauss_pts);  CHKERRQ(ierr);
+	cout << "Normals_at_Gauss_pts size = " << Normals_at_Gauss_pts.size() << endl;
+	for(int gg = 0;gg < Normals_at_Gauss_pts.size();gg++) {
+	  cout << "Normal [ " << gg << " ] " << Normals_at_Gauss_pts[gg] << endl;
+	}
 
 	//calulate & assemble
 	int g_dim = get_dim_gNTRI();
@@ -268,16 +268,15 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  ublas::vector<FieldData,ublas::bounded_array<double,3> > traction_at_Gauss_pt = traction;
 	  double w,area_at_Gauss_pt;
 	  if(Normals_at_Gauss_pts.size()>0) {
+	    if(Normals_at_Gauss_pts.size()!=g_dim) {
+	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    }
 	    area_at_Gauss_pt = cblas_dnrm2(3,Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
 	    w = area_at_Gauss_pt*G_W_TRI[gg];
-	    if(pressure!=0) {
-	      traction_at_Gauss_pt += pressure*Normals_at_Gauss_pts[gg]/(2*area_at_Gauss_pt);
-	    }
+	    traction_at_Gauss_pt = (pressure/(2*area_at_Gauss_pt))*Normals_at_Gauss_pts[gg];
 	  } else {
 	    w = area*G_W_TRI[gg];
-	    if(pressure!=0) {
-	      traction_at_Gauss_pt += pressure*normal/(2*area);
-	    }
+	    traction_at_Gauss_pt += (pressure/area)*normal;
 	  }
 
 	  //nodes
@@ -293,7 +292,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	      vector<ublas::matrix<FieldData> >& FaceNMatrix_edge = FaceNMatrix_edges[siiit->side_number];
 	      ublas::vector<FieldData> f_ext_edges = ublas::zero_vector<FieldData>(FaceNMatrix_edge[0].size2());
 	      f_ext_edges = w*prod(trans(FaceNMatrix_edge[gg]), traction_at_Gauss_pt);
-	      if(RowGlob_edge.size()!=f_ext_edges.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_edge.size()!=f_ext_edges.size()");
+	      if(RowGlob_edge.size()!=f_ext_edges.size()) {
+		SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_edge.size()!=f_ext_edges.size()");
+	      }
 	      ierr = VecSetValues(F_ext,RowGlob_edge.size(),&(RowGlob_edge[0]),&(f_ext_edges.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	    }
 	  }
@@ -338,9 +339,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       }
 
+      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction_glob = ublas::zero_vector<FieldData>(3);
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-
-	ublas::vector<FieldData,ublas::bounded_array<double,3> > traction_glob(3,0);
 
 	pressure_cubit_bc_data mydata;
 	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
@@ -351,14 +351,11 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       }
 
-
       PetscFunctionReturn(0);
     }
 
     virtual PetscErrorCode GetMatricesRows() {
       PetscFunctionBegin;
-      //Higher order approximation of geometry
-      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
       //indicies ROWS
       row_mat = 0;
       ierr = GetRowGlobalIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
@@ -414,6 +411,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     virtual PetscErrorCode GetMatricesCols() {
       PetscFunctionBegin;
+      //Higher order approximation of geometry
+      //ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
       //indicies COLS
       col_mat = 0;
       ierr = GetColGlobalIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
@@ -469,6 +468,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     virtual PetscErrorCode GetMatrices() {
       PetscFunctionBegin;
+      //Higher order approximation of geometry
+      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
+      //
       ierr = GetMatricesRows(); CHKERRQ(ierr);
       ierr = GetMatricesCols(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -584,9 +586,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
 	try {
 	  ublas::matrix< FieldData > GradU = *viit;
-	  if(!invH.empty()) {
-	    GradU = prod( trans( invH[gg] ), GradU ); 
-	  }
+	  //if(!invH.empty()) {
+	    //GradU = prod( trans( invH[gg] ), GradU ); 
+	  //}
 	  ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
 	  ublas::vector< FieldData > VoightStrain(6);
 	  VoightStrain[0] = Strain(0,0);
@@ -644,7 +646,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     virtual PetscErrorCode RhsAndLhs() {
       PetscFunctionBegin;
 
-      ierr = Rhs(); CHKERRQ(ierr);
+      //ierr = Rhs(); CHKERRQ(ierr);
       ierr = Lhs(); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);

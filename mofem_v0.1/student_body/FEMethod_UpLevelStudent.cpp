@@ -762,12 +762,10 @@ PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation(
   if(miit == h1_diff_data_at_gauss_pt.end()) PetscFunctionReturn(0);
   invH = miit->second;
   detH.resize( invH.size() );
-  ublas::matrix<FieldData> H(3,3);
-  //cout << "H size " << invH.size() << endl << endl;
+  ublas::matrix<FieldData> _H_(3,3);
   for(unsigned int gg = 0;gg<invH.size();gg++) {
-    ublas::noalias(H) = invH[gg];
-    //cout << H << endl << endl;
-    detH[gg] = Shape_detJac(&*H.data().begin());
+    ublas::noalias(_H_) = invH[gg];
+    detH[gg] = Shape_detJac(&*_H_.data().begin());
     ierr = Shape_invJac(&*invH[gg].data().begin()); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
@@ -779,25 +777,19 @@ PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_App
   if(invH.size() == 0) PetscFunctionReturn(0);
   if(invH.size() != diffNMatrix.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   unsigned int gg = 0;
-  ublas::matrix<FieldData> diffNMatrix__;
+  ublas::matrix<FieldData> _diffNMatrix__;
   for(;gg<diffNMatrix.size();gg++) {
-    ublas::matrix<FieldData> &invH_ = invH[gg];
-    ublas::matrix<FieldData> &diffNMatrix_ = diffNMatrix[gg];
-    diffNMatrix__.resize(diffNMatrix_.size1(),diffNMatrix_.size2());
-    //cout << "invH " << invH_ << endl;
-    //cout << "diffNMatrix_ " << diffNMatrix_ << endl;	
-    //cout << diffNMatrix_.size1() << " " << diffNMatrix_.size2() << endl;
+    ublas::matrix<FieldData> &_invH_ = invH[gg];
+    ublas::matrix<FieldData> &_diffNMatrix_ = diffNMatrix[gg];
+    _diffNMatrix__.resize(_diffNMatrix_.size1(),_diffNMatrix_.size2());
     for(int rr = 0;rr<rank;rr++) {
       cblas_dgemm(
 	CblasRowMajor,CblasTrans,CblasNoTrans,
-	3,diffNMatrix_.size2(),3,1.,
-	&*invH_.data().begin(),3,&diffNMatrix_.data()[diffNMatrix_.size2()*rr],rank*diffNMatrix_.size2(),
-	0.,&diffNMatrix__.data()[diffNMatrix__.size2()*rr],rank*diffNMatrix__.size2()); 
+	3,_diffNMatrix_.size2(),3,1.,
+	&*_invH_.data().begin(),3,&_diffNMatrix_.data()[rank*_diffNMatrix_.size2()*rr],_diffNMatrix_.size2(),
+	0.,&_diffNMatrix__.data()[rank*_diffNMatrix__.size2()*rr],_diffNMatrix__.size2()); 
     }
-    //cout << "diffNMatrix__ " << diffNMatrix__ << endl;
-    //cout << "Delta diffNMatrix__ " << diffNMatrix_ - diffNMatrix__ << endl;
-    //cout << endl << endl;
-    ublas::noalias(diffNMatrix_) = diffNMatrix__;
+    ublas::noalias(_diffNMatrix_) = _diffNMatrix__;
   }
   PetscFunctionReturn(0);
 }
@@ -832,22 +824,77 @@ PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_Fac
     }
     diffNTRI_edges[face_side] = &*diff->second.begin();
   }
-  double* data_edges[3];    
+  double* data_edges[3] = { NULL,NULL,NULL };    
   for(int ee = 0;ee<3;ee++) {
     data_edges[ee] = &*DataEdges[ee].data().begin();
   }
+
+  vector<vector<double> > N_edge_data(3);
+  vector<ublas::vector<double> > diffN_edge_data(3);
+  vector<int> FaceEdgeSense(3);
+
+  double* N_edge[3];
+  double* diffN_edge[3];
+  vector<int> FaceEdgeOrder(3);
+  vector<ublas::vector<double> > FaceEdgeData_data(3);
+
+
+  typedef FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
+
+  for(int ee = 0;ee<3;ee++) {
+    EntityHandle edge;
+    rval = moab.side_element(ent,1,ee,edge); CHKERR_PETSC(rval);
+    int side_number,offset;
+    rval = moab.side_number(ent,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
+    dofs_iterator eiit,hi_eiit;
+    eiit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge));
+    hi_eiit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge));
+    if(eiit!=hi_eiit) {
+      FaceEdgeOrder[ee] = eiit->get_max_order();
+      if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
+	assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(eiit,hi_eiit));
+	N_edge_data[ee].resize(get_dim_gNTRI()*NBEDGE_H1(FaceEdgeOrder[ee]));
+	diffN_edge_data[ee].resize(2*get_dim_gNTRI()*NBEDGE_H1(FaceEdgeOrder[ee]));
+	N_edge[ee] = &(N_edge_data[ee][0]);
+	diffN_edge[ee] = &(diffN_edge_data[ee][0]);
+	FaceEdgeData_data[ee].resize(3*NBEDGE_H1(FaceEdgeOrder[ee]));
+	assert(distance(eiit,hi_eiit) == 3*NBEDGE_H1(FaceEdgeOrder[ee]));
+	for(;eiit!=hi_eiit;eiit++) {
+	  FaceEdgeData_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData();
+	}
+      }
+    } else {
+      FaceEdgeOrder[ee] = 0;
+      N_edge[ee] = NULL;
+      diffN_edge[ee] = NULL;
+    }
+  }
+  ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&gNTRI[0],&diffNTRI[0],N_edge,diffN_edge,get_dim_gNTRI()); CHKERRQ(ierr);
+
+  for(int ee = 0;ee<3;ee++) {
+    data_edges[ee] = &*FaceEdgeData_data[ee].data().begin();
+  }
+
+
+
   int nb_Gauss_pts = get_dim_gNTRI();
   Normals.resize(nb_Gauss_pts);
-  //cout << "DataFaceOrder " << DataFaceOrder << endl;
-  //cout << "DataEdgesOrder " << DataEdgesOrder[0] << " " << DataEdgesOrder[1] << " " << DataEdgesOrder[2] << endl;
-  //cout << "DataNodes " << DataNodes << endl;
-  //cout << "DataEdges " << DataEdges[0] << " " << DataEdges[1] << " " << DataEdges[2] << endl;
+  cout << "DataFaceOrder " << DataFaceOrder << endl;
+  cout << "DataEdgesOrder " << DataEdgesOrder[0] << " " << DataEdgesOrder[1] << " " << DataEdgesOrder[2] << endl;
+  cout << "FaceEdgeOrder " << FaceEdgeOrder[0] << " " << FaceEdgeOrder[1] << " " << FaceEdgeOrder[2] << endl;
+
+  cout << "DataNodes " << DataNodes << endl;
+  cout << "DataEdges " << DataEdges[0] << " " << DataEdges[1] << " " << DataEdges[2] << endl;
+  cout << "FaceEdgeData_data " << FaceEdgeData_data[0] << " " << FaceEdgeData_data[1] << " " << FaceEdgeData_data[2] << endl;
+
+  cout << "DataFace " << DataFace << endl;
+  cout << "diffN_edge_data \n" << diffN_edge_data[0] << "\n" << diffN_edge_data[1] << "\n" << diffN_edge_data[2] << endl;
+
   for(int gg = 0;gg<nb_Gauss_pts;gg++) {
     __CLPK_doublecomplex xnormal[3];
    ierr = Normal_hierarchical(
-      DataFaceOrder,&*DataEdgesOrder.begin(),
-      diffNTRI,diffNTRI_face,diffNTRI_edges,
-      &*DataNodes.data().begin(),data_edges,&*DataFace.data().begin(),
+      DataFaceOrder,&*FaceEdgeOrder.begin(),diffNTRI,diffNTRI_face,diffN_edge,
+      &*DataNodes.data().begin(),data_edges,NULL,//&*DataFace.data().begin(),
       NULL,NULL,NULL,
       xnormal,NULL,NULL,
       gg); CHKERRQ(ierr);

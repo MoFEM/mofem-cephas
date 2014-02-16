@@ -1663,9 +1663,31 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
     if(rank*nb_Ns!=nit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
     unsigned int gg = 0;
     for(;gg<g_dim;gg++) {
+      //NOTE: N_Matrix_Type typedef map<const MoFEMField*,vector< ublas::matrix<FieldData> > >
       ublas::matrix<FieldData> &mat = data[gg];
+      //nb_rows is rank multiplied by problem dimension (f.e. Displacement field has 9 rows )
+      //nb_cols = rank*nb_Ns (f.e. displacement field on Tetrahedral is 3*4 = 12)
       mat.resize(nb_rows,rank*nb_Ns);
       mat = ublas::zero_matrix<FieldData>(nb_rows,rank*nb_Ns);
+      //NOTE:
+      //diffN_Matrix_nodes = 
+      // f.e. displacement on tetrahedral
+      // [ 0(rr)*3 + 0(dd) 	] dN_rr/dX_dd
+      // [ 0(rr)*3 + 1(dd) 	] 
+      // [ 0(rr)*3 + 2(dd) 	] 
+      // [ 1(rr)*3 + 0(dd) 	] 
+      // [ 1(rr)*3 + 1(dd) 	] 
+      // [ ...			] 
+      // =
+      // [ dN1_X/dX	0	0 dN2_X/dX	0	0 dN3_X/dX	0	...	]
+      // [ dN1_X/dY	0	0 dN2_X/dY	0	0 dN3_X/dY	0	...	]
+      // [ dN1_X/dZ	0	0 dN2_X/dZ	0	0 dN3_X/dZ	0	...	]
+      // [ 0	dN1_Y/dX	0 0	dN2_Y/dX	0 0	dN3_Y/dX	...	]
+      // [ 0	dN1_Y/dY	0 0	dN2_Y/dY	0 0	dN3_Y/dY	...	]
+      // [ 0	dN1_Y/dZ	0 0	dN2_Y/dZ	0 0	dN3_Y/dZ	...	]
+      // [ 0	0	dN1_Z/dX  0	0	dN2_Z/dX  0	0		...	]
+      // [ 0	0	dN1_Z/dY  0	0	dN2_Z/dY  0	0		...	]
+      // [ 0	0	dN1_Z/dZ  0	0	dN2_Z/dZ  0	0		...	]
       int rr = 0;
       for(;rr<rank;rr++) {
 	int dd = 0;
@@ -2032,7 +2054,7 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_FaceGaussPoints(
       const MoFEMEntity* ent_ptr = eiit->first;
       const MoFEMField* field_ptr = ent_ptr->get_MoFEMField_ptr();
       if(field_ptr->get_name()!=field_name) continue;
-     map<EntityHandle,vector<double> >::iterator mit = H1edgeN_TRI_face.find(edge);
+      map<EntityHandle,vector<double> >::iterator mit = H1edgeN_TRI_face.find(edge);
       int rank = field_ptr->get_max_rank();
       int order = ent_ptr->get_max_order();
       unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
@@ -2096,7 +2118,8 @@ PetscErrorCode FEMethod_LowLevelStudent::FaceData(EntityHandle ent,
     bool throw_error_if_no_field) {
   PetscFunctionBegin;
   typedef SideNumber_multiIndex::nth_index<1>::type SideNumber_multiIndex_by_CompositeTag;
-  SideNumber_multiIndex_by_CompositeTag& side_table = const_cast<SideNumber_multiIndex_by_CompositeTag&>(fe_ent_ptr->get_side_number_table().get<1>());
+  SideNumber_multiIndex_by_CompositeTag& 
+    side_table = const_cast<SideNumber_multiIndex_by_CompositeTag&>(fe_ent_ptr->get_side_number_table().get<1>());
   SideNumber* side = fe_ent_ptr->get_side_number_ptr(moab,ent);
   if(side->get_ent_type()!=MBTRI) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;

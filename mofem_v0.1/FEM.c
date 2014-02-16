@@ -506,7 +506,7 @@ PetscErrorCode Normal_hierarchical(int order,int *order_edge,
   double complex diffY_x,diffY_y,diffY_z;
   diffX_x = diffX_x_node;diffX_y = diffX_y_node;diffX_z = diffX_z_node;
   diffY_x = diffY_x_node;diffY_y = diffY_y_node;diffY_z = diffY_z_node;
-  if((dofs_face!=NULL)&&(idofs_face!=NULL)) {
+  if((dofs_face!=NULL)||(idofs_face!=NULL)) {
   int nb_dofs_face = NBFACE_H1(order);
   if(nb_dofs_face>0) {
     if(dofs_face!=NULL) {
@@ -527,7 +527,7 @@ PetscErrorCode Normal_hierarchical(int order,int *order_edge,
     }
   }}
   ee = 0;
-  if((dofs_edge!=NULL)&&(idofs_edge!=NULL)) {
+  if((dofs_edge!=NULL)||(idofs_edge!=NULL)) {
   for(;ee<3;ee++) {
     int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
     if(nb_dofs_edge>0) {

@@ -33,16 +33,11 @@ merge volume all with volume all
 
 modify curve 74 69  chamfer radius 0.02
 
-Sideset 1 curve 79
-Sideset 2 surface 40
-Sideset 3 surface 39 44
-Sideset 4 surface 41 47
-nodeset 1 vertex 40
-
 create Displacement  on curve 79  dof 1 dof 2 dof 3 fix 0 
 create Displacement  on surface 41 47  dof 1 fix 0
 create Displacement  on surface 39 44  dof 2 fix 0 
-create pressure  on surface 40  magnitude 1 
+#create pressure  on surface 40  magnitude 1 
+create force  on node 10  force value 1 direction  z 
 
 block 1 volume 1 
 block 1 name "MAT_ELASTIC_1"
@@ -54,5 +49,9 @@ volume all scheme Tetmesh
 volume all size auto factor 8
 mesh volume all
 
+#block 2 tet all 
+#block 2 element type tetra10
+
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/dome_thin_symm.cub" overwrite
+
 
