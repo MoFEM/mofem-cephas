@@ -118,7 +118,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     }
 
-    Tag th_disp;
+    Tag th_disp,th_positions;
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -134,6 +134,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       // create TAG
       string tag_name = field_name+"_VAL";
       rval = moab_post_proc.tag_get_handle(tag_name.c_str(),3,MB_TYPE_DOUBLE,th_disp,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+      rval = moab_post_proc.tag_get_handle("MESH_NODAL_POSITIONS_VAL",3,MB_TYPE_DOUBLE,th_positions,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
       init_ref = true;
 
@@ -180,6 +181,18 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
       for(;vit!=data.end();vit++,mit++) {
 	rval = moab_post_proc.tag_set_data(th_disp,&mit->second,1,&vit->data()[0]); CHKERR_PETSC(rval);
+      }
+
+
+      //Get mesh nodal positions at Gauss points
+      diit = h1l2_data_at_gauss_pt.find("MESH_NODE_POSITIONS");
+      if(diit!=h1l2_data_at_gauss_pt.end()) {
+	  vector< ublas::vector<FieldData> > &data = diit->second;
+	  vector< ublas::vector<FieldData> >::iterator vit = data.begin();
+	  map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+	  for(;vit!=data.end();vit++,mit++) {
+	    rval = moab_post_proc.tag_set_data(th_positions,&mit->second,1,&vit->data()[0]); CHKERR_PETSC(rval);
+	}
       }
 
       PetscFunctionReturn(0);
@@ -298,11 +311,17 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
   }
 
+  vector< ublas::matrix<FieldData> > invH;
+  vector< FieldData > detH;
+
   PetscErrorCode operator()() {
       PetscFunctionBegin;
 
       //Loop over elements
       ierr = do_operator(); CHKERRQ(ierr);
+
+      //Higher order approximation of geometry
+      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
 
       //Strains to Nodes in PostProc Mesh: create vector containing matrices
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -311,8 +330,28 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
 
-      for(;viit!=GradU_at_GaussPt.end();viit++,mit++) {
+      int gg = 0;
+      for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
         ublas::matrix< FieldData > GradU = *viit;
+	if(!invH.empty()) {
+	  //GradU = 
+	  //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
+	  //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
+	  //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
+	  //H = 
+	  //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
+ 	  //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
+ 	  //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]    
+	  //invH = 
+	  //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
+	  //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
+	  //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
+	  //GradU = 
+	  //[ dU/dX1 dU/dX2 dU/dX3 ]
+	  //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
+	  //[ dW/dX1 dW/dX2 dW/dX3 ] 
+	  GradU = prod( GradU, invH[gg] ); 
+	}
         ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
         rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
         //caluate stress and save it into tag

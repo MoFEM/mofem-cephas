@@ -205,6 +205,13 @@ bool FieldCore::check_field(const string &name) const {
   if(miit==set.end()) return false;
   return true;
 }
+const MoFEMField* FieldCore::get_field_structure(const string& name) {
+  typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
+  const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
+  field_set_by_name::iterator miit = set.find(name);
+  if(miit==set.end()) return NULL;
+  return &*miit;
+}
 BitFieldId FieldCore::get_field_shift() {
   assert((unsigned int)*f_shift<BitFieldId().set().to_ulong());
   return (BitFieldId)(1<<(((*f_shift)++)-1)); 

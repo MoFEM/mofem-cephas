@@ -51,7 +51,10 @@ struct TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh: public TranIso_PostProc
     
     ofstream myfile;
 
-    TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp, int _noAA, double *_AxVector, double *_AxAngle):
+    TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh(
+      Interface& _moab,double _lambda,double _mu,
+      double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp, int _noAA, double *_AxVector, double *_AxAngle):
+
     TranIso_PostProc_AxisAngle_OnRefMesh(_moab,_lambda,_mu,_E_p,_E_z,_nu_p,_nu_pz,_G_zp,_noAA,_AxVector,_AxAngle) {
 
         
@@ -153,8 +156,12 @@ struct TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh: public TranIso_PostProc
 //        cout<<"Applied Stress: "<<AppliedStress<<endl;
         ublas::vector<FieldData> ResultStrain=prod(DummyMatrixCom,AppliedStress);
 //        cout<<"Result Strain: "<<ResultStrain<<endl<<endl;
-        myfile<<"Analytical Strain: \t"<<boost::format("%.3lf") % roundn( ResultStrain[0] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[1] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[2] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[3] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[4] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[5] )<<endl;
-        myfile<<"Analytical Stress: \t"<<boost::format("%.3lf") % roundn( AppliedStress[0] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[1] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[2] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[3] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[4] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[5] )<<endl;
+        myfile<<"Analytical Strain: \t"<<
+	  boost::format("%.3lf") % roundn( ResultStrain[0] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[1] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[2] )<<"\t"<<
+	  boost::format("%.3lf") % roundn( ResultStrain[3] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[4] )<<"\t"<<boost::format("%.3lf") % roundn( ResultStrain[5] )<<endl;
+        myfile<<"Analytical Stress: \t"<<
+	  boost::format("%.3lf") % roundn( AppliedStress[0] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[1] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[2] )<<"\t"<<
+	  boost::format("%.3lf") % roundn( AppliedStress[3] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[4] )<<"\t"<<boost::format("%.3lf") % roundn( AppliedStress[5] )<<endl;
         myfile<<endl;
         
         int gg=0;
@@ -221,8 +228,12 @@ struct TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh: public TranIso_PostProc
             tetStress[3]=Stress(0,1); tetStress[4]=Stress(0,2); tetStress[5]=Stress(1,2);
         }
         
-        myfile<<"Numerical Strain: "<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[0] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[1] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[2] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[3] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[4] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[5] )<<endl;
-        myfile<<"Numerical Stress: "<<"\t"<<boost::format("%.3lf") % roundn( tetStress[0] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[1] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[2] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[3] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[4] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[5] )<<endl;
+        myfile<<"Numerical Strain: "<<"\t"<<
+	  boost::format("%.3lf") % roundn( tetStrain[0] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[1] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[2] )<<"\t"<<
+	  boost::format("%.3lf") % roundn( tetStrain[3] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[4] )<<"\t"<<boost::format("%.3lf") % roundn( tetStrain[5] )<<endl;
+        myfile<<"Numerical Stress: "<<"\t"<<
+	  boost::format("%.3lf") % roundn( tetStress[0] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[1] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[2] )<<"\t"<<
+	  boost::format("%.3lf") % roundn( tetStress[3] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[4] )<<"\t"<<boost::format("%.3lf") % roundn( tetStress[5] )<<endl;
         myfile<<endl;
         
         ierr = OpStudentEnd(); CHKERRQ(ierr);

@@ -169,7 +169,8 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   UId uid;
   MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_mab_ent_ptr);
   inline EntityHandle get_ent() const { return get_ref_ent(); }
-  inline FieldData* get_FieldData() const { return const_cast<FieldData*>(tag_FieldData); }
+  inline int get_nb_dofs_on_ent() const { return tag_FieldData_size/sizeof(FieldData); }
+  inline FieldData* get_ent_FieldData() const { return const_cast<FieldData*>(tag_FieldData); }
   inline int get_order_nb_dofs(int order) const { return forder(order); }
   inline int get_order_nb_dofs_diff(int order) const { return forder(order)-forder(order-1); }
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
@@ -194,7 +195,8 @@ template <typename T>
 struct interface_MoFEMEntity: public interface_MoFEMField<T>,interface_RefMoFEMEntity<RefMoFEMEntity> {
   interface_MoFEMEntity(const T *_ptr): interface_MoFEMField<T>(_ptr),interface_RefMoFEMEntity<RefMoFEMEntity>(_ptr->get_RefMoFEMEntity_ptr()) {};
   inline EntityHandle get_ent() const { return interface_MoFEMField<T>::get_ent(); }
-  inline FieldData* get_FieldData() const { return interface_MoFEMField<T>::field_ptr->get_FieldData(); }
+  inline int get_nb_dofs_on_ent() const { return interface_MoFEMField<T>::field_ptr->get_nb_dofs_on_ent(); }
+  inline FieldData* get_ent_FieldData() const { return interface_MoFEMField<T>::field_ptr->get_FieldData(); }
   inline int get_order_nb_dofs(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs(order); }
   inline int get_order_nb_dofs_diff(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs_diff(order); }
   inline ApproximationOrder get_max_order() const { return interface_MoFEMField<T>::field_ptr->get_max_order(); }

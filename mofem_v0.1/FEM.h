@@ -92,10 +92,12 @@ PetscErrorCode Spin(double *spinOmega,double *vecOmega);
 /// Compose complex matrix (3x3) from two real matrices
 PetscErrorCode make_complex_matrix(double *reA,double *imA,__CLPK_doublecomplex *xA);
 /// Complex normal
-PetscErrorCode Normal_hierarchical(int order,int *order_edge,
+PetscErrorCode Normal_hierarchical(
+  int order_approx,int *order_edge_approx,
+  int order,int *order_edge,
   double *diffN,double *diffN_face,double *diffN_edge[],
-  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
-  double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
+  double *dofs,double *dofs_edge[],double *dofs_face,
+  double *idofs,double *idofs_edge[],double *idofs_face,
     __CLPK_doublecomplex *xnormal,
     __CLPK_doublecomplex *s1,
     __CLPK_doublecomplex *s2,

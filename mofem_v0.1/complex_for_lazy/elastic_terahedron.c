@@ -1069,7 +1069,9 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
     __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
     ierr = Normal_hierarchical(
-      order,order_edge,diffN,diffN_face,diffN_edge,
+      order,order_edge, //FIXME
+      order,order_edge,
+      diffN,diffN_face,diffN_edge,
       dofs_x,dofs_x_edge,dofs_x_face,idofs_x,idofs_x_edge,idofs_x_face,
       xnormal,xs1,xs2,gg); CHKERRQ(ierr);
     ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
@@ -1169,7 +1171,9 @@ PetscErrorCode KExt_hh_hierarchical(double eps,int order,int *order_edge,
       bzero(idofs_x,9*sizeof(double));
       idofs_x[ii] = eps;
       ierr = Normal_hierarchical(
-	order,order_edge,diffN,diffN_face,diffN_edge,
+	order,order_edge, //FIXME
+	order,order_edge,
+	diffN,diffN_face,diffN_edge,
 	dofs_x,dofs_x_edge,dofs_x_face,
 	idofs_x,NULL,NULL,
 	xnormal,xs1,xs2,gg); CHKERRQ(ierr);
@@ -1250,7 +1254,9 @@ PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
         idofs_x_edge_EE[ii] = eps;
 	__CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
 	ierr = Normal_hierarchical(
-	  order,order_edge,diffN,diffN_face,diffN_edge,
+	  order,order_edge, //FIXME
+	  order,order_edge,
+	  diffN,diffN_face,diffN_edge,
 	  dofs_x,dofs_x_edge,dofs_x_face,NULL,idofs_x_edge,NULL,
 	  xnormal,xs1,xs2,gg); CHKERRQ(ierr);
 	ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
@@ -1323,7 +1329,9 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
       idofs_x_face[ii] = eps;
       __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
       ierr = Normal_hierarchical(
-	order,order_edge,diffN,diffN_face,diffN_edge,
+	order,order_edge, //FIXME
+	order,order_edge,
+	diffN,diffN_face,diffN_edge,
 	dofs_x,dofs_x_edge,dofs_x_face,NULL,NULL,idofs_x_face,
 	xnormal,xs1,xs2,gg); CHKERRQ(ierr);
       ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
@@ -1367,7 +1375,8 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
   PetscFunctionReturn(0);
 }
 //Material
-PetscErrorCode Fext_H_hierarchical(int order,int *order_edge,
+PetscErrorCode Fext_H_hierarchical(
+  int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
@@ -1384,7 +1393,9 @@ PetscErrorCode Fext_H_hierarchical(int order,int *order_edge,
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
     __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
     ierr = Normal_hierarchical(
-      order,order_edge,diffN,diffN_face,diffN_edge,
+      order,order_edge, //FIXME
+      order,order_edge,
+      diffN,diffN_face,diffN_edge,
       dofs_X,dofs_X_edge,dofs_X_face,
       idofs_X,NULL,NULL,
       xnormal,xs1,xs2,gg); CHKERRQ(ierr);
@@ -1417,7 +1428,8 @@ PetscErrorCode Fext_H_hierarchical(int order,int *order_edge,
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode KExt_HH_hierarchical(double eps,int order,int *order_edge,
+PetscErrorCode KExt_HH_hierarchical(
+  double eps,int order,int *order_edge,
   double *N,double *N_face,double *N_edge[],
   double *diffN,double *diffN_face,double *diffN_edge[],
   double *t,double *t_edge[],double *t_face,
@@ -1436,7 +1448,9 @@ PetscErrorCode KExt_HH_hierarchical(double eps,int order,int *order_edge,
       bzero(idofs_X,9*sizeof(double));
       idofs_X[ii] = eps;
       ierr = Normal_hierarchical(
-	order,order_edge,diffN,diffN_face,diffN_edge,
+	order,order_edge, //FIXME
+	order,order_edge,
+	diffN,diffN_face,diffN_edge,
 	dofs_X,dofs_X_edge,dofs_X_face,
 	idofs_X,NULL,NULL,
 	xnormal,xs1,xs2,gg); CHKERRQ(ierr);
