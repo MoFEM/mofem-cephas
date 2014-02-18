@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
 
   double step_size = -1e-3;
   for(int step = 1;step<4; step++) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D\n",step); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D\n",step); CHKERRQ(ierr);
     ierr = MyFE.set_t_val(step_size*step); CHKERRQ(ierr);
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
     int its;
