@@ -2082,8 +2082,8 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_FaceGaussPoints(
       int order = ent_ptr->get_max_order();
       unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
       if(mit!=H1edgeN_TRI_face.end()) {
-        if(ent_ptr->get_order_nb_dofs(order)*g_dim != mit->second.size()) 
-  	SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+        if(ent_ptr->get_order_nb_dofs(order)*g_dim > mit->second.size()) 
+  	SETERRQ3(PETSC_COMM_SELF,1,"data inconsitency order %d g_dim %d size %d",ent_ptr->get_order_nb_dofs(order),g_dim,mit->second.size());
       }
       if(nb_dofs!=eiit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       if(nb_dofs!=data_edges[ent_ptr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
@@ -2108,10 +2108,11 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_FaceGaussPoints(
       int order = ent_ptr->get_max_order();
       unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
       if(ent==face) {
-        if(ent_ptr->get_order_nb_dofs(order)*g_dim != H1faceN_TRI_face.size()) 
-  	SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);
+        if(ent_ptr->get_order_nb_dofs(order)*g_dim > H1faceN_TRI_face.size()) {
+	 SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);
+	}
       }
-      if(nb_dofs*g_dim!=rank*H1faceN_TRI_face.size()) SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);
+      if(nb_dofs*g_dim > rank*H1faceN_TRI_face.size()) SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);
       if(nb_dofs!=data_faces[ent_ptr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       unsigned int gg = 0;
       for(;gg<g_dim;gg++) {

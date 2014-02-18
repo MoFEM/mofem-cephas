@@ -45,7 +45,6 @@ struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod { //Field
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  Range test;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
@@ -95,7 +94,7 @@ struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod { //Field
     }
     diff_node_coord.resize(3);
     ublas::noalias(diff_node_coord) = mid_node_coord-ave_mid_coord;
-    double edge_shape_function_val = 0.5*0.5;
+    double edge_shape_function_val = 0.25;
     // Dof*edge_shape_function_val + ave_mid_coord = mid_node_coord
     // Dof = (mid_node_coord-ave_mid_coord)/edge_shape_function_val
     Dof.resize(3);
@@ -116,6 +115,114 @@ struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod { //Field
   }
 
 };
+
+struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
+
+  bool set_nodes;
+  bool on_coords;
+  string on_tag;
+  ProjectionFieldOn10NodeTet(FieldInterface& _mField,string _field_name,
+    bool _set_nodes,bool _on_coords,string _on_tag = "NoNE"): 
+    Projection10NodeCoordsOnField(_mField,_field_name),
+    set_nodes(set_nodes),on_coords(_on_coords),on_tag(_on_tag) {}
+  
+  Tag th;
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
+  ublas::vector<double> L;
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    if(!on_coords) {
+      if(on_tag == "NoNE") {
+	SETERRQ(PETSC_COMM_SELF,1,"tag name not specified");
+      }
+      field_it = moabfields->get<FieldName_mi_tag>().find(field_name);
+      if(field_it == moabfields->get<FieldName_mi_tag>().end()) {
+	SETERRQ1(PETSC_COMM_SELF,1,"field not found %s",field_name.c_str());
+      }
+      int field_rank = field_it->get_max_rank();
+      ublas::vector<double> def_VAL = ublas::zero_vector<double>(field_rank);
+      rval = mField.get_moab().tag_get_handle(
+	on_tag.c_str(),field_rank,MB_TYPE_DOUBLE,
+	th,MB_TAG_CREAT|MB_TAG_SPARSE,&*def_VAL.data().begin()); CHKERR_THROW(rval);
+    }
+    L.resize(5);
+    ierr = Lagrange_basis(5,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    if(dof_ptr->get_name() != field_name) PetscFunctionReturn(0);
+    if(set_nodes) {
+      if(dof_ptr->get_ent_type() == MBVERTEX) {
+	EntityHandle node = dof_ptr->get_ent();
+	if(on_coords) {
+	  coords.resize(3);
+	  rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR(rval);
+	  coords[dof_ptr->get_dof_rank()] = dof_ptr->get_FieldData();
+	  rval = mField.get_moab().set_coords(&node,1,&*coords.data().begin());  CHKERR(rval);
+	} else {
+	  int field_rank = field_it->get_max_rank();
+	  if(field_rank != dof_ptr->get_max_rank()) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
+	  double *tag_value;
+	  int tag_size;
+	  rval = mField.get_moab().tag_get_by_ptr(th,&node,1,(const void **)&tag_value,&tag_size); CHKERR_PETSC(rval);
+	  if(tag_size != dof_ptr->get_max_rank()) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
+	  tag_value[dof_ptr->get_dof_rank()] = dof_ptr->get_FieldData();
+	}
+      }
+      PetscFunctionReturn(0);
+    }
+    if(dof_ptr->get_ent_type() != MBEDGE) {
+      PetscFunctionReturn(0);
+    }
+    EntityHandle edge = dof_ptr->get_ent();
+    if(mField.get_moab().type_from_handle(edge)!=MBEDGE) {
+      SETERRQ(PETSC_COMM_SELF,1,"this method works only elements which are type of MBEDGE"); 
+    }
+    int edge_order = dof_ptr->get_max_order();
+    int num_nodes;
+    const EntityHandle* conn; 
+    rval = mField.get_moab().get_connectivity(edge,conn,num_nodes,false); CHKERR_PETSC(rval);
+    if( (num_nodes != 2) && (num_nodes != 3) ) {
+      SETERRQ(PETSC_COMM_SELF,1,"this method works only 4 node and 10 node tets"); 
+    }
+    if(num_nodes == 2) {
+      PetscFunctionReturn(0);
+    }
+    double approx_val = 0.25*L[dof_ptr->get_EntDofIdx()/dof_ptr->get_max_rank()]*dof_ptr->get_FieldData();;
+    if(on_coords) {
+      coords.resize(num_nodes*3);
+      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin());  CHKERR(rval);
+      if(dof_ptr->get_EntDofIdx() == 0) {
+	double ave_mid = (coords[3*0+dof_ptr->get_dof_rank()] + coords[3*1+dof_ptr->get_dof_rank()])*0.5;
+	coords[2*3+dof_ptr->get_dof_rank()] = ave_mid;
+      }
+      coords[2*3+dof_ptr->get_dof_rank()] += approx_val;
+      rval = mField.get_moab().set_coords(&conn[2],1,&coords[3*2]);  CHKERR(rval);
+    } else {
+      int tag_size;
+      double *tag_value[num_nodes];
+      rval = mField.get_moab().tag_get_by_ptr(th,conn,num_nodes,(const void **)tag_value,&tag_size); CHKERR_PETSC(rval);
+      if(tag_size != dof_ptr->get_max_rank()) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      if(dof_ptr->get_EntDofIdx() == 0) {
+	double ave_mid = (tag_value[0][dof_ptr->get_dof_rank()] + tag_value[1][dof_ptr->get_dof_rank()])*0.5;
+	tag_value[2][dof_ptr->get_dof_rank()] = ave_mid;
+      }
+      tag_value[2][dof_ptr->get_dof_rank()] += approx_val;
+    }
+    PetscFunctionReturn(0);
+  }
+
+
+};
+
 
 }
 
