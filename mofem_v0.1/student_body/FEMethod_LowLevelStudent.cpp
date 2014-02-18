@@ -2142,8 +2142,6 @@ PetscErrorCode FEMethod_LowLevelStudent::FaceData(EntityHandle ent,
     bool throw_error_if_no_field) {
   PetscFunctionBegin;
   typedef SideNumber_multiIndex::nth_index<1>::type SideNumber_multiIndex_by_CompositeTag;
-  SideNumber_multiIndex_by_CompositeTag& 
-    side_table = const_cast<SideNumber_multiIndex_by_CompositeTag&>(fe_ent_ptr->get_side_number_table().get<1>());
   SideNumber* side = fe_ent_ptr->get_side_number_ptr(moab,ent);
   if(side->get_ent_type()!=MBTRI) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;

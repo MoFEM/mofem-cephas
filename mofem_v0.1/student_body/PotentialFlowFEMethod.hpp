@@ -510,7 +510,7 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
       ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",negativeVelocities); CHKERRQ(ierr);
 
       if(invH.size()>0) {
-	for(int gg = 0;gg<negativeVelocities.size();gg++) {
+	for(unsigned int gg = 0;gg<negativeVelocities.size();gg++) {
 	  negativeVelocities[gg] = prod( trans( invH[gg] ), trans(negativeVelocities[gg]) ); 
 	}
       }

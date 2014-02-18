@@ -264,7 +264,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  ublas::vector<FieldData,ublas::bounded_array<double,3> > traction_at_Gauss_pt = traction;
 	  double w,area_at_Gauss_pt;
 	  if(Normals_at_Gauss_pts.size()>0) {
-	    if(Normals_at_Gauss_pts.size()!=g_dim) {
+	    if(Normals_at_Gauss_pts.size()!=(unsigned int)g_dim) {
 	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    }
 	    area_at_Gauss_pt = cblas_dnrm2(3,Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
