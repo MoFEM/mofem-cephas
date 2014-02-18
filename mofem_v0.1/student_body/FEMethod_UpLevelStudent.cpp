@@ -786,8 +786,10 @@ PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_App
       cblas_dgemm(
 	CblasRowMajor,CblasTrans,CblasNoTrans,
 	3,_diffNMatrix_.size2(),3,1.,
-	&*_invH_.data().begin(),3,&_diffNMatrix_.data()[rank*_diffNMatrix_.size2()*rr],_diffNMatrix_.size2(),
-	0.,&_diffNMatrix__.data()[rank*_diffNMatrix__.size2()*rr],_diffNMatrix__.size2()); 
+	&*_invH_.data().begin(),3,
+	&_diffNMatrix_.data()[rank*_diffNMatrix_.size2()*rr],_diffNMatrix_.size2(),
+	0.,
+	&_diffNMatrix__.data()[rank*_diffNMatrix__.size2()*rr],_diffNMatrix__.size2()); 
     }
     ublas::noalias(_diffNMatrix_) = _diffNMatrix__;
   }

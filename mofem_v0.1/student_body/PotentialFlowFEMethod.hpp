@@ -92,18 +92,30 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
     vector<vector<DofIdx> > RowGlobDofs,ColGlobDofs;
     vector<vector< ublas::matrix<FieldData> > > diffRowNMatrix,diffColNMatrix;
 
+    vector< ublas::matrix<FieldData> > invH;
+    vector< FieldData > detH;
+
     PetscErrorCode get_ShapeFunctionsAndIndices() {
       PetscFunctionBegin;
 
+      //Higher order approximation of geometry
+      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
+      //
       RowGlobDofs.resize(1+6+4+1);
       diffRowNMatrix.resize(1+6+4+1);
       ierr = GetRowGlobalIndices("POTENTIAL_FIELD",RowGlobDofs[0]); CHKERRQ(ierr);
       ierr = GetGaussRowDiffNMatrix("POTENTIAL_FIELD",diffRowNMatrix[0]); CHKERRQ(ierr);
+      //HO gemometry
+      ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(1,invH,diffRowNMatrix[0]); CHKERRQ(ierr);
+      //
       int ee = 0;
       for(;ee<6;ee++) {
 	ierr = GetRowGlobalIndices("POTENTIAL_FIELD",MBEDGE,RowGlobDofs[1+ee],ee); CHKERRQ(ierr);
 	if(RowGlobDofs[1+ee].size()>0) {
 	  ierr = GetGaussRowDiffNMatrix("POTENTIAL_FIELD",MBEDGE,diffRowNMatrix[1+ee],ee); CHKERRQ(ierr);
+	  //HO gemometry
+	  ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(1,invH,diffRowNMatrix[1+ee]); CHKERRQ(ierr);
+	  //
 	} 
       }
       int ff = 0;
@@ -111,22 +123,34 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	ierr = GetRowGlobalIndices("POTENTIAL_FIELD",MBTRI,RowGlobDofs[1+6+ff],ff); CHKERRQ(ierr);
 	if(RowGlobDofs[1+6+ff].size()>0) {
 	  ierr = GetGaussRowDiffNMatrix("POTENTIAL_FIELD",MBTRI,diffRowNMatrix[1+6+ff],ff); CHKERRQ(ierr);
+	  //HO gemometry
+	  ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(1,invH,diffRowNMatrix[1+6+ff]); CHKERRQ(ierr);
+	  //
 	}
       }
       ierr = GetRowGlobalIndices("POTENTIAL_FIELD",MBTET,RowGlobDofs[1+6+4]); CHKERRQ(ierr);
       if(RowGlobDofs[1+6+4].size()>0) {
 	ierr = GetGaussRowDiffNMatrix("POTENTIAL_FIELD",MBTET,diffRowNMatrix[1+6+4]); CHKERRQ(ierr);
+	//HO gemometry
+	ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(1,invH,diffRowNMatrix[1+6+4]); CHKERRQ(ierr);
+	//
       }
 
       ColGlobDofs.resize(1+6+4+1);
       diffColNMatrix.resize(1+6+4+1);
       ierr = GetColGlobalIndices("POTENTIAL_FIELD",ColGlobDofs[0]); CHKERRQ(ierr);
       ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",diffColNMatrix[0]); CHKERRQ(ierr);
+      //HO gemometry
+      ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(1,invH,diffColNMatrix[0]); CHKERRQ(ierr);
+      //
       ee = 0;
       for(;ee<6;ee++) {
 	ierr = GetColGlobalIndices("POTENTIAL_FIELD",MBEDGE,ColGlobDofs[1+ee],ee); CHKERRQ(ierr);
 	if(ColGlobDofs[1+ee].size()>0) {
 	  ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",MBEDGE,diffColNMatrix[1+ee],ee); CHKERRQ(ierr);
+	  //HO gemometry
+	  ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(1,invH,diffColNMatrix[1+ee]); CHKERRQ(ierr);
+	  //
 	} 
       }
       ff = 0;
@@ -134,11 +158,17 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	ierr = GetColGlobalIndices("POTENTIAL_FIELD",MBTRI,ColGlobDofs[1+6+ff],ff); CHKERRQ(ierr);
 	if(ColGlobDofs[1+6+ff].size()>0) {
 	  ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",MBTRI,diffColNMatrix[1+6+ff],ff); CHKERRQ(ierr);
+	  //HO gemometry
+	  ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(1,invH,diffColNMatrix[1+6+ff]); CHKERRQ(ierr);
+	  //
 	}
       }
       ierr = GetColGlobalIndices("POTENTIAL_FIELD",MBTET,ColGlobDofs[1+6+4]); CHKERRQ(ierr);
       if(ColGlobDofs[1+6+4].size()>0) {
 	ierr = GetGaussColDiffNMatrix("POTENTIAL_FIELD",MBTET,diffColNMatrix[1+6+4]); CHKERRQ(ierr);
+	//HO gemometry
+	ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(1,invH,diffColNMatrix[1+6+4]); CHKERRQ(ierr);
+	//
       }
 
       PetscFunctionReturn(0);
@@ -155,7 +185,11 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	  K.resize(RowGlobDofs[rr].size(),ColGlobDofs[cc].size());
 	  for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) {
 	    ublas::noalias(K) = prod( trans(diffRowNMatrix[rr][gg]),diffColNMatrix[cc][gg] ); 
-	    K *= a*V*G_TET_W[gg];
+	    if(detH.size()==0) {
+	      K *= a*V*G_TET_W[gg];
+	    } else {
+	      K *= a*V*detH[gg]*G_TET_W[gg];
+	    }
 	    ierr = MatSetValues(A,
 	      RowGlobDofs[rr].size(),&(RowGlobDofs[rr])[0],
 	      ColGlobDofs[cc].size(),&(ColGlobDofs[cc])[0],
@@ -207,13 +241,6 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	  } 
 	}
 
-	double flux = 0;
-	if( (it->get_CubitBCType()&Cubit_BC_bitset(PressureSet)).any() ) {
-	  pressure_cubit_bc_data mydata;
-	  ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-	  flux = mydata.data.value1;
-	}
-
 	SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
 	SideNumber_multiIndex::nth_index<1>::type::iterator sit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
 	SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
@@ -237,6 +264,17 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	  ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > normal(3);
 	  ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
 	  double area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
+
+	  //higher order face shape
+	  vector< ublas::vector<FieldData> > Normals_at_Gauss_pts;
+	  ierr = GetHierarchicalGeometryApproximation_FaceNormal(siit->ent,Normals_at_Gauss_pts);  CHKERRQ(ierr);
+
+	  double flux = 0;
+	  if( (it->get_CubitBCType()&Cubit_BC_bitset(PressureSet)).any() ) {
+	    pressure_cubit_bc_data mydata;
+	    ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+	    flux = mydata.data.value1;
+	  }
 
 	  if( name == "NormalVelocity" ) {
 	    flux = -inner_prod(body_velocity,normal)/(2*area);
@@ -271,8 +309,15 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	  //nodes
 	  ublas::vector<FieldData> f_ext_nodes = ublas::zero_vector<FieldData>(FaceNMatrix_nodes[0].size2());
 	  int g_dim = get_dim_gNTRI();
-	  for(int gg = 0;gg<g_dim;gg++) {
-	    double w = flux*area*G_TRI_W[gg];
+	  for(int gg = 0;gg<g_dim;gg++) {    
+	    double w;
+	    if(Normals_at_Gauss_pts.size()>0) {
+	      double area = cblas_dnrm2(3,&*Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
+	      if( name == "NormalVelocity" ) {
+		flux = -inner_prod(body_velocity,Normals_at_Gauss_pts[gg])/(2*area);
+	      }
+	    }
+	    w = flux*area*G_TRI_W[gg];
 	    f_ext_nodes += w*ublas::matrix_row<ublas::matrix<FieldData> >(FaceNMatrix_nodes[gg],0);
 	  }
 	  ierr = VecSetValues(F,RowGlob_nodes.size(),&(RowGlob_nodes)[0],&(f_ext_nodes.data())[0],ADD_VALUES); CHKERRQ(ierr);
@@ -285,7 +330,14 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	      vector<ublas::matrix<FieldData> >& FaceNMatrix_edge = FaceNMatrix_edges[siiit->side_number];
 	      ublas::vector<FieldData> f_ext_edges = ublas::zero_vector<FieldData>(FaceNMatrix_edge[0].size2());
 	      for(int gg = 0;gg<g_dim;gg++) {
-		double w = flux*area*G_TRI_W[gg];
+		double w;
+		if(Normals_at_Gauss_pts.size()>0) {
+		  double area = cblas_dnrm2(3,&*Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
+		  if( name == "NormalVelocity" ) {
+		    flux = -inner_prod(body_velocity,Normals_at_Gauss_pts[gg])/(2*area);
+		  }
+		}
+		w = flux*area*G_TRI_W[gg];
 		f_ext_edges += w*ublas::matrix_row<ublas::matrix<FieldData> >(FaceNMatrix_edge[gg],0);
 	      }
 	      if(RowGlob_edge.size()!=f_ext_edges.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_edge.size()!=f_ext_edges.size()");
@@ -297,7 +349,14 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	  if(RowGlob_face.size()>0) {
 	    ublas::vector<FieldData> f_ext_faces = ublas::zero_vector<FieldData>(FaceNMatrix_face[0].size2());
 	    for(int gg = 0;gg<g_dim;gg++) {
-	      double w = flux*area*G_TRI_W[gg];
+	      double w;
+	      if(Normals_at_Gauss_pts.size()>0) {
+		double area = cblas_dnrm2(3,&*Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
+		if( name == "NormalVelocity" ) {
+		  flux = -inner_prod(body_velocity,Normals_at_Gauss_pts[gg])/(2*area);
+		}
+	      }
+	      w = flux*area*G_TRI_W[gg];
 	      f_ext_faces += w*ublas::matrix_row<ublas::matrix<FieldData> >(FaceNMatrix_face[gg],0);
 	    }
 	    if(RowGlob_face.size()!=f_ext_faces.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_face.size()!=f_ext_faces.size()");
@@ -399,6 +458,8 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
     vector<vector<DofIdx> > RowGlobDofs;
     vector<vector< ublas::matrix<FieldData> > > RowNMatrix;
     vector< ublas::matrix<FieldData> > negativeVelocities;
+    vector< ublas::matrix<FieldData> > invH;
+    vector< FieldData > detH;
     
     PetscErrorCode get_ShapeFunctionsAndIndices() {
       PetscFunctionBegin;
@@ -409,6 +470,9 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
 	RowGlobDofs[rr].resize(0);
       }
 
+      //Higher order approximation of geometry
+      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
+      //
       switch(pressure_space) {
 	case L2:
 	  ierr = GetRowGlobalIndices("PRESSURE_FIELD",MBTET,RowGlobDofs[1+6+4]); CHKERRQ(ierr);
@@ -445,6 +509,12 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
 
       ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",negativeVelocities); CHKERRQ(ierr);
 
+      if(invH.size()>0) {
+	for(int gg = 0;gg<negativeVelocities.size();gg++) {
+	  negativeVelocities[gg] = prod( trans( invH[gg] ), trans(negativeVelocities[gg]) ); 
+	}
+      }
+
       PetscFunctionReturn(0);
     }
 
@@ -460,7 +530,11 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  K.resize(RowGlobDofs[rr].size(),RowGlobDofs[cc].size());
 	  for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) {
 	    ublas::noalias(K) = prod( trans(RowNMatrix[rr][gg]),RowNMatrix[cc][gg] ); 
-	    K *= V*G_TET_W[gg];
+	    if(detH.size()>0) {
+	      K *= detH[gg]*V*G_TET_W[gg];
+	    } else {
+	      K *= V*G_TET_W[gg];
+	    }
 	    ierr = MatSetValues(A,
 	      RowGlobDofs[rr].size(),&(RowGlobDofs[rr])[0],
 	      RowGlobDofs[cc].size(),&(RowGlobDofs[cc])[0],
@@ -488,7 +562,11 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  ierr = compute_pressure(0,0,velocities,pressure); CHKERRQ(ierr);
 	  //cerr << pressure << endl;
 	  for(unsigned int dd = 0;dd<RowGlobDofs[rr].size();dd++) {
-	    f[dd] += V*G_TET_W[gg]*(RowNMatrix[rr][gg])(0,dd)*pressure;
+	    if(detH.size()>0) {
+	      f[dd] += detH[gg]*V*G_TET_W[gg]*(RowNMatrix[rr][gg])(0,dd)*pressure;
+	    } else {
+	      f[dd] += V*G_TET_W[gg]*(RowNMatrix[rr][gg])(0,dd)*pressure;
+	    }
 	  }
 	  if(f.size()!=RowGlobDofs[rr].size()) {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -607,9 +685,13 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
 	  double area = ublas::norm_2(normal)*0.5;
 	  normal /= ublas::norm_2(normal);
-	  //normal *= siit->sense
+
 	  rval = moab.tag_set_data(th_normal,&(siit->ent),1,&*normal.data().begin()); CHKERR_PETSC(rval);
 	  rval = moab.add_entities(out_meshset,&(siit->ent),1); CHKERR_PETSC(rval);
+
+	  //higher order face shape
+	  vector< ublas::vector<FieldData> > Normals_at_Gauss_pts;
+	  ierr = GetHierarchicalGeometryApproximation_FaceNormal(siit->ent,Normals_at_Gauss_pts);  CHKERRQ(ierr);
 
 	  vector<ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > > coords_at_gauss_points;
 	  int g_dim = get_dim_gNTRI();
@@ -622,12 +704,19 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  }
 
 	  vector<ublas::vector<FieldData> > pressure_at_gauss_points;
-	  Data_at_FaceGaussPoints(siit->ent,"PRESSURE_FIELD",pressure_at_gauss_points);
+	  ierr = Data_at_FaceGaussPoints(siit->ent,"PRESSURE_FIELD",pressure_at_gauss_points); CHKERRQ(ierr);
 
 	  for(int gg = 0;gg<g_dim;gg++) {
 	    double w = G_TRI_W[gg];
 	    //cerr << pressure_at_gauss_points[gg] << endl;
-	    faces_force[siit->side_number] += w*pressure_at_gauss_points[gg][0]*normal*area;
+	    if(Normals_at_Gauss_pts.size()>0) {
+	      ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > normal = Normals_at_Gauss_pts[gg];
+	      double area = ublas::norm_2(normal)*0.5;
+	      normal /= ublas::norm_2(normal);
+	      faces_force[siit->side_number] += w*pressure_at_gauss_points[gg][0]*normal*area;
+	    } else {
+	      faces_force[siit->side_number] += w*pressure_at_gauss_points[gg][0]*normal*area;
+	    }
 	  }
 
 	}

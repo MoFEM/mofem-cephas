@@ -151,9 +151,9 @@ static PetscErrorCode StrainEnergy_Hooke(double lambda,double mu,__CLPK_doubleco
       } else {
 	epsilon = 0.5*(epsilon+xF[jj*3+ii].r + I*xF[jj*3+ii].i);
       }
-      Psi += mu*epsilon*epsilon; 
+      Psi += mu*epsilon*epsilon; // Psi = mu*(epsilon_ij)^2
   }}
-  Psi += 0.5*lambda*tr_epsilon*tr_epsilon;
+  Psi += 0.5*lambda*tr_epsilon*tr_epsilon; // Psi = 0.5*lambda*tr(epsilon)
   (*xPsi).r = creal(Psi);
   (*xPsi).i = cimag(Psi);
   PetscFunctionReturn(0);
@@ -173,14 +173,14 @@ static PetscErrorCode PiolaKirhoiff2_Hooke(double lambda,double mu,__CLPK_double
       } else {
 	epsilon = 0.5*(epsilon+xF[jj*3+ii].r + I*xF[jj*3+ii].i);
       }
-      double complex stress = 2*mu*epsilon;
+      double complex stress = 2*mu*epsilon; // sigma_ij = 2*mu*epsilon_ij
       xS[3*ii+jj].r = creal(stress);
       xS[3*ii+jj].i = cimag(stress);
     }
   }
   ii = 0;
   for(;ii<3;ii++) {
-    xS[3*ii+ii].r += lambda*creal(tr_epsilon);
+    xS[3*ii+ii].r += lambda*creal(tr_epsilon); // sigma_ij = sigma_ij + lambda*tr(epsilon)*delta_ij
     xS[3*ii+ii].i += lambda*cimag(tr_epsilon);
   }
   PetscFunctionReturn(0);
