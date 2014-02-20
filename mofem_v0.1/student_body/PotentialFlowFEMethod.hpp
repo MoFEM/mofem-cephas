@@ -386,7 +386,7 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       PetscFunctionBegin;
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      vector<DofIdx> zero_pressure_dofs;
+      set<DofIdx> set_zero_pressure_dofs;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
 	std::size_t zeroPressureFound=it->get_Cubit_name().find("ZeroPressure");
 	if (zeroPressureFound==std::string::npos) continue;
@@ -405,21 +405,26 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 	for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
 	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
 	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
-	    zero_pressure_dofs.push_back(dof->get_petsc_gloabl_dof_idx());
+	    set_zero_pressure_dofs.insert(dof->get_petsc_gloabl_dof_idx());
 	}}
 	for(Range::iterator eit = edges.begin();eit!=edges.end();eit++) {
 	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*eit,dof)) {
 	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
-	    zero_pressure_dofs.push_back(dof->get_petsc_gloabl_dof_idx());
+	    set_zero_pressure_dofs.insert(dof->get_petsc_gloabl_dof_idx());
 	}}
 	for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
 	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*tit,dof)) {
 	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
-	    zero_pressure_dofs.push_back(dof->get_petsc_gloabl_dof_idx());
+	    set_zero_pressure_dofs.insert(dof->get_petsc_gloabl_dof_idx());
 	}}
       }
+      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      vector<DofIdx> zero_pressure_dofs;
+      zero_pressure_dofs.resize(set_zero_pressure_dofs.size());
+      copy(set_zero_pressure_dofs.begin(),set_zero_pressure_dofs.end(),zero_pressure_dofs.begin());
       ierr = MatZeroRowsColumns(A,zero_pressure_dofs.size(),&zero_pressure_dofs[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
@@ -439,14 +444,13 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
     FieldSpace pressure_space;
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      g_NTET.resize(45*4);
-      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      G_TET_W = G_TET_W45;
+      g_NTET.resize(84*4);
+      ShapeMBTET(&g_NTET[0],NC_TET_X84,NC_TET_Y84,NC_TET_Z84,84);
+      G_TET_W = NC_TET_W84;
       g_NTRI.resize(3*13);
       ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
       G_TRI_W = G_TRI_W13;
       ierr = VecSetOption(F,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
-
 
       MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find("PRESSURE_FIELD");
       if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
@@ -457,6 +461,10 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
 
     vector<vector<DofIdx> > RowGlobDofs;
     vector<vector< ublas::matrix<FieldData> > > RowNMatrix;
+    vector<vector<DofIdx> > ColGlobDofs;
+    vector<vector< ublas::matrix<FieldData> > > ColNMatrix;
+
+    vector< ublas::vector<FieldData> > materialCoords_at_Gauss_pts;
     vector< ublas::matrix<FieldData> > negativeVelocities;
     vector< ublas::matrix<FieldData> > invH;
     vector< FieldData > detH;
@@ -469,18 +477,26 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
       for(int rr= 0;rr<1+6+4+1;rr++) {
 	RowGlobDofs[rr].resize(0);
       }
+      ColGlobDofs.resize(1+6+4+1);
+      ColNMatrix.resize(1+6+4+1);
+      for(int cc= 0;cc<1+6+4+1;cc++) {
+	ColGlobDofs[cc].resize(0);
+      }
 
-      //Higher order approximation of geometry
-      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
-      //
+
       switch(pressure_space) {
 	case L2:
 	  ierr = GetRowGlobalIndices("PRESSURE_FIELD",MBTET,RowGlobDofs[1+6+4]); CHKERRQ(ierr);
 	  if(RowGlobDofs[1+6+4].size()>0) {
 	    ierr = GetGaussRowNMatrix("PRESSURE_FIELD",MBTET,RowNMatrix[1+6+4]); CHKERRQ(ierr);
 	  }
+	  ierr = GetColGlobalIndices("PRESSURE_FIELD",MBTET,ColGlobDofs[1+6+4]); CHKERRQ(ierr);
+	  if(ColGlobDofs[1+6+4].size()>0) {
+	    ierr = GetGaussColNMatrix("PRESSURE_FIELD",MBTET,ColNMatrix[1+6+4]); CHKERRQ(ierr);
+	  }
 	  break;
 	case H1: {
+	  //row
 	  ierr = GetRowGlobalIndices("PRESSURE_FIELD",RowGlobDofs[0]); CHKERRQ(ierr);
 	  ierr = GetGaussRowNMatrix("PRESSURE_FIELD",RowNMatrix[0]); CHKERRQ(ierr);
 	  int ee = 0;
@@ -501,18 +517,35 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  if(RowGlobDofs[1+6+4].size()>0) {
 	    ierr = GetGaussRowNMatrix("PRESSURE_FIELD",MBTET,RowNMatrix[1+6+4]); CHKERRQ(ierr);
 	  }
+	  //col
+	  ierr = GetColGlobalIndices("PRESSURE_FIELD",ColGlobDofs[0]); CHKERRQ(ierr);
+	  ierr = GetGaussColNMatrix("PRESSURE_FIELD",ColNMatrix[0]); CHKERRQ(ierr);
+	  ee = 0;
+	  for(;ee<6;ee++) {
+	    ierr = GetColGlobalIndices("PRESSURE_FIELD",MBEDGE,ColGlobDofs[1+ee],ee); CHKERRQ(ierr);
+	    if(ColGlobDofs[1+ee].size()>0) {
+	      ierr = GetGaussColNMatrix("PRESSURE_FIELD",MBEDGE,ColNMatrix[1+ee],ee); CHKERRQ(ierr);
+	    } 
+	  }
+	  ff = 0;
+	  for(;ff<4;ff++) {
+	    ierr = GetColGlobalIndices("PRESSURE_FIELD",MBTRI,ColGlobDofs[1+6+ff],ff); CHKERRQ(ierr);
+	    if(ColGlobDofs[1+6+ff].size()>0) {
+	      ierr = GetGaussColNMatrix("PRESSURE_FIELD",MBTRI,ColNMatrix[1+6+ff],ff); CHKERRQ(ierr);
+	    }
+	  }
+	  ierr = GetColGlobalIndices("PRESSURE_FIELD",MBTET,ColGlobDofs[1+6+4]); CHKERRQ(ierr);
+	  if(ColGlobDofs[1+6+4].size()>0) {
+	    ierr = GetGaussColNMatrix("PRESSURE_FIELD",MBTET,ColNMatrix[1+6+4]); CHKERRQ(ierr);
+	  }
 	}
 	break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
       }
 
-      ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",negativeVelocities); CHKERRQ(ierr);
-
       if(invH.size()>0) {
-	for(unsigned int gg = 0;gg<negativeVelocities.size();gg++) {
-	  negativeVelocities[gg] = prod( trans( invH[gg] ), trans(negativeVelocities[gg]) ); 
-	}
+	ierr = GetGaussDataVector("MESH_NODE_POSITIONS",materialCoords_at_Gauss_pts); CHKERRQ(ierr);
       }
 
       PetscFunctionReturn(0);
@@ -526,20 +559,22 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
       for(int rr = 0;rr<(1+6+4+1); rr++) {
 	if(RowGlobDofs[rr].size()==0) continue;
 	for(int cc = 0;cc<(1+6+4+1);cc++) {
-	  if(RowGlobDofs[cc].size()==0) continue;
-	  K.resize(RowGlobDofs[rr].size(),RowGlobDofs[cc].size());
+	  if(ColGlobDofs[cc].size()==0) continue;
+	  K.resize(RowGlobDofs[rr].size(),ColGlobDofs[cc].size());
+	  noalias(K) = ublas::zero_matrix<FieldData>(RowGlobDofs[rr].size(),ColGlobDofs[cc].size());
 	  for(unsigned int gg = 0;gg<g_NTET.size()/4;gg++) {
-	    ublas::noalias(K) = prod( trans(RowNMatrix[rr][gg]),RowNMatrix[cc][gg] ); 
+	    double w;
 	    if(detH.size()>0) {
-	      K *= detH[gg]*V*G_TET_W[gg];
+	      w = detH[gg]*V*G_TET_W[gg];
 	    } else {
-	      K *= V*G_TET_W[gg];
+	      w = V*G_TET_W[gg];
 	    }
-	    ierr = MatSetValues(A,
-	      RowGlobDofs[rr].size(),&(RowGlobDofs[rr])[0],
-	      RowGlobDofs[cc].size(),&(RowGlobDofs[cc])[0],
-	      &(K.data())[0],ADD_VALUES); CHKERRQ(ierr);
+	    ublas::noalias(K) += w*prod( trans(RowNMatrix[rr][gg]),ColNMatrix[cc][gg] ); 
 	  }
+	  ierr = MatSetValues(A,
+	      RowGlobDofs[rr].size(),&(RowGlobDofs[rr])[0],
+	      ColGlobDofs[cc].size(),&(ColGlobDofs[cc])[0],
+	      &(K.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
       }
 
@@ -548,6 +583,13 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
 
     PetscErrorCode compute_RHS() {
       PetscFunctionBegin;
+
+      ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",negativeVelocities); CHKERRQ(ierr);
+      if(invH.size()>0) {
+	for(unsigned int gg = 0;gg<negativeVelocities.size();gg++) {
+	  negativeVelocities[gg] = prod( trans( invH[gg] ), trans(negativeVelocities[gg]) ); 
+	}
+      }
 
       for(int rr = 0;rr<(1+6+4+1); rr++) {
 	if(RowGlobDofs[rr].size()==0) continue;
@@ -558,14 +600,14 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
 	  ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > velocities(3);
 	  velocities = -mr;
 	  //cerr << velocities << endl;
-	  FieldData pressure ;
-	  ierr = compute_pressure(0,0,velocities,pressure); CHKERRQ(ierr);
+	  FieldData pressure_at_gauss_point;
+	  ierr = compute_pressure(0,0,velocities,pressure_at_gauss_point); CHKERRQ(ierr);
 	  //cerr << pressure << endl;
 	  for(unsigned int dd = 0;dd<RowGlobDofs[rr].size();dd++) {
 	    if(detH.size()>0) {
-	      f[dd] += detH[gg]*V*G_TET_W[gg]*(RowNMatrix[rr][gg])(0,dd)*pressure;
+	      f[dd] += detH[gg]*V*G_TET_W[gg]*(RowNMatrix[rr][gg])(0,dd)*pressure_at_gauss_point;
 	    } else {
-	      f[dd] += V*G_TET_W[gg]*(RowNMatrix[rr][gg])(0,dd)*pressure;
+	      f[dd] += V*G_TET_W[gg]*(RowNMatrix[rr][gg])(0,dd)*pressure_at_gauss_point;
 	    }
 	  }
 	  if(f.size()!=RowGlobDofs[rr].size()) {
@@ -582,7 +624,12 @@ struct SteadyBernoullyElem: public FEMethod_UpLevelStudent,BernoullyEquations {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
+      //Higher order approximation of geometry
+      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
+      //
+
       ierr = get_ShapeFunctionsAndIndices(); CHKERRQ(ierr);
+
       ierr = compute_LHS(); CHKERRQ(ierr);
       ierr = compute_RHS(); CHKERRQ(ierr);
 
@@ -710,10 +757,10 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 	    double w = G_TRI_W[gg];
 	    //cerr << pressure_at_gauss_points[gg] << endl;
 	    if(Normals_at_Gauss_pts.size()>0) {
-	      ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > normal = Normals_at_Gauss_pts[gg];
-	      double area = ublas::norm_2(normal)*0.5;
-	      normal /= ublas::norm_2(normal);
-	      faces_force[siit->side_number] += w*pressure_at_gauss_points[gg][0]*normal*area;
+	      ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > _normal_ = Normals_at_Gauss_pts[gg];
+	      double _area_ = ublas::norm_2(_normal_)*0.5;
+	      _normal_ /= ublas::norm_2(_normal_);
+	      faces_force[siit->side_number] += w*pressure_at_gauss_points[gg][0]*_normal_*_area_;
 	    } else {
 	      faces_force[siit->side_number] += w*pressure_at_gauss_points[gg][0]*normal*area;
 	    }
@@ -729,6 +776,7 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
+
     ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
     vector<ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > > faces_force;
@@ -749,8 +797,8 @@ struct SurfaceForces: public FEMethod_UpLevelStudent,BernoullyEquations {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    ierr = VecGhostUpdateBegin(total_Force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(total_Force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(total_Force,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(total_Force,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(total_Force); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(total_Force); CHKERRQ(ierr);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -808,11 +856,17 @@ struct PostProcPotentialFlowOnRefMesh: public PostProcDisplacemenysAndStarinOnRe
       PetscFunctionReturn(0);
     }
 
+  vector< ublas::matrix<FieldData> > invH;
+  vector< FieldData > detH;
+
   PetscErrorCode operator()() {
     PetscFunctionBegin;
 
     //Loop over elements
     ierr = do_operator(); CHKERRQ(ierr);
+
+    //Higher order approximation of geometry
+    ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
 
     //Strains to Nodes in PostProc Mesh: create vector containing matrices
     vector< ublas::matrix< FieldData > > negativeVelocities;
@@ -828,7 +882,8 @@ struct PostProcPotentialFlowOnRefMesh: public PostProcDisplacemenysAndStarinOnRe
       
       int gg = distance(node_map.begin(),mit);
 
-      negativeVelocities[gg] *= -1;
+      negativeVelocities[gg] = -prod( trans( invH[gg] ), trans(negativeVelocities[gg]) );
+
       rval = moab_post_proc.tag_set_data(th_u,&mit->second,1,&(negativeVelocities[gg].data()[0])); CHKERR_PETSC(rval);
       rval = moab_post_proc.tag_set_data(th_phi,&mit->second,1,&(phi[gg].data()[0])); CHKERR_PETSC(rval);
       rval = moab_post_proc.tag_set_data(th_p,&mit->second,1,&(p[gg].data()[0])); CHKERR_PETSC(rval);
