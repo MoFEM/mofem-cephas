@@ -64,6 +64,9 @@ target_link_libraries(projection_from_10node_tet_atom mofem_student_body mofem_F
 add_executable(loops_atom_test loops_atom_test.cpp)
 target_link_libraries(loops_atom_test mofem_Field ${PROJECT_LIBS})
 
+add_executable(field_functions_atom_test field_functions_atom_test.cpp)
+target_link_libraries(field_functions_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)
