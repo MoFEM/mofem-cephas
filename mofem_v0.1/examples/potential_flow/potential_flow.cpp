@@ -23,6 +23,7 @@
 #include "PotentialFlowFEMethod.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
+#include "Projection10NodeCoordsOnField.hpp"
 
 using namespace MoFEM;
 
@@ -76,6 +77,7 @@ int main(int argc, char *argv[]) {
   //add filds
   ierr = mField.add_field("POTENTIAL_FIELD",H1,1); CHKERRQ(ierr);
   ierr = mField.add_field("PRESSURE_FIELD",H1,1); CHKERRQ(ierr);
+  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
   //add finite elements
   ierr = mField.add_finite_element("LAPLACIAN_ELEM"); CHKERRQ(ierr);
@@ -83,12 +85,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_col("LAPLACIAN_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("LAPLACIAN_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("LAPLACIAN_ELEM","PRESSURE_FIELD"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("LAPLACIAN_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   ierr = mField.add_finite_element("PRESSURE_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("PRESSURE_ELEM","PRESSURE_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("PRESSURE_ELEM","PRESSURE_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("PRESSURE_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("PRESSURE_ELEM","PRESSURE_FIELD"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("PRESSURE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //add problems 
   ierr = mField.add_problem("LAPLACIAN_PROBLEM"); CHKERRQ(ierr);
@@ -108,6 +112,7 @@ int main(int argc, char *argv[]) {
       //add ents to field and set app. order_laplacian
       ierr = mField.add_ents_to_field_by_TETs(it->meshset,"POTENTIAL_FIELD"); CHKERRQ(ierr);
       ierr = mField.add_ents_to_field_by_TETs(it->meshset,"PRESSURE_FIELD"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
       //add finite elements entities
       ierr = mField.add_ents_to_finite_element_by_TETs(it->meshset,"LAPLACIAN_ELEM",true); CHKERRQ(ierr);
@@ -126,6 +131,11 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"PRESSURE_FIELD",order_pressure); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"PRESSURE_FIELD",order_pressure); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTET,"PRESSURE_FIELD",order_pressure); CHKERRQ(ierr);
+  //
+  ierr = mField.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   //set problem level
   ierr = mField.modify_problem_ref_level_add_bit("LAPLACIAN_PROBLEM",bit_level0); CHKERRQ(ierr);
@@ -153,6 +163,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
 
   //**** solve lapalacian problem ****
+
+  Projection10NodeCoordsOnField ent_method_material(mField,"MESH_NODE_POSITIONS");
+  ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   //create matrices and vectors
   Vec F_Laplacian,D_Laplacian;
@@ -195,18 +208,23 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D_Laplacian); CHKERRQ(ierr);
   ierr = MatDestroy(&A_Laplacian); CHKERRQ(ierr);
 
-  Tag th_phi;
-  double def_val = 0;
+  //double def_val = 0;
+  /*Tag th_phi;
   rval = moab.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"POTENTIAL_FIELD",dof)) {
     EntityHandle ent = dof->get_ent();
     double val = dof->get_FieldData();
     rval = moab.tag_set_data(th_phi,&ent,1,&val); CHKERR_PETSC(rval);
-  }
+  }*/
 
   /*if(pcomm->rank()==0) {
     rval = moab.write_file("solution_laplacian.h5m"); CHKERR_PETSC(rval);
   }*/
+
+  ProjectionFieldOn10NodeTet ent_method_phi_on_10nodeTet(mField,"POTENTIAL_FIELD",true,false,"PHI");
+  ierr = mField.loop_dofs("POTENTIAL_FIELD",ent_method_phi_on_10nodeTet); CHKERRQ(ierr);
+  ent_method_phi_on_10nodeTet.set_nodes = false;
+  ierr = mField.loop_dofs("POTENTIAL_FIELD",ent_method_phi_on_10nodeTet); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -266,17 +284,25 @@ int main(int argc, char *argv[]) {
   SurfaceForces forces_from_pressures(mField);
   Vec total_forces;
   ierr = forces_from_pressures.create_totalForceVector(&total_forces); CHKERRQ(ierr);
+  ierr = VecZeroEntries(total_forces); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(total_forces,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(total_forces,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("PRESSURE_PROBLEM","PRESSURE_ELEM",forces_from_pressures);  CHKERRQ(ierr);
   ierr = VecView(total_forces,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecDestroy(&total_forces); CHKERRQ(ierr);
 
-  Tag th_p;
+  /*Tag th_p;
   rval = moab.tag_get_handle("P",1,MB_TYPE_DOUBLE,th_p,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"PRESSURE_FIELD",dof)) {
     EntityHandle ent = dof->get_ent();
     double val = dof->get_FieldData();
     rval = moab.tag_set_data(th_p,&ent,1,&val); CHKERR_PETSC(rval);
-  }
+  }*/
+
+  ProjectionFieldOn10NodeTet ent_method_p_on_10nodeTet(mField,"PRESSURE_FIELD",true,false,"P");
+  ierr = mField.loop_dofs("PRESSURE_FIELD",ent_method_p_on_10nodeTet); CHKERRQ(ierr);
+  ent_method_p_on_10nodeTet.set_nodes = false;
+  ierr = mField.loop_dofs("PRESSURE_FIELD",ent_method_p_on_10nodeTet); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -286,9 +312,9 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  if(pcomm->rank()==0) {
-    rval = moab.write_file("solution_pressure.h5m"); CHKERR_PETSC(rval);
-  }
+  //if(pcomm->rank()==0) {
+    //rval = moab.write_file("solution_pressure.h5m"); CHKERR_PETSC(rval);
+  //}
 
 
   /*PostProcPotentialFlowOnRefMesh post_proc_on_ref_mesh(moab);
@@ -297,6 +323,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     rval = post_proc_on_ref_mesh.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }*/
+
 
   PetscFinalize();
 

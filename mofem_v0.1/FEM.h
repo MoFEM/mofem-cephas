@@ -92,10 +92,12 @@ PetscErrorCode Spin(double *spinOmega,double *vecOmega);
 /// Compose complex matrix (3x3) from two real matrices
 PetscErrorCode make_complex_matrix(double *reA,double *imA,__CLPK_doublecomplex *xA);
 /// Complex normal
-PetscErrorCode Normal_hierarchical(int order,int *order_edge,
+PetscErrorCode Normal_hierarchical(
+  int order_approx,int *order_edge_approx,
+  int order,int *order_edge,
   double *diffN,double *diffN_face,double *diffN_edge[],
-  double *dofs_x,double *dofs_x_edge[],double *dofs_x_face,
-  double *idofs_x,double *idofs_x_edge[],double *idofs_x_face,
+  double *dofs,double *dofs_edge[],double *dofs_face,
+  double *idofs,double *idofs_edge[],double *idofs_face,
     __CLPK_doublecomplex *xnormal,
     __CLPK_doublecomplex *s1,
     __CLPK_doublecomplex *s2,
@@ -123,6 +125,19 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
  * \param dim dimension
  */
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
+
+//10 Node Tet
+
+PetscErrorCode ShapeMBTRIQ_GAUSS(double *N,const double *X,const double *Y,const int G_DIM);
+PetscErrorCode ShapeMBTRIQ(double *N,const double x,const double y);
+PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double x,const double y);
+PetscErrorCode ShapeMBTETQ(double *N,const double x,const double y,const double z);
+PetscErrorCode ShapeDiffMBTETQ(double *diffN,const double x,const double y,const double z);
+PetscErrorCode ShapeMBTETQ_GAUSS(double *N,const double *X,const double *Y,const double *Z,const int G_DIM);
+PetscErrorCode ShapeDiffMBTETQ_GAUSS(double *diffN,const double *X,const double *Y,const double *Z,const int G_DIM);
+PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *Jac);
+PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points,const double *diffN,const double *coords,int G_DIM);
+double Shape_intVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W);
 
 //complex part
 void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLPK_doublecomplex *diffNinvJac,const enum CBLAS_TRANSPOSE Trans);

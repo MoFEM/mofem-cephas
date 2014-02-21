@@ -1,5 +1,5 @@
 /** \file BCMultiIndices.hpp
- * \brief Multi-index containers, data structures and other low-level functions
+ * \brief Multi-index containers, data boundary data structures and other low-level functions
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *

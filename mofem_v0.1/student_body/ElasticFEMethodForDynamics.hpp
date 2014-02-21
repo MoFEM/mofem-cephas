@@ -133,7 +133,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 
 	ierr = bc->f_CalcTraction(ts_t,traction); CHKERRQ(ierr);
 
-	ierr = NeumannBC_Faces(F,traction,faces); CHKERRQ(ierr);
+	ierr = NeumannBC_Faces(F,0,traction,faces); CHKERRQ(ierr);
 
       }
 

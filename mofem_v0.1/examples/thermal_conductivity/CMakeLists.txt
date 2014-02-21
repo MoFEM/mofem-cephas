@@ -22,5 +22,12 @@ target_link_libraries(thermal_conductivity mofem_student_body mofem_Field ${PROJ
 cm_export_file("../../meshes/Thermal_Exp1.cub" export_thermal_conductivity)
 cm_export_file("../../meshes/cub_thermal_problem.cub" export_thermal_conductivity)
 
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/thermal_problem.sh.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/thermal_problem.sh"
+  @ONLY
+  )
+
 install(TARGETS thermal_conductivity DESTINATION bin)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/thermal_problem.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 

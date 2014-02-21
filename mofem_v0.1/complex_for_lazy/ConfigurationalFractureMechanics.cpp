@@ -40,11 +40,33 @@ struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
   
 struct NL_MaterialFEMethod: public FEMethod_DriverComplexForLazy_Material {
   
-    NL_MaterialFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+  NL_MaterialFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
         FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
         FEMethod_DriverComplexForLazy_Material(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
       set_PhysicalEquationNumber(eq_solid);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*snes_B); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
+    PetscFunctionReturn(0);
+  }
+
   
   };
   
@@ -172,7 +194,9 @@ struct NL_MaterialFEMethodCoupled: public FEMethod_DriverComplexForLazy_CoupledM
     PetscFunctionBegin;
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
-    ierr = GetData(dofs_x_edge_data,dofs_x_edge,
+    ierr = GetData(
+	order_x_edges,order_x_faces,order_x_volume,
+	dofs_x_edge_data,dofs_x_edge,
 	dofs_x_face_data,dofs_x_face,
 	dofs_x_volume,dofs_x,
 	spatial_field_name); CHKERRQ(ierr);
@@ -1763,7 +1787,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_material_problem(FieldInt
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,snes_x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_global_VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,snes_x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
   };

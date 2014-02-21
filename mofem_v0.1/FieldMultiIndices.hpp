@@ -1,5 +1,5 @@
-/** \file common.hpp
- * \brief Myltindex containes, data structures and other low-level functions 
+/** \file FieldMultiIndices.hpp 
+ * \brief Myltindex containes, for mofem fields data structures and other low-level functions 
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *
@@ -26,7 +26,10 @@
 
 namespace MoFEM {
 
-/// \brief keeps data about field
+/** 
+  * \brief keeps data about field
+  *
+  */
 struct MoFEMField {
   EntityHandle meshset; 		///< keeps entities for this meshset
   Tag th_FieldData,th_AppOrder;

@@ -31,9 +31,9 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
   FEMethod_ComplexForLazy &fe_method;
 
-  Tag th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp;
+  Tag th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions;
   PostProcStressNonLinearElasticity(Interface& _moab,FEMethod_ComplexForLazy &_fe_method): 
-    PostProcDisplacementsOnRefMesh(_moab,"SPATIAL_POSITION"),fe_method(_fe_method) {
+    PostProcDisplacementsOnRefMesh(_moab,_fe_method.spatial_field_name),fe_method(_fe_method) {
 
     double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0 };
     rval = moab_post_proc.tag_get_handle("CAUCHY_STRESS_VAL",9,MB_TYPE_DOUBLE,th_cauchy_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
@@ -42,6 +42,8 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
     rval = moab_post_proc.tag_get_handle("PSI_VAL",1,MB_TYPE_DOUBLE,th_psi,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("J_VAL",1,MB_TYPE_DOUBLE,th_j,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("TEMPERATURE_VAL",1,MB_TYPE_DOUBLE,th_themp,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+
+    rval = moab_post_proc.tag_get_handle("MESH_NODAL_POSITIONS_VAL",3,MB_TYPE_DOUBLE,th_positions,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
   }
 
@@ -69,10 +71,24 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       fe_method.g_NTET = g_NTET;
 
       ierr = fe_method.OpComplexForLazyStart(); CHKERRQ(ierr);
-      ierr = fe_method.GetData(fe_method.dofs_x_edge_data,fe_method.dofs_x_edge,
+      ierr = fe_method.GetData(
+	fe_method.order_x_edges,fe_method.order_x_faces,fe_method.order_x_volume,
+	fe_method.dofs_x_edge_data,fe_method.dofs_x_edge,
 	fe_method.dofs_x_face_data,fe_method.dofs_x_face,
 	fe_method.dofs_x_volume,fe_method.dofs_x,
 	fe_method.spatial_field_name); CHKERRQ(ierr);
+      //for(int ee = 0;ee<6;ee++) {
+	//cout << "ee " << ee << " spatial " << fe_method.dofs_x_edge_data[ee] << endl;
+      //}
+      ierr = fe_method.GetData(
+	fe_method.order_X_edges,fe_method.order_X_faces,fe_method.order_X_volume,
+	fe_method.dofs_X_edge_data,fe_method.dofs_X_edge,
+	fe_method.dofs_X_face_data,fe_method.dofs_X_face,
+	fe_method.dofs_X_volume,fe_method.dofs_X,
+	fe_method.material_field_name); CHKERRQ(ierr);
+      //for(int ee = 0;ee<6;ee++) {
+	//cout << "ee " << ee << " material " << fe_method.dofs_X_edge_data[ee] << endl;
+      //}
 
       int ee = 0;
       for(;ee<6;ee++) {
@@ -106,11 +122,10 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       fe_method.diff_volumeNinvJac = &fe_method.diffH1elemNinvJac[0];
       fe_method.volumeN = &fe_method.H1elemN[0];
 
-      ierr = fe_method.GetDofs_X_FromElementData(); CHKERRQ(ierr);
       ierr = fe_method.GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
 
       double _lambda,_mu,_thermal_expansion;
-      ierr = fe_method.GetMatParameters(&_lambda,&_mu,&_thermal_expansion,fe_method.ptr_matctx); CHKERRQ(ierr);
+      ierr = fe_method.GetMatParameters(&_lambda,&_mu,&_thermal_expansion,&fe_method.ptr_matctx); CHKERRQ(ierr);
 
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
       int gg =0;
@@ -123,10 +138,13 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	int order_T_volume = 0;
 
 	ierr = Calulate_Stresses_at_GaussPoint(
-	      &fe_method.order_edges[0],&fe_method.order_faces[0],fe_method.order_volume,fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 
+	      &fe_method.maxOrderEdgeH1[0],&fe_method.maxOrderFaceH1[0],fe_method.maxOrderElemH1,
+	      &fe_method.order_X_edges[0],&fe_method.order_X_faces[0],fe_method.order_X_volume,
+	      &fe_method.order_x_edges[0],&fe_method.order_x_faces[0],fe_method.order_x_volume,
+	      fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 
 	      &fe_method.diffNTETinvJac[0],&fe_method.diff_edgeNinvJac[0],&fe_method.diff_faceNinvJac[0],fe_method.diff_volumeNinvJac, 
-	      &fe_method.dofs_X.data()[0],&*fe_method.dofs_x.data().begin(),
-	      &fe_method.dofs_x_edge[0],&fe_method.dofs_x_face[0],&*fe_method.dofs_x_volume.data().begin(), 
+	      &fe_method.dofs_X.data()[0],&fe_method.dofs_X_edge[0],&fe_method.dofs_X_face[0],&*fe_method.dofs_X_volume.data().begin(), 
+	      &*fe_method.dofs_x.data().begin(),&fe_method.dofs_x_edge[0],&fe_method.dofs_x_face[0],&*fe_method.dofs_x_volume.data().begin(), 
 	      //temperature
 	      _thermal_expansion,1,
 	      &g_NTET[0],&fe_method.edgeN[0],&fe_method.faceN[0],fe_method.volumeN,
@@ -140,6 +158,17 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	rval = moab_post_proc.tag_set_data(th_psi,&mit->second,1,&Psi); CHKERR_PETSC(rval);
 	rval = moab_post_proc.tag_set_data(th_j,&mit->second,1,&J); CHKERR_PETSC(rval);
 	rval = moab_post_proc.tag_set_data(th_themp,&mit->second,1,&themp); CHKERR_PETSC(rval);
+
+	//Get mesh nodal positions at Gauss points
+	H1L2_Data_at_Gauss_pt::iterator diit = h1l2_data_at_gauss_pt.find(fe_method.material_field_name.c_str());
+	if(diit!=h1l2_data_at_gauss_pt.end()) {
+	  vector< ublas::vector<FieldData> > &data = diit->second;
+	  vector< ublas::vector<FieldData> >::iterator vit = data.begin();
+	  map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+	  for(;vit!=data.end();vit++,mit++) {
+	    rval = moab_post_proc.tag_set_data(th_positions,&mit->second,1,&vit->data()[0]); CHKERR_PETSC(rval);
+	  }
+	}
 
       }
 

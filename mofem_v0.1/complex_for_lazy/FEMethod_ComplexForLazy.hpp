@@ -65,7 +65,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double lambda,mu,thermal_expansion;
   void *ptr_matctx;
   bool propeties_from_BlockSet_Mat_ElasticSet;
-  PetscErrorCode GetMatParameters(double *_lambda,double *_mu,double *_termal_epansion,void *ptr_matctx);
+  PetscErrorCode GetMatParameters(double *_lambda,double *_mu,double *_termal_epansion,void **ptr_matctx);
   ctx_EberleinHolzapfel1 EberleinHolzapfel1_mat_parameters;
 
   double eps;
@@ -152,6 +152,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
     string &field_name);
 
   PetscErrorCode GetData(
+    vector<int>& order_edges,vector<int>& order_faces,int& order_volume,
     vector<ublas::vector<double> >& dofs_edge_data,vector<double*>& dofs_edge,
     vector<ublas::vector<double> >& dofs_face_data,vector<double*>& dofs_face,
     ublas::vector<double>& dofs_volume,ublas::vector<double>& dofs_nodes,
@@ -176,7 +177,6 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   //temperature
   ublas::vector<double> dofs_temp;
 
-  PetscErrorCode GetDofs_X_FromElementData();
   PetscErrorCode GetDofs_Termal_FromElementData();
 
   Tag th_quality0,th_quality,th_b;
@@ -185,18 +185,18 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   PetscErrorCode GetTangent();
   PetscErrorCode GetFint();
 
-  int face_order;
+  int face_order,face_order_material;
   EntityHandle GetFaceIndicesAndData_face;
-  vector<int> FaceEdgeOrder;
+  vector<int> FaceEdgeOrder,FaceEdgeOrder_Material;
   vector<DofIdx> FaceIndices;
-  ublas::vector<double> FaceData;
+  ublas::vector<double> FaceData,FaceData_Material;
   vector<double> N_face;
   vector<double> diffN_face;
   vector<DofIdx> FaceNodeIndices,FaceNodeIndices_Material;
   ublas::vector<double> FaceNodeData,FaceNodeData_Material;
   vector<vector<DofIdx> > FaceEdgeIndices_data;
-  vector<ublas::vector<double> > FaceEdgeData_data;
-  double *EdgeData[3];
+  vector<ublas::vector<double> > FaceEdgeData_data,FaceEdgeData_data_Material;
+  double *EdgeData[3],*EdgeData_Material[3];
   vector<vector<double> > N_edge_data;
   vector<vector<double> > diffN_edge_data;
   double* N_edge[3];
@@ -236,9 +236,13 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
 
   PetscErrorCode OpComplexForLazyStart();
 
-  vector<int> order_edges;
-  vector<int> order_faces;
-  int order_volume;
+  vector<int> order_x_edges;
+  vector<int> order_x_faces;
+  int order_x_volume;
+  vector<int> order_X_edges;
+  vector<int> order_X_faces;
+  int order_X_volume;
+
 
 };
 

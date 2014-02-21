@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   PetscInt order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    order = 3;
+    order = 2;
   }
 
 
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  ArcElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),ArcCtx);
+  ArcInterfaceElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),ArcCtx);
   ArcInterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus,h,beta,ft,Gf,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
 
   PetscInt M,N;
@@ -389,7 +389,7 @@ int main(int argc, char *argv[]) {
   for(;step<max_steps;step++) {
 
     if(step == 1) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
@@ -415,7 +415,7 @@ int main(int argc, char *argv[]) {
       double dx_nrm;
       ierr = VecNorm(ArcCtx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
-	"Load Setp %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+	"Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
 	step,step_size,dlambda,dx_nrm,ArcCtx->dx2); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,ArcCtx->dx); CHKERRQ(ierr);
@@ -429,7 +429,7 @@ int main(int argc, char *argv[]) {
       ierr = VecScale(ArcCtx->dx,reduction); CHKERRQ(ierr);
       ierr = VecNorm(ArcCtx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
-	"Load Setp %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+	"Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
 	step,step_size,dlambda,dx_nrm,ArcCtx->dx2); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,ArcCtx->dx); CHKERRQ(ierr);

@@ -75,6 +75,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   nonlinear_elasticity_atom_thermal_compare
   arc_length_nonlinear_elasticity_thermal_atom_compare
   thermal_conductivity_atom_compare
+  projection_from_10node_tet_atom_compare
   #this stuff is too big
   SimpleElasticityTest
   SimpleInterfaceTest

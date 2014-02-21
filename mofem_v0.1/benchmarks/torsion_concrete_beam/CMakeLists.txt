@@ -33,8 +33,8 @@ install(FILES ${CMAKE_SOURCE_DIR}/benchmarks/torsion_concrete_beam/make_plot.sh
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/torsion.cub
   DESTINATION mofem/benchmarks/torsion_concrete_beam
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
+  PERMISSIONS OWNER_READ OWNER_WRITE )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/torsion.jou
   DESTINATION mofem/benchmarks/torsion_concrete_beam
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
+  PERMISSIONS OWNER_READ OWNER_WRITE )
 

@@ -91,7 +91,7 @@ struct PostProcVertexMethodTemp: public FieldInterface::EntMethod {
         if(V_glob_array == NULL) {
             fval = dof_ptr->get_FieldData();
         } else {
-            fval = V_glob_array[dof_ptr->get_petsc_gloabl_dof_idx()];
+            fval = V_glob_array[dof_numered_ptr->get_petsc_gloabl_dof_idx()];
         }
         Range::iterator nit = find(nodes.begin(),nodes.end(),ent);
         if(nit==nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");

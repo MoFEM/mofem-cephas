@@ -205,6 +205,13 @@ bool FieldCore::check_field(const string &name) const {
   if(miit==set.end()) return false;
   return true;
 }
+const MoFEMField* FieldCore::get_field_structure(const string& name) {
+  typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
+  const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
+  field_set_by_name::iterator miit = set.find(name);
+  if(miit==set.end()) return NULL;
+  return &*miit;
+}
 BitFieldId FieldCore::get_field_shift() {
   assert((unsigned int)*f_shift<BitFieldId().set().to_ulong());
   return (BitFieldId)(1<<(((*f_shift)++)-1)); 
@@ -4210,7 +4217,8 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::field_axpy(const double alpha,const string& field_name_x,const string& field_name_y,bool creat_if_missing) {
+PetscErrorCode FieldCore::field_axpy(const double alpha,const string& field_name_x,const string& field_name_y,
+  bool error_if_missing,bool creat_if_missing) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = moabFields.get<FieldName_mi_tag>().find(field_name_x);
   if(x_fit==moabFields.get<FieldName_mi_tag>().end()) {
@@ -4241,9 +4249,13 @@ PetscErrorCode FieldCore::field_axpy(const double alpha,const string& field_name
 	if(creat_if_missing) {
 	  SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
 	} else {
-	  ostringstream ss;
-	  ss << "dof on ent " << x_eit->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
-	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  if(error_if_missing) {
+	    ostringstream ss;
+	    ss << "dof on ent " << x_eit->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
+	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  } else {
+	    continue;
+	  }
 	}
       }
       dit->get_FieldData() += alpha*data;
@@ -4828,7 +4840,35 @@ PetscErrorCode FieldCore::loop_dofs(const string &problem_name,const string &fie
   dofs_by_name::iterator hi_miit = dofs->upper_bound(field_name);
   ierr = method.preProcess(); CHKERRQ(ierr);
   for(;miit!=hi_miit;miit++) {
+    ierr = method.set_dof(miit->get_DofMoFEMEntity_ptr()); CHKERRQ(ierr);
+    ierr = method.set_numered_dof(&*miit); CHKERRQ(ierr);
+    try {
+      ierr = method(); CHKERRQ(ierr);
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "throw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+  }
+  ierr = method.postProcess(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::loop_dofs(const string &field_name,EntMethod &method,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  ierr = method.set_fields(&moabFields); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&entsMoabField); CHKERRQ(ierr);
+  ierr = method.set_dofs_multiIndex(&dofsMoabField); CHKERRQ(ierr);
+  ierr = method.set_fes_multiIndex(&finiteElements); CHKERRQ(ierr);
+  ierr = method.set_fes_data_multiIndex(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
+  ierr = method.set_adjacencies(&entFEAdjacencies); CHKERRQ(ierr);
+  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator miit,hi_miit;
+  miit = dofsMoabField.get<FieldName_mi_tag>().lower_bound(field_name);
+  hi_miit = dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
+  ierr = method.preProcess(); CHKERRQ(ierr);
+  for(;miit!=hi_miit;miit++) {
     ierr = method.set_dof(&*miit); CHKERRQ(ierr);
+    ierr = method.set_numered_dof(NULL); CHKERRQ(ierr);
     try {
       ierr = method(); CHKERRQ(ierr);
     } catch (const std::exception& ex) {

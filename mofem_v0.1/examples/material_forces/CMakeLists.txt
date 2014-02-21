@@ -31,7 +31,6 @@ target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_s
 add_executable(spatial_problem_with_thermal_field spatial_problem_with_thermal_field.cpp)
 target_link_libraries(spatial_problem_with_thermal_field mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
@@ -43,7 +42,6 @@ install(TARGETS arc_length_material_coupled DESTINATION bin)
 cm_export_file("../../meshes/crack1.cub" export_files_material_mechanics)
 cm_export_file("../../meshes/T3_horiz.cub" export_files_material_mechanics)
 cm_export_file("../../meshes/brick_slice_thermal.cub" export_files_material_mechanics)
-
 
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/convergence_study.sh.in"

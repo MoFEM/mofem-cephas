@@ -32,14 +32,24 @@ file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
+
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity.sh"
+  @ONLY
+  )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+
+
+
 #testing
 add_test(ArcLengthNonLinearElasticityTest ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
   -my_file dome_thin_symm.cub -ksp_type fgmres 
   -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor 
   -ksp_atol 1e-10 -ksp_rtol 1e-10 
   -snes_monitor 
-  -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor 
+  -snes_type newtonls -snes_linesearch_type basic -snes_linesearch_monitor 
   -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 
-  -my_sr 1e-6 -my_ms 3 -snes_converged_reason
+  -my_sr 1e-4 -my_ms 3 -snes_converged_reason
   -log_summary)
 

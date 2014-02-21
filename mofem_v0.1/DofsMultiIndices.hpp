@@ -1,5 +1,5 @@
-/** \file common.hpp
- * \brief Myltindex containes, data structures and other low-level functions 
+/** \file DofsMultiIndices.hpp
+ * \brief Myltindex containes, data structures for mofem dofs and other low-level functions 
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *
@@ -52,7 +52,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   inline ApproximationOrder get_dof_order() const { return ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof]; };
   inline ApproximationRank get_dof_rank() const { return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof]; };
   inline int get_active() const { return active ? 1 : 0; }
-  inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const { return this; };
+  inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const { return const_cast<DofMoFEMEntity*>(this); };
   friend ostream& operator<<(ostream& os,const DofMoFEMEntity& e);
 };
 
