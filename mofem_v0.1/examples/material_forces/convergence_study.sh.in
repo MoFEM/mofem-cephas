@@ -186,7 +186,7 @@ do
     $MPIRUN $BIN_PATH/spatial_problem \
       -my_file $FILE -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package $PCFACTOR \
       -ksp_atol 1e-14 -ksp_rtol 1e-12 -ksp_monitor \
-      -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 100 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
+      -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 10 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
       -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_pot_proc_ref_level 1 -log_summary 2>&1 | tee -a $DIR_NAME/log_solution
     if [ $? -ne 0 ]; then
       exit $?

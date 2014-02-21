@@ -1,0 +1,161 @@
+reset
+# Create brick slice
+create Cylinder height 100 radius 230
+create Cylinder height 100 radius 131.5
+subtract volume 2 from volume 1
+Compress Ids All
+brick x 460 y 100 z 100
+Volume  2 copy
+move Volume 3  y 269.5
+Volume  2 copy
+move Volume 4  y -269.5
+Volume  2 copy
+rotate Volume 5 angle 90  about Z
+move Volume 5  x 269.5
+rotate Volume 2 angle 90  about Z
+move Volume 2  x -269.5
+subtract volume 2 3 4 5 from volume 1
+Compress Ids All
+###########################################################
+#cut interstitial Keyway
+
+brick x 60 y 76 z 100
+Volume 2 copy
+move Volume 3  y 219.5
+Volume 2 copy
+move Volume 4  y -219.5
+Volume 2 copy
+rotate Volume 5 angle 90  about Z
+move Volume 5  x 219.5
+rotate Volume 2 angle 90  about Z
+move Volume 2  x -219.5
+subtract volume 2 3 4 5 from volume 1
+Compress Ids All
+###########################################################
+#cut loose Keyway
+
+brick x 26.7 y 84 z 100
+rotate Volume 2 angle -45  about Z
+Volume 2 copy
+move Volume 3 x 162.63456 y 162.63456
+Volume 2 copy
+move Volume 4 x -162.63456 y -162.63456
+rotate Volume 2 angle 90  about Z
+Volume 2 copy
+move Volume 5 x -162.63456 y 162.63456
+move Volume 2 x 162.63456 y -162.63456
+subtract volume 2 3 4 5 from volume 1
+Compress Ids All
+###########################################################
+#cut slot
+
+create vertex 0 0 50 
+create vertex 43.74433 500 50 
+create vertex -43.74433 500 50 
+create surface vertex 83 84 85  
+sweep surface 44  vector 0 0 -1 distance 100
+rotate Volume 2  angle -45  about Z include_merged 
+subtract volume 2 from volume 1
+Compress Ids All
+rotate Volume 1  angle -135  about Z
+###########################################################
+#create steel rods diameter 14mm, locate on 1/4 distance from inner/outer cylinderical surface, r1=156.5mm and r2=205mm 
+
+cylinder height 100 radius 5
+volume 2 copy
+move volume 2 location -35.20484 -152.489 0
+move volume 3 location -46.115 -199.7459 0
+subtract volume 2 3 from volume 1
+compress Ids all
+cylinder height 200 radius 10
+volume 2 copy
+move volume 2 location -35.20484 -152.489 0
+move volume 3 location -46.115 -199.7459 0
+###########################################################
+#create blocks to apply pressure load
+
+brick x 50 y 100 z 40
+split curve 131 distance 20
+split curve 135 distance 20 from end
+split surface 54  through vertex 97 98
+split curve 142  distance 20 from end
+split curve 143  distance 20
+split surface 58  through vertex 100 99
+move volume 4 location -40.6599 -176.11739 80 
+volume 4 copy move z -160
+unite volume 2 3 4 5
+Compress Ids All
+
+############################################################  
+#create initial crack surfaces  
+  
+cylinder height 100 radius 14   
+move volume 3 location -107.126677 -149.553089
+chop volume 1 with volume 3
+Compress Ids All
+webcut volume 2 with plane xplane offset -107.127 rotate -70 about z center -107.127 -149.553 0 imprint merge
+Compress Ids All
+imprint all   
+merge all   
+
+##############################################################   
+#Define materials properties         
+block 1 volume 2 3 4       
+block 1 name 'MAT_ELASTIC_1'   
+block 1 attribute count 10         
+#9600.0*10e-4 
+block 1 attribute index 1 0.96         
+block 1 attribute index 2 0.2        
+   
+block 2 volume 1            
+block 2 name 'MAT_ELASTIC_2'            
+block 2 attribute count 10            
+#210000.0*1e-4  
+block 2 attribute index 1  21            
+block 2 attribute index 2 0.          
+
+#############################################################      
+nodeset 101 vertex all        
+nodeset 101 vertex 114 115 121 116 113 122  remove
+#Boundary edges     
+sideset 100 curve all    
+sideset 100 curve 161 162 176 180 177 178 173 174 175 remove 
+#allow mesh sliding along those edges   
+sideset 100 curve 115 114  remove  
+#############################################################      
+sideset 102  surface all       
+sideset 102 surface 67 70  65 38 remove 
+#add this additional surface constarin - this constrain shape and allow sliding along edges 115 114
+sideset 10200 surface 38  
+#############################################################      
+#sideset for crack surface and crack front edge    
+sideset 200 surface 65   
+sideset 201 curve 173
+
+###############################################################    
+#apply BC, fix one side of the slot, and apply pressure load on the brackets        
+create Displacement name '' on surface 34  dof 1 dof 2 dof 3 fix 0
+create pressure  on surface 47  magnitude 1 
+create pressure  on surface 49  magnitude 1 
+create pressure  on surface 46  magnitude -1 
+create pressure  on surface 50  magnitude -1 
+
+#############################################################  
+#Create Block Set with Vertices to ploat load-disp. path   
+block 3 vertex 20 19   
+block 3 name 'LoadPath'  
+
+#############################################################     
+#mesh the model   
+   
+volume all size auto factor 6 
+
+volume all scheme Tetmesh                 
+mesh volume all     
+ 
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/brick_slice.cub" overwrite 
+ 
+
+   
+ 
+

@@ -16,14 +16,21 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-#include subdirectory
-include_directories("${PROJECT_SOURCE_DIR}/benchmarks")
+cm_export_file("../../meshes/brick_slice.cub" export_files_brick_slice)
+cm_export_file("../../meshes/brick_slice.jou" export_files_brick_slice)
 
-#add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_simple_notch_symmetric")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_corner_notch")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_concrete_beam")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/plate_stability")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/brick_slice")
+install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/arc_length.sh 
+  DESTINATION mofem/benchmarks/brick_slice
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/convergence_study.sh 
+  DESTINATION mofem/benchmarks/brick_slice
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
+#script for making plots for torsion example only
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brick_slice.cub
+  DESTINATION mofem/benchmarks/brick_slice
+  PERMISSIONS OWNER_READ OWNER_WRITE )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brick_slice.jou
+  DESTINATION mofem/benchmarks/brick_slice
+  PERMISSIONS OWNER_READ OWNER_WRITE )
 
