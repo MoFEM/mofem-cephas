@@ -658,7 +658,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     virtual PetscErrorCode RhsAndLhs() {
       PetscFunctionBegin;
 
-      //ierr = Rhs(); CHKERRQ(ierr);
+      ierr = Rhs(); CHKERRQ(ierr);
       ierr = Lhs(); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
