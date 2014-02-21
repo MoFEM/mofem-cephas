@@ -122,5 +122,5 @@ struct ComputeFieldGradients: public FEMethod_UpLevelStudent {
 
 };
 
-#endif // __POTENTIALFLOWFEMETHOD_HPP__
+#endif // __FUNTIONSFORFIELDDATA_HPP__
 
