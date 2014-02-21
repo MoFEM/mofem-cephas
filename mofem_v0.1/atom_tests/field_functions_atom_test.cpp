@@ -253,23 +253,19 @@ int main(int argc, char *argv[]) {
 			int arraysize_fibre;
 			rval = moab.tag_get_by_ptr(th_field_grad,&fe_handle1,1,(const void**)&data,&arraysize_fibre); CHKERR_PETSC(rval);
 			for(unsigned int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
-				cout<<"(";
 				myfile<<"(";
 				for (int rank = 0; rank<rank_size; rank++) {
-					cout<<"[";
 					myfile<<"[";
 					for (int ii=0; ii<3; ii++) {
 						if (data[3*rank_size*gg+3*rank+ii]<1e-15 && data[3*rank_size*gg+3*rank+ii]>-1e-15) {
-							cout<<0<<",";
 							myfile<<0<<",";
 						}
 						else{
-							cout<<data[3*rank_size*gg+3*rank+ii]<<",";
 							myfile<<data[3*rank_size*gg+3*rank+ii]<<",";
 						}
-					}cout<<"]"; myfile<<"]";
-				}cout<<"); "; myfile<<"); ";
-			}cout<<endl; myfile<<endl;
+					}myfile<<"]";
+				}myfile<<"); ";
+			}myfile<<endl;
 			
 			ierr = OpStudentEnd(); CHKERRQ(ierr);
 			
@@ -328,53 +324,18 @@ int main(int argc, char *argv[]) {
 	PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
 	
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
+//  if(pcomm->rank()==0) {
+//    EntityHandle out_meshset;
+//    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+//    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+//    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+//    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+//  }
 	
 	ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",grad);  CHKERRQ(ierr);
 
     //Close mesh_file_name.txt
     myfile.close();
-
-//    
-//    //Output displacements
-//    cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-//    myfile << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-//    
-//    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dof_ptr))
-//    {
-//        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-//        
-//        if(dof_ptr->get_dof_rank()==0)
-//        {
-//            //Round and truncate to 3 decimal places
-//            double fval = dof_ptr->get_FieldData();
-//            cout << boost::format("%.3lf") % roundn(fval) << "  ";
-//            myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-//        }
-//        if(dof_ptr->get_dof_rank()==1)
-//        {
-//            //Round and truncate to 3 decimal places
-//            double fval = dof_ptr->get_FieldData();
-//            cout << boost::format("%.3lf") % roundn(fval) << "  ";
-//            myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-//        }
-//        if(dof_ptr->get_dof_rank()==2)
-//        {
-//            //Round and truncate to 3 decimal places
-//            double fval = dof_ptr->get_FieldData();
-//            cout << boost::format("%.3lf") % roundn(fval) << endl;
-//            myfile << boost::format("%.3lf") % roundn(fval) << endl;
-//        }
-//        
-//    }
-//    
-
 
   //destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

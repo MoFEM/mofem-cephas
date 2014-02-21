@@ -284,6 +284,9 @@ int main(int argc, char *argv[]) {
   SurfaceForces forces_from_pressures(mField);
   Vec total_forces;
   ierr = forces_from_pressures.create_totalForceVector(&total_forces); CHKERRQ(ierr);
+  ierr = VecZeroEntries(total_forces); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(total_forces,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(total_forces,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("PRESSURE_PROBLEM","PRESSURE_ELEM",forces_from_pressures);  CHKERRQ(ierr);
   ierr = VecView(total_forces,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecDestroy(&total_forces); CHKERRQ(ierr);
@@ -309,9 +312,10 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  if(pcomm->rank()==0) {
-    rval = moab.write_file("solution_pressure.h5m"); CHKERR_PETSC(rval);
-  }
+  //if(pcomm->rank()==0) {
+    //rval = moab.write_file("solution_pressure.h5m"); CHKERR_PETSC(rval);
+  //}
+
 
   /*PostProcPotentialFlowOnRefMesh post_proc_on_ref_mesh(moab);
   ierr = mField.loop_finite_elements("PRESSURE_PROBLEM","PRESSURE_ELEM",post_proc_on_ref_mesh);  CHKERRQ(ierr);
@@ -319,6 +323,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     rval = post_proc_on_ref_mesh.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }*/
+
 
   PetscFinalize();
 

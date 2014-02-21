@@ -216,3 +216,10 @@ add_test(cubit_meshset_loop_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/lo
 add_test(cubit_meshset_loop_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/loop_atom.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/loop_atom.cub.txt)
+
+#Field Functions Test
+add_test(field_functions_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_functions_atom_test -my_file tri_axial_cube_atom.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -my_order 1 -log_summary)
+add_test(field_functions_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/tri_axial_cube_atom.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/tri_axial_cube_atom.cub.txt)
+
