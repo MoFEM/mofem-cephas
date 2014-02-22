@@ -64,6 +64,9 @@ target_link_libraries(projection_from_10node_tet_atom mofem_student_body mofem_F
 add_executable(loops_atom_test loops_atom_test.cpp)
 target_link_libraries(loops_atom_test mofem_Field ${PROJECT_LIBS})
 
+add_executable(field_functions_atom_test field_functions_atom_test.cpp)
+target_link_libraries(field_functions_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)
@@ -91,6 +94,7 @@ cm_export_file("../meshes/cube_for_thermal_expansion.cub" export_atom_tests)
 cm_export_file("../meshes/cub_thermal_problem.cub" export_atom_tests)
 cm_export_file("../meshes/sphere.cub" export_atom_tests)
 cm_export_file("../meshes/loop_atom.cub" export_atom_tests)
+cm_export_file("../meshes/tri_axial_cube_atom.cub" export_atom_tests)
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
@@ -212,3 +216,10 @@ add_test(cubit_meshset_loop_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/lo
 add_test(cubit_meshset_loop_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/loop_atom.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/loop_atom.cub.txt)
+
+#Field Functions Test
+add_test(field_functions_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_functions_atom_test -my_file tri_axial_cube_atom.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -my_order 1 -log_summary)
+add_test(field_functions_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/tri_axial_cube_atom.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/tri_axial_cube_atom.cub.txt)
+
