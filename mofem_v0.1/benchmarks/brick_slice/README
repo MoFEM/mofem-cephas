@@ -39,3 +39,9 @@ Example run
 gc = 230 J/m^2
 
 ./arc_length.sh -f test/out_spatial_1_1.h5m -a 10 -n 50 -g 2.3e-8 -d test_prop -t 1e-8 -p 4
+
+
+Making plots
+============
+
+echo '0 0 0 0' | tee gp && grep load_path: test_prop/log | awk '{print $4,-$6,$8,-2*$8/$6 }' | tee -a gp

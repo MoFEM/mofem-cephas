@@ -148,7 +148,7 @@ block 3 name 'LoadPath'
 #############################################################     
 #mesh the model   
    
-volume all size auto factor 6 
+volume all size auto factor 8 
 
 volume all scheme Tetmesh                 
 mesh volume all     
