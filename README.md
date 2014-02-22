@@ -6,3 +6,6 @@
 
 ### Versions: ###
 
+* v0.0.1 Start JosePH
+* v0.1.1 MoFEM is stabile enough to be used by other outside group. It is working version with Linear Elasticity, Non Linear Elasticity, Damage at interface element, Brittle Crack propagation, Lienar Dynamics, Potential Flow, Mesh Smoothing and Potential Flow.
+
