@@ -36,7 +36,15 @@ struct FaceSplittingTools {
     mField(_mField),moab_work(mb_instance_work) {
   }
 
-  
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  PetscErroCode loadMesh(const BitRefLevel &bit_mesh,Range &front_edges);
+
+  Range newCrackFrontFaces;
+  PetscErroCode findFaces(ublas::vector<double,ublas::bounded_array<double,3> > &face_normal);
+
+
 
 
 }
