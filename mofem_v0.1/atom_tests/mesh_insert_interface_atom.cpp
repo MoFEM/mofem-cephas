@@ -59,7 +59,8 @@ int main(int argc, char *argv[]) {
   bit_levels.push_back(BitRefLevel().set(0));
 
   int ll = 1;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
+  //for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,cit)) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
     EntityHandle cubit_meshset = cit->get_meshset();
     {
@@ -71,10 +72,10 @@ int main(int argc, char *argv[]) {
       Range ref_level_tets;
       rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
       //get faces and test to split
-      ierr = mField.get_msId_3dENTS_sides(cubit_meshset,true,0); CHKERRQ(ierr);
+      ierr = mField.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,4); CHKERRQ(ierr);
       //set new bit level
       bit_levels.push_back(BitRefLevel().set(ll++));
-      //split faces and edges
+      //split faces and 
       ierr = mField.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
       //clean meshsets
       rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
@@ -147,6 +148,35 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
+  Range tets_back_bit_level;
+  ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRQ(ierr);
+
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,cit)) {
+
+    EntityHandle cubit_meshset = cit->get_meshset();
+
+    BlockSet_generic_attributes mydata;
+    ierr = cit->get_attribute_data_structure(mydata); CHKERRQ(ierr);   
+    cout << mydata << endl;  
+
+    Range tets;
+    rval = moab.get_entities_by_type(cubit_meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    tets = intersect(tets_back_bit_level,tets);
+    Range nodes;
+    rval = moab.get_connectivity(tets,nodes,true); CHKERR_PETSC(rval);
+
+    for(Range::iterator nit = nodes.begin(); nit!=nodes.end(); nit++) {
+      double coords[3];
+      rval = moab.get_coords(&*nit,1,coords); CHKERR_PETSC(rval);
+      coords[0] += mydata.data.User1;
+      coords[1] += mydata.data.User2;
+      coords[2] += mydata.data.User3;
+      rval = moab.set_coords(&*nit,1,coords); CHKERR_PETSC(rval);
+    }
+    
+  }
+
+
   //partition
   for(int lll = ll-2;lll<ll;lll++) {
     stringstream problem_name;
@@ -161,9 +191,11 @@ int main(int argc, char *argv[]) {
 
   EntityHandle out_meshset_tet;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERR_PETSC(rval);
+
+
   ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
   Range tets;
-  rval = moab.get_entities_by_handle(out_meshset_tet,tets); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_handle(out_meshset_tet,tets,true); CHKERR_PETSC(rval);
   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
     int num_nodes; 
     const EntityHandle* conn;
@@ -197,9 +229,15 @@ int main(int argc, char *argv[]) {
   }
   myfile.close();
 
-  //rval = moab.write_file(mesh_out_file_name,"VTK","",&out_meshset_tet,1); CHKERR_PETSC(rval);
-  //rval = moab.write_file("out_tet.vtk","VTK","",&out_meshset_tet,1); CHKERR_PETSC(rval);
-  //rval = moab.write_file("out_prism.vtk","VTK","",&out_meshset_prism,1); CHKERR_PETSC(rval);
+  rval = moab.write_file("out_tet.vtk","VTK","",&out_meshset_tet,1); CHKERR_PETSC(rval);
+  rval = moab.write_file("out_prism.vtk","VTK","",&out_meshset_prism,1); CHKERR_PETSC(rval);
+
+  EntityHandle out_meshset_tets_and_prism;
+  rval = moab.create_meshset(MESHSET_SET,out_meshset_tets_and_prism); CHKERR_PETSC(rval);
+  rval = moab.add_entities(out_meshset_tets_and_prism,tets); CHKERR_PETSC(rval);
+  rval = moab.add_entities(out_meshset_tets_and_prism,prisms); CHKERR_PETSC(rval);
+  rval = moab.write_file("out_tets_and_prisms.vtk","VTK","",&out_meshset_tets_and_prism,1); CHKERR_PETSC(rval);
+
 
   PetscFinalize();
 

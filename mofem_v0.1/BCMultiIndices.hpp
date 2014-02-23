@@ -69,6 +69,47 @@ struct generic_attribute_data {
     
 };
 
+/*! \struct Unknown attributes
+ *  \brief Arbitrary block atributes  data structure
+ */
+struct BlockSet_generic_attributes: public generic_attribute_data {
+
+    struct __attribute__ ((packed)) _data_{
+        double User1; // User attribute 1
+        double User2; // User attribute 2
+        double User3; // User attribute 3
+        double User4; // User attribute 4
+        double User5; // User attribute 5
+        double User6; // User attribute 6
+        double User7; // User attribute 7
+        double User8; // User attribute 8
+        double User9; // User attribute 9
+        double User10; // User attribute 10
+    };
+    
+    _data_ data;
+    
+    const Cubit_BC_bitset type;
+    const unsigned int min_number_of_atributes;
+    BlockSet_generic_attributes(): type(BlockSet),min_number_of_atributes(0) {};
+    
+    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+      PetscFunctionBegin;
+      if(8*attributes.size()>sizeof(data)) {
+	SETERRQ(PETSC_COMM_SELF,1,
+	  "data inconsistency, please review the number of material properties defined");
+      }
+      bzero(&data,sizeof(data));
+      memcpy(&data, &attributes[0],8*attributes.size());
+      PetscFunctionReturn(0);
+    }
+    
+    /*! \brief Print Mat_Elastic data
+     */
+    friend ostream& operator<<(ostream& os,const BlockSet_generic_attributes& e);
+    
+};
+
 /*! \struct Mat_Elastic
  *  \brief Elastic material data structure
  */
