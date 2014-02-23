@@ -4557,7 +4557,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	rval = moab.add_entities(meshset_for_bit_level,new_conn,4); CHKERR_PETSC(rval);
 	new_3d_ents.insert(prism);
       } break;
-      defaults: 
+      default: 
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
   }
