@@ -1279,7 +1279,24 @@ ostream& operator<<(ostream& os,const cfd_cubit_bc_data& e) {
     os << "CFD BC \n \n";
     return os;   
 }
-        
+ 
+ostream& operator<<(ostream& os,const BlockSet_generic_attributes& e)
+  {
+    os << endl << "Blcok attributes" << endl;
+    os << "-------------------" << endl;
+    os << "User attribute 1 = " << e.data.User1 << endl;
+    os << "User attribute 2 = " << e.data.User2 << endl;
+    os << "User attribute 3 = " << e.data.User3 << endl;
+    os << "User attribute 4 = " << e.data.User4 << endl;
+    os << "User attribute 5 = " << e.data.User5 << endl;
+    os << "User attribute 6 = " << e.data.User6 << endl;
+    os << "User attribute 7 = " << e.data.User7 << endl;
+    os << "User attribute 8 = " << e.data.User7 << endl;
+    os << "User attribute 9 = " << e.data.User7 << endl;
+    os << "User attribute 10 = " << e.data.User10 << endl << endl;
+    return os;
+  }
+       
 ostream& operator<<(ostream& os,const Mat_Elastic& e)
     {
         os << endl << "Material Properties" << endl;
