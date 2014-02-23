@@ -94,62 +94,62 @@ imprint volume all
 merge volume all
 set overlap max gap 0.0005
 
-block 1 volume 1 
-block 2 volume 2
-block 3 volume 3 
-block 4 volume 4
-block 5 volume 5
-block 6 volume 6
-block 7 volume 7
-block 8 volume 8
-block 1 name "PotentialFlow" 
-block 2 name "PotentialFlow1" 
-block 3 name "PotentialFlow2"
-block 4 name "PotentialFlow3"
-block 5 name "PotentialFlow4"
-block 6 name "PotentialFlow5"
-block 7 name "PotentialFlow6"
-block 8 name "PotentialFlow7"
-
-create pressure on surface 1 magnitude 1
-create pressure on surface 15 magnitude -1
-nodeset 1 vertex 1
-nodeset 1 name 'ZeroPressure'
-
-create pressure on surface 2 magnitude 1
-create pressure on surface 22 magnitude -1
-nodeset 2 vertex 3
-nodeset 2 name 'ZeroPressure1'
-
-create pressure on surface 3 magnitude 1
-create pressure on surface 29 magnitude -1
-nodeset 3 vertex 4
-nodeset 3 name 'ZeroPressure2'
-
-create pressure on surface 4 magnitude 1
-create pressure on surface 36 magnitude -1
-nodeset 4 vertex 12
-nodeset 4 name 'ZeroPressure3'
-
-create pressure on surface 5 magnitude 1
-create pressure on surface 43 magnitude -1
-nodeset 5 vertex 11
-nodeset 5 name 'ZeroPressure4'
-
-create pressure on surface 6 magnitude 1
-create pressure on surface 50 magnitude -1
-nodeset 6 vertex 9
-nodeset 6 name 'ZeroPressure5'
-
-create pressure on surface 7 magnitude 1
-create pressure on surface 57 magnitude -1
-nodeset 7 vertex 8
-nodeset 7 name 'ZeroPressure6'
-
-create pressure on surface 8 magnitude 1
-create pressure on surface 64 magnitude -1
-nodeset 8 vertex 6
-nodeset 8 name 'ZeroPressure7'
+#block 1 volume 1 
+#block 2 volume 2
+#block 3 volume 3 
+#block 4 volume 4
+#block 5 volume 5
+#block 6 volume 6
+#block 7 volume 7
+#block 8 volume 8
+#block 1 name "PotentialFlow" 
+#block 2 name "PotentialFlow1" 
+#block 3 name "PotentialFlow2"
+#block 4 name "PotentialFlow3"
+#block 5 name "PotentialFlow4"
+#block 6 name "PotentialFlow5"
+#block 7 name "PotentialFlow6"
+#block 8 name "PotentialFlow7"
+#
+#create pressure on surface 1 magnitude 1
+#create pressure on surface 15 magnitude -1
+#nodeset 1 vertex 1
+#nodeset 1 name 'ZeroPressure'
+#
+#create pressure on surface 2 magnitude 1
+#create pressure on surface 22 magnitude -1
+#nodeset 2 vertex 3
+#nodeset 2 name 'ZeroPressure1'
+#
+#create pressure on surface 3 magnitude 1
+#create pressure on surface 29 magnitude -1
+#nodeset 3 vertex 4
+#nodeset 3 name 'ZeroPressure2'
+#
+#create pressure on surface 4 magnitude 1
+#create pressure on surface 36 magnitude -1
+#nodeset 4 vertex 12
+#nodeset 4 name 'ZeroPressure3'
+#
+#create pressure on surface 5 magnitude 1
+#create pressure on surface 43 magnitude -1
+#nodeset 5 vertex 11
+#nodeset 5 name 'ZeroPressure4'
+#
+#create pressure on surface 6 magnitude 1
+#create pressure on surface 50 magnitude -1
+#nodeset 6 vertex 9
+#nodeset 6 name 'ZeroPressure5'
+#
+#create pressure on surface 7 magnitude 1
+#create pressure on surface 57 magnitude -1
+#nodeset 7 vertex 8
+#nodeset 7 name 'ZeroPressure6'
+#
+#create pressure on surface 8 magnitude 1
+#create pressure on surface 64 magnitude -1
+#nodeset 8 vertex 6
+#nodeset 8 name 'ZeroPressure7'
 
 #Insert Interface using CFD interface
 create cfd_bc name "cfd_bc" interface on surface 9
@@ -166,5 +166,6 @@ volume all scheme Tetmesh
 mesh volume all 
 
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/templar.cub" overwrite
+
 
 
