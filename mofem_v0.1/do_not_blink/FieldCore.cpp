@@ -4573,9 +4573,9 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	  Range tet;
 	  rval = moab.get_adjacencies(&*eit,1,3,false,tet); CHKERR_PETSC(rval);
 	  Range tet_side = intersect(tet,side_ents3d);
-	  if(tet_side.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one node, but is %u",tet.size()); 
+	  if(tet_side.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one side tet, but is %u",tet.size()); 
 	  Range tet_other_side = intersect(tet,other_ents3d);
-	  if(tet_other_side.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one node, but is %u",tet.size()); 
+	  if(tet_other_side.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one other side tet, but is %u",tet_other_side.size()); 
 	  EntityHandle ref_tet_side;
 	  rval = moab.tag_get_data(th_RefParentHandle,&*tet_side.begin(),1,&ref_tet_side); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_side_elem,&*new_ent.begin(),1,&ref_tet_side); CHKERR_PETSC(rval);
