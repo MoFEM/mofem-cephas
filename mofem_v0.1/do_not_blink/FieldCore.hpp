@@ -340,10 +340,15 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
 
   //topology
-  PetscErrorCode get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,
-    const bool recursive = false,int verb = -1);
-  PetscErrorCode get_msId_3dENTS_sides(const EntityHandle SideSet,
-    const bool recursive = false,int verb = -1);
+  PetscErrorCode get_msId_3dENTS_sides(
+    const int msId,
+    const Cubit_BC_bitset CubitBCType,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1);
+  PetscErrorCode get_msId_3dENTS_sides(
+    const EntityHandle SideSet,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1);
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const int msId,const Cubit_BC_bitset CubitBCType,

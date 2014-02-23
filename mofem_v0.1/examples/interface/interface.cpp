@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
   //Interface
   EntityHandle meshset_interface;
   ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
-  ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
+  ierr = mField.get_msId_3dENTS_sides(meshset_interface,BitRefLevel().set(),true); CHKERRQ(ierr);
   // stl::bitset see for more details
   BitRefLevel bit_level_interface;
   bit_level_interface.set(0);

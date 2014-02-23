@@ -10,9 +10,10 @@ webcut volume 1 with plane zplane imprint merge
 imprint tolerant volume all
 merge volume all
 
-create cfd_bc name "cfd_bc1" interface on surface 24 33 35 
-create cfd_bc name "cfd_bc2" interface on surface 32 36
-create cfd_bc name "cfd_bc2" interface on surface 29 
+create cfd_bc name "cfd_bc1" interface on surface 24  
+create cfd_bc name "cfd_bc2" interface on surface 33 35
+create cfd_bc name "cfd_bc4" interface on surface 32 36
+create cfd_bc name "cfd_bc5" interface on surface 29 
 
 block 1 volume 1  
 block 2 volume 2 
@@ -38,10 +39,10 @@ block 3 attribute index 3 0
 
 block 4 attribute index 1 0.02 
 block 4 attribute index 2 -0.02 
-block 4 attribute index 3 -0.02   
+block 4 attribute index 3 -0.04   
 
 volume all scheme Tetmesh 
-volume all size auto factor 6 
+volume all size auto factor 7
 mesh volume all 
  
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/Tinterface.cub" overwrite 

@@ -849,10 +849,14 @@ struct FieldInterface {
    *
    * \param msId Id of meshset 
    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+   * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interfece on all bit levels
    * \param recursive if true parent meshset is searched recursively
    */
-  virtual PetscErrorCode get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,
-    const bool recursive = false,int verb = -1) = 0;
+  virtual PetscErrorCode get_msId_3dENTS_sides(
+    const int msId,
+    const Cubit_BC_bitset CubitBCType,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1) = 0;
 
   /** \brief create two children meshsets in the meshset conta9ning terahedrals on two sides of faces
    *
@@ -863,7 +867,10 @@ struct FieldInterface {
    * After that simply iterate under all tets on one side which are adjacent to the face are found.
    * Side tets are stored in to children meshsets of the SideSet meshset.
    */
-  virtual PetscErrorCode get_msId_3dENTS_sides(const EntityHandle SideSet,const bool recursive = false,int verb = -1) = 0;
+  virtual PetscErrorCode get_msId_3dENTS_sides(
+    const EntityHandle SideSet,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1) = 0;
 
   /**
    * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
