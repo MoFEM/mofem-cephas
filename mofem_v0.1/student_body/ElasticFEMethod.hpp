@@ -269,12 +269,11 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    }
 	    area_at_Gauss_pt = cblas_dnrm2(3,Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
 	    w = area_at_Gauss_pt*G_W_TRI[gg];
-	    traction_at_Gauss_pt = (pressure/(2*area_at_Gauss_pt))*Normals_at_Gauss_pts[gg];
+	    traction_at_Gauss_pt += (pressure/(2*area_at_Gauss_pt))*Normals_at_Gauss_pts[gg];
 	  } else {
 	    w = area*G_W_TRI[gg];
 	    traction_at_Gauss_pt += (pressure/area)*normal;
 	  }
-	  traction_at_Gauss_pt += traction;
 
 	  //nodes
 	  ublas::vector<FieldData> f_ext_nodes(FaceNMatrix_nodes[0].size2());
