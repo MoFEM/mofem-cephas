@@ -4283,33 +4283,42 @@ PetscErrorCode FieldCore::field_scale(const double alpha,const string& field_nam
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,const bool recursive,int verb) {
+PetscErrorCode FieldCore::get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
-    ierr = FieldCore::get_msId_3dENTS_sides(miit->meshset,recursive,verb); CHKERRQ(ierr);
+    ierr = FieldCore::get_msId_3dENTS_sides(miit->meshset,mesh_bit_level,recursive,verb); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,1,"msId is not there");
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const bool recursive,int verb) {
+PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
+  Range mesh_level_ents3d;
+  ierr = refine_get_ents(mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d); CHKERRQ(ierr);
+  Range mesh_level_prisms;
+  ierr = refine_get_ents(mesh_bit_level,BitRefLevel().set(),MBPRISM,mesh_level_prisms); CHKERRQ(ierr);
+  mesh_level_ents3d.merge(mesh_level_prisms);
   Skinner skin(&moab);
+  //get interface triangles from side set
   Range triangles;
   rval = moab.get_entities_by_type(SideSet,MBTRI,triangles,recursive);  CHKERR_PETSC(rval);
   if(verb>1) {
     PetscPrintf(PETSC_COMM_WORLD,"Nb. of triangles in set %u\n",triangles.size());
   }
+  //get nodes, edges and 3d ents (i.e. tets and prisms)
   Range nodes; // nodes from triangles
   rval = moab.get_connectivity(triangles,nodes,true); CHKERR_PETSC(rval);
-  Range edges; // edges from truangles
+  Range edges; // edges from triangles
   rval = moab.get_adjacencies(triangles,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
-  Range ents3d; // 3d ents form nodes
+  Range ents3d,ents3d_with_prisms; // 3d ents form nodes
   rval = moab.get_adjacencies(nodes,3,true,ents3d,Interface::UNION); CHKERR_PETSC(rval);
+  ents3d_with_prisms = ents3d;
+  ents3d = ents3d.subset_by_type(MBTET); // take only tets, add prism later
   if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"adj. node if ents3d %u\n",nodes.size());
   //
   Range skin_faces; // skin faces from 3d ents
@@ -4333,6 +4342,9 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const
   // ents3 that are adjacent to nodes on splitted faces but not those which are on the nodes on internal edgea
   ents3d.clear();
   rval = moab.get_adjacencies(nodes,3,true,ents3d,Interface::UNION); CHKERR_PETSC(rval);
+  if(mesh_bit_level.any()) {
+    ents3d = intersect(ents3d,mesh_level_ents3d);
+  }
   if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"adj. ents3d to nodes %u\n",ents3d.size());
   Range side_ents3d;
   unsigned int nb_side_ents3d = side_ents3d.size();
@@ -4346,16 +4358,29 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const
     adj_tris = subtract(adj_tris,triangles);
     if(verb>2) PetscPrintf(PETSC_COMM_WORLD,"adj_tris %u\n",adj_tris.size());
     rval = moab.get_adjacencies(adj_tris,3,true,adj_ents3d,Interface::UNION); CHKERR_PETSC(rval);
+    adj_ents3d = adj_ents3d.subset_by_type(MBTET);
     if(verb>2) PetscPrintf(PETSC_COMM_WORLD,"adj_ents3d %u\n",adj_ents3d.size());
     adj_ents3d = intersect(adj_ents3d,ents3d);
     if(verb>2) PetscPrintf(PETSC_COMM_WORLD,"adj_ents3d %u\n",adj_ents3d.size());
     side_ents3d.insert(adj_ents3d.begin(),adj_ents3d.end());
   } while (nb_side_ents3d != side_ents3d.size());
-  Range other_side = subtract(ents3d,side_ents3d);
+  //now add prisms
+  Range side_faces;
+  rval = moab.get_adjacencies(side_ents3d,2,true,side_faces,Interface::UNION); CHKERR_PETSC(rval);
+  Range side_faces_ents3d;
+  rval = moab.get_adjacencies(side_faces,3,true,side_faces_ents3d,Interface::UNION); CHKERR_PETSC(rval);
+  Range skin_nodes_ents3d;
+  rval = moab.get_adjacencies(skin_nodes,3,true,skin_nodes_ents3d,Interface::UNION); CHKERR_PETSC(rval);
+  if(verb>2) PetscPrintf(PETSC_COMM_WORLD,"skin_nodes_ents3d.subset_by_type(MBPRISM) %u\n",skin_nodes_ents3d.subset_by_type(MBPRISM).size());
+  if(verb>2) PetscPrintf(PETSC_COMM_WORLD,"side_faces_ents3d.subset_by_type(MBPRISM) %u\n",side_faces_ents3d.subset_by_type(MBPRISM).size());
+  Range side_prisms = intersect(skin_nodes_ents3d.subset_by_type(MBPRISM),side_faces_ents3d.subset_by_type(MBPRISM));
+  side_ents3d.merge(side_prisms);
+  Range other_side = subtract(ents3d_with_prisms,side_ents3d);
+  //make child meshsets
   vector<EntityHandle> children;
   rval = moab.get_child_meshsets(SideSet,children);  CHKERR_PETSC(rval);
   if(children.empty()) {
-    children.resize(3);
+    children.resize(4);
     rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[0]); CHKERR_PETSC(rval);
     rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[1]); CHKERR_PETSC(rval);
     rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[2]); CHKERR_PETSC(rval);
@@ -4374,7 +4399,9 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const
   rval = moab.add_entities(child_nodes_and_skin_edges,skin_edges); CHKERR_PETSC(rval);
   if(verb>1) {
     PetscPrintf(PETSC_COMM_WORLD,"Nb. of side ents3d in set %u\n",side_ents3d.size());
+    PetscPrintf(PETSC_COMM_WORLD,"Nb. of side prisms in set %u\n",side_prisms.size());
     PetscPrintf(PETSC_COMM_WORLD,"Nb. of other side ents3d in set %u\n",other_side.size());
+    PetscPrintf(PETSC_COMM_WORLD,"Nb. of other side prisms in set %u\n",other_side.subset_by_type(MBPRISM).size());
   }
   if(verb>3) {
     ierr = moab.write_file("side.vtk","VTK","",&children[0],1); CHKERRQ(ierr);
@@ -4421,10 +4448,12 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   rval = moab.get_entities_by_type(SideSet,MBTRI,triangles,recursive);  CHKERR_PETSC(rval);
   //tetrahedrasl on "father" side
   Range side_ents3d;
-  rval = moab.get_entities_by_type(children[0],MBTET,side_ents3d,false);  CHKERR_PETSC(rval);
+  //rval = moab.get_entities_by_type(children[0],MBTET,side_ents3d,false);  CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_handle(children[0],side_ents3d,false);  CHKERR_PETSC(rval);
   //tetrahedral on "mather" side
   Range other_ents3d;
-  rval = moab.get_entities_by_type(children[1],MBTET,other_ents3d,false);  CHKERR_PETSC(rval);
+  //rval = moab.get_entities_by_type(children[1],MBTET,other_ents3d,false);  CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_handle(children[1],other_ents3d,false);  CHKERR_PETSC(rval);
   //nodes on interface but not on crack front (those should not be splitted)
   Range nodes;
   rval = moab.get_entities_by_type(children_nodes_and_skin_edges[0],MBVERTEX,nodes,false);  CHKERR_PETSC(rval);
@@ -4478,7 +4507,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     rval = moab.add_entities(meshset_for_bit_level,ents_dd); CHKERR_PETSC(rval);
   }
   //create new tets on "father" side
-  Range new_tets;
+  Range new_3d_ents;
   Range::iterator tit = side_ents3d.begin();
   for(;tit!=side_ents3d.end();tit++) {
     ref_ents_by_ent_type::iterator miit_ref_ent = ref_ents_by_ent.find(*tit);
@@ -4510,18 +4539,32 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
       }
       SETERRQ(PETSC_COMM_SELF,1,"database inconsistency, in side_ent3 is a tet which has no common node with interface");
     }
-    //here is created new tet
-    EntityHandle tet;
-    rval = moab.create_element(MBTET,new_conn,4,tet); CHKERR_PETSC(rval);
-    rval = moab.tag_set_data(th_RefParentHandle,&tet,1,&*tit); CHKERR_PETSC(rval);
-    rval = moab.add_entities(meshset_for_bit_level,&tet,1); CHKERR_PETSC(rval);
-    rval = moab.add_entities(meshset_for_bit_level,new_conn,4); CHKERR_PETSC(rval);
-    new_tets.insert(tet);
+    //here is created new tet or prism is on inteface
+    switch (moab.type_from_handle(*tit)) {
+      case MBTET: {
+	EntityHandle tet;
+	rval = moab.create_element(MBTET,new_conn,4,tet); CHKERR_PETSC(rval);
+	rval = moab.tag_set_data(th_RefParentHandle,&tet,1,&*tit); CHKERR_PETSC(rval);
+	rval = moab.add_entities(meshset_for_bit_level,&tet,1); CHKERR_PETSC(rval);
+	rval = moab.add_entities(meshset_for_bit_level,new_conn,4); CHKERR_PETSC(rval);
+	new_3d_ents.insert(tet);
+      } break;
+      case MBPRISM: {
+	EntityHandle prism;
+	rval = moab.create_element(MBPRISM,new_conn,6,prism); CHKERR_PETSC(rval);
+	rval = moab.tag_set_data(th_RefParentHandle,&prism,1,&*tit); CHKERR_PETSC(rval);
+	rval = moab.add_entities(meshset_for_bit_level,&prism,1); CHKERR_PETSC(rval);
+	rval = moab.add_entities(meshset_for_bit_level,new_conn,4); CHKERR_PETSC(rval);
+	new_3d_ents.insert(prism);
+      } break;
+      default: 
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
   }
   Range new_ents; 
   //create new entities by adjecies form new tets
-  rval = moab.get_adjacencies(new_tets,1,true,new_ents,Interface::UNION); CHKERR_PETSC(rval);
-  rval = moab.get_adjacencies(new_tets,2,true,new_ents,Interface::UNION); CHKERR_PETSC(rval);
+  rval = moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET),1,true,new_ents,Interface::UNION); CHKERR_PETSC(rval);
+  rval = moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET),2,true,new_ents,Interface::UNION); CHKERR_PETSC(rval);
   Range ents; 
   //add new edges and triangles to mofem database
   rval = moab.get_adjacencies(triangles,1,false,ents,Interface::UNION); CHKERR_PETSC(rval);
@@ -4573,9 +4616,13 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	  Range tet;
 	  rval = moab.get_adjacencies(&*eit,1,3,false,tet); CHKERR_PETSC(rval);
 	  Range tet_side = intersect(tet,side_ents3d);
-	  if(tet_side.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one node, but is %u",tet.size()); 
+	  if(tet_side.size()!=1) {
+	    SETERRQ1(PETSC_COMM_SELF,1,"should be only one side tet, but is %u",tet.size()); 
+	  }
 	  Range tet_other_side = intersect(tet,other_ents3d);
-	  if(tet_other_side.size()!=1) SETERRQ1(PETSC_COMM_SELF,1,"should be only one node, but is %u",tet.size()); 
+	  if(tet_other_side.size()!=1) {
+	    SETERRQ1(PETSC_COMM_SELF,1,"should be only one other side tet, but is %u",tet_other_side.size()); 
+	  }
 	  EntityHandle ref_tet_side;
 	  rval = moab.tag_get_data(th_RefParentHandle,&*tet_side.begin(),1,&ref_tet_side); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_side_elem,&*new_ent.begin(),1,&ref_tet_side); CHKERR_PETSC(rval);
@@ -4617,8 +4664,8 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   }
   //all other entities, some ents like triangles and faces on the side of tets
   Range side_adj_faces_and_edges;
-  rval = moab.get_adjacencies(side_ents3d,1,true,side_adj_faces_and_edges,Interface::UNION); CHKERR_PETSC(rval);
-  rval = moab.get_adjacencies(side_ents3d,2,true,side_adj_faces_and_edges,Interface::UNION); CHKERR_PETSC(rval);
+  rval = moab.get_adjacencies(side_ents3d.subset_by_type(MBTET),1,true,side_adj_faces_and_edges,Interface::UNION); CHKERR_PETSC(rval);
+  rval = moab.get_adjacencies(side_ents3d.subset_by_type(MBTET),2,true,side_adj_faces_and_edges,Interface::UNION); CHKERR_PETSC(rval);
   //subtract entities already added to mofem database
   side_adj_faces_and_edges = subtract(side_adj_faces_and_edges,new_ents_in_database);
   eit = side_adj_faces_and_edges.begin();
@@ -4644,7 +4691,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     if(nb_new_conn==0) continue;
     ref_ents_by_ent_type::iterator miit_ref_ent = ref_ents_by_ent.find(*eit);
     if(miit_ref_ent == ref_ents_by_ent.end()) {
-      SETERRQ(PETSC_COMM_SELF,1,"entity should be in MoFem database");
+      SETERRQ1(PETSC_COMM_SELF,1,"entity should be in MoFem database, num_nodes = %d",num_nodes);
     }
     Range new_ent;
     switch (moab.type_from_handle(*eit)) {

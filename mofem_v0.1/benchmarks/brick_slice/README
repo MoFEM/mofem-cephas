@@ -36,9 +36,16 @@ Example run
 * Crack propagation as an input file uses previously obtained solution from step (1)
 * Note that linear elements (1st order) have sheer locking, and usually give overstiff solution
 
-gc = 230 J/m^2
+Uasge: 
+./arc_length.sh -h
+run this for more information about options.
 
-./arc_length.sh -f test/out_spatial_1_1.h5m -a 10 -n 50 -g 2.3e-8 -d test_prop -t 1e-8 -p 4
+gc = 230 J/m^2 
+
+da = 1 mm^2 (this control arc-length, if too beek can generate
+oscillations at crack front at beginning of symmylation)
+
+./arc_length.sh -f test/out_spatial_1_1.h5m -a 1 -n 50 -g 2.3e-8 -d test_prop -t 1e-8 -p 4
 
 
 Making plots

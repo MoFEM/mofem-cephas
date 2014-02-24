@@ -90,6 +90,7 @@ cm_export_file("../meshes/cub_with_interface.cub" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_01X_pressure.cub" export_atom_tests)
 cm_export_file("../meshes/elasticity_atom_test_sheer_force.cub" export_atom_tests)
 cm_export_file("../meshes/templar.cub" export_atom_tests)
+cm_export_file("../meshes/Tinterface.cub" export_atom_tests)
 cm_export_file("../meshes/cube_for_thermal_expansion.cub" export_atom_tests)
 cm_export_file("../meshes/cub_thermal_problem.cub" export_atom_tests)
 cm_export_file("../meshes/sphere.cub" export_atom_tests)
@@ -160,6 +161,9 @@ add_test(mesh_smoothing_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CM
 
 add_test(mesh_insert_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub -log_summary)
 add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
+add_test(mesh_insert_T_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file Tinterface.cub -log_summary)
+add_test(mesh_insert_T_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
+
 
 add_test(mesh_refine_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.cub -log_summary)
 add_test(mesh_refine_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt)
