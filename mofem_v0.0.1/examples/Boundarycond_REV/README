@@ -7,5 +7,5 @@ Check before run
 Example run
 ===========
 
-mpirun -np 3 ./elasticity -my_file LShapeCoarse.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+mpirun -np 3 ./Boundarycond_REV -my_file LShapeCoarse.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 

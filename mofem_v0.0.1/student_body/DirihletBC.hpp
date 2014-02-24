@@ -78,6 +78,10 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
   PetscErrorCode ierr;
   ErrorCode rval;
 
+    
+  //bc_map[int, Range]    =int is cubit msid and range are nodes, [3] is e.g. for x, y and z displacement
+  //bc_map_val[int, Range]=int is cubit msid and double are the applied nodal value
+    
   map<int,Range> bc_map[3];
   map<int,double> bc_map_val[3];
 
@@ -97,6 +101,7 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
   PetscErrorCode SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D);
 
 };
+
     
 }
 #endif //__MOABFEMETHOD_DIRIHLETBC_HPP__

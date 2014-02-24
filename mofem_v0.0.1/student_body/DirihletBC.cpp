@@ -122,32 +122,35 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
         ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
         
         //ss << mydata;
-        for(int dim = 0;dim<3;dim++) {
+        for(int dim = 0;dim<3;dim++) { //we need this loop as get_Cubit_msId_entities_by_dimension will not give us nodes at the boundary (so we need ot make sure to get all the nodes on the boundary)
             Range _ents;
             ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,_ents,true); CHKERRQ(ierr);
             //ss << "dim  = " << dim << " nb. ents " << _ents.size() << endl;
-            if(dim>1) {
+            if(dim>1) {  // for Faces (collect edges for all faces then in dim>0 we will collect nodes for these edges)
                 Range _edges;
                 ierr = mField.get_moab().get_adjacencies(_ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
                 _ents.insert(_edges.begin(),_edges.end());
                 //ss << "dim  = " << dim << " nb. edges " << _edges.size() << endl;
             }
-            if(dim>0) {
+            if(dim>0) { // for Edges (collect all nodes for edges)
                 Range _nodes;
                 rval = mField.get_moab().get_connectivity(_ents,_nodes,true); CHKERR_PETSC(rval);
                 _ents.insert(_nodes.begin(),_nodes.end());
                 //ss << "dim  = " << dim << " nb. nodes " << _nodes.size() << endl;
             }
             if(dim>2) SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
-            if(mydata.data.flag1 == 1) {
-              (bc_map[0])[it->get_msId()].insert(_ents.begin(),_ents.end());
-              (bc_map_val[0])[it->get_msId()] = mydata.data.value1;
+            
+            
+            //for dim=0 is already nodes so just insert these in bc_map[0]
+            if(mydata.data.flag1 == 1) { // X-disp
+              (bc_map[0])[it->get_msId()].insert(_ents.begin(),_ents.end());   //bc_map[0] all entities (nodes)
+              (bc_map_val[0])[it->get_msId()] = mydata.data.value1;            //corresponding values in x directions
             }
-            if(mydata.data.flag2 == 1) {
+            if(mydata.data.flag2 == 1) {//Y disp
               (bc_map[1])[it->get_msId()].insert(_ents.begin(),_ents.end());
               (bc_map_val[1])[it->get_msId()] = mydata.data.value2;
             }
-            if(mydata.data.flag3 == 1) {
+            if(mydata.data.flag3 == 1) { // z disp
               (bc_map[2])[it->get_msId()].insert(_ents.begin(),_ents.end());
               (bc_map_val[2])[it->get_msId()] = mydata.data.value3;
             }
@@ -177,7 +180,7 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
           
 	if(dim>2) SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
     
-	  (bc_map[0])[it->get_msId()].insert(_ents.begin(),_ents.end());
+	  (bc_map[0])[it->get_msId()].insert(_ents.begin(),_ents.end());   // for temprature the field is scalar so we only need bc_map[0] and bc_map_val[0]
 	  (bc_map_val[0])[it->get_msId()] = mydata.data.value1;
           
       }
@@ -185,7 +188,6 @@ PetscErrorCode CubitDisplacementDirihletBC::Init() {
 
     PetscFunctionReturn(0);
 }
-
 
 PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
     FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
