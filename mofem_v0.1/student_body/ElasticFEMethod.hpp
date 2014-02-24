@@ -274,6 +274,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    w = area*G_W_TRI[gg];
 	    traction_at_Gauss_pt += (pressure/area)*normal;
 	  }
+	  traction_at_Gauss_pt += traction;
 
 	  //nodes
 	  ublas::vector<FieldData> f_ext_nodes(FaceNMatrix_nodes[0].size2());
@@ -330,7 +331,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	traction_glob[1] = mydata.data.value4;
 	traction_glob[2] = mydata.data.value5;
 	traction_glob *= mydata.data.value1;
-
+  
 	ierr = NeumannBC_Faces(F,0,traction_glob,faces); CHKERRQ(ierr);
 
       }
