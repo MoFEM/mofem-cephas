@@ -269,7 +269,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    }
 	    area_at_Gauss_pt = cblas_dnrm2(3,Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
 	    w = area_at_Gauss_pt*G_W_TRI[gg];
-	    traction_at_Gauss_pt = (pressure/(2*area_at_Gauss_pt))*Normals_at_Gauss_pts[gg];
+	    traction_at_Gauss_pt += (pressure/(2*area_at_Gauss_pt))*Normals_at_Gauss_pts[gg];
 	  } else {
 	    w = area*G_W_TRI[gg];
 	    traction_at_Gauss_pt += (pressure/area)*normal;
@@ -330,7 +330,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	traction_glob[1] = mydata.data.value4;
 	traction_glob[2] = mydata.data.value5;
 	traction_glob *= mydata.data.value1;
-
+  
 	ierr = NeumannBC_Faces(F,0,traction_glob,faces); CHKERRQ(ierr);
 
       }
