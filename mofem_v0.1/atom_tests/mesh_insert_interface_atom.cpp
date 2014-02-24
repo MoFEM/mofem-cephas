@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
       Range ref_level_tets;
       rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
       //get faces and test to split
-      ierr = mField.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,4); CHKERRQ(ierr);
+      ierr = mField.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
       //set new bit level
       bit_levels.push_back(BitRefLevel().set(ll++));
       //split faces and 
