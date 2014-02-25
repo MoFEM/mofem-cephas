@@ -238,6 +238,13 @@ int main(int argc, char *argv[]) {
   rval = moab.add_entities(out_meshset_tets_and_prism,prisms); CHKERR_PETSC(rval);
   rval = moab.write_file("out_tets_and_prisms.vtk","VTK","",&out_meshset_tets_and_prism,1); CHKERR_PETSC(rval);
 
+  EntityHandle out_meshset_tris;
+  rval = moab.create_meshset(MESHSET_SET,out_meshset_tris); CHKERR_PETSC(rval);
+  Range tris;
+  rval = moab.get_adjacencies(prisms,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
+  cerr << tris.size() << " : " << prisms.size() << endl;
+  rval = moab.add_entities(out_meshset_tris,tris); CHKERR_PETSC(rval);
+  rval = moab.write_file("out_tris.vtk","VTK","",&out_meshset_tris,1); CHKERR_PETSC(rval);
 
   PetscFinalize();
 
