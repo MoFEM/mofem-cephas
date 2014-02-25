@@ -21,7 +21,6 @@
 #include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
 
-
 using namespace MoFEM;
 
 ErrorCode rval;
@@ -158,7 +157,8 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n\n** number of step = %D\n",step); CHKERRQ(ierr);
 
-    ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+    //ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+
     if(aa == 0) {
       ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
 	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  load_factor = load_factor0;
-	  ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+	  //ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, recalculate spatial positions only\n"); CHKERRQ(ierr);
 	  SNES snes_spatial;
 	  //solve spatial problem
@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	Range level_tris;
-	ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+	ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
 	SurfacesFaces = intersect(SurfacesFaces,level_tris);
 	CrackSurfacesFaces = intersect(CrackSurfacesFaces,level_tris);
 
@@ -393,7 +393,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),MBEDGE,out_meshset); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBEDGE,out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out_edges.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }

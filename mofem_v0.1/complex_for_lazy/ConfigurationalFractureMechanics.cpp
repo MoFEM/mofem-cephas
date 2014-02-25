@@ -542,7 +542,7 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
       bit_level.set(lll);
     }
 
-    ierr = mField.refine_get_ents(bit_level,bit_level,meshset_level); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level,bit_level,meshset_level); CHKERRQ(ierr);
   
     int ref_order = order > ll ? order : ll;
     ref_order = ref_order > 5 ? 5 : ref_order;
@@ -870,7 +870,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   }*/
 
   Range level_tris;
-  ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
 
   Range CornersEdges,CornersNodes,SurfacesFaces;
   ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
@@ -1038,7 +1038,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Faces = %d\n",CrackSurfacesEdgeFaces.size()); CHKERRQ(ierr);
 
     Range level_tris;
-    ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
     CrackSurfacesEdgeFaces = intersect(CrackSurfacesEdgeFaces,level_tris);
 
     ierr = mField.seed_finite_elements(CrackSurfacesEdgeFaces); CHKERRQ(ierr);
@@ -1048,7 +1048,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
     ierr = mField.add_ents_to_finite_element_by_TRIs(CrackSurfacesEdgeFaces,"C_TANGENT_ELEM"); CHKERRQ(ierr);
 
     Range level_edges;
-    ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
     CrackFrontEdges = intersect(CrackFrontEdges,level_edges);
     ierr = mField.seed_finite_elements(CrackFrontEdges); CHKERRQ(ierr);
 
@@ -1687,7 +1687,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   Range crackSurfacesFaces;
   ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crackSurfacesFaces,true); CHKERRQ(ierr);
   Range level_tris;
-  ierr = mField.refine_get_ents(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
   crackSurfacesFaces = intersect(crackSurfacesFaces,level_tris);
 
   double aRea = 0;
@@ -2188,7 +2188,7 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
     //get crack surcace
     ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crackSurfacesFaces,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     Range level_tris;
-    ierr = mField.refine_get_ents(*conf_prob->ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(*conf_prob->ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     crackSurfacesFaces = intersect(crackSurfacesFaces,level_tris);
     //get crack surface faces adjacenet to crack front
     Range crack_front_edges;

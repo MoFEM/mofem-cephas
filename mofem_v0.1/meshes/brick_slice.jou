@@ -150,7 +150,7 @@ block 3 name 'LoadPath'
    
 volume all size auto factor 8 
 #volume all size auto factor 7
-#surface 65 size auto factor 4
+surface 65 size auto factor 4
 volume all scheme Tetmesh                 
 mesh volume all     
  

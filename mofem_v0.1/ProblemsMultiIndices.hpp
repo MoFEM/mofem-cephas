@@ -323,6 +323,57 @@ typedef multi_index_container<
       tag<MoFEMProblem_mi_tag>, const_mem_fun<MoFEMProblem,string,&MoFEMProblem::get_name> >
   > > MoFEMProblem_multiIndex;
 
+/// \brief add ref level to problem
+struct problem_change_ref_level_bit_add {
+  BitRefLevel bit;
+  problem_change_ref_level_bit_add(const BitRefLevel _bit): bit(_bit) {};
+  void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) |= bit; };
+};
+
+/// \brief set ref level to problem
+struct problem_change_ref_level_bit_set {
+  BitRefLevel bit;
+  problem_change_ref_level_bit_set(const BitRefLevel _bit): bit(_bit) {};
+  void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) = bit; };
+};
+
+/// \brief add finite element to problem
+struct problem_MoFEMFiniteElement_change_bit_add {
+  BitFEId f_id;
+  problem_MoFEMFiniteElement_change_bit_add(const BitFEId _f_id): f_id(_f_id) {};
+  void operator()(MoFEMProblem &p);
+};
+
+/// \brief increase nb. dof in row
+struct problem_row_change {
+  const DofMoFEMEntity *dof_ptr;
+  problem_row_change(const DofMoFEMEntity *_dof_ptr);
+  void operator()(MoFEMProblem &e);
+};
+
+/// \brief increase nb. dof in col
+struct problem_col_change {
+  const DofMoFEMEntity *dof_ptr;
+  problem_col_change(const DofMoFEMEntity *_dof_ptr);
+  void operator()(MoFEMProblem &e);
+};
+
+/// \brief zero nb. of dofs in row
+struct problem_zero_nb_rows_change {
+  void operator()(MoFEMProblem &e);
+};
+
+/// \brief zero nb. of dofs in col
+struct problem_zero_nb_cols_change {
+  void operator()(MoFEMProblem &e);
+};
+
+/// \brief clear problem finite elements 
+struct problem_clear_numered_finite_elements_change {
+  void operator()(MoFEMProblem &e);
+};
+
+
 }
 
 #endif //__PROBLEMSMULTIINDICES_HPP__
