@@ -1,0 +1,13 @@
+#Generate fibre direction in Model using Potential Flow Problem
+
+make && mpirun -np 1 ./potential_flow_int_RVE -my_file ~/Desktop/RVE_Cubit/Chomarat150TB_No_interface_fiber.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+#example how to run the actual problem
+
+make && mpirun -np 1 ./interface_fibre_new_ver_RVE -my_file solution.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor
+
+#Output
+
+out.vtk - computational mesh
+out_post_proc.vtk - refinded mesh of TETs for prostrocesing
+out_post_proc_prisms.vtk - refinded mesh of PRISMs for prostrocesing

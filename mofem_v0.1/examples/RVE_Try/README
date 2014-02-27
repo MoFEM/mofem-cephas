@@ -1,0 +1,9 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what verion of openmoi (or other MPI library) are you using
+
+Example run
+===========
+make && mpirun -np 1 ./RVE_Try -my_file ~/Desktop/RVE_Cubit/TryRVE/Try_RVE.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -ksp_monitor
