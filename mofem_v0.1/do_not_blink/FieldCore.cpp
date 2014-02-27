@@ -1579,11 +1579,15 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	break;
       case MBTRI: 
 	switch (space) {
-	  case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
+	  case H1: 
+	    //add nodes
+	    if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
 	    adj_ents.insert(nodes.begin(),nodes.end());
+	    //add edges
+	    if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
+	    adj_ents.insert(edges.begin(),edges.end());
 	    for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) p.first->get_side_number_ptr(moab,*eeit);
-	    adj_ents.insert(faces.begin(),faces.end());
-	    for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) p.first->get_side_number_ptr(moab,*fit);
+	    //add faces
 	    adj_ents.insert(fe_ent);
 	    break;
       	  default:
