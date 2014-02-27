@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
 
-  ArcElasticFEMethod MyFE(mField,&myDirihletBC,
+  ArcComplexForLazyElasticFEMethod MyFE(mField,&myDirihletBC,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
     ArcCtx,NodeSet1);
 
@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
   for(;step<max_steps;step++) {
 
     if(step == 1) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Setp %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
       double dx_nrm;
       ierr = VecNorm(ArcCtx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
-	"Load Setp %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+	"Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
 	step,step_size,dlambda,dx_nrm,ArcCtx->dx2); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,ArcCtx->dx); CHKERRQ(ierr);
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
       ierr = VecScale(ArcCtx->dx,reduction); CHKERRQ(ierr);
       ierr = VecNorm(ArcCtx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
-	"Load Setp %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+	"Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
 	step,step_size,dlambda,dx_nrm,ArcCtx->dx2); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,ArcCtx->dx); CHKERRQ(ierr);

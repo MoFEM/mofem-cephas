@@ -1,0 +1,54 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what version of openmpi (or other MPI library) you are using
+
+Note
+====
+
+* Pleas note that E,gc and F_external are scaled such that, lambda*F_eternal has unit [ 0.1 kN ] !!!
+* Mesh dimensions are in millimetres
+
+Example run
+===========
+
+1) Calculation of stress intensity factor K1
+
+* Calculation of Griffith energy and SIF for mode K1.
+* Calculate problem for three approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (cubic).
+* Calculate problem for three refinement levels (in proximity of crack front).
+
+* convergence_study.sh NAME_OF_SCRIPT
+* -f NAME_OF_FILE 
+* -l VALUE_OF_LOAD_FACTOR 
+* -g REFERENCE_GRIFFITH_ENERGY 
+* -o APPROX_ORDERS_SEPARATED_BY_COMMAS 
+* -r REFINEMENT_LEVELS_SEPARATED_BY_COMMAS
+* -d directory name
+* -p number of processors
+
+./convergence_study.sh -f brick_slice.cub -l -1e-5 -o 1,2,3 -r 1,2 -d test -p 4 
+
+
+2) Calculation of crack propagation
+
+* Crack propagation as an input file uses previously obtained solution from step (1)
+* Note that linear elements (1st order) have sheer locking, and usually give overstiff solution
+
+Uasge: 
+./arc_length.sh -h
+run this for more information about options.
+
+gc = 230 J/m^2 
+
+da = 1 mm^2 (this control arc-length, if too beek can generate
+oscillations at crack front at beginning of symmylation)
+
+./arc_length.sh -f test/out_spatial_1_1.h5m -a 1 -n 50 -g 2.3e-8 -d test_prop -t 1e-8 -p 4
+
+
+Making plots
+============
+
+echo '0 0 0 0' | tee gp && grep load_path: test_prop/log | awk '{print $4,-$6,$8,-2*$8/$6 }' | tee -a gp

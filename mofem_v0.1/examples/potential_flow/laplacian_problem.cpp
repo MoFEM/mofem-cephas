@@ -23,6 +23,8 @@
 #include "PotentialFlowFEMethod.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
+#include "Projection10NodeCoordsOnField.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 
@@ -71,12 +73,14 @@ int main(int argc, char *argv[]) {
 
   //add filds
   ierr = mField.add_field("POTENTIAL_FIELD",H1,1); CHKERRQ(ierr);
+  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
   //add finite elements
   ierr = mField.add_finite_element("POTENTIAL_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("POTENTIAL_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("POTENTIAL_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("POTENTIAL_ELEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("POTENTIAL_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //add problems 
   ierr = mField.add_problem("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
@@ -93,6 +97,7 @@ int main(int argc, char *argv[]) {
  
       //add ents to field and set app. order
       ierr = mField.add_ents_to_field_by_TETs(0,"POTENTIAL_FIELD"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
       //add finite elements entities
       ierr = mField.add_ents_to_finite_element_by_TETs(it->meshset,"POTENTIAL_ELEM",true); CHKERRQ(ierr);
@@ -104,6 +109,12 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTET,"POTENTIAL_FIELD",order); CHKERRQ(ierr);
+  //
+  ierr = mField.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
 
   //set problem level
   ierr = mField.modify_problem_ref_level_add_bit("POTENTIAL_PROBLEM",bit_level0); CHKERRQ(ierr);
@@ -132,6 +143,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",Col,&D); CHKERRQ(ierr);
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("POTENTIAL_PROBLEM",&A); CHKERRQ(ierr);
+
+  Projection10NodeCoordsOnField ent_method_material(mField,"MESH_NODE_POSITIONS");
+  ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   LaplacianElem elem(mField,A,F);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
@@ -166,14 +180,19 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&A); CHKERRQ(ierr);
 
-  Tag th_phi;
+  /*Tag th_phi;
   double def_val = 0;
   rval = moab.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"POTENTIAL_FIELD",dof)) {
     EntityHandle ent = dof->get_ent();
     double val = dof->get_FieldData();
     rval = moab.tag_set_data(th_phi,&ent,1,&val); CHKERR_PETSC(rval);
-  }
+  }*/
+
+  ProjectionFieldOn10NodeTet ent_method_phi_on_10nodeTet(mField,"POTENTIAL_FIELD",true,false,"PHI");
+  ierr = mField.loop_dofs("POTENTIAL_FIELD",ent_method_phi_on_10nodeTet); CHKERRQ(ierr);
+  ent_method_phi_on_10nodeTet.set_nodes = false;
+  ierr = mField.loop_dofs("POTENTIAL_FIELD",ent_method_phi_on_10nodeTet); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
@@ -185,6 +204,13 @@ int main(int argc, char *argv[]) {
     ierr = mField.problem_get_FE("POTENTIAL_PROBLEM","POTENTIAL_ELEM",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+
+  PostProcScalarFieldsAndGradientOnRefMesh fe_post_proc_method(moab,"POTENTIAL_FIELD");
+  ierr = mField.loop_finite_elements("POTENTIAL_PROBLEM","POTENTIAL_ELEM",fe_post_proc_method);  CHKERRQ(ierr);
+
+  if(pcomm->rank()==0) {
+    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
   PetscFinalize();

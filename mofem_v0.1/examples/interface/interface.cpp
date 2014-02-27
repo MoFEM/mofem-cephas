@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
   //Interface
   EntityHandle meshset_interface;
   ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
-  ierr = mField.get_msId_3dENTS_sides(meshset_interface,true); CHKERRQ(ierr);
+  ierr = mField.get_msId_3dENTS_sides(meshset_interface,0,true); CHKERRQ(ierr);
   // stl::bitset see for more details
   BitRefLevel bit_level_interface;
   bit_level_interface.set(0);
@@ -218,7 +218,11 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 5;
+  PetscInt order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    order = 4;
+  }
   ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);

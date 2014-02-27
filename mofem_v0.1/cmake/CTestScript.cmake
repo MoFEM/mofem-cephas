@@ -66,6 +66,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   l2_atom_approximation_compare
   mesh_smoothing_atom_test_compare
   mesh_insert_interface_atom_test_compare
+  mesh_insert_T_interface_atom_test_compare
   mesh_refine_atom_test_compare
   nonlinear_elasticity_atom_pressure_compare
   nonlinear_elasticity_atom_sheer_force_compare
@@ -75,6 +76,9 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   nonlinear_elasticity_atom_thermal_compare
   arc_length_nonlinear_elasticity_thermal_atom_compare
   thermal_conductivity_atom_compare
+  projection_from_10node_tet_atom_compare
+  cubit_meshset_loop_test_compare
+  field_functions_test_compare
   #this stuff is too big
   SimpleElasticityTest
   SimpleInterfaceTest

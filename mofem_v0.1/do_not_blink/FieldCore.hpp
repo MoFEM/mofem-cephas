@@ -131,6 +131,7 @@ struct FieldCore: public FieldInterface {
 	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
 	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+	ss << "name "<< it->get_Cubit_name() << endl;
 	ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
 	ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
 	ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;
@@ -266,6 +267,7 @@ struct FieldCore: public FieldInterface {
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const string& name) const;
   bool check_field(const string& name) const;
+  const MoFEMField* get_field_structure(const string& name);
 
   //MoFEMFiniteElement
   PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
@@ -338,10 +340,15 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
 
   //topology
-  PetscErrorCode get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,
-    const bool recursive = false,int verb = -1);
-  PetscErrorCode get_msId_3dENTS_sides(const EntityHandle SideSet,
-    const bool recursive = false,int verb = -1);
+  PetscErrorCode get_msId_3dENTS_sides(
+    const int msId,
+    const Cubit_BC_bitset CubitBCType,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1);
+  PetscErrorCode get_msId_3dENTS_sides(
+    const EntityHandle SideSet,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1);
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const int msId,const Cubit_BC_bitset CubitBCType,
@@ -359,6 +366,7 @@ struct FieldCore: public FieldInterface {
     int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
+  PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
@@ -381,7 +389,7 @@ struct FieldCore: public FieldInterface {
   //Copy Vector of Field to Another
   PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
-  PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool creat_if_missing = false);
+  PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
   PetscErrorCode field_scale(const double alpha,const string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const string& fiel_name);
 

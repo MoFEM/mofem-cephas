@@ -1,5 +1,5 @@
-/** \file common.hpp
- * \brief Myltindex containes, data structures and other low-level functions 
+/** \file FEMMultiIndices.hpp
+ * \brief Myltindex containes, data structures for mofem finite elements and other low-level functions 
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *

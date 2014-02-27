@@ -28,10 +28,10 @@ install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/convergence_study.sh
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/T3_horiz.cub
   DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_symmetric
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
+  PERMISSIONS OWNER_READ OWNER_WRITE )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/T3_horiz.jou
   DESTINATION mofem/benchmarks/three_point_bending_graphite_simple_notch_symmetric
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
+  PERMISSIONS OWNER_READ OWNER_WRITE )
 
 
 

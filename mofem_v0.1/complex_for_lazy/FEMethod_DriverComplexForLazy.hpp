@@ -99,10 +99,11 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   }
 
   //FEMethod_DriverComplexForLazy_Spatial
-  PetscErrorCode addNodalForces(Vec f,double lambda) {
+  PetscErrorCode addNodalForces(Vec f,double lambda,string name = "NoNameSet") {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+      if(it->get_Cubit_name() != name) continue;
       Range NeumannSideSet;
       ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,NeumannSideSet,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       if(!NeumannSideSet.empty()) {
@@ -427,15 +428,16 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   }
 
   //FEMethod_DriverComplexForLazy_Spatial
-  PetscErrorCode CalculateSpatialKFext(Mat K,Vec f,double lambda) {
+  PetscErrorCode CalculateSpatialKFext(Mat K,Vec f,double lambda,string name = "NoNameSet") {
     PetscFunctionBegin;
     if(f!=PETSC_NULL) {
       if(nodal_forces_not_added) {
-	ierr = addNodalForces(f,lambda); CHKERRQ(ierr);
+	ierr = addNodalForces(f,lambda,name); CHKERRQ(ierr);
 	nodal_forces_not_added = false;
       }
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+      if(it->get_Cubit_name() != name) continue;
       EntityHandle tet = fe_ptr->get_ent();
       if(!mField.get_moab().contains_entities(it->get_meshset(),&tet,1)) continue;
       pressure_cubit_bc_data mydata;
@@ -454,6 +456,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       }
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+      if(it->get_Cubit_name() != name) continue;
       EntityHandle tet = fe_ptr->get_ent();
       if(!mField.get_moab().contains_entities(it->get_meshset(),&tet,1)) continue;
       ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
@@ -734,7 +737,9 @@ struct FEMethod_DriverComplexForLazy_Material: public FEMethod_DriverComplexForL
     PetscFunctionBegin;
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
-    ierr = GetData(dofs_x_edge_data,dofs_x_edge,
+    ierr = GetData(
+      order_x_edges,order_x_faces,order_x_volume,
+      dofs_x_edge_data,dofs_x_edge,
       dofs_x_face_data,dofs_x_face,
       dofs_x_volume,dofs_x,
       spatial_field_name); CHKERRQ(ierr);

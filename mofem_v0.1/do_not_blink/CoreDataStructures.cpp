@@ -878,7 +878,6 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle("Block_Attributes",block_attribs); CHKERR(rval); CHKERR_THROW(rval);
   rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR(rval);CHKERR_THROW(rval);
-
   vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {
     if(
@@ -924,11 +923,28 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       //}
     }
     if(*tit == entityNameTag) {
-        rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR(rval); CHKERR_THROW(rval);
+      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR(rval); CHKERR_THROW(rval);
       PetscErrorCode ierr;
       ierr = get_type_from_Cubit_name(CubitBCType); if(ierr>0) throw("unrecognised Cubit name type");
     }
   }
+
+  //If BC set has name, unset UnknownCubitName
+  if(CubitBCType.to_ulong() & (	  
+      DisplacementSet|
+      ForceSet|
+      PressureSet|
+      VelocitySet|
+      AccelerationSet|
+      TemperatureSet|
+      HeatfluxSet|
+      InterfaceSet) ) {
+     
+      if( (CubitBCType & Cubit_BC_bitset(UnknownCubitName)).any() ) {
+	CubitBCType = CubitBCType & (~Cubit_BC_bitset(UnknownCubitName));  
+      }
+  }
+
 }
 PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
@@ -1077,7 +1093,7 @@ PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
 
 PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_BC_bitset &type) const {
     PetscFunctionBegin;
-    
+
     //See Cubit_BC_bitset in common.hpp
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
         type |= Mat_ElasticSet; }
@@ -1093,7 +1109,7 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
         //To be extended as appropriate
     
     else { type |= UnknownCubitName; }
-        
+
     PetscFunctionReturn(0);
 }
 
@@ -1263,7 +1279,24 @@ ostream& operator<<(ostream& os,const cfd_cubit_bc_data& e) {
     os << "CFD BC \n \n";
     return os;   
 }
-        
+ 
+ostream& operator<<(ostream& os,const BlockSet_generic_attributes& e)
+  {
+    os << endl << "Blcok attributes" << endl;
+    os << "-------------------" << endl;
+    os << "User attribute 1 = " << e.data.User1 << endl;
+    os << "User attribute 2 = " << e.data.User2 << endl;
+    os << "User attribute 3 = " << e.data.User3 << endl;
+    os << "User attribute 4 = " << e.data.User4 << endl;
+    os << "User attribute 5 = " << e.data.User5 << endl;
+    os << "User attribute 6 = " << e.data.User6 << endl;
+    os << "User attribute 7 = " << e.data.User7 << endl;
+    os << "User attribute 8 = " << e.data.User7 << endl;
+    os << "User attribute 9 = " << e.data.User7 << endl;
+    os << "User attribute 10 = " << e.data.User10 << endl << endl;
+    return os;
+  }
+       
 ostream& operator<<(ostream& os,const Mat_Elastic& e)
     {
         os << endl << "Material Properties" << endl;

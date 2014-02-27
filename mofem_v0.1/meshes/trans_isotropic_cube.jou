@@ -32,11 +32,10 @@ create force  on surface 1  force value 1 direction   z
 
 block 2 volume 1
 
-create pressure on surface 3 magnitude 1
-create pressure on surface 5 magnitude -1
-nodeset 6 vertex 1 
-nodeset 6 name 'ZeroPressure'
-
+#create pressure on surface 3 magnitude 1
+#create pressure on surface 5 magnitude -1
+#nodeset 6 vertex 1 
+#nodeset 6 name 'ZeroPressure'
 
 #!Add material name and description
 block 1 name "MAT_TRANSISO_1" 
@@ -44,5 +43,6 @@ block 2 name "PotentialFlow"
 
 block 1 description 'Transverse Isotropic material properties' 
 save as "/Users/mikecortis1/Documents/PhD/moFEM/mofem_v0.1/meshes/trans_isotropic_cube.cub" overwrite
+
 
 

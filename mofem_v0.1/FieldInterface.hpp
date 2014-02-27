@@ -246,7 +246,7 @@ struct FieldInterface {
   virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
 
   /**
-  * \brief seed 2D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+  * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjencies) in a particular BitRefLevel
   * 
   * \param EntityHandle MeshSet
   * \param BitRefLevel bitLevel
@@ -487,6 +487,14 @@ struct FieldInterface {
    *
    */
   virtual bool check_field(const string& name) const = 0;
+
+  /** \brief get field structure
+   *
+   * \param name field name
+   * \return const MoFEMField*
+   *
+   */
+  virtual const MoFEMField* get_field_structure(const string& name) = 0;
 
   /**
     * \brief add finite element
@@ -811,10 +819,11 @@ struct FieldInterface {
     * \param alpha
     * \param field_name_x name of field_x
     * \param field_name_y name of field_y
+    * \param error_if_missing throw error if entity/dof exist in field_x but not on field_y
     * \param create_if_missing creat dof in field_y from fiedl_x if it is not database
     *
     */
-  virtual PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool creat_if_missing = false) = 0;
+  virtual PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false) = 0;
 
   /** \brief scale field 
     * 
@@ -840,10 +849,14 @@ struct FieldInterface {
    *
    * \param msId Id of meshset 
    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+   * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interfece on all bit levels
    * \param recursive if true parent meshset is searched recursively
    */
-  virtual PetscErrorCode get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,
-    const bool recursive = false,int verb = -1) = 0;
+  virtual PetscErrorCode get_msId_3dENTS_sides(
+    const int msId,
+    const Cubit_BC_bitset CubitBCType,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1) = 0;
 
   /** \brief create two children meshsets in the meshset conta9ning terahedrals on two sides of faces
    *
@@ -854,7 +867,10 @@ struct FieldInterface {
    * After that simply iterate under all tets on one side which are adjacent to the face are found.
    * Side tets are stored in to children meshsets of the SideSet meshset.
    */
-  virtual PetscErrorCode get_msId_3dENTS_sides(const EntityHandle SideSet,const bool recursive = false,int verb = -1) = 0;
+  virtual PetscErrorCode get_msId_3dENTS_sides(
+    const EntityHandle SideSet,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1) = 0;
 
   /**
    * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
@@ -1146,9 +1162,11 @@ struct FieldInterface {
     PetscErrorCode preProcess();
     PetscErrorCode operator()();
     PetscErrorCode postProcess();
-    
-    PetscErrorCode set_dof(const NumeredDofMoFEMEntity *_dof_ptr);
-    const NumeredDofMoFEMEntity *dof_ptr;
+ 
+    PetscErrorCode set_dof(const DofMoFEMEntity *_dof_ptr);
+    const DofMoFEMEntity *dof_ptr;
+    PetscErrorCode set_numered_dof(const NumeredDofMoFEMEntity *_dof_ptr);
+    const NumeredDofMoFEMEntity *dof_numered_ptr;
   };
 
   /** \brief Set data for BasicMethod 
@@ -1225,6 +1243,12 @@ struct FieldInterface {
     *
     */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1) = 0;
+
+  /** \brief Make a loop over entities
+    *
+    */
+  virtual PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1) = 0;
+
 
   /** \brief Get problem database (datastructure) 
     *

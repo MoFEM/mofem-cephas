@@ -314,6 +314,25 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
     EntityHandle ent,const string &field_name,vector< ublas::matrix<FieldData> > &diffNMatrix,
     EntityType type = MBMAXTYPE,EntityHandle edge_handle = no_handle);
 
+  /**
+    * \brief hierarhical gemetry approximation, jacobian and determinant of jacobian
+    */
+  PetscErrorCode GetHierarchicalGeometryApproximation(vector< ublas::matrix<FieldData> > &invH,vector< FieldData > &detH);
+
+  /**
+    * \brief hierarhical gemetry approximation, diff shape functions
+    */
+  PetscErrorCode GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(int rank,vector< ublas::matrix<FieldData> > &invH,vector< ublas::matrix<FieldData> > &diffNMatrix);
+
+
+  /**
+    * \brief hierarhical gemetry approximation, face normal
+    */
+  PetscErrorCode GetHierarchicalGeometryApproximation_FaceNormal(EntityHandle ent,
+    vector< ublas::vector<FieldData> > &Normals);
+
+
+
 };
 
 }

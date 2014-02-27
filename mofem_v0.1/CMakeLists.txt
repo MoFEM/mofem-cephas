@@ -38,7 +38,7 @@ project(MoFEM C Fortran CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
-set(MoFEM_VERSION_BUILD 1)
+set(MoFEM_VERSION_BUILD 2)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
@@ -93,6 +93,7 @@ endif(TAO_LIBRARY)
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
 include_directories("${PROJECT_SOURCE_DIR}/student_body")
+include_directories("${PROJECT_SOURCE_DIR}/projections")
 include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
