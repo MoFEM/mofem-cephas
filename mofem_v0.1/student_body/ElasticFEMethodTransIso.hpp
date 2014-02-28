@@ -328,7 +328,7 @@ namespace MoFEM {
 		
     PetscErrorCode Fint(Vec F_int) {
 			PetscFunctionBegin;
-			ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
+			ierr = TranIsotropicAxisAngleRotElasticFEMethod::Fint(); CHKERRQ(ierr);
 			for(int rr = 0;rr<row_mat;rr++) {
 				if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 				if(RowGlob[rr].size()==0) continue;
@@ -341,6 +341,112 @@ namespace MoFEM {
     PetscErrorCode calulateD(double _lambda,double _mu) {
 			PetscFunctionBegin;
 			PetscFunctionReturn(0);
+    }
+		
+		PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
+      PetscFunctionBegin;
+			
+      *_lambda = lambda;
+      *_mu = mu;
+			
+      //FIXME
+      //Here You should Get Parameters from atributes of Mat_TransIsoSet.
+      //All parameters which you geting in constructor can be retrived for each element,
+      //	this will allow to have problem, whith heterogenous material properties,
+      //	f.e. each rope can have diffrent properties
+      //Look to ElasticFEMethid how is done.
+			
+      PetscFunctionReturn(0);
+    }
+		
+		PetscErrorCode Fint() {
+			PetscFunctionBegin;
+			
+			double _lambda,_mu;
+			ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
+			ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+			
+			//Gradient at Gauss points;
+			vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+			ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+			unsigned int g_dim = g_NTET.size()/4;
+			assert(GradU_at_GaussPt.size() == g_dim);
+			NOT_USED(g_dim);
+			vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+			int gg = 0;
+			for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
+				ublas::matrix< FieldData > GradU = *viit;
+				ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+				ublas::vector< FieldData > VoightStrain(6);
+				VoightStrain[0] = Strain(0,0);
+				VoightStrain[1] = Strain(1,1);
+				VoightStrain[2] = Strain(2,2);
+				VoightStrain[3] = 2*Strain(0,1);
+				VoightStrain[4] = 2*Strain(1,2);
+				VoightStrain[5] = 2*Strain(2,0);
+				double w = V*G_W_TET[gg];
+				ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
+				//BT * VoigtStress
+				for(int rr = 0;rr<row_mat;rr++) {
+					f_int.resize(row_mat);
+					ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
+					if(gg == 0) {
+						f_int[rr] = prod( trans(B), VoightStress );
+					} else {
+						f_int[rr] += prod( trans(B), VoightStress );
+					}
+				}
+			}
+			
+			PetscFunctionReturn(0);
+    }
+	
+		
+		virtual PetscErrorCode Stiffness() {
+      PetscFunctionBegin;
+			
+      double _lambda,_mu;
+      ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
+      ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+			
+      K.resize(row_mat,col_mat);
+      int g_dim = g_NTET.size()/4;
+      for(int rr = 0;rr<row_mat;rr++) {
+				for(int gg = 0;gg<g_dim;gg++) {
+					ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
+					double w = V*G_W_TET[gg];
+					if(detH.size()>0) {
+						w *= detH[gg];
+					}
+					BD.resize(6,row_Mat.size2());
+					//ublas::noalias(BD) = prod( w*D,row_Mat );
+					cblas_dsymm(CblasRowMajor,CblasLeft,CblasUpper,
+											BD.size1(),BD.size2(),
+											w,&*D.data().begin(),D.size2(),
+											&*row_Mat.data().begin(),row_Mat.size2(),
+											0.,&*BD.data().begin(),BD.size2());
+					for(int cc = rr;cc<col_mat;cc++) {
+						ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
+						if(gg == 0) {
+							K(rr,cc).resize(BD.size2(),col_Mat.size2());
+							//ublas::noalias(K(rr,cc)) = prod(trans(BD) , col_Mat ); // int BT*D*B
+							cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
+													BD.size2(),col_Mat.size2(),BD.size1(),
+													1.,&*BD.data().begin(),BD.size2(),
+													&*col_Mat.data().begin(),col_Mat.size2(),
+													0.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
+						} else {
+							//ublas::noalias(K(rr,cc)) += prod(trans(BTD) , col_Mat ); // int BT*D*B
+							cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
+													BD.size2(),col_Mat.size2(),BD.size1(),
+													1.,&*BD.data().begin(),BD.size2(),
+													&*col_Mat.data().begin(),col_Mat.size2(),
+													1.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
+						}
+					}
+				}
+      }
+      PetscFunctionReturn(0);
     }
 		
     PetscErrorCode operator()() {
