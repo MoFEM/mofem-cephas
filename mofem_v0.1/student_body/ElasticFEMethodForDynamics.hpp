@@ -53,7 +53,7 @@ struct DynamicNeumannBC {
 
 /** \brief FE method for elastic dynamics
   *
-  * M*u'' + K*u' - F = 0
+  * M*u'' + K*u - F = 0
   *
   * F( t, [ dot_u, u], [ dot_u', u'] ) = [ 0 -1 ][ dot_u' ] + [ 1 0 ][ dot_u ] + [ 0    ] = [ 0 ]
   *                                      [ M  0 ][ u'     ]   [ 0 K ][ u     ]   [ F(t) ]   [ 0 ]
