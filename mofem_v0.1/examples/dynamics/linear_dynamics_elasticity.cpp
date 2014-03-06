@@ -41,9 +41,10 @@ struct MyBC: public DynamicNeumannBC {
       if(ts_t > 10.) scale = 0;
 
       //Set Direction of Traction On SideSet2
-      traction[0] = 0; //X
-      traction[1] = 0; //Y 
-      traction[2] = scale; //Z*/
+      //traction[0] = 0; //X
+      //traction[1] = 0; //Y 
+      //traction[2] = scale; //Z*/
+      traction *= scale;
 
       PetscFunctionReturn(0);
     }
@@ -161,15 +162,23 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 1;
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
+  PetscInt disp_order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_disp_order",&disp_order,&flg); CHKERRQ(ierr);
+  if(flg!=PETSC_TRUE) {
+    disp_order = 1;	
+  }
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-  order = 1;
-  ierr = mField.set_field_order(0,MBTET,"VELOCITIES",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"VELOCITIES",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",order); CHKERRQ(ierr);
+  PetscInt vel_order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_vel_order",&vel_order,&flg); CHKERRQ(ierr);
+  if(flg!=PETSC_TRUE) {
+    vel_order = 1;	
+  }
+  ierr = mField.set_field_order(0,MBTET,"VELOCITIES",vel_order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"VELOCITIES",vel_order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",vel_order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"VELOCITIES",1); CHKERRQ(ierr);
 
   /****/
