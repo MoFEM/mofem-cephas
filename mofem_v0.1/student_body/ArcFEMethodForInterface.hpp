@@ -158,6 +158,34 @@ struct ArcInterfaceElasticFEMethod: public ElasticFEMethod {
 
 };
 
+/** \brief Inteface element for damage with linear cohesive law
+ *
+ * Function, make a loop for all gauss points, and calculate gap ( separation
+ * of interface ). We have three types of shape functions, for nodes, edges and
+ * face of interface itself.  Values of shepe functions, for each gauss pt, are
+ * stored in matrixes, nodeNTRI, _H1edgeN_, _H1edgeN_, _H1faceN_, for nodes,
+ * edges and faces, respectively. 
+ *
+ * Since interface has to faces, top and bottom, which can have different
+ * approximation order, shape functions for top and button surface are used
+ * first to calculate displacements. Subtracting displacements from top and
+ * button surface gap at each Gauss point is calculated. 
+ *
+ * Gap is stored in
+ * vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap;
+ * which is vector of vectors, size of vector is equal to number of Gauss
+ * points, each element of that vector, is vector dimension 3, which represent
+ * gap. 
+ *
+ * Gap at each Gauss pt, in local coordinates is in
+ * vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap_loc;
+ *
+ * Having calculated gap, based on physical equation for interface, cohesive
+ * forces are calculated. In particular,  RhsInt() function calulates vector of
+ * internal forces . In LhsInt() { ... }, tangent element stiffness matrix is
+ * calculated.
+ *
+ */
 struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
   enum interface_materials_context { ctx_IntLinearSoftening, ctx_InTBILinearSoftening, ctx_IntNone };
@@ -213,6 +241,15 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap_loc;
   ublas::vector<FieldData> g;
 
+  /* \brief calulate gap in global and local coorinates
+    *
+    * Function, make a loop for all gauss points, and calculate gap ( separation
+    * of interface ). We have three types of shape functions, for nodes, edges and
+    * face of interface itself.  Values of shepe functions, for each gauss pt, are
+    * stored in matrixes, nodeNTRI, _H1edgeN_, _H1edgeN_, _H1faceN_, for nodes,
+    * edges and faces, respectively. 
+    *
+  */
   virtual PetscErrorCode Calc_gap() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
@@ -284,6 +321,9 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
+  /** \brief calulate local and global material elastic stiffnes matrix for inteface
+   *
+   */
   virtual PetscErrorCode CalcDglob(const double _omega_) {
     PetscFunctionBegin;
     double E = (1-_omega_)*E0;
@@ -294,6 +334,9 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
+  /** \brief calulate gap norm
+   *
+   */
   virtual PetscErrorCode Calc_g(const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& gap_loc_at_GaussPt,double& g_at_GaussPt) {
     PetscFunctionBegin;
     switch (int_mat_ctx) {
@@ -309,6 +352,9 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
   
+  /** \brief calulate damage variable
+   *
+   */
   virtual PetscErrorCode Calc_omega(const double _kappa_,double& _omega_) {
     PetscFunctionBegin;
     switch (int_mat_ctx) {
@@ -332,6 +378,10 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
+  
+  /** \brief calulate local and global material elastic stiffnes matrix for inteface
+   *
+   */
   virtual PetscErrorCode CalcTangetDglob(const double _omega_,const double _g_,const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& _gap_loc_) {
     PetscFunctionBegin;
     switch (int_mat_ctx) {
@@ -355,6 +405,9 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
+  /** \brief calulate internal force vector
+   *
+   */
   virtual PetscErrorCode RhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
@@ -388,6 +441,9 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
+  /** calulate elemement tangent matrix
+   *
+   */
   virtual PetscErrorCode LhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
