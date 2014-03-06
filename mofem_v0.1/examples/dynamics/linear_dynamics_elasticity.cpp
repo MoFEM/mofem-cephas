@@ -220,6 +220,7 @@ int main(int argc, char *argv[]) {
 
   //TS
   TsCtx TsCtx(mField,"ELASTIC_MECHANICS");
+  TsCtx.zero_matrix = false;
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;

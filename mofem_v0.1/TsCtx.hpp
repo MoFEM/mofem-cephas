@@ -53,8 +53,9 @@ struct TsCtx {
   PetscLogEvent USER_EVENT_TsCtxIJacobian;
   PetscLogEvent USER_EVENT_TsCtxMonitor;
 
+  bool zero_matrix;
   TsCtx(FieldInterface &_mField,const string &_problem_name): 
-    mField(_mField),moab(_mField.get_moab()),problem_name(_problem_name) {
+    mField(_mField),moab(_mField.get_moab()),problem_name(_problem_name),zero_matrix(true) {
     PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
     PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_TsCtxIJacobian);
     PetscLogEventRegister("LoopTsRHSFunction",0,&USER_EVENT_TsCtxRHSFunction);
@@ -115,7 +116,9 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
   TsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_IJacobian.begin();
-  ierr = MatZeroEntries(*B); CHKERRQ(ierr);
+  if(ts_ctx->zero_matrix) {
+    ierr = MatZeroEntries(*B); CHKERRQ(ierr);
+  }
   for(;lit!=ts_ctx->loops_to_do_IJacobian.end();lit++) {
     lit->second->ts_u = u;
     lit->second->ts_u_t = u_t;
@@ -129,8 +132,10 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::ctx_TSNone);
   }
-  ierr = MatAssemblyBegin(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  if(ts_ctx->zero_matrix) {
+    ierr = MatAssemblyBegin(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  }
   PetscLogEventEnd(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
   PetscFunctionReturn(0);
 }
@@ -168,7 +173,9 @@ PetscErrorCode f_TSSetRHSJacobian(TS ts,PetscReal t,Vec u,Mat *A,Mat *B,MatStruc
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxRHSJacobian,0,0,0,0);
   TsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_RHSJacobian.begin();
-  ierr = MatZeroEntries(*B); CHKERRQ(ierr);
+  if(ts_ctx->zero_matrix) {
+    ierr = MatZeroEntries(*B); CHKERRQ(ierr);
+  }
   for(;lit!=ts_ctx->loops_to_do_RHSJacobian.end();lit++) {
     lit->second->ts_u = u;
     lit->second->ts_A = A;
