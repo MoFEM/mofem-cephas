@@ -346,8 +346,6 @@ int main(int argc, char *argv[]) {
 
   //Rhs
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-	SnesCtx::basic_method_to_do& preProcess_to_do_Rhs = SnesCtx.get_preProcess_to_do_Rhs();
-	SnesCtx::basic_method_to_do& postProcess_to_do_Rhs = SnesCtx.get_postProcess_to_do_Rhs();
 	SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
