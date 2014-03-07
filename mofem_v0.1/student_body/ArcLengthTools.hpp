@@ -226,10 +226,6 @@ struct PCShellCtx {
 struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
 	
 	FieldInterface& mField;
-	
-//	Pre_PostProcessFEMethod(
-//									FieldInterface& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField) {};
-	
 	ArcLengthCtx *arc_ptr;
 	
 	PrePostProcessFEMethod_For_F_lambda(FieldInterface& _mField, ArcLengthCtx *_arc_ptr):
