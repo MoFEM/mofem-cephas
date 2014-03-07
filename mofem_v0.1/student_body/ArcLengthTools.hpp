@@ -224,18 +224,19 @@ struct PCShellCtx {
 			SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE); //finally, assemble F_lambda
   \endcode
  */
-struct Pre_PostProcessFEMethod: public FEMethod_UpLevelStudent {
+struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
 	
 	FieldInterface& mField;
-	Mat Aij;
 	
-	Pre_PostProcessFEMethod(
-									FieldInterface& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),Aij(PETSC_NULL) {};
+//	Pre_PostProcessFEMethod(
+//									FieldInterface& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField) {};
 	
 	ArcLengthCtx *arc_ptr;
-	Pre_PostProcessFEMethod(
-									FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,ArcLengthCtx *_arc_ptr):
-	FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr) {};
+	
+	PrePostProcessFEMethod_For_F_lambda(FieldInterface& _mField, ArcLengthCtx *_arc_ptr):
+		mField(_mField),arc_ptr(_arc_ptr) {}
+
+	PetscErrorCode ierr;
 		
 		PetscErrorCode preProcess() {
 			PetscFunctionBegin;

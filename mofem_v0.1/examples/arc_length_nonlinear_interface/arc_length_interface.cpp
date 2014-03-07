@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
 
   ArcInterfaceElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),ArcCtx);
   ArcInterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus,h,beta,ft,Gf,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
-	Pre_PostProcessFEMethod PrePostFE(mField,&myDirihletBC,Aij,ArcCtx);
+	PrePostProcessFEMethod_For_F_lambda PrePostFE(mField,ArcCtx);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
