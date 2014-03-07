@@ -21,7 +21,6 @@
 #define __ARCLEGHTTOOLS_HPP__
 
 #include "FieldInterface.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
 #include "SnesCtx.hpp"
 
 namespace MoFEM {
