@@ -59,23 +59,6 @@ struct ArcInterfaceElasticFEMethod: public ElasticFEMethod {
     }
     D = lambda*D_lambda + mu*D_mu;
 
-
-    switch(snes_ctx) {
-      case ctx_SNESNone: 
-      case ctx_SNESSetFunction: { 
-	//F_lambda
-	ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetJacobian: {
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
     PetscFunctionReturn(0);
   }
 
@@ -129,15 +112,7 @@ struct ArcInterfaceElasticFEMethod: public ElasticFEMethod {
     switch(snes_ctx) {
       case ctx_SNESNone: {
       }
-      case ctx_SNESSetFunction: { 
-	//F_lambda
-	ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	//F_lambda2
-	ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+      case ctx_SNESSetFunction: {
       }
       break;
       case ctx_SNESSetJacobian: {
