@@ -413,7 +413,7 @@ int main(int argc, char *argv[]) {
     ///Array of Rotational Angles
     double AxAngle[2] = {/*1st Angle*/ -0.25*M_PI ,/*2nd Angle*/ -0.25*M_PI};
     
-    TranIsotropicAxisAngleRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
+    TranIsotropicAxisAngleRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,noAA,AxVector,AxAngle);
     
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
