@@ -316,6 +316,7 @@ int main(int argc, char *argv[]) {
 
   ArcInterfaceElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),ArcCtx);
   ArcInterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus,h,beta,ft,Gf,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
+	Pre_PostProcessFEMethod PrePostFE(mField,&myDirihletBC,Aij,ArcCtx);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
@@ -345,14 +346,24 @@ int main(int argc, char *argv[]) {
 
   //Rhs
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
+	SnesCtx::basic_method_to_do& preProcess_to_do_Rhs = SnesCtx.get_preProcess_to_do_Rhs();
+	SnesCtx::basic_method_to_do& postProcess_to_do_Rhs = SnesCtx.get_postProcess_to_do_Rhs();
+	SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
+	SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE);
+
+
   //Mat
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
+//	SnesCtx::basic_method_to_do& preProcess_to_do_Mat = SnesCtx.get_preProcess_to_do_Mat();
+//	SnesCtx::basic_method_to_do& postProcess_to_do_Mat = SnesCtx.get_postProcess_to_do_Mat();
+//	SnesCtx.get_preProcess_to_do_Mat().push_back(&PrePostFE);
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
+//	SnesCtx.get_postProcess_to_do_Mat().push_back(&PrePostFE);
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;
@@ -396,9 +407,17 @@ int main(int argc, char *argv[]) {
       ierr = VecZeroEntries(F); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+			ierr = VecZeroEntries(ArcCtx->F_lambda); CHKERRQ(ierr);
+			ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+			ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ARC_LENGTH",MyArcMethod);  CHKERRQ(ierr);
+			ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+			ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+			ierr = VecAssemblyBegin(ArcCtx->F_lambda); CHKERRQ(ierr);
+			ierr = VecAssemblyEnd(ArcCtx->F_lambda); CHKERRQ(ierr);
+			ierr = VecDot(ArcCtx->F_lambda,ArcCtx->F_lambda,&ArcCtx->F_lambda2); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);

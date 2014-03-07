@@ -21,6 +21,7 @@
 #define __ARCLEGHTTOOLS_HPP__
 
 #include "FieldInterface.hpp"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "SnesCtx.hpp"
 
 namespace MoFEM {
@@ -208,6 +209,69 @@ struct PCShellCtx {
   friend PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
   friend PetscErrorCode pc_setup_arc_length(PC pc);
 };
+	
+struct Pre_PostProcessFEMethod: public FEMethod_UpLevelStudent {
+	
+	FieldInterface& mField;
+	Mat Aij;
+	
+	Pre_PostProcessFEMethod(
+									FieldInterface& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),Aij(PETSC_NULL) {};
+	
+	ArcLengthCtx *arc_ptr;
+	Pre_PostProcessFEMethod(
+									FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,ArcLengthCtx *_arc_ptr):
+	FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),Aij(_Aij),arc_ptr(_arc_ptr) {};
+		
+		PetscErrorCode preProcess() {
+			PetscFunctionBegin;
+			
+			switch(snes_ctx) {
+				case ctx_SNESNone:
+				case ctx_SNESSetFunction: {
+					//F_lambda
+					ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
+					ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+					ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+				}
+					break;
+				case ctx_SNESSetJacobian: {
+				}
+					break;
+				default:
+					SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+			}
+			
+			PetscFunctionReturn(0);
+		}
+		
+		PetscErrorCode postProcess() {
+			PetscFunctionBegin;
+			
+			switch(snes_ctx) {
+				case ctx_SNESNone: {
+				}
+				case ctx_SNESSetFunction: {
+					//F_lambda
+					ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+					ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+					ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+					ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+					//F_lambda2
+					ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
+					PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+				}
+					break;
+				case ctx_SNESSetJacobian: {
+				}
+					break;
+				default:
+					SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+			}
+			
+			PetscFunctionReturn(0);
+		}
+	};
 
 /**
  * apply oppertor for Arc Length precoditionet
@@ -224,7 +288,7 @@ PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
  */
 PetscErrorCode pc_setup_arc_length(PC pc);
 
-}
+};
 
 #endif // __ARCLEGHTTOOLS_HPP__
 
