@@ -209,7 +209,21 @@ struct PCShellCtx {
   friend PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
   friend PetscErrorCode pc_setup_arc_length(PC pc);
 };
-	
+
+/** 
+ * \brief Pre and Post Process for Arc Length 
+ * preProcess - zero F_lambda
+ * postProcess - assembly F_lambda
+ * Example: \code
+			SnesCtx::basic_method_to_do& preProcess_to_do_Rhs = SnesCtx.get_preProcess_to_do_Rhs();
+			SnesCtx::basic_method_to_do& postProcess_to_do_Rhs = SnesCtx.get_postProcess_to_do_Rhs();
+			SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE); //Zero F_lambda before looping over FEs
+			loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+			loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+			loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
+			SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE); //finally, assemble F_lambda
+  \endcode
+ */
 struct Pre_PostProcessFEMethod: public FEMethod_UpLevelStudent {
 	
 	FieldInterface& mField;

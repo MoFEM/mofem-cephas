@@ -357,13 +357,9 @@ int main(int argc, char *argv[]) {
 
   //Mat
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-//	SnesCtx::basic_method_to_do& preProcess_to_do_Mat = SnesCtx.get_preProcess_to_do_Mat();
-//	SnesCtx::basic_method_to_do& postProcess_to_do_Mat = SnesCtx.get_postProcess_to_do_Mat();
-//	SnesCtx.get_preProcess_to_do_Mat().push_back(&PrePostFE);
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
-//	SnesCtx.get_postProcess_to_do_Mat().push_back(&PrePostFE);
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;
