@@ -315,7 +315,7 @@ namespace MoFEM {
     TranIsotropicAxisAngleRotElasticFEMethod(
 																						 FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
 																						 int _noAA, double *_AxVector, double *_AxAngle):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,NULL,NULL), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle)  {
+    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle)  {
 			
 			propeties_from_BlockSet_Mat_TransIsoSet = false;
 			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
@@ -325,11 +325,14 @@ namespace MoFEM {
 		
     PetscErrorCode preProcess() {
 			PetscFunctionBegin;
-			ierr = ElasticFEMethod::preProcess();  CHKERRQ(ierr);
-			PetscSynchronizedFlush(PETSC_COMM_WORLD);
-			ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-			ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+      PetscSynchronizedFlush(PETSC_COMM_WORLD);
+      ierr = PetscTime(&v1); CHKERRQ(ierr);
+      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 			
+			ierr = VecZeroEntries(Data); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
+						
 			PetscFunctionReturn(0);
 		}
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -495,17 +498,21 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
-		PetscErrorCode Fint(Vec F_int) {
-			PetscFunctionBegin;
-			ierr = TranIsotropicAxisAngleRotElasticFEMethod::Fint(); CHKERRQ(ierr);
-			for(int rr = 0;rr<row_mat;rr++) {
-				if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-				if(RowGlob[rr].size()==0) continue;
-				f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
-				ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-				
-			}
-			PetscFunctionReturn(0);
+    virtual PetscErrorCode Fint(Vec F_int) {
+      PetscFunctionBegin;
+      try {
+				ierr = Fint(); CHKERRQ(ierr);
+				for(int rr = 0;rr<row_mat;rr++) {
+					if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+					if(RowGlob[rr].size()==0) continue;
+					ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+				}
+      } catch (const std::exception& ex) {
+				ostringstream ss;
+				ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+				SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
     }
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
 		virtual PetscErrorCode Stiffness() {
@@ -597,7 +604,7 @@ namespace MoFEM {
 		ArcLengthTranIsotropicAxisAngleRotElasticFEMethod(
 																											FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
 																											int _noAA, double *_AxVector, double *_AxAngle,ArcLengthCtx *_arc_ptr):
-		ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,NULL,NULL), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle),arc_ptr(_arc_ptr) {
+		ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle),arc_ptr(_arc_ptr) {
 			
 			propeties_from_BlockSet_Mat_TransIsoSet = false;
 			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
@@ -943,7 +950,7 @@ namespace MoFEM {
     
     TranIsotropicFibreDirRotElasticFEMethod(
                                             FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,NULL,NULL) {
+    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0) {
 			
 			propeties_from_BlockSet_Mat_TransIsoSet = false;
 			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
@@ -1242,10 +1249,13 @@ namespace MoFEM {
 		//--------------------------------------------------------------------------------------------------------------------------------------------------//
 		PetscErrorCode preProcess() {
 			PetscFunctionBegin;
-			ierr = ElasticFEMethod::preProcess();  CHKERRQ(ierr);
-			PetscSynchronizedFlush(PETSC_COMM_WORLD);
-			ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-			ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+      PetscSynchronizedFlush(PETSC_COMM_WORLD);
+      ierr = PetscTime(&v1); CHKERRQ(ierr);
+      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+			
+			ierr = VecZeroEntries(Data); CHKERRQ(ierr);
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
 			
 			PetscFunctionReturn(0);
     }
@@ -1288,7 +1298,7 @@ namespace MoFEM {
 		Tag th_fibre_dir;
 		
 		ArcLengthTranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ArcLengthCtx *_arc_ptr):
-		ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,NULL,NULL), arc_ptr(_arc_ptr){
+		ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), arc_ptr(_arc_ptr){
 			
 			propeties_from_BlockSet_Mat_TransIsoSet = false;
 			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
