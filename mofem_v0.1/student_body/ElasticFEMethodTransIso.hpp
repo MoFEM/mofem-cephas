@@ -417,46 +417,82 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
-		PetscErrorCode Fint() {
-			PetscFunctionBegin;
+		virtual PetscErrorCode Fint() {
+      PetscFunctionBegin;
 			
-			double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
-			ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-			ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
-			
-			//Gradient at Gauss points;
-			vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-			ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
-			unsigned int g_dim = g_NTET.size()/4;
-			assert(GradU_at_GaussPt.size() == g_dim);
-			NOT_USED(g_dim);
-			vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
-			int gg = 0;
-			for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
-				ublas::matrix< FieldData > GradU = *viit;
-				ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
-				ublas::vector< FieldData > VoightStrain(6);
-				VoightStrain[0] = Strain(0,0);
-				VoightStrain[1] = Strain(1,1);
-				VoightStrain[2] = Strain(2,2);
-				VoightStrain[3] = 2*Strain(0,1);
-				VoightStrain[4] = 2*Strain(1,2);
-				VoightStrain[5] = 2*Strain(2,0);
-				double w = V*G_W_TET[gg];
-				ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
-				//BT * VoigtStress
-				for(int rr = 0;rr<row_mat;rr++) {
-					f_int.resize(row_mat);
-					ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
-					if(gg == 0) {
-						f_int[rr] = prod( trans(B), VoightStress );
-					} else {
-						f_int[rr] += prod( trans(B), VoightStress );
+      try {
+				
+				//Higher order approximation of geometry
+				ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
+				
+				double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
+				ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
+				ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
+				
+				//Gradient at Gauss points;
+				vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+				ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+				unsigned int g_dim = g_NTET.size()/4;
+				assert(GradU_at_GaussPt.size() == g_dim);
+				NOT_USED(g_dim);
+				vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+				int gg = 0;
+				for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
+					try {
+						ublas::matrix< FieldData > GradU = *viit;
+						if(!invH.empty()) {
+							//GradU =
+							//[ dU/dChi1 dU/dChi2 dU/dChi3 ]
+							//[ dV/dChi1 dV/dChi2 dU/dChi3 ]
+							//[ dW/dChi1 dW/dChi2 dW/dChi3 ]
+							//H =
+							//[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
+							//[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
+							//[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]
+							//invH =
+							//[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
+							//[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
+							//[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
+							//GradU =
+							//[ dU/dX1 dU/dX2 dU/dX3 ]
+							//[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
+							//[ dW/dX1 dW/dX2 dW/dX3 ]
+							GradU = prod( GradU, invH[gg] );
+						}
+						ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+						ublas::vector< FieldData > VoightStrain(6);
+						VoightStrain[0] = Strain(0,0);
+						VoightStrain[1] = Strain(1,1);
+						VoightStrain[2] = Strain(2,2);
+						VoightStrain[3] = 2*Strain(0,1);
+						VoightStrain[4] = 2*Strain(1,2);
+						VoightStrain[5] = 2*Strain(2,0);
+						double w = V*G_W_TET[gg];
+						ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
+						//BT * VoigtStress
+						for(int rr = 0;rr<row_mat;rr++) {
+							f_int.resize(row_mat);
+							ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
+							if(gg == 0) {
+								f_int[rr] = prod( trans(B), VoightStress );
+							} else {
+								f_int[rr] += prod( trans(B), VoightStress );
+							}
+						}
+					} catch (const std::exception& ex) {
+						ostringstream ss;
+						ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+						SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 					}
 				}
-			}
+				
+      } catch (const std::exception& ex) {
+				ostringstream ss;
+				ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+				SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
 			
-			PetscFunctionReturn(0);
+      PetscFunctionReturn(0);
     }
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
 		PetscErrorCode Fint(Vec F_int) {
