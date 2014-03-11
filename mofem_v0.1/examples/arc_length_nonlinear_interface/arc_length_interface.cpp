@@ -361,11 +361,13 @@ int main(int argc, char *argv[]) {
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;
+  double step_size0;
   //step = 1;
   if(step == 1) {
     step_size = step_size_reduction;
   } else {
-    reduction = step_size_reduction;
+    reduction = step_size;
+    step_size0 = step_size_reduction;
     step++;
   }
 
@@ -423,6 +425,7 @@ int main(int argc, char *argv[]) {
       ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
       ierr = MyArcMethod.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
       ierr = MyArcMethod.calulate_lambda_int(step_size); CHKERRQ(ierr);
+      step_size0 = step_size;
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = ArcCtx->dlambda;
       double dx_nrm;
@@ -469,7 +472,10 @@ int main(int argc, char *argv[]) {
     if(step > 1) {
       if(its>0) {
 	reduction = pow((double)its_d/(double)(its+1),gamma);
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
+	if(step_size*reduction > 10*step_size0) {
+	  reduction = 1;
+	}
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size (step_size,step_size0) = %6.4e (%6.4e,%6.4e)\n",reduction,step_size,step_size0); CHKERRQ(ierr);
       } else reduction = 1;
     }
 
