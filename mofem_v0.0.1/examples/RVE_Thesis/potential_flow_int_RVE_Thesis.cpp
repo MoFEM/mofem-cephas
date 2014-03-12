@@ -145,11 +145,11 @@ int main(int argc, char *argv[]) {
     Range LatestRefinedTets;
 	rval = moab.get_entities_by_type(out_meshset, MBTET,LatestRefinedTets,true); CHKERR_PETSC(rval);
 
-//     //Saving prisms in interface.vtk
-//      EntityHandle out_meshset1;
-//      rval = moab.create_meshset(MESHSET_SET,out_meshset1); CHKERR_PETSC(rval);
-//      ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBPRISM,out_meshset1); CHKERRQ(ierr);
-//      rval = moab.write_file("interface.vtk","VTK","",&out_meshset1,1); CHKERR_PETSC(rval);
+     //Saving prisms in interface.vtk
+      EntityHandle out_meshset1;
+      rval = moab.create_meshset(MESHSET_SET,out_meshset1); CHKERR_PETSC(rval);
+      ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBPRISM,out_meshset1); CHKERRQ(ierr);
+      rval = moab.write_file("interface.vtk","VTK","",&out_meshset1,1); CHKERR_PETSC(rval);
       
 	BitRefLevel problem_bit_level = bit_levels.back();
       

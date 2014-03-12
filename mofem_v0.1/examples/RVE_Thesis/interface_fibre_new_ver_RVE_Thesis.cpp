@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
        //Applied strain (specified by the user)
     ublas::matrix<double> strain_app;
     strain_app.resize(3,3);
-    strain_app(0,0) = 0.01; strain_app(0,1)=0.0; strain_app(0,2)=0.0;
+    strain_app(0,0) = 0.005; strain_app(0,1)=0.0; strain_app(0,2)=0.0;
     strain_app(1,0) = 0.0; strain_app(1,1)=0.0; strain_app(1,2)=0.0;
     strain_app(2,0) = 0.0; strain_app(2,1)=0.0; strain_app(2,2)=0.0;
     
