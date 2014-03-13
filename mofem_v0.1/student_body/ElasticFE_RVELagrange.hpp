@@ -48,16 +48,26 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
       rowNMatrices.resize(1+3+1);
       ColGlob.resize(1+3+1);
     
-      g_TRI_dim = 13;
-      g_NTRI.resize(3*13);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13);
-      G_W_TRI = G_TRI_W13;
-      
+//      g_TRI_dim = 13;
+//      g_NTRI.resize(3*g_TRI_dim);
+//      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13);
+//      G_W_TRI = G_TRI_W13;
+
+      g_TRI_dim = 28;
+      g_NTRI.resize(3*g_TRI_dim);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
+      G_W_TRI = G_TRI_W28;
           
           
-      row_mat=0;
-      //changing the shape function matrix for nodes to somthing like
           
+    
+      row_mat=0;  //row_mat=0 for nodes   [1,2,3] for edges, 4 for face (for triangle)
+       /*
+        Changing the shape function matrix for nodes to somthing like
+        N=[N1 0  0  N2 0  0  N3 0  0 ]
+           0  N1 0  0  N2 0  0  N3 0 
+           0  0  N1 0  0  N2 0  0  N3
+        */
           
       rowNMatrices[row_mat].resize(g_TRI_dim);
       unsigned int gg = 0;
@@ -79,9 +89,9 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
 //              cout<<rowNMatrices[0][jj]<<endl<<endl;}
           
       //shape functions matrix (g_NTRI_mat) to find the gauss point coordinates
-      g_NTRI_mat.resize(3,13);
+      g_NTRI_mat.resize(3,g_TRI_dim);
       int kk=0;
-      for (int ii=0; ii<13; ii++){
+      for (int ii=0; ii<g_TRI_dim; ii++){
           for(int jj=0; jj<3; jj++)
           {
               g_NTRI_mat(jj,ii)=g_NTRI[kk]; kk++;
@@ -136,6 +146,8 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
     virtual PetscErrorCode GetN_and_Indices() {
         PetscFunctionBegin;
         
+        
+        //Find out indices for row and column for nodes on the surface, i.e. triangles
         row_mat = 0;
         RowGlob[row_mat].resize(9);
         ColGlob[row_mat].resize(9);
@@ -148,9 +160,11 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
 //        cout<< "conn_face ="<<conn_face << endl;
         int nn = 0;
         for(;nn<3;nn++) {
-            dofs_iterator niit,hi_niit;
-            dofs_iterator col_niit,hi_col_niit;
+            dofs_iterator niit,hi_niit;   //for rows
+            dofs_iterator col_niit,hi_col_niit;  // for columns
             string field_name;
+            
+            //minimum and maximum row and column indices for each node on the surface
             niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",conn_face[nn]));
             hi_niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",conn_face[nn]));
             col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
@@ -173,7 +187,7 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
 //        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[row_mat][ii]<<" ";
 //        cout<<"\n\n\n"<<endl;
         
-        // Find row and colum indices for Faces
+        // Find row and colum indices for Edges
         vector<int> FaceEdgeSense;
         vector<int> FaceEdgeOrder;
         vector<vector<double> > N_edge_data;
@@ -185,13 +199,6 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
         FaceEdgeOrder.resize(3);
         N_edge_data.resize(3);
         diffN_edge_data.resize(3);
-        
-        //        cout << "list dofs\n";
-        //        for(_IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(this,"DISPLACEMENT",MBTRI,dof)) {
-        //            cout << *dof << endl;
-        //        }
-        //        cout << "list<-end\n";
-        
         int ee = 0; row_mat++;
         for(;ee<3;ee++) {
             EntityHandle edge;
@@ -249,8 +256,10 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
 ////        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[1].size()<<endl;
 ////        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[1][ii]<<" ";
 //        cout<<"\n\n\n"<<endl;
-//        
+//
         
+        
+        //Find the shape function N at each gauss point for all the edges and then re-araange in the form as mentioned for nodes
         if(N_edge[0] != NULL){
             ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&g_NTRI[0],&diffNTRI[0],N_edge,diffN_edge,g_TRI_dim); CHKERRQ(ierr);
             //            cout<<"Hi from insidie"<<endl<<endl;
@@ -274,15 +283,12 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
                         }
                         gg1++;
                     }
-                    //                    cout<<endl;
                 }
             }
         }
 
         
-        
-        
-        
+        //Find the rows and column indices for face of the triangle
         dofs_iterator fiit,hi_fiit, col_fiit, col_hi_fiit;
         fiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",face_tri));
         hi_fiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",face_tri));
@@ -307,8 +313,9 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
                     ColGlob[row_mat][col_fiit->get_EntDofIdx()]=col_fiit->get_petsc_gloabl_dof_idx();
                 }
             }
-//            cout<<"RowGlob[row_mat] "<<RowGlob[row_mat][0]<<endl;
-//            cout<<"ColGlob[row_mat] "<<ColGlob[row_mat][0]<<endl;
+
+            //Find out the shape funcition and rearrange in the form as shown for the nodes
+            cout<<"NBFACE_H1(face_order) "<<NBFACE_H1(face_order)<<endl;
             vector<double> N_face, diffN_face;
             N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
             diffN_face.resize(2*g_TRI_dim*NBFACE_H1(face_order));
@@ -316,9 +323,11 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
             ierr = H1_FaceShapeFunctions_MBTRI(face_nodes,face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
         
             rowNMatrices[row_mat].resize(g_TRI_dim);
-            unsigned int gg = 0;
-            unsigned int gg1=0;
+            unsigned int gg = 0;  unsigned int gg1=0;
             int nodes_face=NBFACE_H1(face_order);
+            
+            
+//            for(int ii=0; ii<N_face.size(); ii++) cout<<"N_face  "<<N_face[ii]<<endl;
             
             for(;gg<g_TRI_dim;gg++) {
                 rowNMatrices[row_mat][gg].resize(3,3*nodes_face);
@@ -334,8 +343,12 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
                     }
                     gg1++;
                 }
-//                cout<<endl<<endl<<endl;
+//                cout<<"rowNMatrices[row_mat][0](jj,kk)  "<<rowNMatrices[row_mat][gg]<<endl;
+//                std::string wait;
+//                std::cin >> wait;
             }
+
+            
             row_mat++;
         }
         PetscFunctionReturn(0);
@@ -343,7 +356,7 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
     
     
     
-    
+    //Calculate and assemble NT x N matrix
     ublas::matrix<ublas::matrix<FieldData> > NTN;
     double coords_face[9];
     double area;
@@ -361,7 +374,7 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
         ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
         ublas::vector<FieldData,ublas::bounded_array<double,3> > normal(3);
         ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
-        area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
+        area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
         //cout<<" area = "<<area<<endl;
         
         //Calculate C Matrix, i.e. (NT x N)
@@ -429,13 +442,16 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
     ublas::vector<ublas::matrix<FieldData> > D_mat;
     ublas::vector<FieldData> f; //f.resize(9);
 
+    
+    //Calculate the right hand side vector, i.e. f=D_max * applied_strain and assemble it into the global force vector F
     virtual PetscErrorCode Rhs() {
         PetscFunctionBegin;
         X_mat.resize(3,6);    X_mat.clear();
         nodes_coord.resize(3,3);
-        gauss_coord.resize(3,13);
+        gauss_coord.resize(3,g_TRI_dim);
         D_mat.resize(row_mat);
         
+        //used to calculate the coordinates of a Gauss points
         nodes_coord(0,0)=coords_face[0]; nodes_coord(0,1)=coords_face[3]; nodes_coord(0,2)=coords_face[6];
         nodes_coord(1,0)=coords_face[1]; nodes_coord(1,1)=coords_face[4]; nodes_coord(1,2)=coords_face[7];
         nodes_coord(2,0)=coords_face[2]; nodes_coord(2,1)=coords_face[5]; nodes_coord(2,2)=coords_face[8];
@@ -446,11 +462,11 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
 //        cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
 //        cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
         
+        //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xx, xz, zy]^T
         ublas::vector<FieldData> applied_strain;
         applied_strain.resize(6);
-        
-        applied_strain(0)=0.0; applied_strain(1)=1.0; applied_strain(2)=0.0;
-        applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
+        applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
+        applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=1.0;
         //cout<<"area "<<area << endl;
         
         
@@ -465,6 +481,7 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
                 ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
                 ublas::matrix<FieldData> &col_Mat = X_mat;
                 
+                //Integrate D_mat
                 if(gg == 0) {
                     D_mat[rr].resize(row_Mat.size2(),col_Mat.size2());
                     cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
@@ -482,6 +499,8 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
                 }
             }
             //cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl<<endl;
+            
+            //Assemble D_mat into global force vector F
             f=prod(D_mat[rr], applied_strain);
             ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
         }
