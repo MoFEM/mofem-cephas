@@ -74,8 +74,13 @@ struct FieldInterface {
   virtual bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType) = 0;
 
   /** 
-    * \brief get entities form CUBIT/meshset 
-    *
+    * \brief get entities from CUBIT/meshset of a particular entity dimension \n
+	  * Nodeset can contain nodes, edges, triangles and tets. This applies to other CubitBCType meshsets too. \n
+	  * The nodeset's meshset contain the nodes in the MIDDLE of the surface or volume which is done by default in Cubit,\n
+		* Hence if all nodes on a particular nodeset are required,\n
+	  * one should get all triangles or tetrahedrals for which the nodeset was create in Cubit,\n
+	  * and get all the connectivities of tris/tets.
+		*
     * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
     * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 - Volume(tetrahedral))
@@ -85,11 +90,13 @@ struct FieldInterface {
   virtual PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false) = 0;
 
   /** 
-    * \brief get all entities types from CUBIT/meshset 
-    *
+    * \brief get entities related to CUBIT/meshset, \n
+	  * NodeSet will get Vertices only, even if the NodeSet contains egdes, tris and tets\n
+    * SideSet will get Tris, BlockSet will get Tets, DisplacementSet and ForceSet are stored in NodeSet, PressureSet is stored in Sideset.
+	  *
     * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
-    * \param entities form meshset
+    * \param Range containing the retreived entities related to the CubitBCType
     * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
     */
   virtual PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, Range &entities,const bool recursive = false) = 0;
