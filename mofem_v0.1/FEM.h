@@ -72,7 +72,7 @@ void ShapeDiffMBTRIinvJ(double *diffN,double *invJac,double *diffNinvJac);
 /// caluate shape functions
 PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM);
 /// calulare direvatives of shape functions
-void ShapeDiffMBTET(double *diffN);
+PetscErrorCode ShapeDiffMBTET(double *diffN);
 /// determinad of jacobian
 double Shape_detJac(double *Jac);
 /// calulate jacobian

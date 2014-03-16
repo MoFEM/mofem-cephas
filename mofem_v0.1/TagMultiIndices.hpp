@@ -34,6 +34,7 @@ namespace MoFEM {
   struct BitFieldId_mi_tag {};
   struct Unique_mi_tag {};
   struct MoABEnt_mi_tag {};
+  struct MoABFEEnt_mi_tag {};
   struct EntType_mi_tag {};
   struct Composite_unique_mi_tag {};
   struct Composite_mi_tag {};

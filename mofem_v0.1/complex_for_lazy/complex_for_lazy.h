@@ -220,6 +220,7 @@ PetscErrorCode KExt_HH_hierarchical(double eps,int order,int *order_edge,
 //quality
 void set_qual_ver(int ver);
 int get_qual_ver();
+PetscErrorCode get_edges_from_elem_coords(double *coords,double *coords_edges);
 PetscErrorCode quality_volume_length_F(double alpha,double *alpha2,double gamma,double *diffN,
   double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
   double *F,double *iF);

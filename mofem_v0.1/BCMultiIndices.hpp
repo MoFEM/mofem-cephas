@@ -615,6 +615,7 @@ struct CubitMeshSets {
   char* tag_name_data;
   const Cubit_BC_bitset meshsets_mask;
   CubitMeshSets(Interface &moab,const EntityHandle _meshset);
+  CubitMeshSets(Interface &moab,const Cubit_BC_bitset _CubitBCType,const int _msId);
   inline int get_msId() const { return *msId; }
   inline Cubit_BC_bitset get_CubitBCType() const { return CubitBCType; }
 
@@ -745,8 +746,8 @@ struct CubitMeshSets {
    */
   PetscErrorCode print_Cubit_name(ostream& os) const;
     
-template<class _ATTRIBUTE_TYPE_>
-PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
+  template<class _ATTRIBUTE_TYPE_>
+  PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     if((CubitBCType&data.type).none()) {
@@ -756,9 +757,13 @@ PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
     get_Cubit_attributes(attributes);
     ierr = data.fill_data(attributes); CHKERRQ(ierr);
     PetscFunctionReturn(0);
-}
-    
+  }
+     
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
+
+  private:
+  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
+  PetscErrorCode get_tags_hanlders(Interface &moab);
     
 };
     

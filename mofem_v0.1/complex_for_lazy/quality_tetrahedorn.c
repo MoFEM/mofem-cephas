@@ -19,6 +19,22 @@
 
 static PetscErrorCode ierr;
 
+PetscErrorCode get_edges_from_elem_coords(double *coords,double *coords_edges) {
+  PetscFunctionBegin;
+  cblas_dcopy(3,&coords[0*3],1,&coords_edges[0* 3*2+0],1); 
+  cblas_dcopy(3,&coords[1*3],1,&coords_edges[0* 3*2+3],1); 
+  cblas_dcopy(3,&coords[0*3],1,&coords_edges[1* 3*2+0],1); 
+  cblas_dcopy(3,&coords[2*3],1,&coords_edges[1* 3*2+3],1); 
+  cblas_dcopy(3,&coords[0*3],1,&coords_edges[2* 3*2+0],1);
+  cblas_dcopy(3,&coords[3*3],1,&coords_edges[2* 3*2+3],1);
+  cblas_dcopy(3,&coords[1*3],1,&coords_edges[3* 3*2+0],1); 
+  cblas_dcopy(3,&coords[2*3],1,&coords_edges[3* 3*2+3],1); 
+  cblas_dcopy(3,&coords[1*3],1,&coords_edges[4* 3*2+0],1);
+  cblas_dcopy(3,&coords[3*3],1,&coords_edges[4* 3*2+3],1);
+  cblas_dcopy(3,&coords[2*3],1,&coords_edges[5* 3*2+0],1);
+  cblas_dcopy(3,&coords[3*3],1,&coords_edges[5* 3*2+3],1);
+  PetscFunctionReturn(0);
+}
 PetscErrorCode calculate_lrms(double *dofs_egdes_X,double *lrms) {
   PetscFunctionBegin;
   *lrms = 0;
