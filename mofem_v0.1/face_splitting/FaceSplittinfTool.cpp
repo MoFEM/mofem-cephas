@@ -733,7 +733,7 @@ PetscErrorCode FaceSplittingTools::addcrackFront_to_Cubit201() {
   ierr = mField.get_moab().add_entities(meshset201,crack_surface_tris_skin_edges); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FaceSplittingTools::meshRefine(const BitRefLevel bit_mesh,const BitRefLevel new_bit_mesh) {
+PetscErrorCode FaceSplittingTools::meshRefine(const BitRefLevel bit_mesh) {
   PetscFunctionBegin;
 
   PetscBool flg = PETSC_TRUE;
@@ -743,13 +743,15 @@ PetscErrorCode FaceSplittingTools::meshRefine(const BitRefLevel bit_mesh,const B
     nb_ref_levels = 0;
   }
 
-  BitRefLevel last_ref = bit_mesh;
-  for(int ll = 1;ll<nb_ref_levels+1;ll++) {
+  meshRefineBitLevels.resize(0);
+  meshRefineBitLevels.push_back(bit_mesh);
+
+  /*for(int ll = 1;ll<nb_ref_levels+1;ll++) {
 
       Range level_tets;
-      ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),level_tets); CHKERRQ(ierr);
+      ierr = mField.get_entities_by_ref_level(meshRefineBitLevels.back(),BitRefLevel().set(),level_tets); CHKERRQ(ierr);
 
-      Range crack_edges,edges_to_refine;
+      Range crack_edges;
       ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_edges,true); CHKERRQ(ierr);
 
       Range crack_edges_nodes;
@@ -757,6 +759,9 @@ PetscErrorCode FaceSplittingTools::meshRefine(const BitRefLevel bit_mesh,const B
       Range crack_edges_nodes_tets;
       rval = mField.get_moab().get_adjacencies(crack_edges_nodes,3,false,crack_edges_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
       crack_edges_nodes_tets = intersect(level_tets.subset_by_type(MBTET),crack_edges_nodes_tets);
+
+
+      Range edges_to_refine;
       rval = mField.get_moab().get_adjacencies(crack_edges_nodes_tets,1,false,edges_to_refine,Interface::UNION); CHKERR_PETSC(rval);
 
       last_ref = BitRefLevel().set(ll);
@@ -771,7 +776,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const BitRefLevel bit_mesh,const B
 	ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
       }
   
-  }
+  }*/
 
 
   PetscFunctionReturn(0);

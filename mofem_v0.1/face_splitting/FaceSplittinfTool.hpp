@@ -111,10 +111,11 @@ struct FaceSplittingTools {
   PetscErrorCode chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(bool createMeshset);
 
   //Split new crack front faces
+  vector<BitRefLevel> meshRefineBitLevels;
 
   PetscErrorCode addNewSurfaceFaces_to_Cubit_msId200();
   PetscErrorCode addcrackFront_to_Cubit201();
-  PetscErrorCode meshRefine(const BitRefLevel bit_mesh,const BitRefLevel new_bit_mesh);
+  PetscErrorCode meshRefine(const BitRefLevel bit_mesh);
   PetscErrorCode splitFaces(const BitRefLevel bit_mesh,const BitRefLevel new_bit_mesh);
 
   //Cat mesh

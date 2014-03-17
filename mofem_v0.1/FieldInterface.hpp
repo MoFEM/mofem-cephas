@@ -400,7 +400,7 @@ struct FieldInterface {
    * \param EntityHandle meshset   
    *
    */
-  virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
+  virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
    *
@@ -410,7 +410,7 @@ struct FieldInterface {
    *
    *
    */
-  virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
+  virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
 
   /** \brief Get childed entities form meshset containing parent entities 

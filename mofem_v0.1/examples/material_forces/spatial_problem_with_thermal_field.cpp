@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
 
       Range crack_edges,crack_nodes,edge_tets,level_tets,edges_to_refine;
 
-      ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),level_tets); CHKERRQ(ierr);
+      ierr = mField.get_entities_by_ref_level(last_ref,BitRefLevel().set(),level_tets); CHKERRQ(ierr);
 
       ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_edges,true); CHKERRQ(ierr);
       rval = moab.get_connectivity(crack_edges,crack_nodes,true); CHKERR_PETSC(rval);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   ierr = conf_prob.thermal_field(mField); CHKERRQ(ierr);
   ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
