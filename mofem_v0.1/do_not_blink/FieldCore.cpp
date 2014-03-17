@@ -3991,7 +3991,7 @@ PetscErrorCode FieldCore::get_entities_by_type_and_ref_level(const BitRefLevel &
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) {
+PetscErrorCode FieldCore::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) {
   PetscFunctionBegin;
   RefMoFEMEntity_multiIndex::iterator miit = refinedMoFemEntities.begin();
   for(;miit!=refinedMoFemEntities.end();miit++) {
@@ -4004,7 +4004,7 @@ PetscErrorCode FieldCore::get_entities_by_type_and_ref_level(const BitRefLevel &
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) {
+PetscErrorCode FieldCore::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) {
   PetscFunctionBegin;
   RefMoFEMEntity_multiIndex::iterator miit = refinedMoFemEntities.begin();
   for(;miit!=refinedMoFemEntities.end();miit++) {
