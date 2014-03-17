@@ -1647,7 +1647,7 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	    adj_ents.insert(fe_ent);
 	    break;
       	  default:
-  	   SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for TET finite element");
+  	   SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for VERTEX finite element");
 	}
 	break;
       case MBEDGE:
@@ -1657,7 +1657,7 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	    adj_ents.insert(fe_ent);
 	    break;
       	  default:
-  	   SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for TET finite element");
+  	   SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for EDGE finite element");
 	}
 	break;
       case MBTRI: 
@@ -1673,8 +1673,14 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	    //add faces
 	    adj_ents.insert(fe_ent);
 	    break;
+	    case NoField: {
+	      EntityHandle field_meshset = miit->get_meshset();
+	      adj_ents.insert(field_meshset);
+	    }
+	   break;
+
       	  default:
-	    SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for TET finite element");
+	    SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for TRI finite element");
 	}
 	break;
       case MBTET:
@@ -2189,7 +2195,6 @@ PetscErrorCode FieldCore::build_problems(int verb) {
 PetscErrorCode FieldCore::clear_problems(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
   if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,1,"FEs not build");
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,1,"entFEAdjacencies not build");
