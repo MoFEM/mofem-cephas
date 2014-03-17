@@ -74,7 +74,6 @@ int main(int argc, char *argv[]) {
   }
   ierr = mField.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
-
   ierr = mField.shift_right_bit_ref(1); CHKERRQ(ierr);
 
   ofstream myfile;
