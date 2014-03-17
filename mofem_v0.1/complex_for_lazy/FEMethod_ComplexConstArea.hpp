@@ -217,37 +217,42 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     double i_diffX_xi[3],i_diffX_eta[3];
     bzero(i_diffX_xi,3*sizeof(double));
     bzero(i_diffX_eta,3*sizeof(double));
-    //calulate tangent vectors
-    //those vectors are in plane of face
-    for(int nn = 0; nn<3; nn++) {
-      diffX_xi[0] += dofs_X[3*nn + 0]*diffNTRI[2*nn+0]; // unit [ m ]
-      diffX_xi[1] += dofs_X[3*nn + 1]*diffNTRI[2*nn+0];
-      diffX_xi[2] += dofs_X[3*nn + 2]*diffNTRI[2*nn+0];
-      diffX_eta[0] += dofs_X[3*nn + 0]*diffNTRI[2*nn+1];
-      diffX_eta[1] += dofs_X[3*nn + 1]*diffNTRI[2*nn+1];
-      diffX_eta[2] += dofs_X[3*nn + 2]*diffNTRI[2*nn+1];
-      if( dofs_iX == NULL ) continue;
-      i_diffX_xi[0] += dofs_iX[3*nn + 0]*diffNTRI[2*nn+0];
-      i_diffX_xi[1] += dofs_iX[3*nn + 1]*diffNTRI[2*nn+0];
-      i_diffX_xi[2] += dofs_iX[3*nn + 2]*diffNTRI[2*nn+0];
-      i_diffX_eta[0] += dofs_iX[3*nn + 0]*diffNTRI[2*nn+1];
-      i_diffX_eta[1] += dofs_iX[3*nn + 1]*diffNTRI[2*nn+1];
-      i_diffX_eta[2] += dofs_iX[3*nn + 2]*diffNTRI[2*nn+1];
-    }
-    //set direction if crack or interface surface
     Tag th_side_elem;
-    const EntityHandle def_node[] = {0};
+    const EntityHandle def_elem[] = {0};
     rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
-      th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
+      th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_elem); CHKERR_PETSC(rval);
     EntityHandle side_elem;
     rval = moab.tag_get_data(th_side_elem,&face,1,&side_elem); CHKERR_PETSC(rval);
-    if(side_elem!=0) {
+    //Tag th_interface_side;
+    //rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
+    //int side;
+    //rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
+    int order[] = {0, 1, 2};
+    if(side_elem != 0) {
+      //cerr << "BBBBBB\n";
       int side_number,sense,offset;
       rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
       if(sense == -1) {
-	cblas_dscal(3,-1,  diffX_xi,1);
-	cblas_dscal(3,-1,i_diffX_xi,1);
+	order[0] = 1;
+	order[1] = 0;
       }
+    }
+    //calulate tangent vectors
+    //those vectors are in plane of face
+    for(int nn = 0; nn<3; nn++) {
+      diffX_xi[0] += dofs_X[3*order[nn] + 0]*diffNTRI[2*nn+0]; // unit [ m ]
+      diffX_xi[1] += dofs_X[3*order[nn] + 1]*diffNTRI[2*nn+0];
+      diffX_xi[2] += dofs_X[3*order[nn] + 2]*diffNTRI[2*nn+0];
+      diffX_eta[0] += dofs_X[3*order[nn] + 0]*diffNTRI[2*nn+1];
+      diffX_eta[1] += dofs_X[3*order[nn] + 1]*diffNTRI[2*nn+1];
+      diffX_eta[2] += dofs_X[3*order[nn] + 2]*diffNTRI[2*nn+1];
+      if( dofs_iX == NULL ) continue;
+      i_diffX_xi[0] += dofs_iX[3*order[nn] + 0]*diffNTRI[2*nn+0];
+      i_diffX_xi[1] += dofs_iX[3*order[nn] + 1]*diffNTRI[2*nn+0];
+      i_diffX_xi[2] += dofs_iX[3*order[nn] + 2]*diffNTRI[2*nn+0];
+      i_diffX_eta[0] += dofs_iX[3*order[nn] + 0]*diffNTRI[2*nn+1];
+      i_diffX_eta[1] += dofs_iX[3*order[nn] + 1]*diffNTRI[2*nn+1];
+      i_diffX_eta[2] += dofs_iX[3*order[nn] + 2]*diffNTRI[2*nn+1];
     }
     //spins
     double SpinX_xi[9],SpinX_eta[9];
@@ -268,6 +273,27 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     x_diffX_eta[1].r = diffX_eta[1]; x_diffX_eta[1].i = i_diffX_eta[1];
     x_diffX_eta[2].r = diffX_eta[2]; x_diffX_eta[2].i = i_diffX_eta[2];
     cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_one,xSpinX_xi,3,x_diffX_eta,1,&x_zero,x_normal,1); // unit [ m^2 ]
+    /*//debug
+    Tag th_normal1,th_normal2;
+    double def_NORMAL[] = {0, 0, 0};
+    rval = moab.tag_get_handle("NORMAL1",3,MB_TYPE_DOUBLE,th_normal1,MB_TAG_CREAT|MB_TAG_SPARSE,def_NORMAL); CHKERR_PETSC(rval);
+    rval = moab.tag_get_handle("NORMAL2",3,MB_TYPE_DOUBLE,th_normal2,MB_TAG_CREAT|MB_TAG_SPARSE,def_NORMAL); CHKERR_PETSC(rval);
+    double normal1[3] = { x_normal[0].r, x_normal[1].r, x_normal[2].r };
+    double normal2[3];
+    ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&*coords.data().begin(),normal2); CHKERRQ(ierr);
+    if(side_elem!=0) {
+      int side_number,sense,offset;
+      rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
+      if(sense == -1) {
+	cblas_dscal(3,-1,normal2,1);
+      }
+    }
+    double normal1_nrm2 = cblas_dnrm2(3,normal1,1);
+    cblas_dscal(3,1./normal1_nrm2,normal1,1);
+    double normal2_nrm2 = cblas_dnrm2(3,normal2,1);
+    cblas_dscal(3,1./normal2_nrm2,normal2,1);
+    rval = moab.tag_set_data(th_normal1,&face,1,normal1); CHKERR_PETSC(rval);
+    rval = moab.tag_set_data(th_normal2,&face,1,normal2); CHKERR_PETSC(rval);*/
     //calulare complex normal length
     double __complex__ x_nrm2 = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
@@ -286,12 +312,12 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     if(iT!=NULL) bzero(iT,9*sizeof(double));
     for(int nn = 0;nn<3;nn++) {
       double A[3],iA[3];
-      A[0] = xNSpinX_xi[0].r*diffNTRI[2*nn+1]-xNSpinX_eta[0].r*diffNTRI[2*nn+0]; // unit [ 1/m ]
-      A[1] = xNSpinX_xi[1].r*diffNTRI[2*nn+1]-xNSpinX_eta[1].r*diffNTRI[2*nn+0];
-      A[2] = xNSpinX_xi[2].r*diffNTRI[2*nn+1]-xNSpinX_eta[2].r*diffNTRI[2*nn+0];
-      iA[0] = xNSpinX_xi[0].i*diffNTRI[2*nn+1]-xNSpinX_eta[0].i*diffNTRI[2*nn+0]; // unit [ 1/m ]
-      iA[1] = xNSpinX_xi[1].i*diffNTRI[2*nn+1]-xNSpinX_eta[1].i*diffNTRI[2*nn+0];
-      iA[2] = xNSpinX_xi[2].i*diffNTRI[2*nn+1]-xNSpinX_eta[2].i*diffNTRI[2*nn+0];
+      A[0] = xNSpinX_xi[0].r*diffNTRI[2*order[nn]+1]-xNSpinX_eta[0].r*diffNTRI[2*order[nn]+0]; // unit [ 1/m ]
+      A[1] = xNSpinX_xi[1].r*diffNTRI[2*order[nn]+1]-xNSpinX_eta[1].r*diffNTRI[2*order[nn]+0];
+      A[2] = xNSpinX_xi[2].r*diffNTRI[2*order[nn]+1]-xNSpinX_eta[2].r*diffNTRI[2*order[nn]+0];
+      iA[0] = xNSpinX_xi[0].i*diffNTRI[2*order[nn]+1]-xNSpinX_eta[0].i*diffNTRI[2*order[nn]+0]; // unit [ 1/m ]
+      iA[1] = xNSpinX_xi[1].i*diffNTRI[2*order[nn]+1]-xNSpinX_eta[1].i*diffNTRI[2*order[nn]+0];
+      iA[2] = xNSpinX_xi[2].i*diffNTRI[2*order[nn]+1]-xNSpinX_eta[2].i*diffNTRI[2*order[nn]+0];
       if(C != NULL) {
         C[3*nn + 0] = A[0]; 
         C[3*nn + 1] = A[1];

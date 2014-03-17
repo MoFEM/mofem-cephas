@@ -427,10 +427,9 @@ struct FieldInterface {
     * \param recursive if true parent meshset is searched recurively
     *
    **/
-  virtual PetscErrorCode refine_get_childern(
+  virtual PetscErrorCode update_meshset_by_entities_children(
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
     const bool recursive = false, int verb = -1) = 0;
-
 
   /** \brief delete enttities form mofem and moab database 
     */

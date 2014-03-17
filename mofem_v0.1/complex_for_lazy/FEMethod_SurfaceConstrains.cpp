@@ -66,11 +66,11 @@ void C_SURFACE_FEMethod::run_in_constructor() {
   }
  
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose): 
-    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name),updated(false) {
+    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name) {
     run_in_constructor();
   }
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE"),updated(false) {
+    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE") {
     run_in_constructor();
   }
 
@@ -104,9 +104,9 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
   //set direction if crack or interface surface
   Tag th_side_elem;
-  const EntityHandle def_node[] = {0};
+  const EntityHandle def_elem[] = {0};
   rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
-    th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
+    th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_elem); CHKERR_PETSC(rval);
   EntityHandle side_elem;
   rval = moab.tag_get_data(th_side_elem,&face,1,&side_elem); CHKERR_PETSC(rval);
   if(side_elem!=0) {
