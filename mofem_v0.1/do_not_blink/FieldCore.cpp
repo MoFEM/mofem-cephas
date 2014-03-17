@@ -1646,6 +1646,11 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	  case H1: 
 	    adj_ents.insert(fe_ent);
 	    break;
+	  case NoField: {
+	    EntityHandle field_meshset = miit->get_meshset();
+	    adj_ents.insert(field_meshset);
+	  }
+	  break;
       	  default:
   	   SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for VERTEX finite element");
 	}
@@ -1656,6 +1661,11 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	    adj_ents.insert(nodes.begin(),nodes.end());
 	    adj_ents.insert(fe_ent);
 	    break;
+	  case NoField: {
+	    EntityHandle field_meshset = miit->get_meshset();
+	    adj_ents.insert(field_meshset);
+	  }
+	  break;
       	  default:
   	   SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for EDGE finite element");
 	}
@@ -1678,7 +1688,6 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	      adj_ents.insert(field_meshset);
 	    }
 	   break;
-
       	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for TRI finite element");
 	}
@@ -1765,6 +1774,11 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	    case L2:
 	      adj_ents.insert(fe_ent); 
 	      break;
+	    case NoField: {
+	      EntityHandle field_meshset = miit->get_meshset();
+	      adj_ents.insert(field_meshset);
+	    }
+	    break;
 	    default:
 	      SETERRQ(PETSC_COMM_SELF,1,"this field is not implemented for PRISM finite element");
 	  }
