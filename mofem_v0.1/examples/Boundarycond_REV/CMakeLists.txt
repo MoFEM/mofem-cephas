@@ -19,6 +19,8 @@
 add_executable(Boundarycond_REV Boundarycond_REV.cpp)
 target_link_libraries(Boundarycond_REV mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(Boundarycond_REV_traction Boundarycond_REV_traction.cpp)
+target_link_libraries(Boundarycond_REV_traction mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 
 

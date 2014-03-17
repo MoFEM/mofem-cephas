@@ -315,7 +315,7 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
             }
 
             //Find out the shape funcition and rearrange in the form as shown for the nodes
-            cout<<"NBFACE_H1(face_order) "<<NBFACE_H1(face_order)<<endl;
+//            cout<<"NBFACE_H1(face_order) "<<NBFACE_H1(face_order)<<endl;
             vector<double> N_face, diffN_face;
             N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
             diffN_face.resize(2*g_TRI_dim*NBFACE_H1(face_order));
@@ -465,8 +465,8 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
         //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xx, xz, zy]^T
         ublas::vector<FieldData> applied_strain;
         applied_strain.resize(6);
-        applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
-        applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=1.0;
+        applied_strain(0)=1.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
+        applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
         //cout<<"area "<<area << endl;
         
         
