@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
     //Interface
     EntityHandle meshset_interface;
-    ierr = mField.get_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
     ierr = mField.get_msId_3dENTS_sides(meshset_interface,0,true); CHKERRQ(ierr);
     // stl::bitset see for more details
     BitRefLevel bit_level_interface;
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
     EntityHandle meshset_level_interface;
     rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
-    ierr = mField.refine_get_ents(bit_level_interface,BitRefLevel().set(),meshset_level_interface); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level_interface,BitRefLevel().set(),meshset_level_interface); CHKERRQ(ierr);
 
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
     ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     /*
     ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
@@ -316,6 +316,7 @@ int main(int argc, char *argv[]) {
 
   ArcInterfaceElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),ArcCtx);
   ArcInterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus,h,beta,ft,Gf,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
+	PrePostProcessFEMethod_For_F_lambda PrePostFE(mField,ArcCtx);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
@@ -345,9 +346,13 @@ int main(int argc, char *argv[]) {
 
   //Rhs
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
+	SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
+	SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE);
+
+
   //Mat
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
@@ -356,11 +361,13 @@ int main(int argc, char *argv[]) {
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;
+  double step_size0;
   //step = 1;
   if(step == 1) {
     step_size = step_size_reduction;
   } else {
-    reduction = step_size_reduction;
+    reduction = step_size;
+    step_size0 = step_size_reduction;
     step++;
   }
 
@@ -376,9 +383,17 @@ int main(int argc, char *argv[]) {
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecZeroEntries(ArcCtx->F_lambda); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(ArcCtx->F_lambda); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(ArcCtx->F_lambda); CHKERRQ(ierr);
+    ierr = VecDot(ArcCtx->F_lambda,ArcCtx->F_lambda,&ArcCtx->F_lambda2); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -396,9 +411,17 @@ int main(int argc, char *argv[]) {
       ierr = VecZeroEntries(F); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecZeroEntries(ArcCtx->F_lambda); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ARC_LENGTH",MyArcMethod);  CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(ArcCtx->F_lambda); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(ArcCtx->F_lambda); CHKERRQ(ierr);
+      ierr = VecDot(ArcCtx->F_lambda,ArcCtx->F_lambda,&ArcCtx->F_lambda2); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -410,6 +433,7 @@ int main(int argc, char *argv[]) {
       ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
       ierr = MyArcMethod.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
       ierr = MyArcMethod.calulate_lambda_int(step_size); CHKERRQ(ierr);
+      step_size0 = step_size;
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = ArcCtx->dlambda;
       double dx_nrm;
@@ -456,7 +480,10 @@ int main(int argc, char *argv[]) {
     if(step > 1) {
       if(its>0) {
 	reduction = pow((double)its_d/(double)(its+1),gamma);
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
+	if(step_size*reduction > 10*step_size0) {
+	  reduction = 1;
+	}
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size (step_size,step_size0) = %6.4e (%6.4e,%6.4e)\n",reduction,step_size,step_size0); CHKERRQ(ierr);
       } else reduction = 1;
     }
 

@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
       //get tet enties form back bit_level
       EntityHandle ref_level_meshset = 0;
       rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
-      ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
-      ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+      ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
+      ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
       Range ref_level_tets;
       rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
       //get faces and test to split
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   Range tets_back_bit_level;
-  ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRQ(ierr);
 
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,cit)) {
 
@@ -176,7 +176,6 @@ int main(int argc, char *argv[]) {
     
   }
 
-
   //partition
   for(int lll = ll-2;lll<ll;lll++) {
     stringstream problem_name;
@@ -193,7 +192,7 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERR_PETSC(rval);
 
 
-  ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
   Range tets;
   rval = moab.get_entities_by_handle(out_meshset_tet,tets,true); CHKERR_PETSC(rval);
   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
@@ -211,7 +210,7 @@ int main(int argc, char *argv[]) {
   }
   EntityHandle out_meshset_prism;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_prism); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_levels.back(),BitRefLevel().set(),MBPRISM,out_meshset_prism); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,out_meshset_prism); CHKERRQ(ierr);
   Range prisms;
   rval = moab.get_entities_by_handle(out_meshset_prism,prisms); CHKERR_PETSC(rval);
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {

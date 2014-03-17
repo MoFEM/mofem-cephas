@@ -181,7 +181,6 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
 
   Tag th_quality0,th_quality,th_b;
   double *quality0,*quality,*b;
-  PetscErrorCode get_edges_from_elem_coords(double *cords,double *coords_edges);
   PetscErrorCode GetTangent();
   PetscErrorCode GetFint();
 

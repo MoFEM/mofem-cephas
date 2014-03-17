@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   // random mesh refinment
   EntityHandle meshset_ref_edges;
@@ -74,13 +74,14 @@ int main(int argc, char *argv[]) {
   }
   ierr = mField.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
+  ierr = mField.shift_right_bit_ref(1); CHKERRQ(ierr);
 
   ofstream myfile;
   myfile.open("mesh_refine.txt");
 
   EntityHandle out_meshset_tet;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERR_PETSC(rval);
-  ierr = mField.refine_get_ents(bit_level1,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
   Range tets;
   rval = moab.get_entities_by_handle(out_meshset_tet,tets); CHKERR_PETSC(rval);
   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {

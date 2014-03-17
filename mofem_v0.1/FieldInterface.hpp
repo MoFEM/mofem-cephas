@@ -73,9 +73,33 @@ struct FieldInterface {
     */
   virtual bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType) = 0;
 
-  /** 
-    * \brief get entities form CUBIT/meshset 
+  /**
+    * \brief add cubit meshset
     *
+    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
+    *
+    */
+  virtual PetscErrorCode add_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId) = 0;
+
+  /**
+    * \brief delete cubit meshset
+    *
+    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
+    *
+    */
+  virtual PetscErrorCode delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId) = 0;
+
+
+  /** 
+    * \brief get entities from CUBIT/meshset of a particular entity dimension \n
+	  * Nodeset can contain nodes, edges, triangles and tets. This applies to other CubitBCType meshsets too. \n
+	  * The nodeset's meshset contain the nodes in the MIDDLE of the surface or volume which is done by default in Cubit,\n
+		* Hence if all nodes on a particular nodeset are required,\n
+	  * one should get all triangles or tetrahedrals for which the nodeset was create in Cubit,\n
+	  * and get all the connectivities of tris/tets.
+		*
     * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
     * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 - Volume(tetrahedral))
@@ -85,11 +109,13 @@ struct FieldInterface {
   virtual PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false) = 0;
 
   /** 
-    * \brief get all entities types from CUBIT/meshset 
-    *
+    * \brief get entities related to CUBIT/meshset, \n
+	  * NodeSet will get Vertices only, even if the NodeSet contains egdes, tris and tets\n
+    * SideSet will get Tris, BlockSet will get Tets, DisplacementSet and ForceSet are stored in NodeSet, PressureSet is stored in Sideset.
+	  *
     * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
-    * \param entities form meshset
+    * \param Range containing the retreived entities related to the CubitBCType
     * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
     */
   virtual PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, Range &entities,const bool recursive = false) = 0;
@@ -101,7 +127,7 @@ struct FieldInterface {
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
     * \param meshset where to store the retreived entities
     */
-  virtual PetscErrorCode get_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) = 0;
+  virtual PetscErrorCode get_Cubit_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) = 0;
 
   /** 
     * \brief get all CUBIT meshsets by CUBIT type
@@ -109,7 +135,7 @@ struct FieldInterface {
     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more). 
     * \param meshsets is range of meshsets
     */
-  virtual PetscErrorCode get_CubitBCType_meshsets(const unsigned int CubitBCType,Range &meshsets) = 0;
+  virtual PetscErrorCode get_Cubit_meshsets(const unsigned int CubitBCType,Range &meshsets) = 0;
 
    /** 
     * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
@@ -354,7 +380,7 @@ struct FieldInterface {
    * \param EntityHandle meshset   
    *
    */
-  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1) = 0;
+  virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
    *
@@ -364,7 +390,7 @@ struct FieldInterface {
    * \param Range ents   
    *
    */
-  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1) = 0;
+  virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1) = 0;
 
 
   /**\brief add all ents from ref level given by bit to meshset
@@ -374,7 +400,7 @@ struct FieldInterface {
    * \param EntityHandle meshset   
    *
    */
-  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
+  virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
    *
@@ -384,7 +410,7 @@ struct FieldInterface {
    *
    *
    */
-  virtual PetscErrorCode refine_get_ents(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
+  virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
 
   /** \brief Get childed entities form meshset containing parent entities 
@@ -404,6 +430,29 @@ struct FieldInterface {
   virtual PetscErrorCode refine_get_childern(
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
     const bool recursive = false, int verb = -1) = 0;
+
+
+  /** \brief delete enttities form mofem and moab database 
+    */
+  virtual PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** \brief remove entities form mofem database
+    */
+  virtual PetscErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** \brief remove finite element from mofem database
+    */
+  virtual PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** \brief left shift bit ref level
+    * this results of deletion of enetities on far left side
+    */
+  virtual PetscErrorCode shift_left_bit_ref(const int shif,int verb = -1) = 0;
+
+  /** \brief right shift bit ref level
+    *
+    */
+  virtual PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1) = 0;
 
   /** 
     * \brief add approximation field
@@ -458,6 +507,12 @@ struct FieldInterface {
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief remove entities from field
+    *
+    */
+  virtual PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /**
     * \brief Set order approximation of the entities in the field
@@ -577,10 +632,30 @@ struct FieldInterface {
 
   /** \brief add TET elements from given refinment level to finite element database given by name 
    *
-   * \param BitRefLevel BitLevel
-   * \param name Finite Element name
+   * \param BitRefLevel bit
+   * \param Finite Element name
+   * \param Finite Elenent type
+   * \param verrbose level
    */
-  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit_ref,const string &name,EntityType type,int verb = -1) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const string &name,EntityType type,int verb = -1) = 0;
+
+  /** \brief remove elements from given refinment level to finite element database
+   *
+   * \param BitRefLevel bit
+   * \param BitRefLevel mask
+   * \param verrbose level
+   */
+  virtual PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** \brief add TET elements from given refinment level to finite element database given by name 
+   *
+   * \param BitRefLevel bit
+   * \param BitRefLevel mask
+   * \param Finite Element name
+   * \param Finite Elenent type
+   * \param verrbose level
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,int verb = -1) = 0;
 
   /** \brief add MESHSET element to finite element database given by name 
    *
@@ -604,7 +679,7 @@ struct FieldInterface {
 
   /// add Finite Element Problem
   virtual PetscErrorCode add_problem(const string& name) = 0;
-
+  
   /* \brief add finite element to problem, this add entities assigned to finite element to a particular problem
    *
    * \param name Problem name
@@ -655,22 +730,55 @@ struct FieldInterface {
    */
   virtual PetscErrorCode build_fields(int verb = -1) = 0;
 
+  /** clear fields
+   */
+  virtual PetscErrorCode clear_dofs_and_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
   /** build finite elements
     */
   virtual PetscErrorCode build_finite_elements(int verb = -1) = 0;
 
-  /**
-    * \brief build ajacencies 
-    * \param bit adjacencies for refine level
-    * This function will get information of adjacent finite elements and fields of all entities
-    * If this is not perfomed, partitioning the problem is not possible
+  /** clear finite elements
     */
-  virtual PetscErrorCode build_adjacencies(const BitRefLevel bit) = 0;
+  virtual PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** \brief build ajacencies 
+    *
+    * \param bit adjacencies for refine level
+    *
+    * This function will get information of adjacent finite elements and fields
+    * of all entities If this is not perfomed, partitioning the problem is not
+    * possible. Adjacency map is based on degrees of freedom adjacent to
+    * elements. This linked to gemetric element connectivity. 
+    *
+    * If new degrees of freedom or new finite elements are added to the
+    * database, adjacency map has to be rebuild.
+    *
+    */
+  virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit) = 0;
+
+  /** \brief clear adjacency map for finite elements on given bit level
+    *
+    * \param bit
+    * \param mask
+    */
+  virtual PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** \brief clear adjacency map for entities on given bit level
+    *
+    * \param bit
+    * \param mask
+    */
+  virtual PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief build problem data structures
    */
-    
   virtual PetscErrorCode build_problems(int verb = -1) = 0;
+
+  /** \brief clear problems
+   */
+  virtual PetscErrorCode clear_problems(int verb = -1) = 0;
+
 
   /** \brief partition problem dofs
    *
@@ -858,7 +966,7 @@ struct FieldInterface {
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1) = 0;
 
-  /** \brief create two children meshsets in the meshset conta9ning terahedrals on two sides of faces
+  /** \brief create two children meshsets in the meshset contaning terahedrals on two sides of faces
    *
    * Get tets adj to faces. Take skin form tets and get edges from that skin. Take skin form triangles (the face).
    * Subtrac skin faces edges form skin edges in order to get eges on the boundary of the face which is in the

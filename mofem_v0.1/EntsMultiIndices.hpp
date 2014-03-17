@@ -100,6 +100,8 @@ struct RefMoFEMEntity: public BasicMoFEMEntity {
   friend ostream& operator<<(ostream& os,const RefMoFEMEntity& e);
 };
 
+
+
 /**
  * \typedef RefMoFEMEntity_multiIndex
  * type multiIndex container for RefMoFEMEntity
@@ -136,6 +138,30 @@ typedef multi_index_container<
 	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
   > > RefMoFEMEntity_multiIndex;
+
+/// \brief ref mofem entity, left shift
+struct RefMoFEMEntity_change_left_shift {
+  int shift;
+  RefMoFEMEntity_change_left_shift(const int _shift): shift(_shift) {};
+  void operator()(RefMoFEMEntity &e) { (*e.tag_BitRefLevel)<<=shift;  };
+};
+
+/// \brief ref mofem entity, right shift
+struct RefMoFEMEntity_change_right_shift {
+  int shift;
+  RefMoFEMEntity_change_right_shift(const int _shift): shift(_shift) {};
+  void operator()(RefMoFEMEntity &e) { (*e.tag_BitRefLevel)>>=shift;  };
+};
+
+/// \brief ref mofem entity, change bit
+struct RefMoFEMEntity_change_add_bit {
+  BitRefLevel bit;
+  RefMoFEMEntity_change_add_bit(const BitRefLevel &_bit): bit(_bit) {};
+  void operator()(RefMoFEMEntity &e) { 
+    bit |= *(e.tag_BitRefLevel); 
+    *e.tag_BitRefLevel = bit;
+  }
+};
 
 /** 
  * \brief interface to RefMoFEMEntity
