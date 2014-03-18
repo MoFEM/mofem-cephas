@@ -304,6 +304,8 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     double E = (1-_omega_)*E0;
     ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
     Dloc(0,0) = E;
+    Dloc(1,1) = E;
+    Dloc(2,2) = E;
     Dglob = prod( Dloc, R );
     Dglob = prod( trans(R), Dglob );
     PetscFunctionReturn(0);
@@ -363,11 +365,18 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
       case ctx_IntLinearSoftening: {
       double d_omega_ = 
 	0.5*(2*Gf*E0+ft*ft)/((ft+(_g_-ft/E0)*E0)*Gf) - 0.5*((_g_-ft/E0)*(2*Gf*E0+ft*ft)*E0)/(pow(ft+(_g_-ft/E0)*E0,2)*Gf);
-      double Et = (1-_omega_)*E0 - d_omega_*E0*_g_;
       ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
-      Dloc(0,0) = Et*_gap_loc_[0]/_g_;
-      Dloc(0,1) = Et*beta*_gap_loc_[1]/_g_;
-      Dloc(0,2) = Et*beta*_gap_loc_[2]/_g_;
+      Dloc(0,0) = (1-_omega_)*E0 - d_omega_*E0*_gap_loc_[0]*_gap_loc_[0]/_g_;
+      Dloc(0,1) = -d_omega_*E0*_gap_loc_[0]*beta*_gap_loc_[1]/_g_;
+      Dloc(0,2) = -d_omega_*E0*_gap_loc_[0]*beta*_gap_loc_[2]/_g_;
+      //
+      Dloc(1,0) = -d_omega_*E0*_gap_loc_[1]*_gap_loc_[0]/_g_;
+      Dloc(1,1) = (1-_omega_)*E0 - d_omega_*E0*_gap_loc_[1]*beta*_gap_loc_[1]/_g_;
+      Dloc(1,2) = -d_omega_*E0*_gap_loc_[1]*beta*_gap_loc_[2]/_g_;
+      //
+      Dloc(2,0) = -d_omega_*E0*_gap_loc_[2]*_gap_loc_[0]/_g_;
+      Dloc(2,1) = -d_omega_*E0*_gap_loc_[2]*beta*_gap_loc_[1]/_g_;
+      Dloc(2,2) = (1-_omega_)*E0 - d_omega_*E0*_gap_loc_[2]*beta*_gap_loc_[2]/_g_;
       Dglob = prod( Dloc, R );
       Dglob = prod( trans(R), Dglob );
       } break;
