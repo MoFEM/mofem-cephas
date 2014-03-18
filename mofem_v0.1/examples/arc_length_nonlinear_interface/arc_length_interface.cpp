@@ -503,6 +503,13 @@ int main(int argc, char *argv[]) {
 	ostringstream sss;
 	sss << "restart_" << step << ".h5m";
 	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
+	EntityHandle out_meshset;
+	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+	ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+	ostringstream ss;
+	ss << "out_" << step << ".vtk";
+	rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
       }
     }
 
