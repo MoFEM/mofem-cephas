@@ -662,14 +662,7 @@ struct FieldInterface {
    * \param meshset contains all entities that could be used for finite element
    * \param name Finite Element name
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name) = 0;
-    
-    /** \brief add MESHSETs contained in meshset to finite element database given by name 
-     *
-     * \param meshset contains all meshsets with entities that could be used for finite element
-     * \param name Finite Element name
-     */
-  virtual PetscErrorCode add_ents_to_finite_element_by_MESHSETs(const EntityHandle meshset,const string& name) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name,const bool recursive = false) = 0;
 
   /// list finite elements in database
   virtual PetscErrorCode list_finite_elements() const = 0;

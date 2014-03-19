@@ -728,7 +728,7 @@ PetscErrorCode ConfigurationalFractureMechanics::arclength_problem_definition(Fi
   //add finite element ARC_LENGTH meshset to refinment database (all ref bit leveles)
   ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGTH,BitRefLevel().set()); CHKERRQ(ierr);
   //finally add created meshset to the ARC_LENGTH finite element
-  ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGTH,"ARC_LENGTH"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGTH,"ARC_LENGTH",false); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

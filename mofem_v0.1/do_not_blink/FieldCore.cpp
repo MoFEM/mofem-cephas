@@ -1546,22 +1546,19 @@ PetscErrorCode FieldCore::remove_ents_from_finite_element_by_bit_ref(const BitRe
   ierr = clear_finite_elements(bit,mask,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name) {
+PetscErrorCode FieldCore::add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name,const bool recursive) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   const BitFEId id = get_BitFEId(name);
   const EntityHandle idm = get_meshset_by_BitFEId(id);
-  rval = moab.add_entities(idm,&meshset,1); CHKERR_PETSC(rval);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FieldCore::add_ents_to_finite_element_by_MESHSETs(const EntityHandle meshset,const string& name) {
-  PetscFunctionBegin;
-  *build_MoFEM &= 1<<0;
-  const BitFEId id = get_BitFEId(name);
-  const EntityHandle idm = get_meshset_by_BitFEId(id);
-  Range meshsets;
-  rval = moab.get_entities_by_type(meshset,MBENTITYSET,meshsets,false); CHKERR_PETSC(rval);
-  rval = moab.add_entities(idm,meshsets); CHKERR_PETSC(rval);
+	if(recursive==false){
+		rval = moab.add_entities(idm,&meshset,1); CHKERR_PETSC(rval);
+	}
+	else{
+		Range meshsets;
+		rval = moab.get_entities_by_type(meshset,MBENTITYSET,meshsets,false); CHKERR_PETSC(rval);
+		rval = moab.add_entities(idm,meshsets); CHKERR_PETSC(rval);
+	}
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) {
