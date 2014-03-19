@@ -3000,6 +3000,9 @@ PetscErrorCode FieldCore::seed_finite_elements(const Range &entities,int verb) {
       case MBTRI: 
 	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*eiit)));	
 	break;
+      case MBTET: 
+	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*eiit)));	
+	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
@@ -3409,7 +3412,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
   Range::iterator tit = tets.begin();
   for(;tit!=tets.end();tit++) {
     ref_MoFEMFiniteElement_by_ent::iterator miit2 = ref_MoFEMFiniteElement.find(*tit);
-    if(miit2==ref_MoFEMFiniteElement.end()) SETERRQ(PETSC_COMM_SELF,1,"this tet is not in MoFEMFiniteElement");
+    if(miit2==ref_MoFEMFiniteElement.end()) SETERRQ(PETSC_COMM_SELF,1,"this tet is not in refinedMoFemElements");
     //connectivity
     const EntityHandle* conn; 
     int num_nodes; 
@@ -4714,15 +4717,28 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const
   vector<EntityHandle> children;
   rval = moab.get_child_meshsets(SideSet,children);  CHKERR_PETSC(rval);
   if(children.empty()) {
-    children.resize(4);
-    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[0]); CHKERR_PETSC(rval);
-    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[1]); CHKERR_PETSC(rval);
-    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[2]); CHKERR_PETSC(rval);
+    children.resize(3);
+    rval = moab.create_meshset(MESHSET_SET,children[0]); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,children[1]); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,children[2]); CHKERR_PETSC(rval);
     rval = moab.add_child_meshset(SideSet,children[0]); CHKERR_PETSC(rval);
     rval = moab.add_child_meshset(SideSet,children[1]); CHKERR_PETSC(rval);
     rval = moab.add_child_meshset(children[0],children[2]); CHKERR_PETSC(rval);
-    rval = moab.add_child_meshset(children[1],children[2]); CHKERR_PETSC(rval);
-  } else { assert(children.size()==2); }
+    //rval = moab.add_child_meshset(children[1],children[2]); CHKERR_PETSC(rval);
+  } else { 
+    if(children.size()!=2) {
+      SETERRQ(PETSC_COMM_SELF,1,"this meshset shuld have 2 children meshsets");
+    }
+    rval = moab.get_child_meshsets(SideSet,children);  CHKERR_PETSC(rval);
+    vector<EntityHandle> children_of_childern0;
+    rval = moab.get_child_meshsets(children[0],children_of_childern0);  CHKERR_PETSC(rval);
+    if(children_of_childern0.size()!=1) {
+      SETERRQ(PETSC_COMM_SELF,1,"this meshset shuld have 1 child meshset");
+    }
+    children.resize(3);
+    children[2] = children_of_childern0[0];
+    ierr = moab.clear_meshset(&children[0],3); CHKERRQ(ierr);
+  }
   EntityHandle &child_side = children[0];
   EntityHandle &child_other_side = children[1];
   EntityHandle &child_nodes_and_skin_edges = children[2];

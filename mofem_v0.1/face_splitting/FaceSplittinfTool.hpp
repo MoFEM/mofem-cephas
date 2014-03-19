@@ -59,7 +59,7 @@ struct FaceSplittingTools {
     int def_bit_level_vec[BITREFLEVEL_SIZE];
     bzero(def_bit_level_vec,BITREFLEVEL_SIZE*sizeof(int));
     mField.get_moab().tag_get_handle(
-      "_MESHINTEFACEBITLEVELS",BITREFLEVEL_SIZE*sizeof(int),MB_TYPE_OPAQUE,
+      "_MESHREFINEBITLEVELS",BITREFLEVEL_SIZE*sizeof(int),MB_TYPE_OPAQUE,
       th_meshRefineBitLevels,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_vec); 
     mField.get_moab().tag_get_handle(
       "_MESHINTEFACEBITLEVELS",BITREFLEVEL_SIZE*sizeof(int),MB_TYPE_OPAQUE,
@@ -130,7 +130,7 @@ struct FaceSplittingTools {
 
   struct  BitRefLevelVector {
     int* ptr;
-    bool empty() { return ptr[0]; }
+    bool empty() { return !((bool)ptr[0]); }
     int size() { return ptr[0]; }
     void resize(int s) { ptr[0] = s; }
     int& back() { return ptr[ptr[0]]; }

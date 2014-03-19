@@ -81,7 +81,9 @@ int main(int argc, char *argv[]) {
   FaceSplittingTools face_splitting(mField);
   ierr = face_splitting.buildKDTreeForCrackSurface(bit_level0); CHKERRQ(ierr);
 
-  ierr = face_splitting.initBitLevelData(bit_level0);  CHKERRQ(ierr);
+  BitRefLevel bit_last_ref = BitRefLevel().set(face_splitting.meshRefineBitLevels.back());
+
+  ierr = face_splitting.initBitLevelData(bit_last_ref);  CHKERRQ(ierr);
   ierr = face_splitting.calculateDistanceFromCrackSurface();  CHKERRQ(ierr);
   ierr = face_splitting.getOpositeForntEdges(true); CHKERRQ(ierr);
   ierr = face_splitting.getCrackSurfaceCorssingEdges(true); CHKERRQ(ierr);
@@ -93,7 +95,7 @@ int main(int argc, char *argv[]) {
 
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_last_ref,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     //
@@ -104,6 +106,19 @@ int main(int argc, char *argv[]) {
 
   }
 
+  ierr = face_splitting.addNewSurfaceFaces_to_Cubit_msId200(); CHKERRQ(ierr);
+  ierr = face_splitting.splitFaces(); CHKERRQ(ierr);
+  BitRefLevel bit_cat_level = BitRefLevel().set(face_splitting.meshIntefaceBitLevels.back());
+
+  if(pcomm->rank()==0) {
+
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_cat_level,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("cat_out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+
+  }
 
 
   /*ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);

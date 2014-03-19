@@ -713,6 +713,8 @@ PetscErrorCode FaceSplittingTools::catMesh() {
   Range level_edges;
   ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
   edges_to_refine = intersect(edges_to_refine,mesh_level_edges);
+  PetscPrintf(PETSC_COMM_WORLD,"nb. edges to refine = %u\n",edges_to_refine.size());
+
 
   int last_ref_bit = meshRefineBitLevels.back();
   if(!meshIntefaceBitLevels.empty()) {
@@ -726,7 +728,8 @@ PetscErrorCode FaceSplittingTools::catMesh() {
   ierr = mField.add_verices_in_the_middel_of_edges(edges_to_refine,last_ref); CHKERRQ(ierr);
 
   Range level_tets;
-  ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,mesh_level_tets); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
+  ierr = mField.seed_finite_elements(level_tets); CHKERRQ(ierr);
   ierr = mField.refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
 
   for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
@@ -776,6 +779,7 @@ PetscErrorCode FaceSplittingTools::meshRefine() {
       last_ref_bit++;
       meshRefineBitLevels.push_back(last_ref_bit);     
       BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
+      cout << "AAAAAAA " << last_ref << endl;
       ierr = mField.add_verices_in_the_middel_of_edges(edges_to_refine,last_ref,2); CHKERRQ(ierr);
       ierr = mField.refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
       
@@ -795,25 +799,28 @@ PetscErrorCode FaceSplittingTools::splitFaces() {
   PetscFunctionBegin;
 
   BitRefLevel current_ref = BitRefLevel().set(meshRefineBitLevels.back());
+  cout << current_ref << endl;
 
   EntityHandle bit_meshset;
   rval = mField.get_moab().create_meshset(MESHSET_SET,bit_meshset); CHKERR_PETSC(rval);
   {
     ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,bit_meshset); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(bit_meshset); CHKERRQ(ierr);
 
     EntityHandle meshset_interface;
     ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset_interface); CHKERRQ(ierr);
     ierr = mField.get_msId_3dENTS_sides(meshset_interface,current_ref,true); CHKERRQ(ierr);
 
     int last_ref_bit = meshRefineBitLevels.back();
-    last_ref_bit++;
     if(!meshIntefaceBitLevels.empty()) {
-      if(last_ref_bit == meshIntefaceBitLevels.back()) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      if(last_ref_bit<meshIntefaceBitLevels.back()) {
+	last_ref_bit = meshIntefaceBitLevels.back();
       }
     }
+    last_ref_bit++;
     meshIntefaceBitLevels.push_back(last_ref_bit);
     BitRefLevel last_ref = BitRefLevel().set(last_ref_bit);
+
     ierr = mField.get_msId_3dENTS_split_sides(bit_meshset,last_ref,meshset_interface,false,true); CHKERRQ(ierr);
 
     //add refined ent to cubit meshsets
