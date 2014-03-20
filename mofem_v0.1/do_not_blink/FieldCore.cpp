@@ -339,6 +339,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
   if(verb==-1) verb = verbose;
   //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   ierr = clear_map(); CHKERRQ(ierr);
+  ierr = seed_finite_elements(ref_fe_meshset,0); CHKERRQ(ierr);
   Range meshsets;
   rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,false);  CHKERR_PETSC(rval);
   //loop all meshsets in moab database
