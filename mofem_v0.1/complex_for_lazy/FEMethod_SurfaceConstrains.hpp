@@ -38,7 +38,6 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   BaseDirihletBC *dirihlet_bc_method_ptr;
   Mat C;
   string lambda_field_name;
-  bool updated;
 
   vector<double> diffNTRI;
   vector<double> g_NTRI;

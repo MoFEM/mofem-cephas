@@ -49,13 +49,27 @@ struct FaceSplittingTools {
     moab_distance_from_crack_surface(mb_instance_distance_from_crack_surface),
     kdTree_DistanceFromCrackSurface(&moab_distance_from_crack_surface,true) {
 
-
     kdTree_rootMeshset_DistanceFromCrackSurface = 0;
     opositeFrontEdges = 0;
     nodesOnCrackSurface = 0;
     crackSurfaceCrossingEdges = 0;
     crackFrontTests = 0;
     chopTetsFaces = 0;
+
+    int def_bit_level_vec[BITREFLEVEL_SIZE];
+    bzero(def_bit_level_vec,BITREFLEVEL_SIZE*sizeof(int));
+    mField.get_moab().tag_get_handle(
+      "_MESHREFINEBITLEVELS",BITREFLEVEL_SIZE*sizeof(int),MB_TYPE_OPAQUE,
+      th_meshRefineBitLevels,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_vec); 
+    mField.get_moab().tag_get_handle(
+      "_MESHINTEFACEBITLEVELS",BITREFLEVEL_SIZE*sizeof(int),MB_TYPE_OPAQUE,
+      th_meshIntefaceBitLevels,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_vec); 
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+
+    mField.get_moab().tag_get_by_ptr(th_meshRefineBitLevels,&root_meshset,1,(const void**)&ptr_meshRefineBitLevels);
+    mField.get_moab().tag_get_by_ptr(th_meshIntefaceBitLevels,&root_meshset,1,(const void**)&ptr_meshIntefaceBitLevels);
+    meshRefineBitLevels.ptr = ptr_meshRefineBitLevels;
+    meshIntefaceBitLevels.ptr = ptr_meshIntefaceBitLevels;
 
   }
 
@@ -111,16 +125,30 @@ struct FaceSplittingTools {
   PetscErrorCode chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(bool createMeshset);
 
   //Split new crack front faces
-  vector<BitRefLevel> meshRefineBitLevels;
+  Tag th_meshRefineBitLevels,th_meshIntefaceBitLevels;
+  int *ptr_meshRefineBitLevels,*ptr_meshIntefaceBitLevels;
+
+  struct  BitRefLevelVector {
+    int* ptr;
+    bool empty() { return !((bool)ptr[0]); }
+    int size() { return ptr[0]; }
+    void resize(int s) { ptr[0] = s; }
+    int& back() { return ptr[ptr[0]]; }
+    void push_back(int a) { 
+      ptr[0]++;
+      ptr[ptr[0]] = a; 
+    }
+  };
+
+  BitRefLevelVector meshRefineBitLevels;
+  BitRefLevelVector meshIntefaceBitLevels;
+
+  PetscErrorCode catMesh();
+  PetscErrorCode meshRefine();
+  PetscErrorCode splitFaces();
 
   PetscErrorCode addNewSurfaceFaces_to_Cubit_msId200();
   PetscErrorCode addcrackFront_to_Cubit201();
-  PetscErrorCode meshRefine(const BitRefLevel bit_mesh);
-  PetscErrorCode splitFaces(const BitRefLevel bit_mesh,const BitRefLevel new_bit_mesh);
-
-  //Cat mesh
-  
-  PetscErrorCode catMesh(const BitRefLevel bit_mesh,const BitRefLevel new_bit_mesh);
 
   private:
   ErrorCode rval;

@@ -738,12 +738,12 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
     ierr = mField.get_entities_by_type_and_ref_level(bit_level_interface,BitRefLevel().set(),meshset_level_interface); CHKERRQ(ierr);
 
-    ierr = mField.refine_get_childern(meshset_BlockSet1,bit_level_interface,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_BlockSet2,bit_level_interface,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet1,bit_level_interface,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet2,bit_level_interface,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
     
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
         EntityHandle cubit_meshset = cubit_it->meshset; 
-        ierr = mField.refine_get_childern(cubit_meshset,meshset_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,meshset_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }    
 
     EntityHandle temp_meshset;
@@ -762,12 +762,12 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,meshset_level_interface1); CHKERR_PETSC(rval);
     ierr = mField.get_entities_by_type_and_ref_level(bit_level_interface1,BitRefLevel().set(),meshset_level_interface1); CHKERRQ(ierr);
 
-    ierr = mField.refine_get_childern(meshset_BlockSet1,bit_level_interface1,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_BlockSet2,bit_level_interface1,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet1,bit_level_interface1,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet2,bit_level_interface1,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
     
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
         EntityHandle cubit_meshset = cubit_it->meshset; 
-        ierr = mField.refine_get_childern(cubit_meshset,meshset_level_interface1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,meshset_level_interface1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }
 
     //Interface meshset 6
@@ -782,12 +782,12 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,meshset_level_interface2); CHKERR_PETSC(rval);
     ierr = mField.get_entities_by_type_and_ref_level(bit_level_interface2,BitRefLevel().set(),meshset_level_interface2); CHKERRQ(ierr);
     
-    ierr = mField.refine_get_childern(meshset_BlockSet1,bit_level_interface2,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_BlockSet2,bit_level_interface2,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet1,bit_level_interface2,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet2,bit_level_interface2,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
 
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
         EntityHandle cubit_meshset = cubit_it->meshset; 
-        ierr = mField.refine_get_childern(cubit_meshset,meshset_level_interface2,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,meshset_level_interface2,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }
     
     // stl::bitset see for more details

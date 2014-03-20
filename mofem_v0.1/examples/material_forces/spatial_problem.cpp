@@ -18,6 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "ConfigurationalFractureMechanics.hpp"
+#include "FaceSplittinfTool.hpp"
 #include "FieldCore.hpp"
 
 using namespace MoFEM;
@@ -86,84 +87,37 @@ int main(int argc, char *argv[]) {
 
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
-  //ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
-  //BitRefLevel bit_level0;
-  //bit_level0.set(0);
+  //mesh refine and split faces
+  FaceSplittingTools face_splitting_tools(mField);
 
   PetscBool no_add_interface = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_no_add_interface",&no_add_interface,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_restart",&no_add_interface,&flg); CHKERRQ(ierr);
   if(no_add_interface == PETSC_TRUE) {
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_add_crack);
+  } else {
+    bit_level0 = BitRefLevel().set(0);
+    ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+    face_splitting_tools.meshRefineBitLevels.resize(0);
+    face_splitting_tools.meshRefineBitLevels.push_back(0);
   }
 
-  BitRefLevel bit_level_interface;
-  if(mField.check_msId_meshset(200,SideSet)) {
-  if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_add_crack)) {
 
-    conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_add_crack);
-
-    //Interface
-    EntityHandle meshset_interface;
-    ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset_interface); CHKERRQ(ierr);
-    ierr = mField.get_msId_3dENTS_sides(meshset_interface,0,true); CHKERRQ(ierr);
-    // stl::bitset see for more details
-    bit_level_interface.set(0);
-    ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,false,true); CHKERRQ(ierr);
-
-    //add refined ent to cubit meshsets
-    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
-      EntityHandle cubit_meshset = cubit_it->meshset; 
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTET,true); CHKERRQ(ierr);
-    }
-
-  }} else {
-    bit_level_interface.set(0);
-    ierr = mField.seed_ref_level_3D(0,bit_level_interface); CHKERRQ(ierr);
-  }
-
-  if(mField.check_msId_meshset(201,SideSet)) {
   if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_refine_near_crack_tip)) {
-
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_refine_near_crack_tip);
+    ierr = face_splitting_tools.meshRefine(); CHKERRQ(ierr);
+  }
 
-    BitRefLevel last_ref = bit_level_interface;
-    for(int ll = 1;ll<nb_ref_levels+1;ll++) {
+  if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_add_crack)) {
+    conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_add_crack);
+    ierr = face_splitting_tools.splitFaces(); CHKERRQ(ierr);
+  }
 
-      Range crack_edges,crack_nodes,edge_tets,level_tets,edges_to_refine;
-
-      ierr = mField.get_entities_by_ref_level(last_ref,BitRefLevel().set(),level_tets); CHKERRQ(ierr);
-
-      ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_edges,true); CHKERRQ(ierr);
-      rval = moab.get_connectivity(crack_edges,crack_nodes,true); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(crack_nodes,3,false,edge_tets,Interface::UNION); CHKERR_PETSC(rval);
-      edge_tets = intersect(level_tets.subset_by_type(MBTET),edge_tets);
-      rval = moab.get_adjacencies(edge_tets,1,false,edges_to_refine,Interface::UNION); CHKERR_PETSC(rval);
-
-      last_ref = BitRefLevel().set(ll);
-      ierr = mField.add_verices_in_the_middel_of_edges(edges_to_refine,last_ref,2); CHKERRQ(ierr);
-      ierr = mField.refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
-
-      for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
-	EntityHandle cubit_meshset = cubit_it->meshset; 
-	ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-	ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-	ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-	ierr = mField.refine_get_childern(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
-      }
-  
-    }
-
-    bit_level0 = last_ref;
+ 
+  bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
+  //bit_level0 = BitRefLevel().set(face_splitting_tools.meshRefineBitLevels.back());
 
 
-  }} else {
-    bit_level0 = bit_level_interface;
-  } 
-
+  //load factor
   double *t_val;
   Tag th_t_val;
   double def_t_val = 0;

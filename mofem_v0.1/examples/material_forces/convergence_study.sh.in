@@ -203,6 +203,8 @@ do
 
 
     mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
+    mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk 
+    mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk 
     mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
     mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
 

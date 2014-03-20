@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
       EntityHandle cubit_meshset = cubit_it->meshset; 
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }
 
     // stl::bitset see for more details
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.refine_PRISM(meshset_level0,bit_level1); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
       EntityHandle cubit_meshset = cubit_it->meshset; 
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }*/
 
     /***/
