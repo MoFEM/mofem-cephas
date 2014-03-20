@@ -451,6 +451,9 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
 	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");
 	}
+	if(p_MoFEMFiniteElement.second) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, this entity should be already in refined finite elements database");
+	}
 	} catch (const char* msg) {
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
 	}

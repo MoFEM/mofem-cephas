@@ -100,8 +100,6 @@ struct RefMoFEMEntity: public BasicMoFEMEntity {
   friend ostream& operator<<(ostream& os,const RefMoFEMEntity& e);
 };
 
-
-
 /**
  * \typedef RefMoFEMEntity_multiIndex
  * type multiIndex container for RefMoFEMEntity

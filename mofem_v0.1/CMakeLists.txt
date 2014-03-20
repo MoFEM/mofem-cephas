@@ -106,6 +106,7 @@ add_library(mofem_Field
   third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
   do_not_blink/CoreDataStructures.cpp
+  do_not_blink/EntsMultiIndices.cpp
   do_not_blink/FEMMultiIndices.cpp
   do_not_blink/ProblemsMultiIndices.cpp
   do_not_blink/BCMultiIndices.cpp
