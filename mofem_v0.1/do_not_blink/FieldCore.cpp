@@ -3003,6 +3003,9 @@ PetscErrorCode FieldCore::seed_finite_elements(const Range &entities,int verb) {
       case MBTET: 
 	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*eiit)));	
 	break;
+      case MBPRISM: 
+	p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*eiit)));	
+	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
