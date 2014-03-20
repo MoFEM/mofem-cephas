@@ -38,10 +38,12 @@ PetscErrorCode print_MoFem_verison() {
 
 FieldCore::FieldCore(Interface& _moab,int _verbose): 
   moab(_moab),verbose(_verbose) {
+
   const EntityHandle root_meshset = moab.get_root_set();
   if(verbose>0) {
     print_MoFem_verison();
   }
+
   // Version
   Tag th_version;
   stringstream strs_version;
@@ -51,9 +53,11 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
     th_version,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,NULL); CHKERR_THROW(rval);
   const char *ptr_version = version.c_str();
   rval = moab.tag_set_data(th_version,&root_meshset,1,ptr_version); CHKERR_THROW(rval);
+
   //tags saved in vtk-files
   const int def_part = -1;
   rval = moab.tag_get_handle("PARTITION",1,MB_TYPE_INTEGER,th_Part,MB_TAG_CREAT|MB_TAG_SPARSE,&def_part); CHKERR_THROW(rval);
+
   //Tags Ref
   rval = moab.tag_get_handle("_RefParentHandle",1,MB_TYPE_HANDLE,th_RefParentHandle,MB_TAG_CREAT|MB_TAG_SPARSE,&root_meshset); CHKERR_THROW(rval); CHKERR_THROW(rval);
   const int def_type[] = {0,0};
@@ -64,6 +68,17 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
   BitRefEdges def_bit_egde = 0;
   rval = moab.tag_get_handle("_RefBitEdge",sizeof(BitRefEdges),MB_TYPE_OPAQUE,
     th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_egde); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_RefFEMeshset",1,MB_TYPE_HANDLE,
+    th_RefFEMeshset,MB_TAG_CREAT|MB_TAG_SPARSE,&root_meshset);
+  if(rval==MB_ALREADY_ALLOCATED) {
+    rval = MB_SUCCESS;
+    rval = moab.tag_get_data(th_RefFEMeshset,&root_meshset,1,&ref_fe_meshset); CHKERR_THROW(rval);
+  } else {
+    CHKERR_THROW(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,ref_fe_meshset); CHKERR_THROW(rval);
+    rval = moab.tag_set_data(th_RefFEMeshset,&root_meshset,1,&ref_fe_meshset); CHKERR_THROW(rval);
+  }
+    
   //Tags Field
   const unsigned long int def_id = 0;
   rval = moab.tag_get_handle("_FieldId",sizeof(BitFieldId),MB_TYPE_OPAQUE,
@@ -76,6 +91,7 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
     th_FieldName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
   rval = moab.tag_get_handle("_FieldName_DataNamePrefix",def_val_len,MB_TYPE_OPAQUE,
     th_FieldName_DataNamePrefix,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
+
   //Tags FE
   rval = moab.tag_get_handle("_FEId",sizeof(BitFEId),MB_TYPE_OPAQUE,
     th_FEId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
@@ -87,6 +103,7 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
     th_FEIdRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
   rval = moab.tag_get_handle("_FEIdData",sizeof(BitFieldId),MB_TYPE_OPAQUE,
     th_FEIdData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
+
   //Tags Problem
   rval = moab.tag_get_handle("_ProblemId",sizeof(BitProblemId),MB_TYPE_OPAQUE,
     th_ProblemId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
@@ -107,6 +124,7 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
     th_ProblemLocalNbDofCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs); CHKERR_THROW(rval);
   rval = moab.tag_get_handle("_ProblemGhostNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
     th_ProblemGhostNbDofCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs); CHKERR_THROW(rval);
+
   //Global Variables
   //Fields
   int def_shift = 1;

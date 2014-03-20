@@ -35,7 +35,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode ierr;
   //Data and low level methods 
   Tag th_Part;
-  Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitEdge;
+  Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitEdge,th_RefFEMeshset;
   Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace;
   Tag th_FEId,th_FEName;
   Tag th_FEIdCol,th_FEIdRow,th_FEIdData;
@@ -75,13 +75,16 @@ struct FieldCore: public FieldInterface {
   Tag th_MoFEMBuild;
   int *build_MoFEM;
 
-  //core metgids 
+  //core methods
   PetscErrorCode clear_map();
   BitFieldId get_field_shift();
   BitFEId get_BitFEId();
   BitProblemId get_problem_shift();
   PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
   Interface& get_moab();
+
+  //core data
+  EntityHandle ref_fe_meshset;
 
   //check consistency
   PetscErrorCode check_number_of_ents_in_ents_field(const string& name);
