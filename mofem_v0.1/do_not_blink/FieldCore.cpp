@@ -452,7 +452,8 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
 	    SETERRQ(PETSC_COMM_SELF,1,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");
 	}
 	if(p_MoFEMFiniteElement.second) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, this entity should be already in refined finite elements database");
+	  //PetscPrintf(PETSC_COMM_WORLD,"Warrning: this entity should be already in refined finite elements database");
+	  //SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, this entity should be already in refined finite elements database");
 	}
 	} catch (const char* msg) {
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -985,18 +986,8 @@ PetscErrorCode FieldCore::dofs_L2H1HcurlHdiv(const BitFieldId id,int &dof_counte
     // check if ent is in ref meshset
     RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedMoFemEntities.get<MoABEnt_mi_tag>().find(*eit);
     if(miit_ref_ent==refinedMoFemEntities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"database inconsistency");
-    //pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
-    MoFEMEntity_multiIndex::iterator e_miit;
-    try {
-      e_miit = entsMoabField.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
-    } catch (const char* msg) {
-      SETERRQ(PETSC_COMM_SELF,1,msg);
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss <<  ex.what() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-    }
     // create mofem entity linked to ref ent
+    MoFEMEntity_multiIndex::iterator e_miit;
     try {
       e_miit = entsMoabField.find(MoFEMEntity(moab,&*miit,&*miit_ref_ent).get_unique_id());
     } catch (const char* msg) {
@@ -4082,6 +4073,55 @@ PetscErrorCode FieldCore::update_meshset_by_entities_children(
       }
     }
   }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb) {
+  PetscFunctionBegin;
+  MoFEMField_multiIndex::iterator fit = moabFields.begin();
+  for(;fit!=moabFields.end();fit++) {
+    EntityHandle meshset = fit->get_meshset();
+    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
+    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
+    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
+    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::update_field_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,int verb) {
+  PetscFunctionBegin;
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator miit;
+  miit = moabFields.get<FieldName_mi_tag>().find(name);
+  EntityHandle meshset = miit->get_meshset();
+  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
+  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
+  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
+  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::update_finite_element_meshset_by_entities_children(const BitRefLevel &child_bit,int verb) {
+  PetscFunctionBegin;
+  MoFEMFiniteElement_multiIndex::iterator fit;
+  fit = finiteElements.begin();
+  for(;fit!=finiteElements.end();fit++) {
+    EntityHandle meshset = fit->get_meshset();
+    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
+    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
+    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
+    ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::update_finite_element_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,int verb) {
+  PetscFunctionBegin;
+  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
+  const finiteElements_by_name& set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  finiteElements_by_name::iterator miit = set.find(name);
+  if(miit==set.end()) THROW_AT_LINE(("finite element < "+name+" > not found (top tip: check spelling)").c_str());
+  EntityHandle meshset = miit->get_meshset();
+  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
+  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
+  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
+  ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::problem_get_FE(const string &problem_name,const string &fe_name,const EntityHandle meshset) {

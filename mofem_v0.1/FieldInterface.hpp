@@ -431,6 +431,22 @@ struct FieldInterface {
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
     const bool recursive = false, int verb = -1) = 0;
 
+  /** \brief update fields meshesets by child entities
+    */
+  virtual PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1) = 0;
+
+  /** \brief update field mesheset by child entities
+    */
+  virtual PetscErrorCode update_field_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,int verb = -1) = 0;
+
+  /** \brief update finite elements meshesets by child entities
+    */
+  virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1) = 0;
+
+  /** \brief update finite element mesheset by child entities
+    */
+  virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,int verb = -1) = 0;
+
   /** \brief delete enttities form mofem and moab database 
     */
   virtual PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
