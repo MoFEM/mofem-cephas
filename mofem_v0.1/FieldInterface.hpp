@@ -538,6 +538,26 @@ struct FieldInterface {
     */
   virtual PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1) = 0;
 
+  /**
+    * \brief Set order approximation of the entities in the field
+    *
+    * \param entities 
+    * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
+    * \param order approximation order 
+    */
+  virtual PetscErrorCode set_field_order(const Range &ents,const string& name,const ApproximationOrder order,int verb = -1) = 0;
+
+  /**
+    * \brief Set order approximation of the entities in the field
+    *
+    * \param bit refinement level
+    * \param mask bit mask
+    * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
+    * \param order approximation order 
+    */
+  virtual PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1) = 0;
+
+
   /// \brief list entities in the field
   virtual PetscErrorCode list_field() const = 0;
 

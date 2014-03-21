@@ -271,10 +271,22 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+
+  //set apprix oorder
+  PetscErrorCode set_field_order(const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb = -1);
   PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order(const Range &ents,const string& name,const ApproximationOrder order,int verb = -1);
   PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1);
+
+  //build fiels
   PetscErrorCode dofs_NoField(const BitFieldId id,int &dof_counter);
   PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,int &dof_counter,int verb = -1);
+  PetscErrorCode build_fields(int verb = -1);
+  PetscErrorCode clear_dofs_and_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+
+  //other auxiliary functions for fields
   PetscErrorCode list_dof_by_id(const BitFieldId id) const;
   PetscErrorCode list_ent_by_id(const BitFieldId id) const;
   PetscErrorCode list_field() const;
@@ -321,10 +333,6 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit);
   BitProblemId get_BitProblemId(const string& name) const;
   PetscErrorCode list_problem() const;
-
-  //build problem, entFEAdjacencies,MoFEMFiniteElement and dofs
-  PetscErrorCode build_fields(int verb = -1);
-  PetscErrorCode clear_dofs_and_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entities

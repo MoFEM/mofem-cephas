@@ -777,39 +777,15 @@ PetscErrorCode FieldCore::remove_ents_from_field_by_bit_ref(const BitRefLevel &b
   ierr = clear_dofs_and_ents_fields(bit,mask,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb) {
+PetscErrorCode FieldCore::set_field_order(const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
-  Range ents;
-  rval = moab.get_entities_by_type(meshset,type,ents); CHKERR_PETSC(rval);
-  if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD,"nb. of ents for order change %d\n",ents.size());
-  }
   //check field & meshset
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set_id = moabFields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.find(id);
   if(miit==set_id.end()) SETERRQ(PETSC_COMM_SELF,1,"no id found"); 
-  switch(miit->get_space()) {
-    case H1:
-      if(type==MBVERTEX) {
-	if(order!=1) {
-	  SETERRQ(PETSC_COMM_SELF,1,"approximation order for H1 sapce and vertex diffrent than 1 makes not sense"); 
-	}
-      }
-      break;
-     case Hdiv:
-      if(type==MBVERTEX) {
-	SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on vertices makes no sense"); 
-      } 
-      if(type==MBEDGE) {
-	SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on edges makes no sense"); 
-      } 
-      break;
-    default:
-      break;
-  }
   EntityHandle idm = no_handle;
   try {
    idm = get_field_meshset(id);
@@ -819,9 +795,9 @@ PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const Entit
   //itersection with field meshset
   Range ents_of_id_meshset;
   rval = moab.get_entities_by_handle(idm,ents_of_id_meshset,false); CHKERR_PETSC(rval);
-  ents = intersect(ents,ents_of_id_meshset);
+  Range ents_ = intersect(ents,ents_of_id_meshset);
   if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD,"nb. of ents for order change in the field %d\n",ents.size());
+    PetscPrintf(PETSC_COMM_WORLD,"nb. of ents for order change in the field %d\n",ents_.size());
   }
   vector<const void*> tag_data_order(ents.size());
   rval = moab.tag_get_by_ptr(miit->th_AppOrder,ents,&tag_data_order[0]); CHKERR_PETSC(rval);
@@ -843,8 +819,29 @@ PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const Entit
   int nb_ents_set_order_up = 0;
   int nb_ents_set_order_down = 0;
   int nb_ents_set_order_new = 0;
-  Range::iterator eit = ents.begin();
-  for(unsigned int ee = 0;ee<ents.size();ee++,eit++) {
+  Range::iterator eit = ents_.begin();
+  for(unsigned int ee = 0;ee<ents_.size();ee++,eit++) {
+    //sanity check
+    switch(miit->get_space()) {
+      case H1:
+	if(moab.type_from_handle(*eit)==MBVERTEX) {
+	  if(order!=1) {
+	    SETERRQ(PETSC_COMM_SELF,1,"approximation order for H1 sapce and vertex diffrent than 1 makes not sense"); 
+	  }
+	}
+	break;
+      case Hdiv:
+	if(moab.type_from_handle(*eit)==MBVERTEX) {
+	  SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on vertices makes no sense"); 
+	} 
+	if(moab.type_from_handle(*eit)==MBEDGE) {
+	  SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on edges makes no sense"); 
+	} 
+	break;
+      default:
+	break;
+    }
+    //
     MoFEMEntity_multiIndex_ent_view::iterator miit3 = ents_id_view.find(*eit);
     if(miit3!=ents_id_view.end()) {
       const ApproximationOrder old_ApproximationOrder = (*miit3)->get_max_order();
@@ -892,6 +889,23 @@ PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const Entit
   if(verb>4) {
     list_ent_by_id(id);
   }
+
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  Range ents;
+  rval = moab.get_entities_by_type(meshset,type,ents); CHKERR_PETSC(rval);
+  if(verb>1) {
+    PetscPrintf(PETSC_COMM_WORLD,"nb. of ents for order change %d\n",ents.size());
+  }
+  try{
+    ierr = set_field_order(ents,id,order,verb); CHKERRQ(ierr);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  } 
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order,int verb) {
@@ -903,6 +917,45 @@ PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const Entit
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   } 
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::set_field_order(const Range &ents,const string& name,const ApproximationOrder order,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  try{
+    ierr = set_field_order(ents,get_BitFieldId(name),order,verb); CHKERRQ(ierr);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  } 
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  Range ents;
+  ierr = get_entities_by_type_and_ref_level(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  *build_MoFEM = 0;
+  try{
+    ierr = set_field_order(ents,id,order,verb); CHKERRQ(ierr);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const string& name,const ApproximationOrder order,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  Range ents;
+  ierr = get_entities_by_type_and_ref_level(bit,mask,type,ents,verb); CHKERRQ(ierr);
+  *build_MoFEM = 0;
+  try{
+    ierr = set_field_order(ents,get_BitFieldId(name),order,verb); CHKERRQ(ierr);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::dofs_NoField(const BitFieldId id,int &dof_counter) {
