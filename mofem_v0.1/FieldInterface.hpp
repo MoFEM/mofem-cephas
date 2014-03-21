@@ -1046,6 +1046,16 @@ struct FieldInterface {
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
+  /**
+   * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
+   * 
+   * The all new entities (prisms, tets) are added to refinment level given by bit
+   */
+  virtual PetscErrorCode get_msId_3dENTS_split_sides(
+    const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_nodes_from_bit_level,
+    const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
+
+
   struct SnesMethod {
     enum snes_context { ctx_SNESSetFunction, ctx_SNESSetJacobian, ctx_SNESNone };
     //

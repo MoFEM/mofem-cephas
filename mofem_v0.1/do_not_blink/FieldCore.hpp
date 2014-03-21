@@ -384,6 +384,10 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
+  PetscErrorCode get_msId_3dENTS_split_sides(
+    const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_nodes_from_bit_level,
+    const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
+
   PetscErrorCode add_prism_to_basicEntAdjacencies(const EntityHandle prism,int verb = -1);
 
   //loops

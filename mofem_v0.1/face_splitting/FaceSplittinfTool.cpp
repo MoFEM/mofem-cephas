@@ -797,7 +797,10 @@ PetscErrorCode FaceSplittingTools::splitFaces() {
   PetscFunctionBegin;
 
   BitRefLevel current_ref = BitRefLevel().set(meshRefineBitLevels.back());
-  cout << current_ref << endl;
+  BitRefLevel inhered_ents_from_level;
+  if(!meshIntefaceBitLevels.empty()) {
+    inhered_ents_from_level = BitRefLevel().set(meshIntefaceBitLevels.back());
+  }
 
   EntityHandle bit_meshset;
   rval = mField.get_moab().create_meshset(MESHSET_SET,bit_meshset); CHKERR_PETSC(rval);
@@ -818,8 +821,8 @@ PetscErrorCode FaceSplittingTools::splitFaces() {
     last_ref_bit++;
     meshIntefaceBitLevels.push_back(last_ref_bit);
     BitRefLevel last_ref = BitRefLevel().set(last_ref_bit);
-
-    ierr = mField.get_msId_3dENTS_split_sides(bit_meshset,last_ref,meshset_interface,false,true); CHKERRQ(ierr);
+  
+    ierr = mField.get_msId_3dENTS_split_sides(bit_meshset,last_ref,inhered_ents_from_level,meshset_interface,false,true); CHKERRQ(ierr);
 
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {

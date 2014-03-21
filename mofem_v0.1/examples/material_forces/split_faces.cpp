@@ -121,8 +121,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.update_field_meshset_by_entities_children(bit_cat_level,0); CHKERRQ(ierr);
   ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"MESH_NODE_DISPLACEMENT",1); CHKERRQ(ierr);
   ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"SPATIAL_DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBEDGE,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBTRI,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBTET,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
 
   ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_SURFACE",1); CHKERRQ(ierr);
   ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_CRACK_SURFACE",1); CHKERRQ(ierr);
@@ -139,7 +145,7 @@ int main(int argc, char *argv[]) {
 
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(bit_cat_level,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_cat_level,BitRefLevel().set(),MBTRI,out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("cat_out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
 

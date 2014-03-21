@@ -936,7 +936,6 @@ PetscErrorCode FieldCore::set_field_order_by_entity_type_and_bit_ref(const BitRe
   *build_MoFEM = 0;
   Range ents;
   ierr = get_entities_by_type_and_ref_level(bit,mask,type,ents,verb); CHKERRQ(ierr);
-  *build_MoFEM = 0;
   try{
     ierr = set_field_order(ents,id,order,verb); CHKERRQ(ierr);
   } catch (const char* msg) {
@@ -950,7 +949,6 @@ PetscErrorCode FieldCore::set_field_order_by_entity_type_and_bit_ref(const BitRe
   *build_MoFEM = 0;
   Range ents;
   ierr = get_entities_by_type_and_ref_level(bit,mask,type,ents,verb); CHKERRQ(ierr);
-  *build_MoFEM = 0;
   try{
     ierr = set_field_order(ents,get_BitFieldId(name),order,verb); CHKERRQ(ierr);
   } catch (const char* msg) {
@@ -3642,7 +3640,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
       //children elements - if not thorw an error
       if(ref_tets_bit.count()!=(unsigned int)nb_new_tets) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     } else {
-      //if this element was not refined or was reffined with diffrent patterns of splitted edges create new elements
+      //if this element was not refined or was refined with diffrent patterns of splitted edges create new elements
       EntityHandle ref_tets[8];
       for(int tt = 0;tt<nb_new_tets;tt++) {
 	if(!ref_tets_bit.test(tt)) {
@@ -4895,6 +4893,14 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive,
   int verb) {
   PetscFunctionBegin;
+  ierr = get_msId_3dENTS_split_sides(meshset,bit,BitRefLevel(),SideSet,add_iterfece_entities,recursive,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
+  const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_nodes_from_bit_level,
+  const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive,
+  int verb) {
+  PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   vector<EntityHandle> children;
   //get children meshsets
@@ -4935,6 +4941,19 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   }
   typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ents_by_ent_type;
   ref_ents_by_ent_type &ref_ents_by_ent = refinedMoFemEntities.get<MoABEnt_mi_tag>();
+  //view by parent type (VERTEX)
+  RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view_nodes;
+  RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view_tets;
+  if(inheret_nodes_from_bit_level.any()) {
+    typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
+    ref_ents_by_composite &ref_ents = refinedMoFemEntities.get<Composite_EntityType_And_ParentEntityType_mi_tag>();
+    ref_ents_by_composite::iterator miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
+    ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
+    for(;miit!=hi_miit;miit++) ref_parent_ents_view_nodes.insert(&*miit);
+    miit = ref_ents.lower_bound(boost::make_tuple(MBTET,MBTET));
+    hi_miit = ref_ents.upper_bound(boost::make_tuple(MBTET,MBTET));
+    for(;miit!=hi_miit;miit++) ref_parent_ents_view_nodes.insert(&*miit);
+  }
   //maps nodes on "father" and "mather" side
   map<
     EntityHandle, /*node on "mather" side*/
@@ -4944,20 +4963,47 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   Range::iterator nit = nodes.begin();
   double coord[3];
   for(;nit!=nodes.end();nit++) {
-    rval = moab.get_coords(&*nit,1,coord); CHKERR_PETSC(rval);	
-    EntityHandle new_node;
-    rval = moab.create_vertex(coord,new_node); CHKERR(rval);
-    map_nodes[*nit] = new_node;
+    //find ref enet
     ref_ents_by_ent_type::iterator miit_ref_ent = ref_ents_by_ent.find(*nit);
-    if(miit_ref_ent == ref_ents_by_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find node in MoFEM database");
-    //create new node on "father" side
-    //parent is node on "mather" side
-    rval = moab.tag_set_data(th_RefParentHandle,&new_node,1,&*nit); CHKERR_PETSC(rval);
-    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,new_node));
-    //set ref bit level to node on "father" side
-    refinedMoFemEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
+    if(miit_ref_ent == ref_ents_by_ent.end()) {
+      SETERRQ(PETSC_COMM_SELF,1,"can not find node in MoFEM database");
+    }
+    EntityHandle child_entity = 0;
+    RefMoFEMEntity_multiIndex::iterator child_it;
+    if(inheret_nodes_from_bit_level.any()) {
+      RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator child_iit;
+      child_iit = ref_parent_ents_view_nodes.find(*nit);
+      if(child_iit != ref_parent_ents_view_nodes.end()) {
+	child_it = refinedMoFemEntities.find((*child_iit)->get_ref_ent());
+	BitRefLevel bit_child = child_it->get_BitRefLevel();
+	if( (inheret_nodes_from_bit_level&bit_child).any() ) {
+	  child_entity = child_it->get_ref_ent();
+	}
+      }
+    }
+    //
+    bool success;
+    if(child_entity == 0) {
+      rval = moab.get_coords(&*nit,1,coord); CHKERR_PETSC(rval);	
+      EntityHandle new_node;
+      rval = moab.create_vertex(coord,new_node); CHKERR(rval);
+      map_nodes[*nit] = new_node;
+      //create new node on "father" side
+      //parent is node on "mather" side
+      rval = moab.tag_set_data(th_RefParentHandle,&new_node,1,&*nit); CHKERR_PETSC(rval);
+      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,new_node));
+      //set ref bit level to node on "father" side
+      success = refinedMoFemEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
+      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+    } else {
+      map_nodes[*nit] = child_entity;
+      //set ref bit level to node on "father" side
+      success = refinedMoFemEntities.modify(child_it,RefMoFEMEntity_change_add_bit(bit));
+      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+    }
     //set ref bit level to node on "mather" side
-    refinedMoFemEntities.modify(miit_ref_ent,RefMoFEMEntity_change_add_bit(bit));
+    success = refinedMoFemEntities.modify(miit_ref_ent,RefMoFEMEntity_change_add_bit(bit));
+    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   }
   //crete meshset for new mesh bit level
   EntityHandle meshset_for_bit_level;
@@ -4970,6 +5016,9 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     rval = moab.get_adjacencies(meshset_3d_ents,dd,false,ents_dd,moab::Interface::UNION); CHKERR_PETSC(rval);
     rval = moab.add_entities(meshset_for_bit_level,ents_dd); CHKERR_PETSC(rval);
   }
+  //
+  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntityType_mi_tag>::type ref_ent_by_composite;
+  ref_ent_by_composite &by_composite = refinedMoFemEntities.get<Composite_EntityHandle_And_ParentEntityType_mi_tag>();
   //create new 3d ents on "father" side
   Range new_3d_ents;
   Range::iterator tit = side_ents3d.begin();
@@ -5006,9 +5055,34 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     //here is created new tet or prism is on inteface
     switch (moab.type_from_handle(*tit)) {
       case MBTET: {
+	ref_ents_by_ent_type::iterator child_it;
 	EntityHandle tet;
-	rval = moab.create_element(MBTET,new_conn,4,tet); CHKERR_PETSC(rval);
-	rval = moab.tag_set_data(th_RefParentHandle,&tet,1,&*tit); CHKERR_PETSC(rval);
+	bool create_tet = true;
+	if(inheret_nodes_from_bit_level.any()) {
+	  RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator child_iit;
+	  child_iit = ref_parent_ents_view_nodes.find(*tit);
+	  if(child_iit != ref_parent_ents_view_nodes.end()) {
+	    BitRefLevel bit_child = (*child_iit)->get_BitRefLevel();
+	    if( (inheret_nodes_from_bit_level&bit_child).any() ) {
+	      tet = (*child_iit)->get_ref_ent();
+	      const EntityHandle* conn_ref_tet;
+	      rval = moab.get_connectivity(tet,conn_ref_tet,num_nodes,true); CHKERR_PETSC(rval);
+	      int nn = 0;
+	      for(;nn<num_nodes;nn++) {
+		if(conn_ref_tet[nn]!=new_conn[nn]) {
+		  break;
+		}
+	      }
+	      if(nn == num_nodes) {
+		create_tet = false;
+	      }
+	    }
+	  }
+	}
+	if(create_tet) {
+	  rval = moab.create_element(MBTET,new_conn,4,tet); CHKERR_PETSC(rval);
+	  rval = moab.tag_set_data(th_RefParentHandle,&tet,1,&*tit); CHKERR_PETSC(rval);
+	}
 	rval = moab.add_entities(meshset_for_bit_level,&tet,1); CHKERR_PETSC(rval);
 	rval = moab.add_entities(meshset_for_bit_level,new_conn,4); CHKERR_PETSC(rval);
 	new_3d_ents.insert(tet);
@@ -5017,6 +5091,9 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	EntityHandle prism;
 	if(verb>3) {
 	  PetscPrintf(PETSC_COMM_WORLD,"prims nb_new_nodes %d\n",nb_new_conn);
+	}
+	if(inheret_nodes_from_bit_level.any()) {
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented for inheret_nodes_from_bit_level");
 	}
 	rval = moab.create_element(MBPRISM,new_conn,6,prism); CHKERR_PETSC(rval);
 	rval = moab.tag_set_data(th_RefParentHandle,&prism,1,&*tit); CHKERR_PETSC(rval);
@@ -5100,6 +5177,9 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	  rval = moab.tag_set_data(th_side_elem,&*eit,1,&*tet_other_side.begin()); CHKERR_PETSC(rval);
 	  //add prism element
 	  if(add_iterfece_entities) {
+	    if(inheret_nodes_from_bit_level.any()) {
+	      SETERRQ(PETSC_COMM_SELF,1,"not implemented for inheret_nodes_from_bit_level");
+	    }
 	    //set prism connectivity
 	    EntityHandle prism_conn[6] = { 
 	      conn[0],conn[1],conn[2],
