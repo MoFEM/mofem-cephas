@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   FaceSplittingTools face_splitting(mField);
   ierr = face_splitting.buildKDTreeForCrackSurface(bit_level0); CHKERRQ(ierr);
@@ -109,6 +110,30 @@ int main(int argc, char *argv[]) {
   ierr = face_splitting.addNewSurfaceFaces_to_Cubit_msId200(); CHKERRQ(ierr);
   ierr = face_splitting.splitFaces(); CHKERRQ(ierr);
   BitRefLevel bit_cat_level = BitRefLevel().set(face_splitting.meshIntefaceBitLevels.back());
+
+  PetscInt order;
+  flg = PETSC_TRUE;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    order = 1;
+  }
+
+  ierr = mField.update_field_meshset_by_entities_children(bit_cat_level,0); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"MESH_NODE_DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
+
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_SURFACE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_CRACK_SURFACE",1); CHKERRQ(ierr);
+
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_CRACK_TANGENT_CONSTRAIN",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_CRACKFRONT_AREA",1); CHKERRQ(ierr);
+
+  //ierr = mField.update_finite_element_meshset_by_entities_children(bit_cat_level); CHKERRQ(ierr);
+
+  ierr = mField.build_fields(); CHKERRQ(ierr);
+  //ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
 
