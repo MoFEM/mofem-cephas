@@ -257,9 +257,6 @@ PetscErrorCode FaceSplittingTools::getCrackSurfaceCorssingEdges(bool createMeshs
       kdTree_rootMeshset_DistanceFromCrackSurface,tol,&coords[3],coords,
       triangles_out,distance_out); CHKERR_PETSC(rval);
     if(triangles_out.size()>1) {
-      for(unsigned int nn = 0;nn<triangles_out.size();nn++) {
-	cout << triangles_out[nn] << " " << distance_out[nn] << endl;
-      }
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       rval = mField.get_moab().add_entities(out_meshset,&*eit,1); CHKERR_PETSC(rval);
@@ -350,7 +347,7 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset) {
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(bool createMeshset) {
+PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(bool createMeshset,int verb) {
   PetscFunctionBegin;
 
   Range crack_front_tets;
@@ -376,9 +373,16 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 
   int debug_ii = 0;
 
+  if(verb>0) {
+    PetscPrintf(PETSC_COMM_WORLD,"Tets to chop: ");
+  }
+
   do {
 
-    cerr << "AAAAAAA " << crack_front_tets_nodes.size() << endl;
+    if(verb>0) {
+      PetscPrintf(PETSC_COMM_WORLD," %u",crack_front_tets_nodes.size());
+    }
+
 
     double min_b;
     EntityHandle min_node = 0;
@@ -445,7 +449,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     debug_ii++;
     //if(debug_ii == 21) break; 
 
-    {
+    if(verb>1) {
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       rval = mField.get_moab().add_entities(out_meshset,crack_front_tets); CHKERR_PETSC(rval);
@@ -465,6 +469,9 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 
   } while (!crack_front_tets.empty()); 
 
+  if(verb>0) {
+    PetscPrintf(PETSC_COMM_WORLD,"\n",crack_front_tets_nodes.size());
+  }
 
   rval = mField.get_moab().add_entities(chopTetsFaces,crack_front_tets); CHKERR_PETSC(rval);
   rval = mField.get_moab().add_entities(chopTetsFaces,crack_front_tets_faces); CHKERR_PETSC(rval);
@@ -777,7 +784,7 @@ PetscErrorCode FaceSplittingTools::meshRefine() {
       last_ref_bit++;
       meshRefineBitLevels.push_back(last_ref_bit);     
       BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
-      cout << "AAAAAAA " << last_ref << endl;
+      //cout << "AAAAAAA " << last_ref << endl;
       ierr = mField.add_verices_in_the_middel_of_edges(edges_to_refine,last_ref,2); CHKERRQ(ierr);
       ierr = mField.refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
       

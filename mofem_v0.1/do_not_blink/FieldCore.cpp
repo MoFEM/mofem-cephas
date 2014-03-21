@@ -4159,6 +4159,7 @@ PetscErrorCode FieldCore::update_finite_element_meshset_by_entities_children(con
     ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
     ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
     ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBVERTEX,false,verb);  CHKERRQ(ierr);
+    ierr = seed_finite_elements(meshset,verb); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
