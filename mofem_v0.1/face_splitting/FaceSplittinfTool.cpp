@@ -108,7 +108,6 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(const BitRefLevel 
     crack_surface = intersect(crack_surface,mesh_level_tris);
   }
   Tag th_interface_side;
-  const int def_side[] = {0};
   rval = mField.get_moab().tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
   Range entities;
   for(Range::iterator cit = crack_surface.begin();cit!=crack_surface.end();cit++) {
@@ -172,7 +171,6 @@ PetscErrorCode FaceSplittingTools::getOpositeForntEdges(bool createMeshset) {
   PetscFunctionBegin;
 
   //create meshset
-  EntityHandle newFrontEdges_child;
   if(createMeshset) {
     rval = mField.get_moab().create_meshset(MESHSET_SET,opositeFrontEdges); CHKERR_PETSC(rval);
     rval = mField.get_moab().create_meshset(MESHSET_SET,nodesOnCrackSurface); CHKERR_PETSC(rval);
@@ -259,7 +257,7 @@ PetscErrorCode FaceSplittingTools::getCrackSurfaceCorssingEdges(bool createMeshs
       kdTree_rootMeshset_DistanceFromCrackSurface,tol,&coords[3],coords,
       triangles_out,distance_out); CHKERR_PETSC(rval);
     if(triangles_out.size()>1) {
-      for(int nn = 0;nn<triangles_out.size();nn++) {
+      for(unsigned int nn = 0;nn<triangles_out.size();nn++) {
 	cout << triangles_out[nn] << " " << distance_out[nn] << endl;
       }
       EntityHandle out_meshset;
@@ -409,7 +407,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     if(chop_tets.size()>1) {
       Range seen_chop_tets;
       seen_chop_tets.insert(*chop_tets.begin());
-      int nb_seen_chop_tets;
+      unsigned int nb_seen_chop_tets;
       do {
         nb_seen_chop_tets = seen_chop_tets.size();
 	Range seen_chop_tets_faces;
