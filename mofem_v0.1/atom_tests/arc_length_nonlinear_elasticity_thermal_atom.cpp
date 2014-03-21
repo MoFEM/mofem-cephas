@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
     ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);

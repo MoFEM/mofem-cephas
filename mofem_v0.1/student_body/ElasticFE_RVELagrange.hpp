@@ -48,15 +48,15 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
       rowNMatrices.resize(1+3+1);
       ColGlob.resize(1+3+1);
     
-//      g_TRI_dim = 13;
-//      g_NTRI.resize(3*g_TRI_dim);
-//      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13);
-//      G_W_TRI = G_TRI_W13;
-
-      g_TRI_dim = 28;
+      g_TRI_dim = 13;
       g_NTRI.resize(3*g_TRI_dim);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
-      G_W_TRI = G_TRI_W28;
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,g_TRI_dim);
+      G_W_TRI = G_TRI_W13;
+
+//      g_TRI_dim = 28;
+//      g_NTRI.resize(3*g_TRI_dim);
+//      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
+//      G_W_TRI = G_TRI_W28;
           
           
           
@@ -186,7 +186,7 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
 //        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
 //        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[row_mat][ii]<<" ";
 //        cout<<"\n\n\n"<<endl;
-        
+//        
         // Find row and colum indices for Edges
         vector<int> FaceEdgeSense;
         vector<int> FaceEdgeOrder;
@@ -245,13 +245,13 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
             }
         }
         
-//        cout<<"row_mat  =  "<<row_mat<<endl;
-//        cout<<"\nFor Edges "<<endl;
-//        cout<<"\n RowGlob[row_mat].size() "<<RowGlob[1].size()<<endl;
-//        for(int jj=0; jj<3; jj++) for(int ii=0; ii<RowGlob[1].size(); ii++) cout<<RowGlob[jj][ii]<<" ";
-//        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[1].size()<<endl;
-//        for(int jj=0; jj<3; jj++) for(int ii=0; ii<ColGlob[1].size(); ii++) cout<<ColGlob[jj][ii]<<" ";
-//        cout<<"\n\n\n";
+        cout<<"row_mat  =  "<<row_mat<<endl;
+        cout<<"\nFor Edges "<<endl;
+        cout<<"\n RowGlob[row_mat].size() "<<RowGlob[1].size()<<endl;
+        for(int jj=0; jj<3; jj++) for(int ii=0; ii<RowGlob[1].size(); ii++) cout<<RowGlob[jj][ii]<<" ";
+        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[1].size()<<endl;
+        for(int jj=0; jj<3; jj++) for(int ii=0; ii<ColGlob[1].size(); ii++) cout<<ColGlob[jj][ii]<<" ";
+        cout<<"\n\n\n";
 
 ////        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[1].size()<<endl;
 ////        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[1][ii]<<" ";
@@ -356,8 +356,30 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
     
     
     
+    ublas::vector<ublas::matrix<FieldData> > H_mat;
+    virtual PetscErrorCode Get_H_mat() {
+        PetscFunctionBegin;
+        H_mat.resize(row_mat);
+        for(int rr=0; rr<row_mat; rr++){
+//            cout<<"rr "<<rr<<endl;
+//            cout<<"(rowNMatrices[rr])[0].size2() "<<(rowNMatrices[rr])[0].size2()<<endl;
+            int num_col=(rowNMatrices[rr])[0].size2();
+            H_mat[rr].resize(num_col,num_col);
+            H_mat[rr].clear();
+            for(int ii = 0; ii<num_col; ii++) {
+                    H_mat[rr](ii,ii) = 1.0;
+            }
+//        cout<<"H_mat "<<H_mat[rr]<<endl;
+        }
+        PetscFunctionReturn(0);
+    }
+
+    
+    
+    
     //Calculate and assemble NT x N matrix
     ublas::matrix<ublas::matrix<FieldData> > NTN;
+    
     double coords_face[9];
     double area;
     virtual PetscErrorCode Stiffness() {
@@ -381,29 +403,55 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
 //        cout<<" row_mat; "<<row_mat<<endl;
 //        for(int ii=0; ii<39; ii++) cout<<" g_NTRI; "<<g_NTRI[ii]<<endl;
 //        for(int ii=0; ii<13; ii++) cout<<" rowNMatrices; "<<rowNMatrices[0][ii]<<endl;
+        
+        
         for(int rr = 0;rr<row_mat;rr++) {
 //            cout<<" rr = "<<rr<<endl;
             for(int gg = 0;gg<g_TRI_dim;gg++) {
                 ublas::matrix<double> &row_Mat = (rowNMatrices[rr])[gg];
                 double w = area*G_W_TRI[gg];
                 for(int cc = 0;cc<row_mat;cc++) {
+
                     ublas::matrix<FieldData> &col_Mat = (rowNMatrices[cc])[gg];
+                    ublas::matrix<FieldData>  NTN1;
+                    NTN1.resize(row_Mat.size2(),col_Mat.size2());
+
                     if(gg == 0) {
 //                        cout<<" w; "<<w<<endl;
 //                        cout<<" row_Mat; "<<row_Mat<<endl;
 //                        cout<<" col_Mat; "<<col_Mat<<endl;
+                        
                         NTN(rr,cc).resize(row_Mat.size2(),col_Mat.size2());
+                        //calculate (w* NT * N)
                         cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
                                     row_Mat.size2(),col_Mat.size2(),row_Mat.size1(),
                                     w,&*row_Mat.data().begin(),row_Mat.size2(),
                                     &*col_Mat.data().begin(),col_Mat.size2(),
+                                    0.,&*NTN1.data().begin(),NTN1.size2());
+//                        cout<<" NTN1; "<<NTN1<<endl;
+                        //calculate (H_mat * w* NT * N)
+                        cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
+                                    H_mat[rr].size2(),NTN1.size2(),H_mat[rr].size1(),
+                                    1.0,&*H_mat[rr].data().begin(),H_mat[rr].size2(),
+                                    &*NTN1.data().begin(),NTN1.size2(),
                                     0.,&*NTN(rr,cc).data().begin(),NTN(rr,cc).size2());
-                                    //cout<<" NTN "<<NTN<<endl;
+//                        cout<<" NTN; "<<NTN<<endl;
                     } else {
+//                        cout<<" NTN1.size1() gg; "<<NTN1.size1()<<endl;
+//                        cout<<" NTN1.size2() gg; "<<NTN1.size2()<<endl;
+
+                        //calculate (w* NT * N)
                         cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
                                     row_Mat.size2(),col_Mat.size2(),row_Mat.size1(),
                                     w,&*row_Mat.data().begin(),row_Mat.size2(),
                                     &*col_Mat.data().begin(),col_Mat.size2(),
+                                    0.,&*NTN1.data().begin(),NTN1.size2());
+                        
+                        //calculate (H_mat * w* NT * N)
+                        cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
+                                    H_mat[rr].size2(),NTN1.size2(),H_mat[rr].size1(),
+                                    1.0,&*H_mat[rr].data().begin(),H_mat[rr].size2(),
+                                    &*NTN1.data().begin(),NTN1.size2(),
                                     1.,&*NTN(rr,cc).data().begin(),NTN(rr,cc).size2());
                     }
                 }
@@ -481,20 +529,41 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
                 ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
                 ublas::matrix<FieldData> &col_Mat = X_mat;
                 
+                ublas::matrix<FieldData>  D_mat1;    //Dmat1=NT*X_mat
+                D_mat1.resize(row_Mat.size2(),col_Mat.size2());
+
                 //Integrate D_mat
                 if(gg == 0) {
                     D_mat[rr].resize(row_Mat.size2(),col_Mat.size2());
+                    
+                    //calculate (D_mat1= w * NT * X_mat)
                     cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
                                 row_Mat.size2(),col_Mat.size2(),row_Mat.size1(),
                                 w,&*row_Mat.data().begin(),row_Mat.size2(),
                                 &*col_Mat.data().begin(),col_Mat.size2(),
+                                0.,&*D_mat1.data().begin(),D_mat1.size2());
+      
+                    //calculate (D_mat = H_mat * D_mat1)
+                    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
+                                H_mat[rr].size2(),D_mat1.size2(),H_mat[rr].size1(),
+                                1.0,&*H_mat[rr].data().begin(),H_mat[rr].size2(),
+                                &*D_mat1.data().begin(),D_mat1.size2(),
                                 0.,&*D_mat[rr].data().begin(),D_mat[rr].size2());
                     
                 } else {
+                    
+                    //calculate (D_mat1= w * NT * X_mat)
                     cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
                                 row_Mat.size2(),col_Mat.size2(),row_Mat.size1(),
                                 w,&*row_Mat.data().begin(),row_Mat.size2(),
                                 &*col_Mat.data().begin(),col_Mat.size2(),
+                                0.,&*D_mat1.data().begin(),D_mat1.size2());
+                    
+                    //calculate (D_mat = H_mat * D_mat1)
+                    cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
+                                H_mat[rr].size2(),D_mat1.size2(),H_mat[rr].size1(),
+                                1.0,&*H_mat[rr].data().begin(),H_mat[rr].size2(),
+                                &*D_mat1.data().begin(),D_mat1.size2(),
                                 1.,&*D_mat[rr].data().begin(),D_mat[rr].size2());
                 }
             }
@@ -512,9 +581,10 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
     
       PetscErrorCode operator()() {
       PetscFunctionBegin;
-//        cout<<"Hi from class"<<endl;
+        cout<<"Hi from class"<<endl;
         
         ierr = GetN_and_Indices(); CHKERRQ(ierr);
+        ierr = Get_H_mat();
         ierr = Lhs(); CHKERRQ(ierr);
         ierr = Rhs(); CHKERRQ(ierr);
           

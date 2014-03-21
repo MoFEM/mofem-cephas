@@ -64,6 +64,7 @@ struct BaseDirihletBC {
 
   virtual PetscErrorCode SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D);
   virtual PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
+  virtual PetscErrorCode SetDirihletBC_ZerosRowsColumns(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
   virtual PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F);
 
 };
@@ -95,7 +96,7 @@ struct CubitDisplacementDirihletBC: public BaseDirihletBC {
   PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
   PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F);
   PetscErrorCode SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D);
-
+    
 };
 
 struct CubitTemperatureDirihletBC: public CubitDisplacementDirihletBC {
@@ -104,6 +105,40 @@ struct CubitTemperatureDirihletBC: public CubitDisplacementDirihletBC {
   PetscErrorCode Init();
 
 };
+    
+    
+struct CubitDisplacementDirihletBC_ZerosRowsColumns: public CubitDisplacementDirihletBC {
+    CubitDisplacementDirihletBC_ZerosRowsColumns(FieldInterface& _mField,const string _problem_name,const string _field_name);
+
+    PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
+    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC){
+        PetscFunctionBegin;
+        PetscFunctionReturn(0);
+    }
+    
+    PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
+    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC){
+        PetscFunctionBegin;
+        PetscFunctionReturn(0);
+    }
+    
+    PetscErrorCode SetDirihletBC_to_ElementIndicies(
+    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC){
+        PetscFunctionBegin;
+        PetscFunctionReturn(0);
+    }
+    
+    PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
+    FieldInterface::FEMethod *fe_method_ptr,
+    vector<DofIdx>& DirihletBC,vector<DofIdx> &FaceNodeIndices, vector<vector<DofIdx> > &FaceEdgeIndices, vector<DofIdx> &FaceIndices){
+        PetscFunctionBegin;
+        PetscFunctionReturn(0);
+    }
+    
+    PetscErrorCode SetDirihletBC_ZerosRowsColumns(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
+    
+};
+    
 
     
 }

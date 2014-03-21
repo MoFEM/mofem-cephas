@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   Range tets_back_bit_level;
-  ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_ref_level(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRQ(ierr);
 
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,cit)) {
 
