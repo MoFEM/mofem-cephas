@@ -112,10 +112,8 @@ int main(int argc, char *argv[]) {
     ierr = face_splitting_tools.splitFaces(); CHKERRQ(ierr);
   }
 
- 
   bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
   //bit_level0 = BitRefLevel().set(face_splitting_tools.meshRefineBitLevels.back());
-
 
   //load factor
   double *t_val;
