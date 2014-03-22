@@ -23,7 +23,7 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
-#include "ElasticFEMethod_NewBCs.hpp"
+#include "ElasticFEMethod.hpp"
 #include "ElasticFE_RVELagrange_traction.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
@@ -218,10 +218,10 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  struct MyElasticFEMethod: public ElasticFEMethod_NewBCs {
+  struct MyElasticFEMethod: public ElasticFEMethod {
     MyElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
       Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
-      ElasticFEMethod_NewBCs(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
+      ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
 
     PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;

@@ -100,14 +100,6 @@ PetscErrorCode BaseDirihletBC::SetDirihletBC_to_MatrixDiagonal(FieldInterface::F
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode BaseDirihletBC::SetDirihletBC_ZerosRowsColumns(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(Aij);
-    PetscFunctionReturn(0);
-}
-
 PetscErrorCode BaseDirihletBC::SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
@@ -343,7 +335,7 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_FieldData(FieldInte
     
 CubitDisplacementDirihletBC_ZerosRowsColumns::CubitDisplacementDirihletBC_ZerosRowsColumns(FieldInterface& _mField,const string _problem_name,const string _field_name):CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
     
-PetscErrorCode CubitDisplacementDirihletBC_ZerosRowsColumns::SetDirihletBC_ZerosRowsColumns(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
+PetscErrorCode CubitDisplacementDirihletBC_ZerosRowsColumns::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     set<DofIdx> set_zero_rows;
@@ -360,7 +352,6 @@ PetscErrorCode CubitDisplacementDirihletBC_ZerosRowsColumns::SetDirihletBC_Zeros
             }
         }
     }
-    cout<<"Hi from SetDirihletBC_ZerosRowsColumns"<<endl; 
     vector<DofIdx> zero_rows(set_zero_rows.size());
     copy(set_zero_rows.begin(),set_zero_rows.end(),zero_rows.begin());
     ierr = MatZeroRowsColumns(Aij,zero_rows.size(),&*zero_rows.begin(),1.,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);

@@ -64,7 +64,6 @@ struct BaseDirihletBC {
 
   virtual PetscErrorCode SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D);
   virtual PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
-  virtual PetscErrorCode SetDirihletBC_ZerosRowsColumns(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
   virtual PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F);
 
 };
@@ -135,7 +134,7 @@ struct CubitDisplacementDirihletBC_ZerosRowsColumns: public CubitDisplacementDir
         PetscFunctionReturn(0);
     }
     
-    PetscErrorCode SetDirihletBC_ZerosRowsColumns(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
+    PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
     
 };
     
