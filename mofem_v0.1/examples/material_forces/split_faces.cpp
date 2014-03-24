@@ -77,12 +77,18 @@ int main(int argc, char *argv[]) {
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   ierr = mField.build_fields(); CHKERRQ(ierr);
-  //ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-
+ 
   FaceSplittingTools face_splitting(mField);
-  ierr = face_splitting.buildKDTreeForCrackSurface(bit_level0); CHKERRQ(ierr);
 
   BitRefLevel bit_last_ref = BitRefLevel().set(face_splitting.meshRefineBitLevels.back());
+  Range tets_on_last_ref_level;
+  ierr = mField.get_entities_by_type_and_ref_level(bit_last_ref,BitRefLevel().set(),MBTET,tets_on_last_ref_level); CHKERRQ(ierr);
+  ierr = mField.seed_finite_elements(tets_on_last_ref_level); CHKERRQ(ierr);
+
+  ierr = face_splitting.buildKDTreeForCrackSurface(bit_level0); CHKERRQ(ierr);
+
+  ierr = face_splitting.meshRefine(); CHKERRQ(ierr);
+  bit_last_ref = BitRefLevel().set(face_splitting.meshRefineBitLevels.back());
 
   ierr = face_splitting.initBitLevelData(bit_last_ref);  CHKERRQ(ierr);
   ierr = face_splitting.calculateDistanceFromCrackSurface();  CHKERRQ(ierr);

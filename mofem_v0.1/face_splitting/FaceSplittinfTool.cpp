@@ -287,6 +287,10 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset) {
   Range opposite_crack_front_edges_nodes_tets;
   rval = mField.get_moab().get_adjacencies(opposite_crack_front_edges_nodes,3,false,opposite_crack_front_edges_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
   opposite_crack_front_edges_nodes_tets = intersect(opposite_crack_front_edges_nodes_tets,mesh_level_tets);
+  Range opposite_crack_front_edges_tets;
+  rval = mField.get_moab().get_adjacencies(opposite_crack_front_edges,3,false,opposite_crack_front_edges_tets,Interface::UNION); CHKERR_PETSC(rval);
+  opposite_crack_front_edges_tets = intersect(opposite_crack_front_edges_tets,mesh_level_tets);
+
 
   //get crack front faces, that is edges->nodes->tets
   Range crack_front_edges;
@@ -301,11 +305,12 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset) {
   crack_front_edges_nodes_tets = intersect(crack_front_edges_nodes_tets,mesh_level_tets);
 
   //common tets
-  Range common_tets = intersect(crack_front_edges_nodes_tets,opposite_crack_front_edges_nodes_tets);
+  Range common_tets = intersect(crack_front_edges_nodes_tets,opposite_crack_front_edges_tets);
 
   //Nodes on crack surface
   Range nodes_on_crack_surface;
   rval = mField.get_moab().get_entities_by_type(nodesOnCrackSurface,MBVERTEX,nodes_on_crack_surface,false); CHKERR_PETSC(rval);
+  nodes_on_crack_surface = subtract(nodes_on_crack_surface,opposite_crack_front_edges_nodes);
   Range nodes_on_crack_surface_tets;
   rval = mField.get_moab().get_adjacencies(nodes_on_crack_surface,3,false,nodes_on_crack_surface_tets,Interface::UNION); CHKERR_PETSC(rval);
   nodes_on_crack_surface_tets = intersect(nodes_on_crack_surface_tets,crack_front_edges_nodes_tets);
@@ -361,6 +366,9 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
   ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
   Range crack_front_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
+  Range crack_front_edge_nodes_faces;
+  rval = mField.get_moab().get_adjacencies(
+    crack_front_edges_nodes,2,false,crack_front_edge_nodes_faces,Interface::UNION); CHKERR_PETSC(rval);
 
   if(createMeshset) {
     rval = mField.get_moab().create_meshset(MESHSET_SET,chopTetsFaces); CHKERR_PETSC(rval);
@@ -377,22 +385,33 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     PetscPrintf(PETSC_COMM_WORLD,"Tets to chop: ");
   }
 
+  Skinner skin(&mField.get_moab());
+
   do {
 
+    //chope elements which has nodes only on the surface
+    Range crack_front_tets_skin_faces; 
+    rval = skin.find_skin(crack_front_tets,false,crack_front_tets_skin_faces); CHKERR(rval);
+    crack_front_tets_skin_faces = intersect(crack_front_tets_skin_faces,crack_front_edge_nodes_faces);
+    Range crack_front_tets_skin_faces_nodes; 
+    rval = mField.get_moab().get_connectivity(crack_front_tets_skin_faces,crack_front_tets_skin_faces_nodes,true); CHKERR_PETSC(rval);
+
+    Range nodes_on_skin_surface;
+    nodes_on_skin_surface = intersect(crack_front_tets_nodes,crack_front_tets_skin_faces_nodes);
+
     if(verb>0) {
-      PetscPrintf(PETSC_COMM_WORLD," %u",crack_front_tets_nodes.size());
+      PetscPrintf(PETSC_COMM_WORLD," %u (%u)",crack_front_tets_nodes.size(),nodes_on_skin_surface.size());
     }
-
-
+  
     double min_b;
     EntityHandle min_node = 0;
-    for(Range::iterator nit = crack_front_tets_nodes.begin();nit!=crack_front_tets_nodes.end();nit++) {
+    for(Range::iterator nit = nodes_on_skin_surface.begin();nit!=nodes_on_skin_surface.end();nit++) {
       Range check_nodes;
       check_nodes.insert(*nit);
       check_nodes.merge(subtract_crack_front_tets_faces_chop_tets_faces_nodes);
       double b;
       ierr = calculate_qualityAfterProjectingNodes(check_nodes,b); CHKERRQ(ierr);
-      if(nit == crack_front_tets_nodes.begin()) {
+      if(nit == nodes_on_skin_surface.begin()) {
 	min_b = b;
 	min_node = *nit;
       } else {
