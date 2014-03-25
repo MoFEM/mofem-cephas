@@ -452,6 +452,11 @@ int main(int argc, char *argv[]) {
       ierr = MyArcMethod.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else {
       ierr = MyArcMethod.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
+      double step_size1 = step_size;
+      ierr = MyArcMethod.calulate_lambda_int(step_size); CHKERRQ(ierr);
+      //step_size0_1/step_size0 = step_stize1/step_size
+      //step_size0_1 = step_size0*(step_stize1/step_size)
+      step_size0 = step_size0*(step_size1/step_size);
       step_size *= reduction;
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = reduction*ArcCtx->dlambda;
@@ -473,11 +478,14 @@ int main(int argc, char *argv[]) {
 
     //Update History and Calulate Residual
     //Tell Interface method that kappa is upadated
+    IntMyFE.snes_ctx = FieldInterface::FEMethod::ctx_SNESNone;
     ierr = IntMyFE.set_ctx_int(ArcInterfaceFEMethod::ctx_KappaUpdate); CHKERRQ(ierr);
     //run this on all processors, so we could save history tags on all parts and restart
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE,0,pcomm->size());  CHKERRQ(ierr);
     //Standard procedure
     ierr = IntMyFE.set_ctx_int(ArcInterfaceFEMethod::ctx_InterfaceNone); CHKERRQ(ierr);
+    //Remove nodes of damaged prisms
+    ierr = MyArcMethod.remove_damaged_prisms_nodes(); CHKERRQ(ierr);
 
     int its;
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
