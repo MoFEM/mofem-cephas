@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
   };
 
 
-  CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
+  CubitDisplacementDirihletBC_ZerosRowsColumns myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   //Assemble F and Aij
