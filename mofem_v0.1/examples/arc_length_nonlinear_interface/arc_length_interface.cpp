@@ -99,49 +99,56 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  BitRefLevel bit_level0;
-  bit_level0.set(1);
-  BitRefLevel bit_level1;
-  bit_level1.set(2);
-
+  Tag th_my_ref_level;
+  BitRefLevel def_bit_level = 0;
+  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
+    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  BitRefLevel *ptr_bit_level0;
+  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+  BitRefLevel& bit_level0 = *ptr_bit_level0;
   BitRefLevel problem_bit_level = bit_level0;
 
   if(step == 1) {
     //ref meshset ref level 0
-    ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
+    ierr = mField.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+    vector<BitRefLevel> bit_levels;
+    bit_levels.push_back(BitRefLevel().set(0));
 
-    //Interface
-    EntityHandle meshset_interface;
-    ierr = mField.get_Cubit_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
-    ierr = mField.get_msId_3dENTS_sides(meshset_interface,0,true); CHKERRQ(ierr);
-    // stl::bitset see for more details
-    BitRefLevel bit_level_interface;
-    bit_level_interface.set(0);
-    ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
-    EntityHandle meshset_level_interface;
-    rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_ref_level(bit_level_interface,BitRefLevel().set(),meshset_level_interface); CHKERRQ(ierr);
-
-    //add refined ent to cubit meshsets
-    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
-      EntityHandle cubit_meshset = cubit_it->meshset; 
-      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+    int ll = 1;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
+    //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,cit)) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
+      EntityHandle cubit_meshset = cit->get_meshset();
+      {
+	//get tet enties form back bit_level
+	EntityHandle ref_level_meshset = 0;
+	rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
+	ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
+	ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+	Range ref_level_tets;
+	rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
+	//get faces and test to split
+	ierr = mField.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+	//set new bit level
+	bit_levels.push_back(BitRefLevel().set(ll++));
+	//split faces and 
+	ierr = mField.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+	//clean meshsets
+	rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
+      }
+      //update cubit meshsets
+      for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,ciit)) {
+	EntityHandle cubit_meshset = ciit->meshset; 
+	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+      }
     }
-
-    // stl::bitset see for more details
-    EntityHandle meshset_level0;
-    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-    ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
-    ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
-
-    /*
-    ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
-    ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
-    ierr = mField.refine_PRISM(meshset_level0,bit_level1); CHKERRQ(ierr);
-    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
-      EntityHandle cubit_meshset = cubit_it->meshset; 
-      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-    }*/
+    
+    bit_level0 = bit_levels.back();
+    problem_bit_level = bit_level0;
 
     /***/
     //Define problem
@@ -265,19 +272,18 @@ int main(int argc, char *argv[]) {
   const double Gf = 1;
 
   struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
+    FieldInterface& mField;
     Range PostProcNodes;
-    MyArcLengthIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
-      ArcLengthCtx *_arc_ptr): ArcLengthIntElemFEMethod(_moab,_Aij,_F,_D,_arc_ptr) {
+    MyArcLengthIntElemFEMethod(FieldInterface& _mField,Mat &_Aij,Vec& _F,Vec& _D,
+      ArcLengthCtx *_arc_ptr): ArcLengthIntElemFEMethod(_mField.get_moab(),_Aij,_F,_D,_arc_ptr),mField(_mField) {
 
-      Range all_nodes;
-      rval = moab.get_entities_by_type(0,MBVERTEX,all_nodes,true); CHKERR_THROW(rval);
-      for(Range::iterator nit = all_nodes.begin();nit!=all_nodes.end();nit++) {
-	double coords[3];
-	rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
-	if(fabs(coords[0]-5)<1e-6) {
-	  PostProcNodes.insert(*nit);
-	}
+      for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
+	EntityHandle meshset = cit->get_meshset();
+	Range nodes;
+	rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERR_THROW(rval);
+	PostProcNodes.merge(nodes);
       }
+
       PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",PostProcNodes.size());
 
     };
@@ -307,7 +313,7 @@ int main(int argc, char *argv[]) {
   };
 
   ArcLengthCtx* ArcCtx = new ArcLengthCtx(mField,"ELASTIC_MECHANICS");
-  MyArcLengthIntElemFEMethod* MyArcMethod_ptr = new MyArcLengthIntElemFEMethod(moab,Aij,F,D,ArcCtx);
+  MyArcLengthIntElemFEMethod* MyArcMethod_ptr = new MyArcLengthIntElemFEMethod(mField,Aij,F,D,ArcCtx);
   MyArcLengthIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLengthSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
 
