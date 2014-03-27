@@ -439,13 +439,9 @@ struct FieldInterface {
     */
   virtual PetscErrorCode update_field_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,int verb = -1) = 0;
 
-  /** \brief update finite elements meshesets by child entities
-    */
-  virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1) = 0;
-
   /** \brief update finite element mesheset by child entities
     */
-  virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,int verb = -1) = 0;
+  virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1) = 0;
 
   /** \brief delete enttities form mofem and moab database 
     */
@@ -523,11 +519,32 @@ struct FieldInterface {
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
+  /** 
+    * \brief set field entities from adjacencies of tetrahedrals
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param range contains set tetrahedrals
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1) = 0;
+
   /**
     * \brief remove entities from field
     *
     */
   virtual PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /**
+    * \brief remove entities from field
+    *
+    */
+  virtual PetscErrorCode remove_ents_from_field(const string& name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
+
+  /**
+    * \brief remove entities from field
+    *
+    */
+  virtual PetscErrorCode remove_ents_from_field(const string& name,const Range &ents,int verb = -1) = 0;
 
   /**
     * \brief Set order approximation of the entities in the field
@@ -682,6 +699,16 @@ struct FieldInterface {
    */
   virtual PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
+  /** \brief remove elements from given refinment level to finite element database
+   *
+   */
+  virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
+
+  /** \brief remove elements from given refinment level to finite element database
+   *
+   */
+  virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1) = 0;
+
   /** \brief add TET elements from given refinment level to finite element database given by name 
    *
    * \param BitRefLevel bit
@@ -706,7 +733,7 @@ struct FieldInterface {
   virtual PetscErrorCode list_adjacencies() const = 0;
 
   /// add Finite Element Problem
-  virtual PetscErrorCode add_problem(const string& name) = 0;
+  virtual PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
   
   /* \brief add finite element to problem, this add entities assigned to finite element to a particular problem
    *
@@ -760,7 +787,19 @@ struct FieldInterface {
 
   /** clear fields
    */
-  virtual PetscErrorCode clear_dofs_and_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** clear fields
+   */
+  virtual PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** clear fields
+   */
+  virtual PetscErrorCode clear_dofs_fields(const string &name,const Range ents,int verb = -1) = 0;
+
+  /** clear fields
+   */
+  virtual PetscErrorCode clear_ents_fields(const string &name,const Range enst,int verb = -1) = 0;
 
   /** build finite elements
     */
@@ -769,6 +808,10 @@ struct FieldInterface {
   /** clear finite elements
     */
   virtual PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** clear finite elements
+    */
+  virtual PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1) = 0;
 
   /** \brief build ajacencies 
     *
@@ -783,7 +826,7 @@ struct FieldInterface {
     * database, adjacency map has to be rebuild.
     *
     */
-  virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit) = 0;
+  virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1) = 0;
 
   /** \brief clear adjacency map for finite elements on given bit level
     *

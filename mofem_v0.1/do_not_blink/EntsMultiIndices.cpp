@@ -107,6 +107,7 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefM
   EntityHandle meshset = get_meshset();
   rval = moab.add_entities(meshset,&ent,1); CHKERR_THROW(rval);
 }
+MoFEMEntity::~MoFEMEntity() {}
 ostream& operator<<(ostream& os,const MoFEMEntity& e) {
   os << "ent_uid " << e.get_unique_id() << " entity "<< e.get_ent() << " type " << e.get_ent_type()
     <<" order "<<e.get_max_order()<<" "<<*e.field_ptr;

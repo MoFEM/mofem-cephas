@@ -192,6 +192,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   int (*forder)(int);
   UId uid;
   MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_mab_ent_ptr);
+  ~MoFEMEntity();
   inline EntityHandle get_ent() const { return get_ref_ent(); }
   inline int get_nb_dofs_on_ent() const { return tag_FieldData_size/sizeof(FieldData); }
   inline FieldData* get_ent_FieldData() const { return const_cast<FieldData*>(tag_FieldData); }
@@ -253,7 +254,14 @@ struct MoFEMEntity_change_order {
  * \param ordered_non_unique<
  *    tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
  * \param hashed_non_unique<
- *    tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
+ *    tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
+ * \param ordered_non_unique<
+ *   tag<Composite_Name_And_Ent_mi_tag>, 
+ *     composite_key<
+ *	MoFEMEntity,
+ *	const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref>,
+ *	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent>
+ *     > >
  */
 typedef multi_index_container<
   MoFEMEntity,
@@ -265,7 +273,14 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
     hashed_non_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
+      tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
+    ordered_non_unique<
+      tag<Composite_Name_And_Ent_mi_tag>, 
+      composite_key<
+	MoFEMEntity,
+	const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref>,
+	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent>
+      > >
   > > MoFEMEntity_multiIndex;
 
 }

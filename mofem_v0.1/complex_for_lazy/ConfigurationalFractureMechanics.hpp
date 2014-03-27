@@ -96,7 +96,7 @@ struct ConfigurationalFractureMechanics {
 
   double aRea,lambda,energy;
   int nb_un_freez_nodes;
-  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,double da);
+  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,const double da,const double fraction_treshold = 5e-2);
 
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
   PetscErrorCode surface_projection_data(FieldInterface& mField,string problem);
@@ -165,7 +165,16 @@ struct ConfigurationalFractureMechanics {
 
 };
 
-PetscErrorCode  SNESMonitorSpatialAndSmoothing_FEMEthod(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy);
+PetscErrorCode SNESMonitorSpatialAndSmoothing_FEMEthod(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy);
+
+
+PetscErrorCode main_spatial_solution(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
+PetscErrorCode main_material_forces(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
+
+//crack propagation 
+
+PetscErrorCode main_arc_length_setup(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
+PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob,bool face_splitting = false);
 
 
 #endif //__CONFIGURATIONAL_MECHANICS_HPP__

@@ -55,6 +55,7 @@ struct FaceSplittingTools {
     crackSurfaceCrossingEdges = 0;
     crackFrontTests = 0;
     chopTetsFaces = 0;
+    selectedCrackFaces = 0;
 
     int def_bit_level_vec[BITREFLEVEL_SIZE];
     bzero(def_bit_level_vec,BITREFLEVEL_SIZE*sizeof(int));
@@ -84,6 +85,8 @@ struct FaceSplittingTools {
     rval = mField.get_moab().delete_entities(&crackSurfaceCrossingEdges,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&crackFrontTests,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&chopTetsFaces,1); CHKERR_PETSC(rval);
+    rval = mField.get_moab().delete_entities(&selectedCrackFaces,1); CHKERR_PETSC(rval);
+
 
     PetscFunctionReturn(0);
   }
@@ -120,9 +123,11 @@ struct FaceSplittingTools {
 
   EntityHandle crackFrontTests;
   EntityHandle chopTetsFaces;
+  EntityHandle selectedCrackFaces;
 
   PetscErrorCode getCrackFrontTets(bool createMeshset);
   PetscErrorCode chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(bool createMeshset,int verb = 0);
+  PetscErrorCode selectCrackFaces(bool createMeshset,int verb = 0);
 
   //Split new crack front faces
   Tag th_meshRefineBitLevels,th_meshIntefaceBitLevels;
@@ -133,6 +138,7 @@ struct FaceSplittingTools {
     bool empty() { return !((bool)ptr[0]); }
     int size() { return ptr[0]; }
     void resize(int s) { ptr[0] = s; }
+    int& first() { return ptr[1]; }
     int& back() { return ptr[ptr[0]]; }
     void push_back(int a) { 
       ptr[0]++;
@@ -150,6 +156,8 @@ struct FaceSplittingTools {
   PetscErrorCode addNewSurfaceFaces_to_Cubit_msId200();
   PetscErrorCode addcrackFront_to_Cubit201();
 
+  PetscErrorCode projectCrackFrontNodes();
+
   private:
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -157,12 +165,17 @@ struct FaceSplittingTools {
   double diffNTET[4*3];
   Tag th_b;
   Tag th_distance;
+  Tag th_projection;
 
   PetscErrorCode calculate_qualityAfterProjectingNodes(EntityHandle meshset);
   PetscErrorCode calculate_qualityAfterProjectingNodes(Range &option_nodes,double &current_b);
 
 
 };
+
+PetscErrorCode main_refine_and_meshcat(FieldInterface& mField,FaceSplittingTools &face_splitting,bool cat_mesh = false,const int verb = 0);
+PetscErrorCode main_select_faces_for_splitting(FieldInterface& mField,FaceSplittingTools &face_splitting,const int verb = 0);
+PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mField,FaceSplittingTools &face_splitting,const int verb = 0);
 
 }
 

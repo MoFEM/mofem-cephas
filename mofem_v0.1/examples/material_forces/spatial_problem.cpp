@@ -84,7 +84,6 @@ int main(int argc, char *argv[]) {
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   ConfigurationalFractureMechanics conf_prob(mField);
-
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
   //mesh refine and split faces
@@ -100,7 +99,6 @@ int main(int argc, char *argv[]) {
     face_splitting_tools.meshRefineBitLevels.resize(0);
     face_splitting_tools.meshRefineBitLevels.push_back(0);
   }
-
 
   if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_refine_near_crack_tip)) {
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_refine_near_crack_tip);
@@ -139,37 +137,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
-
-  ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
-
-  //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
-  //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_set_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
-
-  //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
-  //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-  //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  //build problem
-  ierr = mField.build_problems(); CHKERRQ(ierr);
-
-  //partition problems
-  ierr = conf_prob.spatial_partition_problems(mField); CHKERRQ(ierr);
-
-  //solve problem
-  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
-  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
-
-  SNES snes;
-  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
-  ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
-  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+  ierr = main_spatial_solution(mField,conf_prob); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Save results in out_spatial.h5m\n"); CHKERRQ(ierr);

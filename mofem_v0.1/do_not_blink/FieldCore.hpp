@@ -245,8 +245,7 @@ struct FieldCore: public FieldInterface {
     const bool recursive = false, int verb = -1);
   PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1);
   PetscErrorCode update_field_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,int verb = -1);
-  PetscErrorCode update_finite_element_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1);
-  PetscErrorCode update_finite_element_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,int verb = -1);
+  PetscErrorCode update_finite_element_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1);
 
   //remove entities
   PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
@@ -268,9 +267,13 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode remove_ents_from_field(const string& name,const EntityHandle meshset,const EntityType type,int verb = -1);
+  PetscErrorCode remove_ents_from_field(const string& name,const Range &ents,int verb = -1);
 
   //set apprix oorder
   PetscErrorCode set_field_order(const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb = -1);
@@ -284,7 +287,10 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode dofs_NoField(const BitFieldId id,int &dof_counter);
   PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,int &dof_counter,int verb = -1);
   PetscErrorCode build_fields(int verb = -1);
-  PetscErrorCode clear_dofs_and_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode clear_dofs_fields(const string &name,const Range ents,int verb = -1);
+  PetscErrorCode clear_ents_fields(const string &name,const Range enst,int verb = -1);
 
   //other auxiliary functions for fields
   PetscErrorCode list_dof_by_id(const BitFieldId id) const;
@@ -319,15 +325,19 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const string &name,EntityType type,int verb = -1);
   PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1);
+  PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1);
+
+  //other auxiliary functions for finite element
   BitFEId get_BitFEId(const string& name) const;
   string get_BitFEId_name(const BitFEId id) const;
-  EntityHandle get_meshset_by_BitFEId(const BitFEId id) const;
-  EntityHandle get_meshset_by_BitFEId(const string& name) const;
+  EntityHandle get_finite_element_meshset(const BitFEId id) const;
+  EntityHandle get_finite_element_meshset(const string& name) const;
   PetscErrorCode list_finite_elements() const;
 
   //problem
   PetscErrorCode add_problem(const BitProblemId id,const string& name);
-  PetscErrorCode add_problem(const string& name);
+  PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
   PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit);
@@ -339,11 +349,18 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode build_finite_elements(const EntMoFEMFiniteElement &EntFe,int verb = -1);
   PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
 
   //entFEAdjacencies
-  PetscErrorCode build_adjacencies(const BitRefLevel &bit);
+  PetscErrorCode build_adjacencies(int verb = -1);
+  PetscErrorCode build_adjacencies(const Range &ents,int verb = -1);
+  PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1);
+  PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode clear_adjacencies_finite_elements(const string &name,const Range &ents,int verb = -1);
+  PetscErrorCode clear_adjacencies_entities(const string &name,const Range &ents,int verb = -1);
+
   PetscErrorCode list_adjacencies() const;
 
   //problem building

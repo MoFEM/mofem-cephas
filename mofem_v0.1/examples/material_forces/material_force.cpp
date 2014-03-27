@@ -63,60 +63,7 @@ int main(int argc, char *argv[]) {
   FieldInterface& mField = core;
 
   ConfigurationalFractureMechanics conf_prob(mField);
-
-  ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
-
-  //ref meshset ref level 0
-  Tag th_my_ref_level;
-  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
-  const EntityHandle root_meshset = mField.get_moab().get_root_set();
-  BitRefLevel *ptr_bit_level0;
-  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
-  BitRefLevel& bit_level0 = *ptr_bit_level0;
-
-  ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.constrains_crack_front_problem_definition(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-
-  //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
-
-  //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_set_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_add_bit("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",bit_level0); CHKERRQ(ierr);
-
-  //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_set_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_set_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_set_bit("C_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_set_bit("CTC_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
-
-  //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
-  //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-  //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  //build problem
-  ierr = mField.build_problems(); CHKERRQ(ierr);
-
-  //partition problems
-  ierr = conf_prob.spatial_partition_problems(mField); CHKERRQ(ierr);
-  ierr = conf_prob.material_partition_problems(mField); CHKERRQ(ierr);
-  ierr = conf_prob.constrains_partition_problems(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.crackfront_partition_problems(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-
-  //caculate material forces
-  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
-  ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.calculate_material_forces(mField,"MATERIAL_MECHANICS","MATERIAL"); CHKERRQ(ierr);
-  ierr = conf_prob.griffith_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.project_force_vector(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.griffith_g(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
-  ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
+  ierr = main_material_forces(mField,conf_prob); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_material.h5m"); CHKERR_PETSC(rval);
@@ -129,6 +76,15 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
+
+  //ref meshset ref level 0
+  Tag th_my_ref_level;
+  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  BitRefLevel *ptr_bit_level0;
+  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+  BitRefLevel& bit_level0 = *ptr_bit_level0;
+
 
   if(pcomm->rank()==0) {
 
