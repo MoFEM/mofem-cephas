@@ -1697,8 +1697,8 @@ namespace MoFEM {
     double *AxVector, *AxAngle;
     Tag th_fibre_orientation;
 		
-    TranIso_PostProc_AxisAngle_OnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp, int _noAA, double *_AxVector, double *_AxAngle):
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,"DISPLACEMENT",_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle) {
+    TranIso_PostProc_AxisAngle_OnRefMesh( Interface& _moab,FieldInterface& _mField,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp, int _noAA, double *_AxVector, double *_AxAngle):
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_mField,"DISPLACEMENT",_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle) {
 			
 			double def_VAL2[3] = {0,0,0};
 			rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
@@ -1830,8 +1830,8 @@ namespace MoFEM {
     double E_p, E_z, nu_p, nu_pz, G_zp;
     Tag th_fibre_orientation;
 		
-    TranIso_PostProc_FibreDirRot_OnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,"DISPLACEMENT",_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
+    TranIso_PostProc_FibreDirRot_OnRefMesh( Interface& _moab,FieldInterface& _mField,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_mField,"DISPLACEMENT",_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
 			
 			double def_VAL2[3] = {0,0,0};
 			rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
