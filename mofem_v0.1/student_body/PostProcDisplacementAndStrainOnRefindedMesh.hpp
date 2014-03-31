@@ -290,7 +290,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 	bool propeties_from_BlockSet_Mat_ElasticSet;
 	
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(
-    FieldInterface& _mField, string _field_name,double _lambda,double _mu): PostProcDisplacemenysAndStarinOnRefMesh(_mField.get_moab(),_field_name),lambda(_lambda),mu(_mu), mField(_mField) {
+    FieldInterface& _mField, string _field_name,double _lambda,double _mu): PostProcDisplacemenysAndStarinOnRefMesh(_mField.get_moab(),_field_name),mField(_mField),lambda(_lambda),mu(_mu) {
     double def_VAL2[3] = { 0.0, 0.0, 0.0 };
     rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
