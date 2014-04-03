@@ -261,68 +261,76 @@ PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
-  EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
-  //id
-  rval = moab.tag_set_data(th_FieldId,&meshset,1,&id); CHKERR_PETSC(rval);
-  //space
-  rval = moab.tag_set_data(th_FieldSpace,&meshset,1,&space); CHKERR_PETSC(rval);
-  //add meshset to ref_ents // meshset dof on all level sets
-  if(space == NoField) {
-    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,meshset));
-    bool success = refinedMoFemEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
-    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-  }
-  //name
-  void const* tag_data[] = { name.c_str() };
-  int tag_sizes[1]; tag_sizes[0] = name.size();
-  rval = moab.tag_set_by_ptr(th_FieldName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
-  //name data prefix
-  string name_data_prefix("_App_Data");
-  void const* tag_prefix_data[] = { name_data_prefix.c_str() };
-  int tag_prefix_sizes[1]; tag_prefix_sizes[0] = name_data_prefix.size();
-  rval = moab.tag_set_by_ptr(th_FieldName_DataNamePrefix,&meshset,1,tag_prefix_data,tag_prefix_sizes); CHKERR_PETSC(rval);
-  Tag th_AppOrder,th_FieldData,th_Rank,th_AppDofOrder,th_DofRank;
-  //data
-  string Tag_data_name = name_data_prefix+name;
-  const int def_len = 0;
-  rval = moab.tag_get_handle(Tag_data_name.c_str(),def_len,MB_TYPE_OPAQUE,
-    th_FieldData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
-  //order
-  ApproximationOrder def_ApproximationOrder = -1;
-  string Tag_ApproximationOrder_name = "_App_Order_"+name;
-  rval = moab.tag_get_handle(Tag_ApproximationOrder_name.c_str(),sizeof(ApproximationOrder),MB_TYPE_OPAQUE,
-    th_AppOrder,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_ApproximationOrder); CHKERR_PETSC(rval);
-  //dof order
-  string Tag_dof_ApproximationOrder_name = "_App_Dof_Order"+name;
-  rval = moab.tag_get_handle(Tag_dof_ApproximationOrder_name.c_str(),def_len,MB_TYPE_OPAQUE,
-    th_AppDofOrder,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
-  //rank
-  int def_rank = 1;
-  string Tag_rank_name = "_Field_Rank_"+name;
-  rval = moab.tag_get_handle(Tag_rank_name.c_str(),sizeof(ApproximationRank),MB_TYPE_OPAQUE,
-    th_Rank,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_rank); CHKERR_PETSC(rval);
-  rval = moab.tag_set_data(th_Rank,&meshset,1,&rank); CHKERR_PETSC(rval);
-  //dof rank
-  string Tag_dof_rank_name = "_Field_Dof_Rank_"+name;
-  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),def_len,MB_TYPE_OPAQUE,
-    th_DofRank,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
-  //add meshset
-  pair<MoFEMField_multiIndex::iterator,bool> p;
-  try {
-    p = moabFields.insert(MoFEMField(moab,meshset));  
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fit;
+  fit = moabFields.get<FieldName_mi_tag>().find(name);
+  if(fit != moabFields.get<FieldName_mi_tag>().end() ) {
     if(bh == MF_EXCL) {
-      if(!p.second) SETERRQ1(PETSC_COMM_SELF,1,
-	"field not inserted %s (top tip, it could be already there)",
-	MoFEMField(moab,meshset).get_name().c_str());
+      SETERRQ1(PETSC_COMM_SELF,1,"field is <%s> in database",name.c_str());
     }
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,1,msg);
-  }
-  if(verbose > 0) {
-    ostringstream ss;
-    ss << "add: " << *p.first << endl;
-    PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+  } else {
+    EntityHandle meshset;
+    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+    //id
+    rval = moab.tag_set_data(th_FieldId,&meshset,1,&id); CHKERR_PETSC(rval);
+    //space
+    rval = moab.tag_set_data(th_FieldSpace,&meshset,1,&space); CHKERR_PETSC(rval);
+    //add meshset to ref_ents // meshset dof on all level sets
+    if(space == NoField) {
+      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,meshset));
+      bool success = refinedMoFemEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
+      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+    }
+    //name
+    void const* tag_data[] = { name.c_str() };
+    int tag_sizes[1]; tag_sizes[0] = name.size();
+    rval = moab.tag_set_by_ptr(th_FieldName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
+    //name data prefix
+    string name_data_prefix("_App_Data");
+    void const* tag_prefix_data[] = { name_data_prefix.c_str() };
+    int tag_prefix_sizes[1]; tag_prefix_sizes[0] = name_data_prefix.size();
+    rval = moab.tag_set_by_ptr(th_FieldName_DataNamePrefix,&meshset,1,tag_prefix_data,tag_prefix_sizes); CHKERR_PETSC(rval);
+    Tag th_AppOrder,th_FieldData,th_Rank,th_AppDofOrder,th_DofRank;
+    //data
+    string Tag_data_name = name_data_prefix+name;
+    const int def_len = 0;
+    rval = moab.tag_get_handle(Tag_data_name.c_str(),def_len,MB_TYPE_OPAQUE,
+      th_FieldData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
+    //order
+    ApproximationOrder def_ApproximationOrder = -1;
+    string Tag_ApproximationOrder_name = "_App_Order_"+name;
+    rval = moab.tag_get_handle(Tag_ApproximationOrder_name.c_str(),sizeof(ApproximationOrder),MB_TYPE_OPAQUE,
+      th_AppOrder,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_ApproximationOrder); CHKERR_PETSC(rval);
+    //dof order
+    string Tag_dof_ApproximationOrder_name = "_App_Dof_Order"+name;
+    rval = moab.tag_get_handle(Tag_dof_ApproximationOrder_name.c_str(),def_len,MB_TYPE_OPAQUE,
+      th_AppDofOrder,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
+    //rank
+    int def_rank = 1;
+    string Tag_rank_name = "_Field_Rank_"+name;
+    rval = moab.tag_get_handle(Tag_rank_name.c_str(),sizeof(ApproximationRank),MB_TYPE_OPAQUE,
+      th_Rank,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_rank); CHKERR_PETSC(rval);
+    rval = moab.tag_set_data(th_Rank,&meshset,1,&rank); CHKERR_PETSC(rval);
+    //dof rank
+    string Tag_dof_rank_name = "_Field_Dof_Rank_"+name;
+    rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),def_len,MB_TYPE_OPAQUE,
+      th_DofRank,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
+    //add meshset
+    pair<MoFEMField_multiIndex::iterator,bool> p;
+    try {
+      p = moabFields.insert(MoFEMField(moab,meshset));  
+      if(bh == MF_EXCL) {
+        if(!p.second) SETERRQ1(PETSC_COMM_SELF,1,
+  	"field not inserted %s (top tip, it could be already there)",
+  	MoFEMField(moab,meshset).get_name().c_str());
+      }
+    } catch (const char* msg) {
+      SETERRQ(PETSC_COMM_SELF,1,msg);
+    }
+    if(verbose > 0) {
+      ostringstream ss;
+      ss << "add: " << *p.first << endl;
+      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }
   }
   //
   PetscFunctionReturn(0);

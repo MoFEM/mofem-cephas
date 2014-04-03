@@ -85,7 +85,6 @@ int main(int argc, char *argv[]) {
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
-
   if(pcomm->rank()==0) {
 
     Range level_tris;
