@@ -19,6 +19,7 @@ while test $# -gt 0; do
 			echo "-p, --proc=NB_OF_PROCESSORS"
       			echo "-t, --rol=TOLERANCE"
 			echo "-i. --its_d=DESIRED_NUMBER_OF_ITS"
+			echo "--pc_factor_mat_solver_package=[superlu_dist,mumps]"
                         exit 0
                         ;;
                 -f)
