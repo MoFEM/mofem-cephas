@@ -173,6 +173,11 @@ PetscErrorCode main_material_forces(FieldInterface& mField,ConfigurationalFractu
 
 //crack propagation 
 
+/** \brief rescale load factor, such that maximally stressed crack front node has griffithe energy equal to gc
+  *
+  */
+PetscErrorCode main_rescale_load_factor(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
+
 PetscErrorCode main_arc_length_setup(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
 PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob,bool face_splitting = false);
 

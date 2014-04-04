@@ -23,6 +23,7 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
+#include "FaceSplittinfTool.hpp"
 
 using namespace MoFEM;
 
@@ -2727,6 +2728,48 @@ PetscErrorCode main_arc_length_setup(FieldInterface& mField,ConfigurationalFract
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode main_rescale_load_factor(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob) {
+  PetscFunctionBegin;
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  double gc;
+  PetscBool flg;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
+  }
+
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+
+  Tag th_t_val;
+  rval = mField.get_moab().tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
+  double *load_factor_ptr;
+  rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&load_factor_ptr); CHKERR_THROW(rval);
+  double& load_factor = *load_factor_ptr;
+
+  double max_j = conf_prob.max_j;
+  double a = fabs(max_j)/pow(load_factor,2);
+  double new_load_factor = copysign(sqrt(gc/a),load_factor);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"\ncoefficient a = %6.4e\n",a); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"new load factor value = %6.4e\n\n",new_load_factor); CHKERRQ(ierr);
+  load_factor = new_load_factor;
+  SNES snes;
+  //solve spatial problem
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+  ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+  ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
+  ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob,bool face_splitting) {
   PetscFunctionBegin;
 
@@ -2772,6 +2815,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_load_steps (what is the number of load_steps ?)");
   }
 
+  PetscInt odd_face_split = 0;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_odd_face_split",&nb_load_steps,&flg); CHKERRQ(ierr);
+
   if(step == 0) {
     ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
   }
@@ -2813,23 +2859,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 
     //calulate initial load factor
     if(step == 0) {
-      double max_j = conf_prob.max_j;
-      double a = fabs(max_j)/pow(load_factor,2);
-      double new_load_factor = copysign(sqrt(gc/a),load_factor);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"\ncoefficient a = %6.4e\n",a); CHKERRQ(ierr);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"new load factor value = %6.4e\n\n",new_load_factor); CHKERRQ(ierr);
-      load_factor = new_load_factor;
-      SNES snes;
-      //solve spatial problem
-      ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
-      ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
-      ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-      ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
-      ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-      ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-      ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-      ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-      ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = main_rescale_load_factor(mField,conf_prob); CHKERRQ(ierr);
     }
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"* da = %6.4e\n",da); CHKERRQ(ierr);
@@ -3017,6 +3047,33 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
     ierr = PetscTime(&v2);CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Step Time Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+
+    if(odd_face_split != 0) {
+
+      if( aa % odd_face_split ) {
+
+	{ //find faces for split
+
+	  FaceSplittingTools face_splitting(mField);
+	  ierr = main_select_faces_for_splitting(mField,face_splitting,2); CHKERRQ(ierr);
+	  //do splittig
+	  ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,2); CHKERRQ(ierr);
+	  //project and set coords
+	  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+	  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+	  ierr = face_splitting.projectCrackFrontNodes(); CHKERRQ(ierr);
+
+	}
+
+	{ //solve spatial problem and calulate griffith forces
+
+	  ierr = main_face_splittong_restart(mField,conf_prob); CHKERRQ(ierr);
+
+	}
+
+      }
+
+    }
 
   }
 
