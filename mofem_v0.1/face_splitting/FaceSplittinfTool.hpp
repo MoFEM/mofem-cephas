@@ -51,8 +51,6 @@ struct FaceSplittingTools {
 
     kdTree_rootMeshset_DistanceFromCrackSurface = 0;
     opositeFrontEdges = 0;
-    nodesOnCrackSurface = 0;
-    crackSurfaceCrossingEdges = 0;
     crackFrontTests = 0;
     chopTetsFaces = 0;
     selectedCrackFaces = 0;
@@ -81,8 +79,6 @@ struct FaceSplittingTools {
 
     rval = mField.get_moab().delete_entities(&kdTree_rootMeshset_DistanceFromCrackSurface,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&opositeFrontEdges,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&nodesOnCrackSurface,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&crackSurfaceCrossingEdges,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&crackFrontTests,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&chopTetsFaces,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&selectedCrackFaces,1); CHKERR_PETSC(rval);
@@ -113,11 +109,8 @@ struct FaceSplittingTools {
   //Front edges
 
   EntityHandle opositeFrontEdges;
-  EntityHandle nodesOnCrackSurface;
-  EntityHandle crackSurfaceCrossingEdges;
 
   PetscErrorCode getOpositeForntEdges(bool createMeshset);
-  PetscErrorCode getCrackSurfaceCorssingEdges(bool createMeshset);
 
   //Front tets
 

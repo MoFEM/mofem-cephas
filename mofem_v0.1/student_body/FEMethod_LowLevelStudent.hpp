@@ -272,7 +272,6 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
   vector<double> gNTET;
   vector<double> gNTRI;  
   EntityHandle last_face;
-  EntityHandle face_edges[3];
 
 };
 

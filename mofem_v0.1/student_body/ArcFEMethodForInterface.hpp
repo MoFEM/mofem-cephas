@@ -44,8 +44,8 @@ struct ArcInterfaceElasticFEMethod: public ElasticFEMethod {
 
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    g_NTRI.resize(3*13);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+    g_NTRI.resize(3*28);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
     // See FEAP - - A Finite Element Analysis Program
     D_lambda = ublas::zero_matrix<FieldData>(6,6);
     for(int rr = 0;rr<3;rr++) {
@@ -201,7 +201,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
     g_NTRI.resize(3*13);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
 
     switch(snes_ctx) {
       case ctx_SNESNone: {}
@@ -420,7 +420,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > traction;
 	    traction = prod(Dglob,gap[gg]);
 	    if(traction.size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	    double w = area3*G_TRI_W13[gg];
+	    double w = area3*G_TRI_W28[gg];
 	    for(int rr = 0;rr<row_mat;rr++) {
 	      ublas::matrix<FieldData> &N = (rowNMatrices[rr])[gg];
 	      ublas::vector<FieldData> f_int = prod(trans(N),w*traction);
@@ -472,7 +472,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    } else {
 	      ierr = CalcTangetDglob(_omega_,g[gg],gap_loc[gg]); CHKERRQ(ierr);
 	    }
-	    double w = area3*G_TRI_W13[gg];
+	    double w = area3*G_TRI_W28[gg];
 	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
 	    K(rr,cc) += prod(NTD , col_Mat ); 
 	  }

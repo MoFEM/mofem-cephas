@@ -92,17 +92,43 @@ int main(int argc, char *argv[]) {
     ierr = main_select_faces_for_splitting(mField,face_splitting,2); CHKERRQ(ierr);
     //do splittig
     ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,2); CHKERRQ(ierr);
-    //project and set coords
-    ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
-    ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
     ierr = face_splitting.projectCrackFrontNodes(); CHKERRQ(ierr);
 
   }
- 
+
+  if(pcomm->rank()==0) {
+
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("cat_out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+
+  }
 
   { //solve spatial problem and calulate griffith forces
 
-    ierr = main_face_splittong_restart(mField,conf_prob); CHKERRQ(ierr);
+    ierr = main_face_splitting_restart(mField,conf_prob); CHKERRQ(ierr);
+
+    //project and set coords
+    ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+    ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+
+    //solve spatial problem
+    SNES snes;
+    ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+    ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+    ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
+    ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
+    //calulate Griffth forces
+    ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
+    ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+    ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+    ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+    ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+    ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+
 
   }
 
