@@ -3049,8 +3049,8 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Step Time Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
 
     if(odd_face_split != 0) {
-
-      if( aa % odd_face_split == 0 ) {
+      
+      if( aa>0 && aa % odd_face_split == 0 ) {
 
 	if(pcomm->rank()==0) {
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"Save debug for face splitting\n"); CHKERRQ(ierr);
