@@ -46,11 +46,32 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
+  const EntityHandle root_meshset = moab.get_root_set();
+
   PetscInt nb_ref_levels;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ref",&nb_ref_levels,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     nb_ref_levels = 0;
   }
+
+  int def_set_ref_level = 0;
+  Tag th_set_ref_level;
+  rval = moab.tag_get_handle("_SET_REF_LEVEL",1,MB_TYPE_INTEGER,
+    th_set_ref_level,MB_TAG_CREAT|MB_TAG_MESH,&def_set_ref_level); 
+  rval = moab.tag_set_data(th_set_ref_level,&root_meshset,1,&nb_ref_levels); CHKERR_PETSC(rval);
+
+  PetscInt order;
+  flg = PETSC_TRUE;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    order = 1;
+  }
+
+  int def_set_order = 1;
+  Tag th_set_order;
+  rval = moab.tag_get_handle("_SET_ORDER",1,MB_TYPE_INTEGER,
+    th_set_order,MB_TAG_CREAT|MB_TAG_MESH,&def_set_order); 
+  rval = moab.tag_set_data(th_set_order,&root_meshset,1,&order); CHKERR_PETSC(rval);
  
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -78,10 +99,10 @@ int main(int argc, char *argv[]) {
   BitRefLevel def_bit_level = 0;
   rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
     th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
-  const EntityHandle root_meshset = mField.get_moab().get_root_set();
   BitRefLevel *ptr_bit_level0;
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
+
 
   ConfigurationalFractureMechanics conf_prob(mField);
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);

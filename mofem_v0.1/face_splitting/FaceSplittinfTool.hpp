@@ -103,7 +103,8 @@ struct FaceSplittingTools {
   PetscErrorCode initBitLevelData(const BitRefLevel bit_mesh);
 
   //Calulte distance on mesh
-  PetscErrorCode calculateDistanceFromCrackSurface(Range &nodes);
+  PetscErrorCode calculateDistanceFromCrackSurface(Range &nodes,double alpha);
+  PetscErrorCode calculateDistanceCrackFrontNodesFromCrackSurface(double alpha);
   PetscErrorCode calculateDistanceFromCrackSurface();
 
   //Front edges

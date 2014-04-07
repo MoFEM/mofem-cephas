@@ -82,56 +82,88 @@ int main(int argc, char *argv[]) {
   { //cat mesh
   
     FaceSplittingTools face_splitting(mField);
-    ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
+    //ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
 
   }
 
-  { //find faces for split
+  //find faces for split
 
-    FaceSplittingTools face_splitting(mField);
-    ierr = main_select_faces_for_splitting(mField,face_splitting,2); CHKERRQ(ierr);
-    //do splittig
-    ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,2); CHKERRQ(ierr);
-    ierr = face_splitting.projectCrackFrontNodes(); CHKERRQ(ierr);
+  FaceSplittingTools face_splitting(mField);
+  ierr = main_select_faces_for_splitting(mField,face_splitting,2); CHKERRQ(ierr);
+  //do splittig
+  ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,2); CHKERRQ(ierr);
+	
+  //rebuild fields, finite elementa and problems
+  ierr = main_face_splitting_restart(mField,conf_prob); CHKERRQ(ierr);
 
-  }
+  //solve spatial problem and calulate griffith forces
 
-  if(pcomm->rank()==0) {
+  //project and set coords
+  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+  
+  SNES snes;
 
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("cat_out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  //solve mesh smoothing
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+  SNESLineSearch linesearch;
+  ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
+  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+  Vec D_tmp_mesh_positions;
+  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
+  int nb_sub_steps = 1;
+  int nn;
+  do { 
+    nn = 1;
+    for(;nn<=nb_sub_steps;nn++) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %D\n",nn); CHKERRQ(ierr);
+      ierr = mField.set_local_VecCreateGhost(
+	"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+	Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      double alpha = (double)nn/(double)nb_sub_steps;
+      ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
+      //project nodes on crack surface
+      ierr = face_splitting.projectCrackFrontNodes(); CHKERRQ(ierr);
+      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
+      SNESConvergedReason reason;
+      SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+      if(ierr == 0 && reason > 0 && reason != 5) {
+	ierr = mField.set_local_VecCreateGhost(
+	  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+	  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      } else {
+	ierr = mField.set_local_VecCreateGhost(
+	  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+	  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	nb_sub_steps++;
+	break;
+      }
+    }
+    if(nb_sub_steps == 10) break;
+  } while(nn-1 != nb_sub_steps);
+  ierr = VecDestroy(&D_tmp_mesh_positions); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-  }
+  ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
+  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
 
-  { //solve spatial problem and calulate griffith forces
+  //solve spatial problem
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+  ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-    ierr = main_face_splitting_restart(mField,conf_prob); CHKERRQ(ierr);
-
-    //project and set coords
-    ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
-    ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
-
-    //solve spatial problem
-    SNES snes;
-    ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
-    ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
-    ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
-    ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-
-    //calulate Griffth forces
-    ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
-    ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-    ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-    ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-    ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-    ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-
-
-  }
-
+  //calulate Griffth forces
+  ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
+  ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
 

@@ -93,6 +93,7 @@ struct ConfigurationalFractureMechanics {
   PostProcStressNonLinearElasticity *fe_post_proc_stresses_method;
   PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes,bool postproc = true);
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
+  PetscErrorCode solve_mesh_smooting_problem(FieldInterface& mField,SNES *snes);
 
   double aRea,lambda,energy;
   int nb_un_freez_nodes;
