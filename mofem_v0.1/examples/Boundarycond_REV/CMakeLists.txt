@@ -22,6 +22,8 @@ target_link_libraries(Boundarycond_REV mofem_student_body mofem_Field ${PROJECT_
 add_executable(Boundarycond_REV_traction Boundarycond_REV_traction.cpp)
 target_link_libraries(Boundarycond_REV_traction mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(Boundarycond_REV_Periodic Boundarycond_REV_Periodic.cpp)
+target_link_libraries(Boundarycond_REV_Periodic mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 
 

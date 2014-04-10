@@ -510,11 +510,11 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
 //        cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
 //        cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
         
-        //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xx, xz, zy]^T
+        //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
         ublas::vector<FieldData> applied_strain;
         applied_strain.resize(6);
-        applied_strain(0)=1.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
-        applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
+        applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
+        applied_strain(3)=1.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
         //cout<<"area "<<area << endl;
         
         
