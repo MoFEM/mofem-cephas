@@ -112,6 +112,7 @@ add_library(mofem_Field
   do_not_blink/BCMultiIndices.cpp
   do_not_blink/TETRefine.cpp
   do_not_blink/FieldCore.cpp
+  do_not_blink/FieldCore_MeshRefinment.cpp
   FEM.c
   H1.c
   Hdiv.c

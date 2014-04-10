@@ -77,13 +77,23 @@ struct FaceSplittingTools {
   PetscErrorCode cleanMeshsets() {
     PetscFunctionBegin;
 
-    rval = mField.get_moab().delete_entities(&kdTree_rootMeshset_DistanceFromCrackSurface,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&opositeFrontEdges,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&crackFrontTests,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&chopTetsFaces,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&selectedCrackFaces,1); CHKERR_PETSC(rval);
-
-
+    if(opositeFrontEdges!=0) {
+      rval = mField.get_moab().delete_entities(&opositeFrontEdges,1); CHKERR_PETSC(rval);
+      opositeFrontEdges = 0;
+    }
+    if(crackFrontTests!=0) {
+      rval = mField.get_moab().delete_entities(&crackFrontTests,1); CHKERR_PETSC(rval);
+      crackFrontTests = 0;
+    }
+    if(chopTetsFaces!=0) {
+      rval = mField.get_moab().delete_entities(&chopTetsFaces,1); CHKERR_PETSC(rval);
+      chopTetsFaces=0;
+    }
+    if(selectedCrackFaces!=0) {
+      rval = mField.get_moab().delete_entities(&selectedCrackFaces,1); CHKERR_PETSC(rval);
+      selectedCrackFaces=0;
+    }
+    
     PetscFunctionReturn(0);
   }
 
@@ -162,7 +172,7 @@ struct FaceSplittingTools {
   Tag th_projection;
 
   PetscErrorCode calculate_qualityAfterProjectingNodes(EntityHandle meshset);
-  PetscErrorCode calculate_qualityAfterProjectingNodes(Range &option_nodes,double &current_b);
+  PetscErrorCode calculate_qualityAfterProjectingNodes(Range &option_nodes,double &current_q);
 
 
 };

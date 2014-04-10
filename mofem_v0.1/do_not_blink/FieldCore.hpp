@@ -229,13 +229,6 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit);
-  PetscErrorCode add_verices_in_the_middel_of_edges(
-    const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
-  PetscErrorCode add_verices_in_the_middel_of_edges(const Range &edges,const BitRefLevel &bit,int verb = -1);
-  PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = true);
-  PetscErrorCode refine_TET(const Range &test,const BitRefLevel &bit,const bool respect_interface = true);
-  PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
-  PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1);
   PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset);
@@ -384,7 +377,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
   PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
 
-  //topology
+  //Mesh refine and interfaces
   PetscErrorCode get_msId_3dENTS_sides(
     const int msId,
     const Cubit_BC_bitset CubitBCType,
@@ -407,6 +400,14 @@ struct FieldCore: public FieldInterface {
 
   PetscErrorCode add_prism_to_basicEntAdjacencies(const EntityHandle prism,int verb = -1);
 
+  PetscErrorCode add_verices_in_the_middel_of_edges(
+    const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
+  PetscErrorCode add_verices_in_the_middel_of_edges(const Range &edges,const BitRefLevel &bit,int verb = -1);
+  PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = true);
+  PetscErrorCode refine_TET(const Range &test,const BitRefLevel &bit,const bool respect_interface = true);
+  PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
+  PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
+
   //loops
   PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1);
   PetscErrorCode problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb = -1);
@@ -418,6 +419,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
+  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedMoFemEntities_ptr);
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr);
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);

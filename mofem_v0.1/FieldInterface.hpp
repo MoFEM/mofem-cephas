@@ -1439,6 +1439,11 @@ struct FieldInterface {
   virtual PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1) = 0;
 
 
+  /** \brief Get ref entities from database (datastructure) 
+    *
+    */
+  virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedMoFemEntities_ptr) = 0;
+
   /** \brief Get problem database (datastructure) 
     *
     */
