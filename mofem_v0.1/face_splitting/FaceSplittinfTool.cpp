@@ -1098,6 +1098,7 @@ PetscErrorCode FaceSplittingTools::calculate_qualityAfterProjectingNodes(Range &
   map<EntityHandle,double> q_map;  
   Range adj_tets;
   rval = mField.get_moab().get_adjacencies(option_nodes,3,false,adj_tets,Interface::UNION); CHKERR_PETSC(rval);
+  adj_tets = intersect(adj_tets,mesh_level_tets);
   for(Range::iterator tit = adj_tets.begin();tit!=adj_tets.end();tit++) {
     int num_nodes; 
     const EntityHandle* conn;
@@ -1137,7 +1138,12 @@ PetscErrorCode FaceSplittingTools::calculate_qualityAfterProjectingNodes(Range &
 	  diffNTET,coords_edges,dofs_X,
 	  NULL,NULL,NULL,
 	  &quality0,&quality,&b,
-	  NULL,NULL); CHKERRQ(ierr);
+	  NULL,NULL); 
+      if(ierr != 0) {
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"dofs_X = [ %6.4e  %6.4e %6.4e %6.4e]\n",dofs_X[0],dofs_X[1],dofs_X[2],dofs_X[3]);
+	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+	CHKERRQ(ierr);
+      }
       //} else {
 	//b = -1;
       //}

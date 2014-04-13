@@ -3295,8 +3295,14 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 
 	}
 
-	//find faces for split
 
+	//project and set coords
+	conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
+	conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
+	ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+	ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+
+	//find faces for split
 	FaceSplittingTools face_splitting(mField);
 	ierr = main_select_faces_for_splitting(mField,face_splitting); CHKERRQ(ierr);
 	//do splittig
