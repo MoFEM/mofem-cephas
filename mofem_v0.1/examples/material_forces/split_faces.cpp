@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   { //cat mesh
   
     FaceSplittingTools face_splitting(mField);
-    //ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
+    ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
     ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
 
   }

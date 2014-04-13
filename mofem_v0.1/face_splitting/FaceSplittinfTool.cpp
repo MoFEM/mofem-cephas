@@ -425,7 +425,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 
   int debug_ii = 0;
 
-  if(verb>0) {
+  if(verb>=0) {
     PetscPrintf(PETSC_COMM_WORLD,"Tets to chop: ");
   }
 
@@ -535,7 +535,9 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 
     if(crack_front_tets_nodes_minus_nodes_on_skin_surface_tets.size()>0) {
       
-      PetscPrintf(PETSC_COMM_WORLD," Zero Nodes");
+      if(verb>=0) {
+	PetscPrintf(PETSC_COMM_WORLD," Zero Nodes");
+      }
 
       _crack_front_free_faces_edges_.clear();
       rval = mField.get_moab().get_adjacencies(
@@ -680,7 +682,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     rval = mField.get_moab().get_connectivity(crack_front_tets,crack_front_tets_nodes,true); CHKERR_PETSC(rval);
     crack_front_tets_nodes = subtract(crack_front_tets_nodes,crack_front_edges_nodes);
 
-    if(verb>0) {
+    if(verb>=0) {
       PetscPrintf(PETSC_COMM_WORLD," %u (%u) <%u> [%4.4f]",
 	crack_front_tets_nodes.size(),nodes_on_skin_surface.size(),crack_front_tets.size(),min_b);
     }
@@ -733,7 +735,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 
   } while (!crack_front_tets.empty()); 
 
-  if(verb>0) {
+  if(verb>=0) {
     PetscPrintf(PETSC_COMM_WORLD,"\n",crack_front_tets_nodes.size());
   }
 
@@ -827,8 +829,7 @@ PetscErrorCode FaceSplittingTools::catMesh() {
       continue;
     }
   }
-
-  PetscPrintf(PETSC_COMM_WORLD,"nb. edges to refine = %u\n",edges_to_refine.size());
+  PetscPrintf(PETSC_COMM_WORLD,"nb. edges to refine = %u\n",edges_to_refine.size());	
 
   int last_ref_bit = meshRefineBitLevels.back();
   if(!meshIntefaceBitLevels.empty()) {

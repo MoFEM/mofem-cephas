@@ -1573,6 +1573,8 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
 
   ierr = VecAssemblyBegin(dD); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(dD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   int M,m;
   ierr = VecGetSize(dD,&M); CHKERRQ(ierr);
@@ -1585,6 +1587,8 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   ierr = VecDuplicate(D,&QTdD); CHKERRQ(ierr);
   ierr = MatMult(Q,dD,QTdD); CHKERRQ(ierr);
   ierr = VecAXPY(D,1.,QTdD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = mField.set_global_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
@@ -3286,7 +3290,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	{ //cat mesh
   
 	  FaceSplittingTools face_splitting(mField);
-	  ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
+	  ierr = main_refine_and_meshcat(mField,face_splitting,false); CHKERRQ(ierr);
 	  ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
 
 	}
@@ -3294,9 +3298,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	//find faces for split
 
 	FaceSplittingTools face_splitting(mField);
-	ierr = main_select_faces_for_splitting(mField,face_splitting,2); CHKERRQ(ierr);
+	ierr = main_select_faces_for_splitting(mField,face_splitting); CHKERRQ(ierr);
 	//do splittig
-	ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,2); CHKERRQ(ierr);
+	ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting); CHKERRQ(ierr);
 	
 	//rebuild fields, finite elementa and problems
 	ierr = main_face_splitting_restart(mField,conf_prob); CHKERRQ(ierr);
