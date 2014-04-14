@@ -1072,7 +1072,7 @@ PetscErrorCode FaceSplittingTools::calculate_qualityAfterProjectingNodes(EntityH
   rval = mField.get_moab().get_entities_by_type(meshset,MBVERTEX,option_nodes,false); CHKERR_PETSC(rval);
   double current_q;
   ierr = calculate_qualityAfterProjectingNodes(option_nodes,current_q); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"meshset b = %3.2f\n",current_q);
+  PetscPrintf(PETSC_COMM_WORLD,"meshset quality = %4.3f\n",current_q);
   rval = mField.get_moab().tag_set_data(th_b,&meshset,1,&current_q); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }

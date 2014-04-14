@@ -1531,8 +1531,10 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   ierr = VecZeroEntries(dD); CHKERRQ(ierr);
   ierr = VecSetOption(dD,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 
-
   ierr = mField.set_local_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   Tag th_projection;
   rval = mField.get_moab().tag_get_handle("PROJECTION_CRACK_SURFACE",th_projection); CHKERR_PETSC(rval);
@@ -1586,10 +1588,12 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   Vec QTdD;
   ierr = VecDuplicate(D,&QTdD); CHKERRQ(ierr);
   ierr = MatMult(Q,dD,QTdD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
   ierr = VecAXPY(D,1.,QTdD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
   ierr = mField.set_global_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   VecDestroy(&D);
@@ -3322,11 +3326,8 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
 	ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
 
-	ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-	ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  
+ 
 	SNES snes;
-
 	//solve mesh smoothing
 	ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
 	ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
@@ -3335,9 +3336,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
 	Vec D_tmp_mesh_positions;
 	ierr = mField.VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
-	ierr = mField.set_local_VecCreateGhost(
-	    "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-	    Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+	ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
 	int nb_sub_steps = 1;
 	int nn;
 	do { 

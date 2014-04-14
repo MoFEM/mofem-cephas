@@ -128,12 +128,7 @@ int main(int argc, char *argv[]) {
   ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
   ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
   
-  ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-  ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-
-
   SNES snes;
-
   //solve mesh smoothing
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
@@ -142,8 +137,9 @@ int main(int argc, char *argv[]) {
   ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
   Vec D_tmp_mesh_positions;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
-  ierr = mField.set_local_VecCreateGhost(
-    "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+  ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
   int nb_sub_steps = 1;
   int nn;
   do { 

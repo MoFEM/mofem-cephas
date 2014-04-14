@@ -373,6 +373,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	      rval = moab.add_entities(meshset_error_out,&*tit,1); CHKERR_PETSC(rval);
 	      ierr = moab.write_file("error_out.vtk","VTK","",&meshset_error_out,1); CHKERRQ(ierr);
 	    }
+	    ierr = PetscBarrier(PETSC_NULL); CHKERRQ(ierr);
 	    ostringstream ss;
 	    ss << "tit " << new_tets_conns[4*tt] << "\n";
 	    ss << coords[0] << " " << coords[1] << " " << coords[2] << "\n";
