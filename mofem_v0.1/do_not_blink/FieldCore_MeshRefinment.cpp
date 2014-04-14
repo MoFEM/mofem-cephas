@@ -362,7 +362,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
       for(int tt = 0;tt<nb_new_tets;tt++) {
 	if(!ref_tets_bit.test(tt)) {
 	  rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERR_PETSC(rval);
-	  double coords[12];
+	  /*double coords[12];
 	  ierr = moab.get_coords(&new_tets_conns[4*tt],4,coords); CHKERRQ(ierr);
 	  double V = Shape_intVolumeMBTET(diffN_TET,coords); 
 	  if(V<=0) {
@@ -383,7 +383,7 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	    ss << "error tet saved to error_out.vtk"  << "\n";
 	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
 	    assert(V>0); 
-	  }
+	  }*/
 	  int ref_type[2];
 	  ref_type[0] = parent_edges_bit.count();
 	  ref_type[1] = sub_type; 
