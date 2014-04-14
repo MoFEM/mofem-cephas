@@ -1081,8 +1081,8 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     rval = moab.add_entities(meshset_for_bit_level,ents_dd); CHKERR_PETSC(rval);
   }
   //
-  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntityType_mi_tag>::type ref_ent_by_composite;
-  ref_ent_by_composite &by_composite = refinedMoFemEntities.get<Composite_EntityHandle_And_ParentEntityType_mi_tag>();
+  //typedef RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntityType_mi_tag>::type ref_ent_by_composite;
+  //ref_ent_by_composite &by_composite = refinedMoFemEntities.get<Composite_EntityHandle_And_ParentEntityType_mi_tag>();
   //create new 3d ents on "father" side
   Range new_3d_ents;
   Range::iterator tit = side_ents3d.begin();

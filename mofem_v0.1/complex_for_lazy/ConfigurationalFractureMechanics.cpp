@@ -2902,7 +2902,7 @@ PetscErrorCode main_arc_length_setup(FieldInterface& mField,ConfigurationalFract
 
   ErrorCode rval;
   PetscErrorCode ierr;
-  PetscBool flg = PETSC_TRUE;
+  //PetscBool flg = PETSC_TRUE;
 
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 

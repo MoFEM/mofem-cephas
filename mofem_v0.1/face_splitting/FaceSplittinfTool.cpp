@@ -236,10 +236,10 @@ PetscErrorCode FaceSplittingTools::getOpositeForntEdges(bool createMeshset) {
     int num_nodes; 
     const EntityHandle* conn;
     rval = mField.get_moab().get_connectivity(*sit,conn,num_nodes,true); CHKERR_PETSC(rval);
-    double coords[3*num_nodes];
-    rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
-    cblas_daxpy(3,-1,coords,1,&coords[3],1);
-    double nrm2 = cblas_dnrm2(3,&coords[3],1);	
+    //double coords[3*num_nodes];
+    //rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
+    //cblas_daxpy(3,-1,coords,1,&coords[3],1);
+    //double nrm2 = cblas_dnrm2(3,&coords[3],1);	
     double d[2];
     rval = mField.get_moab().tag_get_data(th_distance,conn,num_nodes,d); CHKERR_PETSC(rval);
     if(d[0]*d[1]<=0) {
@@ -864,7 +864,6 @@ PetscErrorCode FaceSplittingTools::meshRefine() {
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ref",&nb_ref_levels,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
-    int def_set_ref_level = 0;
     Tag th_set_ref_level;
     rval = mField.get_moab().tag_get_handle("_SET_REF_LEVEL",th_set_ref_level); CHKERR_PETSC(rval);
     rval = mField.get_moab().tag_get_data(th_set_ref_level,&root_meshset,1,&nb_ref_levels); CHKERR_PETSC(rval);
@@ -1299,7 +1298,6 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   PetscBool flg = PETSC_TRUE;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    int def_set_order = 1;
     Tag th_set_order;
     rval = mField.get_moab().tag_get_handle("_SET_ORDER",th_set_order); CHKERR_PETSC(rval);
     rval = mField.get_moab().tag_get_data(th_set_order,&root_meshset,1,&order); CHKERR_PETSC(rval);

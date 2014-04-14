@@ -1244,7 +1244,7 @@ PetscErrorCode FieldCore::clear_ents_fields(const BitRefLevel &bit,const BitRefL
       continue;
     }
     if((bit2&bit).any()) {
-      EntityHandle meshset = eit->get_meshset();
+      //EntityHandle meshset = eit->get_meshset();
       EntityHandle ent = eit->get_ent();
       rval = moab.tag_delete_data(eit->field_ptr->th_AppOrder,&ent,1); CHKERR_PETSC(rval);
       if(eit->tag_FieldData_size>0) {
