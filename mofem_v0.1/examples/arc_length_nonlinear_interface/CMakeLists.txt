@@ -20,6 +20,7 @@ add_executable(arc_length_interface arc_length_interface.cpp)
 target_link_libraries(arc_length_interface mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/PeelTest.cub" export_files_arc_length_interface)
+cm_export_file("../../meshes/PerforatedPlate.cub" export_files_arc_length_interface)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

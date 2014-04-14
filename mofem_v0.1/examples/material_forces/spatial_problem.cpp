@@ -46,11 +46,32 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
+  const EntityHandle root_meshset = moab.get_root_set();
+
   PetscInt nb_ref_levels;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ref",&nb_ref_levels,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     nb_ref_levels = 0;
   }
+
+  int def_set_ref_level = 0;
+  Tag th_set_ref_level;
+  rval = moab.tag_get_handle("_SET_REF_LEVEL",1,MB_TYPE_INTEGER,
+    th_set_ref_level,MB_TAG_CREAT|MB_TAG_MESH,&def_set_ref_level); 
+  rval = moab.tag_set_data(th_set_ref_level,&root_meshset,1,&nb_ref_levels); CHKERR_PETSC(rval);
+
+  PetscInt order;
+  flg = PETSC_TRUE;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    order = 1;
+  }
+
+  int def_set_order = 1;
+  Tag th_set_order;
+  rval = moab.tag_get_handle("_SET_ORDER",1,MB_TYPE_INTEGER,
+    th_set_order,MB_TAG_CREAT|MB_TAG_MESH,&def_set_order); 
+  rval = moab.tag_set_data(th_set_order,&root_meshset,1,&order); CHKERR_PETSC(rval);
  
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -78,13 +99,12 @@ int main(int argc, char *argv[]) {
   BitRefLevel def_bit_level = 0;
   rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
     th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
-  const EntityHandle root_meshset = mField.get_moab().get_root_set();
   BitRefLevel *ptr_bit_level0;
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
-  ConfigurationalFractureMechanics conf_prob(mField);
 
+  ConfigurationalFractureMechanics conf_prob(mField);
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
   //mesh refine and split faces
@@ -100,7 +120,6 @@ int main(int argc, char *argv[]) {
     face_splitting_tools.meshRefineBitLevels.resize(0);
     face_splitting_tools.meshRefineBitLevels.push_back(0);
   }
-
 
   if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_refine_near_crack_tip)) {
     conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_refine_near_crack_tip);
@@ -139,37 +158,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
-
-  ierr = conf_prob.spatial_problem_definition(mField); CHKERRQ(ierr);
-
-  //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
-  //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_set_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
-
-  //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
-  //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-  //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  //build problem
-  ierr = mField.build_problems(); CHKERRQ(ierr);
-
-  //partition problems
-  ierr = conf_prob.spatial_partition_problems(mField); CHKERRQ(ierr);
-
-  //solve problem
-  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
-  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
-
-  SNES snes;
-  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
-  ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
-  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+  ierr = main_spatial_solution(mField,conf_prob); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Save results in out_spatial.h5m\n"); CHKERRQ(ierr);

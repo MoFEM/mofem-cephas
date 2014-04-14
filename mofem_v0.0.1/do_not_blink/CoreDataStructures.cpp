@@ -568,16 +568,19 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
   EntityHandle ent = e.get_ent();
   rval = moab.tag_get_by_ptr(e.field_ptr->th_FieldData,&ent,1,(const void **)&e.tag_FieldData,&e.tag_FieldData_size); 
   if(rval == MB_SUCCESS) {
-    //data
     if( nb_dofs*sizeof(FieldData) == (unsigned int)e.tag_FieldData_size ) {
+      //get ptr of arrray for data and its size 
       rval = moab.tag_get_by_ptr(e.field_ptr->th_FieldData,&ent,1,(const void **)&e.tag_FieldData,&e.tag_FieldData_size); CHKERR(rval);
-      int tag_size[1];
+      int tag_size[1]; 
+      //get ptr of array for dof approx. order and its size
       rval = moab.tag_get_by_ptr(e.field_ptr->th_AppDofOrder,&ent,1,(const void **)&e.tag_dof_order_data,tag_size); CHKERR(rval);
       assert(tag_size[0]/sizeof(ApproximationOrder) == e.tag_FieldData_size/sizeof(FieldData));
+      //get ptr of array for dof rank and its size
       rval = moab.tag_get_by_ptr(e.field_ptr->th_DofRank,&ent,1,(const void **)&e.tag_dof_rank_data,tag_size); CHKERR(rval);
       assert(tag_size[0]/sizeof(ApproximationRank) == e.tag_FieldData_size/sizeof(FieldData));
       return;
     }
+    //data
     data.resize(e.tag_FieldData_size/sizeof(FieldData));
     FieldData *ptr_begin = (FieldData*)e.tag_FieldData;
     FieldData *ptr_end = (FieldData*)e.tag_FieldData + e.tag_FieldData_size/sizeof(FieldData);
@@ -601,6 +604,7 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
     copy(ptr_dof_rank_begin,ptr_dof_rank_end,data_dof_rank.begin());
   }
   if(nb_dofs>0) {
+    //data
     data.resize(nb_dofs,0);
     int tag_size[1]; tag_size[0] = data.size()*sizeof(FieldData);
     void const* tag_data[] = { &data[0] };

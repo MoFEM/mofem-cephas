@@ -17,22 +17,22 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 add_executable(spatial_problem spatial_problem.cpp)
-target_link_libraries(spatial_problem mofem_face_splitting mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(spatial_problem mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(material_force material_force.cpp)
-target_link_libraries(material_force mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(material_force mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(material_problem material_problem.cpp)
-target_link_libraries(material_problem mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(material_problem mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
-target_link_libraries(arc_length_material_coupled mofem_face_splitting mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(spatial_problem_with_thermal_field spatial_problem_with_thermal_field.cpp)
-target_link_libraries(spatial_problem_with_thermal_field mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(spatial_problem_with_thermal_field mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(split_faces split_faces.cpp)
-target_link_libraries(split_faces mofem_face_splitting mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(split_faces mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

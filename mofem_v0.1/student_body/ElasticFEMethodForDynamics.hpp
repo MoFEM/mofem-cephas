@@ -242,6 +242,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       Mass.resize(row_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
+	if(RowGlob[rr].size()==0) continue;
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
 	  ublas::matrix<FieldData> &col_Mat = VelColNMatrix[gg];
@@ -279,6 +280,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       VU.resize(col_mat);
       int g_dim = g_NTET.size()/4;
       for(int cc = 0;cc<col_mat;cc++) {
+	if(ColGlob[cc].size()==0) continue;
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = VelRowNMatrix[gg];
 	  ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
@@ -657,6 +659,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	  case ctx_TSSetIFunction: {
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    for(int cc = 0;cc<col_mat;cc++) {
+	      if(ColGlob[cc].size()==0) continue;
 	      if(VU[cc].size2()!=velocities[cc].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      ublas::vector<FieldData> VUu_t = prod(VU[cc],velocities[cc]);
 	      if(VelRowGlob.size()!=VUu_t.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -665,8 +668,8 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	  } break;
 	  case ctx_TSSetIJacobian: {
 	    if( (!true_if_stiffnes_matrix_is_calulated)||(!linear_problem) ) {
-
 	      for(int cc = 0;cc<col_mat;cc++) {
+		if(ColGlob[cc].size()==0) continue;
 		if(VelRowGlob.size()!=VU[cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		if(ColGlob[cc].size()!=VU[cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		VU[cc] *= ts_a;

@@ -19,11 +19,12 @@ block 1 attribute index 1 10.0
 block 1 attribute index 2 0.3 
 
 Sideset 100  curve all 
-sideset 100 curve 32 29 33 48 30 28 49 47 27   remove
+sideset 100 curve 32 29 33 48 30 28 49 47 27 1 5  remove
 nodeset 101 vertex all 
 nodeset 101 vertex 19 20 remove
 Sideset 102  surface all
-sideset 102 surface 29 18  19 remove
+sideset 102 surface 29 18  19 6 remove
+Sideset 10200  surface 6
 
 Sideset 200  surface 19
 Sideset 201  curve 29
@@ -41,4 +42,5 @@ mesh volume 7
 ##refine curve 27 29 numsplit 5 bias 1.0 depth 1 smoot
  
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/crack1.cub" overwrite 
+
 

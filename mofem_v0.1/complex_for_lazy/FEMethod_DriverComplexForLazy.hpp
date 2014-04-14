@@ -834,7 +834,8 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
 	      for(;diit!=hi_diit;diit++) {
 		for(unsigned int ddd = 0;ddd<ColGlobMaterial[i_nodes].size();ddd++) {
 		  if(frontRowGlobMaterial_front_only[3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
-		    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
+		      3*nn+diit->get_dof_rank(),diit->get_petsc_gloabl_dof_idx());
 		  }
 		  if(diit->get_petsc_local_dof_idx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		  double g = f_tangent_front_mesh_array[diit->get_petsc_local_dof_idx()]*KHH(3*nn+diit->get_dof_rank(),ddd);

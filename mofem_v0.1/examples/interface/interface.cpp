@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  //ref meshset ref level 0
+  /*//ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
   //Interface
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);*/
 
   /*BitRefLevel bit_level1;
   bit_level1.set(2);
@@ -180,7 +180,45 @@ int main(int argc, char *argv[]) {
     ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
   }*/
 
-  BitRefLevel problem_bit_level = bit_level0;
+
+  //ref meshset ref level 0
+  ierr = mField.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+  vector<BitRefLevel> bit_levels;
+  bit_levels.push_back(BitRefLevel().set(0));
+
+  int ll = 1;
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
+    //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,cit)) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
+    EntityHandle cubit_meshset = cit->get_meshset();
+    {
+	//get tet enties form back bit_level
+	EntityHandle ref_level_meshset = 0;
+	rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
+	ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
+	ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+	Range ref_level_tets;
+	rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
+	//get faces and test to split
+	ierr = mField.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+	//set new bit level
+	bit_levels.push_back(BitRefLevel().set(ll++));
+	//split faces and 
+	ierr = mField.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+	//clean meshsets
+	rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
+    }
+    //update cubit meshsets
+    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,ciit)) {
+	EntityHandle cubit_meshset = ciit->meshset; 
+	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+    }
+  }
+    
+  BitRefLevel problem_bit_level = bit_levels.back();
 
   /***/
   //Define problem
@@ -232,6 +270,16 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
+  //reduce level of approximation for entities on inetrface
+  Range prims;
+  ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
+  Range prims_faces;
+  rval = mField.get_moab().get_adjacencies(prims,2,false,prims_faces,Interface::UNION); CHKERR_PETSC(rval);
+  Range prims_faces_edges;
+  rval = mField.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,Interface::UNION); CHKERR_PETSC(rval);
+  ierr = mField.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
+  ierr = mField.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
+
   /****/
   //build database
 
@@ -279,8 +327,8 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
       ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
       for(int rr = 0;rr<row_mat;rr++) {
-	if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	if(RowGlob[rr].size()==0) continue;
+	if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
 	ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
       }
@@ -292,7 +340,7 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
-  const double alpha = 0.05;
+  const double alpha = 0.5;
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
   MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));

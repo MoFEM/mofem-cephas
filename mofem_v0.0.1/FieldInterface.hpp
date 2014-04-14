@@ -460,6 +460,22 @@ struct FieldInterface {
   /**
     * \brief Set order approximation of the entities in the field
     *
+    * \param entities 
+    * \param order approximation order 
+    */
+  PetscErrorCode set_field_order(const Range& ents,const BitFieldId id,const ApproximationOrder order,int verb = -1) = 0;
+
+  /**
+    * \brief Set order approximation of the entities in the field
+    *
+    * \param entities 
+    * \param order approximation order 
+    */
+  PetscErrorCode set_field_order(const Range& ents,const string& name,const ApproximationOrder order,int verb = -1) = 0;
+
+  /**
+    * \brief Set order approximation of the entities in the field
+    *
     * \param meshset containing set of the entities (use 0 for all the entities in the meshset)
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order 
