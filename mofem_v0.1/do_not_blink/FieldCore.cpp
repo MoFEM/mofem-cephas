@@ -524,7 +524,17 @@ PetscErrorCode FieldCore::add_ents_to_field_by_EDGEs(const EntityHandle meshset,
       break;
     case H1:
       rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
-      rval = moab.get_connectivity(edges,nodes,true); CHKERR_PETSC(rval);
+      //rval = moab.get_connectivity(edges,nodes,true); CHKERR_PETSC(rval);
+      //use get adjacencies, this will allow take in account adjacencies set user
+      rval = moab.get_adjacencies(edges,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+      {
+	Range topo_nodes;
+	rval = moab.get_connectivity(edges,topo_nodes,true); CHKERR_PETSC(rval);
+	Range mid_nodes;
+	rval = moab.get_connectivity(edges,mid_nodes,false); CHKERR_PETSC(rval);
+	mid_nodes = subtract(mid_nodes,topo_nodes);
+	nodes = subtract(nodes,mid_nodes);
+      }
       rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
       if(verb>1) {
 	ostringstream ss;
@@ -585,7 +595,17 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TRIs(const EntityHandle meshset,c
       break;
     case H1:
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
-      rval = moab.get_connectivity(tris,nodes,true); CHKERR_PETSC(rval);
+      //rval = moab.get_connectivity(tris,nodes,true); CHKERR_PETSC(rval);
+      //use get adjacencies, this will allow take in account adjacencies set user
+      rval = moab.get_adjacencies(tris,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+      {
+	Range topo_nodes;
+	rval = moab.get_connectivity(tris,topo_nodes,true); CHKERR_PETSC(rval);
+	Range mid_nodes;
+	rval = moab.get_connectivity(tris,mid_nodes,false); CHKERR_PETSC(rval);
+	mid_nodes = subtract(mid_nodes,topo_nodes);
+	nodes = subtract(nodes,mid_nodes);
+      }
       rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
       rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
@@ -706,7 +726,17 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TETs(const Range &tets,const BitF
       break;
     case H1:
       rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
-      rval = moab.get_connectivity(tets,nodes,true); CHKERR_PETSC(rval);
+      //rval = moab.get_connectivity(tets,nodes,true); CHKERR_PETSC(rval);
+      //use get adjacencies, this will allow take in account adjacencies set user
+      rval = moab.get_adjacencies(tets,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+      {
+	Range topo_nodes;
+	rval = moab.get_connectivity(tets,topo_nodes,true); CHKERR_PETSC(rval);
+	Range mid_nodes;
+	rval = moab.get_connectivity(tets,mid_nodes,false); CHKERR_PETSC(rval);
+	mid_nodes = subtract(mid_nodes,topo_nodes);
+	nodes = subtract(nodes,mid_nodes);
+      }
       rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
       rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
@@ -1839,7 +1869,19 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	break;
       case MBEDGE:
 	switch (space) {
-	  case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
+	  case H1: if(nodes.empty()) {
+	      //moab.get_connectivity(&fe_ent,1,nodes,true);
+	      //use get adjacencies, this will allow take in account adjacencies set user
+	      rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+	      {
+		Range topo_nodes;
+		rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
+		Range mid_nodes;
+		rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
+		mid_nodes = subtract(mid_nodes,topo_nodes);
+		nodes = subtract(nodes,mid_nodes);
+	      }
+	    }
 	    adj_ents.insert(nodes.begin(),nodes.end());
 	    adj_ents.insert(fe_ent);
 	    break;
@@ -1856,7 +1898,19 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	switch (space) {
 	  case H1: 
 	    //add nodes
-	    if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
+	    if(nodes.empty()) {
+	      //moab.get_connectivity(&fe_ent,1,nodes,true);
+	      //use get adjacencies, this will allow take in account adjacencies set user
+	      rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+	      {
+		Range topo_nodes;
+		rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
+		Range mid_nodes;
+		rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
+		mid_nodes = subtract(mid_nodes,topo_nodes);
+		nodes = subtract(nodes,mid_nodes);
+	      }
+	    }
 	    adj_ents.insert(nodes.begin(),nodes.end());
 	    //add edges
 	    if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
@@ -1876,7 +1930,19 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	break;
       case MBTET:
 	 switch (space) {
-	  case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
+	  case H1: if(nodes.empty()) {
+	    //moab.get_connectivity(&fe_ent,1,nodes,true);
+	    //use get adjacencies, this will allow take in account adjacencies set user
+	    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+	    {
+	      Range topo_nodes;
+	      rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
+	      Range mid_nodes;
+	      rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
+	      mid_nodes = subtract(mid_nodes,topo_nodes);
+	      nodes = subtract(nodes,mid_nodes);
+	    }
+	  }
   	   adj_ents.insert(nodes.begin(),nodes.end());
   	  case Hcurl: if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
   	   adj_ents.insert(edges.begin(),edges.end());
@@ -1941,7 +2007,19 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	  }
 	  SideNumber_multiIndex &side_table = EntFe.get_RefMoFEMElement()->get_side_number_table();
 	  switch (space) {
-	    case H1: if(nodes.empty()) moab.get_connectivity(&fe_ent,1,nodes,true);
+	    case H1: if(nodes.empty()) {
+		//moab.get_connectivity(&fe_ent,1,nodes,true);
+		//use get adjacencies, this will allow take in account adjacencies set user
+		rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+		{
+		  Range topo_nodes;
+		  rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
+		  Range mid_nodes;
+		  rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
+		  mid_nodes = subtract(mid_nodes,topo_nodes);
+		  nodes = subtract(nodes,mid_nodes);
+		}
+	      }
 	      adj_ents.insert(nodes.begin(),nodes.end());
 	    case Hcurl: {
 	      SideNumber_multiIndex::nth_index<2>::type::iterator
