@@ -3354,13 +3354,13 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	    SNESConvergedReason reason;
 	    SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
 	    if(ierr == 0 && reason > 0) {
-	      /*ierr = mField.set_local_VecCreateGhost(
-	      "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-	      Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);*/
+	      ierr = mField.set_local_VecCreateGhost(
+		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    } else {
 	      ierr = mField.set_local_VecCreateGhost(
-	      "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-	      Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	      nb_sub_steps++;
 	      break;
 	    }
