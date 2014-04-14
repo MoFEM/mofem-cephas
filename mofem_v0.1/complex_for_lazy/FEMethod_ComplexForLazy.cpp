@@ -648,22 +648,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   } 
   PetscFunctionReturn(0);
 }
-PetscErrorCode FEMethod_ComplexForLazy::get_edges_from_elem_coords(double *coords,double *coords_edges) {
-  PetscFunctionBegin;
-  cblas_dcopy(3,&coords[0*3],1,&coords_edges[0* 3*2+0],1); 
-  cblas_dcopy(3,&coords[1*3],1,&coords_edges[0* 3*2+3],1); 
-  cblas_dcopy(3,&coords[0*3],1,&coords_edges[1* 3*2+0],1); 
-  cblas_dcopy(3,&coords[2*3],1,&coords_edges[1* 3*2+3],1); 
-  cblas_dcopy(3,&coords[0*3],1,&coords_edges[2* 3*2+0],1);
-  cblas_dcopy(3,&coords[3*3],1,&coords_edges[2* 3*2+3],1);
-  cblas_dcopy(3,&coords[1*3],1,&coords_edges[3* 3*2+0],1); 
-  cblas_dcopy(3,&coords[2*3],1,&coords_edges[3* 3*2+3],1); 
-  cblas_dcopy(3,&coords[1*3],1,&coords_edges[4* 3*2+0],1);
-  cblas_dcopy(3,&coords[3*3],1,&coords_edges[4* 3*2+3],1);
-  cblas_dcopy(3,&coords[2*3],1,&coords_edges[5* 3*2+0],1);
-  cblas_dcopy(3,&coords[3*3],1,&coords_edges[5* 3*2+3],1);
-  PetscFunctionReturn(0);
-}
 PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
   PetscFunctionBegin;
   try {
@@ -995,7 +979,15 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
 	g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
       break;
     case nonconservative:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented"); 
+      ierr = Fext_h_hierarchical(
+	face_order,&FaceEdgeOrder[0],//2
+	&g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,//8
+	t,t_edge,t_face,//11
+	&*FaceNodeData_Material.data().begin(),EdgeData_Material,&*FaceNodeData_Material.data().begin(),
+	NULL,NULL,NULL,//17
+	&*FExt.data().begin(),FExt_edge,&*FExt_face.data().begin(),//20
+	NULL,NULL,NULL,//23
+	g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
       break;
   }
   } catch (const std::exception& ex) {
@@ -1070,7 +1062,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
       }
       break;
     case nonconservative:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented"); 
+      //do nothing
       break;
     }
   } catch (const std::exception& ex) {

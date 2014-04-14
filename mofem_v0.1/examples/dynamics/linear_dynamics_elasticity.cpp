@@ -41,9 +41,10 @@ struct MyBC: public DynamicNeumannBC {
       if(ts_t > 10.) scale = 0;
 
       //Set Direction of Traction On SideSet2
-      traction[0] = 0; //X
-      traction[1] = 0; //Y 
-      traction[2] = scale; //Z*/
+      //traction[0] = 0; //X
+      //traction[1] = 0; //Y 
+      //traction[2] = scale; //Z*/
+      traction *= scale;
 
       PetscFunctionReturn(0);
     }
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
@@ -161,15 +162,23 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 1;
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
+  PetscInt disp_order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_disp_order",&disp_order,&flg); CHKERRQ(ierr);
+  if(flg!=PETSC_TRUE) {
+    disp_order = 1;	
+  }
+  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-  order = 1;
-  ierr = mField.set_field_order(0,MBTET,"VELOCITIES",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"VELOCITIES",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",order); CHKERRQ(ierr);
+  PetscInt vel_order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_vel_order",&vel_order,&flg); CHKERRQ(ierr);
+  if(flg!=PETSC_TRUE) {
+    vel_order = 1;	
+  }
+  ierr = mField.set_field_order(0,MBTET,"VELOCITIES",vel_order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"VELOCITIES",vel_order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",vel_order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"VELOCITIES",1); CHKERRQ(ierr);
 
   /****/
@@ -211,6 +220,7 @@ int main(int argc, char *argv[]) {
 
   //TS
   TsCtx TsCtx(mField,"ELASTIC_MECHANICS");
+  TsCtx.zero_matrix = false;
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;
@@ -220,7 +230,7 @@ int main(int argc, char *argv[]) {
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  DynamicElasticFEMethod MyFE(moab,&myDirihletBC,mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,&mybc);
+  DynamicElasticFEMethod MyFE(&myDirihletBC,mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,&mybc);
 
   TsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));

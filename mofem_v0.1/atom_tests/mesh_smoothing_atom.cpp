@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   FieldInterface& mField = core;
 
   Range CubitSideSets_meshsets;
-  ierr = mField.get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -184,12 +184,12 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   BitRefLevel problem_level = bit_level0;
 
   EntityHandle skin_faces_meshset;
-  ierr = mField.get_msId_meshset(102,SideSet,skin_faces_meshset); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_meshset(102,SideSet,skin_faces_meshset); CHKERRQ(ierr);
   ierr = mField.seed_ref_level_2D(skin_faces_meshset,bit_level0); CHKERRQ(ierr);
 
   //Fields

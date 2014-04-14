@@ -719,15 +719,10 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TETs(const EntityHandle meshset,c
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb) {
+PetscErrorCode set_field_order(const Range& ents,const BitFieldId id,const ApproximationOrder order,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
-  Range ents;
-  rval = moab.get_entities_by_type(meshset,type,ents); CHKERR_PETSC(rval);
-  if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD,"nb. of ents for order change %d\n",ents.size());
-  }
   //check field & meshset
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set_id = moabFields.get<BitFieldId_mi_tag>();
@@ -834,6 +829,29 @@ PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const Entit
   if(verb>4) {
     list_ent_by_id(id);
   }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode set_field_order(const Range& ents,const string& name,const ApproximationOrder order,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  try{
+    ierr = set_field_order(ents,get_BitFieldId(name),order,verb); CHKERRQ(ierr);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  } 
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  Range ents;
+  rval = moab.get_entities_by_type(meshset,type,ents); CHKERR_PETSC(rval);
+  if(verb>1) {
+    PetscPrintf(PETSC_COMM_WORLD,"nb. of ents for order change %d\n",ents.size());
+  }
+  ierr = set_field_order(ents,id,order,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order,int verb) {

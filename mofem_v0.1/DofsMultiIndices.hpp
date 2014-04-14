@@ -140,8 +140,10 @@ struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDof
   friend ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e);
 };
 
-// multi_index_containers
-
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex container keeps DofMoFEMEntity
+ */
 typedef multi_index_container<
   DofMoFEMEntity,
   indexed_by<

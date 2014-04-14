@@ -331,7 +331,34 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_FieldData(FieldInte
     ierr = mField.set_global_VecCreateGhost(problem_name,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
+    
 
+CubitDisplacementDirihletBC_ZerosRowsColumns::CubitDisplacementDirihletBC_ZerosRowsColumns(FieldInterface& _mField,const string _problem_name,const string _field_name):CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
+
+PetscErrorCode CubitDisplacementDirihletBC_ZerosRowsColumns::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
+    PetscFunctionBegin;
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    set<DofIdx> set_zero_rows;
+    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
+        if(dit->get_part()!=pcomm->rank()) continue;
+        if(dit->get_name()!=field_name) continue;
+        for(int ss = 0;ss<3;ss++) {
+            if(dit->get_dof_rank()==ss) {
+                map<int,Range>::iterator bit = bc_map[ss].begin();
+                for(;bit!=bc_map[ss].end();bit++) {
+                    if(find(bit->second.begin(),bit->second.end(),dit->get_ent()) == bit->second.end()) continue;
+                    set_zero_rows.insert(dit->get_petsc_gloabl_dof_idx());
+                }
+            }
+        }
+    }
+    vector<DofIdx> zero_rows(set_zero_rows.size());
+    copy(set_zero_rows.begin(),set_zero_rows.end(),zero_rows.begin());
+    ierr = MatZeroRowsColumns(Aij,zero_rows.size(),&*zero_rows.begin(),1.,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+    
 CubitTemperatureDirihletBC::CubitTemperatureDirihletBC(FieldInterface& _mField,const string _problem_name,const string _field_name): 
   CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
 
