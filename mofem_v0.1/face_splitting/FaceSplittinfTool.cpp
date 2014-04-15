@@ -970,6 +970,7 @@ PetscErrorCode FaceSplittingTools::splitFaces() {
   EntityHandle bit_meshset;
   rval = mField.get_moab().create_meshset(MESHSET_SET,bit_meshset); CHKERR_PETSC(rval);
   {
+
     ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,bit_meshset); CHKERRQ(ierr);
     ierr = mField.seed_finite_elements(bit_meshset); CHKERRQ(ierr);
 
@@ -997,6 +998,62 @@ PetscErrorCode FaceSplittingTools::splitFaces() {
       ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
       ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
     }
+
+    //remove tets which have 4 nodes on crack surface, those are surce of problems. In case of planar crack, volume of such 
+    //tets is negative. In some other cases quality could be negative.
+    Range last_ref_tets,last_ref_tris;
+    ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTET,last_ref_tets); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTRI,last_ref_tris); CHKERRQ(ierr);
+    Range interface_tris;
+    rval = mField.get_moab().get_entities_by_type(meshset_interface,MBTRI,interface_tris,true); CHKERR_PETSC(rval);
+    interface_tris = intersect(interface_tris,last_ref_tris);
+    Range interface_tris_nodes;
+    rval = mField.get_moab().get_connectivity(interface_tris,interface_tris_nodes,true); CHKERR_PETSC(rval);
+    Range interface_tris_nodes_tets;
+    rval = mField.get_moab().get_adjacencies(interface_tris_nodes,3,false,interface_tris_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
+    interface_tris_nodes_tets = intersect(interface_tris_nodes_tets,last_ref_tets);
+    Range interface_tris_nodes_tets_nodes;
+    rval = mField.get_moab().get_connectivity(interface_tris_nodes_tets,interface_tris_nodes_tets_nodes,true); CHKERR_PETSC(rval);
+    Range interface_tris_nodes_tets_nodes_minus_surface_nodes;
+    interface_tris_nodes_tets_nodes_minus_surface_nodes = subtract(interface_tris_nodes_tets_nodes,interface_tris_nodes);
+    Range interface_tris_nodes_tets_nodes_minus_surface_nodes_tets;
+    rval = mField.get_moab().get_adjacencies(
+      interface_tris_nodes_tets_nodes_minus_surface_nodes,3,false,interface_tris_nodes_tets_nodes_minus_surface_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
+    interface_tris_nodes_tets_nodes_minus_surface_nodes_tets = intersect(interface_tris_nodes_tets_nodes_minus_surface_nodes_tets,last_ref_tets);
+
+    Range tets_on_surface = subtract(interface_tris_nodes_tets,interface_tris_nodes_tets_nodes_minus_surface_nodes_tets);
+    if(tets_on_surface.size()>0) {
+      Range tets_on_surface_faces;
+      rval = mField.get_moab().get_adjacencies(
+	tets_on_surface,2,false,tets_on_surface_faces,Interface::UNION); CHKERR_PETSC(rval);
+      tets_on_surface_faces = intersect(tets_on_surface_faces,interface_tris);
+    
+      EntityHandle out_meshset;
+      rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,tets_on_surface); CHKERR_PETSC(rval);
+      //rval = mField.get_moab().add_entities(out_meshset,interface_tris); CHKERR_PETSC(rval);
+      //rval = mField.get_moab().add_entities(out_meshset,tets_on_surface_faces); CHKERR_PETSC(rval);
+      rval = mField.get_moab().write_file("tets_on_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+
+      const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
+      ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+      for(Range::iterator tit = tets_on_surface.begin();tit!=tets_on_surface.end();tit++) {
+
+	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
+	mit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(*tit);
+	if(mit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
+	}
+	bool success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
+	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+
+      }
+
+      //SETERRQ1(PETSC_COMM_SELF,1,"AAAAAAAAAAAAAAAAAAAAAAA %d",tets_on_surface.size());
+    }
+
   }
   rval = mField.get_moab().delete_entities(&bit_meshset,1); CHKERR_PETSC(rval);
 

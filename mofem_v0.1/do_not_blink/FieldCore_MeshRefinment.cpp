@@ -887,23 +887,6 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const
   //side nodes
   Range side_nodes;
   rval = moab.get_connectivity(side_ents3d.subset_by_type(MBTET),side_nodes,true); CHKERR_PETSC(rval);
-  //check if side tets have 4 nodes on interface
-  /*Range side_nodes_tets;
-  rval = moab.get_adjacencies(side_nodes,3,false,side_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
-  side_nodes_tets = intersect(side_nodes_tets,side_ents3d.subset_by_type(MBTET));
-  Range side_nodes_minus_nodes_tets;
-  rval = moab.get_adjacencies(subtract(side_nodes,nodes),3,false,side_nodes_minus_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
-  side_nodes_minus_nodes_tets = intersect(side_nodes_minus_nodes_tets,side_ents3d.subset_by_type(MBTET));
-  Range side_tets_which_has_four_nodes_on_crack_surface;
-  side_tets_which_has_four_nodes_on_crack_surface = subtract(side_nodes_tets,side_nodes_minus_nodes_tets);
-  if(side_tets_which_has_four_nodes_on_crack_surface.size()) {
-    //SETERRQ1(PETSC_COMM_SELF,1,"AAAAAAAAAAAAAAAAAAAAAAAAAAAA %u",side_tets_which_has_four_nodes_on_crack_surface.size());
-    for(Range::iterator tit = side_tets_which_has_four_nodes_on_crack_surface.begin();
-      tit!=side_tets_which_has_four_nodes_on_crack_surface.end();tit++) {
-      side_ents3d.erase(*tit);
-      other_side.insert(*tit);
-    }
-  }*/
   //nodes on crack surface without front
   nodes_without_front = intersect(nodes_without_front,side_nodes);
   Range side_edges;
