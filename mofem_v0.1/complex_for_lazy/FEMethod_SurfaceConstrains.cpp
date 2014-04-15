@@ -65,12 +65,12 @@ void C_SURFACE_FEMethod::run_in_constructor() {
     dCT_MAT_ELEM.resize(9,9);
   }
  
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose): 
-    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name) {
+C_SURFACE_FEMethod::C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose): 
+    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name) {
     run_in_constructor();
   }
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose): 
-    FEMethod(),moab(_moab),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE") {
+C_SURFACE_FEMethod::C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose): 
+    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE") {
     run_in_constructor();
   }
 
@@ -103,12 +103,13 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   __CLPK_doublecomplex x_normal[3];
   ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
   //set direction if crack or interface surface
-  Tag th_side_elem;
-  const EntityHandle def_elem[] = {0};
-  rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
-    th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_elem); CHKERR_PETSC(rval);
-  EntityHandle side_elem;
-  rval = moab.tag_get_data(th_side_elem,&face,1,&side_elem); CHKERR_PETSC(rval);
+  Range adj_side_elems;
+  ierr = mField.get_adjacencies(problem_ptr,&face,1,3,adj_side_elems); CHKERRQ(ierr);
+  adj_side_elems = adj_side_elems.subset_by_type(MBTET);
+  if(adj_side_elems.size()!=1) {
+    SETERRQ1(PETSC_COMM_SELF,1,"expect 1 tet but is %u",adj_side_elems.size());
+  }
+  EntityHandle side_elem = *adj_side_elems.begin();
   if(side_elem!=0) {
     int side_number,sense,offset;
     rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
@@ -323,12 +324,12 @@ PetscErrorCode C_SURFACE_FEMethod::postProcess() {
   PetscFunctionReturn(0);
 }
 
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,string _lambda_field_name,int _verbose): 
-    C_SURFACE_FEMethod(_moab,_dirihlet_bc_method_ptr,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
+g_SURFACE_FEMethod::g_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,string _lambda_field_name,int _verbose): 
+    C_SURFACE_FEMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
     g_VEC_ELEM.resize(3);
   }
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,int _verbose): 
-    C_SURFACE_FEMethod(_moab,_dirihlet_bc_method_ptr,PETSC_NULL,_verbose),g(_g) {
+g_SURFACE_FEMethod::g_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,int _verbose): 
+    C_SURFACE_FEMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,_verbose),g(_g) {
     g_VEC_ELEM.resize(3);
   }
 

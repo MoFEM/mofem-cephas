@@ -4532,5 +4532,63 @@ PetscErrorCode FieldCore::check_number_of_ents_in_ents_field(const string& name)
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) {
+  PetscFunctionBegin;
+  RefMoFEMEntity from_ref_entiti(moab,from_entiti);
+  //cerr << "from:\n";
+  //cerr << from_ref_entiti << endl;
+  rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERR_PETSC(rval);
+  Range::iterator eit = adj_entities.begin();
+  //cerr << "to:\n";
+  for(;eit!=adj_entities.end();) {
+    RefMoFEMEntity adj_entiti(moab,*eit);
+    //cerr << "\t" << adj_entiti << endl;
+    if(from_ref_entiti.get_BitRefLevel() != adj_entiti.get_BitRefLevel()) {
+      eit = adj_entities.erase(eit);
+    } else {
+      eit++;
+    }
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) {
+  PetscFunctionBegin;
+  RefMoFEMEntity from_ref_entiti(moab,from_entiti);
+  //cerr << "from:\n";
+  //cerr << from_ref_entiti << endl;
+  rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERR_PETSC(rval);
+  Range::iterator eit = adj_entities.begin();
+  //cerr << "to:\n";
+  for(;eit!=adj_entities.end();) {
+    RefMoFEMEntity adj_entiti(moab,*eit);
+    //cerr << "\t" << adj_entiti << endl;
+    if(!(from_ref_entiti.get_BitRefLevel()&adj_entiti.get_BitRefLevel()).any()) {
+      eit = adj_entities.erase(eit);
+    } else {
+      eit++;
+    }
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::get_adjacencies(
+    const MoFEMProblem *problem_ptr,
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type) {
+  PetscFunctionBegin;
+  //cerr << "from:\n";
+  //cerr << problem_ptr->get_BitRefLevel() << endl;
+  rval = moab.get_adjacencies(from_entities,num_netities,to_dimension,false,adj_entities,operation_type); CHKERR_PETSC(rval);
+  Range::iterator eit = adj_entities.begin();
+  //cerr << "to:\n";
+  for(;eit!=adj_entities.end();) {
+    RefMoFEMEntity adj_entiti(moab,*eit);
+    //cerr << "\t" << adj_entiti << endl;
+    if(!(adj_entiti.get_BitRefLevel()&problem_ptr->get_BitRefLevel()).any() ) {
+      eit = adj_entities.erase(eit);
+    } else {
+      eit++;
+    }
+  }
+  PetscFunctionReturn(0);
+}
 
 }

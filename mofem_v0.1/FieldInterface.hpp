@@ -412,6 +412,15 @@ struct FieldInterface {
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
+  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+    *
+    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    */
+  virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+  virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+  virtual PetscErrorCode get_adjacencies(
+    const MoFEMProblem *problem_ptr,
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT) = 0;
 
   /** \brief Get childed entities form meshset containing parent entities 
     * 

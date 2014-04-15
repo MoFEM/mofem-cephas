@@ -1423,8 +1423,8 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_ALL_MATRIX",CornersNodes);
 
   //Loops over body surface (CFE_SURFACE) and crack surface (CFE_CRACK_SURFACE)
-  C_SURFACE_FEMethod CFE_SURFACE(moab,&myDirihletBC,projSurfaceCtx->C);
-  C_SURFACE_FEMethod CFE_CRACK_SURFACE(moab,&myDirihletBC,projSurfaceCtx->C,"LAMBDA_CRACK_SURFACE");
+  C_SURFACE_FEMethod CFE_SURFACE(mField,&myDirihletBC,projSurfaceCtx->C);
+  C_SURFACE_FEMethod CFE_CRACK_SURFACE(mField,&myDirihletBC,projSurfaceCtx->C,"LAMBDA_CRACK_SURFACE");
 
   map<int,C_SURFACE_FEMethod*> CFE_SURFACE_msId_ptr;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
@@ -1432,7 +1432,7 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
     ss << "LAMBDA_SURFACE_msId_" << msId;
-    CFE_SURFACE_msId_ptr[msId] = new C_SURFACE_FEMethod(moab,&myDirihletBC,projSurfaceCtx->C,ss.str());
+    CFE_SURFACE_msId_ptr[msId] = new C_SURFACE_FEMethod(mField,&myDirihletBC,projSurfaceCtx->C,ss.str());
   }
 
   ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);

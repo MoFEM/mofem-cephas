@@ -448,6 +448,13 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode field_scale(const double alpha,const string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const string& fiel_name);
 
+  //Get adjacencies
+  PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
+  PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
+  PetscErrorCode get_adjacencies(
+    const MoFEMProblem *problem_ptr,
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT);
+
   //constructor
   FieldCore(Interface& _moab,int _verbose = 1);
   ~FieldCore();

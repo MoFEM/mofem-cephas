@@ -217,19 +217,15 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     double i_diffX_xi[3],i_diffX_eta[3];
     bzero(i_diffX_xi,3*sizeof(double));
     bzero(i_diffX_eta,3*sizeof(double));
-    Tag th_side_elem;
-    const EntityHandle def_elem[] = {0};
-    rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
-      th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_elem); CHKERR_PETSC(rval);
-    EntityHandle side_elem;
-    rval = moab.tag_get_data(th_side_elem,&face,1,&side_elem); CHKERR_PETSC(rval);
-    //Tag th_interface_side;
-    //rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
-    //int side;
-    //rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
+    Range adj_side_elems;
+    ierr = mField.get_adjacencies(problem_ptr,&face,1,3,adj_side_elems); CHKERRQ(ierr);
+    adj_side_elems = adj_side_elems.subset_by_type(MBTET);
+    if(adj_side_elems.size()!=1) {
+      SETERRQ1(PETSC_COMM_SELF,1,"expect 1 tet but is %u",adj_side_elems.size());
+    }
+    EntityHandle side_elem = *adj_side_elems.begin();
     int order[] = {0, 1, 2};
     if(side_elem != 0) {
-      //cerr << "BBBBBB\n";
       int side_number,sense,offset;
       rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
       if(sense == -1) {

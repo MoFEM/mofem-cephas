@@ -34,6 +34,7 @@ namespace MoFEM {
 struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
+  FieldInterface& mField;
   Interface& moab;
   BaseDirihletBC *dirihlet_bc_method_ptr;
   Mat C;
@@ -43,8 +44,8 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   vector<double> g_NTRI;
   const double *G_TRI_W;
 
-  C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose = 0);
-  C_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose = 0);
+  C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose = 0);
+  C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose = 0);
   void run_in_constructor();
 
   PetscErrorCode preProcess();
@@ -80,8 +81,8 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
 
 struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
   Vec g;
-  g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,string _lambda_field_name,int _verbose = 0); 
-  g_SURFACE_FEMethod(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,int _verbose = 0); 
+  g_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,string _lambda_field_name,int _verbose = 0); 
+  g_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,int _verbose = 0); 
 
   ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
   ublas::vector<double,ublas::bounded_array<double,9> > f_VEC_ELEM;
@@ -140,13 +141,13 @@ struct C_SURFACE_FEMethod_ForSnes: public C_FEMethod_ForSnes {
 
   C_SURFACE_FEMethod_ForSnes(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
    mField(_mField),
-    MatMethod(_mField.get_moab(),_dirihlet_bc_method_ptr,PETSC_NULL),
-    FMethod(_mField.get_moab(),_dirihlet_bc_method_ptr,snes_f),nonlinear(false) {}
+    MatMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL),
+    FMethod(_mField,_dirihlet_bc_method_ptr,snes_f),nonlinear(false) {}
 
   C_SURFACE_FEMethod_ForSnes(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,string _lambda_field_name,int _verbose = 0):
    mField(_mField),
-    MatMethod(_mField.get_moab(),_dirihlet_bc_method_ptr,PETSC_NULL,_lambda_field_name),
-    FMethod(_mField.get_moab(),_dirihlet_bc_method_ptr,snes_f,_lambda_field_name),nonlinear(false) {}
+    MatMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,_lambda_field_name),
+    FMethod(_mField,_dirihlet_bc_method_ptr,snes_f,_lambda_field_name),nonlinear(false) {}
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
