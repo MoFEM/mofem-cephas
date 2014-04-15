@@ -670,7 +670,6 @@ struct FieldInterface {
    *
    * \param range contains tetrahedrals
    * \param name Finite Element name
-   * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const string &name) = 0;
 
@@ -681,6 +680,21 @@ struct FieldInterface {
    * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
+
+  /** \brief add PRISM entities fromm meshset to finite element database given by name
+   *
+   * \param range contains tetrahedrals
+   * \param name Finite Element name
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const string &name) = 0;
+
+  /** \brief add TET entities fromm meshset to finite element database given by name
+   *
+   * \param meshset contains tetrahedrals
+   * \param name Finite Element name
+   * \param recursive if true parent meshset is searched recursively
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
 
   /** \brief add TET elements from given refinment level to finite element database given by name 
    *

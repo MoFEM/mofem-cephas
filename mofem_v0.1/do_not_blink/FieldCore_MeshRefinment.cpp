@@ -1364,7 +1364,6 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 PetscErrorCode FieldCore::add_prism_to_mofem_database(const EntityHandle prism,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  vector<EntityHandle> Ents(8,no_handle);
   try {
     pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,prism));
     if(p_ent.second) {
