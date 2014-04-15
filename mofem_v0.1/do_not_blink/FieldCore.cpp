@@ -488,7 +488,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
   rval = moab.get_entities_by_type(0,MBPRISM,prisms,true);  CHKERR_PETSC(rval);
   Range::iterator pit = prisms.begin();
   for(;pit!=prisms.end();pit++) {
-    ierr = add_prism_to_basicEntAdjacencies(*pit); CHKERRQ(ierr);
+    ierr = add_prism_to_mofem_database(*pit); CHKERRQ(ierr);
   }
   if(verb > 2) {
     list_field();
@@ -3496,19 +3496,6 @@ PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const Bi
     }
   }
   ierr = remove_ents_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
-  for(Range::iterator eit = ents_to_delete.begin();eit!=ents_to_delete.end();eit++) {
-    if(!basicEntAdjacencies.empty()) {
-      for(;1;) {
-	BasicMoFEMEntityAdjacenctMap_multiIndex::index<MoABEnt_mi_tag>::type::iterator iit;
-	iit = basicEntAdjacencies.get<MoABEnt_mi_tag>().find(*eit);
-	if(iit!=basicEntAdjacencies.end()) {
-	  basicEntAdjacencies.get<MoABEnt_mi_tag>().erase(iit);
-	} else {
-	  break;
-	}
-      }
-    }
-  }
   moabCubitMeshSet_multiIndex::iterator cubit_it;
   cubit_it = cubit_meshsets.begin();
   for(;cubit_it!=cubit_meshsets.end();cubit_it++) {
@@ -3523,6 +3510,7 @@ PetscErrorCode FieldCore::remove_ents_by_bit_ref(const BitRefLevel &bit,const Bi
   if(verb==-1) verb = verbose;
   ierr = remove_ents_from_field_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
   ierr = remove_ents_from_finite_element_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
+  ierr = delete_finite_elements_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
   RefMoFEMEntity_multiIndex::iterator ent_it = refinedMoFemEntities.begin();
   for(;ent_it!=refinedMoFemEntities.end();) {
     BitRefLevel bit2 = ent_it->get_BitRefLevel(); 

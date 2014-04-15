@@ -87,31 +87,12 @@ PetscErrorCode FieldCore::add_verices_in_the_middel_of_edges(const Range &_edges
   ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
   for(;miit!=hi_miit;miit++) ref_parent_ents_view.insert(&*miit);
-  // refine edges on the other side of the prism
-  typedef BasicMoFEMEntityAdjacenctMap_multiIndex::index<MoABEnt_mi_tag2>::type BasicMoFEMEntityAdjacenctMap_by_adj;
-  BasicMoFEMEntityAdjacenctMap_by_adj &basicEntAdjacencies_by_adj = basicEntAdjacencies.get<MoABEnt_mi_tag2>();
-  Range::iterator eit = edges.begin();
-  for(;eit!=edges.end();eit++) {
-    BasicMoFEMEntityAdjacenctMap_by_adj::iterator adj_miit = basicEntAdjacencies_by_adj.find(*eit);
-    if(adj_miit==basicEntAdjacencies_by_adj.end()) continue;
-    EntityHandle prism = adj_miit->ent;
-    RefMoFEMElement_multiIndex::iterator miit2 = refinedMoFemElements.get<MoABEnt_mi_tag>().find(prism);
-    SideNumber_multiIndex &side_table = miit2->get_side_number_table();
-    SideNumber_multiIndex::iterator siit = side_table.find(*eit);
-    int side_number = siit->side_number;
-    if(side_number==-1) SETERRQ(PETSC_COMM_SELF,1,"inconsistency in data");
-    if(prism_adj_edges[side_number]==-1) SETERRQ(PETSC_COMM_SELF,1,"inconsistency in data");
-    EntityHandle edge;
-    rval = moab.side_element(prism,1,prism_adj_edges[side_number],edge); CHKERR_PETSC(rval);
-    if(edge==no_handle) SETERRQ(PETSC_COMM_SELF,1,"inconsistency in data");
-    edges.insert(edge);
-  }
   if(verb > 0) {
     ostringstream ss;
     ss << "ref level " << bit << " nb. edges to refine " << edges.size() << endl;
     PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
   }
-  eit = edges.begin();
+  Range::iterator eit = edges.begin();
   for(;eit!=edges.end();eit++) {
     RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator miit_view = ref_parent_ents_view.find(*eit);
     const EntityHandle* conn; 
@@ -166,30 +147,9 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
   ref_MoFEMFiniteElement_by_ent &ref_MoFEMFiniteElement = refinedMoFemElements.get<MoABEnt_mi_tag>();
   typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_ent_by_composite;
   ref_ent_by_composite &by_composite = refinedMoFemElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
-  // find oposite intrface nodes
-  typedef BasicMoFEMEntityAdjacenctMap_multiIndex::index<EntType_mi_tag>::type AdjPrism_by_type;
-  AdjPrism_by_type::iterator face_prism_miit = basicEntAdjacencies.get<EntType_mi_tag>().lower_bound(MBTRI);
-  AdjPrism_by_type::iterator hi_face_prism_miit = basicEntAdjacencies.get<EntType_mi_tag>().upper_bound(MBTRI);
-  map<EntityHandle,EntityHandle> nodes_face_map_for_faces_adj_to_prism_forward;
-  map<EntityHandle,EntityHandle> nodes_face_map_for_faces_adj_to_prism_backward;
-  for(;face_prism_miit!=hi_face_prism_miit;face_prism_miit++) {
-    EntityHandle prism = face_prism_miit->ent;
-    EntityHandle f3;
-    rval = moab.side_element(prism,2,3,f3); CHKERR_PETSC(rval);
-    EntityHandle f4;
-    rval = moab.side_element(prism,2,4,f4); CHKERR_PETSC(rval);
-    if((f4 == face_prism_miit->get_adj())&&(f3 != face_prism_miit->get_adj())) continue;
-    const EntityHandle* conn_face; 
-    int num_nodes_face; 
-    moab.get_connectivity(face_prism_miit->get_adj(),conn_face,num_nodes_face,true); 
-    assert(num_nodes_face==3);
-    const EntityHandle* conn_face_other_side; 
-    moab.get_connectivity(f3,conn_face_other_side,num_nodes_face,true); 
-    assert(num_nodes_face==3);
-    for(int nn = 0;nn<3;nn++) {
-      nodes_face_map_for_faces_adj_to_prism_forward[conn_face[nn]] = conn_face_other_side[nn];
-      nodes_face_map_for_faces_adj_to_prism_backward[conn_face_other_side[nn]] = conn_face[nn];
-    }
+  //
+  if(respect_interface) {
+    SETERRQ(PETSC_COMM_SELF,1,"not implemented, set last parameter in refine_TET to false");
   }
   //
   Range tets = _tets.subset_by_type(MBTET);
@@ -230,14 +190,6 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
     // swap nodes forward
     EntityHandle _conn_[4];
     copy(&conn[0],&conn[4],&_conn_[0]);
-    if(respect_interface) {
-      for(int nn = 0;nn<4;nn++) {
-	map<EntityHandle,EntityHandle>::iterator mmit = nodes_face_map_for_faces_adj_to_prism_forward.find(_conn_[nn]);
-	if(mmit!=nodes_face_map_for_faces_adj_to_prism_forward.end()) {
-	  _conn_[nn] = mmit->second;
-	}
-      } 
-    }
     // build connectivity for rf tets
     EntityHandle new_tets_conns[8*4];
     fill(&new_tets_conns[0],&new_tets_conns[8*4],no_handle);
@@ -324,16 +276,6 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	break;
       default:
 	assert(0);
-    }
-    // swap nodes backward 
-    if(respect_interface) {
-      for(int nn = 0;nn<8*4;nn++) {
-	if(new_tets_conns[nn]==no_handle) continue;
-	map<EntityHandle,EntityHandle>::iterator mmit = nodes_face_map_for_faces_adj_to_prism_backward.find(new_tets_conns[nn]);
-	if(mmit!=nodes_face_map_for_faces_adj_to_prism_backward.end()) {
-	  new_tets_conns[nn] = mmit->second;
-	}
-      }
     }
     // find that tets
     bitset<8> ref_tets_bit(0);
@@ -726,7 +668,7 @@ PetscErrorCode FieldCore::refine_PRISM(const EntityHandle meshset,const BitRefLe
 	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
 	  ref_prism_bit.set(pp);
-	  ierr = add_prism_to_basicEntAdjacencies(ref_prisms[pp]); CHKERRQ(ierr);
+	  ierr = add_prism_to_mofem_database(ref_prisms[pp]); CHKERRQ(ierr);
 	  if(verb>2) {
 	    ostringstream ss;
 	    ss << "add prism: " << *(p_MoFEMFiniteElement.first->get_RefMoFEMElement()) << endl;
@@ -1238,7 +1180,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	    //  << new_conn[0] << " " << new_conn[1] << " " << new_conn[2] << endl;
 	    EntityHandle prism = no_handle;
 	    rval = moab.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
-	    ierr = add_prism_to_basicEntAdjacencies(prism,verb/*nb_new_conn < 3 ? 1 : 0*/); CHKERRQ(ierr);
+	    ierr = add_prism_to_mofem_database(prism,verb/*nb_new_conn < 3 ? 1 : 0*/); CHKERRQ(ierr);
 	    rval = moab.add_entities(meshset_for_bit_level,&prism,1); CHKERR_PETSC(rval);
 	  }
 	} break;
@@ -1341,7 +1283,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   //add new prisms which parents are part of other intefaces
   Range new_3d_prims = new_3d_ents.subset_by_type(MBPRISM);
   for(Range::iterator pit = new_3d_prims.begin();pit!=new_3d_prims.end();pit++) {
-    ierr = add_prism_to_basicEntAdjacencies(*pit,verb); CHKERRQ(ierr);
+    ierr = add_prism_to_mofem_database(*pit,verb); CHKERRQ(ierr);
     //get parent entity
     EntityHandle parent_prism;
     rval = moab.tag_get_data(th_RefParentHandle,&*pit,1,&parent_prism); CHKERR_PETSC(rval);
@@ -1419,15 +1361,16 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   ierr = moab.clear_meshset(&children[0],3); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::add_prism_to_basicEntAdjacencies(const EntityHandle prism,int verb) {
+PetscErrorCode FieldCore::add_prism_to_mofem_database(const EntityHandle prism,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   vector<EntityHandle> Ents(8,no_handle);
   try {
     pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,prism));
-    pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
     if(p_ent.second) {
-      p_MoFEMFiniteElement = refinedMoFemElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
+      pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+      p_MoFEMFiniteElement = refinedMoFemElements.insert(
+	ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
       int num_nodes;
       const EntityHandle* conn;
       rval = moab.get_connectivity(prism,conn,num_nodes,true); CHKERR_THROW(rval);
@@ -1438,17 +1381,6 @@ PetscErrorCode FieldCore::add_prism_to_basicEntAdjacencies(const EntityHandle pr
       if(face_side4.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prims don't have side face 4");
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side3.begin());
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side4.begin());
-      //set bit common for faces with side number 3 and 4
-      RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedMoFemEntities.get<MoABEnt_mi_tag>().find(*face_side3.begin());
-      if(miit_ref_ent!=refinedMoFemEntities.get<MoABEnt_mi_tag>().end()) {
-	BitRefLevel bit = miit_ref_ent->get_BitRefLevel();
-	if(face_side4.empty()) SETERRQ(PETSC_COMM_SELF,1,"database inconsistency");
-	miit_ref_ent = refinedMoFemEntities.get<MoABEnt_mi_tag>().find(*face_side4.begin());
-	if(miit_ref_ent!=refinedMoFemEntities.get<MoABEnt_mi_tag>().end()) {
-	  bit &= miit_ref_ent->get_BitRefLevel();
-	  refinedMoFemEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
-	}
-      }
     } 
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
