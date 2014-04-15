@@ -1059,8 +1059,12 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 	if(mit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
 	}
-	bool success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	bool success;
+	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
 	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
+	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-1,true));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 
       }
@@ -1422,6 +1426,7 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   mask[face_splitting.meshRefineBitLevels.first()] = 0;
   mask[face_splitting.meshRefineBitLevels.back()] = 0;
   mask[face_splitting.meshIntefaceBitLevels.back()] = 0;
+  mask[BITREFLEVEL_SIZE-1] = 0;
   ierr = mField.delete_ents_by_bit_ref(BitRefLevel().set(),mask,1); CHKERRQ(ierr);
 
   //cerr << "bit_level0 " << bit_level0 << endl;

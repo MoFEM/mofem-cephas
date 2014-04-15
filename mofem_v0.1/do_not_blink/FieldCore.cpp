@@ -4572,17 +4572,26 @@ PetscErrorCode FieldCore::get_adjacencies_any(const EntityHandle from_entiti,con
 }
 PetscErrorCode FieldCore::get_adjacencies(
     const MoFEMProblem *problem_ptr,
-    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type) {
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type,
+    const int verb) {
+  PetscFunctionBegin;
+  BitRefLevel bit = problem_ptr->get_BitRefLevel();
+  ierr = get_adjacencies(bit,from_entities,num_netities,to_dimension,adj_entities,operation_type); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::get_adjacencies(
+    const BitRefLevel &bit,
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type,	const int verb) {
   PetscFunctionBegin;
   //cerr << "from:\n";
-  //cerr << problem_ptr->get_BitRefLevel() << endl;
+  //cerr << bit << endl;
   rval = moab.get_adjacencies(from_entities,num_netities,to_dimension,false,adj_entities,operation_type); CHKERR_PETSC(rval);
   Range::iterator eit = adj_entities.begin();
   //cerr << "to:\n";
   for(;eit!=adj_entities.end();) {
     RefMoFEMEntity adj_entiti(moab,*eit);
     //cerr << "\t" << adj_entiti << endl;
-    if(!(adj_entiti.get_BitRefLevel()&problem_ptr->get_BitRefLevel()).any() ) {
+    if(!(adj_entiti.get_BitRefLevel()&bit).any() ) {
       eit = adj_entities.erase(eit);
     } else {
       eit++;

@@ -104,7 +104,9 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
   //set direction if crack or interface surface
   Range adj_side_elems;
-  ierr = mField.get_adjacencies(problem_ptr,&face,1,3,adj_side_elems); CHKERRQ(ierr);
+  BitRefLevel bit = problem_ptr->get_BitRefLevel();
+  bit.set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems); CHKERRQ(ierr);
   adj_side_elems = adj_side_elems.subset_by_type(MBTET);
   if(adj_side_elems.size()!=1) {
     SETERRQ1(PETSC_COMM_SELF,1,"expect 1 tet but is %u",adj_side_elems.size());

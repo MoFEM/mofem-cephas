@@ -218,7 +218,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     bzero(i_diffX_xi,3*sizeof(double));
     bzero(i_diffX_eta,3*sizeof(double));
     Range adj_side_elems;
-    ierr = mField.get_adjacencies(problem_ptr,&face,1,3,adj_side_elems); CHKERRQ(ierr);
+    BitRefLevel bit = problem_ptr->get_BitRefLevel();
+    bit.set(BITREFLEVEL_SIZE-1);
+    ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems); CHKERRQ(ierr);
     adj_side_elems = adj_side_elems.subset_by_type(MBTET);
     if(adj_side_elems.size()!=1) {
       SETERRQ1(PETSC_COMM_SELF,1,"expect 1 tet but is %u",adj_side_elems.size());
