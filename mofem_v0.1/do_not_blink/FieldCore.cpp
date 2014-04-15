@@ -3503,6 +3503,10 @@ PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const Bi
     rval = moab.remove_entities(cubit_meshset,ents_to_delete); CHKERR_PETSC(rval);
   }
   rval = moab.delete_entities(ents_to_delete); CHKERR_PETSC(rval);
+  if(verb>0) {
+    PetscPrintf(PETSC_COMM_WORLD,"number of delete entities = %u\n",ents_to_delete.size());
+
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
