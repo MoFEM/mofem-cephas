@@ -1422,8 +1422,6 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   mask[face_splitting.meshRefineBitLevels.first()] = 0;
   mask[face_splitting.meshRefineBitLevels.back()] = 0;
   mask[face_splitting.meshIntefaceBitLevels.back()] = 0;
-  ierr = mField.remove_ents_from_finite_element_by_bit_ref(BitRefLevel().set(),mask); CHKERRQ(ierr);
-  ierr = mField.remove_ents_from_field_by_bit_ref(BitRefLevel().set(),mask); CHKERRQ(ierr);
   ierr = mField.delete_ents_by_bit_ref(BitRefLevel().set(),mask,1); CHKERRQ(ierr);
 
   //cerr << "bit_level0 " << bit_level0 << endl;
