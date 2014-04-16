@@ -24,7 +24,7 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
-#include "ElasticFE_RVELagrange.hpp"
+#include "ElasticFE_RVELagrange_Periodic.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -41,11 +41,11 @@ static char help[] = "...\n\n";
 
     struct Face_CenPos_Handle
     {
-        double xcoord;
-        double ycoord, zcoord;
-        EntityHandle  Tri_Hand;
-        Face_CenPos_Handle(double _xcoord, double _ycoord,  double _zcoord,  EntityHandle _Tri_Hand):xcoord(_xcoord),
+        double xcoord, ycoord, zcoord;
+        const EntityHandle  Tri_Hand;
+        Face_CenPos_Handle(double _xcoord, double _ycoord,  double _zcoord,  const EntityHandle _Tri_Hand):xcoord(_xcoord),
         ycoord(_ycoord), zcoord(_zcoord), Tri_Hand(_Tri_Hand) {}
+        
     };
 
     struct xcoord_tag {}; //tags to used in the multindex container
@@ -67,7 +67,7 @@ static char help[] = "...\n\n";
             tag<zcoord_tag>, member<Face_CenPos_Handle,double,&Face_CenPos_Handle::zcoord> >,
 
         ordered_unique<
-            tag<Tri_Hand_tag>, member<Face_CenPos_Handle,EntityHandle,&Face_CenPos_Handle::Tri_Hand> >,
+            tag<Tri_Hand_tag>, member<Face_CenPos_Handle,const EntityHandle,&Face_CenPos_Handle::Tri_Hand> >,
 
         ordered_unique<
             tag<Composite_xyzcoord>,
@@ -80,9 +80,6 @@ static char help[] = "...\n\n";
 
 //============================================================================================
 //============================================================================================
-
-
-
 
 
 int main(int argc, char *argv[]) {
@@ -186,20 +183,14 @@ int main(int argc, char *argv[]) {
     //add finite elements entities
     ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
-    
-    
-
-    Range SurTris;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,SideSet,2,SurTris,true); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurTris.size()); CHKERRQ(ierr);
-   
-    map<EntityHandle,EntityHandle> bc_map[SurTris.size()/2];
-    Face_CenPos_Handle_multiIndex Face_CenPos_Handle_var;
-
-    
+    //Add Periodic Prisims Between Triangles on -ve and +ve faces to implement periodic bounary conditions
+    //Populating the Multi-index container with -ve triangles
+    Range SurTrisNeg;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(101,SideSet,2,SurTrisNeg,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
+    Face_CenPos_Handle_multiIndex Face_CenPos_Handle_varNeg, Face_CenPos_Handle_varPos;
     double TriCen[3], coords_Tri[9];
-    
-    for(Range::iterator it = SurTris.begin(); it!=SurTris.end();  it++) {
+    for(Range::iterator it = SurTrisNeg.begin(); it!=SurTrisNeg.end();  it++) {
         const EntityHandle* conn_face;  int num_nodes_Tri;
         
         //get nodes attached to the face
@@ -213,101 +204,132 @@ int main(int argc, char *argv[]) {
         TriCen[2]= (coords_Tri[2]+coords_Tri[5]+coords_Tri[8])/3.0;
         
         //fill the multi-index container with centriod coordinates and triangle handles
-        Face_CenPos_Handle_var.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
+        Face_CenPos_Handle_varNeg.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
 //        for(int ii=0; ii<3; ii++) cout<<"TriCen "<<TriCen[ii]<<endl;
 //        cout<<endl<<endl;
     }
     
-    
-    typedef Face_CenPos_Handle_multiIndex::index<xcoord_tag>::type::iterator xcoord_iterator;
-    xcoord_iterator xiit_L, hi_xiit_L, xiit_R, hi_xiit_R;
-    
-    //iterators for Left face
-    xiit_L = Face_CenPos_Handle_var.get<xcoord_tag>().lower_bound(0.0);
-    hi_xiit_L = Face_CenPos_Handle_var.get<xcoord_tag>().upper_bound(0.0);
-    
-    //iterators for Right face
-    xiit_R = Face_CenPos_Handle_var.get<xcoord_tag>().lower_bound(1.0);
-    hi_xiit_R= Face_CenPos_Handle_var.get<xcoord_tag>().upper_bound(1.0);
-
-//    int count=1;
-//    for(;xiit_L!=hi_xiit_L;xiit_L++) {
-//        cout<<"count  "<<count<<endl;  count++;
-//    }
-//
-//    count=1;
-//    for(;xiit_R!=hi_xiit_R;xiit_R++) {
-//        cout<<"count  "<<count<<endl;  count++;
-//    }
-
-    typedef Face_CenPos_Handle_multiIndex::index<Composite_xyzcoord>::type::iterator xyzcoord_iterator;
-    xyzcoord_iterator iit;
-    
-    
-    for(;xiit_L!=hi_xiit_L;xiit_L++) {
-        iit=Face_CenPos_Handle_var.get<Composite_xyzcoord>().find( boost::make_tuple(xiit_L->xcoord, xiit_L->ycoord, xiit_L->zcoord) );
-//        cout<<"xcoord= "<<xiit_L->xcoord << "   ycoord= "<< xiit_L->ycoord << "   ycoord= "<< xiit_L->zcoord <<endl;
-//        cout<<"xcoord= "<<iit->xcoord << "   ycoord= "<< iit->ycoord << "   ycoord= "<< iit->zcoord <<endl<<endl<<endl;
-        rval = moab.add_adjacencies(xiit_L->Tri_Hand, &(iit->Tri_Hand), 1, true); CHKERR_PETSC(rval);
+    //Populating the Multi-index container with +ve triangles
+    Range SurTrisPos;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurTrisPos,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
+    for(Range::iterator it = SurTrisPos.begin(); it!=SurTrisPos.end();  it++) {
+        const EntityHandle* conn_face;  int num_nodes_Tri;
         
+        //get nodes attached to the face
+        rval = moab.get_connectivity(*it,conn_face,num_nodes_Tri,true); CHKERR_PETSC(rval);
+        //get nodal coordinates
+        rval = moab.get_coords(conn_face,num_nodes_Tri,coords_Tri); CHKERR_PETSC(rval);
         
+        //Find triangle centriod
+        TriCen[0]= (coords_Tri[0]+coords_Tri[3]+coords_Tri[6])/3.0;
+        TriCen[1]= (coords_Tri[1]+coords_Tri[4]+coords_Tri[7])/3.0;
+        TriCen[2]= (coords_Tri[2]+coords_Tri[5]+coords_Tri[8])/3.0;
         
+        //fill the multi-index container with centriod coordinates and triangle handles
+        Face_CenPos_Handle_varPos.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
     }
-   
-    
-    
 
     
+    //Creating Prisims between triangles on -ve and +ve faces
+    typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;
+    Tri_Hand_iterator Tri_Neg;
+    typedef Face_CenPos_Handle_multiIndex::index<Composite_xyzcoord>::type::iterator xyzcoord_iterator;
+    xyzcoord_iterator Tri_Pos;
+    Range PrismRange;
+    double XPos, YPos, ZPos;
+    for(Range::iterator it = SurTrisNeg.begin(); it!=SurTrisNeg.end();  it++) {  //loop over -ve triangles to create prisims elemenet between +ve and -ve triangles
+        Tri_Neg=Face_CenPos_Handle_varNeg.get<Tri_Hand_tag>().find(*it);
+        //cout<<"xcoord= "<<Tri_iit->xcoord << "   ycoord= "<< Tri_iit->ycoord << "   ycoord= "<< Tri_iit->zcoord <<endl;
+        if(Tri_Neg->xcoord==0){XPos=1;                      YPos=Tri_Neg->ycoord;  ZPos=Tri_Neg->zcoord;};
+        if(Tri_Neg->ycoord==0){XPos=YPos=Tri_Neg->xcoord;   YPos=1;                ZPos=Tri_Neg->zcoord;};
+        if(Tri_Neg->zcoord==0){XPos=YPos=Tri_Neg->xcoord;   YPos=Tri_Neg->ycoord;  ZPos=1;              };
+        Tri_Pos=Face_CenPos_Handle_varPos.get<Composite_xyzcoord>().find(boost::make_tuple(XPos, YPos, ZPos));
+        
+        EntityHandle PrismNodes[6];
+        vector<EntityHandle> TriNodesNeg, TriNodesPos;
+        double CoordNodeNeg[9], CoordNodePos[9];
+        
+        rval = moab.get_connectivity(&(Tri_Neg->Tri_Hand),1,TriNodesNeg,true); CHKERR_PETSC(rval);
+        rval = moab.get_connectivity(&(Tri_Pos->Tri_Hand),1,TriNodesPos,true); CHKERR_PETSC(rval);
+        
+        rval = moab.get_coords(&TriNodesNeg[0],3,CoordNodeNeg);  CHKERR_THROW(rval);
+        rval = moab.get_coords(&TriNodesPos[0],3,CoordNodePos);  CHKERR_THROW(rval);
+
+        for(int ii=0; ii<3; ii++){
+            PrismNodes[ii]=TriNodesNeg[ii];
+        }
+//        for(int ii=0; ii<3; ii++){
+//            cout<<"xcoord= "<<CoordNodeNeg[3*ii] << "   ycoord= "<< CoordNodeNeg[3*ii+1] << "   zcoord= "<< CoordNodeNeg[3*ii+2] <<endl;
+//        }
+//        for(int ii=0; ii<3; ii++){
+//            cout<<"xcoord= "<<CoordNodePos[3*ii] << "   ycoord= "<< CoordNodePos[3*ii+1] << "   zcoord= "<< CoordNodePos[3*ii+2] <<endl;
+//        }
+        double XPosNew, YPosNew, ZPosNew;
+        for(int ii=0; ii<3; ii++){
+            if(Tri_Neg->xcoord==0){XPosNew=1;                   YPosNew=CoordNodeNeg[3*ii+1];   ZPosNew=CoordNodeNeg[3*ii+2];};
+            if(Tri_Neg->ycoord==0){XPosNew=CoordNodeNeg[3*ii] ; YPosNew=1;                      ZPosNew=CoordNodeNeg[3*ii+2];};
+            if(Tri_Neg->zcoord==0){XPosNew=CoordNodeNeg[3*ii] ; YPosNew=CoordNodeNeg[3*ii+1];   ZPosNew=1;};
+            for(int jj=0; jj<3; jj++){
+                if(XPosNew==CoordNodePos[3*jj]  &&  YPosNew==CoordNodePos[3*jj+1]  &&  ZPosNew==CoordNodePos[3*jj+2]){
+                    PrismNodes[3+ii]=TriNodesPos[jj];
+                    break;
+                }
+            }
+        }
+        double CoordNodesPrisms[18];
+        rval = moab.get_coords(PrismNodes,6,CoordNodesPrisms);  CHKERR_THROW(rval);
+//        for(int ii=0; ii<6; ii++){
+//            cout<<"xcoord= "<<CoordNodesPrisms[3*ii] << "   ycoord= "<< CoordNodesPrisms[3*ii+1] << "   zcoord= "<< CoordNodesPrisms[3*ii+2] <<endl;
+//        }
+//        cout<<endl<<endl;
+        EntityHandle PeriodicPrism;
+        rval = moab.create_element(MBPRISM,PrismNodes,6,PeriodicPrism); CHKERR_PETSC(rval);
+        PrismRange.insert(PeriodicPrism);
+    }
+    //cout<<"PrismRange "<<PrismRange<<endl;
+    
+    //Adding Prisims to Element Lagrange_elem (to loop over these prisims)
+    EntityHandle PrismRangeMeshset;
+    rval = moab.create_meshset(MESHSET_SET,PrismRangeMeshset); CHKERR_PETSC(rval);
+    rval = moab.add_entities(PrismRangeMeshset,PrismRange); CHKERR_PETSC(rval);
+    ierr = mField.seed_ref_level_3D(PrismRangeMeshset,bit_level0); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"Lagrange_elem",MBPRISM); CHKERRQ(ierr);
+    
+    //Adding only -ve surfaces to the field Lagrange_mul_disp (in periodic boundary conditions size of C (3M/2 x 3N))
+    //to create meshset from range  SurTrisNeg
+    EntityHandle SurTrisNegMeshset;
+    rval = moab.create_meshset(MESHSET_SET,SurTrisNegMeshset); CHKERR_PETSC(rval);
+	rval = moab.add_entities(SurTrisNegMeshset,SurTrisNeg); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_field_by_TRIs(SurTrisNegMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
+
+    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+    
+    ierr = mField.set_field_order(0,MBTRI,"Lagrange_mul_disp",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBEDGE,"Lagrange_mul_disp",order); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBVERTEX,"Lagrange_mul_disp",1); CHKERRQ(ierr);
+    
+    /****/
+    //build database
+    
+    //build field
+    ierr = mField.build_fields(); CHKERRQ(ierr);
+    
+    //build finite elemnts
+    ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+    
+    //build adjacencies
+    ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+    
+    //build problem
+    ierr = mField.build_problems(); CHKERRQ(ierr);
     
     
     
-    
-    
-    
-//    for(int ii=0; ii<)
-//    
-//    
-//    
-//    ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
-//    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
-//    
-//    
-//    //to create meshset from range
-//    EntityHandle BoundFacesMeshset;
-//    rval = moab.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
-//	rval = moab.add_entities(BoundFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
-//    
-//    ierr = mField.add_ents_to_field_by_TRIs(BoundFacesMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
-//    
-//    //set app. order
-//    //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-//    //int order = 5;
-//    ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
-//    ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
-//    ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
-//    ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-//    
-//    ierr = mField.set_field_order(0,MBTRI,"Lagrange_mul_disp",order); CHKERRQ(ierr);
-//    ierr = mField.set_field_order(0,MBEDGE,"Lagrange_mul_disp",order); CHKERRQ(ierr);
-//    ierr = mField.set_field_order(0,MBVERTEX,"Lagrange_mul_disp",1); CHKERRQ(ierr);
-//    
-//    /****/
-//    //build database
-//    
-//    //build field
-//    ierr = mField.build_fields(); CHKERRQ(ierr);
-//    
-//    //build finite elemnts
-//    ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-//    
-//    //build adjacencies
-//    ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
-//    
-//    //build problem
-//    ierr = mField.build_problems(); CHKERRQ(ierr);
-//    
-//    
-//    
 //    /****/
 //    //mesh partitioning
 //    
@@ -336,6 +358,13 @@ int main(int argc, char *argv[]) {
 //    Mat Aij;
 //    ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 //    
+//    
+//    //Matrix View
+//    MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+//    std::string wait;
+//    std::cin >> wait;
+//
+//    
 //    struct MyElasticFEMethod: public ElasticFEMethod {
 //        MyElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
 //                          Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu):
@@ -356,7 +385,7 @@ int main(int argc, char *argv[]) {
 //    };
 //    
 //    
-//    CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
+//    CubitDisplacementDirihletBC_ZerosRowsColumns myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
 //    ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 //    
 //    //Assemble F and Aij
@@ -364,7 +393,8 @@ int main(int argc, char *argv[]) {
 //    const double PoissonRatio = 0.0;
 //    MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 //    
-//    ElasticFE_RVELagrange MyFE_RVELagrange(mField,&myDirihletBC,Aij,D,F);
+//    ElasticFE_RVELagrange_Periodic MyFE_RVELagrange(mField,&myDirihletBC,Aij,D,F);
+//    
 //    
 //    ierr = VecZeroEntries(F); CHKERRQ(ierr);
 //    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

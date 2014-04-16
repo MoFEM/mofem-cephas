@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(Boundarycond_REV Boundarycond_REV.cpp)
-target_link_libraries(Boundarycond_REV mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(Boundarycond_REV_Disp Boundarycond_REV_Disp.cpp)
+target_link_libraries(Boundarycond_REV_Disp mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(Boundarycond_REV_traction Boundarycond_REV_traction.cpp)
-target_link_libraries(Boundarycond_REV_traction mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(Boundarycond_REV_Traction Boundarycond_REV_Traction.cpp)
+target_link_libraries(Boundarycond_REV_Traction mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(Boundarycond_REV_Periodic Boundarycond_REV_Periodic.cpp)
 target_link_libraries(Boundarycond_REV_Periodic mofem_student_body mofem_Field ${PROJECT_LIBS})

@@ -77,6 +77,8 @@ int main(int argc, char *argv[]) {
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
+    
+    
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
