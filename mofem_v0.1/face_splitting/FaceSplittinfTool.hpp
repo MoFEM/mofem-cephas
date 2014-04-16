@@ -158,6 +158,8 @@ struct FaceSplittingTools {
     void resize(int s) { ptr[0] = s; }
     int& first() { return ptr[1]; }
     int& back() { return ptr[ptr[0]]; }
+    int* begin() { return &ptr[1]; };
+    int* end() { return &ptr[ptr[0]]; }
     void push_back(int a) { 
       ptr[0]++;
       ptr[ptr[0]] = a; 

@@ -1434,6 +1434,60 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
 
   bit_level0 = bit_cat_level;
 
+  /*PetscPrintf(PETSC_COMM_WORLD,"meshRefineBitLevels: ");
+  int *p = face_splitting.meshRefineBitLevels.begin();
+  for(;p!=face_splitting.meshRefineBitLevels.end();p++) {
+    PetscPrintf(PETSC_COMM_WORLD," %d",*p);
+  }
+  PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+  PetscPrintf(PETSC_COMM_WORLD,"meshIntefaceBitLevels: ");
+  p = face_splitting.meshIntefaceBitLevels.begin();
+  for(;p!=face_splitting.meshIntefaceBitLevels.end();p++) {
+    PetscPrintf(PETSC_COMM_WORLD," %d",*p);
+  }
+  PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
+  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+
+  //squash bits
+  RefMoFEMEntity_multiIndex::iterator mit = refinedMoFemEntities_ptr->begin();
+  for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
+    if((mask&mit->get_BitRefLevel())==mit->get_BitRefLevel()) {
+      //cerr << mask << endl;
+      //cerr << mit->get_BitRefLevel() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistencies");
+    }
+    BitRefLevel new_bit = BitRefLevel().set(face_splitting.meshRefineBitLevels.first());
+    if( 
+      (BitRefLevel().set(face_splitting.meshRefineBitLevels.back())&mit->get_BitRefLevel()).any()
+    ) {
+      new_bit.set(face_splitting.meshRefineBitLevels.first()+1);
+    }
+    if(
+      (BitRefLevel().set(face_splitting.meshIntefaceBitLevels.back())&mit->get_BitRefLevel()).any()
+    ) {
+      new_bit.set(face_splitting.meshRefineBitLevels.first()+2);
+    }
+    if(
+      (BitRefLevel().set(BITREFLEVEL_SIZE-1)&mit->get_BitRefLevel()).any()
+    ) {
+      new_bit.set(BITREFLEVEL_SIZE-1);
+    } 
+    //cerr << mit->get_BitRefLevel() << " : " << new_bit << endl;
+    const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)->modify(mit,RefMoFEMEntity_change_set_bit(new_bit));
+  }
+  
+  int new_meshRefineBitLevels[] = { 2, face_splitting.meshRefineBitLevels.first(),face_splitting.meshRefineBitLevels.first()+1 };
+  int new_meshIntefaceBitLevels[] = { 1, face_splitting.meshRefineBitLevels.first()+2 };
+  bzero(face_splitting.meshRefineBitLevels.ptr,BITREFLEVEL_SIZE*sizeof(int));
+  bzero(face_splitting.meshIntefaceBitLevels.ptr,BITREFLEVEL_SIZE*sizeof(int));
+  bcopy(new_meshRefineBitLevels,face_splitting.meshRefineBitLevels.ptr,3);
+  bcopy(new_meshIntefaceBitLevels,face_splitting.meshIntefaceBitLevels.ptr,2);
+
+  bit_level0 = BitRefLevel().set(face_splitting.meshIntefaceBitLevels.back());*/
+
   PetscFunctionReturn(0);
 }
 
