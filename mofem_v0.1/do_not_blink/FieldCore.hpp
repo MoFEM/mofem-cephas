@@ -64,7 +64,7 @@ struct FieldCore: public FieldInterface {
   MoFEMFiniteElement_multiIndex finiteElements;
   EntMoFEMFiniteElement_multiIndex finiteElementsMoFEMEnts;
   //entFEAdjacencies
-  BasicMoFEMEntityAdjacenctMap_multiIndex basicEntAdjacencies;
+  //BasicMoFEMEntityAdjacenctMap_multiIndex basicEntAdjacencies;
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;
   //moFEMProblems
   MoFEMProblem_multiIndex moFEMProblems;
@@ -314,6 +314,10 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false);
+  PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const string &name);
+  PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const BitFEId id,const bool recursive = false);
+  PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const string &name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const string &name,EntityType type,int verb = -1);
   PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,int verb = -1);
@@ -398,13 +402,13 @@ struct FieldCore: public FieldInterface {
     const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_nodes_from_bit_level,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
 
-  PetscErrorCode add_prism_to_basicEntAdjacencies(const EntityHandle prism,int verb = -1);
+  PetscErrorCode add_prism_to_mofem_database(const EntityHandle prism,int verb = -1);
 
   PetscErrorCode add_verices_in_the_middel_of_edges(
     const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
   PetscErrorCode add_verices_in_the_middel_of_edges(const Range &edges,const BitRefLevel &bit,int verb = -1);
-  PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = true);
-  PetscErrorCode refine_TET(const Range &test,const BitRefLevel &bit,const bool respect_interface = true);
+  PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = false);
+  PetscErrorCode refine_TET(const Range &test,const BitRefLevel &bit,const bool respect_interface = false);
   PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
 
@@ -443,6 +447,16 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
   PetscErrorCode field_scale(const double alpha,const string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const string& fiel_name);
+
+  //Get adjacencies
+  PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
+  PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
+  PetscErrorCode get_adjacencies(
+    const MoFEMProblem *problem_ptr,
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0);
+  PetscErrorCode get_adjacencies(
+    const BitRefLevel &bit,
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0);
 
   //constructor
   FieldCore(Interface& _moab,int _verbose = 1);

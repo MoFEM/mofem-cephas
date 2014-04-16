@@ -343,7 +343,7 @@ struct FieldInterface {
    * \param BitRefLevel bitLevel
    * \param If TRUE, interface elements would be refined too
    */
-  virtual PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = true) = 0;
+  virtual PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = false) = 0;
 
   /**\brief refine TET in the meshset
    *
@@ -351,7 +351,7 @@ struct FieldInterface {
    * \param BitRefLevel bitLevel
    * \param If TRUE, interface elements would be refined too
    */
-  virtual PetscErrorCode refine_TET(const Range &tets,const BitRefLevel &bit,const bool respect_interface = true) = 0;
+  virtual PetscErrorCode refine_TET(const Range &tets,const BitRefLevel &bit,const bool respect_interface = false) = 0;
 
 
   /**\brief refine PRISM in the meshset
@@ -411,6 +411,19 @@ struct FieldInterface {
    *
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
+
+  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+    *
+    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    */
+  virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+  virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+  virtual PetscErrorCode get_adjacencies(
+    const MoFEMProblem *problem_ptr,
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
+  virtual PetscErrorCode get_adjacencies(
+    const BitRefLevel &bit,
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
 
 
   /** \brief Get childed entities form meshset containing parent entities 
@@ -670,7 +683,6 @@ struct FieldInterface {
    *
    * \param range contains tetrahedrals
    * \param name Finite Element name
-   * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const string &name) = 0;
 
@@ -681,6 +693,21 @@ struct FieldInterface {
    * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
+
+  /** \brief add PRISM entities fromm meshset to finite element database given by name
+   *
+   * \param range contains tetrahedrals
+   * \param name Finite Element name
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const string &name) = 0;
+
+  /** \brief add TET entities fromm meshset to finite element database given by name
+   *
+   * \param meshset contains tetrahedrals
+   * \param name Finite Element name
+   * \param recursive if true parent meshset is searched recursively
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
 
   /** \brief add TET elements from given refinment level to finite element database given by name 
    *

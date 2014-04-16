@@ -27,57 +27,6 @@
 
 namespace MoFEM {
 
-/** 
- * \brief struct keeps data about selected prism adjacencies, and potentially other entities
- */
-struct BasicMoFEMEntityAdjacenctMap: public BasicMoFEMEntity {
-  BasicMoFEMEntity Adj; ///< adjacent entity to this BasicMoFEMEntityAdjacenctMap
-  BasicMoFEMEntityAdjacenctMap(const EntityHandle _ent,const EntityHandle adj):
-    BasicMoFEMEntity(_ent), Adj(adj) {};
-  inline EntityHandle get_adj() const { return Adj.ent; };
-  inline EntityType get_adj_type() const { return Adj.get_ent_type(); };
-};
-
-/** 
- * @relates multi_index_container
- * \brief MultiIndex container keeps BasicMoFEMEntityAdjacenctMap
- *
- * \param   hashed_non_unique<
-      tag<MoABEnt_mi_tag>, 
-      member<BasicMoFEMEntityAdjacenctMap::BasicMoFEMEntity,EntityHandle,&BasicMoFEMEntityAdjacenctMap::ent> >,
- * \param    hashed_non_unique<
-      tag<MoABEnt_mi_tag2>, 
-      const_mem_fun<BasicMoFEMEntityAdjacenctMap,EntityHandle,&BasicMoFEMEntityAdjacenctMap::get_adj> >,
- * \param    ordered_non_unique<
-      tag<EntType_mi_tag>, 
-      const_mem_fun<BasicMoFEMEntityAdjacenctMap,EntityType,&BasicMoFEMEntityAdjacenctMap::get_adj_type> >,
- * \param    hashed_unique< tag<Composite_mi_tag>, <br>
-      composite_key< <br>
-	BasicMoFEMEntityAdjacenctMap,
-      	member<BasicMoFEMEntityAdjacenctMap::BasicMoFEMEntity,EntityHandle,&BasicMoFEMEntityAdjacenctMap::ent>,
-	const_mem_fun<BasicMoFEMEntityAdjacenctMap,EntityHandle,&BasicMoFEMEntityAdjacenctMap::get_adj> > >
- *
- */
-typedef multi_index_container<
-  BasicMoFEMEntityAdjacenctMap,
-  indexed_by<
-    hashed_non_unique<
-      tag<MoABEnt_mi_tag>, 
-      member<BasicMoFEMEntityAdjacenctMap::BasicMoFEMEntity,EntityHandle,&BasicMoFEMEntityAdjacenctMap::ent> >,
-    hashed_non_unique<
-      tag<MoABEnt_mi_tag2>, 
-      const_mem_fun<BasicMoFEMEntityAdjacenctMap,EntityHandle,&BasicMoFEMEntityAdjacenctMap::get_adj> >,
-    ordered_non_unique<
-      tag<EntType_mi_tag>, 
-      const_mem_fun<BasicMoFEMEntityAdjacenctMap,EntityType,&BasicMoFEMEntityAdjacenctMap::get_adj_type> >,
-    hashed_unique<
-      tag<Composite_mi_tag>, 
-      composite_key<
-	BasicMoFEMEntityAdjacenctMap,
-      	member<BasicMoFEMEntityAdjacenctMap::BasicMoFEMEntity,EntityHandle,&BasicMoFEMEntityAdjacenctMap::ent>,
-	const_mem_fun<BasicMoFEMEntityAdjacenctMap,EntityHandle,&BasicMoFEMEntityAdjacenctMap::get_adj> > >
-  > > BasicMoFEMEntityAdjacenctMap_multiIndex;
-
 /**
   * \brief MoFEMEntityEntMoFEMFiniteElementAdjacencyMap of mofem finite element and entities
   *

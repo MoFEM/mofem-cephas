@@ -167,6 +167,45 @@ struct RefMoFEMEntity_change_add_bit {
   }
 };
 
+/// \brief ref mofem entity, change bit
+struct RefMoFEMEntity_change_and_bit {
+  BitRefLevel bit;
+  RefMoFEMEntity_change_and_bit(const BitRefLevel &_bit): bit(_bit) {};
+  void operator()(RefMoFEMEntity &e) { 
+    bit &= *(e.tag_BitRefLevel); 
+    *e.tag_BitRefLevel = bit;
+  }
+};
+
+/// \brief ref mofem entity, change bit
+struct RefMoFEMEntity_change_xor_bit {
+  BitRefLevel bit;
+  RefMoFEMEntity_change_xor_bit(const BitRefLevel &_bit): bit(_bit) {};
+  void operator()(RefMoFEMEntity &e) { 
+    bit ^= *(e.tag_BitRefLevel); 
+    *e.tag_BitRefLevel = bit;
+  }
+};
+
+/// \brief ref mofem entity, change bit
+struct RefMoFEMEntity_change_set_bit {
+  BitRefLevel bit;
+  RefMoFEMEntity_change_set_bit(const BitRefLevel &_bit): bit(_bit) {};
+  void operator()(RefMoFEMEntity &e) { 
+    *e.tag_BitRefLevel = bit;
+  }
+};
+
+/// \brief ref mofem entity, change bit
+struct RefMoFEMEntity_change_set_nth_bit {
+  int n;
+  bool b;
+  RefMoFEMEntity_change_set_nth_bit(const int _n,bool _b): n(_n),b(_b) {};
+  void operator()(RefMoFEMEntity &e) { 
+    (*e.tag_BitRefLevel)[n] = b;
+  }
+};
+
 /** 
  * \brief interface to RefMoFEMEntity
  */

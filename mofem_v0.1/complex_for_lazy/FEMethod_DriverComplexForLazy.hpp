@@ -1138,10 +1138,10 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
     }
 
     try {
-      gFE_SURFACE = new g_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.g);
+      gFE_SURFACE = new g_SURFACE_FEMethod(mField,dirihlet_bc_method_ptr,proj_all_ctx.g);
       if(cs) {
 	//CRACK
-	gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
+	gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(mField,dirihlet_bc_method_ptr,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -1154,10 +1154,10 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	ierr = mField.set_global_VecCreateGhost(problem_name,Col,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 	try {
-	CFE_SURFACE = new C_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.C);
+	CFE_SURFACE = new C_SURFACE_FEMethod(mField,dirihlet_bc_method_ptr,proj_all_ctx.C);
 	if(cs) {
 	  //CRACK
-	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
+	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(mField,dirihlet_bc_method_ptr,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
 	}
 	} catch (const std::exception& ex) {
 	  ostringstream ss;

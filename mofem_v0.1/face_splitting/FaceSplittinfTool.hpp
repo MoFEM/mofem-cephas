@@ -47,7 +47,8 @@ struct FaceSplittingTools {
     mField(_mField),
     kdTree(&_mField.get_moab(),true),
     moab_distance_from_crack_surface(mb_instance_distance_from_crack_surface),
-    kdTree_DistanceFromCrackSurface(&moab_distance_from_crack_surface,true) {
+    kdTree_DistanceFromCrackSurface(&moab_distance_from_crack_surface,true),
+    th_b(NULL),th_distance(NULL),th_projection(NULL) {
 
     kdTree_rootMeshset_DistanceFromCrackSurface = 0;
     opositeFrontEdges = 0;
@@ -93,6 +94,19 @@ struct FaceSplittingTools {
       rval = mField.get_moab().delete_entities(&selectedCrackFaces,1); CHKERR_PETSC(rval);
       selectedCrackFaces=0;
     }
+
+    if(th_b != NULL) {
+      rval = mField.get_moab().tag_delete(th_b); CHKERR_PETSC(rval);
+    }
+
+    if(th_distance != NULL) {
+      rval = mField.get_moab().tag_delete(th_distance); CHKERR_PETSC(rval);
+    }
+
+    if(th_projection != NULL) {
+      rval = mField.get_moab().tag_delete(th_projection); CHKERR_PETSC(rval);
+    }
+
     
     PetscFunctionReturn(0);
   }
@@ -144,6 +158,8 @@ struct FaceSplittingTools {
     void resize(int s) { ptr[0] = s; }
     int& first() { return ptr[1]; }
     int& back() { return ptr[ptr[0]]; }
+    int* begin() { return &ptr[1]; };
+    int* end() { return &ptr[ptr[0]]; }
     void push_back(int a) { 
       ptr[0]++;
       ptr[ptr[0]] = a; 
@@ -153,9 +169,9 @@ struct FaceSplittingTools {
   BitRefLevelVector meshRefineBitLevels;
   BitRefLevelVector meshIntefaceBitLevels;
 
-  PetscErrorCode catMesh();
-  PetscErrorCode meshRefine();
-  PetscErrorCode splitFaces();
+  PetscErrorCode catMesh(const int verb = 0);
+  PetscErrorCode meshRefine(const int verb = 0);
+  PetscErrorCode splitFaces(const int verb = 0);
 
   PetscErrorCode addNewSurfaceFaces_to_Cubit_msId200();
   PetscErrorCode addcrackFront_to_Cubit201();
