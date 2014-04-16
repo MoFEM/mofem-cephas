@@ -106,10 +106,13 @@ add_library(mofem_Field
   third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
   do_not_blink/CoreDataStructures.cpp
-  do_not_blink/BCMultiIndices.cpp
+  do_not_blink/EntsMultiIndices.cpp
+  do_not_blink/FEMMultiIndices.cpp
   do_not_blink/ProblemsMultiIndices.cpp
+  do_not_blink/BCMultiIndices.cpp
   do_not_blink/TETRefine.cpp
   do_not_blink/FieldCore.cpp
+  do_not_blink/FieldCore_MeshRefinment.cpp
   FEM.c
   H1.c
   Hdiv.c

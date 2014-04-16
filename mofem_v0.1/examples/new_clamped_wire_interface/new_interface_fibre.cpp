@@ -526,8 +526,8 @@ struct TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressO
     Tag th_fibre_orientation;
     Tag th_dist_from_surface;
 
-    TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh( Interface& _moab,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_moab,_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
+    TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh( FieldInterface& _mField,double _lambda,double _mu, double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp):
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(_mField,_lambda,_mu),E_p(_E_p),E_z(_E_z),nu_p(_nu_p),nu_pz(_nu_pz),G_zp(_G_zp) {
         
         double def_VAL2[3] = {0,0,0};
         rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION",3,MB_TYPE_DOUBLE,th_fibre_orientation,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
@@ -738,12 +738,12 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
     ierr = mField.get_entities_by_type_and_ref_level(bit_level_interface,BitRefLevel().set(),meshset_level_interface); CHKERRQ(ierr);
 
-    ierr = mField.refine_get_childern(meshset_BlockSet1,bit_level_interface,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_BlockSet2,bit_level_interface,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet1,bit_level_interface,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet2,bit_level_interface,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
     
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
         EntityHandle cubit_meshset = cubit_it->meshset; 
-        ierr = mField.refine_get_childern(cubit_meshset,meshset_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,meshset_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }    
 
     EntityHandle temp_meshset;
@@ -762,12 +762,12 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,meshset_level_interface1); CHKERR_PETSC(rval);
     ierr = mField.get_entities_by_type_and_ref_level(bit_level_interface1,BitRefLevel().set(),meshset_level_interface1); CHKERRQ(ierr);
 
-    ierr = mField.refine_get_childern(meshset_BlockSet1,bit_level_interface1,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_BlockSet2,bit_level_interface1,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet1,bit_level_interface1,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet2,bit_level_interface1,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
     
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
         EntityHandle cubit_meshset = cubit_it->meshset; 
-        ierr = mField.refine_get_childern(cubit_meshset,meshset_level_interface1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,meshset_level_interface1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }
 
     //Interface meshset 6
@@ -782,12 +782,12 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,meshset_level_interface2); CHKERR_PETSC(rval);
     ierr = mField.get_entities_by_type_and_ref_level(bit_level_interface2,BitRefLevel().set(),meshset_level_interface2); CHKERRQ(ierr);
     
-    ierr = mField.refine_get_childern(meshset_BlockSet1,bit_level_interface2,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
-    ierr = mField.refine_get_childern(meshset_BlockSet2,bit_level_interface2,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet1,bit_level_interface2,meshset_BlockSet1,MBTET,true); CHKERRQ(ierr);
+    ierr = mField.update_meshset_by_entities_children(meshset_BlockSet2,bit_level_interface2,meshset_BlockSet2,MBTET,true); CHKERRQ(ierr);
 
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
         EntityHandle cubit_meshset = cubit_it->meshset; 
-        ierr = mField.refine_get_childern(cubit_meshset,meshset_level_interface2,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,meshset_level_interface2,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }
     
     // stl::bitset see for more details
@@ -994,8 +994,8 @@ int main(int argc, char *argv[]) {
     }
     
     //  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-    TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_fibre_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+    TranIsotropic_Fibre_PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_fibre_post_proc_method( mField,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_fibre_post_proc_method);  CHKERRQ(ierr);
     

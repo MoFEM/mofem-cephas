@@ -17,23 +17,22 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 add_executable(spatial_problem spatial_problem.cpp)
-target_link_libraries(spatial_problem mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(spatial_problem mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(material_force material_force.cpp)
-target_link_libraries(material_force mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(material_force mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(material_problem material_problem.cpp)
-target_link_libraries(material_problem mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(material_problem mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
-target_link_libraries(arc_length_material_coupled mofem_face_splitting mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(spatial_problem_with_thermal_field spatial_problem_with_thermal_field.cpp)
-target_link_libraries(spatial_problem_with_thermal_field mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(spatial_problem_with_thermal_field mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(split_faces split_faces.cpp)
-target_link_libraries(split_faces mofem_face_splitting mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
+target_link_libraries(split_faces mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -63,7 +62,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh DESTINATION bin PERMISSI
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
 #testing
-add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh -f crack1.cub -l 1e-3 -o 1 -r 1 -d TEST_SIF)
-add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_1_1.h5m 
-  -a 2e-4 -n 1 -g 1e-4 -d TEST_ARC --snes_linesearch_type=basic --my_nb_sub_steps=1)
+add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh -f crack1.cub -l 1e-4 -o 2 -r 1 -d TEST_SIF)
+add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_2_1.h5m 
+  -a 2e-3 -n 1 -g 1e-6 -d TEST_ARC --snes_linesearch_type=basic --my_nb_sub_steps=1)
 

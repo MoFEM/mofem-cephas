@@ -332,9 +332,9 @@ PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_FieldData(FieldInte
     PetscFunctionReturn(0);
 }
     
-    
+
 CubitDisplacementDirihletBC_ZerosRowsColumns::CubitDisplacementDirihletBC_ZerosRowsColumns(FieldInterface& _mField,const string _problem_name,const string _field_name):CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
-    
+
 PetscErrorCode CubitDisplacementDirihletBC_ZerosRowsColumns::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -357,9 +357,9 @@ PetscErrorCode CubitDisplacementDirihletBC_ZerosRowsColumns::SetDirihletBC_to_Ma
     ierr = MatZeroRowsColumns(Aij,zero_rows.size(),&*zero_rows.begin(),1.,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
+
     
-    
-CubitTemperatureDirihletBC::CubitTemperatureDirihletBC(FieldInterface& _mField,const string _problem_name,const string _field_name):
+CubitTemperatureDirihletBC::CubitTemperatureDirihletBC(FieldInterface& _mField,const string _problem_name,const string _field_name): 
   CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
 
 PetscErrorCode CubitTemperatureDirihletBC::Init() {

@@ -76,143 +76,158 @@ int main(int argc, char *argv[]) {
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
-  ierr = conf_prob.constrains_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.material_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.coupled_problem_definition(mField); CHKERRQ(ierr);
-  ierr = conf_prob.constrains_crack_front_problem_definition(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-  ierr = conf_prob.arclength_problem_definition(mField); CHKERRQ(ierr);
-
-  //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC_COUPLED",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL_COUPLED",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
-
-  //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_set_bit("MATERIAL_MECHANICS",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_set_bit("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_set_bit("COUPLED_PROBLEM",bit_level0); CHKERRQ(ierr);
-
-  //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_set_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_set_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_set_bit("C_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
-  ierr = mField.modify_problem_ref_level_set_bit("CTC_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
-
-  //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
-  //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-  //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  //build problem
-  ierr = mField.build_problems(); CHKERRQ(ierr);
 
-  //partition problems
-  ierr = conf_prob.spatial_partition_problems(mField); CHKERRQ(ierr);
-  ierr = conf_prob.material_partition_problems(mField); CHKERRQ(ierr);
-  ierr = conf_prob.coupled_partition_problems(mField); CHKERRQ(ierr);
-  ierr = conf_prob.constrains_partition_problems(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-  ierr = conf_prob.crackfront_partition_problems(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-
-  //caculate material forces
-  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
-
-  FaceSplittingTools face_splitting(mField);
-  ierr = face_splitting.buildKDTreeForCrackSurface(bit_level0); CHKERRQ(ierr);
-
-  ierr = face_splitting.initBitLevelData(bit_level0);  CHKERRQ(ierr);
-  ierr = face_splitting.calculateDistanceFromCrackSurface();  CHKERRQ(ierr);
-  ierr = face_splitting.getOpositeForntEdges(true); CHKERRQ(ierr);
-  ierr = face_splitting.getCrackSurfaceCorssingEdges(true); CHKERRQ(ierr);
-
-  ierr = face_splitting.getCrackFrontTets(true); CHKERRQ(ierr);
-  ierr = face_splitting.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true); CHKERRQ(ierr);
-
-  if(pcomm->rank()==0) {
-
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-    //
-    rval = moab.write_file("opositeFrontEdges.vtk","VTK","",&face_splitting.opositeFrontEdges,1); CHKERR_PETSC(rval);
-    rval = moab.write_file("crackSurfaceCrossingEdges.vtk","VTK","",&face_splitting.crackSurfaceCrossingEdges,1); CHKERR_PETSC(rval);
-    rval = moab.write_file("crackFrontTests.vtk","VTK","",&face_splitting.crackFrontTests,1); CHKERR_PETSC(rval);
-    rval = moab.write_file("chopTetsFaces.vtk","VTK","",&face_splitting.chopTetsFaces,1); CHKERR_PETSC(rval);
-
-  }
-
-  int last_ll = 1;
-  for(int ll = 1;ll<bit_level0.size();ll++) {
-    if(bit_level0.test(ll)) last_ll = ll;
-  }
-  last_ll++;
-  BitRefLevel new_bit_level0;
-  new_bit_level0.set(last_ll);
-
-  ierr = face_splitting.catMesh(bit_level0,new_bit_level0); CHKERRQ(ierr);
-
-  if(pcomm->rank()==0) {
-    Range mesh_level_tets;
-    ierr = mField.get_entities_by_type_and_ref_level(new_bit_level0,BitRefLevel().set(),MBTET,mesh_level_tets); CHKERRQ(ierr);
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = moab.add_entities(out_meshset,mesh_level_tets); CHKERRQ(ierr);
-    rval = moab.write_file("cat_mesh.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
-
-  FaceSplittingTools face_splitting2(mField);
-  ierr = face_splitting2.buildKDTreeForCrackSurface(bit_level0); CHKERRQ(ierr);
-
-  ierr = face_splitting2.initBitLevelData(new_bit_level0);  CHKERRQ(ierr);
-  ierr = face_splitting2.calculateDistanceFromCrackSurface();  CHKERRQ(ierr);
-  ierr = face_splitting2.getOpositeForntEdges(true); CHKERRQ(ierr);
-  ierr = face_splitting2.getCrackSurfaceCorssingEdges(true); CHKERRQ(ierr);
-
-  ierr = face_splitting2.getCrackFrontTets(true); CHKERRQ(ierr);
-  ierr = face_splitting2.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true); CHKERRQ(ierr);
+  { //cat mesh
   
-  if(pcomm->rank()==0) {
-
-    rval = moab.write_file("cat_opositeFrontEdges.vtk","VTK","",&face_splitting2.opositeFrontEdges,1); CHKERR_PETSC(rval);
-    rval = moab.write_file("cat_crackSurfaceCrossingEdges.vtk","VTK","",&face_splitting2.crackSurfaceCrossingEdges,1); CHKERR_PETSC(rval);
-    rval = moab.write_file("cat_crackFrontTests.vtk","VTK","",&face_splitting2.crackFrontTests,1); CHKERR_PETSC(rval);
-    rval = moab.write_file("cat_chopTetsFaces.vtk","VTK","",&face_splitting2.chopTetsFaces,1); CHKERR_PETSC(rval);
+    FaceSplittingTools face_splitting(mField);
+    ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
+    ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
 
   }
 
-
-  ierr = face_splitting2.addNewSurfaceFaces_to_Cubit_msId200();
-  ierr = face_splitting2.addcrackFront_to_Cubit201(); CHKERRQ(ierr);
-
   if(pcomm->rank()==0) {
+
     EntityHandle meshset200;
     ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset200); CHKERRQ(ierr);
-    rval = moab.write_file("cat_CrackFrontSurface.vtk","VTK","",&meshset200,1); CHKERR_PETSC(rval);
+    Range tris;
+    rval = moab.get_entities_by_type(meshset200,MBTRI,tris,false); CHKERR_PETSC(rval);
+    Range level_tris;
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+    tris = intersect(tris,level_tris);
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    rval = moab.add_entities(out_meshset,tris); CHKERR_PETSC(rval);
+    rval = moab.write_file("CrackFrontSurface_ref.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    //rval = moab.write_file("cat_CrackFrontSurface.vtk","VTK","",&meshset200,1); CHKERR_PETSC(rval);
+    EntityHandle meshset201;
+    ierr = mField.get_Cubit_msId_meshset(201,SideSet,meshset201); CHKERRQ(ierr);
+    rval = moab.write_file("CrackFrontEdges_ref.vtk","VTK","",&meshset201,1); CHKERR_PETSC(rval);
+
+  }
+
+
+  //find faces for split
+
+  FaceSplittingTools face_splitting(mField);
+  ierr = main_select_faces_for_splitting(mField,face_splitting,2); CHKERRQ(ierr);
+  //do splittig
+  ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,2); CHKERRQ(ierr);
+	
+  //rebuild fields, finite elementa and problems
+  ierr = main_face_splitting_restart(mField,conf_prob); CHKERRQ(ierr);
+
+  //face spliting job done
+  ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
+
+
+  //solve spatial problem and calulate griffith forces
+
+  //project and set coords
+  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+  
+  SNES snes;
+  //solve mesh smoothing
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+  SNESLineSearch linesearch;
+  ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
+  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+  Vec D_tmp_mesh_positions;
+  ierr = mField.VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+  ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+  int nb_sub_steps = 1;
+  int nn;
+  do { 
+    nn = 1;
+    for(;nn<=nb_sub_steps;nn++) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %D\n",nn); CHKERRQ(ierr);
+      double alpha = (double)nn/(double)nb_sub_steps;
+      ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
+      //project nodes on crack surface
+      //ierr = face_splitting.projectCrackFrontNodes(); CHKERRQ(ierr);
+      ierr = conf_prob.project_form_th_projection_tag(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
+      SNESConvergedReason reason;
+      SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+      if(ierr == 0 && reason > 0) {
+	ierr = mField.set_local_VecCreateGhost(
+	  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+	  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      } else {
+	ierr = mField.set_local_VecCreateGhost(
+	  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+	  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	nb_sub_steps++;
+	break;
+      }
+    }
+    if(nb_sub_steps == 10) break;
+  } while(nn-1 != nb_sub_steps);
+  ierr = VecDestroy(&D_tmp_mesh_positions); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
+  ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
+  ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
+
+  ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
+  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+
+  //solve spatial problem
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+  ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
+  //calulate Griffth forces
+  ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
+  ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+
+  if(pcomm->rank()==0) {
+
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("cat_out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+
+  }
+
+  if(pcomm->rank()==0) {
+
+    EntityHandle meshset200;
+    ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset200); CHKERRQ(ierr);
+    Range tris;
+    rval = moab.get_entities_by_type(meshset200,MBTRI,tris,false); CHKERR_PETSC(rval);
+    Range level_tris;
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+    tris = intersect(tris,level_tris);
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    rval = moab.add_entities(out_meshset,tris); CHKERR_PETSC(rval);
+    rval = moab.write_file("cat_CrackFrontSurface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    //rval = moab.write_file("cat_CrackFrontSurface.vtk","VTK","",&meshset200,1); CHKERR_PETSC(rval);
     EntityHandle meshset201;
     ierr = mField.get_Cubit_msId_meshset(201,SideSet,meshset201); CHKERRQ(ierr);
     rval = moab.write_file("cat_CrackFrontEdges.vtk","VTK","",&meshset201,1); CHKERR_PETSC(rval);
+
   }
 
-  ierr = mField.clear_problems(); CHKERRQ(ierr);
-
-  /*last_ll++;
-  BitRefLevel new_bit_level1;
-  new_bit_level1.set(last_ll);
-
-  ierr = face_splitting2.splitFaces(new_bit_level0,new_bit_level1); CHKERRQ(ierr);
   if(pcomm->rank()==0) {
-    Range mesh_level_tets;
-    ierr = mField.get_entities_by_type_and_ref_level(new_bit_level1,BitRefLevel().set(),MBTET,mesh_level_tets); CHKERRQ(ierr);
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = moab.add_entities(out_meshset,mesh_level_tets); CHKERRQ(ierr);
-    rval = moab.write_file("split_mesh.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }*/
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Save results in out_split_faces.h5m\n"); CHKERRQ(ierr);
+    rval = moab.write_file("out_split_faces.h5m"); CHKERR_PETSC(rval);
+  }
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

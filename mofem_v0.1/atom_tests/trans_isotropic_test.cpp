@@ -52,10 +52,10 @@ struct TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh: public TranIso_PostProc
     ofstream myfile;
 
     TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh(
-      Interface& _moab,double _lambda,double _mu,
+      FieldInterface& _mField,double _lambda,double _mu,
       double _E_p,double _E_z, double _nu_p, double _nu_pz, double _G_zp, int _noAA, double *_AxVector, double *_AxAngle):
 
-    TranIso_PostProc_AxisAngle_OnRefMesh(_moab,_lambda,_mu,_E_p,_E_z,_nu_p,_nu_pz,_G_zp,_noAA,_AxVector,_AxAngle) {
+    TranIso_PostProc_AxisAngle_OnRefMesh(_mField,_lambda,_mu,_E_p,_E_z,_nu_p,_nu_pz,_G_zp,_noAA,_AxVector,_AxAngle) {
 
         
         myfile.open("transIso_Mat_Blessed_File.txt");
@@ -295,9 +295,9 @@ int main(int argc, char *argv[]) {
     
   for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
       EntityHandle cubit_meshset = cubit_it->meshset; 
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level0,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level0,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level0,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level0,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level0,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level0,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
   }
 
   /***/
@@ -462,7 +462,7 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh fe_fibre_post_proc_method( moab, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
+  TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh fe_fibre_post_proc_method( mField, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
     
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_fibre_post_proc_method);  CHKERRQ(ierr);
 

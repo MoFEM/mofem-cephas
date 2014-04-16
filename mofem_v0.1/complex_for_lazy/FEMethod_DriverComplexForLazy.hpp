@@ -834,7 +834,8 @@ struct FEMethod_DriverComplexForLazy_MeshSmoothing: public FEMethod_DriverComple
 	      for(;diit!=hi_diit;diit++) {
 		for(unsigned int ddd = 0;ddd<ColGlobMaterial[i_nodes].size();ddd++) {
 		  if(frontRowGlobMaterial_front_only[3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
-		    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
+		      3*nn+diit->get_dof_rank(),diit->get_petsc_gloabl_dof_idx());
 		  }
 		  if(diit->get_petsc_local_dof_idx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		  double g = f_tangent_front_mesh_array[diit->get_petsc_local_dof_idx()]*KHH(3*nn+diit->get_dof_rank(),ddd);
@@ -1137,10 +1138,10 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
     }
 
     try {
-      gFE_SURFACE = new g_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.g);
+      gFE_SURFACE = new g_SURFACE_FEMethod(mField,dirihlet_bc_method_ptr,proj_all_ctx.g);
       if(cs) {
 	//CRACK
-	gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
+	gFE_CRACK_SURFACE = new g_SURFACE_FEMethod(mField,dirihlet_bc_method_ptr,proj_all_ctx.g,"LAMBDA_CRACK_SURFACE");
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -1153,10 +1154,10 @@ struct FEMethod_DriverComplexForLazy_Projected: public virtual FEMethod_ComplexF
 	ierr = mField.set_global_VecCreateGhost(problem_name,Col,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 	try {
-	CFE_SURFACE = new C_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.C);
+	CFE_SURFACE = new C_SURFACE_FEMethod(mField,dirihlet_bc_method_ptr,proj_all_ctx.C);
 	if(cs) {
 	  //CRACK
-	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(moab,dirihlet_bc_method_ptr,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
+	  CFE_CRACK_SURFACE = new C_SURFACE_FEMethod(mField,dirihlet_bc_method_ptr,proj_all_ctx.C,"LAMBDA_CRACK_SURFACE");
 	}
 	} catch (const std::exception& ex) {
 	  ostringstream ss;
