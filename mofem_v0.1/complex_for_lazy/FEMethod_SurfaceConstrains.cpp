@@ -106,7 +106,7 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   Range adj_side_elems;
   BitRefLevel bit = problem_ptr->get_BitRefLevel();
   bit.set(BITREFLEVEL_SIZE-1);
-  ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems); CHKERRQ(ierr);
+  ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,0); CHKERRQ(ierr);
   adj_side_elems = adj_side_elems.subset_by_type(MBTET);
   if(adj_side_elems.size()!=1) {
     SETERRQ1(PETSC_COMM_SELF,1,"expect 1 tet but is %u",adj_side_elems.size());

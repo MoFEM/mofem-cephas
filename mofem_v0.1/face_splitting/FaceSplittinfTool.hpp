@@ -159,7 +159,7 @@ struct FaceSplittingTools {
     int& first() { return ptr[1]; }
     int& back() { return ptr[ptr[0]]; }
     int* begin() { return &ptr[1]; };
-    int* end() { return &ptr[ptr[0]]; }
+    int* end() { return &ptr[ptr[0]+1]; }
     void push_back(int a) { 
       ptr[0]++;
       ptr[ptr[0]] = a; 
@@ -176,7 +176,13 @@ struct FaceSplittingTools {
   PetscErrorCode addNewSurfaceFaces_to_Cubit_msId200();
   PetscErrorCode addcrackFront_to_Cubit201();
 
+  /** \brief project coords ibn crack surfec
+   * do not use this function, it not respect body boundaries
+   */
   PetscErrorCode projectCrackFrontNodes();
+
+  PetscErrorCode getMask(BitRefLevel &maskPreserv,const int verb = 0);
+  PetscErrorCode squashIndices(const int verb);
 
   private:
   ErrorCode rval;
@@ -189,7 +195,6 @@ struct FaceSplittingTools {
 
   PetscErrorCode calculate_qualityAfterProjectingNodes(EntityHandle meshset);
   PetscErrorCode calculate_qualityAfterProjectingNodes(Range &option_nodes,double &current_q);
-
 
 };
 

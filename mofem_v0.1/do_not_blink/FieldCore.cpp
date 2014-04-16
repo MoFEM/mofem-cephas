@@ -4581,16 +4581,23 @@ PetscErrorCode FieldCore::get_adjacencies(
 }
 PetscErrorCode FieldCore::get_adjacencies(
     const BitRefLevel &bit,
-    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type,	const int verb) {
+    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type,const int verb) {
   PetscFunctionBegin;
-  //cerr << "from:\n";
-  //cerr << bit << endl;
+  if(verb>0) {
+    ostringstream ss;
+    ss << "from: " << bit << endl << "to: " << endl;
+    PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+  }
   rval = moab.get_adjacencies(from_entities,num_netities,to_dimension,false,adj_entities,operation_type); CHKERR_PETSC(rval);
   Range::iterator eit = adj_entities.begin();
   //cerr << "to:\n";
   for(;eit!=adj_entities.end();) {
     RefMoFEMEntity adj_entiti(moab,*eit);
-    //cerr << "\t" << adj_entiti << endl;
+    if(verb>0) {
+      ostringstream ss;
+      ss << "\t" << adj_entiti << endl;
+      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }
     if(!(adj_entiti.get_BitRefLevel()&bit).any() ) {
       eit = adj_entities.erase(eit);
     } else {

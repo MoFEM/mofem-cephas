@@ -64,7 +64,6 @@ struct FieldCore: public FieldInterface {
   MoFEMFiniteElement_multiIndex finiteElements;
   EntMoFEMFiniteElement_multiIndex finiteElementsMoFEMEnts;
   //entFEAdjacencies
-  //BasicMoFEMEntityAdjacenctMap_multiIndex basicEntAdjacencies;
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;
   //moFEMProblems
   MoFEMProblem_multiIndex moFEMProblems;

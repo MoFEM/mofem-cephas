@@ -1,6 +1,9 @@
 /* Copyright (C) 2014, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
+ *
+ * Implemented with MOLOKO in headphones https://www.youtube.com/watch?v=46IIAylUph0.
+ *
  */
 
 /* This file is part of MoFEM.
@@ -971,6 +974,18 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   PetscFunctionBegin;
 
+  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
+  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+  RefMoFEMEntity_multiIndex::iterator mit = refinedMoFemEntities_ptr->begin();
+  for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
+    if( (mit->get_BitRefLevel()&BitRefLevel().set(BITREFLEVEL_SIZE-1)).any() ) {
+      bool success;
+      success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-1,false));
+      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+    }
+  }
+
   BitRefLevel current_ref = BitRefLevel().set(meshRefineBitLevels.back());
   BitRefLevel inhered_ents_from_level;
   if(!meshIntefaceBitLevels.empty()) {
@@ -1050,8 +1065,6 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       
       }
 
-      const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
-      ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
       for(Range::iterator tit = tets_on_surface.begin();tit!=tets_on_surface.end();tit++) {
 
 	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
@@ -1135,6 +1148,95 @@ PetscErrorCode FaceSplittingTools::projectCrackFrontNodes() {
     for(;dit!=hi_dit;dit++) {
       dit->get_FieldData() = new_coords[dit->get_dof_rank()];
     }
+  }
+
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
+  PetscFunctionBegin;
+
+  if(verb>0) {
+    PetscPrintf(PETSC_COMM_WORLD,"meshRefineBitLevels: ");
+    int *p = meshRefineBitLevels.begin();
+    for(;p!=meshRefineBitLevels.end();p++) {
+      PetscPrintf(PETSC_COMM_WORLD," %d",*p);
+    }
+    PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+    PetscPrintf(PETSC_COMM_WORLD,"meshIntefaceBitLevels: ");
+    p = meshIntefaceBitLevels.begin();
+    for(;p!=meshIntefaceBitLevels.end();p++) {
+      PetscPrintf(PETSC_COMM_WORLD," %d",*p);
+    }
+    PetscPrintf(PETSC_COMM_WORLD,"\n");
+  }
+
+  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
+  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+
+  BitRefLevel mask = BitRefLevel().set();
+  mask[meshRefineBitLevels.first()] = 0;
+  mask[meshRefineBitLevels.back()] = 0;
+  mask[meshIntefaceBitLevels.back()] = 0;
+  mask[BITREFLEVEL_SIZE-1] = 0;
+
+  BitRefLevel first_meshRefineBitLevels = 
+    BitRefLevel().set(meshRefineBitLevels.first());
+  BitRefLevel back_meshRefineBitLevels = 
+    BitRefLevel().set(meshRefineBitLevels.back());
+  BitRefLevel back_meshIntefaceBitLevels = 
+    BitRefLevel().set(meshIntefaceBitLevels.back());
+
+  //squash bits
+  RefMoFEMEntity_multiIndex::iterator mit = refinedMoFemEntities_ptr->begin();
+  for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
+    if((mask&mit->get_BitRefLevel())==mit->get_BitRefLevel()) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistencies");
+    }
+    BitRefLevel new_bit = first_meshRefineBitLevels;
+    if( ( first_meshRefineBitLevels&mit->get_BitRefLevel() ).any() ) {
+      new_bit.set(meshRefineBitLevels.first()+1);
+    }
+    if( ( back_meshRefineBitLevels&mit->get_BitRefLevel() ).any() ) {
+      new_bit.set(meshRefineBitLevels.first()+2);
+    }
+    if( (BitRefLevel().set(BITREFLEVEL_SIZE-1)&mit->get_BitRefLevel()).any() ) {
+      new_bit.set(BITREFLEVEL_SIZE-1);
+    } 
+    //cerr << mit->get_BitRefLevel() << " : " << new_bit << endl;
+    const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)->modify(mit,RefMoFEMEntity_change_set_bit(new_bit));
+  }
+  
+  int new_meshRefineBitLevels[] = { 2, meshRefineBitLevels.first(),meshRefineBitLevels.first()+1 };
+  int new_meshIntefaceBitLevels[] = { 1, meshRefineBitLevels.first()+2 };
+  bzero(meshRefineBitLevels.ptr,BITREFLEVEL_SIZE*sizeof(int));
+  bzero(meshIntefaceBitLevels.ptr,BITREFLEVEL_SIZE*sizeof(int));
+  bcopy(new_meshRefineBitLevels,meshRefineBitLevels.ptr,3*sizeof(int));
+  bcopy(new_meshIntefaceBitLevels,meshIntefaceBitLevels.ptr,2*sizeof(int));
+
+  //ref meshset ref level 0
+  Tag th_my_ref_level;
+  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  BitRefLevel *ptr_bit_level0;
+  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+  BitRefLevel& bit_level0 = *ptr_bit_level0;
+  bit_level0 = BitRefLevel().set(meshIntefaceBitLevels.back());
+
+  if(verb>0) {
+    PetscPrintf(PETSC_COMM_WORLD,"meshRefineBitLevels: ");
+    int *p = meshRefineBitLevels.begin();
+    for(;p!=meshRefineBitLevels.end();p++) {
+      PetscPrintf(PETSC_COMM_WORLD," %d",*p);
+    }
+    PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+    PetscPrintf(PETSC_COMM_WORLD,"meshIntefaceBitLevels: ");
+    p = meshIntefaceBitLevels.begin();
+    for(;p!=meshIntefaceBitLevels.end();p++) {
+      PetscPrintf(PETSC_COMM_WORLD," %d",*p);
+    }
+    PetscPrintf(PETSC_COMM_WORLD,"\n");
   }
 
   PetscFunctionReturn(0);
@@ -1241,6 +1343,63 @@ PetscErrorCode FaceSplittingTools::calculate_qualityAfterProjectingNodes(Range &
     //PetscPrintf(PETSC_COMM_WORLD,"node %u b = %3.2f\n",mit->first,mit->second);
     rval = mField.get_moab().tag_set_data(th_b,&mit->first,1,&mit->second); CHKERR_PETSC(rval);
   }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FaceSplittingTools::getMask(BitRefLevel &maskPreserv,const int verb) {
+  PetscFunctionBegin;
+
+  PetscBool flg = PETSC_TRUE;
+  PetscInt nb_ref_levels;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ref",&nb_ref_levels,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+    Tag th_set_ref_level;
+    rval = mField.get_moab().tag_get_handle("_SET_REF_LEVEL",th_set_ref_level); CHKERR_PETSC(rval);
+    rval = mField.get_moab().tag_get_data(th_set_ref_level,&root_meshset,1,&nb_ref_levels); CHKERR_PETSC(rval);
+    //cerr << "nb_ref_levels " << nb_ref_levels << endl;
+  }
+
+  if(meshRefineBitLevels.size()<nb_ref_levels) {
+    SETERRQ2(
+      PETSC_COMM_SELF,1,"number of mesh levelsmeshRefineBitLevels.size()<nb_ref_levels %d < %d",
+      meshRefineBitLevels.size(),nb_ref_levels);
+  }
+
+  if(verb>0) {
+    PetscPrintf(PETSC_COMM_WORLD,"meshRefineBitLevels: ");
+    int *p = meshRefineBitLevels.begin();
+    for(;p!=meshRefineBitLevels.end();p++) {
+      PetscPrintf(PETSC_COMM_WORLD," %d",*p);
+    }
+    PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+    PetscPrintf(PETSC_COMM_WORLD,"meshIntefaceBitLevels: ");
+    p = meshIntefaceBitLevels.begin();
+    for(;p!=meshIntefaceBitLevels.end();p++) {
+      PetscPrintf(PETSC_COMM_WORLD," %d",*p);
+    }
+    PetscPrintf(PETSC_COMM_WORLD,"\n");
+  }
+
+  maskPreserv.set();
+  maskPreserv[meshRefineBitLevels.first()] = false;
+  maskPreserv[meshIntefaceBitLevels.back()] = false;
+  maskPreserv[BITREFLEVEL_SIZE-1] = false;
+
+  {
+    int *p = meshRefineBitLevels.end();
+    p--;
+    for(int nn = 0;nn<nb_ref_levels;nn++,p--) {
+      maskPreserv[*p] = false;
+    }
+  }
+
+  if(verb>0) {
+    ostringstream s;
+    s << "maskPreserv: " << maskPreserv << endl;
+    PetscPrintf(PETSC_COMM_WORLD,s.str().c_str());
+  }
+
   PetscFunctionReturn(0);
 }
 
@@ -1422,71 +1581,15 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
 
   //remove old elements
-  BitRefLevel mask = BitRefLevel().set();
-  mask[face_splitting.meshRefineBitLevels.first()] = 0;
-  mask[face_splitting.meshRefineBitLevels.back()] = 0;
-  mask[face_splitting.meshIntefaceBitLevels.back()] = 0;
-  mask[BITREFLEVEL_SIZE-1] = 0;
-  ierr = mField.delete_ents_by_bit_ref(BitRefLevel().set(),mask,1); CHKERRQ(ierr);
+  BitRefLevel maskPreserv;
+  ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
+  ierr = mField.delete_ents_by_bit_ref(BitRefLevel().set(),maskPreserv,1); CHKERRQ(ierr);
 
   //cerr << "bit_level0 " << bit_level0 << endl;
   //cerr << "bit_cat_level " << bit_cat_level << endl;
-
   bit_level0 = bit_cat_level;
 
-  /*PetscPrintf(PETSC_COMM_WORLD,"meshRefineBitLevels: ");
-  int *p = face_splitting.meshRefineBitLevels.begin();
-  for(;p!=face_splitting.meshRefineBitLevels.end();p++) {
-    PetscPrintf(PETSC_COMM_WORLD," %d",*p);
-  }
-  PetscPrintf(PETSC_COMM_WORLD,"\n");
-
-  PetscPrintf(PETSC_COMM_WORLD,"meshIntefaceBitLevels: ");
-  p = face_splitting.meshIntefaceBitLevels.begin();
-  for(;p!=face_splitting.meshIntefaceBitLevels.end();p++) {
-    PetscPrintf(PETSC_COMM_WORLD," %d",*p);
-  }
-  PetscPrintf(PETSC_COMM_WORLD,"\n");
-
-  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
-  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
-
-  //squash bits
-  RefMoFEMEntity_multiIndex::iterator mit = refinedMoFemEntities_ptr->begin();
-  for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
-    if((mask&mit->get_BitRefLevel())==mit->get_BitRefLevel()) {
-      //cerr << mask << endl;
-      //cerr << mit->get_BitRefLevel() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistencies");
-    }
-    BitRefLevel new_bit = BitRefLevel().set(face_splitting.meshRefineBitLevels.first());
-    if( 
-      (BitRefLevel().set(face_splitting.meshRefineBitLevels.back())&mit->get_BitRefLevel()).any()
-    ) {
-      new_bit.set(face_splitting.meshRefineBitLevels.first()+1);
-    }
-    if(
-      (BitRefLevel().set(face_splitting.meshIntefaceBitLevels.back())&mit->get_BitRefLevel()).any()
-    ) {
-      new_bit.set(face_splitting.meshRefineBitLevels.first()+2);
-    }
-    if(
-      (BitRefLevel().set(BITREFLEVEL_SIZE-1)&mit->get_BitRefLevel()).any()
-    ) {
-      new_bit.set(BITREFLEVEL_SIZE-1);
-    } 
-    //cerr << mit->get_BitRefLevel() << " : " << new_bit << endl;
-    const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)->modify(mit,RefMoFEMEntity_change_set_bit(new_bit));
-  }
-  
-  int new_meshRefineBitLevels[] = { 2, face_splitting.meshRefineBitLevels.first(),face_splitting.meshRefineBitLevels.first()+1 };
-  int new_meshIntefaceBitLevels[] = { 1, face_splitting.meshRefineBitLevels.first()+2 };
-  bzero(face_splitting.meshRefineBitLevels.ptr,BITREFLEVEL_SIZE*sizeof(int));
-  bzero(face_splitting.meshIntefaceBitLevels.ptr,BITREFLEVEL_SIZE*sizeof(int));
-  bcopy(new_meshRefineBitLevels,face_splitting.meshRefineBitLevels.ptr,3);
-  bcopy(new_meshIntefaceBitLevels,face_splitting.meshIntefaceBitLevels.ptr,2);
-
-  bit_level0 = BitRefLevel().set(face_splitting.meshIntefaceBitLevels.back());*/
+  //ierr = face_splitting.squashIndices(1); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
