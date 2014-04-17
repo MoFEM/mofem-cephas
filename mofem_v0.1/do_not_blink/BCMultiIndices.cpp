@@ -127,7 +127,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const Cubit_BC_bitset _CubitBCType,
   PetscErrorCode ierr;
   ierr = get_tags_hanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ErrorCode rval;
-  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_THROW(rval);
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_THROW(rval);
 
   switch(_CubitBCType.to_ulong()) {
     case NodeSet:

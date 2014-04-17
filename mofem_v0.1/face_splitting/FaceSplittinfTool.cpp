@@ -1388,11 +1388,19 @@ PetscErrorCode FaceSplittingTools::getMask(BitRefLevel &maskPreserv,const int ve
 
   {
     int *p = meshRefineBitLevels.end();
-    p--;
-    for(int nn = 0;nn<nb_ref_levels;nn++,p--) {
+    for(int nn = 0;nn<nb_ref_levels;nn++) {
+      --p;
       maskPreserv[*p] = false;
     }
   }
+
+  {
+    int *p = meshIntefaceBitLevels.begin();
+    for(;p!=meshIntefaceBitLevels.end();p++) {
+      maskPreserv[*p] = false;
+    }
+  }
+
 
   if(verb>0) {
     ostringstream s;
@@ -1583,11 +1591,22 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   //remove old elements
   BitRefLevel maskPreserv;
   ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
-  ierr = mField.delete_ents_by_bit_ref(BitRefLevel().set(),maskPreserv,1); CHKERRQ(ierr);
+  ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv,3); CHKERRQ(ierr);
 
   //cerr << "bit_level0 " << bit_level0 << endl;
   //cerr << "bit_cat_level " << bit_cat_level << endl;
   bit_level0 = bit_cat_level;
+
+  {
+    EntityHandle out_meshset;
+    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    Range tets;
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr); 
+    rval = mField.get_moab().add_entities(out_meshset,tets); CHKERR_PETSC(rval);
+    rval = mField.get_moab().write_file("debug_meshs_after_delete.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+
 
   //ierr = face_splitting.squashIndices(1); CHKERRQ(ierr);
 

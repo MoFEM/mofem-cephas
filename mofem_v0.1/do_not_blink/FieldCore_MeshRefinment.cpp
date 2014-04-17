@@ -86,7 +86,13 @@ PetscErrorCode FieldCore::add_verices_in_the_middel_of_edges(const Range &_edges
   ref_ents_by_composite::iterator miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
-  for(;miit!=hi_miit;miit++) ref_parent_ents_view.insert(&*miit);
+  for(;miit!=hi_miit;miit++) {
+    pair<RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
+    p_ref_ent_view = ref_parent_ents_view.insert(&*miit);
+    if(!p_ref_ent_view.second) {
+      SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
+    }
+  }
   if(verb > 0) {
     ostringstream ss;
     ss << "ref level " << bit << " nb. edges to refine " << edges.size() << endl;
@@ -142,9 +148,17 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
   ref_ents_by_composite::iterator miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
-  for(;miit!=hi_miit;miit++) ref_parent_ents_view.insert(&*miit);
+  for(;miit!=hi_miit;miit++) {
+    pair<RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
+    p_ref_ent_view = ref_parent_ents_view.insert(&*miit);
+    if(!p_ref_ent_view.second) {
+      SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
+    }
+  }
   typedef RefMoFEMElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
   ref_MoFEMFiniteElement_by_ent &ref_MoFEMFiniteElement = refinedMoFemElements.get<MoABEnt_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>::type ref_ent_by_parent;
+  ref_ent_by_parent &by_parent = refinedMoFemElements.get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>();
   typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_ent_by_composite;
   ref_ent_by_composite &by_composite = refinedMoFemElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   //
@@ -177,7 +191,8 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
     for(int ee = 0;ee<6;ee++) { 
       EntityHandle edge = no_handle;
       rval = moab.side_element(*tit,1,ee,edge);  CHKERR_PETSC(rval);
-      RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator miit_view = ref_parent_ents_view.find(edge);
+      RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator miit_view;
+      miit_view = ref_parent_ents_view.find(edge);
       if(miit_view != ref_parent_ents_view.end()) {
 	if(((*miit_view)->get_BitRefLevel()&bit).any()) {
 	  edge_new_nodes[ee] = (*miit_view)->get_ref_ent(); 
@@ -528,7 +543,11 @@ PetscErrorCode FieldCore::refine_PRISM(const EntityHandle meshset,const BitRefLe
   ref_ents_by_composite::iterator hi_miit = ref_ents_by_comp.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
   for(;miit!=hi_miit;miit++) {
-    ref_parent_ents_view.insert(&*miit);
+    pair<RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
+    p_ref_ent_view = ref_parent_ents_view.insert(&*miit);
+    if(!p_ref_ent_view.second) {
+      SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
+    }
   }
   Range prisms;
   rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,false); CHKERR_PETSC(rval);
@@ -873,7 +892,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
-  const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_nodes_from_bit_level,
+  const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_from_bit_level,
   const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive,
   int verb) {
   PetscFunctionBegin;
@@ -918,19 +937,43 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     ref_ents_by_composite::iterator miit;
     ref_ents_by_composite::iterator hi_miit;
     //view by parent type (VERTEX)
-    if(inheret_nodes_from_bit_level.any()) {
+    if(inheret_from_bit_level.any()) {
       miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
       hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
-      for(;miit!=hi_miit;miit++) ref_parent_ents_view.insert(&*miit);
+      for(;miit!=hi_miit;miit++) {
+	if((miit->get_BitRefLevel()&inheret_from_bit_level) == miit->get_BitRefLevel()) {
+	  pair<RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
+	  p_ref_ent_view = ref_parent_ents_view.insert(&*miit);
+	  if(!p_ref_ent_view.second) {
+	    SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
+	  }
+	}
+      }
     }
     //view by parent type (TET and PRISM) 
     {
       miit = ref_ents.lower_bound(boost::make_tuple(MBTET,MBTET));
       hi_miit = ref_ents.upper_bound(boost::make_tuple(MBTET,MBTET));
-      for(;miit!=hi_miit;miit++) ref_parent_ents_view.insert(&*miit);
+      for(;miit!=hi_miit;miit++) {
+	if((miit->get_BitRefLevel()&inheret_from_bit_level) == miit->get_BitRefLevel()) {
+	  pair<RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
+	  p_ref_ent_view = ref_parent_ents_view.insert(&*miit);
+	  if(!p_ref_ent_view.second) {
+	    SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
+	  }
+	}
+      }
       miit = ref_ents.lower_bound(boost::make_tuple(MBPRISM,MBPRISM));
       hi_miit = ref_ents.upper_bound(boost::make_tuple(MBPRISM,MBPRISM));
-      for(;miit!=hi_miit;miit++) ref_parent_ents_view.insert(&*miit);
+      for(;miit!=hi_miit;miit++) {
+	if((miit->get_BitRefLevel()&inheret_from_bit_level) == miit->get_BitRefLevel()) {
+	  pair<RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
+	  p_ref_ent_view = ref_parent_ents_view.insert(&*miit);
+	  if(!p_ref_ent_view.second) {
+	    SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
+	  }
+	}
+      }
     }
   }
   //maps nodes on "father" and "mather" side
@@ -949,13 +992,13 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
     }
     EntityHandle child_entity = 0;
     RefMoFEMEntity_multiIndex::iterator child_it;
-    if(inheret_nodes_from_bit_level.any()) {
+    if(inheret_from_bit_level.any()) {
       RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator child_iit;
       child_iit = ref_parent_ents_view.find(*nit);
       if(child_iit != ref_parent_ents_view.end()) {
 	child_it = refinedMoFemEntities.find((*child_iit)->get_ref_ent());
 	BitRefLevel bit_child = child_it->get_BitRefLevel();
-	if( (inheret_nodes_from_bit_level&bit_child).any() ) {
+	if( (inheret_from_bit_level&bit_child).any() ) {
 	  child_entity = child_it->get_ref_ent();
 	}
       }
@@ -1168,8 +1211,8 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	  if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"new_ent %u\n",new_ent.size());
 	  //add prism element
 	  if(add_iterfece_entities) {
-	    if(inheret_nodes_from_bit_level.any()) {
-	      SETERRQ(PETSC_COMM_SELF,1,"not implemented for inheret_nodes_from_bit_level");
+	    if(inheret_from_bit_level.any()) {
+	      SETERRQ(PETSC_COMM_SELF,1,"not implemented for inheret_from_bit_level");
 	    }
 	    //set prism connectivity
 	    EntityHandle prism_conn[6] = { 

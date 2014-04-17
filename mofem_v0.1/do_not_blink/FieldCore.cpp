@@ -76,7 +76,7 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
     rval = moab.tag_get_data(th_RefFEMeshset,&root_meshset,1,&ref_fe_meshset); CHKERR_THROW(rval);
   } else {
     CHKERR_THROW(rval);
-    rval = moab.create_meshset(MESHSET_SET,ref_fe_meshset); CHKERR_THROW(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,ref_fe_meshset); CHKERR_THROW(rval);
     rval = moab.tag_set_data(th_RefFEMeshset,&root_meshset,1,&ref_fe_meshset); CHKERR_THROW(rval);
   }
     
@@ -270,7 +270,7 @@ PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const
     }
   } else {
     EntityHandle meshset;
-    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
     //id
     rval = moab.tag_set_data(th_FieldId,&meshset,1,&id); CHKERR_PETSC(rval);
     //space
@@ -1382,7 +1382,7 @@ PetscErrorCode FieldCore::add_finite_element(const string &MoFEMFiniteElement_na
     if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) PetscFunctionReturn(0);
   }
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
   //id
   BitFEId id = get_BitFEId();
   rval = moab.tag_set_data(th_FEId,&meshset,1,&id); CHKERR_PETSC(rval);
@@ -1550,7 +1550,7 @@ PetscErrorCode FieldCore::list_finite_elements() const {
 PetscErrorCode FieldCore::add_problem(const BitProblemId id,const string& name) {
   PetscFunctionBegin;
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
   rval = moab.tag_set_data(th_ProblemId,&meshset,1,&id); CHKERR_PETSC(rval);
   void const* tag_data[] = { name.c_str() };
   int tag_sizes[1]; tag_sizes[0] = name.size();
@@ -3529,26 +3529,82 @@ PetscErrorCode FieldCore::seed_ref_level_MESHSET(const EntityHandle meshset,cons
 PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
   PetscFunctionBegin;
   Range ents_to_delete;
-  RefMoFEMEntity_multiIndex::iterator ent_it = refinedMoFemEntities.begin();
-  for(;ent_it!=refinedMoFemEntities.end();ent_it++) {
-    BitRefLevel bit2 = ent_it->get_BitRefLevel(); 
-    if((bit2&mask)!=bit2) continue;
-    if((bit2&bit).any()) {
-      ents_to_delete.insert(ent_it->get_ref_ent());
+  rval = moab.get_entities_by_handle(0,ents_to_delete,false); CHKERR_PETSC(rval);
+  {
+    Range::iterator eit = ents_to_delete.begin();
+    for(;eit != ents_to_delete.end();) {
+	
+      if(moab.type_from_handle(*eit) == MBENTITYSET) {
+  	eit = ents_to_delete.erase(eit);
+      } else {
+
+	RefMoFEMEntity mofem_ent(moab,*eit);
+  
+	//skip entities which has bit ref level not set
+	//or bit ref level is zero
+	if(mofem_ent.get_BitRefLevel().none()) {
+	  eit = ents_to_delete.erase(eit);
+	} else {
+	  //if ent bit to much whith mask
+	  if( (mofem_ent.get_BitRefLevel()&mask)!=mofem_ent.get_BitRefLevel() ) {
+	    eit = ents_to_delete.erase(eit);
+	  } else {
+	    if( (mofem_ent.get_BitRefLevel()&bit).any() ) {
+	      if(verb>3) {
+		ostringstream ss;
+		ss << mofem_ent.get_BitRefLevel() << endl;
+		PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	      }
+	      eit++;
+	    } else {
+	      eit = ents_to_delete.erase(eit);
+	    }
+	  }
+	}
+
+      }
+
     }
   }
   ierr = remove_ents_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
-  moabCubitMeshSet_multiIndex::iterator cubit_it;
-  cubit_it = cubit_meshsets.begin();
-  for(;cubit_it!=cubit_meshsets.end();cubit_it++) {
-    EntityHandle cubit_meshset = cubit_it->meshset; 
-    rval = moab.remove_entities(cubit_meshset,ents_to_delete); CHKERR_PETSC(rval);
+  { //do not delete entities which are parents
+    Range::iterator eit = ents_to_delete.begin();
+    for(;eit != ents_to_delete.end();) {
+      RefMoFEMEntity_multiIndex::index<MoABEnt_MoABEnt_mi_tag>::type::iterator pit,hi_pit;
+      pit = refinedMoFemEntities.get<MoABEnt_MoABEnt_mi_tag>().lower_bound(*eit);
+      hi_pit = refinedMoFemEntities.get<MoABEnt_MoABEnt_mi_tag>().upper_bound(*eit);
+      if(distance(pit,hi_pit)>0) {
+	eit = ents_to_delete.erase(eit);
+      } else {
+	eit++;
+      }
+    }
   }
-  rval = moab.delete_entities(ents_to_delete); CHKERR_PETSC(rval);
+  { //remove deleted entities form cubit meshsets
+    moabCubitMeshSet_multiIndex::iterator cubit_it;
+    cubit_it = cubit_meshsets.begin();
+    for(;cubit_it!=cubit_meshsets.end();cubit_it++) {
+      EntityHandle cubit_meshset = cubit_it->meshset; 
+      rval = moab.remove_entities(cubit_meshset,ents_to_delete); CHKERR_PETSC(rval);
+    }
+  }
   if(verb>0) {
     PetscPrintf(PETSC_COMM_WORLD,"number of deleted entities = %u\n",ents_to_delete.size());
 
   }
+
+  if(verb>2) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    rval = moab.add_entities(out_meshset,ents_to_delete.subset_by_type(MBTET)); CHKERR_PETSC(rval);
+    rval = moab.write_file("debug_ents_to_delete.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+
+  }
+  
+  //delete entities form moab
+  rval = moab.delete_entities(ents_to_delete); CHKERR_PETSC(rval);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
