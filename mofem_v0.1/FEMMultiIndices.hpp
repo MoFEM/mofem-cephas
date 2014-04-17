@@ -36,8 +36,8 @@ struct RefMoFEMElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
 
   SideNumber_multiIndex side_number_table;
   RefMoFEMElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  inline const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
-  int get_BitRefEdges_ulong() const { return 0; }
+  virtual const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
+  virtual int get_BitRefEdges_ulong() const { return 0; }
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   virtual SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const {
     NOT_USED(moab);
@@ -65,7 +65,7 @@ struct RefMoFEMElement_PRISM: public RefMoFEMElement {
   RefMoFEMElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
   const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
-  inline const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
+  const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
 };
 
@@ -79,7 +79,7 @@ struct RefMoFEMElement_TET: public RefMoFEMElement {
   const RefMoFEMElement* get_RefMoFEMElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
-  inline const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
+  const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
   inline int get_ref_type() const { return tag_type_data[0]; }
   inline int get_ref_sub_type() const { return tag_type_data[1]; }
