@@ -69,7 +69,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 				PetscOptionsGetInt(PETSC_NULL,"-GDIM_at_interface",&no_gauss_points,&flg);
 				if(flg!=PETSC_TRUE) no_gauss_points = 37;
 				PetscOptionsGetInt(PETSC_NULL,"-GM_rule",&gm_rule,&flg);
-				if(flg!=PETSC_TRUE) gm_rule = 1;
+				if(flg!=PETSC_TRUE) gm_rule = 5;
 				
 			propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
@@ -203,7 +203,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 			g_NTET.resize(4*sizeGMruleTET);
 			ierr = ShapeMBTET(&g_NTET[0],G_X_TET,G_Y_TET,G_Z_TET,sizeGMruleTET); CHKERRQ(ierr);
 			
-
       // See FEAP - - A Finite Element Analysis Program
       D_lambda.resize(6,6);
       D_lambda.clear();

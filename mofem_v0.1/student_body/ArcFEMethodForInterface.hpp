@@ -42,10 +42,40 @@ struct ArcInterfaceElasticFEMethod: public ElasticFEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    g_NTET.resize(4*45);
-    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    g_NTRI.resize(3*28);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
+//    g_NTET.resize(4*45);
+//    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+//    g_NTRI.resize(3*28);
+//    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28);
+		
+//		ierr=ElasticFEMethod::preProcess(); CHKERRQ(ierr);
+		const int sizeGMruleTRI = gm_rule_size ( gm_rule, 2 );
+		vector<double> G_X_TRI_vec(sizeGMruleTRI,0);
+		vector<double> G_Y_TRI_vec(sizeGMruleTRI,0);
+		G_W_TRI_vec.resize(sizeGMruleTRI);
+		double *G_X_TRI, *G_Y_TRI;
+		G_X_TRI = &*G_X_TRI_vec.begin();
+		G_Y_TRI = &*G_Y_TRI_vec.begin();
+		G_W_TRI = &*G_W_TRI_vec.begin();
+		
+		ierr = Grundmann_Moeller_integration_points_2D_TRI(gm_rule,G_X_TRI,G_Y_TRI,G_W_TRI); CHKERRQ(ierr);
+		g_NTRI.resize(3*sizeGMruleTRI);
+		ierr = ShapeMBTRI(&g_NTRI[0],G_X_TRI,G_Y_TRI,sizeGMruleTRI); CHKERRQ(ierr);
+		
+		const int sizeGMruleTET = gm_rule_size ( gm_rule, 3 );
+		vector<double> G_X_TET_vec(sizeGMruleTET,0);
+		vector<double> G_Y_TET_vec(sizeGMruleTET,0);
+		vector<double> G_Z_TET_vec(sizeGMruleTET,0);
+		G_W_TET_vec.resize(sizeGMruleTET);
+		double *G_X_TET, *G_Y_TET, *G_Z_TET;
+		G_X_TET = &*G_X_TET_vec.begin();
+		G_Y_TET = &*G_Y_TET_vec.begin();
+		G_Z_TET = &*G_Z_TET_vec.begin();
+		G_W_TET = &*G_W_TET_vec.begin();
+		
+		ierr = Grundmann_Moeller_integration_points_3D_TET(gm_rule,G_X_TET,G_Y_TET,G_Z_TET,G_W_TET); CHKERRQ(ierr);
+		g_NTET.resize(4*sizeGMruleTET);
+		ierr = ShapeMBTET(&g_NTET[0],G_X_TET,G_Y_TET,G_Z_TET,sizeGMruleTET); CHKERRQ(ierr);
+		
     // See FEAP - - A Finite Element Analysis Program
     D_lambda = ublas::zero_matrix<FieldData>(6,6);
     for(int rr = 0;rr<3;rr++) {
@@ -198,6 +228,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
     ierr = PetscTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
     g_NTRI.resize(3*28);
@@ -420,7 +451,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > traction;
 	    traction = prod(Dglob,gap[gg]);
 	    if(traction.size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	    double w = area3*G_TRI_W28[gg];
+	    double w = area3*G_W_TRI[gg];
 	    for(int rr = 0;rr<row_mat;rr++) {
 	      ublas::matrix<FieldData> &N = (rowNMatrices[rr])[gg];
 	      ublas::vector<FieldData> f_int = prod(trans(N),w*traction);
@@ -472,7 +503,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 	    } else {
 	      ierr = CalcTangetDglob(_omega_,g[gg],gap_loc[gg]); CHKERRQ(ierr);
 	    }
-	    double w = area3*G_TRI_W28[gg];
+	    double w = area3*G_W_TRI[gg];
 	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
 	    K(rr,cc) += prod(NTD , col_Mat ); 
 	  }

@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
 				for (int rank = 0; rank<rank_size; rank++) {
 					myfile<<"[";
 					for (int ii=0; ii<3; ii++) {
-						if (data[3*rank_size*gg+3*rank+ii]<1e-15 && data[3*rank_size*gg+3*rank+ii]>-1e-15) {
+						if (data[3*rank_size*gg+3*rank+ii]<1e-12 && data[3*rank_size*gg+3*rank+ii]>-1e-12) {
 							myfile<<0<<",";
 						}
 						else{

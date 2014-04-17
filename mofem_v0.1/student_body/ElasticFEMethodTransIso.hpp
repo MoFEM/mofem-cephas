@@ -325,6 +325,37 @@ namespace MoFEM {
 		
     PetscErrorCode preProcess() {
 			PetscFunctionBegin;
+			
+			ierr = ElasticFEMethod::preProcess(); CHKERRQ(ierr);
+			
+//			const int sizeGMruleTRI = gm_rule_size ( gm_rule, 2 );
+//			vector<double> G_X_TRI_vec(sizeGMruleTRI,0);
+//			vector<double> G_Y_TRI_vec(sizeGMruleTRI,0);
+//			G_W_TRI_vec.resize(sizeGMruleTRI);
+//			double *G_X_TRI, *G_Y_TRI;
+//			G_X_TRI = &*G_X_TRI_vec.begin();
+//			G_Y_TRI = &*G_Y_TRI_vec.begin();
+//			G_W_TRI = &*G_W_TRI_vec.begin();
+//			
+//			ierr = Grundmann_Moeller_integration_points_2D_TRI(gm_rule,G_X_TRI,G_Y_TRI,G_W_TRI); CHKERRQ(ierr);
+//			g_NTRI.resize(3*sizeGMruleTRI);
+//			ierr = ShapeMBTRI(&g_NTRI[0],G_X_TRI,G_Y_TRI,sizeGMruleTRI); CHKERRQ(ierr);
+//			
+//			const int sizeGMruleTET = gm_rule_size ( gm_rule, 3 );
+//			vector<double> G_X_TET_vec(sizeGMruleTET,0);
+//			vector<double> G_Y_TET_vec(sizeGMruleTET,0);
+//			vector<double> G_Z_TET_vec(sizeGMruleTET,0);
+//			G_W_TET_vec.resize(sizeGMruleTET);
+//			double *G_X_TET, *G_Y_TET, *G_Z_TET;
+//			G_X_TET = &*G_X_TET_vec.begin();
+//			G_Y_TET = &*G_Y_TET_vec.begin();
+//			G_Z_TET = &*G_Z_TET_vec.begin();
+//			G_W_TET = &*G_W_TET_vec.begin();
+//			
+//			ierr = Grundmann_Moeller_integration_points_3D_TET(gm_rule,G_X_TET,G_Y_TET,G_Z_TET,G_W_TET); CHKERRQ(ierr);
+//			g_NTET.resize(4*sizeGMruleTET);
+//			ierr = ShapeMBTET(&g_NTET[0],G_X_TET,G_Y_TET,G_Z_TET,sizeGMruleTET); CHKERRQ(ierr);
+			
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
       PetscSynchronizedFlush(PETSC_COMM_WORLD);
       ierr = PetscTime(&v1); CHKERRQ(ierr);
@@ -568,15 +599,16 @@ namespace MoFEM {
     PetscErrorCode operator()() {
 			
 			PetscFunctionBegin;
+
 			ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 			ierr = GetMatrices(); CHKERRQ(ierr);
-			
+
 			//Dirihlet Boundary Condition
 			ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 			
 			//Assembly Aij and F
 			ierr = RhsAndLhs(); CHKERRQ(ierr);
-			
+
 			//Neumann Boundary Conditions
 			ierr = NeumannBC(F); CHKERRQ(ierr);
 			
@@ -1263,6 +1295,8 @@ namespace MoFEM {
 		//--------------------------------------------------------------------------------------------------------------------------------------------------//
 		PetscErrorCode preProcess() {
 			PetscFunctionBegin;
+			ierr = ElasticFEMethod::preProcess(); CHKERRQ(ierr);
+
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
       PetscSynchronizedFlush(PETSC_COMM_WORLD);
       ierr = PetscTime(&v1); CHKERRQ(ierr);
@@ -1276,6 +1310,7 @@ namespace MoFEM {
 		//--------------------------------------------------------------------------------------------------------------------------------------------------//
     PetscErrorCode operator()() {
 			PetscFunctionBegin;
+
 			ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 			ierr = GetMatrices(); CHKERRQ(ierr);
 			
