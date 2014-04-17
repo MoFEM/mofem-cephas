@@ -27,6 +27,9 @@
 #include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
+extern "C" {
+#include <gm_rule.h>
+}
 
 #include "ElasticFEMethod.hpp"
 #include "PostProcVertexMethod.hpp"
@@ -36,7 +39,7 @@ namespace MoFEM {
 
 struct InterfaceFEMethod: public ElasticFEMethod {
 
-  double YoungModulus; 
+  double YoungModulus;
   ublas::matrix<double> R;
   ublas::matrix<double> Dglob;
   double tangent1[3],tangent2[3];
@@ -50,12 +53,15 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     };
 
   InterfaceFEMethod(
-      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _YoungModulus): 
-	ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0),YoungModulus(_YoungModulus) {
-    DispData.resize(1+6+2);
-    };
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _YoungModulus):
+	ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0),YoungModulus(_YoungModulus){
+		DispData.resize(1+6+2);
+	};
 
-  const double *G_TRI_W;
+	double *G_TRI_W,*G_TET_W;
+	vector<double> G_TRI_W_vec;
+	vector<double> G_TET_W_vec;
+
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
@@ -63,15 +69,45 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 
     ierr = PetscTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-    g_NTET.resize(4*45);
-    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+//    g_NTET.resize(4*45);
+//    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
     //g_NTRI.resize(3*28);
     //ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
     //G_TRI_W = G_TRI_W28;
-    g_NTRI.resize(3*37);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X37,G_TRI_Y37,37); 
-    G_TRI_W = G_TRI_W37;
+//		const double *G_TRI_X,*G_TRI_Y;
+//		ierr = GetIntegrationPointsMBTRI(no_gauss_points,&G_TRI_X,&G_TRI_Y,&G_TRI_W);
+//		
+//		g_NTRI.resize(3*no_gauss_points);
+//    ShapeMBTRI(&g_NTRI[0],G_TRI_X,G_TRI_Y,no_gauss_points);
 
+		const int sizeGMruleTRI = gm_rule_size ( gm_rule, 2 );
+		vector<double> G_TRI_X_vec(sizeGMruleTRI,0);
+		vector<double> G_TRI_Y_vec(sizeGMruleTRI,0);
+		G_TRI_W_vec.resize(sizeGMruleTRI);
+		double *G_TRI_X, *G_TRI_Y;
+		G_TRI_X = &*G_TRI_X_vec.begin();
+		G_TRI_Y = &*G_TRI_Y_vec.begin();
+		G_TRI_W = &*G_TRI_W_vec.begin();
+
+		ierr = Grundmann_Moeller_integration_points_2D_TRI(gm_rule,G_TRI_X,G_TRI_Y,G_TRI_W); CHKERRQ(ierr);
+		g_NTRI.resize(3*sizeGMruleTRI);
+		ierr = ShapeMBTRI(&g_NTRI[0],G_TRI_X,G_TRI_Y,sizeGMruleTRI); CHKERRQ(ierr);
+		
+		const int sizeGMruleTET = gm_rule_size ( gm_rule, 3 );
+		vector<double> G_TET_X_vec(sizeGMruleTET,0);
+		vector<double> G_TET_Y_vec(sizeGMruleTET,0);
+		vector<double> G_TET_Z_vec(sizeGMruleTET,0);
+		G_TET_W_vec.resize(sizeGMruleTET);
+		double *G_TET_X, *G_TET_Y, *G_TET_Z;
+		G_TET_X = &*G_TET_X_vec.begin();
+		G_TET_Y = &*G_TET_Y_vec.begin();
+		G_TET_Z = &*G_TET_Z_vec.begin();
+		G_TET_W = &*G_TET_W_vec.begin();
+
+		ierr = Grundmann_Moeller_integration_points_3D_TET(gm_rule,G_TET_X,G_TET_Y,G_TET_Z,G_TET_W); CHKERRQ(ierr);
+		g_NTET.resize(4*sizeGMruleTET);
+		ierr = ShapeMBTET(&g_NTET[0],G_TET_X,G_TET_Y,G_TET_Z,sizeGMruleTET); CHKERRQ(ierr);
+		
     PetscFunctionReturn(0);
   }
 
@@ -134,6 +170,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 
   virtual PetscErrorCode LhsInt() {
     PetscFunctionBegin;
+		
     int g_dim = g_NTRI.size()/3;
     K.resize(row_mat,col_mat);
     for(int rr = 0;rr<row_mat;rr++) {

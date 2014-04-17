@@ -21,6 +21,9 @@
 #define __ELASTICFEMETHOD_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
+extern "C" {
+#include <gm_rule.h>
+}
 
 namespace MoFEM {
 
@@ -35,12 +38,14 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL) {};
 
     bool propeties_from_BlockSet_Mat_ElasticSet;
+		int no_gauss_points;
+		int gm_rule;
+	
     ElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
       double _lambda,double _mu): 
       FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
-      Aij(_Aij),Data(_D),F(_F),
-      lambda(_lambda),mu(_mu) { 
+      Aij(_Aij),Data(_D),F(_F),lambda(_lambda),mu(_mu) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
       RowGlob.resize(1+6+4+1);
@@ -60,17 +65,17 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	VecSetOption(F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
       }
 
-      g_NTET.resize(4*45);
-      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      G_W_TET = G_TET_W45;
-      g_NTRI.resize(3*28);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
-      G_W_TRI = G_TRI_W28;
-
-      propeties_from_BlockSet_Mat_ElasticSet = false;
+				PetscBool flg = PETSC_TRUE;
+				PetscOptionsGetInt(PETSC_NULL,"-GDIM_at_interface",&no_gauss_points,&flg);
+				if(flg!=PETSC_TRUE) no_gauss_points = 37;
+				PetscOptionsGetInt(PETSC_NULL,"-GM_rule",&gm_rule,&flg);
+				if(flg!=PETSC_TRUE) gm_rule = 1;
+				
+			propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 	propeties_from_BlockSet_Mat_ElasticSet = true;
       }
+			
 
     }; 
 
@@ -151,19 +156,53 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    
+	vector<double> g_NTET, g_NTRI;
+	double *G_W_TRI;
+	double *G_W_TET;
+	vector<double> G_W_TRI_vec;
+	vector<double> G_W_TET_vec;
+  
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
       PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       ierr = PetscTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-      g_NTET.resize(4*45);
-      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      G_W_TET = G_TET_W45;
-      g_NTRI.resize(3*28);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
-      G_W_TRI = G_TRI_W28;
+//      g_NTET.resize(4*45);
+//      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+//      G_W_TET = G_TET_W45;
+//      g_NTRI.resize(3*28);
+//      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28);
+//      G_W_TRI = G_TRI_W28;
+			
+			const int sizeGMruleTRI = gm_rule_size ( gm_rule, 2 );
+			vector<double> G_X_TRI_vec(sizeGMruleTRI,0);
+			vector<double> G_Y_TRI_vec(sizeGMruleTRI,0);
+			G_W_TRI_vec.resize(sizeGMruleTRI);
+			double *G_X_TRI, *G_Y_TRI;
+			G_X_TRI = &*G_X_TRI_vec.begin();
+			G_Y_TRI = &*G_Y_TRI_vec.begin();
+			G_W_TRI = &*G_W_TRI_vec.begin();
+			
+			ierr = Grundmann_Moeller_integration_points_2D_TRI(gm_rule,G_X_TRI,G_Y_TRI,G_W_TRI); CHKERRQ(ierr);
+			g_NTRI.resize(3*sizeGMruleTRI);
+			ierr = ShapeMBTRI(&g_NTRI[0],G_X_TRI,G_Y_TRI,sizeGMruleTRI); CHKERRQ(ierr);
+
+			const int sizeGMruleTET = gm_rule_size ( gm_rule, 3 );
+			vector<double> G_X_TET_vec(sizeGMruleTET,0);
+			vector<double> G_Y_TET_vec(sizeGMruleTET,0);
+			vector<double> G_Z_TET_vec(sizeGMruleTET,0);
+			G_W_TET_vec.resize(sizeGMruleTET);
+			double *G_X_TET, *G_Y_TET, *G_Z_TET;
+			G_X_TET = &*G_X_TET_vec.begin();
+			G_Y_TET = &*G_Y_TET_vec.begin();
+			G_Z_TET = &*G_Z_TET_vec.begin();
+			G_W_TET = &*G_W_TET_vec.begin();
+			
+			ierr = Grundmann_Moeller_integration_points_3D_TET(gm_rule,G_X_TET,G_Y_TET,G_Z_TET,G_W_TET); CHKERRQ(ierr);
+			g_NTET.resize(4*sizeGMruleTET);
+			ierr = ShapeMBTET(&g_NTET[0],G_X_TET,G_Y_TET,G_Z_TET,sizeGMruleTET); CHKERRQ(ierr);
+			
 
       // See FEAP - - A Finite Element Analysis Program
       D_lambda.resize(6,6);

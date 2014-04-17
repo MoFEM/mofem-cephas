@@ -228,16 +228,22 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
-  //reduce level of approximation for entities on inetrface
-  Range prims;
-  ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
-  Range prims_faces;
-  rval = mField.get_moab().get_adjacencies(prims,2,false,prims_faces,Interface::UNION); CHKERR_PETSC(rval);
-  Range prims_faces_edges;
-  rval = mField.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,Interface::UNION); CHKERR_PETSC(rval);
-  ierr = mField.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
-  ierr = mField.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
-
+	PetscBool oscillationBool;
+	ierr = PetscOptionsGetBool(PETSC_NULL,"-my_interface_order_reduction",&oscillationBool,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+		oscillationBool=PETSC_FALSE;}
+	
+	if (oscillationBool==PETSC_TRUE) {
+		//reduce level of approximation for entities on inetrface
+		Range prims;
+		ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
+		Range prims_faces;
+		rval = mField.get_moab().get_adjacencies(prims,2,false,prims_faces,Interface::UNION); CHKERR_PETSC(rval);
+		Range prims_faces_edges;
+		rval = mField.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,Interface::UNION); CHKERR_PETSC(rval);
+		ierr = mField.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
+		ierr = mField.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
+	}
   /****/
   //build database
 
@@ -268,7 +274,6 @@ int main(int argc, char *argv[]) {
   //print block sets with materials
   ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
 
-
   //create matrices
   Vec D,F;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
@@ -298,7 +303,7 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
-  const double alpha = 1;
+  const double alpha = 1e12;
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
   MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));

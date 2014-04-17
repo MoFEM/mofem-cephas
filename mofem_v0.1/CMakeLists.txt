@@ -106,6 +106,7 @@ add_library(mofem_Field
   SnesCtx.cpp
   third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
+  third_party/gm_rule.c
   do_not_blink/CoreDataStructures.cpp
   do_not_blink/EntsMultiIndices.cpp
   do_not_blink/DofsMultiIndices.cpp
