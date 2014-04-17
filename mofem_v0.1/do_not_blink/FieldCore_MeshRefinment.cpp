@@ -1176,14 +1176,8 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 	      conn[0],conn[1],conn[2],
 	      new_conn[0],new_conn[1],new_conn[2] 
 	    };
-	    Range new_conn_prism;
-	    rval = moab.get_adjacencies(new_conn,6,3,false,new_conn_prism); CHKERR(rval);
 	    EntityHandle prism;
-	    if(new_conn_prism.empty()) {
-	      rval = moab.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
-	    } else {
-	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	    }
+	    rval = moab.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
 	    ierr = add_prism_to_mofem_database(prism,verb); CHKERRQ(ierr);
 	    rval = moab.add_entities(meshset_for_bit_level,&prism,1); CHKERR_PETSC(rval);
 	  }
