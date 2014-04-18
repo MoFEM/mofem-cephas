@@ -490,17 +490,20 @@ static void EntMoFEMFiniteElement_dofs_change(
 
 void EntMoFEMFiniteElement_row_dofs_change::operator()(EntMoFEMFiniteElement &MoFEMFiniteElement) { 
   EntMoFEMFiniteElement_dofs_change(
-    moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidRow,(const void **)&MoFEMFiniteElement.tag_row_uids_data,&MoFEMFiniteElement.tag_row_uids_size);
+    moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidRow,
+    (const void **)&MoFEMFiniteElement.tag_row_uids_data,&MoFEMFiniteElement.tag_row_uids_size);
 }
 
 void EntMoFEMFiniteElement_col_dofs_change::operator()(EntMoFEMFiniteElement &MoFEMFiniteElement) { 
   EntMoFEMFiniteElement_dofs_change(
-    moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidCol,(const void **)&MoFEMFiniteElement.tag_col_uids_data,&MoFEMFiniteElement.tag_col_uids_size);
+    moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidCol,
+    (const void **)&MoFEMFiniteElement.tag_col_uids_data,&MoFEMFiniteElement.tag_col_uids_size);
 }
 
 void EntMoFEMFiniteElement_data_dofs_change::operator()(EntMoFEMFiniteElement &MoFEMFiniteElement) { 
   EntMoFEMFiniteElement_dofs_change(
-    moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidData,(const void **)&MoFEMFiniteElement.tag_data_uids_data,&MoFEMFiniteElement.tag_data_uids_size);
+    moab,uids_view,MoFEMFiniteElement.get_ent(),MoFEMFiniteElement.fe_ptr->th_DofUidData,
+    (const void **)&MoFEMFiniteElement.tag_data_uids_data,&MoFEMFiniteElement.tag_data_uids_size);
 }
 
 

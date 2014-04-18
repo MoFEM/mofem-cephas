@@ -169,9 +169,9 @@ struct FaceSplittingTools {
   BitRefLevelVector meshRefineBitLevels;
   BitRefLevelVector meshIntefaceBitLevels;
 
-  PetscErrorCode catMesh(const int verb = 0);
-  PetscErrorCode meshRefine(const int verb = 0);
-  PetscErrorCode splitFaces(const int verb = 0);
+  PetscErrorCode catMesh(const int verb = -1);
+  PetscErrorCode meshRefine(const int verb = -1);
+  PetscErrorCode splitFaces(const int verb = -1);
 
   PetscErrorCode addNewSurfaceFaces_to_Cubit_msId200();
   PetscErrorCode addcrackFront_to_Cubit201();
@@ -181,8 +181,8 @@ struct FaceSplittingTools {
    */
   PetscErrorCode projectCrackFrontNodes();
 
-  PetscErrorCode getMask(BitRefLevel &maskPreserv,const int verb = 0);
-  PetscErrorCode squashIndices(const int verb);
+  PetscErrorCode getMask(BitRefLevel &maskPreserv,const int verb = -1);
+  PetscErrorCode squashIndices(const int verb = -1);
 
   private:
   ErrorCode rval;

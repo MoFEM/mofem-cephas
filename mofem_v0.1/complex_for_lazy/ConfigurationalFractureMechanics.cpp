@@ -3161,9 +3161,16 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	if(!first_step_converged) {
 	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  load_factor = load_factor0;
-	  da = 0.5*da;
-	  _da_ = da;
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
+	  if(da > 0) {
+	    da = 0.5*da;
+	    _da_ = da;
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
+	  } else {
+	    if(ii>1) {
+	      SETERRQ(PETSC_COMM_SELF,1,"* unable to converge\n");
+	    }
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, try line searcher\n"); CHKERRQ(ierr);
+	  }
 	} else {
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
 	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -3364,11 +3371,32 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	      ierr = mField.set_global_VecCreateGhost(
 		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 	      nb_sub_steps++;
 	      break;
 	    }
 	  }
-	  if(nb_sub_steps == 10) break;
+	  if(nb_sub_steps >= 10) break;
+
+	  //do sanity check if meshsmoother converged and no inverted elements
+	  if(nn-1 == nb_sub_steps) {
+	    ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
+	    SNESConvergedReason reason;
+	    SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+	    if(ierr == 0 && reason > 0) {
+	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+	      conf_prob.material_FirelWall->
+		operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
+	      ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+	    } else {
+	      ierr = mField.set_global_VecCreateGhost(
+		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+	      nb_sub_steps++;
+	    }
+	  }
+
 	} while(nn-1 != nb_sub_steps);
 	ierr = VecDestroy(&D_tmp_mesh_positions); CHKERRQ(ierr);
 	ierr = SNESDestroy(&snes); CHKERRQ(ierr);
@@ -3376,11 +3404,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
 	ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
-	ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-	conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
-	conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
+	//save on mesh spatial positions
+	conf_prob.material_FirelWall->
+	  operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
 	ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
-	ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
 
 	//solve spatial problem
 	ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  

@@ -1955,7 +1955,9 @@ PetscErrorCode FieldCore::build_finite_elements(const EntMoFEMFiniteElement &Ent
 	    }
 	    adj_ents.insert(nodes.begin(),nodes.end());
 	    //add edges
-	    if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
+	    if(edges.empty()) {
+	      moab.get_adjacencies(&fe_ent,1,1,false,edges);
+	    }
 	    adj_ents.insert(edges.begin(),edges.end());
 	    for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) p.first->get_side_number_ptr(moab,*eeit);
 	    //add faces

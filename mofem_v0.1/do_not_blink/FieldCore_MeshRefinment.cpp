@@ -313,7 +313,10 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
     if(miit_composite!=hi_miit_composite) {
       //if that tet has the same pattern of splitted edges it has to have the same number of refined 
       //children elements - if not thorw an error
-      if(ref_tets_bit.count()!=(unsigned int)nb_new_tets) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      if(ref_tets_bit.count()!=(unsigned int)nb_new_tets) {
+	SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency ref_tets_bit.count()!=(unsigned int)nb_new_tets %d != %d",
+	ref_tets_bit.count(),(unsigned int)nb_new_tets);
+      }
     } else {
       //if this element was not refined or was refined with diffrent patterns of splitted edges create new elements
       for(int tt = 0;tt<nb_new_tets;tt++) {
