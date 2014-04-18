@@ -63,6 +63,8 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
+  ierr = mField.seed_ref_level_3D(0,BitRefLevel()); CHKERRQ(ierr);
+
   ConfigurationalFractureMechanics conf_prob(mField);
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 

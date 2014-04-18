@@ -76,6 +76,8 @@ int main(int argc, char *argv[]) {
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
+  ierr = mField.seed_ref_level_3D(0,BitRefLevel()); CHKERRQ(ierr);
+
   ierr = mField.build_fields(); CHKERRQ(ierr);
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
