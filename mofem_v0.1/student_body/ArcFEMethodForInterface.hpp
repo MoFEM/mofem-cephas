@@ -47,7 +47,6 @@ struct ArcInterfaceElasticFEMethod: public ElasticFEMethod {
 //    g_NTRI.resize(3*28);
 //    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28);
 		
-//		ierr=ElasticFEMethod::preProcess(); CHKERRQ(ierr);
 		const int sizeGMruleTRI = gm_rule_size ( gm_rule, 2 );
 		vector<double> G_X_TRI_vec(sizeGMruleTRI,0);
 		vector<double> G_Y_TRI_vec(sizeGMruleTRI,0);
