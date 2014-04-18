@@ -1293,14 +1293,14 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
     }
     
     BitRefLevel new_bit;
-    for(int nn = 1;nn<new_meshRefineBitLevels.size();nn++) {
+    for(unsigned int nn = 1;nn<new_meshRefineBitLevels.size();nn++) {
       if((mit->get_BitRefLevel()&
 	BitRefLevel().set(new_meshRefineBitLevels_map[nn])).any()) {
 	new_bit.set(new_meshRefineBitLevels[nn]);
       }
     }
 
-    for(int nn = 1;nn<new_meshIntefaceBitLevels.size();nn++) {
+    for(unsigned int nn = 1;nn<new_meshIntefaceBitLevels.size();nn++) {
       if((mit->get_BitRefLevel()&
 	BitRefLevel().set(new_meshIntefaceBitLevels_map[nn])).any()) {
 	new_bit.set(new_meshIntefaceBitLevels[nn]);
@@ -1310,6 +1310,10 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
       BitRefLevel().set(BITREFLEVEL_SIZE-1)).any() ) {
       new_bit.set(BITREFLEVEL_SIZE-1);
     } 
+
+    /*cerr << *mit << endl;
+    cerr << "mit->get_BitRefLevel():\n" << mit->get_BitRefLevel() << endl;
+    cerr << "new_bit:\n" << new_bit << endl;*/
 
     if(new_bit.none()) {
       cerr << "mit->get_BitRefLevel():\n" << mit->get_BitRefLevel() << endl;
@@ -1328,7 +1332,15 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
   BitRefLevel *ptr_bit_level0;
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
-  bit_level0 = BitRefLevel().set(meshRefineBitLevels.back());
+  bit_level0 = BitRefLevel().set(meshIntefaceBitLevels.back());
+
+  if(verb>0) {
+    EntityHandle out_meshset;
+    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+    rval = mField.get_moab().write_file("squash_mesh.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
 
   PetscFunctionReturn(0);
 }
