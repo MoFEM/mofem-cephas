@@ -64,7 +64,6 @@ struct FieldCore: public FieldInterface {
   MoFEMFiniteElement_multiIndex finiteElements;
   EntMoFEMFiniteElement_multiIndex finiteElementsMoFEMEnts;
   //entFEAdjacencies
-  //BasicMoFEMEntityAdjacenctMap_multiIndex basicEntAdjacencies;
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;
   //moFEMProblems
   MoFEMProblem_multiIndex moFEMProblems;
@@ -399,7 +398,8 @@ struct FieldCore: public FieldInterface {
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
   PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_nodes_from_bit_level,
+    const EntityHandle meshset,const BitRefLevel &bit,
+    const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
 
   PetscErrorCode add_prism_to_mofem_database(const EntityHandle prism,int verb = -1);

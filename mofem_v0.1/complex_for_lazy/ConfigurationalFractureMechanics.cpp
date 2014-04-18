@@ -1403,7 +1403,6 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-  Interface& moab = mField.get_moab();
 
   ierr = delete_surface_projection_data(mField); CHKERRQ(ierr);
 
@@ -2150,6 +2149,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost(
+    "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -3358,7 +3361,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    } else {
-	      ierr = mField.set_local_VecCreateGhost(
+	      ierr = mField.set_global_VecCreateGhost(
 		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	      nb_sub_steps++;

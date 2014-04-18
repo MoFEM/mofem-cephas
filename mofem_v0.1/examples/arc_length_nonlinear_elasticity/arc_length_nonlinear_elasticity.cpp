@@ -279,9 +279,16 @@ int main(int argc, char *argv[]) {
 			PoissonRatio=mydata.data.Poisson;
 		}
 	}
-	
+
   Range NodeSet1;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
+	EntityHandle meshset = cit->get_meshset();
+	Range nodes;
+	rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERR_THROW(rval);
+	NodeSet1.merge(nodes);
+  }
+
+  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
 
   ArcComplexForLazyElasticFEMethod MyFE(mField,&myDirihletBC,

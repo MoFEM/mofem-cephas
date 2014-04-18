@@ -85,7 +85,7 @@ struct BasicMoFEMEntity {
  * \brief struct keeps handle to refined handle.
  */
 struct RefMoFEMEntity: public BasicMoFEMEntity {
-  const EntityHandle *tag_parent_ent;
+  EntityHandle *tag_parent_ent;
   BitRefLevel *tag_BitRefLevel;
   RefMoFEMEntity(Interface &moab,const EntityHandle _ent);
   /// get entity
@@ -142,6 +142,13 @@ typedef multi_index_container<
 	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
   > > RefMoFEMEntity_multiIndex;
+
+
+/// \brief ref mofem entity, remove parent
+struct RefMoFEMEntity_change_remove_parent {
+  RefMoFEMEntity_change_remove_parent() {};
+  void operator()(RefMoFEMEntity &e) { (*e.tag_parent_ent) = 0; };
+};
 
 /// \brief ref mofem entity, left shift
 struct RefMoFEMEntity_change_left_shift {

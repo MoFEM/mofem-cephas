@@ -1120,9 +1120,21 @@ struct FieldInterface {
    * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
    * 
    * The all new entities (prisms, tets) are added to refinment level given by bit
+   *
+   * \param meshset 
+   * \param refinment bit level of new mesh
+   * \param inheret_from_bit_level inheret nodes and other entities form this bit level. 
+   * \param add_iterfece_entities add prism elements at interface
+   * \param recuslsive do meshesets in the meshset
+   * 
+   * note inheret_from_bit_level is need to be specidied to some meshset
+   * with interfaces. Some nodes on some refinment levels dividing edges but
+   * not splitting faces. Inhereteing thise nodes will not split faces.
+   *
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_nodes_from_bit_level,
+    const EntityHandle meshset,const BitRefLevel &bit,
+    const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
 
