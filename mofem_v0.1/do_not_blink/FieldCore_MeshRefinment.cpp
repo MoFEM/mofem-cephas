@@ -157,8 +157,6 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
   }
   typedef RefMoFEMElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
   ref_MoFEMFiniteElement_by_ent &ref_MoFEMFiniteElement = refinedMoFemElements.get<MoABEnt_mi_tag>();
-  typedef RefMoFEMElement_multiIndex::index<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>::type ref_ent_by_parent;
-  ref_ent_by_parent &by_parent = refinedMoFemElements.get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>();
   typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_ent_by_composite;
   ref_ent_by_composite &by_composite = refinedMoFemElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   //

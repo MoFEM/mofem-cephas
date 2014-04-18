@@ -181,7 +181,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
       double _YoungModulus,double _h,double _beta,double _ft,double _Gf,interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
       InterfaceFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_YoungModulus),int_mat_ctx(_int_mat_ctx),
-      h(_h),beta(_beta),ft(_ft),Gf(_Gf),D(_D),ctx_int(ctx_InterfaceNone) {
+      h(_h),beta(_beta),ft(_ft),Gf(_Gf),ctx_int(ctx_InterfaceNone),D(_D) {
 
     E0 = YoungModulus/h;
     g0 = ft/E0;
