@@ -341,8 +341,9 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode list_problem() const;
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
-  //loop over all finite elements, resolve its meshsets, and resolve dofs on that entities
-  PetscErrorCode build_finite_elements(const EntMoFEMFiniteElement &EntFe,int verb = -1);
+  //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
+  PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &EntFe,int verb = -1);
+  PetscErrorCode build_finite_element_uids_tags(EntMoFEMFiniteElement &EntFe,int verb = -1);
   PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);

@@ -424,6 +424,22 @@ ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e) {
 }
 
 PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_uid_view(
+    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
+    const int operation_type) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = get_MoFEMFiniteElement_dof_uid_view(dofs,dofs_view,operation_type,tag_row_uids_data,tag_row_uids_size); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_uid_view(
+    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
+    const int operation_type) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = get_MoFEMFiniteElement_dof_uid_view(dofs,dofs_view,operation_type,tag_col_uids_data,tag_col_uids_size); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
@@ -431,7 +447,6 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_uid_view(
   ierr = get_MoFEMFiniteElement_dof_uid_view(dofs,dofs_view,operation_type,tag_row_uids_data,tag_row_uids_size); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-
 PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {

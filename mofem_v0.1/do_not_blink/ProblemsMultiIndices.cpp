@@ -77,7 +77,7 @@ problem_row_change::problem_row_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(
 }
 void problem_row_change::operator()(MoFEMProblem &e) { 
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
-    = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity((*(DofIdx*)e.tag_nbdof_data_row),dof_ptr)); 
+    = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity(dof_ptr)); 
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_row)++;
   }
@@ -85,7 +85,7 @@ void problem_row_change::operator()(MoFEMProblem &e) {
 problem_col_change::problem_col_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
 void problem_col_change::operator()(MoFEMProblem &e) { 
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
-    = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity((*(DofIdx*)e.tag_nbdof_data_col),dof_ptr)); 
+    = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity(dof_ptr)); 
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_col)++;
   }
@@ -104,6 +104,30 @@ void problem_zero_nb_cols_change::operator()(MoFEMProblem &e) {
 }
 void problem_clear_numered_finite_elements_change::operator()(MoFEMProblem &e) { 
   e.numeredFiniteElements.clear();
+}
+void problem_row_number_change::operator()(MoFEMProblem &e) {
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator dit;
+  dit = e.numered_dofs_rows.get<Unique_mi_tag>().begin();
+  int idx = 0;
+  for(;dit!=e.numered_dofs_rows.get<Unique_mi_tag>().end();dit++,idx++) {
+    bool success =
+      e.numered_dofs_rows.modify(dit,NumeredDofMoFEMEntity_mofem_index_change(idx));
+    if(!success) {
+      throw "modification unsucessfull";
+    }
+  }
+}
+void problem_col_number_change::operator()(MoFEMProblem &e) {
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator dit;
+  dit = e.numered_dofs_cols.get<Unique_mi_tag>().begin();
+  int idx = 0;
+  for(;dit!=e.numered_dofs_cols.get<Unique_mi_tag>().end();dit++,idx++) {
+    bool success =
+      e.numered_dofs_cols.modify(dit,NumeredDofMoFEMEntity_mofem_index_change(idx));
+    if(!success) {
+      throw "modification unsucessfull";
+    }
+  }
 }
 
 }

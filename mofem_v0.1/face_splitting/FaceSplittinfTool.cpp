@@ -1296,7 +1296,7 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
   for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
     
     if(mit->get_ent_type() == MBENTITYSET) continue;
-
+    if(mit->get_BitRefLevel().none()) continue;
 
     if( (mask&mit->get_BitRefLevel()).none() ) {
       cerr << "mask:\n" << mask << endl;

@@ -148,55 +148,6 @@ typedef multi_index_container<
       tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
   > > MoFEMEntity_multiIndex_ent_view;
 
-struct DofMoFEMEntity_active_change {
-  bool active;
-  DofMoFEMEntity_active_change(bool _active);
-  void operator()(DofMoFEMEntity &_dof_);
-};
-
-typedef multi_index_container<
-  const DofMoFEMEntity*,
-  indexed_by<
-    ordered_non_unique< 
-      const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
-  > > DofMoFEMEntity_multiIndex_active_view;
-
-typedef multi_index_container<
-  const DofMoFEMEntity*,
-  indexed_by<
-    ordered_non_unique< 
-      const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order> >
-  > > DofMoFEMEntity_multiIndex_order_view;
-
-typedef multi_index_container<
-  const DofMoFEMEntity*,
-  indexed_by<
-    ordered_non_unique<
-      const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type> >
-  > > DofMoFEMEntity_multiIndex_ent_type_view;
-
-struct NumeredDofMoFEMEntity_part_change {
-  unsigned int part;
-  DofIdx petsc_gloabl_dof_idx;
-  NumeredDofMoFEMEntity_part_change(const unsigned int _part,const DofIdx _petsc_gloabl_dof_idx): 
-    part(_part),
-    petsc_gloabl_dof_idx(_petsc_gloabl_dof_idx) {};
-  void operator()(NumeredDofMoFEMEntity &dof) { 
-    dof.part = part;
-    dof.petsc_gloabl_dof_idx = petsc_gloabl_dof_idx; 
-    dof.petsc_local_dof_idx = -1;
-  }
-};
-
-struct NumeredDofMoFEMEntity_local_idx_change {
-  DofIdx petsc_local_dof_idx;
-  NumeredDofMoFEMEntity_local_idx_change(const DofIdx _petsc_local_dof_idx): 
-    petsc_local_dof_idx(_petsc_local_dof_idx) {};
-  void operator()(NumeredDofMoFEMEntity &dof) { 
-    dof.petsc_local_dof_idx = petsc_local_dof_idx; 
-  }
-};
-
 typedef multi_index_container<
   const NumeredDofMoFEMEntity*,
   indexed_by<
@@ -234,33 +185,6 @@ struct EntMoFEMFiniteElement_change_bit_off {
   BitFieldId f_id_data;
   EntMoFEMFiniteElement_change_bit_off(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
   void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-/// set uids for finite elements dofs in rows
-struct EntMoFEMFiniteElement_row_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_row_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-/// set uids for finite elements dofs in rows
-struct EntMoFEMFiniteElement_col_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_col_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-/// set uids for finite elements dofs need to calulate element matrices and vectors
-struct EntMoFEMFiniteElement_data_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_data_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view):
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
 };
 
 struct NumeredMoFEMFiniteElement_change_part {

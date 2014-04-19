@@ -206,6 +206,12 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   inline DofIdx get_nb_dofs_data() const { return tag_data_uids_size/sizeof(UId); }
   friend ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e);
   PetscErrorCode get_MoFEMFiniteElement_row_dof_uid_view(
+    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
+    const int operation_type = Interface::UNION) const;
+  PetscErrorCode get_MoFEMFiniteElement_col_dof_uid_view(
+    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
+    const int operation_type = Interface::UNION) const;
+  PetscErrorCode get_MoFEMFiniteElement_row_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_col_dof_uid_view(
@@ -217,7 +223,6 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   PetscErrorCode get_MoFEMFiniteElement_col_dof_uid_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
-  //
   PetscErrorCode get_uid_side_number(
     Interface &moab,const UId uid,
     const DofMoFEMEntity_multiIndex &dofs_moabfield,
@@ -361,6 +366,38 @@ typedef multi_index_container<
     ordered_unique<
       tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,boost::string_ref,&MoFEMFiniteElement::get_name_ref> >
   > > MoFEMFiniteElement_multiIndex;
+
+
+// modify procedures
+
+/// set uids for finite elements dofs in rows
+struct EntMoFEMFiniteElement_row_dofs_change {
+  Interface &moab;
+  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
+  EntMoFEMFiniteElement_row_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
+    moab(_moab),uids_view(_uids_view) {};
+  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
+};
+
+/// set uids for finite elements dofs in rows
+struct EntMoFEMFiniteElement_col_dofs_change {
+  Interface &moab;
+  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
+  EntMoFEMFiniteElement_col_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
+    moab(_moab),uids_view(_uids_view) {};
+  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
+};
+
+/// set uids for finite elements dofs need to calulate element matrices and vectors
+struct EntMoFEMFiniteElement_data_dofs_change {
+  Interface &moab;
+  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
+  EntMoFEMFiniteElement_data_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view):
+    moab(_moab),uids_view(_uids_view) {};
+  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
+};
+
+
 
 }
 
