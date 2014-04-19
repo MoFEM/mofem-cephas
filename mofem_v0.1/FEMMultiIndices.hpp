@@ -129,6 +129,69 @@ struct interface_RefMoFEMElement: interface_RefMoFEMEntity<T> {
   virtual ~interface_RefMoFEMElement() {}
 };
 
+typedef multi_index_container<
+  const RefMoFEMEntity*,
+  indexed_by<
+    hashed_unique<
+      const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
+    hashed_unique<
+      tag<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>,
+      composite_key<
+	const RefMoFEMEntity*,
+	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_ref_ent>,
+	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> > >
+  > > RefMoFEMEntity_multiIndex_view_by_parent_entity;
+
+struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMElement> {
+  typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
+  typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
+  int wrapp;
+  ptrWrapperRefMoFEMElement(const RefMoFEMElement *__ptr): interface_RefMoFEMElement<RefMoFEMElement>(__ptr),wrapp(1) {}
+  ptrWrapperRefMoFEMElement(const ptrWrapperRefMoFEMElement &ref): interface_RefMoFEMElement<RefMoFEMElement>(ref) { 
+    wrapp = 1;
+    assert(ref.wrapp == 1);
+    (const_cast<ptrWrapperRefMoFEMElement&>(ref)).wrapp++;
+  }
+  virtual ~ptrWrapperRefMoFEMElement() { 
+    if(wrapp == 1) {
+      delete interface_RefMoFEMEntity<RefMoFEMElement>::ref_ptr; 
+    }
+  }
+};
+
+/**
+ * \typedef RefMoFEMElement
+ * type multiIndex container for RefMoFEMElement
+ *
+ * \param hashed_unique MoABEnt_mi_tag 
+ * \param ordered_non_unique Meshset_mi_tag 
+ * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
+ * \param ordered_non_unique Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag
+ */
+typedef multi_index_container<
+  ptrWrapperRefMoFEMElement,
+  indexed_by<
+    hashed_unique<
+      tag<MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_ref_ent> >,
+    ordered_non_unique<
+      tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent> >,
+    ordered_non_unique<
+      tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefMoFEMElement::get_ent_type> >,
+    ordered_non_unique<
+      tag<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
+      composite_key<
+	ptrWrapperRefMoFEMElement,
+	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent>,
+	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMElement,int,&ptrWrapperRefMoFEMElement::get_BitRefEdges_ulong> > >,
+    hashed_unique<
+      tag<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>,
+      composite_key<
+	ptrWrapperRefMoFEMElement,
+	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_ref_ent>,
+	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent> > >
+  > > RefMoFEMElement_multiIndex;
+
+
 /** 
  * \brief Finite element definition
  */
@@ -379,7 +442,7 @@ struct EntMoFEMFiniteElement_row_dofs_change {
   void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
 };
 
-/// set uids for finite elements dofs in rows
+/// set uids for finite elements dofs in cols
 struct EntMoFEMFiniteElement_col_dofs_change {
   Interface &moab;
   const DofMoFEMEntity_multiIndex_uid_view &uids_view;
@@ -396,8 +459,6 @@ struct EntMoFEMFiniteElement_data_dofs_change {
     moab(_moab),uids_view(_uids_view) {};
   void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
 };
-
-
 
 }
 

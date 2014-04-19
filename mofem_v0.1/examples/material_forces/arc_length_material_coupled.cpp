@@ -63,14 +63,11 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  ierr = mField.seed_ref_level_3D(0,BitRefLevel()); CHKERRQ(ierr);
-
   ConfigurationalFractureMechanics conf_prob(mField);
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
   ierr = main_arc_length_setup(mField,conf_prob); CHKERRQ(ierr);
   ierr = main_arc_length_solve(mField,conf_prob); CHKERRQ(ierr);
-  ierr = main_arc_length_setup(mField,conf_prob); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_arc_length.h5m"); CHKERR_PETSC(rval);

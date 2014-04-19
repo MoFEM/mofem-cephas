@@ -82,11 +82,9 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
   Interface& get_moab();
 
-  //core data
-  EntityHandle ref_fe_meshset;
-
   //check consistency
   PetscErrorCode check_number_of_ents_in_ents_field(const string& name);
+  PetscErrorCode rebuild_database(int verb = -1);
 
   //cubit meshsets
   bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType);
@@ -223,9 +221,11 @@ struct FieldCore: public FieldInterface {
   }
 
   //refine
-  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
   PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
+  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
+  PetscErrorCode seed_ref_level_2D(const Range &ents2d,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
+  PetscErrorCode seed_ref_level_3D(const Range &ents3d,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1);
@@ -276,8 +276,8 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1);
 
   //build fiels
-  PetscErrorCode dofs_NoField(const BitFieldId id,int &dof_counter);
-  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,int &dof_counter,int verb = -1);
+  PetscErrorCode dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_counter);
+  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> &dof_counter,int verb = -1);
   PetscErrorCode build_fields(int verb = -1);
   PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
@@ -285,8 +285,10 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode clear_ents_fields(const string &name,const Range enst,int verb = -1);
 
   //other auxiliary functions for fields
-  PetscErrorCode list_dof_by_id(const BitFieldId id) const;
-  PetscErrorCode list_ent_by_id(const BitFieldId id) const;
+  PetscErrorCode list_dof_by_field_name(const string &name) const;
+  PetscErrorCode list_ent_by_field_name(const string &name) const;
+  PetscErrorCode list_dof_by_field_id(const BitFieldId id) const;
+  PetscErrorCode list_ent_by_field_id(const BitFieldId id) const;
   PetscErrorCode list_field() const;
   BitFieldId get_BitFieldId(const string& name) const;
   string get_BitFieldId_name(const BitFieldId id) const;
@@ -349,7 +351,6 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
 
   //entFEAdjacencies
-  PetscErrorCode build_adjacencies(int verb = -1);
   PetscErrorCode build_adjacencies(const Range &ents,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
@@ -369,6 +370,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
+  PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
 
   //save meshsets
   PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset);
@@ -481,8 +483,15 @@ struct FieldCore: public FieldInterface {
     const NumeredDofMoFEMEntitys_by_idx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<Tag>();
     const NumeredDofMoFEMEntitys_by_unique_id &dofs_col_by_id = p_miit->numered_dofs_cols.get<Unique_mi_tag>();
     DofIdx nb_dofs_row = dofs_row_by_idx.size();
-    assert(p_miit->get_nb_dofs_row()==nb_dofs_row);
-    if(nb_dofs_row == 0) SETERRQ(PETSC_COMM_SELF,1,"problem has zero rows");
+    if(p_miit->get_nb_dofs_row()!=nb_dofs_row) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    }
+    if(p_miit->get_nb_dofs_col()!=p_miit->numered_dofs_cols.size()) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    }
+    if(nb_dofs_row == 0) {
+      SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> has zero rows",name.c_str());
+    }
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type::iterator miit_row,hi_miit_row;
     if(Tag::IamNotPartitioned) {
       DofIdx nb_dofs_row_on_proc = (DofIdx)ceil(nb_dofs_row/pcomm->size());
@@ -498,18 +507,19 @@ struct FieldCore: public FieldInterface {
       miit_row = dofs_row_by_idx.lower_bound(pcomm->rank());
       hi_miit_row = dofs_row_by_idx.upper_bound(pcomm->rank());
     }
+    int nb_loc_row_from_iterators = distance(miit_row,hi_miit_row);
     MoFEMEntity *MoFEMEntity_ptr = NULL;
-    vector<DofIdx> dofs_vec,dofs_vec2;
+    set<DofIdx> dofs_set;
     vector<PetscInt> i,j;
     // loop local rows
     for(;miit_row!=hi_miit_row;miit_row++) {
       i.push_back(j.size());
-      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->field_ptr->field_ptr->get_unique_id()) ) {
+      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_unique_id()) ) {
 	// get field ptr
-	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->field_ptr->field_ptr);
+	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->get_MoFEMEntity_ptr());
 	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
-	dofs_vec.resize(0);
+	dofs_set.clear();
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row of element
 	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
@@ -519,27 +529,23 @@ struct FieldCore: public FieldInterface {
 	    UId uid = adj_miit->EntMoFEMFiniteElement_ptr->tag_col_uids_data[ii];
 	    NumeredDofMoFEMEntitys_by_unique_id::iterator miiit = dofs_col_by_id.find(uid);
 	    if(miiit == p_miit->numered_dofs_cols.get<Unique_mi_tag>().end()) continue;
-	    dofs_vec.insert(dofs_vec.end(),Tag::get_index(miiit));
+	    int idx = Tag::get_index(miiit);
+	    if(idx<0) {
+	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    } 
+	    if(idx>=p_miit->get_nb_dofs_col()) {
+	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    }
+	    dofs_set.insert(idx);
 	  }
 	}
-	sort(dofs_vec.begin(),dofs_vec.end());
-	vector<DofIdx>::iterator new_end = unique(dofs_vec.begin(),dofs_vec.end());
-	dofs_vec.erase(new_end,dofs_vec.end());
       }
-      if(!dofs_vec.empty()) {
+      if(!dofs_set.empty()) {
 	if(no_diagonals) {
-	  dofs_vec2.resize(0);
-	  dofs_vec2.insert(dofs_vec2.end(),dofs_vec.begin(),dofs_vec.end());
-	  vector<DofIdx>::iterator vit = find(dofs_vec2.begin(),dofs_vec2.end(),Tag::get_index(miit_row));
-	  if(vit==dofs_vec2.end()) {
-	    continue; // matrix can have no diagonals entries
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  }
-	  dofs_vec2.erase(vit);
-	  j.insert(j.end(),dofs_vec2.begin(),dofs_vec2.end());
-	} else {
-	  j.insert(j.end(),dofs_vec.begin(),dofs_vec.end());
+	  dofs_set.erase(Tag::get_index(miit_row));
+	  j.insert(j.end(),dofs_set.begin(),dofs_set.end());
 	}
+	j.insert(j.end(),dofs_set.begin(),dofs_set.end());
       }
     }
     //build adj matrix
@@ -552,10 +558,18 @@ struct FieldCore: public FieldInterface {
     PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
     PetscInt nb_col_dofs = p_miit->get_nb_dofs_col();
     if(strcmp(type,MATMPIADJ)==0) { 
+      if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
       ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
     } else if(strcmp(type,MATMPIAIJ)==0) {
+      if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
       PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
-      if((unsigned int)nb_local_dofs_row!=i.size()-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      if((unsigned int)nb_local_dofs_row!=i.size()-1) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
       PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
       ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
       ierr = PetscFree(_i); CHKERRQ(ierr);

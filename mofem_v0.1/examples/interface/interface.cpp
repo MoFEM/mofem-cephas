@@ -105,6 +105,8 @@ struct ExampleDiriheltBC: public BaseDirihletBC {
 
 int main(int argc, char *argv[]) {
 
+  try {
+
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   Core mb_instance;
@@ -384,6 +386,10 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
   PetscFinalize();
+
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
 
 }
 

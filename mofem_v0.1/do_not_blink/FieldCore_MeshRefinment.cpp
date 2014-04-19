@@ -295,27 +295,29 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
     bitset<8> ref_tets_bit(0);
     ref_ent_by_composite::iterator miit_composite = by_composite.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
     ref_ent_by_composite::iterator hi_miit_composite = by_composite.upper_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
-    ref_ent_by_composite::iterator miit_composite2 = miit_composite;
-    for(int tt = 0;miit_composite2!=hi_miit_composite;miit_composite2++,tt++) {
-      //add this tet if exist to this ref level
-      EntityHandle tet = miit_composite2->get_ref_ent();
-      refinedMoFemEntities.modify(refinedMoFemEntities.find(tet),RefMoFEMEntity_change_add_bit(bit));
-      //set ref tets entities
-      ref_tets[tt] = miit_composite2->get_ref_ent();
-      //set bit that this element is in databse - no need to create it
-      ref_tets_bit.set(tt,1);
-      if(verbose>2) {
-	ostringstream ss;
-	ss << miit_composite2->get_RefMoFEMElement() << endl;
-	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-      }
-    }
-    if(miit_composite!=hi_miit_composite) {
-      //if that tet has the same pattern of splitted edges it has to have the same number of refined 
-      //children elements - if not thorw an error
-      if(ref_tets_bit.count()!=(unsigned int)nb_new_tets) {
-	SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency ref_tets_bit.count()!=(unsigned int)nb_new_tets %d != %d",
-	ref_tets_bit.count(),(unsigned int)nb_new_tets);
+    if(distance(miit_composite,hi_miit_composite)==(unsigned int)nb_new_tets) {
+      for(int tt = 0;miit_composite!=hi_miit_composite;miit_composite++,tt++) {
+	EntityHandle tet = miit_composite->get_ref_ent();
+	//set ref tets entities
+	ref_tets[tt] = tet;
+	ref_tets_bit.set(tt,1);
+	//add this tet if exist to this ref level
+	RefMoFEMEntity_multiIndex::iterator ref_tet_it;
+	ref_tet_it = refinedMoFemEntities.find(tet);
+	if(ref_tet_it == refinedMoFemEntities.end()) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	}
+	bool success = refinedMoFemEntities.modify(
+	  ref_tet_it,RefMoFEMEntity_change_add_bit(bit));
+	if(!success) {
+	  SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessfull");
+	}
+	//verbose
+	if(verbose>2) {
+	  ostringstream ss;
+	  ss << miit_composite->get_RefMoFEMElement() << endl;
+	  PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	}
       }
     } else {
       //if this element was not refined or was refined with diffrent patterns of splitted edges create new elements

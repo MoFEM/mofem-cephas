@@ -28,19 +28,7 @@ namespace MoFEM {
 
 //ref moab MoFEMFiniteElement
 RefMoFEMElement::RefMoFEMElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
-  interface_RefMoFEMEntity<RefMoFEMEntity>(_RefMoFEMEntity_ptr) {
- 
-  ErrorCode rval;
-  const EntityHandle root_meshset = moab.get_root_set();
-
-  Tag th_RefFEMeshset;
-  rval = moab.tag_get_handle("_RefFEMeshset",th_RefFEMeshset); CHKERR_THROW(rval);
-  EntityHandle meshset;
-  rval = moab.tag_get_data(th_RefFEMeshset,&root_meshset,1,&meshset); CHKERR_THROW(rval);
-  EntityHandle ent = get_ref_ent();
-  rval = moab.add_entities(meshset,&ent,1); CHKERR_THROW(rval);
-
-}
+  interface_RefMoFEMEntity<RefMoFEMEntity>(_RefMoFEMEntity_ptr) {}
 
 ostream& operator<<(ostream& os,const RefMoFEMElement& e) {
   os << " ref egdes " << e.get_BitRefEdges();
@@ -231,7 +219,15 @@ SideNumber* RefMoFEMElement_TET::get_side_number_ptr(Interface &moab,EntityHandl
   int side_number,sense,offset;
   rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
   if(side_number==-1) THROW_AT_LINE("this not working");
-  miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
+  pair<SideNumber_multiIndex::iterator,bool> p_miit;
+  p_miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset));
+  miit = p_miit.first;
+  if(miit->ent != ent) {
+    PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	"data inconsistency",PETSC_NULL);
+    PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	"data insonsistency",PETSC_NULL);
+  }
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
 }
@@ -494,8 +490,12 @@ static void EntMoFEMFiniteElement_dofs_change(
   data.resize(uids_view.size());
   DofMoFEMEntity_multiIndex_uid_view::iterator miit = uids_view.begin();
   vector<UId>::iterator vit = data.begin();
-  for(;miit!=uids_view.end();miit++,vit++) *vit = (*miit)->get_unique_id();
-  assert(vit==data.end());
+  for(;miit!=uids_view.end();miit++,vit++) {
+    *vit = (*miit)->get_unique_id();
+  }
+  if(vit!=data.end()) {
+    THROW_AT_LINE("data inconsistency");
+  }
   int tag_sizes[1]; 
   tag_sizes[0] = data.size()*sizeof(UId);
   void const* tag_data[] = { &data[0] };

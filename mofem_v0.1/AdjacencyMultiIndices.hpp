@@ -63,7 +63,7 @@ struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap {
 typedef multi_index_container<
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
   indexed_by<
-    ordered_non_unique<
+    ordered_unique<
       tag<Composite_unique_mi_tag>,       
       composite_key<
 	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,

@@ -360,7 +360,63 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX,0));
       hi_niit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX,4));
       if(field_name == spatial_field_name) {
-	if(distance(niit,hi_niit)!=12) SETERRQ(PETSC_COMM_SELF,1,"I can not find dofs on vertices, it should be 12 dofs (i.e. 4 nodes and 3 dofs for each node)");
+	if(distance(niit,hi_niit)!=12) {
+	  EntityHandle ent = fe_ptr->get_ent();
+	  const EntityHandle* conn; 
+	  int num_nodes; 
+	  rval = moab.get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+	  PetscPrintf(PETSC_COMM_WORLD,"== sides ==\n");
+	  SideNumber_multiIndex::nth_index<2>::type &sides = 
+	    const_cast<SideNumber_multiIndex::nth_index<2>::type&>(fe_ptr->get_side_number_table().get<2>());
+	  SideNumber_multiIndex::nth_index<2>::type::iterator sit,hi_sit;
+	  sit = sides.lower_bound(MBVERTEX);
+	  hi_sit = sides.upper_bound(MBVERTEX);
+	  for(;sit!=hi_sit;sit++) {
+	    EntityHandle side_ent;
+	    rval = moab.side_element(ent,0,sit->side_number,side_ent); CHKERR_PETSC(rval);
+	    PetscPrintf(PETSC_COMM_WORLD,"side %u ent %lu (%lu) [%lu]\n",sit->side_number,sit->ent,conn[sit->side_number],side_ent);
+	    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	    dit = dofs_moabfield->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(spatial_field_name,sit->ent));
+	    hi_dit = dofs_moabfield->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(spatial_field_name,sit->ent));
+	    for(;dit!=hi_dit;dit++) {
+	      ostringstream ss;
+	      ss << *dit << endl;
+	      PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
+	    }
+	    MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator eit;
+	    eit = ents_moabfield->get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(spatial_field_name,sit->ent));
+	    if(eit != ents_moabfield->get<Composite_Name_And_Ent_mi_tag>().end()) {
+	      ostringstream ss;
+	      ss << *eit << endl;
+	      PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
+	    }
+	    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator reit;
+	    reit = refinedMoFemEntities->get<MoABEnt_mi_tag>().find(sit->ent);
+	    if(reit != refinedMoFemEntities->get<MoABEnt_mi_tag>().end()) {
+	      ostringstream ss;
+	      ss << *reit << endl;
+	      PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
+	    }
+	  }
+	  PetscPrintf(PETSC_COMM_WORLD,"== fe dofs ==\n");
+	  FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator iit,hi_iit;
+	  iit = data_multiIndex->get<FieldName_mi_tag>().lower_bound(spatial_field_name);
+	  hi_iit = data_multiIndex->get<FieldName_mi_tag>().upper_bound(spatial_field_name);
+	  for(;iit!=hi_iit;iit++) {
+	    ostringstream ss;
+	    ss << *iit << endl;
+	    PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
+	  }
+	  PetscPrintf(PETSC_COMM_WORLD,"== fe ==\n");
+	  {
+	    ostringstream ss;
+	    ss << *fe_ptr << endl;
+	    PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
+	  }
+	  SETERRQ1(PETSC_COMM_SELF,1,
+	    "I can not find dofs on vertices, it should be 12 dofs (i.e. 4 nodes and 3 dofs for each node), but is %u",
+	    distance(niit,hi_niit));
+	}
       }
       for(int dd = 0;niit!=hi_niit;niit++,dd++) {
 	dofs_nodes[3*niit->side_number_ptr->side_number+niit->get_EntDofIdx()] = niit->get_FieldData(); 

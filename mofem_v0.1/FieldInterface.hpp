@@ -255,6 +255,8 @@ struct FieldInterface {
   virtual PetscErrorCode printCubitHeatFluxSet() = 0;
   virtual PetscErrorCode printCubitMaterials() = 0;
 
+  virtual PetscErrorCode rebuild_database(int verb) = 0;
+
   /**
   * Create finite elements based from eneties in meshses. Throw error if entity is not in database
   * 
@@ -281,6 +283,15 @@ struct FieldInterface {
   virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
+  * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjencies) in a particular BitRefLevel
+  * 
+  * \param Range of tris
+  * \param BitRefLevel bitLevel
+  * 
+  */
+  virtual PetscErrorCode seed_ref_level_2D(const Range &ents2d,const BitRefLevel &bit,int verb = -1) = 0;
+
+  /**
   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
   * 
   * \param EntityHandle MeshSet
@@ -304,6 +315,13 @@ struct FieldInterface {
   * 
   */
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+
+
+  /**
+   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+   */ 
+  virtual PetscErrorCode seed_ref_level_3D(const Range &ents3d,const BitRefLevel &bit,int verb = -1) = 0;
+
 
   /** brief seed ref level by MESHSET that contains entities other than volumes
    * 
@@ -353,13 +371,11 @@ struct FieldInterface {
    */
   virtual PetscErrorCode refine_TET(const Range &tets,const BitRefLevel &bit,const bool respect_interface = false) = 0;
 
-
   /**\brief refine PRISM in the meshset
    *
    * \param EntityHandle meshset
    * \param BitRefLevel bitLevel
    */
-
   virtual PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**\brief refinem meshset, i.e. add child of refined entities to meshset
@@ -812,6 +828,14 @@ struct FieldInterface {
    */
   virtual PetscErrorCode build_fields(int verb = -1) = 0;
 
+  /** list dofs
+   */
+  virtual PetscErrorCode list_dof_by_field_name(const string &name) const = 0;
+
+  /** list ents
+   */
+  virtual PetscErrorCode list_ent_by_field_name(const string &name) const = 0;
+
   /** clear fields
    */
   virtual PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
@@ -928,6 +952,11 @@ struct FieldInterface {
    * \param do_skip if true, MultiIndices are set for finite element only on entities own by given partition
    */
   virtual PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1) = 0;
+
+  /** \brief check if matrix fill in correspond to finite element indices
+    *
+    */
+  virtual PetscErrorCode partition_check_matrix_fill_in(const string &problem_name,int verb) = 0;
 
   /**
     * \brief add finite elements to the meshset
@@ -1187,6 +1216,8 @@ struct FieldInterface {
     virtual PetscErrorCode operator()() = 0;
     virtual PetscErrorCode postProcess() = 0;
     //
+    const RefMoFEMEntity_multiIndex *refinedMoFemEntities;
+    const RefMoFEMElement_multiIndex *refinedMoFemElements;
     const MoFEMProblem *problem_ptr;
     const MoFEMField_multiIndex *moabfields;
     const MoFEMEntity_multiIndex *ents_moabfield;
