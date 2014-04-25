@@ -1721,17 +1721,20 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
   ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv); CHKERRQ(ierr);
   ierr = face_splitting.squashIndices(0); CHKERRQ(ierr);
-  //ierr = mField.check_number_of_ents_in_ents_field("SPATIAL_POSITION"); CHKERRQ(ierr);
-  //ierr = mField.check_number_of_ents_in_ents_field("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.rebuild_database(verb); CHKERRQ(ierr);
 
   ierr = face_splitting.addNewSurfaceFaces_to_Cubit_msId200(); CHKERRQ(ierr);
   ierr = face_splitting.splitFaces(); CHKERRQ(ierr);
   ierr = face_splitting.addcrackFront_to_Cubit201(); CHKERRQ(ierr);
 
-  ierr = mField.clear_problems(); CHKERRQ(ierr);
+  BitRefLevel not_split_face_ref_level;
+  not_split_face_ref_level.set(face_splitting.meshIntefaceBitLevels.back());
+  not_split_face_ref_level.flip();
+  ierr = mField.remove_ents_from_field_by_bit_ref(not_split_face_ref_level,not_split_face_ref_level,0); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_finite_element_by_bit_ref(not_split_face_ref_level,not_split_face_ref_level,0); CHKERRQ(ierr);
 
-  
+  ierr = mField.clear_problems(); CHKERRQ(ierr);
+ 
   if(verb>0) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     if(pcomm->rank()==0) {
