@@ -345,7 +345,7 @@ struct FieldCore: public FieldInterface {
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
   PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &EntFe,int verb = -1);
-  PetscErrorCode build_finite_element_uids_tags(EntMoFEMFiniteElement &EntFe,int verb = -1);
+  PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &EntFe,int verb = -1);
   PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
@@ -544,12 +544,16 @@ struct FieldCore: public FieldInterface {
 	  }
 	}
       }
-      if(!dofs_set.empty()) {
-	if(no_diagonals) {
-	  dofs_set.erase(Tag::get_index(miit_row));
-	  j.insert(j.end(),dofs_set.begin(),dofs_set.end());
-	}
+      if(no_diagonals) {
+  	dofs_set.erase(Tag::get_index(miit_row));
 	j.insert(j.end(),dofs_set.begin(),dofs_set.end());
+      }
+      if(dofs_set.size()>0) {
+	j.insert(j.end(),dofs_set.begin(),dofs_set.end());
+      } else {
+	if(strcmp(type,MATMPIADJ)==0) {
+	  SETERRQ1(PETSC_COMM_SELF,1,"empty matrix row problem <%s>",name.c_str());
+	}
       }
     }
     //build adj matrix

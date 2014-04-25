@@ -1732,11 +1732,9 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
   PetscFunctionBegin;
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
   FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(EntFe.data_dofs);
+  //clear data dofs multiindex //FIXME should be cleaned when dofs are cleaned form datasets
+  data_dofs.clear();
   DofMoFEMEntity_multiIndex_active_view data_view;
-  //const void* tag_data_uids_data = EntFe.tag_data_uids_data;
-  //const int tag_data_uids_size = EntFe.tag_data_uids_size;
-  //ierr = get_MoFEMFiniteElement_dof_uid_view(
-    //dofsMoabField,data_view,Interface::UNION,tag_data_uids_data,tag_data_uids_size); CHKERRQ(ierr);
   ierr = EntFe.get_MoFEMFiniteElement_data_dof_uid_view(dofsMoabField,data_view,Interface::UNION); CHKERRQ(ierr);
   DofMoFEMEntity_multiIndex_active_view::iterator viit_data,hi_viit_data;
   //loops over active dofs only
@@ -1774,7 +1772,7 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::build_finite_element_uids_tags(EntMoFEMFiniteElement &EntFe,int verb) {
+PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &EntFe,int verb) {
   PetscFunctionBegin;
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_by_id;
@@ -2124,10 +2122,7 @@ PetscErrorCode FieldCore::build_finite_elements(int verb) {
       }
       EntMoFEMFiniteElement EntFe(moab,ref_MoFEMFiniteElement_miit->get_RefMoFEMElement(),&*MoFEMFiniteElement_miit);
       pair<EntMoFEMFiniteElement_multiIndex::iterator,bool> p = finiteElementsMoFEMEnts.insert(EntFe);
-      //clear data dofs multiindex
-      //FIXME should be cleaned when dofs are cleaned form datasets
-      const_cast<EntMoFEMFiniteElement&>(*p.first).data_dofs.clear(); 
-      ierr = build_finite_element_uids_tags(const_cast<EntMoFEMFiniteElement&>(*p.first),verb); CHKERRQ(ierr);
+      ierr = build_finite_element_uids_view(const_cast<EntMoFEMFiniteElement&>(*p.first),verb); CHKERRQ(ierr);
       ierr = build_finite_element_data_dofs(const_cast<EntMoFEMFiniteElement&>(*p.first),verb); CHKERRQ(ierr);
     }
   }
@@ -2473,7 +2468,7 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
   PetscMalloc(nb_dofs_row*sizeof(PetscInt),&_values);
   fill(&_values[0],&_values[nb_dofs_row],1);
   //partitioning
-  //PetscBarrier(PETSC_NULL);
+  ierr = PetscBarrier(PETSC_NULL); CHKERRQ(ierr);
   MatPartitioning part;
   IS is;
   ierr = MatPartitioningCreate(MPI_COMM_WORLD,&part); CHKERRQ(ierr);
