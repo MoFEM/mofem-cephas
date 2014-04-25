@@ -25,5 +25,4 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_concrete_beam")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/plate_stability")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/brick_slice")
-
-
+add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/plate_with_horizontal_crack")
