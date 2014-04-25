@@ -238,23 +238,6 @@ int main(int argc, char *argv[]) {
         Face_CenPos_Handle_varPos.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
     }
 
-//    //Creating Prisims between triangles on -ve and +ve faces
-//    typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;
-//    Tri_Hand_iterator Tri_Neg;
-//    typedef Face_CenPos_Handle_multiIndex::index<Composite_xyzcoord>::type::iterator xyzcoord_iterator;
-//    xyzcoord_iterator Tri_Pos;
-//    double XPos, YPos, ZPos;
-//    for(Range::iterator it = SurTrisNeg.begin(); it!=SurTrisNeg.end();  it++) {
-//        Tri_Neg=Face_CenPos_Handle_varNeg.get<Tri_Hand_tag>().find(*it);
-//        //cout<<"xcoord= "<<Tri_iit->xcoord << "   ycoord= "<< Tri_iit->ycoord << "   ycoord= "<< Tri_iit->zcoord <<endl;
-//        if(Tri_Neg->xcoord==0){XPos=1;                      YPos=Tri_Neg->ycoord;  ZPos=Tri_Neg->zcoord;};
-//        if(Tri_Neg->ycoord==0){XPos=YPos=Tri_Neg->xcoord;   YPos=1;                ZPos=Tri_Neg->zcoord;};
-//        if(Tri_Neg->zcoord==0){XPos=YPos=Tri_Neg->xcoord;   YPos=Tri_Neg->ycoord;  ZPos=1;              };
-//        Tri_Pos=Face_CenPos_Handle_varPos.get<Composite_xyzcoord>().find(boost::make_tuple(XPos, YPos, ZPos));
-//
-//        cout<<"Diff X =   "<< (XPos-Tri_Pos->xcoord)<<"    "<< (YPos-Tri_Pos->ycoord)  <<"    "<< (ZPos-Tri_Pos->zcoord)<< endl;
-//     }
-    
     
     //Creating Prisims between triangles on -ve and +ve faces
     typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;
@@ -318,7 +301,7 @@ int main(int argc, char *argv[]) {
         rval = moab.create_element(MBPRISM,PrismNodes,6,PeriodicPrism); CHKERR_PETSC(rval);
         PrismRange.insert(PeriodicPrism);
         
-//        
+        
 //        //to see individual prisms
 //        Range Prism1;
 //        Prism1.insert(PeriodicPrism);
@@ -330,8 +313,9 @@ int main(int argc, char *argv[]) {
 //        rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset1,1); CHKERR_PETSC(rval);
         
     }
-    //cout<<"PrismRange "<<PrismRange<<endl;
     
+    
+    //cout<<"PrismRange "<<PrismRange<<endl;
 //    //Saving prisms in interface.vtk
 //      EntityHandle out_meshset1;
 //      rval = moab.create_meshset(MESHSET_SET,out_meshset1); CHKERR_PETSC(rval);
@@ -440,6 +424,7 @@ int main(int argc, char *argv[]) {
     CubitDisplacementDirihletBC_ZerosRowsColumns myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
     ierr = myDirihletBC.Init(); CHKERRQ(ierr);
     
+    
     //Assemble F and Aij
     const double YoungModulus = 1;
     const double PoissonRatio = 0.0;
@@ -453,82 +438,86 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
     
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    
+    PetscSynchronizedFlush(PETSC_COMM_WORLD);
+    //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    //ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    
+    
+//    ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 //
-//    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-//    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-//    ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-//    ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 //    
-//    PetscSynchronizedFlush(PETSC_COMM_WORLD);
-//    //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//    //ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//    
-//    
-//    ////Matrix View
-//    //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-//    //std::string wait;
-//    //std::cin >> wait;
-//    
-//    //Solver
-//    KSP solver;
-//    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-//    ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-//    ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-//    ierr = KSPSetUp(solver); CHKERRQ(ierr);
-//    
-//    ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-//    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//    
-//    //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//    //     ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//    //
-//    
-//    //Save data on mesh
-//    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//    //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//    
-//    PostProcVertexMethod ent_method(moab);
-//    ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
-//    
-//    if(pcomm->rank()==0) {
-//        EntityHandle out_meshset;
-//        rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-//        ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-//        rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-//        rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-//    }
-//    
-//    //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-//    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,"DISPLACEMENT",LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-//    
-//    if(pcomm->rank()==0) {
-//        rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-//    }
-//    
-//    //End Disp
-//    /*Range ents;*/
-//    //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
-//    //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) {
-//    //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
-//    //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
-//    //}
-//    /*}*/
-//    
-//    //Support stresses
-//    //Range ents;
-//    //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
-//    
-//    //Destroy matrices
-//    ierr = VecDestroy(&F); CHKERRQ(ierr);
-//    ierr = VecDestroy(&D); CHKERRQ(ierr);
-//    ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-//    ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+    //Matrix View
+    ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+    std::string wait;
+    std::cin >> wait;
+    
+    //Solver
+    KSP solver;
+    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+    ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+    ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+    ierr = KSPSetUp(solver); CHKERRQ(ierr);
+    
+    ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    
+    //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    //     ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    //
+    
+    //Save data on mesh
+    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    
+    PostProcVertexMethod ent_method(moab);
+    ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
+    
+    if(pcomm->rank()==0) {
+        EntityHandle out_meshset;
+        rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+        ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+        rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+        rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    }
+    
+    //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,"DISPLACEMENT",LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+    
+    if(pcomm->rank()==0) {
+        rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
+    }
+    
+    //End Disp
+    /*Range ents;*/
+    //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
+    //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) {
+    //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
+    //}
+    /*}*/
+    
+    //Support stresses
+    //Range ents;
+    //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
+    
+    //Destroy matrices
+    ierr = VecDestroy(&F); CHKERRQ(ierr);
+    ierr = VecDestroy(&D); CHKERRQ(ierr);
+    ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+    ierr = KSPDestroy(&solver); CHKERRQ(ierr);
     
     
     ierr = PetscTime(&v2);CHKERRQ(ierr);

@@ -27,173 +27,240 @@ namespace MoFEM {
 
 struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange {
 
+    
     ElasticFE_RVELagrange_Periodic(
                                    FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F):
-    ElasticFE_RVELagrange(_mField, _dirihlet_ptr,_Aij, _D, _F ){};
-    
-
+    ElasticFE_RVELagrange(_mField, _dirihlet_ptr,_Aij, _D, _F){};
     
     
+    
+    
+     vector<vector<vector<DofIdx> > > RowGlob;  //The outer vector is of size 2 (one for -ve triangles and one for +ve triangles)
+    vector<vector<vector<DofIdx> > > ColGlob;
+    EntityHandle prism_periodic;
+    double coords_prism[18];
+    const EntityHandle* conn_Prism;
+    int  num_nodes1;
+    double coords_face[2][9];
     
     virtual PetscErrorCode GetN_and_Indices() {
         PetscFunctionBegin;
         
-        RowGlob.clear();  rowNMatrices.clear();  ColGlob.clear();
-        RowGlob.resize(1+6+2);    // 1-node, 6-edges   2-face (Two opposite triangles for prisms)
-        rowNMatrices.resize(1+6+2);
-        ColGlob.resize(1+6+2);
+        RowGlob.resize(2); ColGlob.resize(2);
+        row_mat=0;
+        RowGlob[0].resize(1+3+1);    // 1-node, 3-edges   1-face (-ve faces of prisms)
+        ColGlob[0].resize(1+3+1);    // 1-node, 3-edges   1-face (-ve faces of prisms)
+        RowGlob[1].resize(1+3+1);    // 1-node, 3-edges   1-face (+ve faces of prisms)
+        ColGlob[1].resize(1+3+1);    // 1-node, 3-edges   1-face (+ve faces of prisms)
+        rowNMatrices.resize(1+3+1);  // shape functions are the same for +ve and negative triangles (so only calculate for one face)
         
-        
-        //Indices for row and column for nodes for Prisms element
-        row_mat = 0;  RowGlob[row_mat].clear();   ColGlob[row_mat].clear();
-        RowGlob[row_mat].resize(18);
-        ColGlob[row_mat].resize(18);
         typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
-        const EntityHandle* conn_prism;
-        int num_nodes;
-        EntityHandle prism_periodic;  prism_periodic=fe_ptr->get_ent();
-        rval = moab.get_connectivity(prism_periodic,conn_prism,num_nodes,true); CHKERR_PETSC(rval);
-//        cout<< "num_nodes ="<<num_nodes << endl;
+        int num_nodes, num_nodes1;
+        dofs_iterator niit,hi_niit;   //for rows
+        dofs_iterator col_niit,hi_col_niit;  // for columns
+        prism_periodic=fe_ptr->get_ent();
+        //Indices for row and column for nodes for Prisms element
         
-        int nn = 0;
-        for(;nn<num_nodes;nn++) {
-            dofs_iterator niit,hi_niit;   //for rows
-            dofs_iterator col_niit,hi_col_niit;  // for columns
-            string field_name;
-            
-            //minimum and maximum row and column indices for each node on the surface
-            niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",conn_prism[nn]));
-            hi_niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",conn_prism[nn]));
-            
-            col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_prism[nn]));
-            hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_prism[nn]));
+//        cout<<"row_mat "<<row_mat<<endl;
+        RowGlob[0][0].clear();     ColGlob[0][0].clear();    RowGlob[1][0].clear();     ColGlob[1][0].clear();
+        RowGlob[0][0].resize(9);   ColGlob[0][0].resize(9);  RowGlob[1][0].resize(9);   ColGlob[1][0].resize(9);
         
-            for(;niit!=hi_niit;niit++) {
-                RowGlob[row_mat][nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_petsc_gloabl_dof_idx();
-            }
-            for(;col_niit!=hi_col_niit;col_niit++) {
-                ColGlob[row_mat][nn*col_niit->get_max_rank()+col_niit->get_dof_rank()] = col_niit->get_petsc_gloabl_dof_idx();
+        rval = moab.get_connectivity(prism_periodic,conn_Prism,num_nodes1,true); CHKERR_PETSC(rval);
+        rval = moab.get_coords(conn_Prism,num_nodes1,coords_prism); CHKERR_PETSC(rval);
+        
+//        cout<<"num_nodes1 "<<num_nodes1<<endl;
+//        cout<<"coord   ";
+//        for(int ii=0; ii<18; ii++) cout<<coords_prism[ii]<<"  ";
+//        cout<<endl<<endl;
+//        //Stop code
+//        std::string wait;
+//        std::cin >> wait;
+        
+        int count=0;
+        //int ff_arr[]={3, 4};
+        for(int ff=0; ff<2; ff++) {
+            //const EntityHandle* conn_Tri;
+           //EntityHandle Tri_Prism;
+            //rval = moab.side_element(prism_periodic,2,ff_arr[ff],Tri_Prism); CHKERR_PETSC(rval);
+            //rval = moab.get_connectivity(Tri_Prism,conn_Tri,num_nodes,true); CHKERR_PETSC(rval);
+            for(int nn = 0;nn<num_nodes1/2;nn++) {
+                
+                coords_face[ff][3*nn+0]=coords_prism[3*count+0];    coords_face[ff][3*nn+1]=coords_prism[3*count+1];    coords_face[ff][3*nn+2]=coords_prism[3*count+2];
+                //minimum and maximum row and column indices for each node on the prism triangle
+                niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
+                hi_niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
+
+                col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_Prism[count]));
+                hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_Prism[count]));
+
+              if(ff==0){
+                for(;niit!=hi_niit;niit++) {
+                    RowGlob[0][0][nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_petsc_gloabl_dof_idx();
+                    RowGlob[1][0][nn*niit->get_max_rank()+niit->get_dof_rank()]  = niit->get_petsc_gloabl_dof_idx();
+                }}
+                for(;col_niit!=hi_col_niit;col_niit++) {
+                    ColGlob[ff][0][nn*col_niit->get_max_rank()+col_niit->get_dof_rank()] = col_niit->get_petsc_gloabl_dof_idx();
+                }
+                count++;
             }
         }
-//        cout<<"\nFor nodes "<<endl;
-//        cout<<"\n RowGlob[row_mat].size() "<<RowGlob[row_mat].size()<<endl;
-//        for(int ii=0; ii<RowGlob[row_mat].size(); ii++) cout<<RowGlob[row_mat][ii]<<" ";
-//        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
-//        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[row_mat][ii]<<" ";
-//        cout<<"\n\n\n"<<endl;
+        row_mat++;
         
+        
+//        cout<<"\nFor Nodes "<<endl;
+//        cout<<"\nRowGlob[ii].size() "<<endl;
+//        for(int ii=0; ii<2; ii++) cout<<RowGlob[ii][0].size() <<"  ";
+//        cout<<"\nColGlob[ii].size() "<<endl;
+//        for(int ii=0; ii<2; ii++) cout<<ColGlob[ii][0].size() <<"  ";
+//        cout<<endl;
+//        for(int jj=0; jj<2; jj++) for(int ii=0; ii<RowGlob[jj][0].size(); ii++) cout<<RowGlob[jj][0][ii]<<" ";
+//        cout<<endl;
+//        for(int jj=0; jj<2; jj++) for(int ii=0; ii<ColGlob[jj][0].size(); ii++) cout<<ColGlob[jj][0][ii]<<" ";
+//        cout<<"\n\n\n"<<endl;
+
+//        cout<<"coord   ";
+//        for(int ff=0; ff<2; ff++)for(int ii=0; ii<9; ii++) cout<<coords_face[ff][ii]<<"  ";
+//        cout<<endl<<endl;
+//        //Stop code
+//        std::string wait;
+//        std::cin >> wait;
+
         // Find row and colum indices for Edges
         vector<int> FaceEdgeSense;
         vector<int> FaceEdgeOrder;
         vector<vector<double> > N_edge_data;
         vector<vector<double> > diffN_edge_data;
-        double* N_edge[6];
-        double* diffN_edge[6];
         
-        FaceEdgeSense.resize(6);
-        FaceEdgeOrder.resize(6);
-        N_edge_data.resize(6);
-        diffN_edge_data.resize(6);
+        
+        double* N_edge[3];  //Only for one side of prism (Triangle)
+        double* diffN_edge[3];
+        FaceEdgeSense.resize(3);
+        FaceEdgeOrder.resize(3);
+        N_edge_data.resize(3);
+        diffN_edge_data.resize(3);
 
+        count=0;
         int ee_arr[]={0, 1, 2, 6, 7, 8};  //side numbers (Canonical numbering) of edges belong to triangles
-        int ee = 0; row_mat++;
-        for(;ee<6;ee++) {
-            EntityHandle edge;
-            rval = moab.side_element(prism_periodic,1,ee_arr[ee],edge); CHKERR_PETSC(rval);
-            int side_number,offset;
-            rval = moab.side_number(prism_periodic,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
-            dofs_iterator eiit,hi_eiit,col_eiit,col_hi_eiit;
-//            cout<<"side_number "<<side_number<<endl;
-//            cout<<"FaceEdgeSense[ee] "<<FaceEdgeSense[ee]<<endl;
-//            cout<<"edge "<<edge<<endl;
-            
-            eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",edge));
-            hi_eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",edge));
-            col_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
-            col_hi_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
-            
-            //For rows (we will get indices only for -ve edges, i.e. eiit!=hi_eiit===True)
-            RowGlob[row_mat].clear();  //without clear it will get the previous value
-            if(eiit!=hi_eiit) {
-                FaceEdgeOrder[ee] = eiit->get_max_order();
-                if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
-                    assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(eiit,hi_eiit));
-                    RowGlob[row_mat].resize(distance(eiit,hi_eiit));
-//                    cout<<"row_mat "<<row_mat<<endl;
-//                    cout<<"RowGlob[row_mat].size() "<<RowGlob[row_mat].size()<<endl;
-                    for(;eiit!=hi_eiit;eiit++) {
-                        RowGlob[row_mat][eiit->get_EntDofIdx()]=eiit->get_petsc_gloabl_dof_idx();
+        
+        for(int ff=0; ff<2; ff++) { //face
+            row_mat=1;
+            for(int ee=0; ee<3; ee++){ //edge
+                EntityHandle edge;
+                rval = moab.side_element(prism_periodic,1,ee_arr[count],edge); CHKERR_PETSC(rval);
+                int side_number,offset;
+                rval = moab.side_number(prism_periodic,edge,side_number,FaceEdgeSense[ee],offset); CHKERR_PETSC(rval);
+                
+//                cout<<"side_number "<<side_number<<endl;
+//                cout<<"FaceEdgeSense[ee] "<<FaceEdgeSense[ee]<<endl;
+//                cout<<"edge "<<edge<<endl;
+//                std::string wait;
+//                std::cin >> wait;
+                
+
+                dofs_iterator eiit,hi_eiit,col_eiit,col_hi_eiit;
+                eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",edge));
+                hi_eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",edge));
+                col_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
+                col_hi_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
+                
+                //For rows (we will get indices only for -ve edges, i.e. eiit!=hi_eiit===True)
+                if(ff==0){
+                    RowGlob[0][row_mat].clear();  RowGlob[1][row_mat].clear();//without clear it will get the previous value
+                    if(eiit!=hi_eiit) {
+                        FaceEdgeOrder[ee] = eiit->get_max_order();
+                        if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
+                            assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(eiit,hi_eiit));
+                            
+                            RowGlob[0][row_mat].resize(distance(eiit,hi_eiit));
+                            RowGlob[1][row_mat].resize(distance(eiit,hi_eiit));
+                            
+//                            cout<<"row_mat "<<row_mat<<endl;
+//                            cout<<"RowGlob[row_mat].size() "<<RowGlob[0][row_mat].size()<<endl;
+                            for(;eiit!=hi_eiit;eiit++) {
+                                RowGlob[0][row_mat][eiit->get_EntDofIdx()]=eiit->get_petsc_gloabl_dof_idx();
+                                RowGlob[1][row_mat][eiit->get_EntDofIdx()]=eiit->get_petsc_gloabl_dof_idx();
+                            }
+                            
+                        }
                     }
                 }
-            }
 
-            ColGlob[row_mat].clear(); //without clear it will get the previous value
-            if(col_eiit!=col_hi_eiit) {
-                FaceEdgeOrder[ee] = col_eiit->get_max_order();
-                if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
-                    assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(col_eiit,col_hi_eiit));
-                    ColGlob[row_mat].resize(distance(col_eiit,col_hi_eiit));
-//                    cout<<"ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
-                    for(;col_eiit!=col_hi_eiit;col_eiit++) {
-                        ColGlob[row_mat][col_eiit->get_EntDofIdx()]=col_eiit->get_petsc_gloabl_dof_idx();
+                ColGlob[ff][row_mat].clear(); //without clear it will get the previous value
+                if(col_eiit!=col_hi_eiit) {
+                    FaceEdgeOrder[ee] = col_eiit->get_max_order();
+                    if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
+                        assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(col_eiit,col_hi_eiit));
+                        ColGlob[ff][row_mat].resize(distance(col_eiit,col_hi_eiit));
+    //                    cout<<"ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
+                        for(;col_eiit!=col_hi_eiit;col_eiit++) {
+                            ColGlob[ff][row_mat][col_eiit->get_EntDofIdx()]=col_eiit->get_petsc_gloabl_dof_idx();
+                        }
+                        N_edge_data[ee].resize(g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
+                        diffN_edge_data[ee].resize(2*g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
+                        N_edge[ee] = &(N_edge_data[ee][0]);
+                        diffN_edge[ee] = &(diffN_edge_data[ee][0]);
                     }
-                    N_edge_data[ee].resize(g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
-                    diffN_edge_data[ee].resize(2*g_TRI_dim*NBEDGE_H1(FaceEdgeOrder[ee]));
-                    N_edge[ee] = &(N_edge_data[ee][0]);
-                    diffN_edge[ee] = &(diffN_edge_data[ee][0]);
-                    row_mat++;   //row_mat++ here as column indices exists for every edge (this increment will create 0 entries in row indices)
+                    count++;  row_mat++;
+//                    cout<<"row_mat  "<<row_mat<<endl;
                 }
             }
         }
-
+        
 //        cout<<"\nFor Edges "<<endl;
+//        cout<<"\nrow_mat "<<row_mat << endl;
 //        cout<<"\nRowGlob[ii].size() "<<endl;
-//        for(int ii=1; ii<row_mat; ii++) cout<<RowGlob[ii].size() <<"  ";
-//        cout<<"\nColGlob[ii].size() "<<endl;
-//        for(int ii=1; ii<row_mat; ii++) cout<<ColGlob[ii].size() <<"  ";
-//        cout<<"\nCol indices "<<endl;
-//        for(int jj=1; jj<row_mat; jj++) for(int ii=0; ii<ColGlob[jj].size(); ii++) cout<<ColGlob[jj][ii]<<" "; cout<<endl;
-//        cout<<"Row indices "<<endl;
-//        for(int jj=1; jj<row_mat; jj++) for(int ii=0; ii<RowGlob[jj].size(); ii++) cout<<RowGlob[jj][ii]<<" "; cout<<endl;
-//        cout<<"\n\n\n";
-        
-//        //Find the shape function N at each gauss point for all the edges and then re-araange in the form as mentioned for nodes
-//        if(N_edge[0] != NULL){
-//            ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&g_NTRI[0],&diffNTRI[0],N_edge,diffN_edge,g_TRI_dim); CHKERRQ(ierr);
-//            //            cout<<"Hi from insidie"<<endl<<endl;
-//            ee = 0; int row_mat1=1;
-//            for (;ee<3;ee++,row_mat1++){
-//                rowNMatrices[row_mat1].resize(g_TRI_dim);
-//                unsigned int gg = 0; unsigned int gg1=0;
-//                int nodes_edge=NBEDGE_H1(FaceEdgeOrder[ee]);
-//                //                cout<<"nodes_edge  "<<nodes_edge<<endl;
-//                for(;gg<g_TRI_dim;gg++) {
-//                    rowNMatrices[row_mat1][gg].resize(3,3*nodes_edge);
-//                    rowNMatrices[row_mat1][gg].clear();
-//                    int kk=0;
-//                    for(int ii=0; ii<nodes_edge; ii++){
-//                        for (int jj=0; jj<3; jj++){
-//                            //                              cout<<"jj  "<<jj<<endl;
-//                            //                              cout<<"kk  "<<kk<<endl;
-//                            //                              cout<<"gg1  "<<gg1<<endl;
-//                            //                              cout<<"N_face[gg1]  "<<N_edge[ee][gg1]<<endl<<endl;
-//                            rowNMatrices[row_mat1][gg](jj,kk)=N_edge[ee][gg1]; kk++;
-//                        }
-//                        gg1++;
-//                    }
-//                }
-//            }
-//        }
-        
-        
-        
-        
-        vector<int> FaceOrder;
-        FaceOrder.resize(2);
+//        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) cout<<RowGlob[ff][jj].size() <<"  ";
+//        cout<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) for(int ii=0; ii<RowGlob[ff][jj].size(); ii++) cout<<RowGlob[ff][jj][ii]<<" ";
+//        
+//        cout<<"\nFor Edges "<<endl;
+//        cout<<"\nrow_mat "<<row_mat << endl;
+//        cout<<"\ColGlob[ii].size() "<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) cout<<ColGlob[ff][jj].size() <<"  ";
+//        cout<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) for(int ii=0; ii<ColGlob[ff][jj].size(); ii++) cout<<ColGlob[ff][jj][ii]<<" ";
+//        
+//        cout<<endl;
+//        std::string wait;
+//        std::cin >> wait;
 
+
+        //Find the shape function N at each gauss point for all the edges and then re-araange in the form as mentioned for nodes
+        if(N_edge[0] != NULL){
+            ierr = H1_EdgeShapeFunctions_MBTRI(&FaceEdgeSense[0],&FaceEdgeOrder[0],&g_NTRI[0],&diffNTRI[0],N_edge,diffN_edge,g_TRI_dim); CHKERRQ(ierr);
+//            cout<<"Hi from insidie"<<endl<<endl;
+            int ee = 0; int row_mat1=1;
+            for (;ee<3;ee++,row_mat1++){
+                rowNMatrices[row_mat1].resize(g_TRI_dim);
+                unsigned int gg = 0; unsigned int gg1=0;
+                int nodes_edge=NBEDGE_H1(FaceEdgeOrder[ee]);
+                //                cout<<"nodes_edge  "<<nodes_edge<<endl;
+                for(;gg<g_TRI_dim;gg++) {
+                    rowNMatrices[row_mat1][gg].resize(3,3*nodes_edge);
+                    rowNMatrices[row_mat1][gg].clear();
+                    int kk=0;
+                    for(int ii=0; ii<nodes_edge; ii++){
+                        for (int jj=0; jj<3; jj++){
+//                            cout<<"jj  "<<jj<<endl;
+//                            cout<<"kk  "<<kk<<endl;
+//                            cout<<"gg1  "<<gg1<<endl;
+//                            cout<<"N_face[gg1]  "<<N_edge[ee][gg1]<<endl<<endl;
+                            rowNMatrices[row_mat1][gg](jj,kk)=N_edge[ee][gg1]; kk++;
+                        }
+                        gg1++;
+                    }
+                }
+            }
+        }
+        
+        
+        
+        
+// Indices and shape funcitons for the faces
         int ff_arr[]={3, 4};  //Canonical numbering of two triangles only
-        int ff = 0; row_mat++;
-        for(;ff<2;ff++) {
+ 
+        for(int ff=0;ff<2;ff++) {
+            row_mat=4;
             EntityHandle Tri_Prism;
             rval = moab.side_element(prism_periodic,2,ff_arr[ff],Tri_Prism); CHKERR_PETSC(rval);
             
@@ -204,68 +271,317 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange {
             col_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
             col_hi_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
 
-             //For rows (we will get indices only for -ve edges, i.e. eiit!=hi_eiit===True)
-            RowGlob[row_mat].clear();  //without clear it will get the previous value
-            if(fiit!=hi_fiit) {
-                FaceOrder[ff] = fiit->get_max_order();
-//                cout<<"FaceOrder[ff] "<<FaceOrder[ff]<<endl;
-                assert((unsigned int)3*NBFACE_H1(FaceOrder[ff])==distance(fiit,hi_fiit));
-                if(NBFACE_H1(FaceOrder[ff])>0) {
-                    RowGlob[row_mat].resize(distance(fiit,hi_fiit));
-//                    cout<<"RowGlob[row_mat].size() "<<RowGlob[row_mat].size()<<endl;
-                    for(;fiit!=hi_fiit;fiit++) {
-                        RowGlob[row_mat][fiit->get_EntDofIdx()]=fiit->get_petsc_gloabl_dof_idx();
+
+            if(ff==0){
+                RowGlob[0][row_mat].clear();  RowGlob[1][row_mat].clear();//without clear it will get the previous value
+                if(fiit!=hi_fiit) {
+                    int face_order = fiit->get_max_order();
+//                    cout<<"face_order "<<face_order<<endl;
+                    assert((unsigned int)3*NBFACE_H1(face_order)==distance(fiit,hi_fiit));
+                    if(NBFACE_H1(face_order)>0) {
+                        RowGlob[0][row_mat].resize(distance(fiit,hi_fiit));  RowGlob[1][row_mat].resize(distance(fiit,hi_fiit));
+//                        cout<<"RowGlob[0][row_mat].size() "<<RowGlob[0][row_mat].size()<<endl;
+//                        cout<<"RowGlob[1][row_mat].size() "<<RowGlob[1][row_mat].size()<<endl;
+                        for(;fiit!=hi_fiit;fiit++) {
+                            RowGlob[0][row_mat][fiit->get_EntDofIdx()]=fiit->get_petsc_gloabl_dof_idx();
+                            RowGlob[1][row_mat][fiit->get_EntDofIdx()]=fiit->get_petsc_gloabl_dof_idx();
+                        }
                     }
-                }
-            }
-            
-            ColGlob[row_mat].clear(); //without clear it will get the previous value
-            if(col_fiit!=col_hi_fiit) {
-                FaceOrder[ff] = col_fiit->get_max_order();
-//                cout<<"FaceOrder[ff] "<<FaceOrder[ff]<<endl;
-                assert((unsigned int)3*NBFACE_H1(FaceOrder[ff])==distance(col_fiit,col_hi_fiit));
-                if(NBFACE_H1(FaceOrder[ff])>0) {
-                    ColGlob[row_mat].resize(distance(col_fiit,col_hi_fiit));
-//                    cout<<"ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
-                    for(;col_fiit!=col_hi_fiit;col_fiit++) {
-                        ColGlob[row_mat][col_fiit->get_EntDofIdx()]=col_fiit->get_petsc_gloabl_dof_idx();
+                    
+                    
+                    //Find out the shape funcition and rearrange in the form as shown for the nodes (This should be inside fiit!=hi_fiit) and we do it only once for only one side of Prism and use the same to assemble
+                    vector<double> N_face, diffN_face;
+                    N_face.resize(g_TRI_dim*NBFACE_H1(face_order));
+                    diffN_face.resize(2*g_TRI_dim*NBFACE_H1(face_order));
+                    int face_nodes[] = { 0,1,2 };
+                    ierr = H1_FaceShapeFunctions_MBTRI(face_nodes,face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
+                    
+                    rowNMatrices[row_mat].resize(g_TRI_dim);
+                    unsigned int gg = 0;  unsigned int gg1=0;
+                    int nodes_face=NBFACE_H1(face_order);
+                    
+                    for(;gg<g_TRI_dim;gg++) {
+                        rowNMatrices[row_mat][gg].resize(3,3*nodes_face);
+                        rowNMatrices[row_mat][gg].clear();
+                        int kk=0;
+                        for(int ii=0; ii<nodes_face; ii++){
+                            for (int jj=0; jj<3; jj++){
+//                                  cout<<"jj  "<<jj<<endl;
+//                                  cout<<"kk  "<<kk<<endl;
+//                                  cout<<"gg1  "<<gg1<<endl<<endl;
+//                                  cout<<"N_face[gg1]  "<<N_face[gg1]<<endl<<endl;
+                                  rowNMatrices[row_mat][gg](jj,kk)=N_face[gg1]; kk++;
+                            }
+                            gg1++;
+                        }
+//                        cout<<"rowNMatrices[row_mat][0](jj,kk)  "<<rowNMatrices[row_mat][gg]<<endl;
+//                        std::string wait;
+//                        std::cin >> wait;
                     }
                 }
             }
             
 
-            
-            cout<<"\n\n";
+            ColGlob[ff][row_mat].clear(); //without clear it will get the previous value
+            if(col_fiit!=col_hi_fiit) {
+                int face_order = col_fiit->get_max_order();
+//                cout<<"FaceOrder[ff] "<<face_order<<endl;
+                assert((unsigned int)3*NBFACE_H1(face_order)==distance(col_fiit,col_hi_fiit));
+                if(NBFACE_H1(face_order)>0) {
+                    ColGlob[ff][row_mat].resize(distance(col_fiit,col_hi_fiit));
+//                    cout<<"ColGlob[row_mat].size() "<<ColGlob[ff][row_mat].size()<<endl;
+                    for(;col_fiit!=col_hi_fiit;col_fiit++) {
+                        ColGlob[ff][row_mat][col_fiit->get_EntDofIdx()]=col_fiit->get_petsc_gloabl_dof_idx();
+                    }
+                }
+                row_mat++;
+            }
+        
         }
         
-        
-        
-        
-        
-        
-        
-//        //Stop code
+////        cout<<"\nFor Faces "<<endl;
+//        cout<<"\nRowGlob[ii].size() "<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=4; jj<row_mat; jj++) cout<<RowGlob[ff][jj].size() <<"  ";
+//        cout<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=4; jj<row_mat; jj++) for(int ii=0; ii<RowGlob[ff][jj].size(); ii++) cout<<RowGlob[ff][jj][ii]<<" ";
+//        cout<<"\nColGlob[ii].size() "<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=4; jj<row_mat; jj++) cout<<ColGlob[ff][jj].size() <<"  ";
+//        cout<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=4; jj<row_mat; jj++) for(int ii=0; ii<ColGlob[ff][jj].size(); ii++) cout<<ColGlob[ff][jj][ii]<<" ";
+//        cout<<endl;
+//        cout<<"row_mat  "<<row_mat<<endl;
 //        std::string wait;
 //        std::cin >> wait;
-//
-        
+
         PetscFunctionReturn(0);
     }
     
     
+    ublas::vector<ublas::vector<ublas::matrix<FieldData> > > H_mat;
+    virtual PetscErrorCode Get_H_mat() {
+        PetscFunctionBegin;
+        H_mat.resize(2);  //one for -ve triangle and one for +ve triangle of the prism
+        for(int ff=0; ff<2; ff++){
+            H_mat(ff).resize(row_mat);
+            for(int rr=0; rr<row_mat; rr++){
+//                cout<<"rr "<<rr<<endl;
+//                cout<<"(rowNMatrices[rr])[0].size2() "<<(rowNMatrices[rr])[0].size2()<<endl;
+                int num_col=(rowNMatrices[rr])[0].size2();
+                H_mat[ff][rr].resize(num_col,num_col);
+                H_mat[ff][rr].clear();
+                for(int ii = 0; ii<num_col; ii++) {
+                    if(ff==0) H_mat[ff][rr](ii,ii) = +1.0;
+                    else H_mat[ff][rr](ii,ii) = -1.0;
+                }
+//                cout<<"H_mat "<<H_mat[ff][rr]<<endl;
+            }
+//            cout<<"ff "<<ff<<endl;
+        }
+        PetscFunctionReturn(0);
+    }
+   
     
+    //Calculate and assemble NT x N matrix
+    ublas::vector<ublas::matrix<ublas::matrix<FieldData> > > NTN;  //The outer most vector is of size(2) for negative and positive triangles
+//    double coords_face[2][9];  //[2] i.e. [0] for -ve face and [1] for +ve face
+//    double coords_face1[2][3][3];  //[2] i.e. [0] for -ve face and [1] for +ve face
+    double area;
+    virtual PetscErrorCode Stiffness() {
+        PetscFunctionBegin;
+//        cout<<" row_mat; "<<row_mat<<endl;
+        NTN.resize(2);
+//        int ff_arr[]={3, 4};
+        for(int ff=0; ff<2; ff++){
+            NTN(ff).resize(row_mat,row_mat);
+//            const EntityHandle *conn_Tri;
+//            int num_nodes;
+//            EntityHandle Tri_Prism;
+//            rval = moab.side_element(prism_periodic,2,ff_arr[ff],Tri_Prism); CHKERR_PETSC(rval);
+//            rval = moab.get_connectivity(Tri_Prism,conn_Tri,num_nodes,true); CHKERR_PETSC(rval);
+//            cout<<"num_nodes "<<num_nodes<<endl<<endl;
+//            rval = moab.get_coords(conn_Tri,num_nodes,coords_face[ff]); CHKERR_PETSC(rval);
+//            cout<<"coord   ";
+//            for(int ii=0; ii<9; ii++) cout<<coords_face[ff][ii]<<"  ";
+//            cout<<endl<<endl;
+//            for (int nn=0; nn<num_nodes; nn++){
+//                rval = moab.get_coords(&conn_Tri[nn],1,coords_face1[ff][nn]); CHKERR_PETSC(rval);
+//            }
+//            cout<<"coord1  ";
+//            for(int ii=0; ii<3; ii++)for(int jj=0; jj<3; jj++) cout<<coords_face1[ff][ii][jj]<<"  ";
+//            cout<<endl<<endl;
+//             //Stop code
+//            std::string wait;
+//            std::cin >> wait;
+            ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
+            ublas::vector<FieldData,ublas::bounded_array<double,3> > normal(3);
+            ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face[ff],&*normal.data().begin()); CHKERRQ(ierr);
+            area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
+//            cout<<" area = "<<area<<endl;
+        //Calculate C Matrix, i.e. (NT x N)
+            for(int rr = 0;rr<row_mat;rr++) {
+//                cout<<" rr = "<<rr<<endl;
+                for(int gg = 0;gg<g_TRI_dim;gg++) {
+                    ublas::matrix<double> &row_Mat = (rowNMatrices[rr])[gg];
+//                    cout<<" row_Mat; "<<row_Mat<<endl;
+                    double w = area*G_W_TRI[gg];
+                    for(int cc = 0;cc<row_mat;cc++) {
+                        ublas::matrix<FieldData> &col_Mat = (rowNMatrices[cc])[gg];
+                        ublas::matrix<FieldData>  NTN1;
+                        NTN1.resize(row_Mat.size2(),col_Mat.size2());
+                        
+//                        cout<<" G_W_TRI[gg] "<<G_W_TRI[gg]<<endl;
+//                        cout<<" row_Mat; "<<row_Mat<<endl;
+//                        cout<<" col_Mat; "<<col_Mat<<endl;
+                        if(gg == 0) {
+//                            cout<<" row_Mat; "<<row_Mat<<endl;
+//                            cout<<" col_Mat; "<<col_Mat<<endl;
+                            //calculate NTN1=(w* NT * N)
+                            NTN1 = prod( w*trans(row_Mat), col_Mat);
+                            //calculate NTN=(H_mat* w* NT * N)
+                            NTN(ff)(rr,cc).resize(H_mat[ff][rr].size1(),NTN1.size2());
+                            NTN(ff)(rr,cc) = prod(H_mat[ff][rr], NTN1);
+//                            cout<<" NTN= "<<NTN(ff)(rr,cc)<<endl;
+                        }else {
+                            NTN1 = prod( w*trans(row_Mat), col_Mat);
+                            NTN(ff)(rr,cc)+=prod(H_mat[ff][rr], NTN1);
+                        }
+                    }
+                }
+            }
+//            cout<<endl<<endl<<endl;
+        }
+        PetscFunctionReturn(0);
+    }
+//         //Stop code
+//        std::string wait;
+//        std::cin >> wait;
+
     
-       PetscErrorCode operator()() {
-          PetscFunctionBegin;
-          cout<<"Hi from class"<<endl;
+     virtual PetscErrorCode Lhs() {
+        PetscFunctionBegin;
+        ierr = Stiffness(); CHKERRQ(ierr);
         
-          ierr = GetN_and_Indices(); CHKERRQ(ierr);
-//        ierr = Get_H_mat();
-//        ierr = Lhs(); CHKERRQ(ierr);
-//        ierr = Rhs(); CHKERRQ(ierr);
-          PetscFunctionReturn(0);
+         //Assembly C
+         for(int ff=0; ff<2; ff++){
+            for(int rr = 0;rr<row_mat;rr++) {
+                for(int cc = 0;cc<row_mat;cc++) {
+//                    cout<<"HI from assembly "<<endl;
+                    ierr = MatSetValues(Aij,RowGlob[ff][rr].size(),&(RowGlob[ff][rr])[0],ColGlob[ff][cc].size(),&(ColGlob[ff][cc])[0],&(NTN[ff](rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+                }
+            }
+         }
+
+        //Assembly trans(C)
+        for(int ff=0; ff<2; ff++){
+            for(int rr = 0;rr<row_mat;rr++) {
+                for(int cc = 0;cc<row_mat;cc++) {
+                    NTN[ff](rr,cc) = trans(NTN[ff](rr,cc));
+                    ierr = MatSetValues(Aij,ColGlob[ff][cc].size(),&(ColGlob[ff][cc])[0],RowGlob[ff][rr].size(),&(RowGlob[ff][rr])[0],&(NTN[ff](rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+                }
+            }
+        }
+        PetscFunctionReturn(0);
     }
 
+    
+    
+    //Calculate the right hand side vector, i.e. f=D_mat * applied_strain and assemble it into the global force vector F
+    virtual PetscErrorCode Rhs() {
+        PetscFunctionBegin;
+        X_mat.resize(3,6);    X_mat.clear();
+        nodes_coord.resize(3,3);
+        gauss_coord.resize(3,g_TRI_dim);
+        
+        for(int ff=0; ff<2; ff++){
+            D_mat.resize(row_mat);
+            
+            //used to calculate the coordinates of a Gauss points
+            nodes_coord(0,0)=coords_face[ff][0]; nodes_coord(0,1)=coords_face[ff][3]; nodes_coord(0,2)=coords_face[ff][6];
+            nodes_coord(1,0)=coords_face[ff][1]; nodes_coord(1,1)=coords_face[ff][4]; nodes_coord(1,2)=coords_face[ff][7];
+            nodes_coord(2,0)=coords_face[ff][2]; nodes_coord(2,1)=coords_face[ff][5]; nodes_coord(2,2)=coords_face[ff][8];
+
+            //coordinates for all gauss points
+            gauss_coord=prod(nodes_coord, g_NTRI_mat);
+            
+            
+//            cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
+//            cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
+//            cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
+//            std::string wait;
+//            std::cin >> wait;
+//            
+            //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
+            ublas::vector<FieldData> applied_strain;
+            applied_strain.resize(6);
+            applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
+            applied_strain(3)=1.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
+//            cout<<"area "<<area << endl;
+            
+            for(int rr=0; rr<row_mat; rr++){
+                for(int gg = 0;gg<g_TRI_dim;gg++) {
+                    double w = area*G_W_TRI[gg];
+                    X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
+                    X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
+                    X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
+                    X_mat=0.5*X_mat;
+                    
+                    ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
+                    ublas::matrix<FieldData> &col_Mat = X_mat;
+                    
+                    ublas::matrix<FieldData>  D_mat1;    //Dmat1=NT*X_mat
+                    D_mat1.resize(row_Mat.size2(),col_Mat.size2());
+                    //Integrate D_mat
+                    if(gg == 0) {
+                        D_mat[rr].resize(H_mat[ff][rr].size1(),D_mat1.size2());
+                        
+//                        //calculate (D_mat1= w * NT * X_mat)
+//                        cout<<"\n row_Mat "<<row_Mat<<endl;
+//                        cout<<"\n col_Mat "<<rr<<col_Mat;
+//                        cout<<"\n w "<<w<<endl;
+                        
+                        D_mat1=prod(w*trans(row_Mat), col_Mat);
+                        //calculate (D_mat = H_mat * D_mat1)
+                        //                    cout<<"\n rr "<<rr<<endl;
+                        //                    cout<<"\n D_mat[rr] "<<D_mat[rr]<<endl;
+                        D_mat[rr]=prod(H_mat[ff][rr], D_mat1);
+                    }else{
+                    //calculate (D_mat1= w * NT * X_mat)
+                    D_mat1=prod(w*trans(row_Mat), col_Mat);
+                    
+                    //calculate (D_mat = H_mat * D_mat1)
+                    D_mat[rr]+=prod(H_mat[ff][rr], D_mat1);
+                }
+            }
+//            cout<<"\n rr "<<rr<<endl;
+//            cout<<"\n RowGlob[ff][0].size() "<<RowGlob[ff][0].size()<<endl;
+//            for(int ii=0; ii<RowGlob[ff][0].size(); ii++) cout<<RowGlob[ff][0][ii]<<" ";
+//            cout<< "\nD_mat[rr] =  "<<D_mat[rr]<<endl<<endl;
+            //Assemble D_mat into global force vector F
+            f=prod(D_mat[rr], applied_strain);
+//            cout<<"\n f "<<f<<endl;
+            ierr = VecSetValues(F,RowGlob[ff][rr].size(),&(RowGlob[ff][rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+        }
+        }
+        PetscFunctionReturn(0);
+    }
+
+    
+    
+    PetscErrorCode operator()() {
+        PetscFunctionBegin;
+//        cout<<"Hi from class"<<endl;
+        ierr = GetN_and_Indices(); CHKERRQ(ierr);
+        ierr = Get_H_mat();
+        
+        //Dirihlet Boundary Condition
+//        ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
+
+        ierr = Lhs(); CHKERRQ(ierr);
+        ierr = Rhs(); CHKERRQ(ierr);
+        PetscFunctionReturn(0);
+    }
+
+    
 };
 
     
