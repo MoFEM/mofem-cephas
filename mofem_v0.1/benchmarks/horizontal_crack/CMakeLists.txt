@@ -16,26 +16,18 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-cm_export_file("../../meshes/radwanska_benchmark.cub" export_files_plate_stability)
-cm_export_file("../../meshes/randwanska_benchmark.jou" export_files_plate_stability)
-cm_export_file("../../meshes/radwanska_benchmark2.cub" export_files_plate_stability)
-cm_export_file("../../meshes/radwanska_benchmark2.jou" export_files_plate_stability)
+cm_export_file("../../meshes/horizontal_crack.cub" export_files_horizontal_crack)
+cm_export_file("../../meshes/horizontal_crack.jou" export_files_horizontal_crack)
 
-install(FILES ${CMAKE_BINARY_DIR}/examples/arc_length_nonlinear_elasticity/arc_length_nonlinear_elasticity.sh
-  DESTINATION mofem/benchmarks/plate_stability
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/convergence_study.sh 
+  DESTINATION mofem/benchmarks/horizontal_crack
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/radwanska_benchmark.cub
-  DESTINATION mofem/benchmarks/plate_stability
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/horizontal_crack.cub
+  DESTINATION mofem/benchmarks/horizontal_crack
   PERMISSIONS OWNER_READ OWNER_WRITE)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/radwanska_benchmark2.cub
-  DESTINATION mofem/benchmarks/plate_stability
-  PERMISSIONS OWNER_READ OWNER_WRITE)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/randwanska_benchmark.jou
-  DESTINATION mofem/benchmarks/plate_stability
-  PERMISSIONS OWNER_READ OWNER_WRITE)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/radwanska_benchmark2.jou
-  DESTINATION mofem/benchmarks/plate_stability
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/horizontal_crack.jou
+  DESTINATION mofem/benchmarks/horizontal_crack
   PERMISSIONS OWNER_READ OWNER_WRITE)
 
 
