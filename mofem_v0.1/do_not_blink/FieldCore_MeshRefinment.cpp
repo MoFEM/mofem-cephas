@@ -295,6 +295,12 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
     bitset<8> ref_tets_bit(0);
     ref_ent_by_composite::iterator miit_composite = by_composite.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
     ref_ent_by_composite::iterator hi_miit_composite = by_composite.upper_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
+    if(miit_composite!=hi_miit_composite) {
+      if(distance(miit_composite,hi_miit_composite)!=(unsigned int)nb_new_tets) {
+	SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %u != %u",
+	  distance(miit_composite,hi_miit_composite),(unsigned int)nb_new_tets);
+      }
+    }
     if(distance(miit_composite,hi_miit_composite)==(unsigned int)nb_new_tets) {
       for(int tt = 0;miit_composite!=hi_miit_composite;miit_composite++,tt++) {
 	EntityHandle tet = miit_composite->get_ref_ent();
@@ -348,6 +354,15 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
 	    PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
 	  }
 	}
+      }
+    }
+    //debug
+    miit_composite = by_composite.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
+    hi_miit_composite = by_composite.upper_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
+    if(miit_composite!=hi_miit_composite) {
+      if(distance(miit_composite,hi_miit_composite)!=(unsigned int)nb_new_tets) {
+	SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %u != %u",
+	  distance(miit_composite,hi_miit_composite),(unsigned int)nb_new_tets);
       }
     }
     //find parents for new edges and faces

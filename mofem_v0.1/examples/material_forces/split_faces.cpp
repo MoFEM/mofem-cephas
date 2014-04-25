@@ -87,6 +87,12 @@ int main(int argc, char *argv[]) {
     ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
   }
 
+  //project and set coords
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
+  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+
   if(pcomm->rank()==0) {
     EntityHandle meshset200;
     ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset200); CHKERRQ(ierr);

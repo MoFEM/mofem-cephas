@@ -3406,7 +3406,6 @@ PetscErrorCode main_face_splitting_restart(FieldInterface& mField,Configurationa
   const EntityHandle root_meshset = mField.get_moab().get_root_set();
   BitRefLevel *ptr_bit_level0;
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
-  BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   Tag th_griffith_force;
   rval = mField.get_moab().tag_get_handle("GRIFFITH_FORCE",th_griffith_force); CHKERR_PETSC(rval);
