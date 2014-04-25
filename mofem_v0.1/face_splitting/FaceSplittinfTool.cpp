@@ -252,7 +252,7 @@ PetscErrorCode FaceSplittingTools::getOpositeForntEdges(bool createMeshset) {
  
   PetscFunctionReturn(0);
 }
-PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset) {
+PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb) {
   PetscFunctionBegin;
 
   //get oposite crack foront faces, that is edges->nodes->tets
@@ -358,13 +358,16 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset) {
   common_tets_faces_nodes = subtract(common_tets_faces_nodes,crack_front_edges_nodes);
   ierr = mField.get_moab().add_entities(crackFrontTests,common_tets_faces_nodes); CHKERRQ(ierr);
 
-  /*{
-    EntityHandle out_meshset;
-    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    //rval = mField.get_moab().add_entities(out_meshset,common_tets); CHKERR_PETSC(rval);
-    rval = mField.get_moab().add_entities(out_meshset,common_tets_faces); CHKERR_PETSC(rval);
-    rval = mField.get_moab().write_file("debug.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-  }*/
+  if(verb>0) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    if(pcomm->rank()==0) {
+      EntityHandle out_meshset;
+      rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,common_tets); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,common_tets_faces); CHKERR_PETSC(rval);
+      rval = mField.get_moab().write_file("debug.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    }
+  }
 
   PetscFunctionReturn(0);
 }
@@ -571,14 +574,17 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 	debug_ii++;
 
 	if(verb>1) {
-	  EntityHandle out_meshset;
-	  rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	  rval = mField.get_moab().add_entities(out_meshset,crack_front_tets); CHKERR_PETSC(rval);
-	  rval = mField.get_moab().add_entities(out_meshset,crack_front_tets_faces); CHKERR_PETSC(rval);
-	  ostringstream ss;
-	  ss << "chop_debug_" << debug_ii << ".vtk";
-	  rval = mField.get_moab().write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	  rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+	  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+	  if(pcomm->rank()==0) {
+	    EntityHandle out_meshset;
+	    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+	    rval = mField.get_moab().add_entities(out_meshset,crack_front_tets); CHKERR_PETSC(rval);
+	    rval = mField.get_moab().add_entities(out_meshset,crack_front_tets_faces); CHKERR_PETSC(rval);
+	    ostringstream ss;
+	    ss << "chop_debug_" << debug_ii << ".vtk";
+	    rval = mField.get_moab().write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+	    rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+	  }
 	}
 
 	if(crack_front_tets.empty()) {
@@ -709,6 +715,9 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     debug_ii++;
 
     if(verb>1) {
+      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+      if(pcomm->rank()==0) {
+
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       rval = mField.get_moab().add_entities(out_meshset,crack_front_tets); CHKERR_PETSC(rval);
@@ -736,6 +745,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
       rval = mField.get_moab().write_file(ssssss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
 
+      }
 
     }	
 
@@ -898,10 +908,24 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
   for(int ll = 1;ll<nb_ref_levels+1;ll++) {
 
       BitRefLevel current_ref = BitRefLevel().set(current_ref_bit);
-  
+
       Range level_tets;
       ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
-      ierr = mField.seed_finite_elements(level_tets); CHKERRQ(ierr);
+      ierr = mField.seed_ref_level_3D(level_tets,current_ref); CHKERRQ(ierr);
+
+      if(verb>0) {
+	ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+	if(pcomm->rank()==0) {
+	  EntityHandle out_meshset;
+	  rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+	  ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+	  ostringstream ss;
+	  ss << "debug_mesh_refine_" << ll << ".vtk";
+	  rval = mField.get_moab().write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+	  rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+	}
+      }
+  
       Range level_edges;
       ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
 
@@ -910,12 +934,19 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
       Range crack_edges_nodes;
       rval = mField.get_moab().get_connectivity(crack_edges,crack_edges_nodes,true); CHKERR_PETSC(rval);
 
+      //PetscAttachDebugger();
+
       Range crack_edge_nodes_parents;
       for(Range::iterator nit = crack_edges_nodes.begin();nit!=crack_edges_nodes.end();nit++) {
-	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator refit;
-	refit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(*nit);
-	if(refit->get_parent_ent() == 0) continue;
-	crack_edge_nodes_parents.insert(refit->get_parent_ent());
+	EntityHandle ent = *nit;
+	do {
+	  RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator refit;
+	  refit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(ent);
+	  if(refit->get_parent_ent() != 0) {
+	    ent = refit->get_parent_ent();
+	    crack_edge_nodes_parents.insert(ent);
+	  }
+	} while(refit->get_parent_ent() != 0);
       }
       Range crack_edge_nodes_parents_nodes;
       rval = mField.get_moab().get_connectivity(crack_edge_nodes_parents,crack_edge_nodes_parents_nodes,true); CHKERR_PETSC(rval);
@@ -942,6 +973,35 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
       BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
       ierr = mField.add_verices_in_the_middel_of_edges(edges_to_refine,last_ref,2); CHKERRQ(ierr);
       ierr = mField.refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
+
+      BitRefLevel preserve_ref = BitRefLevel().set(BITREFLEVEL_SIZE-2);
+      const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
+      ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+      RefMoFEMEntity_multiIndex::iterator rit;
+      rit = refinedMoFemEntities_ptr->begin();
+      for(;rit!=refinedMoFemEntities_ptr->end();rit++) {
+	BitRefLevel bit2 = rit->get_BitRefLevel();
+	if((bit2&last_ref).any()) {
+	  EntityHandle parent_ent = rit->get_parent_ent(); 
+	  if(parent_ent == 0) {
+	    continue;
+	  }
+	  RefMoFEMEntity_multiIndex::iterator parent_rit;
+	  parent_rit = refinedMoFemEntities_ptr->find(parent_ent);
+	  if(parent_rit == refinedMoFemEntities_ptr->end()) {
+	    SETERRQ1(PETSC_COMM_SELF,1,
+	      "data inconsistency, entity in database not found %lu",rit->get_parent_ent());
+	  }
+	  if((parent_rit->get_BitRefLevel()&current_ref).any()) {
+	    continue;
+	  }
+	  bool success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	    ->modify(parent_rit,RefMoFEMEntity_change_add_bit(preserve_ref));
+	  if(!success) {
+	    SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessfull");
+	  }
+	}
+      }
       
       for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
 	EntityHandle cubit_meshset = cubit_it->meshset; 
@@ -955,17 +1015,16 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
   
   }
 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-
-  if(pcomm->rank()==0) {
-
+  if(verb>0) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
       ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
       rval = mField.get_moab().write_file("debug_mesh_refine.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-
+    }
   }
 
   PetscFunctionReturn(0);
@@ -973,11 +1032,14 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   PetscFunctionBegin;
 
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+
   const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
   ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
   RefMoFEMEntity_multiIndex::iterator mit = refinedMoFemEntities_ptr->begin();
   for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
-    if( (mit->get_BitRefLevel()&BitRefLevel().set(BITREFLEVEL_SIZE-1)).any() ) {
+    if(mit->get_ent_type() == MBENTITYSET) continue;
+    if((mit->get_BitRefLevel()&BitRefLevel().set(BITREFLEVEL_SIZE-1)).any()) {
       bool success;
       success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
 	->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-1,false));
@@ -1008,7 +1070,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   {
 
     ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,bit_meshset); CHKERRQ(ierr);
-    ierr = mField.seed_finite_elements(bit_meshset); CHKERRQ(ierr);
+    ierr = mField.seed_ref_level_3D(bit_meshset,current_ref); CHKERRQ(ierr);
 
     EntityHandle meshset_interface;
     ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset_interface); CHKERRQ(ierr);
@@ -1065,16 +1127,16 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 	tets_on_surface,2,false,tets_on_surface_faces,Interface::UNION); CHKERR_PETSC(rval);
       tets_on_surface_faces = intersect(tets_on_surface_faces,interface_tris);
       
-      if(verb>1) {    
-
-	EntityHandle out_meshset;
-	rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	rval = mField.get_moab().add_entities(out_meshset,tets_on_surface); CHKERR_PETSC(rval);
-	//rval = mField.get_moab().add_entities(out_meshset,interface_tris); CHKERR_PETSC(rval);
-	//rval = mField.get_moab().add_entities(out_meshset,tets_on_surface_faces); CHKERR_PETSC(rval);
-	rval = mField.get_moab().write_file("tets_on_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-      
+      if(pcomm->rank()>0) {
+	if(verb>0) {    
+	  EntityHandle out_meshset;
+	  rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+	  rval = mField.get_moab().add_entities(out_meshset,tets_on_surface); CHKERR_PETSC(rval);
+	  //rval = mField.get_moab().add_entities(out_meshset,interface_tris); CHKERR_PETSC(rval);
+	  //rval = mField.get_moab().add_entities(out_meshset,tets_on_surface_faces); CHKERR_PETSC(rval);
+	  rval = mField.get_moab().write_file("tets_on_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+	  rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+	}
       }
 
       for(Range::iterator tit = tets_on_surface.begin();tit!=tets_on_surface.end();tit++) {
@@ -1100,17 +1162,24 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 
   rval = mField.get_moab().delete_entities(&bit_meshset,1); CHKERR_PETSC(rval);
 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
- 
-  if(pcomm->rank()==0) {
+  //ref meshset ref level 0
+  Tag th_my_ref_level;
+  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  BitRefLevel *ptr_bit_level0;
+  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+  BitRefLevel& bit_level0 = *ptr_bit_level0;
+  bit_level0 = BitRefLevel().set(meshIntefaceBitLevels.back());
 
+  if(verb>0) {    
+    if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       BitRefLevel last_ref = BitRefLevel().set(meshIntefaceBitLevels.back());
       ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
       rval = mField.get_moab().write_file("debug_split_faces.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-
+    }
   }
 
 
@@ -1198,15 +1267,13 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
     PetscPrintf(PETSC_COMM_WORLD,"\n");
   }
 
-  BitRefLevel mask;
-  ierr = getMask(mask); CHKERRQ(ierr);
-  mask.flip();
-
   const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
   ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
 
   BitRefLevel maskPreserv;
   ierr = getMask(maskPreserv); CHKERRQ(ierr);
+  BitRefLevel mask = maskPreserv;
+  mask.flip();
 
   PetscBool flg = PETSC_TRUE;
   PetscInt nb_ref_levels;
@@ -1231,21 +1298,21 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
   }
   new_meshRefineBitLevels[0] = new_meshRefineBitLevels.size()-1;
 
-  vector<int> new_meshIntefaceBitLevels;
+  /*vector<int> new_meshIntefaceBitLevels;
   vector<int> new_meshIntefaceBitLevels_map;
   new_meshIntefaceBitLevels.push_back(0);
   new_meshIntefaceBitLevels_map.push_back(0);
   new_meshIntefaceBitLevels.push_back(new_meshRefineBitLevels.size()-1);
   new_meshIntefaceBitLevels_map.push_back(meshIntefaceBitLevels.back());
-  new_meshIntefaceBitLevels[0] = new_meshIntefaceBitLevels.size()-1;
+  new_meshIntefaceBitLevels[0] = new_meshIntefaceBitLevels.size()-1;*/
 
   //set new memory
   bzero(meshRefineBitLevels.ptr,(BITREFLEVEL_SIZE-1)*sizeof(int));
-  bzero(meshIntefaceBitLevels.ptr,(BITREFLEVEL_SIZE-1)*sizeof(int));
   bcopy(&*new_meshRefineBitLevels.begin(),meshRefineBitLevels.ptr,new_meshRefineBitLevels.size()*sizeof(int));
-  bcopy(&*new_meshIntefaceBitLevels.begin(),meshIntefaceBitLevels.ptr,new_meshIntefaceBitLevels.size()*sizeof(int));
+  bzero(meshIntefaceBitLevels.ptr,(BITREFLEVEL_SIZE-1)*sizeof(int));
+  //bcopy(&*new_meshIntefaceBitLevels.begin(),meshIntefaceBitLevels.ptr,new_meshIntefaceBitLevels.size()*sizeof(int));
 
-  if(verb>0) {
+  if(verb>1) {
     PetscPrintf(PETSC_COMM_WORLD,"meshRefineBitLevels: ");
     int *p = meshRefineBitLevels.begin();
     for(;p!=meshRefineBitLevels.end();p++) {
@@ -1269,13 +1336,13 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
       PetscPrintf(PETSC_COMM_WORLD," %d (%d)",*vit,*viit);
     }
     PetscPrintf(PETSC_COMM_WORLD,"\n");
-    PetscPrintf(PETSC_COMM_WORLD,"meshIntefaceBitLevels (map): ");
+    /*PetscPrintf(PETSC_COMM_WORLD,"meshIntefaceBitLevels (map): ");
     vit = new_meshIntefaceBitLevels.begin();
     viit = new_meshIntefaceBitLevels_map.begin();
     for(;vit!=new_meshIntefaceBitLevels.end();vit++,viit++) {
       PetscPrintf(PETSC_COMM_WORLD," %d (%d)",*vit,*viit);
     }
-    PetscPrintf(PETSC_COMM_WORLD,"\n");  
+    PetscPrintf(PETSC_COMM_WORLD,"\n");  */
   }
 
   //squash bits
@@ -1284,7 +1351,7 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
   for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
     
     if(mit->get_ent_type() == MBENTITYSET) continue;
-
+    if(mit->get_BitRefLevel().none()) continue;
 
     if( (mask&mit->get_BitRefLevel()).none() ) {
       cerr << "mask:\n" << mask << endl;
@@ -1293,14 +1360,14 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
     }
     
     BitRefLevel new_bit;
-    for(int nn = 1;nn<new_meshRefineBitLevels.size();nn++) {
+    for(unsigned int nn = 1;nn<new_meshRefineBitLevels.size();nn++) {
       if((mit->get_BitRefLevel()&
 	BitRefLevel().set(new_meshRefineBitLevels_map[nn])).any()) {
 	new_bit.set(new_meshRefineBitLevels[nn]);
       }
     }
 
-    for(int nn = 1;nn<new_meshIntefaceBitLevels.size();nn++) {
+    /*for(unsigned int nn = 1;nn<new_meshIntefaceBitLevels.size();nn++) {
       if((mit->get_BitRefLevel()&
 	BitRefLevel().set(new_meshIntefaceBitLevels_map[nn])).any()) {
 	new_bit.set(new_meshIntefaceBitLevels[nn]);
@@ -1309,7 +1376,16 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
     if( (mit->get_BitRefLevel()&
       BitRefLevel().set(BITREFLEVEL_SIZE-1)).any() ) {
       new_bit.set(BITREFLEVEL_SIZE-1);
+    }*/
+ 
+    if( (mit->get_BitRefLevel()&
+      BitRefLevel().set(BITREFLEVEL_SIZE-2)).any() ) {
+      new_bit.set(BITREFLEVEL_SIZE-2);
     } 
+
+    /*cerr << *mit << endl;
+    cerr << "mit->get_BitRefLevel():\n" << mit->get_BitRefLevel() << endl;
+    cerr << "new_bit:\n" << new_bit << endl;*/
 
     if(new_bit.none()) {
       cerr << "mit->get_BitRefLevel():\n" << mit->get_BitRefLevel() << endl;
@@ -1328,7 +1404,15 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
   BitRefLevel *ptr_bit_level0;
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
-  bit_level0 = BitRefLevel().set(meshRefineBitLevels.back());
+  bit_level0 = BitRefLevel().set(meshIntefaceBitLevels.back());
+
+  if(verb>2) {
+    EntityHandle out_meshset;
+    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+    rval = mField.get_moab().write_file("squash_mesh.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
 
   PetscFunctionReturn(0);
 }
@@ -1394,10 +1478,9 @@ PetscErrorCode FaceSplittingTools::calculate_qualityAfterProjectingNodes(Range &
       double coords_edges[2*3*6]; 
       ierr = get_edges_from_elem_coords(coords,coords_edges); CHKERRQ(ierr);
       double V =  Shape_intVolumeMBTET(diffNTET,&*coords); 
-      //cerr << "V " << V;
-      //double V1 =  Shape_intVolumeMBTET(diffNTET,dofs_X); 
-      //cerr << " V1 " << V1 << endl;
-      //if(fabs(V1/V)>1e-12) {
+      /*cerr << "V " << V;
+      double V1 =  Shape_intVolumeMBTET(diffNTET,dofs_X); 
+      cerr << " V1 " << V1 << endl;*/
       double alpha[4] = {1,1,1,1};
       ierr = quality_volume_length_F(
 	  V,alpha,0,
@@ -1406,13 +1489,16 @@ PetscErrorCode FaceSplittingTools::calculate_qualityAfterProjectingNodes(Range &
 	  &quality0,&quality,&b,
 	  NULL,NULL); 
       if(ierr != 0) {
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"dofs_X = [ %6.4e  %6.4e %6.4e %6.4e]\n",dofs_X[0],dofs_X[1],dofs_X[2],dofs_X[3]);
-	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
-	CHKERRQ(ierr);
+	b = -1;
+	quality = -1;
+	ierr = 0;
+	/*PetscSynchronizedPrintf(PETSC_COMM_WORLD,"dofs_X = [ %6.4e  %6.4e %6.4e %6.4e]\n",dofs_X[0],dofs_X[1],dofs_X[2],dofs_X[3]);
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"dofs_X = [ %6.4e  %6.4e %6.4e %6.4e]\n",dofs_X[4],dofs_X[5],dofs_X[6],dofs_X[7]);
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"dofs_X = [ %6.4e  %6.4e %6.4e %6.4e]\n",dofs_X[8],dofs_X[9],dofs_X[10],dofs_X[11]);
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"dofs_X = [ %6.4e  %6.4e %6.4e %6.4e]\n",dofs_X[12],dofs_X[13],dofs_X[14],dofs_X[15]);
+	PetscSynchronizedFlush(PETSC_COMM_WORLD);*/
+	//CHKERRQ(ierr);
       }
-      //} else {
-	//b = -1;
-      //}
     }
     Range new_front_nodes;
     new_front_nodes.insert(&conn[0],&conn[4]);
@@ -1473,8 +1559,9 @@ PetscErrorCode FaceSplittingTools::getMask(BitRefLevel &maskPreserv,const int ve
 
   maskPreserv.set();
   maskPreserv[meshRefineBitLevels.first()] = false;
-  maskPreserv[meshIntefaceBitLevels.back()] = false;
-  maskPreserv[BITREFLEVEL_SIZE-1] = false;
+  //maskPreserv[meshIntefaceBitLevels.back()] = false;
+  //maskPreserv[BITREFLEVEL_SIZE-1] = false;
+  maskPreserv[BITREFLEVEL_SIZE-2] = false;
 
   {
     int *p = meshRefineBitLevels.end();
@@ -1517,7 +1604,7 @@ PetscErrorCode main_refine_and_meshcat(FieldInterface& mField,FaceSplittingTools
   BitRefLevel bit_last_ref = BitRefLevel().set(face_splitting.meshRefineBitLevels.back());
   Range tets_on_last_ref_level;
   ierr = mField.get_entities_by_type_and_ref_level(bit_last_ref,BitRefLevel().set(),MBTET,tets_on_last_ref_level); CHKERRQ(ierr);
-  ierr = mField.seed_finite_elements(tets_on_last_ref_level); CHKERRQ(ierr);
+  ierr = mField.seed_ref_level_3D(tets_on_last_ref_level,bit_last_ref); CHKERRQ(ierr);
   ierr = face_splitting.buildKDTreeForCrackSurface(bit_level0); CHKERRQ(ierr);
   ierr = face_splitting.meshRefine(); CHKERRQ(ierr);
   bit_last_ref = BitRefLevel().set(face_splitting.meshRefineBitLevels.back());
@@ -1581,8 +1668,8 @@ PetscErrorCode main_select_faces_for_splitting(FieldInterface& mField,FaceSplitt
 
   }
 
-  ierr = face_splitting.getCrackFrontTets(true); CHKERRQ(ierr);
-  ierr = face_splitting.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true,verb); CHKERRQ(ierr);
+  ierr = face_splitting.getCrackFrontTets(true,0); CHKERRQ(ierr);
+  ierr = face_splitting.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true,0); CHKERRQ(ierr);
   ierr = face_splitting.selectCrackFaces(true); CHKERRQ(ierr);
 
   if(verb>0) {
@@ -1621,79 +1708,44 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
-  ierr = face_splitting.addNewSurfaceFaces_to_Cubit_msId200(); CHKERRQ(ierr);
-  ierr = face_splitting.splitFaces(verb); CHKERRQ(ierr);
-  BitRefLevel bit_cat_level = BitRefLevel().set(face_splitting.meshIntefaceBitLevels.back());
-  PetscInt order;
-  PetscBool flg = PETSC_TRUE;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    Tag th_set_order;
-    rval = mField.get_moab().tag_get_handle("_SET_ORDER",th_set_order); CHKERR_PETSC(rval);
-    rval = mField.get_moab().tag_get_data(th_set_order,&root_meshset,1,&order); CHKERR_PETSC(rval);
-  }
-  
-  ierr = face_splitting.addcrackFront_to_Cubit201(); CHKERRQ(ierr);
-
-  ierr = mField.update_field_meshset_by_entities_children(bit_cat_level,0); CHKERRQ(ierr);
-
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"MESH_NODE_DISPLACEMENT",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"SPATIAL_DISPLACEMENT",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBEDGE,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBTRI,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBTET,"SPATIAL_DISPLACEMENT",order); CHKERRQ(ierr);
-
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_SURFACE",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_CRACK_SURFACE",1); CHKERRQ(ierr);
-  ierr = mField.add_field("LAMBDA_SURFACE",H1,1,MF_ZERO); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
-    int msId = it->get_msId();
-    if((msId < 10200)||(msId >= 10300)) continue;
-    ostringstream ss;
-    ss << "LAMBDA_SURFACE_msId_" << msId;
-    ierr = mField.set_field_order_by_entity_type_and_bit_ref(
-      bit_cat_level,BitRefLevel().set(),MBVERTEX,ss.str().c_str(),1); CHKERRQ(ierr);
-  }
-
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(
-    bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_CRACK_TANGENT_CONSTRAIN",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order_by_entity_type_and_bit_ref(
-    bit_cat_level,BitRefLevel().set(),MBVERTEX,"LAMBDA_CRACKFRONT_AREA",1); CHKERRQ(ierr);
-
-  ierr = mField.clear_problems(); CHKERRQ(ierr);
-
   //remove all crack front elements
   ierr = mField.remove_ents_from_finite_element("C_TANGENT_ELEM",0,MBTRI); CHKERRQ(ierr);
-  ierr = mField.remove_ents_from_field("LAMBDA_CRACK_TANGENT_CONSTRAIN",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("C_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("CTC_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("dCT_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_field("LAMBDA_CRACK_TANGENT_CONSTRAIN",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
 
   //remove old elements
   BitRefLevel maskPreserv;
   ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
-  ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv,3); CHKERRQ(ierr);
+  ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv); CHKERRQ(ierr);
+  ierr = face_splitting.squashIndices(0); CHKERRQ(ierr);
+  ierr = mField.rebuild_database(verb); CHKERRQ(ierr);
 
-  //cerr << "bit_level0 " << bit_level0 << endl;
-  //cerr << "bit_cat_level " << bit_cat_level << endl;
-  bit_level0 = bit_cat_level;
+  ierr = face_splitting.addNewSurfaceFaces_to_Cubit_msId200(); CHKERRQ(ierr);
+  ierr = face_splitting.splitFaces(); CHKERRQ(ierr);
+  ierr = face_splitting.addcrackFront_to_Cubit201(); CHKERRQ(ierr);
 
-  ierr = face_splitting.squashIndices(3); CHKERRQ(ierr);
+  BitRefLevel not_split_face_ref_level;
+  not_split_face_ref_level.set(face_splitting.meshIntefaceBitLevels.back());
+  not_split_face_ref_level.flip();
+  ierr = mField.remove_ents_from_field_by_bit_ref(not_split_face_ref_level,not_split_face_ref_level,0); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_finite_element_by_bit_ref(not_split_face_ref_level,not_split_face_ref_level,0); CHKERRQ(ierr);
 
-  {
-    EntityHandle out_meshset;
-    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    Range tets;
-    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr); 
-    rval = mField.get_moab().add_entities(out_meshset,tets); CHKERR_PETSC(rval);
-    rval = mField.get_moab().write_file("debug_meshs_after_delete.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  ierr = mField.clear_problems(); CHKERRQ(ierr);
+ 
+  if(verb>0) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    if(pcomm->rank()==0) {
+      EntityHandle out_meshset;
+      rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      Range tets;
+      ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr); 
+      rval = mField.get_moab().add_entities(out_meshset,tets); CHKERR_PETSC(rval);
+      rval = mField.get_moab().write_file("debug_meshs_after_delete.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    }
   }
 
   PetscFunctionReturn(0);

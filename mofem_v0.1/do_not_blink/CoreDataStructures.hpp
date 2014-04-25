@@ -80,122 +80,11 @@ struct CubitMeshSets_change_add_bit_to_CubitBCType {
 };
 
 typedef multi_index_container<
-  const RefMoFEMEntity*,
-  indexed_by<
-    hashed_unique<
-      const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
-    hashed_unique<
-      tag<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>,
-      composite_key<
-	const RefMoFEMEntity*,
-	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_ref_ent>,
-	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> > >
-  > > RefMoFEMEntity_multiIndex_view_by_parent_entity;
-
-struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMElement> {
-  typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
-  typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
-  int wrapp;
-  ptrWrapperRefMoFEMElement(const RefMoFEMElement *__ptr): interface_RefMoFEMElement<RefMoFEMElement>(__ptr),wrapp(1) {}
-  ptrWrapperRefMoFEMElement(const ptrWrapperRefMoFEMElement &ref): interface_RefMoFEMElement<RefMoFEMElement>(ref) { 
-    wrapp = 1;
-    assert(ref.wrapp == 1);
-    (const_cast<ptrWrapperRefMoFEMElement&>(ref)).wrapp++;
-  }
-  virtual ~ptrWrapperRefMoFEMElement() { 
-    if(wrapp == 1) {
-      delete interface_RefMoFEMEntity<RefMoFEMElement>::ref_ptr; 
-    }
-  }
-};
-
-/**
- * \typedef RefMoFEMElement
- * type multiIndex container for RefMoFEMElement
- *
- * \param hashed_unique MoABEnt_mi_tag 
- * \param ordered_non_unique Meshset_mi_tag 
- * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
- * \param ordered_non_unique Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag
- */
-typedef multi_index_container<
-  ptrWrapperRefMoFEMElement,
-  indexed_by<
-    hashed_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_ref_ent> >,
-    ordered_non_unique<
-      tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent> >,
-    ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefMoFEMElement::get_ent_type> >,
-    ordered_non_unique<
-      tag<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
-      composite_key<
-	ptrWrapperRefMoFEMElement,
-	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent>,
-	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMElement,int,&ptrWrapperRefMoFEMElement::get_BitRefEdges_ulong> > >,
-    hashed_unique<
-      tag<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>,
-      composite_key<
-	ptrWrapperRefMoFEMElement,
-	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_ref_ent>,
-	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent> > >
-  > > RefMoFEMElement_multiIndex;
-
-typedef multi_index_container<
   const MoFEMEntity*,
   indexed_by<
     hashed_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
   > > MoFEMEntity_multiIndex_ent_view;
-
-struct DofMoFEMEntity_active_change {
-  bool active;
-  DofMoFEMEntity_active_change(bool _active);
-  void operator()(DofMoFEMEntity &_dof_);
-};
-
-typedef multi_index_container<
-  const DofMoFEMEntity*,
-  indexed_by<
-    ordered_non_unique< 
-      const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
-  > > DofMoFEMEntity_multiIndex_active_view;
-
-typedef multi_index_container<
-  const DofMoFEMEntity*,
-  indexed_by<
-    ordered_non_unique< 
-      const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order> >
-  > > DofMoFEMEntity_multiIndex_order_view;
-
-typedef multi_index_container<
-  const DofMoFEMEntity*,
-  indexed_by<
-    ordered_non_unique<
-      const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type> >
-  > > DofMoFEMEntity_multiIndex_ent_type_view;
-
-struct NumeredDofMoFEMEntity_part_change {
-  unsigned int part;
-  DofIdx petsc_gloabl_dof_idx;
-  NumeredDofMoFEMEntity_part_change(const unsigned int _part,const DofIdx _petsc_gloabl_dof_idx): 
-    part(_part),
-    petsc_gloabl_dof_idx(_petsc_gloabl_dof_idx) {};
-  void operator()(NumeredDofMoFEMEntity &dof) { 
-    dof.part = part;
-    dof.petsc_gloabl_dof_idx = petsc_gloabl_dof_idx; 
-    dof.petsc_local_dof_idx = -1;
-  }
-};
-
-struct NumeredDofMoFEMEntity_local_idx_change {
-  DofIdx petsc_local_dof_idx;
-  NumeredDofMoFEMEntity_local_idx_change(const DofIdx _petsc_local_dof_idx): 
-    petsc_local_dof_idx(_petsc_local_dof_idx) {};
-  void operator()(NumeredDofMoFEMEntity &dof) { 
-    dof.petsc_local_dof_idx = petsc_local_dof_idx; 
-  }
-};
 
 typedef multi_index_container<
   const NumeredDofMoFEMEntity*,
@@ -236,33 +125,6 @@ struct EntMoFEMFiniteElement_change_bit_off {
   void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
 };
 
-/// set uids for finite elements dofs in rows
-struct EntMoFEMFiniteElement_row_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_row_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-/// set uids for finite elements dofs in rows
-struct EntMoFEMFiniteElement_col_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_col_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-/// set uids for finite elements dofs need to calulate element matrices and vectors
-struct EntMoFEMFiniteElement_data_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_data_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view):
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
-
 struct NumeredMoFEMFiniteElement_change_part {
   unsigned int part;
   NumeredMoFEMFiniteElement_change_part(unsigned int _part): part(_part) {};
@@ -281,32 +143,6 @@ template<typename Tag>
 void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFEMEntity_multiIndex &dofs,Tag* = 0) {
   const typename boost::multi_index::index<DofMoFEMEntity_multiIndex,Tag>::type& i = get<Tag>(dofs);
   vec_dof.insert(vec_dof.end(),i.begin(),i.end());
-}
-
-template <typename T,typename V>
-PetscErrorCode get_MoFEMFiniteElement_dof_uid_view(
-  const T &dofsMoabField,V &dofs_view,
-  const int operation_type,const void* tag_data,const int tag_size) {
-  PetscFunctionBegin;
-  typedef typename boost::multi_index::index<T,Unique_mi_tag>::type dofs_by_uid;
-  typedef typename boost::multi_index::index<T,Unique_mi_tag>::type::value_type value_type;
-  const dofs_by_uid &dofs = dofsMoabField.get<Unique_mi_tag>();
-  const UId *uids = (UId*)tag_data;
-  int size = tag_size/sizeof(UId);
-  vector<const value_type*> vec;
-  for(int ii = 0;ii<size;ii++) {
-    UId uid = uids[ii];
-    typename dofs_by_uid::iterator miit = dofs.find(uid);
-    if(miit==dofs.end()) continue;
-    vec.push_back(&*miit);
-  }
-  if(operation_type==Interface::UNION) {
-    dofs_view.insert(vec.begin(),vec.end());
-  } else {
-    //FIXME not implemented
-    assert(0);
-  }
-  PetscFunctionReturn(0);
 }
 
 /**

@@ -76,19 +76,18 @@ int main(int argc, char *argv[]) {
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
+  ierr = mField.seed_ref_level_3D(0,BitRefLevel()); CHKERRQ(ierr);
+
   ierr = mField.build_fields(); CHKERRQ(ierr);
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   { //cat mesh
-  
     FaceSplittingTools face_splitting(mField);
     ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
     ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
-
   }
 
   if(pcomm->rank()==0) {
-
     EntityHandle meshset200;
     ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset200); CHKERRQ(ierr);
     Range tris;
@@ -104,12 +103,9 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset201;
     ierr = mField.get_Cubit_msId_meshset(201,SideSet,meshset201); CHKERRQ(ierr);
     rval = moab.write_file("CrackFrontEdges_ref.vtk","VTK","",&meshset201,1); CHKERR_PETSC(rval);
-
   }
 
-
   //find faces for split
-
   FaceSplittingTools face_splitting(mField);
   ierr = main_select_faces_for_splitting(mField,face_splitting,2); CHKERRQ(ierr);
   //do splittig
@@ -121,9 +117,7 @@ int main(int argc, char *argv[]) {
   //face spliting job done
   ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
 
-
   //solve spatial problem and calulate griffith forces
-
   //project and set coords
   ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
   ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
@@ -183,7 +177,7 @@ int main(int argc, char *argv[]) {
   //solve spatial problem
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
-  ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
+  ierr = conf_prob.solve_spatial_problem(mField,&snes,true); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   //calulate Griffth forces
