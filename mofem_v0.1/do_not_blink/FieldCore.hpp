@@ -521,21 +521,25 @@ struct FieldCore: public FieldInterface {
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	dofs_set.clear();
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row of element
-	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
-	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue; // if entity is not problem refinment level
-	  int size  = adj_miit->EntMoFEMFiniteElement_ptr->tag_col_uids_size/sizeof(UId);
-	  for(int ii = 0;ii<size;ii++) {
-	    UId uid = adj_miit->EntMoFEMFiniteElement_ptr->tag_col_uids_data[ii];
-	    NumeredDofMoFEMEntitys_by_unique_id::iterator miiit = dofs_col_by_id.find(uid);
-	    if(miiit == p_miit->numered_dofs_cols.get<Unique_mi_tag>().end()) continue;
-	    int idx = Tag::get_index(miiit);
-	    if(idx<0) {
-	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	    } 
-	    if(idx>=p_miit->get_nb_dofs_col()) {
-	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	    }
+	  if(!(adj_miit->by_other&by_row)) {
+	    // if it is not row of element
+	    continue;  
+	  }
+	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
+	    // if element is not part of problem
+	    continue; 
+	  }
+	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) {
+	    // if entity is not problem refinment level
+	    continue; 
+	  }
+	  NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
+	  ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view( 
+	    p_miit->numered_dofs_cols,dofs_col_view,Interface::UNION); CHKERRQ(ierr);
+	  NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cvit;
+	  cvit = dofs_col_view.begin();
+	  for(;cvit!=dofs_col_view.end();cvit++) {
+	    int idx = Tag::get_index(*cvit);
 	    dofs_set.insert(idx);
 	  }
 	}

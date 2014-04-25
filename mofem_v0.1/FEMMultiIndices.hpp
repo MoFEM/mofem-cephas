@@ -203,8 +203,6 @@ struct MoFEMFiniteElement {
   BitFieldId* tag_BitFieldId_col_data; ///< tag stores col id_id for fields
   BitFieldId* tag_BitFieldId_row_data;  ///< tag stores row id_id for fields
   BitFieldId* tag_BitFieldId_data; ///< tag stores data id_id for fields
-  Tag th_FEMatData,th_FEVecData;
-  Tag th_DofUidRow,th_DofUidCol,th_DofUidData;
   MoFEMFiniteElement(Interface &moab,const EntityHandle _meshset);
   inline BitFEId get_id() const { return *tag_id_data; };
   /// get meshset
@@ -247,12 +245,15 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
   typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
   typedef interface_MoFEMFiniteElement<MoFEMFiniteElement> interface_type_MoFEMFiniteElement;
-  const UId* tag_row_uids_data;
+  /*const UId* tag_row_uids_data;
   int tag_row_uids_size;
   const UId* tag_col_uids_data;
   int tag_col_uids_size;
   const UId* tag_data_uids_data;
-  int tag_data_uids_size;
+  int tag_data_uids_size;*/
+  DofMoFEMEntity_multiIndex_uid_view row_dof_view;
+  DofMoFEMEntity_multiIndex_uid_view col_dof_view;
+  DofMoFEMEntity_multiIndex_uid_view data_dof_view;
   FEDofMoFEMEntity_multiIndex data_dofs;
   UId uid;
   EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr);
@@ -264,14 +265,17 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
     return _uid_;
   }
   inline EntityHandle get_ent() const { return get_ref_ent(); }
-  inline DofIdx get_nb_dofs_row() const { return tag_row_uids_size/sizeof(UId); }
-  inline DofIdx get_nb_dofs_col() const { return tag_col_uids_size/sizeof(UId); }
-  inline DofIdx get_nb_dofs_data() const { return tag_data_uids_size/sizeof(UId); }
+  inline DofIdx get_nb_dofs_row() const { return row_dof_view.size(); }
+  inline DofIdx get_nb_dofs_col() const { return col_dof_view.size(); }
+  inline DofIdx get_nb_dofs_data() const { return data_dof_view.size(); }
   friend ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e);
   PetscErrorCode get_MoFEMFiniteElement_row_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_col_dof_uid_view(
+    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
+    const int operation_type = Interface::UNION) const;
+  PetscErrorCode get_MoFEMFiniteElement_data_dof_uid_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_row_dof_uid_view(
@@ -431,7 +435,7 @@ typedef multi_index_container<
   > > MoFEMFiniteElement_multiIndex;
 
 
-// modify procedures
+/*// modify procedures
 
 /// set uids for finite elements dofs in rows
 struct EntMoFEMFiniteElement_row_dofs_change {
@@ -458,7 +462,7 @@ struct EntMoFEMFiniteElement_data_dofs_change {
   EntMoFEMFiniteElement_data_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view):
     moab(_moab),uids_view(_uids_view) {};
   void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
+};*/
 
 }
 

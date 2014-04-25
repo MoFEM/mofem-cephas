@@ -145,32 +145,6 @@ void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFE
   vec_dof.insert(vec_dof.end(),i.begin(),i.end());
 }
 
-template <typename T,typename V>
-PetscErrorCode get_MoFEMFiniteElement_dof_uid_view(
-  const T &dofsMoabField,V &dofs_view,
-  const int operation_type,const void* tag_data,const int tag_size) {
-  PetscFunctionBegin;
-  typedef typename boost::multi_index::index<T,Unique_mi_tag>::type dofs_by_uid;
-  typedef typename boost::multi_index::index<T,Unique_mi_tag>::type::value_type value_type;
-  const dofs_by_uid &dofs = dofsMoabField.get<Unique_mi_tag>();
-  const UId *uids = (UId*)tag_data;
-  int size = tag_size/sizeof(UId);
-  vector<const value_type*> vec;
-  for(int ii = 0;ii<size;ii++) {
-    UId uid = uids[ii];
-    typename dofs_by_uid::iterator miit = dofs.find(uid);
-    if(miit==dofs.end()) continue;
-    vec.push_back(&*miit);
-  }
-  if(operation_type==Interface::UNION) {
-    dofs_view.insert(vec.begin(),vec.end());
-  } else {
-    //FIXME
-    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-  }
-  PetscFunctionReturn(0);
-}
-
 /**
  * \brief test if MoFEM is compatible with linked version of moab
  *
