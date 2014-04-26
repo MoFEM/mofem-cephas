@@ -84,6 +84,9 @@ struct FieldCore: public FieldInterface {
 
   //check consistency
   PetscErrorCode check_number_of_ents_in_ents_field(const string& name);
+  PetscErrorCode check_number_of_ents_in_ents_field();
+  PetscErrorCode check_number_of_ents_in_ents_finite_element(const string& name);
+  PetscErrorCode check_number_of_ents_in_ents_finite_element();
   PetscErrorCode rebuild_database(int verb = -1);
 
   //cubit meshsets
@@ -345,7 +348,7 @@ struct FieldCore: public FieldInterface {
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
   PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &EntFe,int verb = -1);
-  PetscErrorCode build_finite_element_uids_tags(EntMoFEMFiniteElement &EntFe,int verb = -1);
+  PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &EntFe,int verb = -1);
   PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
@@ -472,7 +475,6 @@ struct FieldCore: public FieldInterface {
     if(verb==-1) verb = verbose;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
-    typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofMoFEMEntitys_by_unique_id;
     typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type adj_by_ent;
     //find p_miit
     typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
@@ -481,12 +483,12 @@ struct FieldCore: public FieldInterface {
     if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
     //
     const NumeredDofMoFEMEntitys_by_idx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<Tag>();
-    const NumeredDofMoFEMEntitys_by_unique_id &dofs_col_by_id = p_miit->numered_dofs_cols.get<Unique_mi_tag>();
+    const NumeredDofMoFEMEntitys_by_idx &dofs_col_by_idx = p_miit->numered_dofs_cols.get<Tag>();
     DofIdx nb_dofs_row = dofs_row_by_idx.size();
     if(p_miit->get_nb_dofs_row()!=nb_dofs_row) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    if(p_miit->get_nb_dofs_col()!=p_miit->numered_dofs_cols.size()) {
+    if((unsigned int)p_miit->get_nb_dofs_col()!=p_miit->numered_dofs_cols.size()) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
     if(nb_dofs_row == 0) {
@@ -514,6 +516,12 @@ struct FieldCore: public FieldInterface {
     // loop local rows
     for(;miit_row!=hi_miit_row;miit_row++) {
       i.push_back(j.size());
+      if(strcmp(type,MATMPIADJ)==0) {
+	DofIdx idx = Tag::get_index(miit_row);
+	if(dofs_col_by_idx.find(idx)->get_unique_id()!=miit_row->get_unique_id()) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data insonsistency");
+	}
+      }
       if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_unique_id()) ) {
 	// get field ptr
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->get_MoFEMEntity_ptr());
@@ -521,36 +529,60 @@ struct FieldCore: public FieldInterface {
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	dofs_set.clear();
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_row)) {
-	    // if it is not row of element
-	    continue;  
+	  if(adj_miit->by_other&by_row) {
+	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
+	      // if element is not part of problem
+	      continue; 
+	    }
+	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) {
+	      // if entity is not problem refinment level
+	      continue; 
+	    }
+	    NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
+	    ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view( 
+	      p_miit->numered_dofs_cols,dofs_col_view,Interface::UNION); CHKERRQ(ierr);
+	    NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cvit;
+	    cvit = dofs_col_view.begin();
+	    for(;cvit!=dofs_col_view.end();cvit++) {
+	      int idx = Tag::get_index(*cvit);
+	      dofs_set.insert(idx);
+	    }
 	  }
-	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
-	    // if element is not part of problem
-	    continue; 
-	  }
-	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) {
-	    // if entity is not problem refinment level
-	    continue; 
-	  }
-	  NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
-	  ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view( 
-	    p_miit->numered_dofs_cols,dofs_col_view,Interface::UNION); CHKERRQ(ierr);
-	  NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cvit;
-	  cvit = dofs_col_view.begin();
-	  for(;cvit!=dofs_col_view.end();cvit++) {
-	    int idx = Tag::get_index(*cvit);
-	    dofs_set.insert(idx);
+	  if(strcmp(type,MATMPIADJ)==0) {
+	    if(adj_miit->by_other&by_col) {
+	      if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
+		// if element is not part of problem
+		continue; 
+	      }
+	      if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) {
+		// if entity is not problem refinment level
+		continue; 
+	      }
+	      NumeredDofMoFEMEntity_multiIndex_uid_view dofs_row_view;
+	      ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view( 
+		p_miit->numered_dofs_rows,dofs_row_view,Interface::UNION); CHKERRQ(ierr);
+	      NumeredDofMoFEMEntity_multiIndex_uid_view::iterator rvit;
+	      rvit = dofs_row_view.begin();
+	      for(;rvit!=dofs_row_view.end();rvit++) {
+		int idx = Tag::get_index(*rvit);
+		dofs_set.insert(idx);
+	      }
+	    }
 	  }
 	}
       }
-      if(!dofs_set.empty()) {
-	if(no_diagonals) {
-	  dofs_set.erase(Tag::get_index(miit_row));
-	  j.insert(j.end(),dofs_set.begin(),dofs_set.end());
-	}
+      if(no_diagonals) {
+  	dofs_set.erase(Tag::get_index(miit_row));
 	j.insert(j.end(),dofs_set.begin(),dofs_set.end());
       }
+      j.insert(j.end(),dofs_set.begin(),dofs_set.end());
+      /*if(dofs_set.size()>0) {
+	j.insert(j.end(),dofs_set.begin(),dofs_set.end());
+      } else {
+	if(strcmp(type,MATMPIADJ)==0) {
+	  SETERRQ1(PETSC_COMM_SELF,1,"empty matrix row problem <%s>",name.c_str());
+	}
+      }*/
     }
     //build adj matrix
     i.push_back(j.size());

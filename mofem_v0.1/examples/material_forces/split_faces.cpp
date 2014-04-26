@@ -81,11 +81,19 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_fields(); CHKERRQ(ierr);
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
+  //PetscAttachDebugger();
+
   { //cat mesh
     FaceSplittingTools face_splitting(mField);
     ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
     ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
   }
+
+  //project and set coords
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
+  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle meshset200;

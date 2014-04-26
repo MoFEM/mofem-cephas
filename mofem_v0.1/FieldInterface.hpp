@@ -66,6 +66,24 @@ struct FieldInterface {
   virtual PetscErrorCode check_number_of_ents_in_ents_field(const string& name) = 0;
 
   /** 
+    * \brief check data consistency in ents_moabfield
+    *
+    */
+  virtual PetscErrorCode check_number_of_ents_in_ents_field() = 0;
+
+  /** 
+    * \brief check data consistency in finiteElementsMoFEMEnts
+    *
+    */
+  virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(const string& name) = 0;
+
+  /** 
+    * \brief check data consistency in finiteElementsMoFEMEnts
+    *
+    */
+  virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() = 0;
+
+  /** 
     * \brief check for CUBIT Id and CUBIT type
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
@@ -255,7 +273,7 @@ struct FieldInterface {
   virtual PetscErrorCode printCubitHeatFluxSet() = 0;
   virtual PetscErrorCode printCubitMaterials() = 0;
 
-  virtual PetscErrorCode rebuild_database(int verb) = 0;
+  virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 
   /**
   * Create finite elements based from eneties in meshses. Throw error if entity is not in database
