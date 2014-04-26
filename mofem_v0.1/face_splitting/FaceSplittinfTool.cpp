@@ -954,14 +954,13 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 	  }
 	} while(refit->get_parent_ent() != 0);
       }
-      Range crack_edge_nodes_parents_tets;
-      rval = mField.get_moab().get_adjacencies(
-	crack_edge_nodes_parents,3,false,crack_edge_nodes_parents_tets,Interface::UNION); CHKERR_PETSC(rval);
+      Range crack_edge_nodes_parents_nodes;
+      rval = mField.get_moab().get_connectivity(crack_edge_nodes_parents,crack_edge_nodes_parents_nodes,true); CHKERR_PETSC(rval);
+      crack_edges_nodes.merge(crack_edge_nodes_parents_nodes);
 
       Range crack_edges_nodes_tets;
       rval = mField.get_moab().get_adjacencies(
 	crack_edges_nodes,3,false,crack_edges_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
-      crack_edges_nodes_tets.merge(crack_edge_nodes_parents_tets);
       Range edges_to_refine;
       rval = mField.get_moab().get_adjacencies(crack_edges_nodes_tets,1,false,edges_to_refine,Interface::UNION); CHKERR_PETSC(rval);
       edges_to_refine.merge(already_refined_edges);
