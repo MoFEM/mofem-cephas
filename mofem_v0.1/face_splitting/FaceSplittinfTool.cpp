@@ -1156,6 +1156,31 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
     }
   }
 
+  BitRefLevel levels_to_preserve;
+  {
+    int *p = meshIntefaceBitLevels.begin();
+    for(;p!=meshIntefaceBitLevels.end();p++) {
+      levels_to_preserve.set(*p);
+    }
+  }
+  Range ents_to_preserve;
+  ierr = mField.get_entities_by_ref_level(
+    levels_to_preserve,BitRefLevel().set(),ents_to_preserve); CHKERRQ(ierr);
+  BitRefLevel preserve_ref = BitRefLevel().set(BITREFLEVEL_SIZE-2);
+  for(Range::iterator eit = ents_to_preserve.begin();
+    eit!=ents_to_preserve.end();eit++) {
+    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
+    mit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(*eit);
+    if(mit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+      SETERRQ1(
+	PETSC_COMM_SELF,1,"no such ent in database, type %lu",
+	mField.get_moab().type_from_handle(*eit));
+    }
+    bool success;
+    success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+      ->modify(mit,RefMoFEMEntity_change_add_bit(preserve_ref));
+    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+  }
 
   PetscFunctionReturn(0);
 }
@@ -1692,9 +1717,7 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   //BitRefLevel maskPreserv;
   //ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
   //ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv); CHKERRQ(ierr);
-  //ierr = mField.remove_ents_from_finite_element_by_bit_ref(maskPreserv,maskPreserv,1); CHKERRQ(ierr);
-  //ierr = mField.remove_ents_from_field_by_bit_ref(maskPreserv,maskPreserv,1); CHKERRQ(ierr);
-  //ierr = face_splitting.squashIndices(0); CHKERRQ(ierr);
+  ierr = face_splitting.squashIndices(0); CHKERRQ(ierr);
  
   BitRefLevel not_split_face_ref_level;
   not_split_face_ref_level.set(face_splitting.meshIntefaceBitLevels.back());
@@ -1705,7 +1728,6 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   ierr = face_splitting.addNewSurfaceFaces_to_Cubit_msId200(); CHKERRQ(ierr);
   ierr = face_splitting.splitFaces(); CHKERRQ(ierr);
   ierr = face_splitting.addcrackFront_to_Cubit201(); CHKERRQ(ierr);
-
 
   if(verb>0) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);

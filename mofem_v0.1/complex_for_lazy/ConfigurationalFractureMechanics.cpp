@@ -3401,18 +3401,12 @@ PetscErrorCode main_face_splitting_restart(FieldInterface& mField,Configurationa
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  Tag th_my_ref_level;
-  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); 
-  const EntityHandle root_meshset = mField.get_moab().get_root_set();
-  BitRefLevel *ptr_bit_level0;
-  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
-
-  /*Tag th_griffith_force;
+  Tag th_griffith_force;
   rval = mField.get_moab().tag_get_handle("GRIFFITH_FORCE",th_griffith_force); CHKERR_PETSC(rval);
   rval = mField.get_moab().tag_delete(th_griffith_force); CHKERR_PETSC(rval);
   Tag th_freez;
   rval = mField.get_moab().tag_get_handle("FROZEN_NODE",th_freez); CHKERR_PETSC(rval);
-  rval = mField.get_moab().tag_delete(th_freez); CHKERR_PETSC(rval);*/
+  rval = mField.get_moab().tag_delete(th_freez); CHKERR_PETSC(rval);
 
   conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_spatial_problem_definition) = 0;
   conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_material_problem_definition) = 0;
@@ -3422,7 +3416,7 @@ PetscErrorCode main_face_splitting_restart(FieldInterface& mField,Configurationa
   conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
   conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
 
-  ierr = mField.rebuild_database(0); CHKERRQ(ierr);
+  //ierr = mField.rebuild_database(0); CHKERRQ(ierr);
   ierr = main_arc_length_setup(mField,conf_prob); CHKERRQ(ierr);
   ierr = mField.check_number_of_ents_in_ents_field("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = mField.check_number_of_ents_in_ents_field("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
