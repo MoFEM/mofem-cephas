@@ -377,12 +377,11 @@ void EntMoFEMFiniteElement_change_bit_off::operator()(MoFEMFiniteElement &MoFEMF
 //MoFEMFiniteElement data
 EntMoFEMFiniteElement::EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr): 
   interface_MoFEMFiniteElement<MoFEMFiniteElement>(_MoFEMFiniteElement_ptr),interface_RefMoFEMElement<RefMoFEMElement>(_ref_MoFEMFiniteElement) {
-  PetscErrorCode ierr;
   //get finite element entity
-  EntityHandle ent = get_ent();
   uid = get_unique_id_calculate();
   //add ents to meshset
   //EntityHandle meshset = get_meshset();
+  //EntityHandle ent = get_ent();
   //ierr = moab.add_entities(meshset,&ent,1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 

@@ -1784,7 +1784,7 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
     }
   }
   viit_data = data_view.lower_bound(1); 
-  if(data_dofs.size()!=distance(viit_data,hi_viit_data)) {
+  if(data_dofs.size()!=(unsigned int)distance(viit_data,hi_viit_data)) {
     SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   }
   PetscFunctionReturn(0);
@@ -4359,7 +4359,8 @@ PetscErrorCode FieldCore::check_number_of_ents_in_ents_field(const string& name)
   EntityHandle meshset = it->get_meshset();
   int num_entities;
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
-  if(entsMoabField.get<FieldName_mi_tag>().count(it->get_name().c_str()) != num_entities) {
+  if(entsMoabField.get<FieldName_mi_tag>().count(it->get_name()) 
+    != (unsigned int)num_entities) {
     SETERRQ1(PETSC_COMM_SELF,1,"not equal number of entities in meshset and field multiindex < %s >",name.c_str());
   }
   PetscFunctionReturn(0);
@@ -4372,7 +4373,7 @@ PetscErrorCode FieldCore::check_number_of_ents_in_ents_field() {
     EntityHandle meshset = it->get_meshset();
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
-    if(entsMoabField.get<FieldName_mi_tag>().count(it->get_name().c_str()) != num_entities) {
+    if(entsMoabField.get<FieldName_mi_tag>().count(it->get_name()) != (unsigned int)num_entities) {
       SETERRQ1(PETSC_COMM_SELF,1,"not equal number of entities in meshset and field multiindex < %s >",it->get_name().c_str());
     }
   }
@@ -4388,7 +4389,8 @@ PetscErrorCode FieldCore::check_number_of_ents_in_ents_finite_element(const stri
   EntityHandle meshset = it->get_meshset();
   int num_entities;
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
-  if(finiteElementsMoFEMEnts.get<MoFEMFiniteElement_name_mi_tag>().count(it->get_name().c_str()) != num_entities) {
+  if(finiteElementsMoFEMEnts.get<MoFEMFiniteElement_name_mi_tag>().count(it->get_name().c_str()) 
+    != (unsigned int)num_entities) {
     SETERRQ1(PETSC_COMM_SELF,1,"not equal number of entities in meshset and finite elements multiindex < %s >",it->get_name().c_str());
   }
   PetscFunctionReturn(0);
@@ -4401,7 +4403,8 @@ PetscErrorCode FieldCore::check_number_of_ents_in_ents_finite_element() {
     EntityHandle meshset = it->get_meshset();
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
-    if(finiteElementsMoFEMEnts.get<MoFEMFiniteElement_name_mi_tag>().count(it->get_name().c_str()) != num_entities) {
+    if(finiteElementsMoFEMEnts.get<MoFEMFiniteElement_name_mi_tag>().count(it->get_name().c_str()) 
+      != (unsigned int)num_entities) {
       SETERRQ1(PETSC_COMM_SELF,1,"not equal number of entities in meshset and finite elements multiindex < %s >",it->get_name().c_str());
     }
   }
