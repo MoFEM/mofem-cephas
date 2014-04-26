@@ -255,7 +255,7 @@ struct FieldInterface {
   virtual PetscErrorCode printCubitHeatFluxSet() = 0;
   virtual PetscErrorCode printCubitMaterials() = 0;
 
-  virtual PetscErrorCode rebuild_database(int verb) = 0;
+  virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 
   /**
   * Create finite elements based from eneties in meshses. Throw error if entity is not in database

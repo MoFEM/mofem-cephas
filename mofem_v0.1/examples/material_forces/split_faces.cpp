@@ -81,6 +81,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_fields(); CHKERRQ(ierr);
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
+  PetscAttachDebugger();
+
   { //cat mesh
     FaceSplittingTools face_splitting(mField);
     ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
