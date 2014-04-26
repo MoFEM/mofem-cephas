@@ -3483,10 +3483,10 @@ PetscErrorCode FieldCore::get_entities_by_ref_level(const BitRefLevel &bit,const
       case MBTRI:
       case MBTET:
       case MBPRISM:
-      //case MBENTITYSET:
       break;
+      case MBENTITYSET:
       default:
-	eit++;
+	eit = ents.erase(eit);
 	continue;
     }
     BitRefLevel bit2;
