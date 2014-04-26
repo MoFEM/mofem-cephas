@@ -84,6 +84,9 @@ struct FieldCore: public FieldInterface {
 
   //check consistency
   PetscErrorCode check_number_of_ents_in_ents_field(const string& name);
+  PetscErrorCode check_number_of_ents_in_ents_field();
+  PetscErrorCode check_number_of_ents_in_ents_finite_element(const string& name);
+  PetscErrorCode check_number_of_ents_in_ents_finite_element();
   PetscErrorCode rebuild_database(int verb = -1);
 
   //cubit meshsets

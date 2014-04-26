@@ -3418,8 +3418,9 @@ PetscErrorCode main_face_splitting_restart(FieldInterface& mField,Configurationa
 
   //ierr = mField.rebuild_database(0); CHKERRQ(ierr);
   ierr = main_arc_length_setup(mField,conf_prob); CHKERRQ(ierr);
-  ierr = mField.check_number_of_ents_in_ents_field("SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = mField.check_number_of_ents_in_ents_field("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.check_number_of_ents_in_ents_field(); CHKERRQ(ierr);
+  ierr = mField.check_number_of_ents_in_ents_finite_element(); CHKERRQ(ierr);
+
   //ierr = mField.list_ent_by_field_name("SPATIAL_POSITION"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
