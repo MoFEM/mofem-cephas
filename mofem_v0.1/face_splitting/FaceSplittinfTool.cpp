@@ -279,14 +279,17 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
   crack_front_edges_nodes_tets = intersect(crack_front_edges_nodes_tets,mesh_level_tets);
   Range crack_front_edges_faces;
   rval = mField.get_moab().get_adjacencies(crack_front_edges,2,false,crack_front_edges_faces,Interface::UNION); CHKERR_PETSC(rval);
+  crack_front_edges_faces = intersect(crack_front_edges_faces,mesh_level_tris);
 
   //common tets
   Range common_tets = intersect(crack_front_edges_nodes_tets,opposite_crack_front_edges_tets);
 
   //get edges which are connecting crack front nodes but are not part of crack front itself
+  //nodes of such edges, and node of crack front create face, which is part of crack.
   Range crack_front_edges_nodes_edges;
   mField.get_moab().get_adjacencies(crack_front_edges_nodes,1,false,crack_front_edges_nodes_edges,Interface::UNION);
   crack_front_edges_nodes_edges = subtract(crack_front_edges_nodes_edges,crack_front_edges);
+  crack_front_edges_nodes_edges = intersect(crack_front_edges_nodes_edges,mesh_level_edges);
   Range::iterator eit = crack_front_edges_nodes_edges.begin();
   for(;eit!=crack_front_edges_nodes_edges.end();) {
     Range edge_nodes;
@@ -307,16 +310,16 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
   crack_front_edges_nodes_edges_faces = subtract(crack_front_edges_nodes_edges_faces,crack_surface);
   Range crack_surface_nodes;
   rval = mField.get_moab().get_connectivity(crack_surface,crack_surface_nodes,true); CHKERR_PETSC(rval);
-  //Range crack_front_edges_nodes_edges_faces_tets;
-  //rval = mField.get_moab().get_adjacencies(
-    //crack_front_edges_nodes_edges_faces,3,false,crack_front_edges_nodes_edges_faces_tets,Interface::UNION); CHKERR_PETSC(rval);
-  //for(Range::iterator tit = crack_front_edges_nodes_edges_faces_tets.begin();
-    //tit!=crack_front_edges_nodes_edges_faces_tets.end();tit++) {
   for(Range::iterator fit = crack_front_edges_nodes_edges_faces.begin(); 
     fit != crack_front_edges_nodes_edges_faces.end();) {
     Range adj_tets;
     rval = mField.get_moab().get_adjacencies(
       &*fit,1,3,false,adj_tets,Interface::UNION); CHKERR_PETSC(rval);
+    adj_tets = intersect(adj_tets,mesh_level_tets);
+    if(adj_tets.size() == 0) {
+      fit = crack_front_edges_nodes_edges_faces.erase(fit);
+      continue;
+    }
     Range::iterator tit = adj_tets.begin();
     for(;tit!=adj_tets.end();tit++) {
       Range tit_nodes;
@@ -332,7 +335,6 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
     }
   }
   
-
   //get faces
   Skinner skin(&mField.get_moab());
   //
