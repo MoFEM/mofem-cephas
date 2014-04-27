@@ -2485,7 +2485,7 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
     MatView(Adj,PETSC_VIEWER_STDOUT_WORLD);
   }
   //partitioning
-   MatPartitioning part;
+  MatPartitioning part;
   IS is;
   ierr = MatPartitioningCreate(MPI_COMM_WORLD,&part); CHKERRQ(ierr);
   ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
