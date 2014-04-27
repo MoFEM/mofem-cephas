@@ -136,7 +136,7 @@ add_library(mofem_complex_for_lazy
 )
 
 add_library(mofem_face_splitting
-  face_splitting/FaceSplittinfTool.cpp
+  face_splitting/FaceSplittingTool.cpp
 )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")

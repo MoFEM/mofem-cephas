@@ -20,7 +20,7 @@
 
 #include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
-#include "FaceSplittinfTool.hpp"
+#include "FaceSplittingTool.hpp"
 
 using namespace MoFEM;
 
