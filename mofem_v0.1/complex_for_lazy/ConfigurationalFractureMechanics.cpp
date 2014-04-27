@@ -23,7 +23,7 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
-#include "FaceSplittinfTool.hpp"
+#include "FaceSplittingTool.hpp"
 
 #include <petscsnes.h>
 

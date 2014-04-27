@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "ConfigurationalFractureMechanics.hpp"
-#include "FaceSplittinfTool.hpp"
+#include "FaceSplittingTool.hpp"
 #include "FieldCore.hpp"
 
 using namespace MoFEM;
