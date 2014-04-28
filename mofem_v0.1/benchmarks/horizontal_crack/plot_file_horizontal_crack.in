@@ -1,0 +1,40 @@
+# gnuplot
+# l 'filename.in'
+# exit
+# open 'output.eps'
+#
+
+set terminal postscript eps enhanced "Helvetica" 50 size 20,14
+
+set output "output.eps"
+
+#set title ""
+
+#Define axis titles
+set xlabel "Degrees of freedom (log_{10})"
+set ylabel "K_I Error (%)"
+
+#Define range set xrange or set yrange 
+#set xrange [1000:1000000]
+#set yrange [-25.0:0.0]
+
+set logscale x
+set format x "%1.0f"
+
+#Legend position and alignment of the legend labels 
+set key right bottom
+set key spacing 3 
+#unset key
+set grid back lc rgb "black" linewidth 1
+set grid mxtics mytics ls 101 lc rgb "black" linewidth 5
+
+#Define linestyle
+#set style line 1 lt 1
+
+#Define x and y ranges
+plot [:] [:] \
+'input_file_1.dat' u ($13):((sqrt($20*1000)-1.9499)/1.9499*100) w linespoints lt 1 pt 7 ps 5 linewidth 5 lc rgb "blue" title "1st order, h 0 to 4",\
+'input_file_2.dat' u ($13):((sqrt($20*1000)-1.9499)/1.9499*100) w linespoints lt 1 pt 7 ps 5 linewidth 5 lc rgb "red" title "2nd order, h 0 to 4",\
+'input_file_3.dat' u ($13):((sqrt($20*1000)-1.9499)/1.9499*100) w linespoints lt 1 pt 7 ps 5 linewidth 5 lc rgb "green" title "3rd order, h 0 to 4",\
+'input_file_4.dat' u ($13):((sqrt($20*1000)-1.9499)/1.9499*100) w linespoints lt 1 pt 7 ps 5 linewidth 5 lc rgb "purple" title "4th order, h 0 to 4",\
+'input_file_5.dat' u ($13):((sqrt($20*1000)-1.9499)/1.9499*100) w linespoints lt 1 pt 7 ps 5 linewidth 5 lc rgb "dark-blue" title "5th order, h 0 to 4"
