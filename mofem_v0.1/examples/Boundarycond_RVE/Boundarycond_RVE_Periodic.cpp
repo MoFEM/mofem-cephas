@@ -25,6 +25,7 @@
 
 #include "ElasticFEMethod.hpp"
 #include "ElasticFE_RVELagrange_Periodic.hpp"
+#include "ElasticFE_RVELagrange_Periodic_RigidBodyMotion.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -137,17 +138,21 @@ int main(int argc, char *argv[]) {
     
     //Fields
     ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-    ierr = mField.add_field("Lagrange_mul_disp",H1,3); CHKERRQ(ierr);
+    ierr = mField.add_field("Lagrange_mul_disp",H1,3); CHKERRQ(ierr);  //For lagrange multipliers to control the periodic motion
+    ierr = mField.add_field("Lagrange_mul_disp_rigid",NoField,3); CHKERRQ(ierr);  //To control the rigid body motion (3 Traslations and 3 rotations)
     
     //FE
     ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
     ierr = mField.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("Lagrange_elem_rigid"); CHKERRQ(ierr);//For rigid body control
     
-    //Define rows/cols and element data
+    //Define rows/cols and element data for Elastic element
     ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     
+    //Define rows/cols and element data for C and CT (for lagrange multipliers)
+    //============================================================================================================
     //C row as Lagrange_mul_disp and col as DISPLACEMENT
     ierr = mField.modify_finite_element_add_field_row("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
@@ -159,8 +164,25 @@ int main(int argc, char *argv[]) {
     //As for stress we need both displacement and temprature (Lukasz)
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
+    //============================================================================================================
+
+   
+    //Define rows/cols and element data for C1 and C1T (for lagrange multipliers to contol the rigid body motion)
+    //============================================================================================================
+    //C row as Lagrange_mul_disp and col as DISPLACEMENT
+    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid","Lagrange_mul_disp_rigid"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid","DISPLACEMENT"); CHKERRQ(ierr);
     
+    //CT col as Lagrange_mul_disp and row as DISPLACEMENT
+    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid","Lagrange_mul_disp_rigid"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid","DISPLACEMENT"); CHKERRQ(ierr);
     
+    //As for stress we need both displacement and temprature (Lukasz)
+    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid","Lagrange_mul_disp_rigid"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid","DISPLACEMENT"); CHKERRQ(ierr);
+    //============================================================================================================
+
+
     //define problems
     ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     
@@ -168,7 +190,8 @@ int main(int argc, char *argv[]) {
     //set finite elements for problem
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
-    
+    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem_rigid"); CHKERRQ(ierr);
+
     
     //set refinment level for problem
     ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
@@ -183,6 +206,15 @@ int main(int argc, char *argv[]) {
     //add finite elements entities
     ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
+    
+    //Add finite element to lagrange element for rigid body motion
+    Range SurfacesFaces;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(103,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid"); CHKERRQ(ierr);
+
+    
     //Add Periodic Prisims Between Triangles on -ve and +ve faces to implement periodic bounary conditions
     //Populating the Multi-index container with -ve triangles
     Range SurTrisNeg;
@@ -429,8 +461,8 @@ int main(int argc, char *argv[]) {
     const double YoungModulus = 1;
     const double PoissonRatio = 0.0;
     MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-    
     ElasticFE_RVELagrange_Periodic MyFE_RVELagrangePeriodic(mField,&myDirihletBC,Aij,D,F);
+    ElasticFE_RVELagrange_Periodic_RigidBodyMotion MyFE_RVELagrangePeriodicRigidBodyMotion(mField,&myDirihletBC,Aij,D,F);
 
     
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -438,8 +470,10 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
     
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid",MyFE_RVELagrangePeriodicRigidBodyMotion);  CHKERRQ(ierr);
+    
 
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -457,11 +491,11 @@ int main(int argc, char *argv[]) {
 //
 //    
     //Matrix View
-    ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-    std::string wait;
-    std::cin >> wait;
-    
+//    ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//    MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+//    std::string wait;
+//    std::cin >> wait;
+
     //Solver
     KSP solver;
     ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);

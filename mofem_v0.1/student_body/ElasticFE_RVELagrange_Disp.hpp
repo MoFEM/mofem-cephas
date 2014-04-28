@@ -17,21 +17,21 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ElasticFE_RVELagrange_HPP__
-#define __ElasticFE_RVELagrange_HPP__
+#ifndef __ElasticFE_RVELagrange_Disp_HPP__
+#define __ElasticFE_RVELagrange_Disp_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
 
 namespace MoFEM {
 
-struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
+struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
 
     FieldInterface& mField;
     Mat Aij;
     Vec F;
 
     bool propeties_from_BlockSet_Mat_ElasticSet;
-    ElasticFE_RVELagrange(
+    ElasticFE_RVELagrange_Disp(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F):
       FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
       Aij(_Aij),F(_F){
@@ -48,15 +48,15 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
       rowNMatrices.resize(1+3+1);
       ColGlob.resize(1+3+1);
     
-      g_TRI_dim = 13;
-      g_NTRI.resize(3*g_TRI_dim);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,g_TRI_dim);
-      G_W_TRI = G_TRI_W13;
-
-//      g_TRI_dim = 28;
+//      g_TRI_dim = 13;
 //      g_NTRI.resize(3*g_TRI_dim);
-//      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
-//      G_W_TRI = G_TRI_W28;
+//      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,g_TRI_dim);
+//      G_W_TRI = G_TRI_W13;
+
+      g_TRI_dim = 28;
+      g_NTRI.resize(3*g_TRI_dim);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
+      G_W_TRI = G_TRI_W28;
           
           
           
@@ -245,14 +245,13 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
             }
         }
         
-        cout<<"row_mat  =  "<<row_mat<<endl;
-        cout<<"\nFor Edges "<<endl;
-        cout<<"\n RowGlob[row_mat].size() "<<RowGlob[1].size()<<endl;
-        for(int jj=0; jj<3; jj++) for(int ii=0; ii<RowGlob[1].size(); ii++) cout<<RowGlob[jj][ii]<<" ";
-        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[1].size()<<endl;
-        for(int jj=0; jj<3; jj++) for(int ii=0; ii<ColGlob[1].size(); ii++) cout<<ColGlob[jj][ii]<<" ";
-        cout<<"\n\n\n";
-
+//        cout<<"row_mat  =  "<<row_mat<<endl;
+//        cout<<"\nFor Edges "<<endl;
+//        cout<<"\n RowGlob[row_mat].size() "<<RowGlob[1].size()<<endl;
+//        for(int jj=0; jj<3; jj++) for(int ii=0; ii<RowGlob[1].size(); ii++) cout<<RowGlob[jj][ii]<<" ";
+//        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[1].size()<<endl;
+//        for(int jj=0; jj<3; jj++) for(int ii=0; ii<ColGlob[1].size(); ii++) cout<<ColGlob[jj][ii]<<" ";
+//        cout<<"\n\n\n";
 ////        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[1].size()<<endl;
 ////        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[1][ii]<<" ";
 //        cout<<"\n\n\n"<<endl;
@@ -514,7 +513,7 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
         ublas::vector<FieldData> applied_strain;
         applied_strain.resize(6);
         applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
-        applied_strain(3)=1.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
+        applied_strain(3)=0.0; applied_strain(4)=0.0; applied_strain(5)=1.0;
         //cout<<"area "<<area << endl;
         
         
@@ -581,7 +580,7 @@ struct ElasticFE_RVELagrange: public FEMethod_UpLevelStudent {
     
       PetscErrorCode operator()() {
       PetscFunctionBegin;
-        cout<<"Hi from class"<<endl;
+//        cout<<"Hi from class"<<endl;
         
         ierr = GetN_and_Indices(); CHKERRQ(ierr);
         ierr = Get_H_mat();

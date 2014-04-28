@@ -21,16 +21,16 @@
 #define __ElasticFE_RVELagrange_Traction_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
-#include "ElasticFE_RVELagrange.hpp"
+#include "ElasticFE_RVELagrange_Disp.hpp"
 
 
 namespace MoFEM {
 
-struct ElasticFE_RVELagrange_Traction: public ElasticFE_RVELagrange {
+struct ElasticFE_RVELagrange_Traction: public ElasticFE_RVELagrange_Disp {
 
     ElasticFE_RVELagrange_Traction(
                           FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F):
-    ElasticFE_RVELagrange(_mField, _dirihlet_ptr,_Aij, _D, _F ){};
+    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F ){};
     
     
     vector<DofIdx> DirihletBC;

@@ -24,7 +24,8 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
-#include "ElasticFE_RVELagrange.hpp"
+#include "ElasticFE_RVELagrange_Disp.hpp"
+#include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -236,7 +237,7 @@ int main(int argc, char *argv[]) {
   const double PoissonRatio = 0.0;
   MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
     
-  ElasticFE_RVELagrange MyFE_RVELagrange(mField,&myDirihletBC,Aij,D,F);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,&myDirihletBC,Aij,D,F);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -282,6 +283,19 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+    
+   //Calculation of Homogenized stress
+//    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,&myDirihletBC,Aij,D,F);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
+    
+    
+    
+    
+    
+    
+    
+    
   PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
 

@@ -21,16 +21,16 @@
 #define __ElasticFE_RVELagrange_Periodic_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
-#include "ElasticFE_RVELagrange.hpp"
+#include "ElasticFE_RVELagrange_Disp.hpp"
 
 namespace MoFEM {
 
-struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange {
+struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
 
     
     ElasticFE_RVELagrange_Periodic(
                                    FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F):
-    ElasticFE_RVELagrange(_mField, _dirihlet_ptr,_Aij, _D, _F){};
+    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F){};
     
     
     
@@ -513,8 +513,8 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange {
             //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
             ublas::vector<FieldData> applied_strain;
             applied_strain.resize(6);
-            applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
-            applied_strain(3)=1.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
+            applied_strain(0)=0.0; applied_strain(1)=1.0; applied_strain(2)=0.0;
+            applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
 //            cout<<"area "<<area << endl;
             
             for(int rr=0; rr<row_mat; rr++){
