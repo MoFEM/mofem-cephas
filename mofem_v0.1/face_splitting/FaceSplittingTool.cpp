@@ -671,7 +671,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     }
 
     //remove choped tets
-    unsigned int nb_crack_front_tets = crack_front_tets.size();
+    //unsigned int nb_crack_front_tets = crack_front_tets.size();
     crack_front_tets = subtract(crack_front_tets,chop_tets);
 
     //get faces adjacent to removed node
