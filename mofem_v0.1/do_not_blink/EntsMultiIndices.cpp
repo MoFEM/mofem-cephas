@@ -104,8 +104,8 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefM
     }
   }
   //add entitity to field meshset
-  EntityHandle meshset = get_meshset();
-  rval = moab.add_entities(meshset,&ent,1); CHKERR_THROW(rval);
+  //EntityHandle meshset = get_meshset();
+  //rval = moab.add_entities(meshset,&ent,1); CHKERR_THROW(rval);
 }
 MoFEMEntity::~MoFEMEntity() {}
 ostream& operator<<(ostream& os,const MoFEMEntity& e) {

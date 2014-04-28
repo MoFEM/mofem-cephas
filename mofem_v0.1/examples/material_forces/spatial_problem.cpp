@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "ConfigurationalFractureMechanics.hpp"
-#include "FaceSplittinfTool.hpp"
+#include "FaceSplittingTool.hpp"
 #include "FieldCore.hpp"
 
 using namespace MoFEM;
@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
-
   ConfigurationalFractureMechanics conf_prob(mField);
   ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
 
@@ -132,7 +131,6 @@ int main(int argc, char *argv[]) {
   }
 
   bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
-  //bit_level0 = BitRefLevel().set(face_splitting_tools.meshRefineBitLevels.back());
 
   //load factor
   double *t_val;
@@ -183,6 +181,7 @@ int main(int argc, char *argv[]) {
 
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
+
 
   PetscFinalize();
 

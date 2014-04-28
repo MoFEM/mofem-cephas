@@ -20,7 +20,7 @@
 
 #include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
-#include "FaceSplittinfTool.hpp"
+#include "FaceSplittingTool.hpp"
 
 using namespace MoFEM;
 
@@ -76,19 +76,26 @@ int main(int argc, char *argv[]) {
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
+  ierr = mField.seed_ref_level_3D(0,BitRefLevel()); CHKERRQ(ierr);
+
   ierr = mField.build_fields(); CHKERRQ(ierr);
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
+  //PetscAttachDebugger();
+
   { //cat mesh
-  
     FaceSplittingTools face_splitting(mField);
     ierr = main_refine_and_meshcat(mField,face_splitting,false,2); CHKERRQ(ierr);
     ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
-
   }
 
-  if(pcomm->rank()==0) {
+  //project and set coords
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
+  conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
+  ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+  ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
 
+  if(pcomm->rank()==0) {
     EntityHandle meshset200;
     ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset200); CHKERRQ(ierr);
     Range tris;
@@ -104,12 +111,9 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset201;
     ierr = mField.get_Cubit_msId_meshset(201,SideSet,meshset201); CHKERRQ(ierr);
     rval = moab.write_file("CrackFrontEdges_ref.vtk","VTK","",&meshset201,1); CHKERR_PETSC(rval);
-
   }
 
-
   //find faces for split
-
   FaceSplittingTools face_splitting(mField);
   ierr = main_select_faces_for_splitting(mField,face_splitting,2); CHKERRQ(ierr);
   //do splittig
@@ -121,19 +125,12 @@ int main(int argc, char *argv[]) {
   //face spliting job done
   ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
 
-
   //solve spatial problem and calulate griffith forces
-
   //project and set coords
   ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
   ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
   
-  ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-  ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-
-
   SNES snes;
-
   //solve mesh smoothing
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
@@ -142,8 +139,9 @@ int main(int argc, char *argv[]) {
   ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
   Vec D_tmp_mesh_positions;
   ierr = mField.VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
-  ierr = mField.set_local_VecCreateGhost(
-    "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+  ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
   int nb_sub_steps = 1;
   int nn;
   do { 
@@ -159,9 +157,9 @@ int main(int argc, char *argv[]) {
       SNESConvergedReason reason;
       SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
       if(ierr == 0 && reason > 0) {
-	/*ierr = mField.set_local_VecCreateGhost(
+	ierr = mField.set_local_VecCreateGhost(
 	  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-	  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);*/
+	  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       } else {
 	ierr = mField.set_local_VecCreateGhost(
 	  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
@@ -187,7 +185,7 @@ int main(int argc, char *argv[]) {
   //solve spatial problem
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
-  ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
+  ierr = conf_prob.solve_spatial_problem(mField,&snes,true); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   //calulate Griffth forces

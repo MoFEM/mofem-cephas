@@ -1,7 +1,0 @@
-#!python
-cubit.cmd('brick x 1 ')
-cubit.cmd('volume 1  scheme Tetmesh')
-cubit.cmd('volume 1 size 1')
-cubit.cmd('mesh volume 1')
-cubit.cmd('create cfd_bc  pressureinlet on surface 5  ')
-cubit.cmd('create cfd_bc  pressureoutlet on surface 3  ')

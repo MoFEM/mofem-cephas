@@ -105,6 +105,8 @@ struct ExampleDiriheltBC: public BaseDirihletBC {
 
 int main(int argc, char *argv[]) {
 
+  try {
+
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   Core mb_instance;
@@ -136,50 +138,6 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   FieldCore core(moab);
   FieldInterface& mField = core;
-
-  /*//ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
-
-  //Interface
-  EntityHandle meshset_interface;
-  ierr = mField.get_Cubit_msId_meshset(4,SideSet,meshset_interface); CHKERRQ(ierr);
-  ierr = mField.get_msId_3dENTS_sides(meshset_interface,0,true); CHKERRQ(ierr);
-  // stl::bitset see for more details
-  BitRefLevel bit_level_interface;
-  bit_level_interface.set(0);
-  ierr = mField.get_msId_3dENTS_split_sides(0,bit_level_interface,meshset_interface,true,true); CHKERRQ(ierr);
-  EntityHandle meshset_level_interface;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level_interface); CHKERR_PETSC(rval);
-  ierr = mField.get_entities_by_ref_level(bit_level_interface,BitRefLevel().set(),meshset_level_interface); CHKERRQ(ierr);
-
-  //add refined ent to cubit meshsets
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
-    EntityHandle cubit_meshset = cubit_it->meshset; 
-    ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level_interface,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-		ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level_interface,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-    ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level_interface,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-    ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level_interface,cubit_meshset,MBTET,true); CHKERRQ(ierr);
-
-  }
-
-  // stl::bitset see for more details
-  BitRefLevel bit_level0;
-  bit_level0.set(1);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(meshset_level_interface,bit_level0); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);*/
-
-  /*BitRefLevel bit_level1;
-  bit_level1.set(2);
-  ierr = mField.add_verices_in_the_middel_of_edges(meshset_level0,bit_level1); CHKERRQ(ierr);
-  ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
-  ierr = mField.refine_PRISM(meshset_level0,bit_level1); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
-    EntityHandle cubit_meshset = cubit_it->meshset; 
-    ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-  }*/
-
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
@@ -340,7 +298,7 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
-  const double alpha = 0.5;
+  const double alpha = 1;
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
   MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
@@ -397,8 +355,8 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 	
-	PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
-	mField,"DISPLACEMENT",LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
+    mField,"DISPLACEMENT",LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
 	
   if(pcomm->rank()==0) {
@@ -428,6 +386,10 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
   PetscFinalize();
+
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
 
 }
 

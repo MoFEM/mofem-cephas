@@ -107,6 +107,7 @@ add_library(mofem_Field
   third_party/tetcircumcenter.c
   do_not_blink/CoreDataStructures.cpp
   do_not_blink/EntsMultiIndices.cpp
+  do_not_blink/DofsMultiIndices.cpp
   do_not_blink/FEMMultiIndices.cpp
   do_not_blink/ProblemsMultiIndices.cpp
   do_not_blink/BCMultiIndices.cpp
@@ -135,7 +136,7 @@ add_library(mofem_complex_for_lazy
 )
 
 add_library(mofem_face_splitting
-  face_splitting/FaceSplittinfTool.cpp
+  face_splitting/FaceSplittingTool.cpp
 )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")

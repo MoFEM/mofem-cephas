@@ -437,7 +437,9 @@ PetscErrorCode InvertComplexSymmMatrix3by3(__CLPK_doublecomplex *xC) {
 PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *det_xF) {
   PetscFunctionBegin;
   __CLPK_integer IPIV[4];
-  if(lapack_zgetrf(3,3,xF,3,IPIV) != 0) SETERRQ(PETSC_COMM_SELF,1,"lapack_zgetrf(3,3,xF,3,IPIV) != 0");
+  if(lapack_zgetrf(3,3,xF,3,IPIV) != 0) {
+    SETERRQ(PETSC_COMM_SELF,1,"lapack_zgetrf(3,3,xF,3,IPIV) != 0");
+  }
   double complex det = 1;
   int i = 0,j = 0;
   for(; i<3; i++) {

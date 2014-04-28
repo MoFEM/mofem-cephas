@@ -85,17 +85,24 @@ struct BasicMoFEMEntity {
  * \brief struct keeps handle to refined handle.
  */
 struct RefMoFEMEntity: public BasicMoFEMEntity {
-  const EntityHandle *tag_parent_ent;
+  EntityHandle *tag_parent_ent;
   BitRefLevel *tag_BitRefLevel;
   RefMoFEMEntity(Interface &moab,const EntityHandle _ent);
   /// get entity
   inline EntityHandle get_ref_ent() const { return ent; }
   /// get patent entity
-  inline EntityType get_parent_ent_type() const { return (EntityType)((*tag_parent_ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
+  inline EntityType get_parent_ent_type() const { 
+    if(tag_parent_ent == NULL) return MBMAXTYPE;
+    if(*tag_parent_ent == 0)  return MBMAXTYPE;
+    return (EntityType)((*tag_parent_ent&MB_TYPE_MASK)>>MB_ID_WIDTH); 
+  }
   /// get entity ref bit refinment signature
   inline const BitRefLevel& get_BitRefLevel() const { return *tag_BitRefLevel; }
   /// get parent entity, i.e. entity form one refinment level up
-  inline EntityHandle get_parent_ent() const { return *tag_parent_ent; }
+  inline EntityHandle get_parent_ent() const { 
+    if(tag_parent_ent == NULL) return 0;
+    return *tag_parent_ent; 
+  }
   const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return this; }
   friend ostream& operator<<(ostream& os,const RefMoFEMEntity& e);
 };
@@ -143,6 +150,21 @@ typedef multi_index_container<
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
   > > RefMoFEMEntity_multiIndex;
 
+
+/// \brief ref mofem entity, remove parent
+struct RefMoFEMEntity_change_remove_parent {
+  Interface &moab;
+  Tag th_RefParentHandle;
+  ErrorCode rval;
+  RefMoFEMEntity_change_remove_parent(Interface &_moab):moab(_moab) {
+    rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERR_THROW(rval);
+  };
+  void operator()(RefMoFEMEntity &e) { 
+    rval = moab.tag_delete_data(th_RefParentHandle,&e.ent,1); CHKERR_THROW(rval);
+    rval = moab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERR_THROW(rval);
+  };
+};
+
 /// \brief ref mofem entity, left shift
 struct RefMoFEMEntity_change_left_shift {
   int shift;
@@ -164,6 +186,45 @@ struct RefMoFEMEntity_change_add_bit {
   void operator()(RefMoFEMEntity &e) { 
     bit |= *(e.tag_BitRefLevel); 
     *e.tag_BitRefLevel = bit;
+  }
+};
+
+/// \brief ref mofem entity, change bit
+struct RefMoFEMEntity_change_and_bit {
+  BitRefLevel bit;
+  RefMoFEMEntity_change_and_bit(const BitRefLevel &_bit): bit(_bit) {};
+  void operator()(RefMoFEMEntity &e) { 
+    bit &= *(e.tag_BitRefLevel); 
+    *e.tag_BitRefLevel = bit;
+  }
+};
+
+/// \brief ref mofem entity, change bit
+struct RefMoFEMEntity_change_xor_bit {
+  BitRefLevel bit;
+  RefMoFEMEntity_change_xor_bit(const BitRefLevel &_bit): bit(_bit) {};
+  void operator()(RefMoFEMEntity &e) { 
+    bit ^= *(e.tag_BitRefLevel); 
+    *e.tag_BitRefLevel = bit;
+  }
+};
+
+/// \brief ref mofem entity, change bit
+struct RefMoFEMEntity_change_set_bit {
+  BitRefLevel bit;
+  RefMoFEMEntity_change_set_bit(const BitRefLevel &_bit): bit(_bit) {};
+  void operator()(RefMoFEMEntity &e) { 
+    *e.tag_BitRefLevel = bit;
+  }
+};
+
+/// \brief ref mofem entity, change bit
+struct RefMoFEMEntity_change_set_nth_bit {
+  int n;
+  bool b;
+  RefMoFEMEntity_change_set_nth_bit(const int _n,bool _b): n(_n),b(_b) {};
+  void operator()(RefMoFEMEntity &e) { 
+    (*e.tag_BitRefLevel)[n] = b;
   }
 };
 
