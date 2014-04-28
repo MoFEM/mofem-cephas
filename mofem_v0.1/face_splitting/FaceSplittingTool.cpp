@@ -671,7 +671,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     }
 
     //remove choped tets
-    unsigned int nb_crack_front_tets = crack_front_tets.size();
+    //unsigned int nb_crack_front_tets = crack_front_tets.size();
     crack_front_tets = subtract(crack_front_tets,chop_tets);
 
     //get faces adjacent to removed node
@@ -1691,7 +1691,7 @@ PetscErrorCode main_select_faces_for_splitting(FieldInterface& mField,FaceSplitt
   }
 
   ierr = face_splitting.getCrackFrontTets(true,0); CHKERRQ(ierr);
-  ierr = face_splitting.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true,10); CHKERRQ(ierr);
+  ierr = face_splitting.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true,0); CHKERRQ(ierr);
   ierr = face_splitting.selectCrackFaces(true); CHKERRQ(ierr);
 
   if(verb>0) {
