@@ -3099,22 +3099,26 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
       } else {
 	not_converged_state = true;
 	if(!first_step_converged) {
+	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  load_factor = load_factor0;
 	  if(da > 0) {
 	    da = 0.5*da;
 	    _da_ = da;
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
-	    ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	    load_factor = load_factor0;
 	  } else {
-	    if(ii>0) {
-	      if(reason==SNES_DIVERGED_MAX_IT) {
-		ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+	    if(odd_face_split != 0) {
+	      if(ii>0) {
+		ierr = PetscPrintf(PETSC_COMM_WORLD,"* use spatial solution only and split faces\n"); CHKERRQ(ierr);
+		ierr = main_rescale_load_factor(mField,conf_prob); CHKERRQ(ierr);
+		break;
+	      }
+	    } else {
+	      if(ii>0) {
+		SETERRQ(PETSC_COMM_SELF,1,"* run out form options unable to converge\n");		
 	      } else {
-		SETERRQ(PETSC_COMM_SELF,1,"* unable to converge\n");
+		ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, try line searcher\n"); CHKERRQ(ierr);
 	      }
 	    }
-	    ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, try line searcher\n"); CHKERRQ(ierr);
 	  }
 	} else {
 	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
