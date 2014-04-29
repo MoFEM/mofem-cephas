@@ -26,6 +26,9 @@
 #include "ElasticFEMethod.hpp"
 #include "ElasticFE_RVELagrange_traction.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Traction.hpp"
+#include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"
+#include "ElasticFE_RVELagrange_RigidBodyRotation.hpp"
+
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -91,17 +94,25 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-                ierr = mField.add_field("Lagrange_mul_disp",NoField,6); CHKERRQ(ierr);
+  ierr = mField.add_field("Lagrange_mul_disp",NoField,6); CHKERRQ(ierr);
+  ierr = mField.add_field("Lagrange_mul_disp_rigid_trans",NoField,3); CHKERRQ(ierr);   //Control 3 rigid body translations in x, y and z axis
+  ierr = mField.add_field("Lagrange_mul_disp_rigid_rotation",NoField,3); CHKERRQ(ierr); //Controla 3 rigid body rotations about x, y and z axis
+  
 
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
-                ierr = mField.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
+  
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   
+    //Define rows/cols and element data for C and CT (for lagrange multipliers)
+    //============================================================================================================
     //C row as Lagrange_mul_disp and col as DISPLACEMENT
     ierr = mField.modify_finite_element_add_field_row("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
@@ -113,6 +124,40 @@ int main(int argc, char *argv[]) {
     //As for stress we need both displacement and temprature (Lukasz)
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
+    //============================================================================================================
+
+    
+    //Define rows/cols and element data for C1 and C1T (for lagrange multipliers to contol the rigid body translations)
+    //============================================================================================================
+    //C1 row as Lagrange_elem_rigid_trans and col as DISPLACEMENT
+    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
+    
+    //C1T col as Lagrange_elem_rigid_trans and row as DISPLACEMENT
+    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
+    
+    //As for stress we need both displacement and temprature (Lukasz)
+    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
+    //============================================================================================================
+
+    
+    
+    //Define rows/cols and element data for C2 and C2T (for lagrange multipliers to contol the rigid body rotations)
+    //============================================================================================================
+    //C2 row as Lagrange_elem_rigid_trans and col as DISPLACEMENT
+    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
+    
+    //C2T col as Lagrange_elem_rigid_trans and row as DISPLACEMENT
+    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
+    
+    //As for stress we need both displacement and temprature (Lukasz)
+    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
+    //============================================================================================================
     
 
   //define problems
@@ -121,7 +166,9 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
-                ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
 
     
   //set refinment level for problem
@@ -141,26 +188,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
     ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
-    
-    
-//    //to create meshset from range
-//    EntityHandle BoundFacesMeshset;
-//    rval = moab.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
-//	rval = moab.add_entities(BoundFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
-//    ierr = mField.add_ents_to_field_by_TRIs(BoundFacesMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
-
-    
-//    //this entity will carray data for this finite element
-//    EntityHandle meshset_FE_Lagrange_elem;
-//    rval = moab.create_meshset(MESHSET_SET,meshset_FE_Lagrange_elem); CHKERR_PETSC(rval);
-//    //get Lagrange_mul_disp field meshset
-//    EntityHandle meshset_field_Lagrange_mul_disp = mField.get_field_meshset("Lagrange_mul_disp");
-//    //add Lagrange_mul_disp field meshset to finite element Lagrange_elem
-//    rval = moab.add_entities(meshset_FE_Lagrange_elem,&meshset_field_Lagrange_mul_disp,1); CHKERR_PETSC(rval);
-//    //add finite element Lagrange_elem meshset to refinment database (al  //set app. orderl ref bit leveles)
-//    ierr = mField.seed_ref_level_MESHSET(meshset_FE_Lagrange_elem,BitRefLevel().set()); CHKERRQ(ierr);
-//    //finally add created meshset to the Lagrange_elem finite element
-//    ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_Lagrange_elem,"Lagrange_elem"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
   
 
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -245,8 +274,11 @@ int main(int argc, char *argv[]) {
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
   MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-    
   ElasticFE_RVELagrange_Traction MyFE_RVELagrange(mField,&myDirihletBC,Aij,D,F);
+        
+  ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField,&myDirihletBC,Aij,D,F);
+  ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,&myDirihletBC,Aij,D,F);
+
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -255,7 +287,9 @@ int main(int argc, char *argv[]) {
 
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
- 
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",MyFE_RVELagrangeRigidBodyRotation);  CHKERRQ(ierr);
+
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -269,9 +303,9 @@ int main(int argc, char *argv[]) {
 
     
 //Matrix View
-//MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-//std::string wait;
-//std::cin >> wait;
+MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+std::string wait;
+std::cin >> wait;
 
   //Solver
   KSP solver;

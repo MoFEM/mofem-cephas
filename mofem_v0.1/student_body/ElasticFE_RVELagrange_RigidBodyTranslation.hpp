@@ -17,24 +17,19 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ElasticFE_RVELagrange_Periodic_RigidBodyMotion_HPP__
-#define __ElasticFE_RVELagrange_Periodic_HPP_RigidBodyMotion__
+#ifndef __ElasticFE_RVELagrange_RigidBodyTranslation_HPP__
+#define __ElasticFE_RVELagrange_RigidBodyTranslation__
 
 #include <boost/numeric/ublas/symmetric.hpp>
 #include "ElasticFE_RVELagrange_Disp.hpp"
 
 namespace MoFEM {
 
-struct ElasticFE_RVELagrange_Periodic_RigidBodyMotion: public ElasticFE_RVELagrange_Disp {
+struct ElasticFE_RVELagrange_RigidBodyTranslation: public ElasticFE_RVELagrange_Disp {
 
-    
-    ElasticFE_RVELagrange_Periodic_RigidBodyMotion(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F):
+    ElasticFE_RVELagrange_RigidBodyTranslation(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F):
     ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F){};
     
-    
-    
-    double coords_face[9];
-
     virtual PetscErrorCode GetN_and_Indices() {
         PetscFunctionBegin;
         
@@ -49,14 +44,13 @@ struct ElasticFE_RVELagrange_Periodic_RigidBodyMotion: public ElasticFE_RVELagra
         int num_nodes;
         EntityHandle face_tri;  face_tri=fe_ptr->get_ent();
         rval = moab.get_connectivity(face_tri,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-        rval = moab.get_coords(conn_face,num_nodes,coords_face); CHKERR_PETSC(rval);
-//        for(int ii=0; ii<9; ii++) cout<<"coord "<<coords_face[ii]<<endl;
 //        cout<< "num_nodes ="<<num_nodes << endl;
 //        cout<< "conn_face ="<<conn_face << endl;
+        
         //minimum and maximum rows indices for each node on the surface
         row_dofs_iterator niit,hi_niit;   //iterator for rows
-        niit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("Lagrange_mul_disp_rigid");
-        hi_niit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("Lagrange_mul_disp_rigid");
+        niit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("Lagrange_mul_disp_rigid_trans");
+        hi_niit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("Lagrange_mul_disp_rigid_trans");
         int nn = 0;
         for(;niit!=hi_niit;niit++) {
             RowGlob[row_mat][nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_petsc_gloabl_dof_idx();
@@ -65,7 +59,6 @@ struct ElasticFE_RVELagrange_Periodic_RigidBodyMotion: public ElasticFE_RVELagra
         nn = 0;
         for(;nn<3;nn++) {
             dofs_iterator col_niit,hi_col_niit;  // iterator for columns
-            string field_name;
             
             //minimum and maximum row and column indices for each node on the surface
             col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
@@ -96,20 +89,12 @@ struct ElasticFE_RVELagrange_Periodic_RigidBodyMotion: public ElasticFE_RVELagra
         //cout<<"Mat_face "<<Mat_face<<endl;
         for(int nn=0; nn<3; nn++){
             Mat_face(0,3*nn+0)=1.0;  Mat_face(1,3*nn+1)=1.0;   Mat_face(2,3*nn+2)=1.0;
-            
-//            Mat_face(3,3*nn+1)=-coords_face[3*nn+2];    Mat_face(3,3*nn+2)= coords_face[3*nn+1];
-//            Mat_face(4,3*nn+0)= coords_face[3*nn+2];    Mat_face(4,3*nn+2)=-coords_face[3*nn+0];
-//            Mat_face(5,3*nn+0)=-coords_face[3*nn+1];    Mat_face(5,3*nn+1)= coords_face[3*nn+0];
-            
-            //strain=[xx, yy, zz, xy, xz, zy]^T
-
         }
-//        for(int ii=0; ii<9; ii++) cout<<"coord "<<coords_face[ii]<<endl;
 //        cout<<"Mat_face "<< Mat_face << endl<<endl;
-        //Assembly C1 with size (6 x 9) for each node
+        //Assembly C1 with size (3 x 9) for each node
         ierr = MatSetValues(Aij,RowGlob[0].size(),&(RowGlob[0])[0],ColGlob[0].size(),&(ColGlob[0])[0],&(Mat_face.data())[0],INSERT_VALUES ); CHKERRQ(ierr);
         
-        //Assembly C1T with size (9 x 6) for each node
+        //Assembly C1T with size (9 x 3) for each node
         Mat_face_Tran=trans(Mat_face);
         ierr = MatSetValues(Aij,ColGlob[0].size(),&(ColGlob[0])[0],RowGlob[0].size(),&(RowGlob[0])[0],&(Mat_face_Tran.data())[0],INSERT_VALUES ); CHKERRQ(ierr);
         
