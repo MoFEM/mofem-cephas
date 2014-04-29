@@ -301,9 +301,9 @@ int main(int argc, char *argv[]) {
   };
 
   //Assemble F and Aij
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.0;
-  const double alpha = 1e12;
+  const double YoungModulus = 1000;
+  const double PoissonRatio = 0.2;
+  const double alpha = 0.1;
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
   MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
