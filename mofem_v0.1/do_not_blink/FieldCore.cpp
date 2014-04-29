@@ -2473,7 +2473,7 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
   PetscInt m,n;
   ierr = MatGetSize(Adj,&m,&n); CHKERRQ(ierr);
   if(m!=p_miit->get_nb_dofs_row()) {
-    SETERRQ(PETSC_COMM_SELF,1,"row number inconsistency");
+    SETERRQ3(PETSC_COMM_SELF,1,"row number inconsistency %d != %d nb cols. %d",m,p_miit->get_nb_dofs_row(),p_miit->get_nb_dofs_col());
   }
   if(n!=p_miit->get_nb_dofs_col()) {
     SETERRQ(PETSC_COMM_SELF,1,"col number inconsistency");
