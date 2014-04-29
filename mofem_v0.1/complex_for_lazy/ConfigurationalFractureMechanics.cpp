@@ -1323,9 +1323,13 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method_res); CHKERRQ(ierr);
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Save tags on refined mesh with stresses\n"); CHKERRQ(ierr);
-    if(fe_post_proc_stresses_method!=NULL) delete fe_post_proc_stresses_method;
-    fe_post_proc_stresses_method = new PostProcStressNonLinearElasticity(mField.get_moab(),MySpatialFE);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",*fe_post_proc_stresses_method);  CHKERRQ(ierr);
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    if(pcomm->rank()==0) {
+      if(fe_post_proc_stresses_method!=NULL) delete fe_post_proc_stresses_method;
+      fe_post_proc_stresses_method = new PostProcStressNonLinearElasticity(mField.get_moab(),MySpatialFE);
+      fe_post_proc_stresses_method->do_broadcast = false;
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",*fe_post_proc_stresses_method,0,pcomm->size());  CHKERRQ(ierr);
+    }
   }
 
   //detroy matrices

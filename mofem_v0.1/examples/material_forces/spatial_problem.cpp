@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out_spatial.h5m"); CHKERR_PETSC(rval);
   }
 
-  /*if(pcomm->rank()==0) {
+  if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Save stresses in post-processing mesh out_stresses.vtk\n"); CHKERRQ(ierr);
       rval = conf_prob.fe_post_proc_stresses_method->moab_post_proc.write_file("out_stresses.vtk","VTK",""); CHKERR_PETSC(rval);
     }
-  }*/
+  }
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
