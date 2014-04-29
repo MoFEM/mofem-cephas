@@ -33,16 +33,15 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
     ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F){};
     
     
-    
-    
-     vector<vector<vector<DofIdx> > > RowGlob;  //The outer vector is of size 2 (one for -ve triangles and one for +ve triangles)
+    vector<vector<vector<DofIdx> > > RowGlob;  //The outer vector is of size 2 (one for -ve triangles and one for +ve triangles)
     vector<vector<vector<DofIdx> > > ColGlob;
     EntityHandle prism_periodic;
     double coords_prism[18];
     const EntityHandle* conn_Prism;
     int  num_nodes1;
     double coords_face[2][9];
-    
+    double area;  //area is the same for two triangular faces of the prism so don't need area[2]
+
     virtual PetscErrorCode GetN_and_Indices() {
         PetscFunctionBegin;
         
@@ -72,20 +71,16 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
 //        cout<<"coord   ";
 //        for(int ii=0; ii<18; ii++) cout<<coords_prism[ii]<<"  ";
 //        cout<<endl<<endl;
-//        //Stop code
-//        std::string wait;
-//        std::cin >> wait;
         
         int count=0;
-        //int ff_arr[]={3, 4};
         for(int ff=0; ff<2; ff++) {
-            //const EntityHandle* conn_Tri;
-           //EntityHandle Tri_Prism;
-            //rval = moab.side_element(prism_periodic,2,ff_arr[ff],Tri_Prism); CHKERR_PETSC(rval);
-            //rval = moab.get_connectivity(Tri_Prism,conn_Tri,num_nodes,true); CHKERR_PETSC(rval);
             for(int nn = 0;nn<num_nodes1/2;nn++) {
-                
                 coords_face[ff][3*nn+0]=coords_prism[3*count+0];    coords_face[ff][3*nn+1]=coords_prism[3*count+1];    coords_face[ff][3*nn+2]=coords_prism[3*count+2];
+                ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
+                ublas::vector<FieldData,ublas::bounded_array<double,3> > normal(3);
+                ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face[ff],&*normal.data().begin()); CHKERRQ(ierr);
+                area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
+
                 //minimum and maximum row and column indices for each node on the prism triangle
                 niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
                 hi_niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
@@ -156,7 +151,6 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
 //                std::string wait;
 //                std::cin >> wait;
                 
-
                 dofs_iterator eiit,hi_eiit,col_eiit,col_hi_eiit;
                 eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",edge));
                 hi_eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",edge));
@@ -258,7 +252,6 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
         
 // Indices and shape funcitons for the faces
         int ff_arr[]={3, 4};  //Canonical numbering of two triangles only
- 
         for(int ff=0;ff<2;ff++) {
             row_mat=4;
             EntityHandle Tri_Prism;
@@ -383,41 +376,14 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
     
     //Calculate and assemble NT x N matrix
     ublas::vector<ublas::matrix<ublas::matrix<FieldData> > > NTN;  //The outer most vector is of size(2) for negative and positive triangles
-//    double coords_face[2][9];  //[2] i.e. [0] for -ve face and [1] for +ve face
-//    double coords_face1[2][3][3];  //[2] i.e. [0] for -ve face and [1] for +ve face
-    double area;
+    
     virtual PetscErrorCode Stiffness() {
         PetscFunctionBegin;
-//        cout<<" row_mat; "<<row_mat<<endl;
         NTN.resize(2);
-//        int ff_arr[]={3, 4};
         for(int ff=0; ff<2; ff++){
             NTN(ff).resize(row_mat,row_mat);
-//            const EntityHandle *conn_Tri;
-//            int num_nodes;
-//            EntityHandle Tri_Prism;
-//            rval = moab.side_element(prism_periodic,2,ff_arr[ff],Tri_Prism); CHKERR_PETSC(rval);
-//            rval = moab.get_connectivity(Tri_Prism,conn_Tri,num_nodes,true); CHKERR_PETSC(rval);
-//            cout<<"num_nodes "<<num_nodes<<endl<<endl;
-//            rval = moab.get_coords(conn_Tri,num_nodes,coords_face[ff]); CHKERR_PETSC(rval);
-//            cout<<"coord   ";
-//            for(int ii=0; ii<9; ii++) cout<<coords_face[ff][ii]<<"  ";
-//            cout<<endl<<endl;
-//            for (int nn=0; nn<num_nodes; nn++){
-//                rval = moab.get_coords(&conn_Tri[nn],1,coords_face1[ff][nn]); CHKERR_PETSC(rval);
-//            }
-//            cout<<"coord1  ";
-//            for(int ii=0; ii<3; ii++)for(int jj=0; jj<3; jj++) cout<<coords_face1[ff][ii][jj]<<"  ";
-//            cout<<endl<<endl;
-//             //Stop code
-//            std::string wait;
-//            std::cin >> wait;
-            ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
-            ublas::vector<FieldData,ublas::bounded_array<double,3> > normal(3);
-            ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face[ff],&*normal.data().begin()); CHKERRQ(ierr);
-            area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
-//            cout<<" area = "<<area<<endl;
-        //Calculate C Matrix, i.e. (NT x N)
+
+            //Calculate C Matrix, i.e. (NT x N)
             for(int rr = 0;rr<row_mat;rr++) {
 //                cout<<" rr = "<<rr<<endl;
                 for(int gg = 0;gg<g_TRI_dim;gg++) {
@@ -452,9 +418,6 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
         }
         PetscFunctionReturn(0);
     }
-//         //Stop code
-//        std::string wait;
-//        std::cin >> wait;
 
     
      virtual PetscErrorCode Lhs() {
@@ -503,7 +466,6 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
             //coordinates for all gauss points
             gauss_coord=prod(nodes_coord, g_NTRI_mat);
             
-            
 //            cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
 //            cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
 //            cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
@@ -513,8 +475,8 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
             //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
             ublas::vector<FieldData> applied_strain;
             applied_strain.resize(6);
-            applied_strain(0)=0.0; applied_strain(1)=1.0; applied_strain(2)=0.0;
-            applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
+            applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
+            applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=1.0;
 //            cout<<"area "<<area << endl;
             
             for(int rr=0; rr<row_mat; rr++){
@@ -572,10 +534,6 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
 //        cout<<"Hi from class"<<endl;
         ierr = GetN_and_Indices(); CHKERRQ(ierr);
         ierr = Get_H_mat();
-        
-        //Dirihlet Boundary Condition
-//        ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
-
         ierr = Lhs(); CHKERRQ(ierr);
         ierr = Rhs(); CHKERRQ(ierr);
         PetscFunctionReturn(0);

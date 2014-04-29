@@ -58,8 +58,6 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
       ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
       G_W_TRI = G_TRI_W28;
           
-          
-          
     
       row_mat=0;  //row_mat=0 for nodes   [1,2,3] for edges, 4 for face (for triangle)
        /*
@@ -143,9 +141,11 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
+    
+    double coords_face[9];
+    double area;
     virtual PetscErrorCode GetN_and_Indices() {
         PetscFunctionBegin;
-        
         
         //Find out indices for row and column for nodes on the surface, i.e. triangles
         row_mat = 0;
@@ -158,6 +158,15 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
         rval = moab.get_connectivity(face_tri,conn_face,num_nodes,true); CHKERR_PETSC(rval);
 //        cout<< "num_nodes ="<<num_nodes << endl;
 //        cout<< "conn_face ="<<conn_face << endl;
+        rval = moab.get_coords(conn_face,num_nodes,coords_face); CHKERR_PETSC(rval);
+//        for(int ii=0; ii<9; ii++) cout<<"coord "<<coords_face[ii]<<endl;
+//        cout<<endl<<endl;
+        ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
+        ublas::vector<FieldData,ublas::bounded_array<double,3> > normal(3);
+        ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
+        area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
+        //cout<<" area = "<<area<<endl;
+        
         int nn = 0;
         for(;nn<3;nn++) {
             dofs_iterator niit,hi_niit;   //for rows
@@ -256,7 +265,6 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
 ////        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[1][ii]<<" ";
 //        cout<<"\n\n\n"<<endl;
 //
-        
         
         //Find the shape function N at each gauss point for all the edges and then re-araange in the form as mentioned for nodes
         if(N_edge[0] != NULL){
@@ -379,31 +387,15 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
     //Calculate and assemble NT x N matrix
     ublas::matrix<ublas::matrix<FieldData> > NTN;
     
-    double coords_face[9];
-    double area;
     virtual PetscErrorCode Stiffness() {
         PetscFunctionBegin;
 //        cout<<" row_mat; "<<row_mat<<endl;
         NTN.resize(row_mat,row_mat);
-        const EntityHandle *conn_face;
-        int num_nodes_face;
-        rval = moab.get_connectivity(fe_ptr->get_ent(),conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
-//        cout<<"num_nodes_face "<<num_nodes_face<<endl<<endl; 
-        rval = moab.get_coords(conn_face,num_nodes_face,coords_face); CHKERR_PETSC(rval);
-        //        for(int ii=0; ii<9; ii++) cout<<"coord "<<coords_face[ii]<<endl;
-        //        cout<<endl<<endl;
-        ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
-        ublas::vector<FieldData,ublas::bounded_array<double,3> > normal(3);
-        ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
-        area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
-        //cout<<" area = "<<area<<endl;
-        
+
         //Calculate C Matrix, i.e. (NT x N)
 //        cout<<" row_mat; "<<row_mat<<endl;
 //        for(int ii=0; ii<39; ii++) cout<<" g_NTRI; "<<g_NTRI[ii]<<endl;
 //        for(int ii=0; ii<13; ii++) cout<<" rowNMatrices; "<<rowNMatrices[0][ii]<<endl;
-        
-        
         for(int rr = 0;rr<row_mat;rr++) {
 //            cout<<" rr = "<<rr<<endl;
             for(int gg = 0;gg<g_TRI_dim;gg++) {
@@ -512,8 +504,8 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
         //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
         ublas::vector<FieldData> applied_strain;
         applied_strain.resize(6);
-        applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
-        applied_strain(3)=0.0; applied_strain(4)=0.0; applied_strain(5)=1.0;
+        applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=1.0;
+        applied_strain(3)=0.0; applied_strain(4)=0.0; applied_strain(5)=0.0;
         //cout<<"area "<<area << endl;
         
         

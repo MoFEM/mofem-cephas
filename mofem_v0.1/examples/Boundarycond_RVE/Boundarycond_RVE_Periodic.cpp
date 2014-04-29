@@ -26,6 +26,7 @@
 #include "ElasticFEMethod.hpp"
 #include "ElasticFE_RVELagrange_Periodic.hpp"
 #include "ElasticFE_RVELagrange_Periodic_RigidBodyMotion.hpp"
+#include "ElasticFE_RVELagrange_Homogenized_Stress_Periodic.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -514,6 +515,40 @@ int main(int argc, char *argv[]) {
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    
+    
+    //Calculation of Homogenized stress
+    //=======================================================================================================================================================
+    double RVE_volume; RVE_volume=0.0; //We need this for stress calculation
+    
+    struct CalculateRVEVolume: public ElasticFEMethod {
+        double *RVE_volume;
+        CalculateRVEVolume(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu, double *_RVE_volume):
+        ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), RVE_volume(_RVE_volume){};
+        
+        PetscErrorCode operator()() {
+            PetscFunctionBegin;
+            ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+            
+            *RVE_volume+=V;
+            ierr = OpStudentEnd(); CHKERRQ(ierr);
+            PetscFunctionReturn(0);
+        }
+    };
+    
+    CalculateRVEVolume MyCalRVEVol(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), &RVE_volume);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyCalRVEVol);  CHKERRQ(ierr);
+    cout<<"RVE_volume  ="<<RVE_volume<<endl;
+    
+    //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(mField,&myDirihletBC,Aij,D,F,&RVE_volume);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressPeriodic);  CHKERRQ(ierr);
+    //=======================================================================================================================================================
+
+    
+    
+    
+    
     
     PostProcVertexMethod ent_method(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);

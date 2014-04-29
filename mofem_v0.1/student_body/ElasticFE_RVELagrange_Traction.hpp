@@ -35,7 +35,10 @@ struct ElasticFE_RVELagrange_Traction: public ElasticFE_RVELagrange_Disp {
     
     vector<DofIdx> DirihletBC;
     
-    virtual PetscErrorCode GetN_and_Indices() {
+    
+    double coords_face[9];
+    double area;
+     virtual PetscErrorCode GetN_and_Indices() {
         PetscFunctionBegin;
         
         
@@ -50,10 +53,18 @@ struct ElasticFE_RVELagrange_Traction: public ElasticFE_RVELagrange_Disp {
         int num_nodes;
         EntityHandle face_tri;  face_tri=fe_ptr->get_ent();
         rval = moab.get_connectivity(face_tri,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-        //        cout<< "num_nodes ="<<num_nodes << endl;
-        //        cout<< "conn_face ="<<conn_face << endl;
-        
-       
+//        cout<< "num_nodes ="<<num_nodes << endl;
+//        cout<< "conn_face ="<<conn_face << endl;
+         rval = moab.get_coords(conn_face,num_nodes,coords_face); CHKERR_PETSC(rval);
+         //        for(int ii=0; ii<9; ii++) cout<<"coord "<<coords_face[ii]<<endl;
+         //        cout<<endl<<endl;
+         ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
+         ublas::vector<FieldData,ublas::bounded_array<double,3> > normal(3);
+         ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
+         area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
+         //cout<<" area = "<<area<<endl;
+         
+         
         //minimum and maximum rows indices for each node on the surface
         row_dofs_iterator niit,hi_niit;   //iterator for rows
         niit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("Lagrange_mul_disp");
@@ -317,9 +328,6 @@ struct ElasticFE_RVELagrange_Traction: public ElasticFE_RVELagrange_Disp {
     
     //Calculate and assemble NT x N matrix
 //    ublas::matrix<ublas::matrix<FieldData> > NTN;
-    
-    double coords_face[9];
-    double area;
     virtual PetscErrorCode Stiffness() {
         PetscFunctionBegin;
         //        cout<<" row_mat; "<<row_mat<<endl;
@@ -328,14 +336,6 @@ struct ElasticFE_RVELagrange_Traction: public ElasticFE_RVELagrange_Disp {
         int num_nodes_face;
         rval = moab.get_connectivity(fe_ptr->get_ent(),conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
         //        cout<<"num_nodes_face "<<num_nodes_face<<endl<<endl;
-        rval = moab.get_coords(conn_face,num_nodes_face,coords_face); CHKERR_PETSC(rval);
-        //        for(int ii=0; ii<9; ii++) cout<<"coord "<<coords_face[ii]<<endl;
-        //        cout<<endl<<endl;
-        ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
-        ublas::vector<FieldData,ublas::bounded_array<double,3> > normal(3);
-        ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
-        area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
-        //cout<<" area = "<<area<<endl;
         
         //Calculate C Matrix, i.e. (NT x N)
         for(int rr = 0;rr<1;rr++) {   //only for nodes (i.e. only 6 rows we have no row indices for higher order DOFs)
@@ -441,8 +441,8 @@ struct ElasticFE_RVELagrange_Traction: public ElasticFE_RVELagrange_Disp {
         //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
         ublas::vector<FieldData> applied_strain;
         applied_strain.resize(6);
-        applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
-        applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=1.0;
+        applied_strain(0)=1.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
+        applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
         //cout<<"area "<<area << endl;
         
         
@@ -500,7 +500,7 @@ struct ElasticFE_RVELagrange_Traction: public ElasticFE_RVELagrange_Disp {
     
     PetscErrorCode operator()() {
         PetscFunctionBegin;
-        cout<<"Hi from class"<<endl;
+//        cout<<"Hi from class"<<endl;
         
         ierr = GetN_and_Indices(); CHKERRQ(ierr);
         ierr = Get_H_mat();
