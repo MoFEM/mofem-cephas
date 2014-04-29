@@ -701,6 +701,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 	Range fit_nodes;
 	rval = mField.get_moab().get_connectivity(&*fit,1,fit_nodes,true); CHKERR_PETSC(rval);
 	fit_nodes = intersect(fit_nodes,_nodes_on_skin_surface_);
+	fit_nodes = subtract(fit_nodes,mesh_level_tets_skin_faces_nodes);
 	Range crack_front_tets_faces_but_one = crack_front_tets_faces;
 	crack_front_tets_faces_but_one.erase(*fit);
 	Range crack_front_tets_faces_but_one_nodes;
