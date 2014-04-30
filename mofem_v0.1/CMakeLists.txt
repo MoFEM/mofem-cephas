@@ -99,6 +99,8 @@ include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
+include_directories("${PROJECT_SOURCE_DIR}/homogenisation")
+
 
 add_library(mofem_Field 
   FieldInterface.cpp
