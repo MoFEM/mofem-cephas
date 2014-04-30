@@ -142,34 +142,70 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
   ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-  int nb_sub_steps = 1;
-  int nn;
-  do { 
-    nn = 1;
-    for(;nn<=nb_sub_steps;nn++) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %D\n",nn); CHKERRQ(ierr);
-      double alpha = (double)nn/(double)nb_sub_steps;
-      ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
-      //project nodes on crack surface
-      //ierr = face_splitting.projectCrackFrontNodes(); CHKERRQ(ierr);
-      ierr = conf_prob.project_form_th_projection_tag(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
-      SNESConvergedReason reason;
-      SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
-      if(ierr == 0 && reason > 0) {
-	ierr = mField.set_local_VecCreateGhost(
-	  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-	  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      } else {
-	ierr = mField.set_local_VecCreateGhost(
-	  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-	  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	nb_sub_steps++;
-	break;
-      }
-    }
-    if(nb_sub_steps == 10) break;
-  } while(nn-1 != nb_sub_steps);
+
+  Range level_tris;
+  ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+  Range level_tets;
+  ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
+  Range level_tris_nodes;
+  rval = mField.get_moab().get_connectivity(level_tris,level_tris_nodes,true); CHKERR_PETSC(rval);
+  Range level_tets_nodes;
+  rval = mField.get_moab().get_connectivity(level_tets,level_tets_nodes,true); CHKERR_PETSC(rval);
+  if(subtract(level_tris_nodes,level_tets_nodes).size()>0) {
+    SETERRQ(PETSC_COMM_SELF,1,"error");
+  }
+
+
+	int nb_sub_steps = 1;
+	int nn;
+	do { 
+	  nn = 1;
+	  for(;nn<=nb_sub_steps;nn++) {
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %d out of %d\n",nn,nb_sub_steps); CHKERRQ(ierr);
+	    double alpha = (double)nn/(double)nb_sub_steps;
+	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
+	    //project nodes on crack surface
+	    //ierr = face_splitting.projectCrackFrontNodes(); CHKERRQ(ierr);
+	    ierr = conf_prob.project_form_th_projection_tag(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+	    ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
+	    SNESConvergedReason reason;
+	    SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+	    if(ierr == 0 && reason > 0) {
+	      ierr = mField.set_local_VecCreateGhost(
+		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    } else {
+	      ierr = mField.set_global_VecCreateGhost(
+		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+	      nb_sub_steps++;
+	      break;
+	    }
+	  }
+	  if(nb_sub_steps >= 10) break;
+
+	  //do sanity check if meshsmoother converged and no inverted elements
+	  if(nn-1 == nb_sub_steps) {
+	    ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
+	    SNESConvergedReason reason;
+	    SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+	    if(ierr == 0 && reason > 0) {
+	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+	      conf_prob.material_FirelWall->
+		operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
+	      ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
+	    } else {
+	      ierr = mField.set_global_VecCreateGhost(
+		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+	      nb_sub_steps++;
+	    }
+	  }
+
+	} while(nn-1 != nb_sub_steps);
+
   ierr = VecDestroy(&D_tmp_mesh_positions); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 

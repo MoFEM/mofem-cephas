@@ -3319,7 +3319,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	do { 
 	  nn = 1;
 	  for(;nn<=nb_sub_steps;nn++) {
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %D\n",nn); CHKERRQ(ierr);
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %d out of %d\n",nn,nb_sub_steps); CHKERRQ(ierr);
 	    double alpha = (double)nn/(double)nb_sub_steps;
 	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
 	    //project nodes on crack surface

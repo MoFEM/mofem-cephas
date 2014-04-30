@@ -213,7 +213,7 @@ do
       fi
     fi
 
-    if [ -n ${SHOWME+x} ]; then
+    if [ ! -z ${SHOWME+x} ]; then
       echo $COMMAND1
     fi
 
@@ -230,7 +230,7 @@ do
       fi
     fi
 
-    if [ -n ${SHOWME+x} ]; then
+    if [ ! -z ${SHOWME+x} ]; then
       echo $COMMAND2
     fi
 
@@ -242,7 +242,7 @@ do
       mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
     fi
 
-    if [ -n ${SHOWME+x} ]; then
+    if [ ! -z ${SHOWME+x} ]; then
       echo mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
       echo mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk 
       echo mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk 
