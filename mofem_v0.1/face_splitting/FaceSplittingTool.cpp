@@ -1018,23 +1018,22 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   PetscFunctionBegin;
 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-
   const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
   ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
-  RefMoFEMEntity_multiIndex::iterator mit = refinedMoFemEntities_ptr->begin();
-  for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
-    if(mit->get_ent_type() == MBENTITYSET) continue;
-    if((mit->get_BitRefLevel()&BitRefLevel().set(BITREFLEVEL_SIZE-1)).any()) {
-      bool success;
-      success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
-	->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-1,false));
-      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-    }
-  }
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  BitRefLevel back_up_level;
+
+  /*Range back_ents;
+  back_up_level.set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_entities_by_ref_level(back_up_level,BitRefLevel.set(),back_ents); CHKERRQ(ierr);
+  RefMoFEMEntity_change_set_nth_bit modify(BITREFLEVEL_SIZE-1,false);
+  Range::iterator bit = back_ents.end();
+  for(;bit!=back_ents.end();bit++) {
+    RefMoFEMEntity ref_ent(moab,*bit);
+    modify.operator()(ref_ent);
+  }*/
 
   BitRefLevel current_ref = BitRefLevel().set(meshRefineBitLevels.back());
-
   BitRefLevel inheret_ents_from_level,inheret_ents_from_level_mask;
   if(!meshIntefaceBitLevels.empty()) {
     inheret_ents_from_level.set(meshIntefaceBitLevels.back());
@@ -1044,6 +1043,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 	inheret_ents_from_level_mask.set(*p);
       }
     }
+    inheret_ents_from_level_mask.set(BITREFLEVEL_SIZE-1);
   }
 
   Range interface_elements;
@@ -1073,7 +1073,8 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
     BitRefLevel last_ref = BitRefLevel().set(last_ref_bit);
   
     ierr = mField.get_msId_3dENTS_split_sides(
-      bit_meshset,last_ref,inheret_ents_from_level,inheret_ents_from_level_mask,meshset_interface,false,true); CHKERRQ(ierr);
+      bit_meshset,last_ref,inheret_ents_from_level,
+      inheret_ents_from_level_mask,meshset_interface,false,true); CHKERRQ(ierr);
 
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
