@@ -2325,47 +2325,61 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   *(MySpatialFE.t_val) = arc_ctx.get_FieldData();
 
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = MySpatialFE.set_t_val(arc_ctx.get_FieldData()); CHKERRQ(ierr);
+  aRea = arc_elem.aRea;
+  lambda = arc_ctx.get_FieldData();
+
+  ierr = mField.set_field(0,MBVERTEX,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.set_field(0,MBEDGE,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.set_field(0,MBTRI,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.set_field(0,MBTET,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.field_axpy(+1.,"SPATIAL_POSITION","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.field_axpy(-1.,"MESH_NODE_POSITIONS","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+
+  Vec DISP;
+  ierr = VecDuplicate(D,&DISP); CHKERRQ(ierr);
+  ierr = VecZeroEntries(DISP); CHKERRQ(ierr);
+  ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
+  energy = 0.5*lambda*energy;
+
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
 
+  int verb = 1;
   if(reason>=0) {
 
-    //Save data on mesh
-    ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = MySpatialFE.set_t_val(arc_ctx.get_FieldData()); CHKERRQ(ierr);
-    aRea = arc_elem.aRea;
-    lambda = arc_ctx.get_FieldData();
-
     //Save field on mesh
+    if(verb>0) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_POSITION on tags"); CHKERRQ(ierr);
+    }
     PostProcVertexMethod ent_method_spatial(mField.get_moab(),"SPATIAL_POSITION");
     ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_spatial); CHKERRQ(ierr);
+    if(verb>0) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save MESH_NODE_POSITIONS on tags"); CHKERRQ(ierr);
+    }
     PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS");
     ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
-    PostProcVertexMethod ent_method_res_mat(mField.get_moab(),"MESH_NODE_POSITIONS",F,"MATERIAL_RESIDUAL");
-    ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_res_mat); CHKERRQ(ierr);
-    PostProcVertexMethod ent_method_res_spat(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
-    ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_res_spat); CHKERRQ(ierr);
-
-    ierr = mField.set_field(0,MBVERTEX,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = mField.set_field(0,MBEDGE,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = mField.set_field(0,MBTRI,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = mField.set_field(0,MBTET,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = mField.field_axpy(+1.,"SPATIAL_POSITION","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = mField.field_axpy(-1.,"MESH_NODE_POSITIONS","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-
-    Vec DISP;
-    ierr = VecDuplicate(D,&DISP); CHKERRQ(ierr);
-    ierr = VecZeroEntries(DISP); CHKERRQ(ierr);
-    ierr = mField.set_other_global_VecCreateGhost(
-      "COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",Col,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    PostProcVertexMethod ent_method_disp_spat(mField.get_moab(),"SPATIAL_POSITION",DISP,"SPATIAL_DISPLACEMENT");
-    ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_disp_spat); CHKERRQ(ierr);
-    ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
-    energy = 0.5*lambda*energy;
-    ierr = VecDestroy(&DISP); CHKERRQ(ierr);
-
+    if(verb>2) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save MATERIAL_RESIDUAL on tags"); CHKERRQ(ierr);
+      PostProcVertexMethod ent_method_res_mat(mField.get_moab(),"MESH_NODE_POSITIONS",F,"MATERIAL_RESIDUAL");
+      ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_res_mat); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_RESIDUAL on tags"); CHKERRQ(ierr);
+      PostProcVertexMethod ent_method_res_spat(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
+      ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_res_spat); CHKERRQ(ierr);
+    }
+    if(verb>0) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_DISPLACEMENT on tags"); CHKERRQ(ierr);
+      ierr = mField.set_other_global_VecCreateGhost(
+	"COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",Col,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      PostProcVertexMethod ent_method_disp_spat(mField.get_moab(),"SPATIAL_POSITION",DISP,"SPATIAL_DISPLACEMENT");
+      ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_disp_spat); CHKERRQ(ierr);
+    }
+ 
   }
 
+  ierr = VecDestroy(&DISP); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellK); CHKERRQ(ierr);
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
