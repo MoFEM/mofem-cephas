@@ -2325,39 +2325,46 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   *(MySpatialFE.t_val) = arc_ctx.get_FieldData();
 
-  //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = MySpatialFE.set_t_val(arc_ctx.get_FieldData()); CHKERRQ(ierr);
-  aRea = arc_elem.aRea;
-  lambda = arc_ctx.get_FieldData();
+  SNESConvergedReason reason;
+  ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
 
-  //Save field on mesh
-  PostProcVertexMethod ent_method_spatial(mField.get_moab(),"SPATIAL_POSITION");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_spatial); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_res_mat(mField.get_moab(),"MESH_NODE_POSITIONS",F,"MATERIAL_RESIDUAL");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_res_mat); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_res_spat(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_res_spat); CHKERRQ(ierr);
+  if(reason>=0) {
 
-  ierr = mField.set_field(0,MBVERTEX,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.set_field(0,MBEDGE,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.set_field(0,MBTRI,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.set_field(0,MBTET,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.field_axpy(+1.,"SPATIAL_POSITION","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.field_axpy(-1.,"MESH_NODE_POSITIONS","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+    //Save data on mesh
+    ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = MySpatialFE.set_t_val(arc_ctx.get_FieldData()); CHKERRQ(ierr);
+    aRea = arc_elem.aRea;
+    lambda = arc_ctx.get_FieldData();
 
-  Vec DISP;
-  ierr = VecDuplicate(D,&DISP); CHKERRQ(ierr);
-  ierr = VecZeroEntries(DISP); CHKERRQ(ierr);
-  ierr = mField.set_other_global_VecCreateGhost(
-    "COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",Col,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_disp_spat(mField.get_moab(),"SPATIAL_POSITION",DISP,"SPATIAL_DISPLACEMENT");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_disp_spat); CHKERRQ(ierr);
-  ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
-  energy = 0.5*lambda*energy;
-  ierr = VecDestroy(&DISP); CHKERRQ(ierr);
+    //Save field on mesh
+    PostProcVertexMethod ent_method_spatial(mField.get_moab(),"SPATIAL_POSITION");
+    ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_spatial); CHKERRQ(ierr);
+    PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS");
+    ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
+    PostProcVertexMethod ent_method_res_mat(mField.get_moab(),"MESH_NODE_POSITIONS",F,"MATERIAL_RESIDUAL");
+    ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_res_mat); CHKERRQ(ierr);
+    PostProcVertexMethod ent_method_res_spat(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
+    ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_res_spat); CHKERRQ(ierr);
+
+    ierr = mField.set_field(0,MBVERTEX,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.set_field(0,MBEDGE,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.set_field(0,MBTRI,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.set_field(0,MBTET,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.field_axpy(+1.,"SPATIAL_POSITION","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.field_axpy(-1.,"MESH_NODE_POSITIONS","SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
+
+    Vec DISP;
+    ierr = VecDuplicate(D,&DISP); CHKERRQ(ierr);
+    ierr = VecZeroEntries(DISP); CHKERRQ(ierr);
+    ierr = mField.set_other_global_VecCreateGhost(
+      "COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",Col,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    PostProcVertexMethod ent_method_disp_spat(mField.get_moab(),"SPATIAL_POSITION",DISP,"SPATIAL_DISPLACEMENT");
+    ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_disp_spat); CHKERRQ(ierr);
+    ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
+    energy = 0.5*lambda*energy;
+    ierr = VecDestroy(&DISP); CHKERRQ(ierr);
+
+  }
 
   ierr = MatDestroy(&ShellK); CHKERRQ(ierr);
   ierr = MatDestroy(&K); CHKERRQ(ierr);
@@ -2416,7 +2423,8 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 
   //Fields
   ierr = mField.set_other_global_VecCreateGhost(
-    problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",
+    Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
     //cerr << *dof << endl;
   //}
@@ -3057,8 +3065,8 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 
     bool first_step_converged = false;
     bool not_converged_state = false;
+    bool line_searcher_set = false;
     double _da_ = 0;
-    //int last_converged = -1;
     for(int ii = 0;ii<nb_sub_steps;ii++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
       if(ii == 0) {
@@ -3087,7 +3095,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  }
 	}
 	_da_ = 0;
-	//last_converged = ii;
 	first_step_converged = true;
 	not_converged_state = false;
 	ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -3102,35 +3109,12 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
       } else {
 	not_converged_state = true;
-	if(!first_step_converged) {
-	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	  load_factor = load_factor0;
-	  if(da > 0) {
-	    da = 0.5*da;
-	    _da_ = da;
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
-	  } else {
-	    if(odd_face_split != 0) {
-	      if(ii>0) {
-		ierr = PetscPrintf(PETSC_COMM_WORLD,"* use spatial solution only and split faces\n"); CHKERRQ(ierr);
-		ierr = main_rescale_load_factor(mField,conf_prob); CHKERRQ(ierr);
-		break;
-	      }
-	    } else {
-	      if(ii>0) {
-		SETERRQ(PETSC_COMM_SELF,1,"* run out form options unable to converge\n");		
-	      } else {
-		ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, try line searcher\n"); CHKERRQ(ierr);
-	      }
-	    }
-	  }
-	} else {
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
-	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	  load_factor = load_factor0;
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, recalculate spatial positions only\n"); CHKERRQ(ierr);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
+	ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	load_factor = load_factor0;
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, recalculate spatial positions\n"); CHKERRQ(ierr);
+	{
 	  SNES snes_spatial;
-	  //solve spatial problem
 	  ierr = SNESCreate(PETSC_COMM_WORLD,&snes_spatial); CHKERRQ(ierr);  
 	  ierr = conf_prob.solve_spatial_problem(mField,&snes_spatial,false); CHKERRQ(ierr);
 	  ierr = SNESDestroy(&snes_spatial); CHKERRQ(ierr);
@@ -3140,10 +3124,27 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	  ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-	  if(not_converged_state) {
-	    _da_+= 0.1*da;
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.1 ) \n",_da_); CHKERRQ(ierr);
+	}
+	if(!first_step_converged) {
+	  if(da > 0) {
+	    da = 0.5*da;
+	    _da_ = da;
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
+	  } 
+	} else {
+	  if(da>0) {
+	    if(not_converged_state) {
+	      _da_+= 0.1*da;
+	      ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e\n",_da_); CHKERRQ(ierr);
+	    }
 	  }
+	}
+      }
+      //just split and make animation going
+      if(reason < 0 && odd_face_split != 0) {
+	if(line_searcher_set) {
+	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* use spatial solution only and split faces\n"); CHKERRQ(ierr);
+	  break;
 	}
       }
       //set line sercher L2 for not converged state
@@ -3156,9 +3157,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	SNESLineSearch linesearch;
 	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
 	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+	line_searcher_set = true;
       }
     }
-
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
@@ -3237,7 +3238,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	}
 
       }
-
     }
 
     ierr = PetscTime(&v2);CHKERRQ(ierr);
@@ -3248,11 +3248,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
     if(odd_face_split != 0) {
       
       if( aa>0 && aa % odd_face_split == 0 ) {
-
-	/*if(pcomm->rank()==0) {
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"Save debug for face splitting\n"); CHKERRQ(ierr);
-	  rval = mField.get_moab().write_file("debug_split_faces.h5m"); CHKERR_PETSC(rval);
-	}*/
 
 	{ //cat mesh
   
@@ -3366,7 +3361,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
 
 	//solve spatial problem
-
 	ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
 	ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 	ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
