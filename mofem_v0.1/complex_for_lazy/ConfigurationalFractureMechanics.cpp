@@ -1169,7 +1169,7 @@ PetscErrorCode ConfigurationalFractureMechanics::crackfront_partition_problems(F
   PetscErrorCode ierr;
 
   //partition
-  ierr = mField.simple_partition_problem("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   //partition

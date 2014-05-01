@@ -2419,7 +2419,7 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
     for(;miit_row!=hi_miit_row;miit_row++) {
       bool success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_part_change(part,miit_row->dof_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
-      if(miit_row->part == pcomm->rank()) {
+      if(part == pcomm->rank()) {
 	success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
       }
@@ -2435,7 +2435,7 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
     for(;miit_col!=hi_miit_col;miit_col++) {
       bool success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_part_change(part,miit_col->dof_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
-      if(miit_col->part == pcomm->rank()) {
+      if(part == pcomm->rank()) {
 	success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
       }
