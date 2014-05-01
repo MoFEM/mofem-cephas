@@ -468,9 +468,24 @@ struct FieldCore: public FieldInterface {
   FieldCore(Interface& _moab,int _verbose = 1);
   ~FieldCore();
 
-  //Templates
+
+  //templates
   template<typename Tag> 
-  PetscErrorCode partition_create_Mat(const string &name,Mat *M,const MatType type,const bool no_diagonals = true,int verb = -1) {
+  PetscErrorCode partition_create_Mat(const string &name,Mat *M,const MatType type,const bool no_diagonals = true,int verb = -1);
+  
+  //low level finite element data
+  double diffN_TET[12]; 
+
+  //Petsc Logs
+  PetscLogEvent USER_EVENT_preProcess;
+  PetscLogEvent USER_EVENT_operator;
+  PetscLogEvent USER_EVENT_postProcess;
+};
+
+//templates
+
+template<typename Tag> 
+PetscErrorCode FieldCore::partition_create_Mat(const string &name,Mat *M,const MatType type,const bool no_diagonals,int verb) {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -611,9 +626,13 @@ struct FieldCore: public FieldInterface {
       ierr = PetscFree(_i); CHKERRQ(ierr);
       ierr = PetscFree(_j); CHKERRQ(ierr);
     } else if(strcmp(type,MATAIJ)==0) {
-      ierr = PetscFree(_i); CHKERRQ(ierr);
-      ierr = PetscFree(_j); CHKERRQ(ierr);
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      Mat Adj;
+      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,_i,_j,PETSC_NULL,&Adj); CHKERRQ(ierr);
+      ierr = MatConvert(Adj,MATAIJ,MAT_INITIAL_MATRIX,M); CHKERRQ(ierr);
+      ierr = MatDestroy(&Adj); CHKERRQ(ierr);
     } else {
       ierr = PetscFree(_i); CHKERRQ(ierr);
       ierr = PetscFree(_j); CHKERRQ(ierr);
@@ -621,15 +640,6 @@ struct FieldCore: public FieldInterface {
     }
     PetscFunctionReturn(0);
   }
-  
-  //low level finite element data
-  double diffN_TET[12]; 
-
-  //Petsc Logs
-  PetscLogEvent USER_EVENT_preProcess;
-  PetscLogEvent USER_EVENT_operator;
-  PetscLogEvent USER_EVENT_postProcess;
-};
 
 }
 

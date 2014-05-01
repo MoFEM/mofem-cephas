@@ -2458,7 +2458,8 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
     PetscPrintf(PETSC_COMM_WORLD,"\tcreate Adj matrix\n");
   }
   try {
-    ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,MATMPIADJ,true,verb); CHKERRQ(ierr);
+    //ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,MATMPIADJ,true,verb); CHKERRQ(ierr);
+    ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,MATAIJ,true,verb); CHKERRQ(ierr);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   } catch (const std::exception& ex) {
