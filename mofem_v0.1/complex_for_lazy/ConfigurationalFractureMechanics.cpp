@@ -2340,7 +2340,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   Vec DISP;
   ierr = VecDuplicate(D,&DISP); CHKERRQ(ierr);
-  ierr = VecZeroEntries(DISP); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost(
+    "COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",Col,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
   energy = 0.5*lambda*energy;
 
@@ -2371,8 +2372,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     }
     if(verb>0) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_DISPLACEMENT on tags"); CHKERRQ(ierr);
-      ierr = mField.set_other_global_VecCreateGhost(
-	"COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",Col,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       PostProcVertexMethod ent_method_disp_spat(mField.get_moab(),"SPATIAL_POSITION",DISP,"SPATIAL_DISPLACEMENT");
       ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_disp_spat); CHKERRQ(ierr);
     }
@@ -3346,9 +3345,20 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  //do sanity check if meshsmoother converged and no inverted elements
 	  if(nn-1 == nb_sub_steps) {
 	    ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-	    try {
-	      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
-	    } catch (mofem_exception& e) {
+	    Range tets;
+	    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+	    double diffNTET[12],coords[12],V;
+	    ierr = ShapeDiffMBTET(diffNTET); CHKERRQ(ierr);
+	    Range::iterator tit = tets.begin();
+	    for(;tit!=tets.end();tit++) {
+	      int num_nodes;
+	      const EntityHandle *conn;
+	      rval = mField.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERR_PETSC(rval);
+	      rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
+	      V = Shape_intVolumeMBTET(diffNTET,coords); 
+	      if(V<=0) break;	  
+	    }
+	    if(tit!=tets.end()) {
 	      ierr = mField.set_global_VecCreateGhost(
 		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

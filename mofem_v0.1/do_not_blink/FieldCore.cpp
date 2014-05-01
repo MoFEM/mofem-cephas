@@ -2382,21 +2382,39 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
   boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Idx_mi_tag>::type::iterator miit_row,hi_miit_row;
   boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Idx_mi_tag>::type::iterator miit_col,hi_miit_col;
   DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
-  nb_row_local_dofs = 0;
   DofIdx &nb_row_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_row);
+  nb_row_local_dofs = 0;
   nb_row_ghost_dofs = 0;
   DofIdx &nb_col_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_col);
-  nb_col_local_dofs = 0;
   DofIdx &nb_col_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_col);
+  nb_col_local_dofs = 0;
   nb_col_ghost_dofs = 0;
+  //get row range of local indices
+  DofIdx nb_dofs_row = dofs_row_by_idx.size();
+  PetscLayout layout_row;
+  ierr = PetscLayoutCreate(PETSC_COMM_WORLD,&layout_row); CHKERRQ(ierr);
+  ierr = PetscLayoutSetBlockSize(layout_row,1); CHKERRQ(ierr);
+  ierr = PetscLayoutSetSize(layout_row,nb_dofs_row); CHKERRQ(ierr);
+  ierr = PetscLayoutSetUp(layout_row); CHKERRQ(ierr);
+  const PetscInt *ranges_row;
+  ierr = PetscLayoutGetRanges(layout_row,&ranges_row); CHKERRQ(ierr);
+  //get col range of local indices
+  DofIdx nb_dofs_col = dofs_col_by_idx.size();
+  PetscLayout layout_col;
+  ierr = PetscLayoutCreate(PETSC_COMM_WORLD,&layout_col); CHKERRQ(ierr);
+  ierr = PetscLayoutSetBlockSize(layout_col,1); CHKERRQ(ierr);
+  ierr = PetscLayoutSetSize(layout_col,nb_dofs_col); CHKERRQ(ierr);
+  ierr = PetscLayoutSetUp(layout_col); CHKERRQ(ierr);
+  const PetscInt *ranges_col;
+  ierr = PetscLayoutGetRanges(layout_col,&ranges_col); CHKERRQ(ierr);
   for(unsigned int part = 0;part<pcomm->size();part++) {
-    DofIdx nb_dofs_row = dofs_row_by_idx.size();
-    assert(p_miit->get_nb_dofs_row()==nb_dofs_row);
-    DofIdx nb_dofs_row_on_proc = (DofIdx)ceil(nb_dofs_row/pcomm->size());
-    DofIdx lower_dof_row = nb_dofs_row_on_proc*part;
-    miit_row = dofs_row_by_idx.lower_bound(lower_dof_row);
-    DofIdx upper_dof_row = part==pcomm->size()-1 ? nb_dofs_row-1 : nb_dofs_row_on_proc*(part+1)-1;
-    hi_miit_row = dofs_row_by_idx.upper_bound(upper_dof_row);
+    miit_row = dofs_row_by_idx.lower_bound(ranges_row[part]);
+    hi_miit_row = dofs_row_by_idx.lower_bound(ranges_row[part+1]);
+    if(distance(miit_row,hi_miit_row) != ranges_row[part+1]-ranges_row[part]) {
+      SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
+	  "data inconsistency, distance(miit_row,hi_miit_row) != rend - rstart (%d != %d - %d = %d) ",
+	  distance(miit_row,hi_miit_row),ranges_row[part+1],ranges_row[part],ranges_row[part+1]-ranges_row[part]);
+    }
     // loop rows
     for(;miit_row!=hi_miit_row;miit_row++) {
       bool success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_part_change(part,miit_row->dof_idx));
@@ -2406,13 +2424,13 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
       }
     }
-    DofIdx nb_dofs_col = dofs_col_by_idx.size();
-    assert(p_miit->get_nb_dofs_col()==nb_dofs_col);
-    DofIdx nb_dofs_col_on_proc = (DofIdx)ceil(nb_dofs_col/pcomm->size());
-    DofIdx lower_dof_col = nb_dofs_col_on_proc*part;
-    miit_col = dofs_col_by_idx.lower_bound(lower_dof_col);
-    DofIdx upper_dof_col = part==pcomm->size()-1 ? nb_dofs_col-1 : nb_dofs_col_on_proc*(part+1)-1;
-    hi_miit_col = dofs_col_by_idx.upper_bound(upper_dof_col);
+    miit_col = dofs_col_by_idx.lower_bound(ranges_col[part]);
+    hi_miit_col = dofs_col_by_idx.lower_bound(ranges_col[part+1]);
+    if(distance(miit_col,hi_miit_col) != ranges_col[part+1]-ranges_col[part]) {
+      SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
+	  "data inconsistency, distance(miit_col,hi_miit_col) != rend - rstart (%d != %d - %d = %d) ",
+	  distance(miit_col,hi_miit_col),ranges_col[part+1],ranges_col[part],ranges_col[part+1]-ranges_col[part]);
+    }
     // loop cols
     for(;miit_col!=hi_miit_col;miit_col++) {
       bool success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_part_change(part,miit_col->dof_idx));
@@ -2423,6 +2441,8 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
       }
     }
   }
+  ierr = PetscLayoutDestroy(&layout_row); CHKERRQ(ierr);
+  ierr = PetscLayoutDestroy(&layout_col); CHKERRQ(ierr);
   if(verbose>0) {
     ostringstream ss;
     ss << "simple_partition_problem: rank = " << pcomm->rank() << " FEs row ghost dofs "<< *p_miit 

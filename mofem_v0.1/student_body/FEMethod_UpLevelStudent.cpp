@@ -69,6 +69,7 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
 
   V = Shape_intVolumeMBTET(diffNTET,&*coords.data().begin()); 
   if( V <= 0 ) {
+    SETERRQ(PETSC_COMM_SELF,1,"negative volume");
     throw FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume();
   }
   rval = moab.tag_set_data(th_volume,&fe_handle,1,&V); CHKERR_PETSC(rval);
