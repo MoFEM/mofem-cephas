@@ -3346,14 +3346,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  //do sanity check if meshsmoother converged and no inverted elements
 	  if(nn-1 == nb_sub_steps) {
 	    ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-	    ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
-	    SNESConvergedReason reason;
-	    SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
-	    if(ierr == 0 && reason > 0) {
-	      conf_prob.material_FirelWall->
-		operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
-	      ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
-	    } else {
+	    try {
+	      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
+	    } catch (mofem_exception& e) {
 	      ierr = mField.set_global_VecCreateGhost(
 		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
