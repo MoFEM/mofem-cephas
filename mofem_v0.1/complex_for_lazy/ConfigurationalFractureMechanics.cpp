@@ -1169,7 +1169,7 @@ PetscErrorCode ConfigurationalFractureMechanics::crackfront_partition_problems(F
   PetscErrorCode ierr;
 
   //partition
-  ierr = mField.partition_problem("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.simple_partition_problem("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   //partition
@@ -3345,11 +3345,11 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 
 	  //do sanity check if meshsmoother converged and no inverted elements
 	  if(nn-1 == nb_sub_steps) {
+	    ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 	    ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
 	    SNESConvergedReason reason;
 	    SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
 	    if(ierr == 0 && reason > 0) {
-	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 	      conf_prob.material_FirelWall->
 		operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
 	      ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);

@@ -2453,13 +2453,13 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",name.c_str());
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
+  PetscInt *i,*j;
   Mat Adj;
   if(verb>1) {
     PetscPrintf(PETSC_COMM_WORLD,"\tcreate Adj matrix\n");
   }
   try {
-    //ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,MATMPIADJ,true,verb); CHKERRQ(ierr);
-    ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,MATAIJ,true,verb); CHKERRQ(ierr);
+    ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,MATMPIADJ,&i,&j,PETSC_NULL,true,verb); CHKERRQ(ierr);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   } catch (const std::exception& ex) {
@@ -2470,18 +2470,8 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
   if(verb>1) {
     PetscPrintf(PETSC_COMM_WORLD,"\t<- done\n");
   }
-  //PetscBarrier(PETSC_NULL);
   PetscInt m,n;
   ierr = MatGetSize(Adj,&m,&n); CHKERRQ(ierr);
-  if(m!=p_miit->get_nb_dofs_row()) {
-    SETERRQ3(PETSC_COMM_SELF,1,"row number inconsistency %d != %d nb cols. %d",m,p_miit->get_nb_dofs_row(),p_miit->get_nb_dofs_col());
-  }
-  if(n!=p_miit->get_nb_dofs_col()) {
-    SETERRQ(PETSC_COMM_SELF,1,"col number inconsistency");
-  }
-  if(m != n) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-  }
   if(verb>2) {
     MatView(Adj,PETSC_VIEWER_STDOUT_WORLD);
   }
@@ -2491,7 +2481,6 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
   ierr = MatPartitioningCreate(MPI_COMM_WORLD,&part); CHKERRQ(ierr);
   ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
   ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
-  ierr = PetscBarrier(PETSC_NULL); CHKERRQ(ierr);
   ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
   if(verb>2) {
     ISView(is,PETSC_VIEWER_STDOUT_WORLD);
@@ -2507,11 +2496,11 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
   PetscInt size_is_num,size_is_gather;
   ISGetSize(is_gather,&size_is_gather);
   if(size_is_gather != (int)nb_dofs_row) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency %d != %d",size_is_gather,nb_dofs_row);
   }
   ISGetSize(is_num,&size_is_num);
   if(size_is_num != (int)nb_dofs_row) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency %d != %d",size_is_num,nb_dofs_row);
   }
   //set petsc global indicies
   NumeredDofMoFEMEntitys_by_idx &dofs_row_by_idx_no_const = const_cast<NumeredDofMoFEMEntitys_by_idx&>(p_miit->numered_dofs_rows.get<Idx_mi_tag>());
@@ -2599,8 +2588,6 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     PetscSynchronizedFlush(PETSC_COMM_WORLD); 
   }
-
-  //
   ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRQ(ierr);
   ierr = ISRestoreIndices(is_gather_num,&petsc_idx);  CHKERRQ(ierr);
   ierr = ISDestroy(&is_num); CHKERRQ(ierr);
@@ -2609,7 +2596,6 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
   ierr = ISDestroy(&is); CHKERRQ(ierr);
   ierr = MatPartitioningDestroy(&part); CHKERRQ(ierr);
   ierr = MatDestroy(&Adj); CHKERRQ(ierr);
-  //PetscBarrier(PETSC_NULL);
   if(debug>0) {
     try {
       NumeredDofMoFEMEntitys_by_idx::iterator dit,hi_dit;
@@ -3794,13 +3780,14 @@ PetscErrorCode FieldCore::VecScatterCreate(Vec xin,string &x_problem,RowColData 
 PetscErrorCode FieldCore::MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  ierr = partition_create_Mat<Part_mi_tag>(name,Aij,MATMPIAIJ,false,verb); CHKERRQ(ierr);
+  PetscInt *_i,*_j;
+  ierr = partition_create_Mat<Part_mi_tag>(name,Aij,MATMPIAIJ,&_i,&_j,PETSC_NULL,false,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb) {
+PetscErrorCode FieldCore::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  ierr = partition_create_Mat<Part_mi_tag>(name,Aij,MATAIJ,false,verb); CHKERRQ(ierr);
+  ierr = partition_create_Mat<PetscGlobalIdx_mi_tag>(name,Aij,MATAIJ,i,j,v,false,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {

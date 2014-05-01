@@ -383,7 +383,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
-  PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
+  PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
   PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
 
   //Mesh refine and interfaces
@@ -471,7 +471,8 @@ struct FieldCore: public FieldInterface {
 
   //templates
   template<typename Tag> 
-  PetscErrorCode partition_create_Mat(const string &name,Mat *M,const MatType type,const bool no_diagonals = true,int verb = -1);
+  PetscErrorCode partition_create_Mat(
+    const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,const bool no_diagonals = true,int verb = -1);
   
   //low level finite element data
   double diffN_TET[12]; 
@@ -485,7 +486,9 @@ struct FieldCore: public FieldInterface {
 //templates
 
 template<typename Tag> 
-PetscErrorCode FieldCore::partition_create_Mat(const string &name,Mat *M,const MatType type,const bool no_diagonals,int verb) {
+PetscErrorCode FieldCore::partition_create_Mat(
+    const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
+    const bool no_diagonals,int verb) {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -501,24 +504,35 @@ PetscErrorCode FieldCore::partition_create_Mat(const string &name,Mat *M,const M
     const NumeredDofMoFEMEntitys_by_idx &dofs_col_by_idx = p_miit->numered_dofs_cols.get<Tag>();
     DofIdx nb_dofs_row = dofs_row_by_idx.size();
     if(p_miit->get_nb_dofs_row()!=nb_dofs_row) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
     if((unsigned int)p_miit->get_nb_dofs_col()!=p_miit->numered_dofs_cols.size()) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
     if(nb_dofs_row == 0) {
       SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> has zero rows",name.c_str());
     }
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type::iterator miit_row,hi_miit_row;
     if(Tag::IamNotPartitioned) {
-      DofIdx nb_dofs_row_on_proc = (DofIdx)ceil(nb_dofs_row/pcomm->size());
-      DofIdx lower_dof_row = nb_dofs_row_on_proc*pcomm->rank();
-      miit_row = dofs_row_by_idx.lower_bound(lower_dof_row);
-      DofIdx upper_dof_row = pcomm->rank()==pcomm->size()-1 ? nb_dofs_row-1 : nb_dofs_row_on_proc*(pcomm->rank()+1)-1;
-      hi_miit_row = dofs_row_by_idx.upper_bound(upper_dof_row);
-      if(verb > 1) {
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tpartition_create_Mat: row lower %d row upper %d\n",lower_dof_row,upper_dof_row);
+      //get range of local indices
+      PetscLayout layout;
+      ierr = PetscLayoutCreate(PETSC_COMM_WORLD,&layout); CHKERRQ(ierr);
+      ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
+      ierr = PetscLayoutSetSize(layout,nb_dofs_row); CHKERRQ(ierr);
+      ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
+      PetscInt rstart,rend;
+      ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
+      ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+      if(verb > 0) {
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tpartition_create_Mat: row lower %d row upper %d\n",rstart,rend);
 	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+      }
+      miit_row = dofs_row_by_idx.lower_bound(rstart);
+      hi_miit_row = dofs_row_by_idx.lower_bound(rend);
+      if(distance(miit_row,hi_miit_row) != rend-rstart) {
+	SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
+	  "data inconsistency, distance(miit_row,hi_miit_row) != rend - rstart (%d != %d - %d = %d) ",
+	  distance(miit_row,hi_miit_row),rend,rstart,rend-rstart);
       }
     } else {
       miit_row = dofs_row_by_idx.lower_bound(pcomm->rank());
@@ -534,7 +548,7 @@ PetscErrorCode FieldCore::partition_create_Mat(const string &name,Mat *M,const M
       if(strcmp(type,MATMPIADJ)==0) {
 	DofIdx idx = Tag::get_index(miit_row);
 	if(dofs_col_by_idx.find(idx)->get_unique_id()!=miit_row->get_unique_id()) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data insonsistency");
+	  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data insonsistency");
 	}
       }
       if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_unique_id()) ) {
@@ -563,27 +577,6 @@ PetscErrorCode FieldCore::partition_create_Mat(const string &name,Mat *M,const M
 	      dofs_set.insert(idx);
 	    }
 	  }
-	  if(strcmp(type,MATMPIADJ)==0) {
-	    if(adj_miit->by_other&by_col) {
-	      if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
-		// if element is not part of problem
-		continue; 
-	      }
-	      if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) {
-		// if entity is not problem refinment level
-		continue; 
-	      }
-	      NumeredDofMoFEMEntity_multiIndex_uid_view dofs_row_view;
-	      ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view( 
-		p_miit->numered_dofs_rows,dofs_row_view,Interface::UNION); CHKERRQ(ierr);
-	      NumeredDofMoFEMEntity_multiIndex_uid_view::iterator rvit;
-	      rvit = dofs_row_view.begin();
-	      for(;rvit!=dofs_row_view.end();rvit++) {
-		int idx = Tag::get_index(*rvit);
-		dofs_set.insert(idx);
-	      }
-	    }
-	  }
 	}
       }
       if(no_diagonals) {
@@ -591,52 +584,35 @@ PetscErrorCode FieldCore::partition_create_Mat(const string &name,Mat *M,const M
 	j.insert(j.end(),dofs_set.begin(),dofs_set.end());
       }
       j.insert(j.end(),dofs_set.begin(),dofs_set.end());
-      /*if(dofs_set.size()>0) {
-	j.insert(j.end(),dofs_set.begin(),dofs_set.end());
-      } else {
-	if(strcmp(type,MATMPIADJ)==0) {
-	  SETERRQ1(PETSC_COMM_SELF,1,"empty matrix row problem <%s>",name.c_str());
-	}
-      }*/
     }
     //build adj matrix
     i.push_back(j.size());
-    PetscInt *_i,*_j;
-    ierr = PetscMalloc(i.size()*sizeof(PetscInt),&_i); CHKERRQ(ierr);
-    ierr = PetscMalloc(j.size()*sizeof(PetscInt),&_j); CHKERRQ(ierr);
-    copy(i.begin(),i.end(),_i);
-    copy(j.begin(),j.end(),_j);
+    ierr = PetscMalloc(i.size()*sizeof(PetscInt),_i); CHKERRQ(ierr);
+    ierr = PetscMalloc(j.size()*sizeof(PetscInt),_j); CHKERRQ(ierr);
+    copy(i.begin(),i.end(),*_i);
+    copy(j.begin(),j.end(),*_j);
     PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
     PetscInt nb_col_dofs = p_miit->get_nb_dofs_col();
     if(strcmp(type,MATMPIADJ)==0) { 
       if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
       }
-      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
+      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
+      ierr = MatSetOption(*M,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
     } else if(strcmp(type,MATMPIAIJ)==0) {
       if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
       }
       PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
       if((unsigned int)nb_local_dofs_row!=i.size()-1) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
       }
       PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
-      ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
-      ierr = PetscFree(_i); CHKERRQ(ierr);
-      ierr = PetscFree(_j); CHKERRQ(ierr);
+      ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
     } else if(strcmp(type,MATAIJ)==0) {
-      if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      }
-      Mat Adj;
-      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,_i,_j,PETSC_NULL,&Adj); CHKERRQ(ierr);
-      ierr = MatConvert(Adj,MATAIJ,MAT_INITIAL_MATRIX,M); CHKERRQ(ierr);
-      ierr = MatDestroy(&Adj); CHKERRQ(ierr);
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"not implemented");
     } else {
-      ierr = PetscFree(_i); CHKERRQ(ierr);
-      ierr = PetscFree(_j); CHKERRQ(ierr);
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_NULL,"not implemented");
     }
     PetscFunctionReturn(0);
   }

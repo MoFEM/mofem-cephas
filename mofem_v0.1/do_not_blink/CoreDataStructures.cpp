@@ -27,6 +27,7 @@
 namespace MoFEM {
 
 const bool Idx_mi_tag::IamNotPartitioned = true;
+const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields 

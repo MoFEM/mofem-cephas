@@ -1006,7 +1006,7 @@ struct FieldInterface {
     *
     * \param name of the problem
     */
-  virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb = -1) = 0;
+  virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
 
   /**
     * \brief create scatter for vectors form one to another problem
