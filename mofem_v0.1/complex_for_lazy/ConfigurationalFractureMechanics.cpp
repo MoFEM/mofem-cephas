@@ -3378,8 +3378,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  nn = 1;
 	  for(;nn<=nb_sub_steps;nn++) {
 
-	    if(nb_sub_steps >= 10) break;
-
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %d out of %d\n",nn,nb_sub_steps); CHKERRQ(ierr);
 	    double alpha = (double)nn/(double)nb_sub_steps;
 	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
@@ -3399,7 +3397,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	      SNESConvergedReason reason;
 	      ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
 	      ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
-	      if(reason <0 || !flg) {
+	      if(reason < 0 || !flg) {
 		ierr = mField.set_global_VecCreateGhost(
 		  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
 		  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -3412,6 +3410,8 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 
 	    }
 	  }
+
+	  if(nb_sub_steps >= 10) break;
 
 	} while(nn-1 != nb_sub_steps);
 	ierr = VecDestroy(&D_tmp_mesh_positions); CHKERRQ(ierr);
