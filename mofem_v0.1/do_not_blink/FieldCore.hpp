@@ -485,6 +485,13 @@ struct FieldCore: public FieldInterface {
 
 //templates
 
+#define PARALLEL_PARTITIONING 0
+#if PARALLEL_PARTITIONING
+  #define PARTITIONING_MPIADJ_COMM PETSC_COMM_WORLD
+#else 
+  #define PARTITIONING_MPIADJ_COMM PETSC_COMM_SELF
+#endif
+
 template<typename Tag> 
 PetscErrorCode FieldCore::partition_create_Mat(
     const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
@@ -515,6 +522,7 @@ PetscErrorCode FieldCore::partition_create_Mat(
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type::iterator miit_row,hi_miit_row;
     if(Tag::IamNotPartitioned) {
       //get range of local indices
+      #if PARALLEL_PARTITIONING
       PetscLayout layout;
       ierr = PetscLayoutCreate(PETSC_COMM_WORLD,&layout); CHKERRQ(ierr);
       ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
@@ -534,6 +542,10 @@ PetscErrorCode FieldCore::partition_create_Mat(
 	  "data inconsistency, distance(miit_row,hi_miit_row) != rend - rstart (%d != %d - %d = %d) ",
 	  distance(miit_row,hi_miit_row),rend,rstart,rend-rstart);
       }
+      #else
+      miit_row = dofs_row_by_idx.begin();
+      hi_miit_row = dofs_row_by_idx.end();
+      #endif
     } else {
       miit_row = dofs_row_by_idx.lower_bound(pcomm->rank());
       hi_miit_row = dofs_row_by_idx.upper_bound(pcomm->rank());
@@ -597,7 +609,7 @@ PetscErrorCode FieldCore::partition_create_Mat(
       if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
 	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
       }
-      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
+      ierr = MatCreateMPIAdj(PARTITIONING_MPIADJ_COMM,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
       ierr = MatSetOption(*M,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
     } else if(strcmp(type,MATMPIAIJ)==0) {
       if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
