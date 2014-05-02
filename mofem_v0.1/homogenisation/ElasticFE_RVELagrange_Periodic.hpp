@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
+/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -253,7 +253,7 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
 // Indices and shape funcitons for the faces
         int ff_arr[]={3, 4};  //Canonical numbering of two triangles only
         for(int ff=0;ff<2;ff++) {
-            row_mat=4;
+            
             EntityHandle Tri_Prism;
             rval = moab.side_element(prism_periodic,2,ff_arr[ff],Tri_Prism); CHKERR_PETSC(rval);
             
@@ -264,7 +264,8 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
             col_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
             col_hi_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
 
-
+            if(col_fiit != col_hi_fiit)  row_mat=4;
+//            cout<<"row_mat hi "<<row_mat<<endl;
             if(ff==0){
                 RowGlob[0][row_mat].clear();  RowGlob[1][row_mat].clear();//without clear it will get the previous value
                 if(fiit!=hi_fiit) {
@@ -475,8 +476,8 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
             //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
             ublas::vector<FieldData> applied_strain;
             applied_strain.resize(6);
-            applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
-            applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=1.0;
+            applied_strain(0)=1.0;  applied_strain(1)=0.0; applied_strain(2)=0.0;
+            applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=0.0;
 //            cout<<"area "<<area << endl;
             
             for(int rr=0; rr<row_mat; rr++){

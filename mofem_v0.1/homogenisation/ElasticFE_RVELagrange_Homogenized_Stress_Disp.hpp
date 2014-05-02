@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
+/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -28,6 +28,7 @@ namespace MoFEM {
 struct ElasticFE_RVELagrange_Homogenized_Stress_Disp: public ElasticFE_RVELagrange_Disp {
 
     Vec DVec;
+    Vec Stress_Homo;
     double *RVE_volume;
 
     ElasticFE_RVELagrange_Homogenized_Stress_Disp(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume):
@@ -42,8 +43,10 @@ struct ElasticFE_RVELagrange_Homogenized_Stress_Disp: public ElasticFE_RVELagran
         ierr = PetscTime(&v1); CHKERRQ(ierr);
         ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
         
-        Stress_Homo.resize(6);   Stress_Homo.clear();
-        
+        //create a vector for 6 components of homogenized stress
+        ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
+        ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+
         PetscFunctionReturn(0);
     }
 
@@ -51,23 +54,16 @@ struct ElasticFE_RVELagrange_Homogenized_Stress_Disp: public ElasticFE_RVELagran
     PetscErrorCode postProcess() {
         PetscFunctionBegin;
         // Note MAT_FLUSH_ASSEMBLY
-        ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-        ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-        ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-        ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(Stress_Homo); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(Stress_Homo); CHKERRQ(ierr);
         ierr = PetscTime(&v2); CHKERRQ(ierr);
         ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
         PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
         PetscSynchronizedFlush(PETSC_COMM_WORLD);
         
-        cout<<"RVE_volume in postProcess = "<<*RVE_volume<<endl;
-        Stress_Homo=(1.0/(*RVE_volume))*Stress_Homo;
-        
-        cout<< " Stress_Homo =  "<<endl;
-        for(int ii=0; ii<6; ii++) cout<<Stress_Homo(ii)<<endl; 
-        
+        ierr = VecScale(Stress_Homo, 1.0/(*RVE_volume)); CHKERRQ(ierr);
+        if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+        ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
         
         PetscFunctionReturn(0);
     }
@@ -76,7 +72,6 @@ struct ElasticFE_RVELagrange_Homogenized_Stress_Disp: public ElasticFE_RVELagran
     
     ublas::matrix<FieldData> X_mat, nodes_coord, gauss_coord;
     ublas::vector<ublas::matrix<FieldData> > D_mat;
-    ublas::vector<FieldData>  Stress_Homo;
     ublas::vector<ublas::vector<FieldData> > Lamda;
     
     
@@ -87,7 +82,10 @@ struct ElasticFE_RVELagrange_Homogenized_Stress_Disp: public ElasticFE_RVELagran
         gauss_coord.resize(3,g_TRI_dim);
         D_mat.resize(row_mat);
         Lamda.resize(row_mat);
-
+        
+        ublas::vector<FieldData>  Stress_Homo_elem;
+        Stress_Homo_elem.resize(6);   Stress_Homo_elem.clear();   //homogenised stress for one element (triangle)
+        
         //used to calculate the coordinates of a Gauss points
         nodes_coord(0,0)=coords_face[0]; nodes_coord(0,1)=coords_face[3]; nodes_coord(0,2)=coords_face[6];
         nodes_coord(1,0)=coords_face[1]; nodes_coord(1,1)=coords_face[4]; nodes_coord(1,2)=coords_face[7];
@@ -133,17 +131,59 @@ struct ElasticFE_RVELagrange_Homogenized_Stress_Disp: public ElasticFE_RVELagran
             }
 //            cout<<"row_mat  =  "<<row_mat<<endl;
 //            cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl;
-            Lamda[rr].resize(RowGlob[rr].size());
-            ierr = VecGetValues(DVec,RowGlob[rr].size(),&(RowGlob[rr])[0],&(Lamda[rr].data())[0]); CHKERRQ(ierr);
-//            cout<< " Lamda[rr] =  "<<Lamda[rr]<<endl;
             
-//            cout<< " Stress_Homo before =  "<<Stress_Homo<<endl;
-//            cout<< "  New part          =  "<<prod(trans(D_mat[rr]), Lamda[rr])<<endl;
-            Stress_Homo+=prod(trans(D_mat[rr]), -1*Lamda[rr]);   //Lamda is reaction force (so multiply for -1 to get the force)
-//            cout<< " Stress_Homo after  =   "<<Stress_Homo<<endl;
+            
+            //To get Lambda for stress calculation
+            Lamda[rr].resize(RowGlob[rr].size());
+            switch(rr) {
+                case 0:  //for nodes
+//                    cout<<"For nodes"<<endl;
+                    const EntityHandle* conn;
+                    int num_nodes;
+                    rval = mField.get_moab().get_connectivity(fe_ptr->get_ent(),conn,num_nodes,true); CHKERR_PETSC(rval);
+//                    cout<<"num_nodes  =  "<<num_nodes<<endl;
+                    for(int nn = 0;nn<num_nodes; nn++) {
+                        for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",conn[nn],iit)) {
+                            Lamda[rr][3*nn+iit->get_dof_rank()]=iit->get_FieldData();
+                        }
+                    }
+//                    for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
+//                    cout<<endl;
+                    break;
+                    
+                case 1:  case 2:  case 3: { //For edges
+//                    cout<<"For Edges"<<endl;
+                    for(int ee=0; ee<3; ee++) {
+                        EntityHandle edge;
+                        
+                        rval = moab.side_element(fe_ptr->get_ent(),1,rr-1,edge); CHKERR_PETSC(rval);
+                        for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",edge,iit)) {
+                            Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
+                         }
+//                        for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
+//                        cout<<endl;
+                    }
+                    break;
+                }
+                    
+                case 4: //for face
+//                    cout<<"For Face"<<endl;
+                    for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",fe_ptr->get_ent(),iit)) {
+                        Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
+                    }
+//                    for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
+//                    cout<<endl;
+                    break;
+            }
+
+            Stress_Homo_elem+=prod(trans(D_mat[rr]), -1*Lamda[rr]);   //Lamda is reaction force (so multiply for -1 to get the force)
         }
         
-        PetscFunctionReturn(0);
+//        cout<< "rank "<< pcomm->rank() << " Stress_Homo after  =   "<<Stress_Homo_elem<<endl;
+        int Indices[6]={0, 1, 2, 3, 4, 5};
+        ierr = VecSetValues(Stress_Homo,6,Indices,&(Stress_Homo_elem.data())[0],ADD_VALUES); CHKERRQ(ierr);
+        
+         PetscFunctionReturn(0);
     }
 
     

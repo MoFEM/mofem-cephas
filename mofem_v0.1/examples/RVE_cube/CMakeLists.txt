@@ -1,4 +1,4 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+# Copyright (C) 2013, Zahur Ullah (Zahur.Ullah AT Glasgow.ac.uk)
 # The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
 # It can be freely used for educational and research purposes 
 # by other institutions. If you use this softwre pleas cite my work. 
@@ -16,14 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(Boundarycond_RVE_Disp Boundarycond_RVE_Disp.cpp)
-target_link_libraries(Boundarycond_RVE_Disp mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(RVE_Cube_Disp RVE_Cube_Disp.cpp)
+target_link_libraries(RVE_Cube_Disp mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(Boundarycond_RVE_Traction Boundarycond_RVE_Traction.cpp)
-target_link_libraries(Boundarycond_RVE_Traction mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(RVE_Cube_Traction RVE_Cube_Traction.cpp)
+target_link_libraries(RVE_Cube_Traction mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(Boundarycond_RVE_Periodic Boundarycond_RVE_Periodic.cpp)
-target_link_libraries(Boundarycond_RVE_Periodic mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(RVE_Cube_Periodic RVE_Cube_Periodic.cpp)
+target_link_libraries(RVE_Cube_Periodic mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 
 

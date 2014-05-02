@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -26,6 +26,7 @@
 #include "ElasticFEMethod.hpp"
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
+#include "RVEVolume.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -277,42 +278,33 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
 //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//     ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-// 
+//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+ 
     
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-    
-   //Calculation of Homogenized stress
-    double RVE_volume; RVE_volume=0.0; //We need this for stress calculation
-    
-    struct CalculateRVEVolume: public ElasticFEMethod {
-        double *RVE_volume;
-        CalculateRVEVolume(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu, double *_RVE_volume):
-        ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), RVE_volume(_RVE_volume){};
-        
-        PetscErrorCode operator()() {
-            PetscFunctionBegin;
-            ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-            
-            *RVE_volume+=V;
-            ierr = OpStudentEnd(); CHKERRQ(ierr);
-            PetscFunctionReturn(0);
-        }
-    };
+    //Calculation of Homogenized stress
+    //=======================================================================================================================================================
+    double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
+    Vec RVE_volume_Vec;
+    ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
+    ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
 
-    CalculateRVEVolume MyCalRVEVol(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), &RVE_volume);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyCalRVEVol);  CHKERRQ(ierr);
-    cout<<"RVE_volume  ="<<RVE_volume<<endl;
+    RVEVolume MyRVEVol(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), RVE_volume_Vec);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
+//    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
+//    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
     
     
 //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
     ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,&myDirihletBC,Aij,D,F,&RVE_volume);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-   
-    
+    //=======================================================================================================================================================
+
+
   PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
 
@@ -344,7 +336,7 @@ int main(int argc, char *argv[]) {
   //Support stresses
   //Range ents;
   //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
-      
+    
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
