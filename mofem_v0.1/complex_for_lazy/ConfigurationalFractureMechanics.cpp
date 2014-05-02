@@ -554,6 +554,11 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
   ierr = mField.add_ents_to_field_by_TETs(level_tets,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(level_tets,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(level_tets,"MESH_NODE_DISPLACEMENT"); CHKERRQ(ierr);
+  Range blocked_tets;
+  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBTET,blocked_tets); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(blocked_tets,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(blocked_tets,"MESH_NODE_DISPLACEMENT"); CHKERRQ(ierr);
 
   PetscInt order;
   PetscBool flg = PETSC_TRUE;
@@ -1323,9 +1328,13 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method_res); CHKERRQ(ierr);
 
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Save tags on refined mesh with stresses\n"); CHKERRQ(ierr);
-    if(fe_post_proc_stresses_method!=NULL) delete fe_post_proc_stresses_method;
-    fe_post_proc_stresses_method = new PostProcStressNonLinearElasticity(mField.get_moab(),MySpatialFE);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",*fe_post_proc_stresses_method);  CHKERRQ(ierr);
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    if(pcomm->rank()==0) {
+      if(fe_post_proc_stresses_method!=NULL) delete fe_post_proc_stresses_method;
+      fe_post_proc_stresses_method = new PostProcStressNonLinearElasticity(mField.get_moab(),MySpatialFE);
+      fe_post_proc_stresses_method->do_broadcast = false;
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",*fe_post_proc_stresses_method,0,pcomm->size());  CHKERRQ(ierr);
+    }
   }
 
   //detroy matrices
@@ -1351,14 +1360,18 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
     ierr = mField.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&projSurfaceCtx->C); CHKERRQ(ierr);
   }
 
-  Range CornersEdges,CornersNodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
+  Range corners_edges,corners_nodes;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
   ErrorCode rval;
-  Range CornersEdgesNodes;
-  rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
-  CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_ALL_MATRIX",CornersNodes);
+  Range corners_edges_nodes;
+  rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
+  corners_nodes.merge(corners_edges_nodes);
+  Range nodes_to_block;
+  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
+  corners_nodes.merge(nodes_to_block);
+  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_ALL_MATRIX",corners_nodes);
 
   //Loops over body surface (CFE_SURFACE) and crack surface (CFE_CRACK_SURFACE)
   C_SURFACE_FEMethod CFE_SURFACE(mField,&myDirihletBC,projSurfaceCtx->C);
@@ -1603,14 +1616,18 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
     ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
   }
 
-  Range CornersEdges,CornersNodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
+  Range corners_edges,corners_nodes;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
   ErrorCode rval;
-  Range CornersEdgesNodes;
-  rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
-  CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_CRACKFRONT_MATRIX",CornersNodes);
+  Range corners_edges_nodes;
+  rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
+  corners_nodes.merge(corners_edges_nodes);
+  Range blocked_nodes;
+  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,blocked_nodes); CHKERRQ(ierr);
+  corners_nodes.merge(blocked_nodes);
+  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_CRACKFRONT_MATRIX",corners_nodes);
 
   C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
@@ -1672,13 +1689,17 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   }
 
   ErrorCode rval;
-  Range CornersEdges,CornersNodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
-  Range CornersEdgesNodes;
-  rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
-  CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_CRACKFRONT_MATRIX",CornersNodes);
+  Range corners_edges,corners_nodes;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
+  Range corners_edges_nodes;
+  rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
+  corners_nodes.insert(corners_edges_nodes.begin(),corners_edges_nodes.end());
+  Range blocked_nodes;
+  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,blocked_nodes); CHKERRQ(ierr);
+  corners_nodes.merge(blocked_nodes);
+  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_CRACKFRONT_MATRIX",corners_nodes);
   C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -1982,6 +2003,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
 
   corners_nodes.merge(corners_edges_nodes);
   corners_nodes.merge(crack_front_edges_nodes);
+  Range nodes_to_block;
+  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
+  corners_nodes.merge(nodes_to_block);
 
   CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",corners_nodes);
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
@@ -2149,6 +2174,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   Range corners_edgesNodes;
   rval = mField.get_moab().get_connectivity(corners_edges,corners_edgesNodes,true); CHKERR_PETSC(rval);
   corners_nodes.insert(corners_edgesNodes.begin(),corners_edgesNodes.end());
+  Range nodes_to_block;
+  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
+  corners_nodes.merge(nodes_to_block);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"freeze front nodes:\n");
   nb_un_freez_nodes = 0;
@@ -2327,16 +2356,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   aRea = arc_elem.aRea;
   lambda = arc_ctx.get_FieldData();
 
-  //Save field on mesh
-  PostProcVertexMethod ent_method_spatial(mField.get_moab(),"SPATIAL_POSITION");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_spatial); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_res_mat(mField.get_moab(),"MESH_NODE_POSITIONS",F,"MATERIAL_RESIDUAL");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_res_mat); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_res_spat(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_res_spat); CHKERRQ(ierr);
-
   ierr = mField.set_field(0,MBVERTEX,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.set_field(0,MBEDGE,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.set_field(0,MBTRI,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
@@ -2346,15 +2365,45 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   Vec DISP;
   ierr = VecDuplicate(D,&DISP); CHKERRQ(ierr);
-  ierr = VecZeroEntries(DISP); CHKERRQ(ierr);
   ierr = mField.set_other_global_VecCreateGhost(
     "COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",Col,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method_disp_spat(mField.get_moab(),"SPATIAL_POSITION",DISP,"SPATIAL_DISPLACEMENT");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_disp_spat); CHKERRQ(ierr);
   ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
   energy = 0.5*lambda*energy;
-  ierr = VecDestroy(&DISP); CHKERRQ(ierr);
 
+  SNESConvergedReason reason;
+  ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
+
+  int verb = 1;
+  if(reason>=0) {
+
+    //Save field on mesh
+    if(verb>0) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_POSITION on tags"); CHKERRQ(ierr);
+    }
+    PostProcVertexMethod ent_method_spatial(mField.get_moab(),"SPATIAL_POSITION");
+    ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_spatial); CHKERRQ(ierr);
+    if(verb>0) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save MESH_NODE_POSITIONS on tags"); CHKERRQ(ierr);
+    }
+    PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS");
+    ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
+    if(verb>2) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save MATERIAL_RESIDUAL on tags"); CHKERRQ(ierr);
+      PostProcVertexMethod ent_method_res_mat(mField.get_moab(),"MESH_NODE_POSITIONS",F,"MATERIAL_RESIDUAL");
+      ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_res_mat); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_RESIDUAL on tags"); CHKERRQ(ierr);
+      PostProcVertexMethod ent_method_res_spat(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
+      ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_res_spat); CHKERRQ(ierr);
+    }
+    if(verb>0) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_DISPLACEMENT on tags"); CHKERRQ(ierr);
+      PostProcVertexMethod ent_method_disp_spat(mField.get_moab(),"SPATIAL_POSITION",DISP,"SPATIAL_DISPLACEMENT");
+      ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_disp_spat); CHKERRQ(ierr);
+    }
+ 
+  }
+
+  ierr = VecDestroy(&DISP); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellK); CHKERRQ(ierr);
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -2382,6 +2431,11 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   Range CornersEdgesNodes;
   rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
   corners_nodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
+  Range nodes_to_block;
+  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
+  corners_nodes.merge(nodes_to_block);
+
   CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,problem,corners_nodes);
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
@@ -2412,7 +2466,8 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 
   //Fields
   ierr = mField.set_other_global_VecCreateGhost(
-    problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",
+    Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
     //cerr << *dof << endl;
   //}
@@ -3053,8 +3108,8 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 
     bool first_step_converged = false;
     bool not_converged_state = false;
+    bool line_searcher_set = false;
     double _da_ = 0;
-    //int last_converged = -1;
     for(int ii = 0;ii<nb_sub_steps;ii++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
       if(ii == 0) {
@@ -3083,7 +3138,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  }
 	}
 	_da_ = 0;
-	//last_converged = ii;
 	first_step_converged = true;
 	not_converged_state = false;
 	ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -3098,35 +3152,12 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
       } else {
 	not_converged_state = true;
-	if(!first_step_converged) {
-	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	  load_factor = load_factor0;
-	  if(da > 0) {
-	    da = 0.5*da;
-	    _da_ = da;
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
-	  } else {
-	    if(odd_face_split != 0) {
-	      if(ii>0) {
-		ierr = PetscPrintf(PETSC_COMM_WORLD,"* use spatial solution only and split faces\n"); CHKERRQ(ierr);
-		ierr = main_rescale_load_factor(mField,conf_prob); CHKERRQ(ierr);
-		break;
-	      }
-	    } else {
-	      if(ii>0) {
-		SETERRQ(PETSC_COMM_SELF,1,"* run out form options unable to converge\n");		
-	      } else {
-		ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, try line searcher\n"); CHKERRQ(ierr);
-	      }
-	    }
-	  }
-	} else {
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
-	  ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	  load_factor = load_factor0;
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, recalculate spatial positions only\n"); CHKERRQ(ierr);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
+	ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	load_factor = load_factor0;
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, recalculate spatial positions\n"); CHKERRQ(ierr);
+	{
 	  SNES snes_spatial;
-	  //solve spatial problem
 	  ierr = SNESCreate(PETSC_COMM_WORLD,&snes_spatial); CHKERRQ(ierr);  
 	  ierr = conf_prob.solve_spatial_problem(mField,&snes_spatial,false); CHKERRQ(ierr);
 	  ierr = SNESDestroy(&snes_spatial); CHKERRQ(ierr);
@@ -3136,10 +3167,27 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  ierr = conf_prob.project_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	  ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-	  if(not_converged_state) {
-	    _da_+= 0.1*da;
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.1 ) \n",_da_); CHKERRQ(ierr);
+	}
+	if(!first_step_converged) {
+	  if(da > 0) {
+	    da = 0.5*da;
+	    _da_ = da;
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
+	  } 
+	} else {
+	  if(da>0) {
+	    if(not_converged_state) {
+	      _da_+= 0.1*da;
+	      ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e\n",_da_); CHKERRQ(ierr);
+	    }
 	  }
+	}
+      }
+      //just split and make animation going
+      if(reason < 0 && odd_face_split != 0) {
+	if(line_searcher_set) {
+	  ierr = PetscPrintf(PETSC_COMM_WORLD,"* use spatial solution only and split faces\n"); CHKERRQ(ierr);
+	  break;
 	}
       }
       //set line sercher L2 for not converged state
@@ -3152,9 +3200,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	SNESLineSearch linesearch;
 	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
 	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+	line_searcher_set = true;
       }
     }
-
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
@@ -3233,7 +3281,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	}
 
       }
-
     }
 
     ierr = PetscTime(&v2);CHKERRQ(ierr);
@@ -3244,11 +3291,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
     if(odd_face_split != 0) {
       
       if( aa>0 && aa % odd_face_split == 0 ) {
-
-	/*if(pcomm->rank()==0) {
-	  ierr = PetscPrintf(PETSC_COMM_WORLD,"Save debug for face splitting\n"); CHKERRQ(ierr);
-	  rval = mField.get_moab().write_file("debug_split_faces.h5m"); CHKERR_PETSC(rval);
-	}*/
 
 	{ //cat mesh
   
@@ -3301,53 +3343,75 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
 	ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+	Range tets;
+	ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+
+	struct CheckForNegatieVolume {
+	  static PetscErrorCode F(FieldInterface &mField,const Range &tets,bool &flg) {
+	    PetscFunctionBegin;
+	    ErrorCode rval;
+	    PetscErrorCode ierr;
+	    double diffNTET[12],coords[12],V;
+	    ierr = ShapeDiffMBTET(diffNTET); CHKERRQ(ierr);
+	    Range::iterator tit = tets.begin();
+	    for(;tit!=tets.end();tit++) {
+	      int num_nodes;
+	      const EntityHandle *conn;
+	      rval = mField.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERR_PETSC(rval);
+	      ierr = mField.get_FielData("MESH_NODE_POSITIONS",conn,num_nodes,coords); CHKERRQ(ierr);
+	      V = Shape_intVolumeMBTET(diffNTET,coords); 
+	      if(V<=0) break;	  
+	    }
+	    if(tit==tets.end()) {
+	      flg = true;
+	    } else {
+	      flg = false;
+	    }
+	    PetscFunctionReturn(0);
+	  }
+	};
+
 	int nb_sub_steps = 1;
 	int nn;
 	do { 
+
 	  nn = 1;
 	  for(;nn<=nb_sub_steps;nn++) {
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %D\n",nn); CHKERRQ(ierr);
+
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %d out of %d\n",nn,nb_sub_steps); CHKERRQ(ierr);
 	    double alpha = (double)nn/(double)nb_sub_steps;
 	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
 	    //project nodes on crack surface
-	    //ierr = face_splitting.projectCrackFrontNodes(); CHKERRQ(ierr);
 	    ierr = conf_prob.project_form_th_projection_tag(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-	    ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
-	    SNESConvergedReason reason;
-	    SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
-	    if(ierr == 0 && reason > 0) {
+	    bool flg;
+	    ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
+	    if(!flg) {
+	      ierr = mField.set_global_VecCreateGhost(
+		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	      nb_sub_steps++;
+	      break;
+	    } else {
+
+	      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes);  CHKERRQ(ierr);
+	      SNESConvergedReason reason;
+	      ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+	      ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
+	      if(reason < 0 || !flg) {
+		ierr = mField.set_global_VecCreateGhost(
+		  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+		nb_sub_steps++;
+		break;
+	      }
 	      ierr = mField.set_local_VecCreateGhost(
 		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	    } else {
-	      ierr = mField.set_global_VecCreateGhost(
-		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-	      nb_sub_steps++;
-	      break;
-	    }
-	  }
-	  if(nb_sub_steps >= 10) break;
 
-	  //do sanity check if meshsmoother converged and no inverted elements
-	  if(nn-1 == nb_sub_steps) {
-	    ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
-	    SNESConvergedReason reason;
-	    SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
-	    if(ierr == 0 && reason > 0) {
-	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-	      conf_prob.material_FirelWall->
-		operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
-	      ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
-	    } else {
-	      ierr = mField.set_global_VecCreateGhost(
-		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-	      nb_sub_steps++;
 	    }
 	  }
+
+	  if(nb_sub_steps >= 10) break;
 
 	} while(nn-1 != nb_sub_steps);
 	ierr = VecDestroy(&D_tmp_mesh_positions); CHKERRQ(ierr);
@@ -3362,7 +3426,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
 
 	//solve spatial problem
-
 	ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
 	ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 	ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);

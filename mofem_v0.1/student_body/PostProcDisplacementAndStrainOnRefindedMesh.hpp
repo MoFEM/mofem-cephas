@@ -38,10 +38,11 @@ struct PostProcOnRefMesh_Base {
     int max_level;
     vector<EntityHandle> meshset_level;
     bool init_ref;
+    bool do_broadcast;
 
     PostProcOnRefMesh_Base(): 
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
-      max_level(0),init_ref(false) {
+      max_level(0),init_ref(false),do_broadcast(true) {
       PetscBool flg = PETSC_TRUE;
       PetscOptionsGetInt(PETSC_NULL,"-my_max_pot_proc_ref_level",&max_level,&flg);
       meshset_level.resize(max_level+1);
@@ -94,13 +95,15 @@ struct PostProcOnRefMesh_Base {
 
     PetscErrorCode do_postproc() {
       PetscFunctionBegin;
-      ErrorCode rval;
       ParallelComm* pcomm_post_proc = ParallelComm::get_pcomm(&moab_post_proc,MYPCOMM_INDEX);
       if(pcomm_post_proc == NULL) pcomm_post_proc =  new ParallelComm(&moab_post_proc,PETSC_COMM_WORLD);
-      for(unsigned int rr = 1; rr<pcomm_post_proc->size();rr++) {
+      if(do_broadcast) {
+	ErrorCode rval;
 	Range tets;
 	rval = moab_post_proc.get_entities_by_type(0,MBTET,tets); CHKERR_PETSC(rval);
-	rval = pcomm_post_proc->broadcast_entities(rr,tets); CHKERR(rval);
+	for(unsigned int rr = 0; rr<pcomm_post_proc->size();rr++) {
+	  rval = pcomm_post_proc->broadcast_entities(rr,tets); CHKERR(rval);
+	}
       }
       PetscFunctionReturn(0);
     }
@@ -357,10 +360,9 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 					}
 				}
 				
-      }
+		}
 			
-      SETERRQ(PETSC_COMM_SELF,1,
-							"Element is not in elestic block, however you run linear elastic analysis with that element\n"
+		SETERRQ(PETSC_COMM_SELF,1,"Element is not in elestic block, however you run linear elastic analysis with that element\n"
 							"top tip: check if you update block sets after mesh refinments or interface insertion");
 			
 		}

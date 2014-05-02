@@ -193,8 +193,9 @@ struct FaceSplittingTools {
   Tag th_distance;
   Tag th_projection;
 
-  PetscErrorCode calculate_qualityAfterProjectingNodes(EntityHandle meshset);
-  PetscErrorCode calculate_qualityAfterProjectingNodes(Range &option_nodes,double &current_q);
+  PetscErrorCode calculate_qualityAfterProjectingNodes(
+    Range &option_nodes,Range &intersect_tets,
+    Range &crack_front_edges_nodes,double &current_q);
 
 };
 

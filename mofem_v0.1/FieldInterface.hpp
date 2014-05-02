@@ -451,10 +451,25 @@ struct FieldInterface {
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
   virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+
+  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+    *
+    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    */
   virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+
+  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+    *
+    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    */
   virtual PetscErrorCode get_adjacencies(
     const MoFEMProblem *problem_ptr,
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
+
+  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+    *
+    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    */
   virtual PetscErrorCode get_adjacencies(
     const BitRefLevel &bit,
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
@@ -1006,7 +1021,7 @@ struct FieldInterface {
     *
     * \param name of the problem
     */
-  virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb = -1) = 0;
+  virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
 
   /**
     * \brief create scatter for vectors form one to another problem
@@ -1622,6 +1637,44 @@ struct FieldInterface {
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
     DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
       IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
+
+  /** 
+    * \brief get field data from entity and field
+    * 
+    * this funciont is not recommended to be used in finite elemeny implementation
+    *
+    */
+  template <typename DIT>
+  PetscErrorCode get_FielData(const string& name,const EntityHandle *ent,const int num_ents,DIT dit,int *count = NULL) {
+    PetscFunctionBegin;
+    if(count!=NULL) *count = 0;
+    for(int nn = 0;nn<num_ents;nn++) {
+      for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,ent[nn],it)) {
+	*(dit++) = it->get_FieldData();
+	if(count!=NULL) (*count)++;
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  /** 
+    * \brief get field data from entity and field
+    * 
+    * this funciont is not recommended to be used in finite elemeny implementation
+    *
+    */
+  template <typename DIT>
+  PetscErrorCode get_FielData(const string& name,const Range &ents,DIT dit,int *count = NULL) {
+    PetscFunctionBegin;
+    if(count!=NULL) *count = 0;
+    for(Range::const_iterator eit = ents.begin();eit!=ents.end();eit++) {
+      for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,*eit,it)) {
+	*(dit++) = it->get_FieldData();
+	if(count!=NULL) (*count)++;
+      }
+    }
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \brief get begin iterator of filed dofs of given name and ent type (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
