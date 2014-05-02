@@ -3313,40 +3313,14 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
 	ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-	int nb_sub_steps = 1;
-	int nn;
-	do { 
-	  nn = 1;
-	  for(;nn<=nb_sub_steps;nn++) {
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %d out of %d\n",nn,nb_sub_steps); CHKERRQ(ierr);
-	    double alpha = (double)nn/(double)nb_sub_steps;
-	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
-	    //project nodes on crack surface
-	    //ierr = face_splitting.projectCrackFrontNodes(); CHKERRQ(ierr);
-	    ierr = conf_prob.project_form_th_projection_tag(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-	    ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes); 
-	    SNESConvergedReason reason;
-	    SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
-	    if(ierr == 0 && reason > 0) {
-	      ierr = mField.set_local_VecCreateGhost(
-		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	    } else {
-	      ierr = mField.set_global_VecCreateGhost(
-		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
-		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-	      nb_sub_steps++;
-	      break;
-	    }
-	  }
-	  if(nb_sub_steps >= 10) break;
+	Range tets;
+	ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
 
-	  //do sanity check if meshsmoother converged and no inverted elements
-	  if(nn-1 == nb_sub_steps) {
-	    ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
-	    Range tets;
-	    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+	struct CheckForNegatieVolume {
+	  static PetscErrorCode F(FieldInterface &mField,const Range &tets,bool &flg) {
+	    PetscFunctionBegin;
+	    ErrorCode rval;
+	    PetscErrorCode ierr;
 	    double diffNTET[12],coords[12],V;
 	    ierr = ShapeDiffMBTET(diffNTET); CHKERRQ(ierr);
 	    Range::iterator tit = tets.begin();
@@ -3354,16 +3328,58 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	      int num_nodes;
 	      const EntityHandle *conn;
 	      rval = mField.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERR_PETSC(rval);
-	      rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
+	      ierr = mField.get_FielData("MESH_NODE_POSITIONS",conn,num_nodes,coords); CHKERRQ(ierr);
 	      V = Shape_intVolumeMBTET(diffNTET,coords); 
 	      if(V<=0) break;	  
 	    }
-	    if(tit!=tets.end()) {
+	    if(tit==tets.end()) {
+	      flg = true;
+	    } else {
+	      flg = false;
+	    }
+	    PetscFunctionReturn(0);
+	  }
+	};
+
+	int nb_sub_steps = 1;
+	int nn;
+	do { 
+
+	  nn = 1;
+	  for(;nn<=nb_sub_steps;nn++) {
+
+	    if(nb_sub_steps >= 10) break;
+
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %d out of %d\n",nn,nb_sub_steps); CHKERRQ(ierr);
+	    double alpha = (double)nn/(double)nb_sub_steps;
+	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
+	    //project nodes on crack surface
+	    ierr = conf_prob.project_form_th_projection_tag(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+	    bool flg;
+	    ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
+	    if(!flg) {
 	      ierr = mField.set_global_VecCreateGhost(
 		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	      ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 	      nb_sub_steps++;
+	      break;
+	    } else {
+
+	      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes);  CHKERRQ(ierr);
+	      SNESConvergedReason reason;
+	      ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+	      ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
+	      if(reason <0 || !flg) {
+		ierr = mField.set_global_VecCreateGhost(
+		  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+		nb_sub_steps++;
+		break;
+	      }
+	      ierr = mField.set_local_VecCreateGhost(
+		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
 	    }
 	  }
 
