@@ -1645,11 +1645,13 @@ struct FieldInterface {
     *
     */
   template <typename DIT>
-  PetscErrorCode get_FielData(const string& name,const EntityHandle *ent,const int num_ents,DIT dit) {
+  PetscErrorCode get_FielData(const string& name,const EntityHandle *ent,const int num_ents,DIT dit,int *count = NULL) {
     PetscFunctionBegin;
+    if(count!=NULL) *count = 0;
     for(int nn = 0;nn<num_ents;nn++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,ent[nn],it)) {
 	*(dit++) = it->get_FieldData();
+	if(count!=NULL) (*count)++;
       }
     }
     PetscFunctionReturn(0);
@@ -1662,11 +1664,13 @@ struct FieldInterface {
     *
     */
   template <typename DIT>
-  PetscErrorCode get_FielData(const string& name,const Range &ents,DIT dit) {
+  PetscErrorCode get_FielData(const string& name,const Range &ents,DIT dit,int *count = NULL) {
     PetscFunctionBegin;
+    if(count!=NULL) *count = 0;
     for(Range::const_iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,*eit,it)) {
 	*(dit++) = it->get_FieldData();
+	if(count!=NULL) (*count)++;
       }
     }
     PetscFunctionReturn(0);

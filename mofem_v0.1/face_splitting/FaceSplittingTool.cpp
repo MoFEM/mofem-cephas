@@ -1137,7 +1137,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       tets_on_surface_faces = intersect(tets_on_surface_faces,interface_tris);
       
       if(pcomm->rank()>0) {
-	if(verb>0) {    
+	if(verb>3) {    
 	  EntityHandle out_meshset;
 	  rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
 	  rval = mField.get_moab().add_entities(out_meshset,tets_on_surface); CHKERR_PETSC(rval);
@@ -1164,13 +1164,12 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 
       }
+      if(verb>=0) {    
+	PetscPrintf(PETSC_COMM_WORLD,"number of block quasi-flat (on crack surface) tets: %u\n",tets_on_surface.size());
+      }
 
       Range level_nodes;
       ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBVERTEX,level_nodes); CHKERRQ(ierr);
-      Range level_edges;
-      ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
-      Range level_tris;
-      ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
       Range level_tets;
       ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
 
@@ -1179,12 +1178,9 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       Range level_tets_nodes;
       rval = mField.get_moab().get_connectivity(level_tets,level_tets_nodes,true); CHKERR_PETSC(rval);
       ents_to_set_level.merge(subtract(level_nodes,level_tets_nodes));
-      Range level_tets_edges;
-      rval = mField.get_moab().get_adjacencies(level_tets,1,false,level_tets_edges,Interface::UNION); CHKERR_PETSC(rval);
-      ents_to_set_level.merge(subtract(level_edges,level_tets_edges));
-      Range level_tets_faces;
-      rval = mField.get_moab().get_adjacencies(level_tets,2,false,level_tets_faces,Interface::UNION); CHKERR_PETSC(rval);
-      ents_to_set_level.merge(subtract(level_tris,level_tets_faces));
+      if(verb>=0) {    
+	PetscPrintf(PETSC_COMM_WORLD,"number of block entities of quasi-flat (on crack surface) tets: %u\n",ents_to_set_level.size());
+      }
 
       for(Range::iterator eit = ents_to_set_level.begin();eit!=ents_to_set_level.end();eit++) {
 	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
@@ -1193,9 +1189,8 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
 	}
 	bool success;
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
-	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
-	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+	//success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	//  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
 	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
 	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-1,true));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
@@ -1778,7 +1773,7 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   ierr = mField.remove_ents_from_field_by_bit_ref(not_split_face_ref_level,not_split_face_ref_level,1); CHKERRQ(ierr);
 
   ierr = face_splitting.addNewSurfaceFaces_to_Cubit_msId200(); CHKERRQ(ierr);
-  ierr = face_splitting.splitFaces(); CHKERRQ(ierr);
+  ierr = face_splitting.splitFaces(0); CHKERRQ(ierr);
   ierr = face_splitting.addcrackFront_to_Cubit201(); CHKERRQ(ierr);
 
   if(verb>0) {
