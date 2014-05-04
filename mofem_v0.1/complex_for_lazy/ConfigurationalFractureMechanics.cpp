@@ -2378,25 +2378,25 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
     //Save field on mesh
     if(verb>0) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_POSITION on tags"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_POSITION on tags\n"); CHKERRQ(ierr);
     }
     PostProcVertexMethod ent_method_spatial(mField.get_moab(),"SPATIAL_POSITION");
     ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_spatial); CHKERRQ(ierr);
     if(verb>0) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save MESH_NODE_POSITIONS on tags"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save MESH_NODE_POSITIONS on tags\n"); CHKERRQ(ierr);
     }
     PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS");
     ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
     if(verb>2) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save MATERIAL_RESIDUAL on tags"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save MATERIAL_RESIDUAL on tags\n"); CHKERRQ(ierr);
       PostProcVertexMethod ent_method_res_mat(mField.get_moab(),"MESH_NODE_POSITIONS",F,"MATERIAL_RESIDUAL");
       ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_res_mat); CHKERRQ(ierr);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_RESIDUAL on tags"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_RESIDUAL on tags\n"); CHKERRQ(ierr);
       PostProcVertexMethod ent_method_res_spat(mField.get_moab(),"SPATIAL_POSITION",F,"SPATIAL_RESIDUAL");
       ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_res_spat); CHKERRQ(ierr);
     }
     if(verb>0) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_DISPLACEMENT on tags"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Save SPATIAL_DISPLACEMENT on tags\n"); CHKERRQ(ierr);
       PostProcVertexMethod ent_method_disp_spat(mField.get_moab(),"SPATIAL_POSITION",DISP,"SPATIAL_DISPLACEMENT");
       ierr = mField.loop_dofs("COUPLED_PROBLEM","SPATIAL_POSITION",Col,ent_method_disp_spat); CHKERRQ(ierr);
     }

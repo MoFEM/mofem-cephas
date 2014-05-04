@@ -552,8 +552,8 @@ PetscErrorCode FieldCore::partition_create_Mat(
     }
     int nb_loc_row_from_iterators = distance(miit_row,hi_miit_row);
     MoFEMEntity *MoFEMEntity_ptr = NULL;
-    set<DofIdx> dofs_set;
     vector<PetscInt> i,j;
+    vector<DofIdx> dofs_vec;
     // loop local rows
     for(;miit_row!=hi_miit_row;miit_row++) {
       i.push_back(j.size());
@@ -568,7 +568,7 @@ PetscErrorCode FieldCore::partition_create_Mat(
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->get_MoFEMEntity_ptr());
 	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
-	dofs_set.clear();
+	NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	  if(adj_miit->by_other&by_row) {
 	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
@@ -579,23 +579,26 @@ PetscErrorCode FieldCore::partition_create_Mat(
 	      // if entity is not problem refinment level
 	      continue; 
 	    }
-	    NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
-	    ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view( 
+	    ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_view( 
 	      p_miit->numered_dofs_cols,dofs_col_view,Interface::UNION); CHKERRQ(ierr);
-	    NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cvit;
-	    cvit = dofs_col_view.begin();
-	    for(;cvit!=dofs_col_view.end();cvit++) {
-	      int idx = Tag::get_index(*cvit);
-	      dofs_set.insert(idx);
-	    }
 	  }
 	}
+	dofs_vec.resize(dofs_col_view.size());
+	vector<DofIdx>::iterator vvit = dofs_vec.begin();
+	NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cvit;
+	cvit = dofs_col_view.begin();
+	for(;cvit!=dofs_col_view.end();cvit++,vvit++) {
+	  int idx = Tag::get_index(*cvit);
+	  if(no_diagonals) {
+	    if(idx == Tag::get_index(miit_row)) {
+	      continue;
+	    }
+	  }
+	  *vvit = idx;
+	}
+	sort(dofs_vec.begin(),dofs_vec.end());
       }
-      if(no_diagonals) {
-  	dofs_set.erase(Tag::get_index(miit_row));
-	j.insert(j.end(),dofs_set.begin(),dofs_set.end());
-      }
-      j.insert(j.end(),dofs_set.begin(),dofs_set.end());
+      j.insert(j.end(),dofs_vec.begin(),dofs_vec.end());
     }
     //build adj matrix
     i.push_back(j.size());

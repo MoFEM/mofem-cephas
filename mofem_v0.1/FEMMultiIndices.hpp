@@ -269,25 +269,25 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   inline DofIdx get_nb_dofs_col() const { return col_dof_view.size(); }
   inline DofIdx get_nb_dofs_data() const { return data_dof_view.size(); }
   friend ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e);
-  PetscErrorCode get_MoFEMFiniteElement_row_dof_uid_view(
+  PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_MoFEMFiniteElement_col_dof_uid_view(
+  PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_MoFEMFiniteElement_data_dof_uid_view(
+  PetscErrorCode get_MoFEMFiniteElement_data_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_MoFEMFiniteElement_row_dof_uid_view(
+  PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_MoFEMFiniteElement_col_dof_uid_view(
+  PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_MoFEMFiniteElement_row_dof_uid_view(
+  PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_MoFEMFiniteElement_col_dof_uid_view(
+  PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_uid_side_number(
