@@ -2408,7 +2408,7 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,const int 
   const PetscInt *ranges_col;
   ierr = PetscLayoutGetRanges(layout_col,&ranges_col); CHKERRQ(ierr);
   for(unsigned int part = 0;part<pcomm->size();part++) {
-    int set_part = all_on_part == -1 ? part : all_on_part;
+    unsigned int set_part = all_on_part == -1 ? part : all_on_part;
     miit_row = dofs_row_by_idx.lower_bound(ranges_row[part]);
     hi_miit_row = dofs_row_by_idx.lower_bound(ranges_row[part+1]);
     if(distance(miit_row,hi_miit_row) != ranges_row[part+1]-ranges_row[part]) {
