@@ -1753,10 +1753,10 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
   data_dofs.clear();
   DofMoFEMEntity_multiIndex_active_view data_view;
   ierr = EntFe.get_MoFEMFiniteElement_data_dof_view(dofsMoabField,data_view,Interface::UNION); CHKERRQ(ierr);
-  DofMoFEMEntity_multiIndex_active_view::iterator viit_data,hi_viit_data;
+  DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator viit_data,hi_viit_data;
   //loops over active dofs only
-  viit_data = data_view.lower_bound(1); 
-  hi_viit_data = data_view.upper_bound(1);
+  viit_data = data_view.get<1>().lower_bound(1); 
+  hi_viit_data = data_view.get<1>().upper_bound(1);
   for(;viit_data!=hi_viit_data;viit_data++) {
     try {
       switch((*viit_data)->get_space()) {
@@ -1783,7 +1783,7 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
       SETERRQ(PETSC_COMM_SELF,1,msg);
     }
   }
-  viit_data = data_view.lower_bound(1); 
+  viit_data = data_view.get<1>().lower_bound(1); 
   if(data_dofs.size()!=(unsigned int)distance(viit_data,hi_viit_data)) {
     SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   }
@@ -2286,17 +2286,17 @@ PetscErrorCode FieldCore::build_problems(int verb) {
     success = moFEMProblems.modify(p_miit,problem_zero_nb_cols_change());
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     //add dofs for rows
-    DofMoFEMEntity_multiIndex_active_view::iterator miit4,hi_miit4;
-    miit4 = dofs_rows.lower_bound(1);
-    hi_miit4 = dofs_rows.upper_bound(1);
+    DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit4,hi_miit4;
+    miit4 = dofs_rows.get<1>().lower_bound(1);
+    hi_miit4 = dofs_rows.get<1>().upper_bound(1);
     for(;miit4!=hi_miit4;miit4++) {
       success = moFEMProblems.modify(p_miit,problem_row_change(&**miit4));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     }
     //add dofs for cols
-    DofMoFEMEntity_multiIndex_active_view::iterator miit5,hi_miit5;
-    miit5 = dofs_cols.lower_bound(1);
-    hi_miit5 = dofs_cols.upper_bound(1);
+    DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit5,hi_miit5;
+    miit5 = dofs_cols.get<1>().lower_bound(1);
+    hi_miit5 = dofs_cols.get<1>().upper_bound(1);
     for(;miit5!=hi_miit5;miit5++) {
       success = moFEMProblems.modify(p_miit,problem_col_change(&**miit5));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");

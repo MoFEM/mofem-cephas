@@ -199,6 +199,8 @@ typedef multi_index_container<
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
+    ordered_unique< 
+      const_mem_fun<DofMoFEMEntity,UId,&DofMoFEMEntity::get_unique_id> >,
     ordered_non_unique< 
       const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
   > > DofMoFEMEntity_multiIndex_active_view;
