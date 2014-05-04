@@ -473,9 +473,9 @@ namespace MoFEM {
 						double w = V*G_W_TET[gg];
 						ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
 						//BT * VoigtStress
+						f_int.resize(row_mat);
 						for(int rr = 0;rr<row_mat;rr++) {
 							if(RowGlob[rr].size()==0) continue;
-							f_int.resize(row_mat);
 							ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
 							if(gg == 0) {
 								f_int[rr] = prod( trans(B), VoightStress );
@@ -504,8 +504,8 @@ namespace MoFEM {
       try {
 				ierr = Fint(); CHKERRQ(ierr);
 				for(int rr = 0;rr<row_mat;rr++) {
-					if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 					if(RowGlob[rr].size()==0) continue;
+					if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 					ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
 				}
       } catch (const std::exception& ex) {
@@ -523,7 +523,7 @@ namespace MoFEM {
 			ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
 			ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 			
-      K.resize(row_mat,col_mat);
+			K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
 				if(RowGlob[rr].size()==0) continue;
@@ -754,8 +754,9 @@ namespace MoFEM {
 						double w = V*G_W_TET[gg];
 						ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
 						//BT * VoigtStress
+						f_int.resize(row_mat);
 						for(int rr = 0;rr<row_mat;rr++) {
-							f_int.resize(row_mat);
+							if(RowGlob[rr].size()==0) continue;
 							ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
 							if(gg == 0) {
 								f_int[rr] = prod( trans(B), VoightStress );
@@ -784,8 +785,8 @@ namespace MoFEM {
       try {
 				ierr = Fint(); CHKERRQ(ierr);
 				for(int rr = 0;rr<row_mat;rr++) {
-					if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 					if(RowGlob[rr].size()==0) continue;
+					if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 					ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
 				}
       } catch (const std::exception& ex) {
@@ -803,10 +804,11 @@ namespace MoFEM {
 			
       ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
       ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
-			
-      K.resize(row_mat,col_mat);
+						
+			K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
+				if(RowGlob[rr].size()==0) continue;
 				for(int gg = 0;gg<g_dim;gg++) {
 					ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
 					double w = V*G_W_TET[gg];
@@ -821,6 +823,7 @@ namespace MoFEM {
 											&*row_Mat.data().begin(),row_Mat.size2(),
 											0.,&*BD.data().begin(),BD.size2());
 					for(int cc = rr;cc<col_mat;cc++) {
+						if(ColGlob[cc].size()==0) continue;
 						ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
 						if(gg == 0) {
 							K(rr,cc).resize(BD.size2(),col_Mat.size2());
@@ -1117,8 +1120,9 @@ namespace MoFEM {
 						double w = V*G_W_TET[gg];
 						ublas::vector<FieldData> VoightStress = prod(w*D_At_GaussPoint[gg],VoightStrain);
 						//BT * VoigtStress
+						f_int.resize(row_mat);
 						for(int rr = 0;rr<row_mat;rr++) {
-							f_int.resize(row_mat);
+							if(RowGlob[rr].size()==0) continue;
 							ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
 							if(gg == 0) {
 								f_int[rr] = prod( trans(B), VoightStress );
@@ -1142,13 +1146,13 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 		//--------------------------------------------------------------------------------------------------------------------------------------------------//
-		virtual PetscErrorCode Fint(Vec F_int) {
+    virtual PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
       try {
 				ierr = Fint(); CHKERRQ(ierr);
 				for(int rr = 0;rr<row_mat;rr++) {
-					if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 					if(RowGlob[rr].size()==0) continue;
+					if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 					ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
 				}
       } catch (const std::exception& ex) {
@@ -1165,13 +1169,17 @@ namespace MoFEM {
 			double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
       ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
       ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
-			
+						
 			K.resize(row_mat,col_mat);
-			int g_dim = g_NTET.size()/4;
-			for(int rr = 0;rr<row_mat;rr++) {
+      int g_dim = g_NTET.size()/4;
+      for(int rr = 0;rr<row_mat;rr++) {
+				if(RowGlob[rr].size()==0) continue;
 				for(int gg = 0;gg<g_dim;gg++) {
 					ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
 					double w = V*G_W_TET[gg];
+					if(detH.size()>0) {
+						w *= detH[gg];
+					}
 					BD.resize(6,row_Mat.size2());
 					//ublas::noalias(BD) = prod( w*D,row_Mat );
 					cblas_dsymm(CblasRowMajor,CblasLeft,CblasUpper,
@@ -1180,6 +1188,7 @@ namespace MoFEM {
 											&*row_Mat.data().begin(),row_Mat.size2(),
 											0.,&*BD.data().begin(),BD.size2());
 					for(int cc = rr;cc<col_mat;cc++) {
+						if(ColGlob[cc].size()==0) continue;
 						ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
 						if(gg == 0) {
 							K(rr,cc).resize(BD.size2(),col_Mat.size2());
@@ -1199,14 +1208,16 @@ namespace MoFEM {
 						}
 					}
 				}
-			}
-			PetscFunctionReturn(0);
+      }
+      PetscFunctionReturn(0);
+			
     }
 		//--------------------------------------------------------------------------------------------------------------------------------------------------//
     virtual PetscErrorCode Lhs() {
       PetscFunctionBegin;
       ierr = Stiffness(); CHKERRQ(ierr);
       for(int rr = 0;rr<row_mat;rr++) {
+				if(RowGlob[rr].size()==0) continue;
 				for(int cc = rr;cc<col_mat;cc++) {
 					if(ColGlob[cc].size()==0) continue;
 					if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -1465,8 +1476,9 @@ namespace MoFEM {
 						double w = V*G_W_TET[gg];
 						ublas::vector<FieldData> VoightStress = prod(w*D_At_GaussPoint[gg],VoightStrain);
 						//BT * VoigtStress
+						f_int.resize(row_mat);
 						for(int rr = 0;rr<row_mat;rr++) {
-							f_int.resize(row_mat);
+							if(RowGlob[rr].size()==0) continue;
 							ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
 							if(gg == 0) {
 								f_int[rr] = prod( trans(B), VoightStress );
@@ -1495,8 +1507,8 @@ namespace MoFEM {
       try {
 				ierr = Fint(); CHKERRQ(ierr);
 				for(int rr = 0;rr<row_mat;rr++) {
-					if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 					if(RowGlob[rr].size()==0) continue;
+					if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 					ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
 				}
       } catch (const std::exception& ex) {
@@ -1515,11 +1527,15 @@ namespace MoFEM {
       ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 			
 			K.resize(row_mat,col_mat);
-			int g_dim = g_NTET.size()/4;
-			for(int rr = 0;rr<row_mat;rr++) {
+      int g_dim = g_NTET.size()/4;
+      for(int rr = 0;rr<row_mat;rr++) {
+				if(RowGlob[rr].size()==0) continue;
 				for(int gg = 0;gg<g_dim;gg++) {
 					ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
 					double w = V*G_W_TET[gg];
+					if(detH.size()>0) {
+						w *= detH[gg];
+					}
 					BD.resize(6,row_Mat.size2());
 					//ublas::noalias(BD) = prod( w*D,row_Mat );
 					cblas_dsymm(CblasRowMajor,CblasLeft,CblasUpper,
@@ -1528,6 +1544,7 @@ namespace MoFEM {
 											&*row_Mat.data().begin(),row_Mat.size2(),
 											0.,&*BD.data().begin(),BD.size2());
 					for(int cc = rr;cc<col_mat;cc++) {
+						if(ColGlob[cc].size()==0) continue;
 						ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
 						if(gg == 0) {
 							K(rr,cc).resize(BD.size2(),col_Mat.size2());
@@ -1547,14 +1564,15 @@ namespace MoFEM {
 						}
 					}
 				}
-			}
-			PetscFunctionReturn(0);
+      }
+      PetscFunctionReturn(0);
     }
 		//--------------------------------------------------------------------------------------------------------------------------------------------------//
     virtual PetscErrorCode Lhs() {
       PetscFunctionBegin;
       ierr = Stiffness(); CHKERRQ(ierr);
       for(int rr = 0;rr<row_mat;rr++) {
+				if(RowGlob[rr].size()==0) continue;
 				for(int cc = rr;cc<col_mat;cc++) {
 					if(ColGlob[cc].size()==0) continue;
 					if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
