@@ -2921,7 +2921,6 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
       NumeredDofMoFEMEntity_multiIndex_uid_view rows_view;
       //rows_view
       ierr = miit2->get_MoFEMFiniteElement_row_dof_view(p_miit->numered_dofs_rows,rows_view,Interface::UNION); CHKERRQ(ierr);
-      if(rows_view.empty()) continue;
       NumeredDofMoFEMEntity_multiIndex_uid_view::iterator viit_rows;
       vector<int> parts(pcomm->size(),0);
       viit_rows = rows_view.begin();
@@ -2930,41 +2929,41 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
       }
       vector<int>::iterator pos = max_element(parts.begin(),parts.end());
       unsigned int max_part = distance(parts.begin(),pos);
-      if(do_skip) if(max_part!=pcomm->rank()) continue; 
       NumeredMoFEMFiniteElement_change_part(max_part).operator()(numered_fe);
-      //rows element dof multiindices
-      FENumeredDofMoFEMEntity_multiIndex &rows_dofs = numered_fe.rows_dofs;
-      viit_rows = rows_view.begin();
-      for(;viit_rows!=rows_view.end();viit_rows++) {
-	try {
-	  SideNumber *side_number_ptr = miit2->get_side_number_ptr(moab,(*viit_rows)->get_ent());
-	  pair<FENumeredDofMoFEMEntity_multiIndex::iterator,bool> pp;
-	  pp = rows_dofs.insert(FENumeredDofMoFEMEntity(side_number_ptr,&**viit_rows));
-	  if(!pp.second) {
-	    SETERRQ(PETSC_COMM_SELF,1,"insertion unsucesfull");
+      if( (max_part==pcomm->rank())||(!do_skip) ) {
+	//rows element dof multiindices
+	FENumeredDofMoFEMEntity_multiIndex &rows_dofs = numered_fe.rows_dofs;
+	viit_rows = rows_view.begin();
+	for(;viit_rows!=rows_view.end();viit_rows++) {
+	  try {
+	    SideNumber *side_number_ptr = miit2->get_side_number_ptr(moab,(*viit_rows)->get_ent());
+	    pair<FENumeredDofMoFEMEntity_multiIndex::iterator,bool> pp;
+	    pp = rows_dofs.insert(FENumeredDofMoFEMEntity(side_number_ptr,&**viit_rows));
+	    if(!pp.second) {
+	      SETERRQ(PETSC_COMM_SELF,1,"insertion unsucesfull");
+	    }
+	  } catch (const char* msg) {
+	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
-	} catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
 	}
-      }
-      //cols_vies
-      NumeredDofMoFEMEntity_multiIndex_uid_view cols_view;
-      ierr = miit2->get_MoFEMFiniteElement_col_dof_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION); CHKERRQ(ierr);
-      if(cols_view.empty()) continue;
-      //cols elmeny dof multiindices
-      FENumeredDofMoFEMEntity_multiIndex &cols_dofs = numered_fe.cols_dofs;
-      NumeredDofMoFEMEntity_multiIndex_uid_view::iterator viit_cols;;
-      viit_cols = cols_view.begin();
-      for(;viit_cols!=cols_view.end();viit_cols++) {
-	try {
-	  SideNumber *side_number_ptr = miit2->get_side_number_ptr(moab,(*viit_cols)->get_ent());
-	  pair<FENumeredDofMoFEMEntity_multiIndex::iterator,bool> pp;
-	  pp = cols_dofs.insert(FENumeredDofMoFEMEntity(side_number_ptr,&**viit_cols));
-	  if(!pp.second) {
-	    SETERRQ(PETSC_COMM_SELF,1,"insertion unsucesfull");
+	//cols_vies
+	NumeredDofMoFEMEntity_multiIndex_uid_view cols_view;
+	ierr = miit2->get_MoFEMFiniteElement_col_dof_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION); CHKERRQ(ierr);
+	//cols elmeny dof multiindices
+	FENumeredDofMoFEMEntity_multiIndex &cols_dofs = numered_fe.cols_dofs;
+	NumeredDofMoFEMEntity_multiIndex_uid_view::iterator viit_cols;;
+	viit_cols = cols_view.begin();
+	for(;viit_cols!=cols_view.end();viit_cols++) {
+	  try {
+	    SideNumber *side_number_ptr = miit2->get_side_number_ptr(moab,(*viit_cols)->get_ent());
+	    pair<FENumeredDofMoFEMEntity_multiIndex::iterator,bool> pp;
+	    pp = cols_dofs.insert(FENumeredDofMoFEMEntity(side_number_ptr,&**viit_cols));
+	    if(!pp.second) {
+	      SETERRQ(PETSC_COMM_SELF,1,"insertion unsucesfull");
+	   }
+	  } catch (const char* msg) {
+	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
-	} catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
 	}
       }
       pair<NumeredMoFEMFiniteElement_multiIndex::iterator,bool> p;
@@ -3179,22 +3178,24 @@ PetscErrorCode FieldCore::partition_ghost_dofs(const string &name,int verb) {
     fe_it = p_miit->numeredFiniteElements.get<MoFEMFiniteElement_Part_mi_tag>().lower_bound(pcomm->rank());
     hi_fe_it = p_miit->numeredFiniteElements.get<MoFEMFiniteElement_Part_mi_tag>().upper_bound(pcomm->rank());
     for(;fe_it!=hi_fe_it;fe_it++) {
-      if(fe_it->rows_dofs.empty()) SETERRQ(PETSC_COMM_SELF,1,"no row dofs on this element why is it here?");
-      if(fe_it->cols_dofs.empty()) SETERRQ(PETSC_COMM_SELF,1,"no col dofs on this element why is it here?");
       typedef FENumeredDofMoFEMEntity_multiIndex::iterator dof_it;
-      dof_it rowdofit,hi_rowdofit;
-      rowdofit = fe_it->rows_dofs.begin();
-      hi_rowdofit = fe_it->rows_dofs.end();
-      for(;rowdofit!=hi_rowdofit;rowdofit++) {
-	if(rowdofit->get_part()==pcomm->rank()) continue; 
-	ghost_idx_row_view.insert(rowdofit->get_NumeredDofMoFEMEntity_ptr());
+      if(fe_it->rows_dofs.size()>0) {
+	dof_it rowdofit,hi_rowdofit;
+	rowdofit = fe_it->rows_dofs.begin();
+	hi_rowdofit = fe_it->rows_dofs.end();
+	for(;rowdofit!=hi_rowdofit;rowdofit++) {
+	  if(rowdofit->get_part()==pcomm->rank()) continue; 
+	  ghost_idx_row_view.insert(rowdofit->get_NumeredDofMoFEMEntity_ptr());
+	}
       }
-      dof_it coldofit,hi_coldofit;
-      coldofit = fe_it->cols_dofs.begin();
-      hi_coldofit = fe_it->cols_dofs.end();
-      for(;coldofit!=hi_coldofit;coldofit++) {
-	if(coldofit->get_part()==pcomm->rank()) continue;
-	ghost_idx_col_view.insert(coldofit->get_NumeredDofMoFEMEntity_ptr());
+      if(fe_it->cols_dofs.size()>0) {
+	dof_it coldofit,hi_coldofit;
+	coldofit = fe_it->cols_dofs.begin();
+	hi_coldofit = fe_it->cols_dofs.end();
+	for(;coldofit!=hi_coldofit;coldofit++) {
+	  if(coldofit->get_part()==pcomm->rank()) continue;
+	  ghost_idx_col_view.insert(coldofit->get_NumeredDofMoFEMEntity_ptr());
+	}
       }
     }
     DofIdx *nb_ghost_dofs[2] = { &nb_col_ghost_dofs, &nb_row_ghost_dofs };
