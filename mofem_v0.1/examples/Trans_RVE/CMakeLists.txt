@@ -19,5 +19,7 @@
 add_executable(potential_flow_disp potential_flow_disp.cpp)
 target_link_libraries(potential_flow_disp mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(RVE_disp RVE_disp.cpp)
+target_link_libraries(RVE_disp mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 
