@@ -2913,23 +2913,15 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
   //MoFEMFiniteElement set
   EntMoFEMFiniteElement_multiIndex::iterator miit2 = finiteElementsMoFEMEnts.begin();
   EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = finiteElementsMoFEMEnts.end();
-  EntMoFEMFiniteElement_multiIndex::iterator miit3 = miit2;
-  for(;miit3!=hi_miit2;miit3++) {
-    if((miit3->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
-    if((miit3->get_BitRefLevel()&p_miit->get_BitRefLevel())!=p_miit->get_BitRefLevel()) continue; // if entity is not problem refinment level
+  for(;miit2!=hi_miit2;miit2++) {
+    if((miit2->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
+    if((miit2->get_BitRefLevel()&p_miit->get_BitRefLevel())!=p_miit->get_BitRefLevel()) continue; // if entity is not problem refinment level
+    NumeredMoFEMFiniteElement numered_fe(&*miit2);
     {
       NumeredDofMoFEMEntity_multiIndex_uid_view rows_view;
       //rows_view
-      ierr = miit3->get_MoFEMFiniteElement_row_dof_view(p_miit->numered_dofs_rows,rows_view,Interface::UNION); CHKERRQ(ierr);
+      ierr = miit2->get_MoFEMFiniteElement_row_dof_view(p_miit->numered_dofs_rows,rows_view,Interface::UNION); CHKERRQ(ierr);
       if(rows_view.empty()) continue;
-      pair<NumeredMoFEMFiniteElement_multiIndex::iterator,bool> p;
-      p = numeredFiniteElements.insert(NumeredMoFEMFiniteElement(&*miit3));
-      if(!p.second) {
-	SETERRQ(PETSC_COMM_SELF,1,"element is there");
-      }
-      //rows element dof multiindices
-      FENumeredDofMoFEMEntity_multiIndex &rows_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(p.first->rows_dofs);
-      rows_dofs.clear();
       NumeredDofMoFEMEntity_multiIndex_uid_view::iterator viit_rows;
       vector<int> parts(pcomm->size(),0);
       viit_rows = rows_view.begin();
@@ -2938,17 +2930,18 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
       }
       vector<int>::iterator pos = max_element(parts.begin(),parts.end());
       unsigned int max_part = distance(parts.begin(),pos);
-      bool success = numeredFiniteElements.modify(p.first,NumeredMoFEMFiniteElement_change_part(max_part));
-      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessfull");
       if(do_skip) if(max_part!=pcomm->rank()) continue; 
+      NumeredMoFEMFiniteElement_change_part(max_part).operator()(numered_fe);
+      //rows element dof multiindices
+      FENumeredDofMoFEMEntity_multiIndex &rows_dofs = numered_fe.rows_dofs;
       viit_rows = rows_view.begin();
       for(;viit_rows!=rows_view.end();viit_rows++) {
 	try {
-	  SideNumber *side_number_ptr = p.first->get_side_number_ptr(moab,(*viit_rows)->get_ent());
+	  SideNumber *side_number_ptr = miit2->get_side_number_ptr(moab,(*viit_rows)->get_ent());
 	  pair<FENumeredDofMoFEMEntity_multiIndex::iterator,bool> pp;
 	  pp = rows_dofs.insert(FENumeredDofMoFEMEntity(side_number_ptr,&**viit_rows));
-	  if(!p.second) {
-	    SETERRQ(PETSC_COMM_SELF,1,"element is there");
+	  if(!pp.second) {
+	    SETERRQ(PETSC_COMM_SELF,1,"insertion unsucesfull");
 	  }
 	} catch (const char* msg) {
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -2956,23 +2949,28 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
       }
       //cols_vies
       NumeredDofMoFEMEntity_multiIndex_uid_view cols_view;
-      ierr = miit3->get_MoFEMFiniteElement_col_dof_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION); CHKERRQ(ierr);
+      ierr = miit2->get_MoFEMFiniteElement_col_dof_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION); CHKERRQ(ierr);
       if(cols_view.empty()) continue;
       //cols elmeny dof multiindices
-      FENumeredDofMoFEMEntity_multiIndex &cols_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(p.first->cols_dofs);
-      cols_dofs.clear();
-      NumeredDofMoFEMEntity_multiIndex_uid_view::iterator viit_cols = cols_view.begin();
+      FENumeredDofMoFEMEntity_multiIndex &cols_dofs = numered_fe.cols_dofs;
+      NumeredDofMoFEMEntity_multiIndex_uid_view::iterator viit_cols;;
+      viit_cols = cols_view.begin();
       for(;viit_cols!=cols_view.end();viit_cols++) {
 	try {
-	  SideNumber *side_number_ptr = p.first->get_side_number_ptr(moab,(*viit_cols)->get_ent());
+	  SideNumber *side_number_ptr = miit2->get_side_number_ptr(moab,(*viit_cols)->get_ent());
 	  pair<FENumeredDofMoFEMEntity_multiIndex::iterator,bool> pp;
 	  pp = cols_dofs.insert(FENumeredDofMoFEMEntity(side_number_ptr,&**viit_cols));
-	  if(!p.second) {
-	    SETERRQ(PETSC_COMM_SELF,1,"element is there");
+	  if(!pp.second) {
+	    SETERRQ(PETSC_COMM_SELF,1,"insertion unsucesfull");
 	  }
 	} catch (const char* msg) {
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
 	}
+      }
+      pair<NumeredMoFEMFiniteElement_multiIndex::iterator,bool> p;
+      p = numeredFiniteElements.insert(numered_fe);
+      if(!p.second) {
+	SETERRQ(PETSC_COMM_SELF,1,"element is there");
       }
       if(verb>1) {
 	ostringstream ss;
