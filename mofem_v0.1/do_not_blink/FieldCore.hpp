@@ -579,7 +579,7 @@ PetscErrorCode FieldCore::partition_create_Mat(
 	      // if entity is not problem refinment level
 	      continue; 
 	    }
-	    ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_uid_view( 
+	    ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_view( 
 	      p_miit->numered_dofs_cols,dofs_col_view,Interface::UNION); CHKERRQ(ierr);
 	  }
 	}
