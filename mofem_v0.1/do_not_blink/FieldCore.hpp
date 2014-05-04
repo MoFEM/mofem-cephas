@@ -367,7 +367,7 @@ struct FieldCore: public FieldInterface {
   //problem building
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
-  PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
+  PetscErrorCode simple_partition_problem(const string &name,const int all_on_part = -1,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);

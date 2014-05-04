@@ -2360,7 +2360,7 @@ PetscErrorCode FieldCore::clear_problems(int verb) {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) {
+PetscErrorCode FieldCore::simple_partition_problem(const string &name,const int all_on_part,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
@@ -2408,6 +2408,7 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
   const PetscInt *ranges_col;
   ierr = PetscLayoutGetRanges(layout_col,&ranges_col); CHKERRQ(ierr);
   for(unsigned int part = 0;part<pcomm->size();part++) {
+    int set_part = all_on_part == -1 ? part : all_on_part;
     miit_row = dofs_row_by_idx.lower_bound(ranges_row[part]);
     hi_miit_row = dofs_row_by_idx.lower_bound(ranges_row[part+1]);
     if(distance(miit_row,hi_miit_row) != ranges_row[part+1]-ranges_row[part]) {
@@ -2417,9 +2418,9 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
     }
     // loop rows
     for(;miit_row!=hi_miit_row;miit_row++) {
-      bool success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_part_change(part,miit_row->dof_idx));
+      bool success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_part_change(set_part,miit_row->dof_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
-      if(part == pcomm->rank()) {
+      if(set_part == pcomm->rank()) {
 	success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
       }
@@ -2433,9 +2434,9 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,int verb) 
     }
     // loop cols
     for(;miit_col!=hi_miit_col;miit_col++) {
-      bool success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_part_change(part,miit_col->dof_idx));
+      bool success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_part_change(set_part,miit_col->dof_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
-      if(part == pcomm->rank()) {
+      if(set_part == pcomm->rank()) {
 	success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
       }
@@ -3210,7 +3211,9 @@ PetscErrorCode FieldCore::partition_ghost_dofs(const string &name,int verb) {
       NumeredDofMoFEMEntity_multiIndex_uid_view::iterator ghost_idx_miit = ghost_idx_view[ss]->begin();
       for(;ghost_idx_miit!=ghost_idx_view[ss]->end();ghost_idx_miit++) {
         NumeredDofMoFEMEntitys_by_unique_id::iterator diit = dof_by_uid_no_const[ss]->find((*ghost_idx_miit)->get_unique_id());
-        if(diit->petsc_local_dof_idx!=(DofIdx)-1) SETERRQ(PETSC_COMM_SELF,1,"inconsistent data, ghost dof already set");
+        if(diit->petsc_local_dof_idx!=(DofIdx)-1) {
+	  SETERRQ(PETSC_COMM_SELF,1,"inconsistent data, ghost dof already set");
+	}
         bool success = dof_by_uid_no_const[ss]->modify(diit,NumeredDofMoFEMEntity_local_idx_change(nb_local_dofs[ss]++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
         (*nb_ghost_dofs[ss])++;

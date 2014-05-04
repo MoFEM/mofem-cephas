@@ -939,7 +939,7 @@ struct FieldInterface {
    *
    * \param name problem name
    */
-  virtual PetscErrorCode simple_partition_problem(const string &name,int verb = -1) = 0;
+  virtual PetscErrorCode simple_partition_problem(const string &name,const int all_on_part = -1,int verb = -1) = 0;
 
 
   /** \brief partition problem dofs
