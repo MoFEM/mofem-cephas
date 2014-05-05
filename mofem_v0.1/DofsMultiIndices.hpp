@@ -51,8 +51,9 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   //inline EntityType get_ent_type() const { return field_ptr->get_ent_type(); };
   inline ApproximationOrder get_dof_order() const { return ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof]; };
   inline ApproximationRank get_dof_rank() const { return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof]; };
-  inline int get_active() const { return active ? 1 : 0; }
   inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const { return const_cast<DofMoFEMEntity*>(this); };
+  //check if node is active
+  inline int get_active() const { return active ? 1 : 0; }
   friend ostream& operator<<(ostream& os,const DofMoFEMEntity& e);
 };
 
@@ -86,7 +87,7 @@ struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
   inline DofIdx get_petsc_gloabl_dof_idx() const { return petsc_gloabl_dof_idx;  }
   inline DofIdx get_petsc_local_dof_idx() const { return petsc_local_dof_idx; }
   inline unsigned int get_part() const { return part;  }
-  NumeredDofMoFEMEntity(const DofIdx idx,const DofMoFEMEntity* _DofMoFEMEntity_ptr);
+  NumeredDofMoFEMEntity(const DofMoFEMEntity* _DofMoFEMEntity_ptr);
   inline const NumeredDofMoFEMEntity* get_NumeredDofMoFEMEntity_ptr() const { return this; };
   inline bool operator<(const NumeredDofMoFEMEntity& _dof) const { return get_unique_id()<_dof.get_unique_id(); }
   friend ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e);
@@ -194,6 +195,29 @@ typedef multi_index_container<
     ordered_unique< 
       member<DofMoFEMEntity,const UId,&DofMoFEMEntity::uid> >
   > > DofMoFEMEntity_multiIndex_uid_view;
+
+typedef multi_index_container<
+  const DofMoFEMEntity*,
+  indexed_by<
+    ordered_unique< 
+      const_mem_fun<DofMoFEMEntity,UId,&DofMoFEMEntity::get_unique_id> >,
+    ordered_non_unique< 
+      const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
+  > > DofMoFEMEntity_multiIndex_active_view;
+
+typedef multi_index_container<
+  const DofMoFEMEntity*,
+  indexed_by<
+    ordered_non_unique< 
+      const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order> >
+  > > DofMoFEMEntity_multiIndex_order_view;
+
+typedef multi_index_container<
+  const DofMoFEMEntity*,
+  indexed_by<
+    ordered_non_unique<
+      const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type> >
+  > > DofMoFEMEntity_multiIndex_ent_type_view;
 
 /** 
  * @relates multi_index_container
@@ -364,7 +388,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique< 
       tag<Unique_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&NumeredDofMoFEMEntity::get_unique_id> >,
-    ordered_unique< 
+    ordered_non_unique< 
       tag<Idx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::dof_idx> >,
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref> >,
@@ -393,6 +417,42 @@ typedef multi_index_container<
       const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&NumeredDofMoFEMEntity::get_unique_id> >
   > > NumeredDofMoFEMEntity_multiIndex_uid_view;
 
-}
+struct DofMoFEMEntity_active_change {
+  bool active;
+  DofMoFEMEntity_active_change(bool _active);
+  void operator()(DofMoFEMEntity &_dof_);
+};
 
+struct NumeredDofMoFEMEntity_part_change {
+  unsigned int part;
+  DofIdx petsc_gloabl_dof_idx;
+  NumeredDofMoFEMEntity_part_change(const unsigned int _part,const DofIdx _petsc_gloabl_dof_idx): 
+    part(_part),
+    petsc_gloabl_dof_idx(_petsc_gloabl_dof_idx) {};
+  void operator()(NumeredDofMoFEMEntity &dof) { 
+    dof.part = part;
+    dof.petsc_gloabl_dof_idx = petsc_gloabl_dof_idx; 
+    dof.petsc_local_dof_idx = -1;
+  }
+};
+
+struct NumeredDofMoFEMEntity_local_idx_change {
+  DofIdx petsc_local_dof_idx;
+  NumeredDofMoFEMEntity_local_idx_change(const DofIdx _petsc_local_dof_idx): 
+    petsc_local_dof_idx(_petsc_local_dof_idx) {};
+  void operator()(NumeredDofMoFEMEntity &dof) { 
+    dof.petsc_local_dof_idx = petsc_local_dof_idx; 
+  }
+};
+
+struct NumeredDofMoFEMEntity_mofem_index_change {
+  DofIdx mofem_idx;
+  NumeredDofMoFEMEntity_mofem_index_change(const DofIdx _mofem_idx): 
+    mofem_idx(_mofem_idx) {};
+  void operator()(NumeredDofMoFEMEntity &dof) { 
+    dof.dof_idx = mofem_idx;
+  }
+};
+
+}
 #endif // __DOFSMULTIINDICES_HPP__

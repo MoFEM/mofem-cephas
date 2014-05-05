@@ -40,6 +40,8 @@ int main(int argc, char *argv[]) {
 
   Core mb_instance;
   Interface& moab = mb_instance;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   const char *option;
   option = "";//"PARALLEL=BCAST";//;DEBUG_IO";
@@ -74,14 +76,15 @@ int main(int argc, char *argv[]) {
   }
   ierr = mField.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
   ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
-  ierr = mField.shift_right_bit_ref(1); CHKERRQ(ierr);
+  //PetscAttachDebugger ();
+  //ierr = mField.shift_right_bit_ref(1); CHKERRQ(ierr);
 
   ofstream myfile;
   myfile.open("mesh_refine.txt");
 
   EntityHandle out_meshset_tet;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERR_PETSC(rval);
-  ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
   Range tets;
   rval = moab.get_entities_by_handle(out_meshset_tet,tets); CHKERR_PETSC(rval);
   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
@@ -100,7 +103,7 @@ int main(int argc, char *argv[]) {
 
   myfile.close();
 
-  //rval = moab.write_file("out.vtk","VTK","",&out_meshset_tet,1); CHKERR_PETSC(rval);
+  rval = moab.write_file("out_mesh_refine.vtk","VTK","",&out_meshset_tet,1); CHKERR_PETSC(rval);
 
   PetscFinalize();
 

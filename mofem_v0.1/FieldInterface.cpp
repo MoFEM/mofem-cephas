@@ -51,6 +51,7 @@ PetscErrorCode FieldInterface::TSMethod::set_ts(TS _ts) {
 }
 //BasicMethod
 FieldInterface::BasicMethod::BasicMethod():
+  refinedMoFemEntities(NULL),refinedMoFemElements(NULL),
   problem_ptr(NULL),moabfields(NULL),ents_moabfield(NULL),dofs_moabfield(NULL),
   finite_elements(NULL),finite_elements_moabents(NULL),fem_adjacencies(NULL) {};
 PetscErrorCode FieldInterface::BasicMethod::set_problem(const MoFEMProblem *_problem_ptr) {

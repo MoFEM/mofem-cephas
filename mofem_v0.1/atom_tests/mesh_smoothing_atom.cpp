@@ -301,7 +301,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("MESH_SMOOTHING"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("MESH_SMOOTHING"); CHKERRQ(ierr);
   //partition
-  ierr = mField.partition_problem("CCT_ALL_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.simple_partition_problem("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   //partition

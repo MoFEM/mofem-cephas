@@ -37,11 +37,15 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
  
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+
+  const char *option;
+  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  BARRIER_RANK_START(pcomm) 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  BARRIER_RANK_END(pcomm) 
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -82,7 +86,7 @@ int main(int argc, char *argv[]) {
     Range edges_to_refine;
     rval = moab.get_entities_by_type(meshset_level0,MBEDGE,edges_to_refine);  CHKERR_PETSC(rval);
     for(Range::iterator eit = edges_to_refine.begin();eit!=edges_to_refine.end();eit++) {
-      int numb = rand() % 2;
+      int numb = *eit % 2;
       if(numb == 0) {
 	ierr = moab.add_entities(meshset_ref_edges,&*eit,1); CHKERRQ(ierr);
       }

@@ -64,7 +64,6 @@ struct FieldCore: public FieldInterface {
   MoFEMFiniteElement_multiIndex finiteElements;
   EntMoFEMFiniteElement_multiIndex finiteElementsMoFEMEnts;
   //entFEAdjacencies
-  //BasicMoFEMEntityAdjacenctMap_multiIndex basicEntAdjacencies;
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;
   //moFEMProblems
   MoFEMProblem_multiIndex moFEMProblems;
@@ -83,11 +82,12 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
   Interface& get_moab();
 
-  //core data
-  EntityHandle ref_fe_meshset;
-
   //check consistency
   PetscErrorCode check_number_of_ents_in_ents_field(const string& name);
+  PetscErrorCode check_number_of_ents_in_ents_field();
+  PetscErrorCode check_number_of_ents_in_ents_finite_element(const string& name);
+  PetscErrorCode check_number_of_ents_in_ents_finite_element();
+  PetscErrorCode rebuild_database(int verb = -1);
 
   //cubit meshsets
   bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType);
@@ -224,9 +224,11 @@ struct FieldCore: public FieldInterface {
   }
 
   //refine
-  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
   PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
+  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
+  PetscErrorCode seed_ref_level_2D(const Range &ents2d,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
+  PetscErrorCode seed_ref_level_3D(const Range &ents3d,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1);
@@ -277,8 +279,8 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1);
 
   //build fiels
-  PetscErrorCode dofs_NoField(const BitFieldId id,int &dof_counter);
-  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,int &dof_counter,int verb = -1);
+  PetscErrorCode dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_counter);
+  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> &dof_counter,int verb = -1);
   PetscErrorCode build_fields(int verb = -1);
   PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
@@ -286,8 +288,10 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode clear_ents_fields(const string &name,const Range enst,int verb = -1);
 
   //other auxiliary functions for fields
-  PetscErrorCode list_dof_by_id(const BitFieldId id) const;
-  PetscErrorCode list_ent_by_id(const BitFieldId id) const;
+  PetscErrorCode list_dof_by_field_name(const string &name) const;
+  PetscErrorCode list_ent_by_field_name(const string &name) const;
+  PetscErrorCode list_dof_by_field_id(const BitFieldId id) const;
+  PetscErrorCode list_ent_by_field_id(const BitFieldId id) const;
   PetscErrorCode list_field() const;
   BitFieldId get_BitFieldId(const string& name) const;
   string get_BitFieldId_name(const BitFieldId id) const;
@@ -342,14 +346,14 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode list_problem() const;
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
-  //loop over all finite elements, resolve its meshsets, and resolve dofs on that entities
-  PetscErrorCode build_finite_elements(const EntMoFEMFiniteElement &EntFe,int verb = -1);
+  //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
+  PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &EntFe,int verb = -1);
+  PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &EntFe,int verb = -1);
   PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
 
   //entFEAdjacencies
-  PetscErrorCode build_adjacencies(int verb = -1);
   PetscErrorCode build_adjacencies(const Range &ents,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
@@ -363,12 +367,13 @@ struct FieldCore: public FieldInterface {
   //problem building
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
-  PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
+  PetscErrorCode simple_partition_problem(const string &name,const int all_on_part = -1,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
+  PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
 
   //save meshsets
   PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset);
@@ -378,7 +383,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
-  PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
+  PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
   PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
 
   //Mesh refine and interfaces
@@ -399,7 +404,8 @@ struct FieldCore: public FieldInterface {
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
   PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_nodes_from_bit_level,
+    const EntityHandle meshset,const BitRefLevel &bit,
+    const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
 
   PetscErrorCode add_prism_to_mofem_database(const EntityHandle prism,int verb = -1);
@@ -462,114 +468,11 @@ struct FieldCore: public FieldInterface {
   FieldCore(Interface& _moab,int _verbose = 1);
   ~FieldCore();
 
-  //Templates
+
+  //templates
   template<typename Tag> 
-  PetscErrorCode partition_create_Mat(const string &name,Mat *M,const MatType type,const bool no_diagonals = true,int verb = -1) {
-    PetscFunctionBegin;
-    if(verb==-1) verb = verbose;
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
-    typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofMoFEMEntitys_by_unique_id;
-    typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type adj_by_ent;
-    //find p_miit
-    typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-    moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
-    moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-    if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
-    //
-    const NumeredDofMoFEMEntitys_by_idx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<Tag>();
-    const NumeredDofMoFEMEntitys_by_unique_id &dofs_col_by_id = p_miit->numered_dofs_cols.get<Unique_mi_tag>();
-    DofIdx nb_dofs_row = dofs_row_by_idx.size();
-    assert(p_miit->get_nb_dofs_row()==nb_dofs_row);
-    if(nb_dofs_row == 0) SETERRQ(PETSC_COMM_SELF,1,"problem has zero rows");
-    typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type::iterator miit_row,hi_miit_row;
-    if(Tag::IamNotPartitioned) {
-      DofIdx nb_dofs_row_on_proc = (DofIdx)ceil(nb_dofs_row/pcomm->size());
-      DofIdx lower_dof_row = nb_dofs_row_on_proc*pcomm->rank();
-      miit_row = dofs_row_by_idx.lower_bound(lower_dof_row);
-      DofIdx upper_dof_row = pcomm->rank()==pcomm->size()-1 ? nb_dofs_row-1 : nb_dofs_row_on_proc*(pcomm->rank()+1)-1;
-      hi_miit_row = dofs_row_by_idx.upper_bound(upper_dof_row);
-      if(verb > 1) {
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tpartition_create_Mat: row lower %d row upper %d\n",lower_dof_row,upper_dof_row);
-	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
-      }
-    } else {
-      miit_row = dofs_row_by_idx.lower_bound(pcomm->rank());
-      hi_miit_row = dofs_row_by_idx.upper_bound(pcomm->rank());
-    }
-    MoFEMEntity *MoFEMEntity_ptr = NULL;
-    vector<DofIdx> dofs_vec,dofs_vec2;
-    vector<PetscInt> i,j;
-    // loop local rows
-    for(;miit_row!=hi_miit_row;miit_row++) {
-      i.push_back(j.size());
-      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->field_ptr->field_ptr->get_unique_id()) ) {
-	// get field ptr
-	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->field_ptr->field_ptr);
-	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
-	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
-	dofs_vec.resize(0);
-	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_row)) continue;  // if it is not row of element
-	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
-	  if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) continue; // if entity is not problem refinment level
-	  int size  = adj_miit->EntMoFEMFiniteElement_ptr->tag_col_uids_size/sizeof(UId);
-	  for(int ii = 0;ii<size;ii++) {
-	    UId uid = adj_miit->EntMoFEMFiniteElement_ptr->tag_col_uids_data[ii];
-	    NumeredDofMoFEMEntitys_by_unique_id::iterator miiit = dofs_col_by_id.find(uid);
-	    if(miiit == p_miit->numered_dofs_cols.get<Unique_mi_tag>().end()) continue;
-	    dofs_vec.insert(dofs_vec.end(),Tag::get_index(miiit));
-	  }
-	}
-	sort(dofs_vec.begin(),dofs_vec.end());
-	vector<DofIdx>::iterator new_end = unique(dofs_vec.begin(),dofs_vec.end());
-	dofs_vec.erase(new_end,dofs_vec.end());
-      }
-      if(!dofs_vec.empty()) {
-	if(no_diagonals) {
-	  dofs_vec2.resize(0);
-	  dofs_vec2.insert(dofs_vec2.end(),dofs_vec.begin(),dofs_vec.end());
-	  vector<DofIdx>::iterator vit = find(dofs_vec2.begin(),dofs_vec2.end(),Tag::get_index(miit_row));
-	  if(vit==dofs_vec2.end()) {
-	    continue; // matrix can have no diagonals entries
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  }
-	  dofs_vec2.erase(vit);
-	  j.insert(j.end(),dofs_vec2.begin(),dofs_vec2.end());
-	} else {
-	  j.insert(j.end(),dofs_vec.begin(),dofs_vec.end());
-	}
-      }
-    }
-    //build adj matrix
-    i.push_back(j.size());
-    PetscInt *_i,*_j;
-    ierr = PetscMalloc(i.size()*sizeof(PetscInt),&_i); CHKERRQ(ierr);
-    ierr = PetscMalloc(j.size()*sizeof(PetscInt),&_j); CHKERRQ(ierr);
-    copy(i.begin(),i.end(),_i);
-    copy(j.begin(),j.end(),_j);
-    PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
-    PetscInt nb_col_dofs = p_miit->get_nb_dofs_col();
-    if(strcmp(type,MATMPIADJ)==0) { 
-      ierr = MatCreateMPIAdj(PETSC_COMM_WORLD,i.size()-1,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
-    } else if(strcmp(type,MATMPIAIJ)==0) {
-      PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
-      if((unsigned int)nb_local_dofs_row!=i.size()-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
-      ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,_i,_j,PETSC_NULL,M); CHKERRQ(ierr);
-      ierr = PetscFree(_i); CHKERRQ(ierr);
-      ierr = PetscFree(_j); CHKERRQ(ierr);
-    } else if(strcmp(type,MATAIJ)==0) {
-      ierr = PetscFree(_i); CHKERRQ(ierr);
-      ierr = PetscFree(_j); CHKERRQ(ierr);
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    } else {
-      ierr = PetscFree(_i); CHKERRQ(ierr);
-      ierr = PetscFree(_j); CHKERRQ(ierr);
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-    PetscFunctionReturn(0);
-  }
+  PetscErrorCode partition_create_Mat(
+    const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,const bool no_diagonals = true,int verb = -1);
   
   //low level finite element data
   double diffN_TET[12]; 
@@ -579,6 +482,154 @@ struct FieldCore: public FieldInterface {
   PetscLogEvent USER_EVENT_operator;
   PetscLogEvent USER_EVENT_postProcess;
 };
+
+//templates
+
+#define PARALLEL_PARTITIONING 0
+#if PARALLEL_PARTITIONING
+  #define PARTITIONING_MPIADJ_COMM PETSC_COMM_WORLD
+#else 
+  #define PARTITIONING_MPIADJ_COMM PETSC_COMM_SELF
+#endif
+
+template<typename Tag> 
+PetscErrorCode FieldCore::partition_create_Mat(
+    const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
+    const bool no_diagonals,int verb) {
+    PetscFunctionBegin;
+    if(verb==-1) verb = verbose;
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
+    typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type adj_by_ent;
+    //find p_miit
+    typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+    moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+    moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
+    if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
+    //
+    const NumeredDofMoFEMEntitys_by_idx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<Tag>();
+    const NumeredDofMoFEMEntitys_by_idx &dofs_col_by_idx = p_miit->numered_dofs_cols.get<Tag>();
+    DofIdx nb_dofs_row = dofs_row_by_idx.size();
+    if(p_miit->get_nb_dofs_row()!=nb_dofs_row) {
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+    }
+    if((unsigned int)p_miit->get_nb_dofs_col()!=p_miit->numered_dofs_cols.size()) {
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+    }
+    if(nb_dofs_row == 0) {
+      SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> has zero rows",name.c_str());
+    }
+    typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type::iterator miit_row,hi_miit_row;
+    if(Tag::IamNotPartitioned) {
+      //get range of local indices
+      #if PARALLEL_PARTITIONING
+      PetscLayout layout;
+      ierr = PetscLayoutCreate(PETSC_COMM_WORLD,&layout); CHKERRQ(ierr);
+      ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
+      ierr = PetscLayoutSetSize(layout,nb_dofs_row); CHKERRQ(ierr);
+      ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
+      PetscInt rstart,rend;
+      ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
+      ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+      if(verb > 0) {
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tpartition_create_Mat: row lower %d row upper %d\n",rstart,rend);
+	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+      }
+      miit_row = dofs_row_by_idx.lower_bound(rstart);
+      hi_miit_row = dofs_row_by_idx.lower_bound(rend);
+      if(distance(miit_row,hi_miit_row) != rend-rstart) {
+	SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
+	  "data inconsistency, distance(miit_row,hi_miit_row) != rend - rstart (%d != %d - %d = %d) ",
+	  distance(miit_row,hi_miit_row),rend,rstart,rend-rstart);
+      }
+      #else
+      miit_row = dofs_row_by_idx.begin();
+      hi_miit_row = dofs_row_by_idx.end();
+      #endif
+    } else {
+      miit_row = dofs_row_by_idx.lower_bound(pcomm->rank());
+      hi_miit_row = dofs_row_by_idx.upper_bound(pcomm->rank());
+    }
+    int nb_loc_row_from_iterators = distance(miit_row,hi_miit_row);
+    MoFEMEntity *MoFEMEntity_ptr = NULL;
+    vector<PetscInt> i,j;
+    vector<DofIdx> dofs_vec;
+    // loop local rows
+    for(;miit_row!=hi_miit_row;miit_row++) {
+      i.push_back(j.size());
+      if(strcmp(type,MATMPIADJ)==0) {
+	DofIdx idx = Tag::get_index(miit_row);
+	if(dofs_col_by_idx.find(idx)->get_unique_id()!=miit_row->get_unique_id()) {
+	  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data insonsistency");
+	}
+      }
+      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_unique_id()) ) {
+	// get field ptr
+	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->get_MoFEMEntity_ptr());
+	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
+	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
+	NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
+	for(;adj_miit!=hi_adj_miit;adj_miit++) {
+	  if(adj_miit->by_other&by_row) {
+	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
+	      // if element is not part of problem
+	      continue; 
+	    }
+	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&miit_row->get_BitRefLevel()).none()) {
+	      // if entity is not problem refinment level
+	      continue; 
+	    }
+	    ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_view( 
+	      p_miit->numered_dofs_cols,dofs_col_view,Interface::UNION); CHKERRQ(ierr);
+	  }
+	}
+	dofs_vec.resize(0);
+	NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cvit;
+	cvit = dofs_col_view.begin();
+	for(;cvit!=dofs_col_view.end();cvit++) {
+	  int idx = Tag::get_index(*cvit);
+	  if(no_diagonals) {
+	    if(idx == Tag::get_index(miit_row)) {
+	      continue;
+	    }
+	  }
+	  dofs_vec.push_back(idx);
+	}
+	sort(dofs_vec.begin(),dofs_vec.end());
+      }
+      j.insert(j.end(),dofs_vec.begin(),dofs_vec.end());
+    }
+    //build adj matrix
+    i.push_back(j.size());
+    ierr = PetscMalloc(i.size()*sizeof(PetscInt),_i); CHKERRQ(ierr);
+    ierr = PetscMalloc(j.size()*sizeof(PetscInt),_j); CHKERRQ(ierr);
+    copy(i.begin(),i.end(),*_i);
+    copy(j.begin(),j.end(),*_j);
+    PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
+    PetscInt nb_col_dofs = p_miit->get_nb_dofs_col();
+    if(strcmp(type,MATMPIADJ)==0) { 
+      if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+      }
+      ierr = MatCreateMPIAdj(PARTITIONING_MPIADJ_COMM,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
+      ierr = MatSetOption(*M,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
+    } else if(strcmp(type,MATMPIAIJ)==0) {
+      if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+      }
+      PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
+      if((unsigned int)nb_local_dofs_row!=i.size()-1) {
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+      }
+      PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
+      ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
+    } else if(strcmp(type,MATAIJ)==0) {
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"not implemented");
+    } else {
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_NULL,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
 
 }
 

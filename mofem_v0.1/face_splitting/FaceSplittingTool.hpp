@@ -143,7 +143,7 @@ struct FaceSplittingTools {
   EntityHandle chopTetsFaces;
   EntityHandle selectedCrackFaces;
 
-  PetscErrorCode getCrackFrontTets(bool createMeshset);
+  PetscErrorCode getCrackFrontTets(bool createMeshset,int verb = 0);
   PetscErrorCode chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(bool createMeshset,int verb = 0);
   PetscErrorCode selectCrackFaces(bool createMeshset,int verb = 0);
 
@@ -159,7 +159,7 @@ struct FaceSplittingTools {
     int& first() { return ptr[1]; }
     int& back() { return ptr[ptr[0]]; }
     int* begin() { return &ptr[1]; };
-    int* end() { return &ptr[ptr[0]]; }
+    int* end() { return &ptr[ptr[0]+1]; }
     void push_back(int a) { 
       ptr[0]++;
       ptr[ptr[0]] = a; 
@@ -169,14 +169,20 @@ struct FaceSplittingTools {
   BitRefLevelVector meshRefineBitLevels;
   BitRefLevelVector meshIntefaceBitLevels;
 
-  PetscErrorCode catMesh(const int verb = 0);
-  PetscErrorCode meshRefine(const int verb = 0);
-  PetscErrorCode splitFaces(const int verb = 0);
+  PetscErrorCode catMesh(const int verb = -1);
+  PetscErrorCode meshRefine(const int verb = -1);
+  PetscErrorCode splitFaces(const int verb = -1);
 
   PetscErrorCode addNewSurfaceFaces_to_Cubit_msId200();
   PetscErrorCode addcrackFront_to_Cubit201();
 
+  /** \brief project coords ibn crack surfec
+   * do not use this function, it not respect body boundaries
+   */
   PetscErrorCode projectCrackFrontNodes();
+
+  PetscErrorCode getMask(BitRefLevel &maskPreserv,const int verb = -1);
+  PetscErrorCode squashIndices(const int verb = -1);
 
   private:
   ErrorCode rval;
@@ -187,9 +193,9 @@ struct FaceSplittingTools {
   Tag th_distance;
   Tag th_projection;
 
-  PetscErrorCode calculate_qualityAfterProjectingNodes(EntityHandle meshset);
-  PetscErrorCode calculate_qualityAfterProjectingNodes(Range &option_nodes,double &current_q);
-
+  PetscErrorCode calculate_qualityAfterProjectingNodes(
+    Range &option_nodes,Range &intersect_tets,
+    Range &crack_front_edges_nodes,double &current_q);
 
 };
 

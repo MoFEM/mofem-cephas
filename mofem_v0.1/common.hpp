@@ -260,6 +260,13 @@ struct hashbit
 
 }
 
+struct mofem_exception {
+  virtual const char* what() const throw() {
+    return "somthing goes wrong";
+  }
+};
+
+
 //MULTIINDICES
 #include "TagMultiIndices.hpp"
 #include "FieldMultiIndices.hpp"

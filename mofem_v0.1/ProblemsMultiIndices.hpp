@@ -373,6 +373,17 @@ struct problem_clear_numered_finite_elements_change {
   void operator()(MoFEMProblem &e);
 };
 
+/// \brief number dofs in row
+struct problem_row_number_change {
+  problem_row_number_change() {};
+  void operator()(MoFEMProblem &e);
+};
+
+/// \brief number dofs in col
+struct problem_col_number_change {
+  problem_col_number_change() {};
+  void operator()(MoFEMProblem &e);
+};
 
 }
 

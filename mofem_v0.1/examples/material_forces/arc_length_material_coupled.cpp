@@ -68,7 +68,6 @@ int main(int argc, char *argv[]) {
 
   ierr = main_arc_length_setup(mField,conf_prob); CHKERRQ(ierr);
   ierr = main_arc_length_solve(mField,conf_prob); CHKERRQ(ierr);
-  ierr = main_arc_length_setup(mField,conf_prob); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_arc_length.h5m"); CHKERR_PETSC(rval);

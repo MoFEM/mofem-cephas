@@ -37,21 +37,25 @@ create Displacement  on surface 45 dof 3 fix 0
 create Displacement  on surface 41 47  dof 1 fix 0 
 create Displacement  on surface 39 44  dof 2 fix 0  
 create pressure  on surface 40  magnitude 1 
-create pressure  on surface 46  magnitude 1  
+#create pressure  on surface 46  magnitude 1
  
 block 1 volume 1  
 block 1 name "MAT_ELASTIC_1" 
 block 1 attribute count 2 
-block 1 attribute index 1 1 
+block 1 attribute index 1 1
 block 1 attribute index 2 0.25 
  
+nodeset 4 vertex 40  
+nodeset 4 name 'LoadPath'
+
 volume all scheme Tetmesh 
-volume all size auto factor 7 
+volume all size auto factor 9
 mesh volume all 
  
 block 2 tet all  
 block 2 element type tetra10 
 
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/dome_thin_symm.cub" overwrite
+
 
 

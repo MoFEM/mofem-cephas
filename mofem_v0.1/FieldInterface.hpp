@@ -66,6 +66,24 @@ struct FieldInterface {
   virtual PetscErrorCode check_number_of_ents_in_ents_field(const string& name) = 0;
 
   /** 
+    * \brief check data consistency in ents_moabfield
+    *
+    */
+  virtual PetscErrorCode check_number_of_ents_in_ents_field() = 0;
+
+  /** 
+    * \brief check data consistency in finiteElementsMoFEMEnts
+    *
+    */
+  virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(const string& name) = 0;
+
+  /** 
+    * \brief check data consistency in finiteElementsMoFEMEnts
+    *
+    */
+  virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() = 0;
+
+  /** 
     * \brief check for CUBIT Id and CUBIT type
     *
     * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
@@ -255,6 +273,8 @@ struct FieldInterface {
   virtual PetscErrorCode printCubitHeatFluxSet() = 0;
   virtual PetscErrorCode printCubitMaterials() = 0;
 
+  virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
+
   /**
   * Create finite elements based from eneties in meshses. Throw error if entity is not in database
   * 
@@ -281,6 +301,15 @@ struct FieldInterface {
   virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
+  * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjencies) in a particular BitRefLevel
+  * 
+  * \param Range of tris
+  * \param BitRefLevel bitLevel
+  * 
+  */
+  virtual PetscErrorCode seed_ref_level_2D(const Range &ents2d,const BitRefLevel &bit,int verb = -1) = 0;
+
+  /**
   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
   * 
   * \param EntityHandle MeshSet
@@ -304,6 +333,13 @@ struct FieldInterface {
   * 
   */
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
+
+
+  /**
+   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+   */ 
+  virtual PetscErrorCode seed_ref_level_3D(const Range &ents3d,const BitRefLevel &bit,int verb = -1) = 0;
+
 
   /** brief seed ref level by MESHSET that contains entities other than volumes
    * 
@@ -353,13 +389,11 @@ struct FieldInterface {
    */
   virtual PetscErrorCode refine_TET(const Range &tets,const BitRefLevel &bit,const bool respect_interface = false) = 0;
 
-
   /**\brief refine PRISM in the meshset
    *
    * \param EntityHandle meshset
    * \param BitRefLevel bitLevel
    */
-
   virtual PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**\brief refinem meshset, i.e. add child of refined entities to meshset
@@ -417,10 +451,25 @@ struct FieldInterface {
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
   virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+
+  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+    *
+    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    */
   virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+
+  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+    *
+    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    */
   virtual PetscErrorCode get_adjacencies(
     const MoFEMProblem *problem_ptr,
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
+
+  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+    *
+    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    */
   virtual PetscErrorCode get_adjacencies(
     const BitRefLevel &bit,
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
@@ -812,6 +861,14 @@ struct FieldInterface {
    */
   virtual PetscErrorCode build_fields(int verb = -1) = 0;
 
+  /** list dofs
+   */
+  virtual PetscErrorCode list_dof_by_field_name(const string &name) const = 0;
+
+  /** list ents
+   */
+  virtual PetscErrorCode list_ent_by_field_name(const string &name) const = 0;
+
   /** clear fields
    */
   virtual PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
@@ -882,7 +939,7 @@ struct FieldInterface {
    *
    * \param name problem name
    */
-  virtual PetscErrorCode simple_partition_problem(const string &name,int verb = -1) = 0;
+  virtual PetscErrorCode simple_partition_problem(const string &name,const int all_on_part = -1,int verb = -1) = 0;
 
 
   /** \brief partition problem dofs
@@ -929,6 +986,11 @@ struct FieldInterface {
    */
   virtual PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1) = 0;
 
+  /** \brief check if matrix fill in correspond to finite element indices
+    *
+    */
+  virtual PetscErrorCode partition_check_matrix_fill_in(const string &problem_name,int verb) = 0;
+
   /**
     * \brief add finite elements to the meshset
     *
@@ -959,7 +1021,7 @@ struct FieldInterface {
     *
     * \param name of the problem
     */
-  virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,int verb = -1) = 0;
+  virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
 
   /**
     * \brief create scatter for vectors form one to another problem
@@ -1120,9 +1182,21 @@ struct FieldInterface {
    * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
    * 
    * The all new entities (prisms, tets) are added to refinment level given by bit
+   *
+   * \param meshset 
+   * \param refinment bit level of new mesh
+   * \param inheret_from_bit_level inheret nodes and other entities form this bit level. 
+   * \param add_iterfece_entities add prism elements at interface
+   * \param recuslsive do meshesets in the meshset
+   * 
+   * note inheret_from_bit_level is need to be specidied to some meshset
+   * with interfaces. Some nodes on some refinment levels dividing edges but
+   * not splitting faces. Inhereteing thise nodes will not split faces.
+   *
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,const BitRefLevel &inheret_nodes_from_bit_level,
+    const EntityHandle meshset,const BitRefLevel &bit,
+    const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
 
@@ -1175,6 +1249,8 @@ struct FieldInterface {
     virtual PetscErrorCode operator()() = 0;
     virtual PetscErrorCode postProcess() = 0;
     //
+    const RefMoFEMEntity_multiIndex *refinedMoFemEntities;
+    const RefMoFEMElement_multiIndex *refinedMoFemElements;
     const MoFEMProblem *problem_ptr;
     const MoFEMField_multiIndex *moabfields;
     const MoFEMEntity_multiIndex *ents_moabfield;
@@ -1561,6 +1637,44 @@ struct FieldInterface {
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
     DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
       IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
+
+  /** 
+    * \brief get field data from entity and field
+    * 
+    * this funciont is not recommended to be used in finite elemeny implementation
+    *
+    */
+  template <typename DIT>
+  PetscErrorCode get_FielData(const string& name,const EntityHandle *ent,const int num_ents,DIT dit,int *count = NULL) {
+    PetscFunctionBegin;
+    if(count!=NULL) *count = 0;
+    for(int nn = 0;nn<num_ents;nn++) {
+      for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,ent[nn],it)) {
+	*(dit++) = it->get_FieldData();
+	if(count!=NULL) (*count)++;
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  /** 
+    * \brief get field data from entity and field
+    * 
+    * this funciont is not recommended to be used in finite elemeny implementation
+    *
+    */
+  template <typename DIT>
+  PetscErrorCode get_FielData(const string& name,const Range &ents,DIT dit,int *count = NULL) {
+    PetscFunctionBegin;
+    if(count!=NULL) *count = 0;
+    for(Range::const_iterator eit = ents.begin();eit!=ents.end();eit++) {
+      for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,*eit,it)) {
+	*(dit++) = it->get_FieldData();
+	if(count!=NULL) (*count)++;
+      }
+    }
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \brief get begin iterator of filed dofs of given name and ent type (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)

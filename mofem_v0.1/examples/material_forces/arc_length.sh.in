@@ -21,8 +21,13 @@ while test $# -gt 0; do
 			echo "-i. --its_d=DESIRED_NUMBER_OF_ITS"
 			echo "-s, --spit_iter=NB_SPLIT"
 			echo "--pc_factor_mat_solver_package=[superlu_dist,mumps]"
+			echo "--showme"
                         exit 0
                         ;;
+		--showme) 
+			export SHOWME=1
+			shift
+			;;
                 -f)
                         shift
                         if test $# -gt 0; then
@@ -195,8 +200,10 @@ if [ -z ${DIR_NAME+x} ]; then
   export DIR_NAME=arc_length_"$DIR_PREFIX"_"$DIR_SURFIX"
 fi
 
-if [ ! -d $DIR_NAME ]; then
-  mkdir $DIR_NAME
+if [ -z ${SHOWME+x} ]; then
+  if [ ! -d $DIR_NAME ]; then
+    mkdir $DIR_NAME
+  fi
 fi
 
 if [ -z ${NB_PROC+x} ]; then 
@@ -230,13 +237,17 @@ fi
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MPI_RUN@ -np $NB_PROC"
 
-cp $FILE $DIR_NAME/
-cd $DIR_NAME
+if [ -z ${SHOWME+x} ]; then
+  cp $FILE $DIR_NAME/
+  cd $DIR_NAME
+fi
 
-echo "Line command ..." | tee log
-echo $0 $ARGS | tee -a log
-echo | tee -a log
-echo "Satrt time: "`date` | tee -a log
+if [ -z ${SHOWME+x} ]; then
+  echo "Line command ..." | tee log
+  echo $0 $ARGS | tee -a log
+  echo | tee -a log
+  echo "Satrt time: "`date` | tee -a log
+fi
 
 COMMAND="$MPIRUN $BIN_PATH/arc_length_material_coupled \
   -my_file `basename $FILE` \
@@ -245,24 +256,38 @@ COMMAND="$MPIRUN $BIN_PATH/arc_length_material_coupled \
   -ksp_atol 1e-14 -ksp_rtol 1e-12 -ksp_max_it 500\
   -snes_max_it 25 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
   -snes_monitor -snes_converged_reason -ksp_monitor \
+  -mat_partitioning_type parmetis \
+  -mat_partitioning_parmetis_coarse_sequential \
   -my_tol $TOL -my_its_d $ITSD \
   -my_gc $GC -my_alpha2 1e-3 -my_gamma 0. \
   -my_da $DA -my_load_steps $NBSTEPS \
   -my_nb_sub_steps $NBSUBSTEPS \
-  -my_odd_face_split $NBSPLIT
+  -my_odd_face_split $NBSPLIT \
   -mat_ascii_output_large \
   -log_summary"
 
-echo | tee -a log
-echo "Start calculations ..." | tee -a log
-echo $COMMAND | tee -a log
-echo | tee -a log
+if [ ! -z ${SHOWME+x} ]; then
+  echo $COMMAND
+fi
 
-exec $COMMAND 2>&1 | tee -a log
+if [ -z ${SHOWME+x} ]; then
+  echo | tee -a log
+  echo "Start calculations ..." | tee -a log
+  echo $COMMAND | tee -a log
+  echo | tee -a log
+fi
 
-echo | tee -a log
-echo "End time: "`date` | tee -a log
+if [ -z ${SHOWME+x} ]; then
+  exec $COMMAND 2>&1 | tee -a log
+  if [ $? -ne 0 ]; then
+    exit $?
+  fi
+fi
 
+if [ -z ${SHOWME+x} ]; then
+  echo | tee -a log
+  echo "End time: "`date` | tee -a log
+fi
 
 if [ $? -ne 0 ]; then
   exit $?
