@@ -2910,6 +2910,7 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   NumeredMoFEMFiniteElement_multiIndex& numeredFiniteElements = const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
+  numeredFiniteElements.clear();
   //MoFEMFiniteElement set
   EntMoFEMFiniteElement_multiIndex::iterator miit2 = finiteElementsMoFEMEnts.begin();
   EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = finiteElementsMoFEMEnts.end();
@@ -2917,6 +2918,10 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
     if((miit2->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
     if((miit2->get_BitRefLevel()&p_miit->get_BitRefLevel())!=p_miit->get_BitRefLevel()) continue; // if entity is not problem refinment level
     NumeredMoFEMFiniteElement numered_fe(&*miit2);
+    FENumeredDofMoFEMEntity_multiIndex &rows_dofs = numered_fe.rows_dofs;
+    FENumeredDofMoFEMEntity_multiIndex &cols_dofs = numered_fe.cols_dofs;
+    rows_dofs.clear();
+    cols_dofs.clear();
     {
       NumeredDofMoFEMEntity_multiIndex_uid_view rows_view;
       //rows_view
@@ -2932,7 +2937,6 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
       NumeredMoFEMFiniteElement_change_part(max_part).operator()(numered_fe);
       if( (max_part==pcomm->rank())||(!do_skip) ) {
 	//rows element dof multiindices
-	FENumeredDofMoFEMEntity_multiIndex &rows_dofs = numered_fe.rows_dofs;
 	viit_rows = rows_view.begin();
 	for(;viit_rows!=rows_view.end();viit_rows++) {
 	  try {
@@ -2946,11 +2950,10 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
 	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
 	}
-	//cols_vies
+	//cols_views
 	NumeredDofMoFEMEntity_multiIndex_uid_view cols_view;
 	ierr = miit2->get_MoFEMFiniteElement_col_dof_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION); CHKERRQ(ierr);
 	//cols elmeny dof multiindices
-	FENumeredDofMoFEMEntity_multiIndex &cols_dofs = numered_fe.cols_dofs;
 	NumeredDofMoFEMEntity_multiIndex_uid_view::iterator viit_cols;;
 	viit_cols = cols_view.begin();
 	for(;viit_cols!=cols_view.end();viit_cols++) {
@@ -4742,7 +4745,8 @@ PetscErrorCode FieldCore::remove_ents_from_field_by_bit_ref(const BitRefLevel &b
     }
     rval = moab.remove_entities(meshset,ents_to_remove); CHKERR_PETSC(rval);
     if(verb>0) {
-      PetscPrintf(PETSC_COMM_WORLD,"number of removed entities = %u from field %s\n",ents_to_remove.size(),f_it->get_name().c_str());
+      PetscPrintf(PETSC_COMM_WORLD,
+	"number of removed entities = %u from field %s\n",ents_to_remove.size(),f_it->get_name().c_str());
       if(verb>1) {
 	int num_entities;
 	rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
@@ -4810,7 +4814,9 @@ PetscErrorCode FieldCore::remove_ents_from_finite_element_by_bit_ref(const BitRe
     }
     rval = moab.remove_entities(meshset,ents_to_remove); CHKERR_PETSC(rval);
     if(verb>0) {
-      PetscPrintf(PETSC_COMM_WORLD,"number of removed entities = %u from finite element %s\n",ents_to_remove.size(),fe_it->get_name().c_str());
+      PetscPrintf(PETSC_COMM_WORLD,
+	"number of removed entities = %u from finite element %s\n",
+	ents_to_remove.size(),fe_it->get_name().c_str());
     }
   }
   PetscFunctionReturn(0);
