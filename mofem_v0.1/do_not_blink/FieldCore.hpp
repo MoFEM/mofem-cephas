@@ -583,18 +583,17 @@ PetscErrorCode FieldCore::partition_create_Mat(
 	      p_miit->numered_dofs_cols,dofs_col_view,Interface::UNION); CHKERRQ(ierr);
 	  }
 	}
-	dofs_vec.resize(dofs_col_view.size());
-	vector<DofIdx>::iterator vvit = dofs_vec.begin();
+	dofs_vec.resize(0);
 	NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cvit;
 	cvit = dofs_col_view.begin();
-	for(;cvit!=dofs_col_view.end();cvit++,vvit++) {
+	for(;cvit!=dofs_col_view.end();cvit++) {
 	  int idx = Tag::get_index(*cvit);
 	  if(no_diagonals) {
 	    if(idx == Tag::get_index(miit_row)) {
 	      continue;
 	    }
 	  }
-	  *vvit = idx;
+	  dofs_vec.push_back(idx);
 	}
 	sort(dofs_vec.begin(),dofs_vec.end());
       }
