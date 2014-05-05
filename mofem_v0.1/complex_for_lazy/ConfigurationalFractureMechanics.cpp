@@ -1550,6 +1550,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   VecDestroy(&D);
   VecDestroy(&dD);
   VecDestroy(&QTdD);
+  MatDestroy(&Q);
 
   PetscFunctionReturn(0);
 }
