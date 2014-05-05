@@ -3808,6 +3808,8 @@ PetscErrorCode FieldCore::MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,
   if(verb==-1) verb = verbose;
   PetscInt *_i,*_j;
   ierr = partition_create_Mat<Part_mi_tag>(name,Aij,MATMPIAIJ,&_i,&_j,PETSC_NULL,false,verb); CHKERRQ(ierr);
+  ierr = PetscFree(_i); CHKERRQ(ierr);
+  ierr = PetscFree(_j); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb) {
