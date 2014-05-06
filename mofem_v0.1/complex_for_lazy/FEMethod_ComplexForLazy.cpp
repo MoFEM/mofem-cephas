@@ -343,9 +343,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	}
       }
       //data voolume
-      FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit,hi_viit;
-      viit = data_multiIndex->get<Composite_mi_tag2>().lower_bound(boost::make_tuple(field_name,MBTET));
-      hi_viit = data_multiIndex->get<Composite_mi_tag2>().upper_bound(boost::make_tuple(field_name,MBTET));
+      FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator viit,hi_viit;
+      viit = data_multiIndex->get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,MBTET));
+      hi_viit = data_multiIndex->get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,MBTET));
       if(viit!=hi_viit) {
 	order_volume = viit->get_max_order();
 	dofs_volume.resize(distance(viit,hi_viit));
@@ -576,9 +576,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	KfaceH_data[ff].resize(dofs_x_face_data[ff].size(),12);
 	KfaceH[ff] = &*KfaceH_data[ff].data().begin();
       }
-      FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator viit;
-      viit = data_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(spatial_field_name,MBTET));
-      if(viit==data_multiIndex->get<Composite_mi_tag2>().end()) {
+      FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator viit;
+      viit = data_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(spatial_field_name,MBTET));
+      if(viit==data_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) {
 	order_x_volume = 0;
       } else {
 	order_x_volume = viit->get_max_order();

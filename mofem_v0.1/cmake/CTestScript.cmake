@@ -80,6 +80,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   projection_from_10node_tet_atom_compare
   cubit_meshset_loop_test_compare
   field_functions_test_compare
+  forces_and_surces_getting_orders_indices_test
   #this stuff is too big
   SimpleElasticityTest
   SimpleInterfaceTest

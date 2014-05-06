@@ -109,6 +109,10 @@ struct FieldInterface {
     */
   virtual PetscErrorCode delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId) = 0;
 
+  /** 
+    * \brief get cubit meshset
+    */
+  virtual PetscErrorCode get_Cubit_msId(const int msId,const Cubit_BC_bitset CubitBCType,const CubitMeshSets **cubit_meshset_ptr) = 0;
 
   /** 
     * \brief get entities from CUBIT/meshset of a particular entity dimension \n
@@ -1254,9 +1258,13 @@ struct FieldInterface {
     //
     PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
     PetscErrorCode set_fields(const MoFEMField_multiIndex *_moabfields);
-    PetscErrorCode set_ents_multiIndex(const MoFEMEntity_multiIndex *_ents_moabfield);
+    PetscErrorCode set_ents_multiIndex(
+      const  RefMoFEMEntity_multiIndex *_refinedMoFemEntities,
+      const MoFEMEntity_multiIndex *_ents_moabfield);
     PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
-    PetscErrorCode set_fes_multiIndex(const MoFEMFiniteElement_multiIndex *_finite_elements);
+    PetscErrorCode set_fes_multiIndex(
+      const RefMoFEMElement_multiIndex *_refinedMoFemElements,
+      const MoFEMFiniteElement_multiIndex *_finite_elements);
     PetscErrorCode set_fes_data_multiIndex(const EntMoFEMFiniteElement_multiIndex *_finite_elements_moabents);
     PetscErrorCode set_adjacencies(const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *_fem_adjacencies);
     //
@@ -1375,19 +1383,19 @@ struct FieldInterface {
 
       ///loop over all dofs which are on a particular FE row, field and entity type
     #define _IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
-    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->row_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->row_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
       ///loop over all dofs which are on a particular FE column, field and entity type
     #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
-    FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->col_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->col_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
+    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
       ///loop over all dofs which are on a particular FE data, field and entity type
     #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
-    FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator \
-      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->data_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); \
-      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type>(FE->data_multiIndex->get<Composite_mi_tag2>(),NAME,TYPE); IT++
+    FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
+      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
 
     template<class MULTIINDEX>
     typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name) const {

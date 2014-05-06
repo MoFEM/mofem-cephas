@@ -93,6 +93,7 @@ struct FieldCore: public FieldInterface {
   bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType);
   PetscErrorCode add_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId);
   PetscErrorCode delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId);
+  PetscErrorCode get_Cubit_msId(const int msId,const Cubit_BC_bitset CubitBCType,const CubitMeshSets **cubit_meshset_ptr);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, const int dimension,Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false);

@@ -67,6 +67,9 @@ target_link_libraries(loops_atom_test mofem_Field ${PROJECT_LIBS})
 add_executable(field_functions_atom_test field_functions_atom_test.cpp)
 target_link_libraries(field_functions_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(forces_and_surces_getting_orders_indices_atom_test forces_and_surces_getting_orders_indices_atom_test.cpp)
+target_link_libraries(forces_and_surces_getting_orders_indices_atom_test mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)
@@ -229,4 +232,11 @@ add_test(field_functions_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field
 add_test(field_functions_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/tri_axial_cube_atom.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/tri_axial_cube_atom.cub.txt)
+
+#Field Functions Test
+add_test(forces_and_surces_getting_orders_indices_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_surces_getting_orders_indices_atom_test -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_surces_getting_orders_indices_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_surces_getting_orders_indices_atom_test.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_surces_getting_orders_indices_atom_test.txt)
+
 

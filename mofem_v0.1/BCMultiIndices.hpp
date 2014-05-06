@@ -195,7 +195,7 @@ struct Mat_Thermal: public generic_attribute_data {
 };
 
 /*! \struct Body forces block
-*  \brief Thermal material data structure
+*  \brief Body farce data structure
 */
 struct Block_BodyForces: public generic_attribute_data {
   struct __attribute__ ((packed)) _data_{
@@ -214,7 +214,7 @@ struct Block_BodyForces: public generic_attribute_data {
         
   const Cubit_BC_bitset type;
   const unsigned int min_number_of_atributes;
-  Block_BodyForces(): type(Block_BodyForcesSet),min_number_of_atributes(5) {};
+  Block_BodyForces(): type(Block_BodyForcesSet),min_number_of_atributes(4) {};
         
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {
     PetscFunctionBegin;

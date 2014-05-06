@@ -39,6 +39,9 @@ PetscErrorCode print_MoFem_verison() {
 FieldCore::FieldCore(Interface& _moab,int _verbose): 
   moab(_moab),verbose(_verbose) {
 
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
   const EntityHandle root_meshset = moab.get_root_set();
   if(verbose>0) {
     print_MoFem_verison();
@@ -812,6 +815,9 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TETs(const EntityHandle meshset,c
   if(verb==-1) verb = verbose;
   Range tets;
   rval = moab.get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+  if(verb>3) {
+    PetscPrintf(PETSC_COMM_WORLD,"nb. of tets %d\n",tets.size());
+  }
   ierr = add_ents_to_field_by_TETs(tets,id,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -3705,6 +3711,17 @@ PetscErrorCode FieldCore::delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,co
   rval = moab.delete_entities(&meshset,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::get_Cubit_msId(const int msId,const Cubit_BC_bitset CubitBCType,const CubitMeshSets **cubit_meshset_ptr) {
+  PetscFunctionBegin;
+  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+    miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
+  if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
+    *cubit_meshset_ptr = &*miit;
+  } else {
+    SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType,
   const int dimension,Range &entities,const bool recursive) {
   PetscFunctionBegin;
@@ -4205,9 +4222,9 @@ PetscErrorCode FieldCore::problem_basic_method_preProcess(const string &problem_
   typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
   ierr = method.set_problem(&*p_miit); CHKERRQ(ierr);
   ierr = method.set_fields(&moabFields); CHKERRQ(ierr);
-  ierr = method.set_ents_multiIndex(&entsMoabField); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&refinedMoFemEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.set_dofs_multiIndex(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.set_fes_multiIndex(&finiteElements); CHKERRQ(ierr);
+  ierr = method.set_fes_multiIndex(&refinedMoFemElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.set_fes_data_multiIndex(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.set_adjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
@@ -4227,9 +4244,9 @@ PetscErrorCode FieldCore::problem_basic_method_postProcess(const string &problem
   typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
   ierr = method.set_problem(&*p_miit); CHKERRQ(ierr);
   ierr = method.set_fields(&moabFields); CHKERRQ(ierr);
-  ierr = method.set_ents_multiIndex(&entsMoabField); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&refinedMoFemEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.set_dofs_multiIndex(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.set_fes_multiIndex(&finiteElements); CHKERRQ(ierr);
+  ierr = method.set_fes_multiIndex(&refinedMoFemElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.set_fes_data_multiIndex(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.set_adjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   PetscLogEventBegin(USER_EVENT_postProcess,0,0,0,0);
@@ -4257,13 +4274,11 @@ PetscErrorCode FieldCore::loop_finite_elements(
   // finite element
   typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
   method.fe_name = fe_name;
-  method.refinedMoFemEntities = &refinedMoFemEntities;
-  method.refinedMoFemElements = &refinedMoFemElements;
   ierr = method.set_problem(&*p_miit); CHKERRQ(ierr);
   ierr = method.set_fields(&moabFields); CHKERRQ(ierr);
-  ierr = method.set_ents_multiIndex(&entsMoabField); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&refinedMoFemEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.set_dofs_multiIndex(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.set_fes_multiIndex(&finiteElements); CHKERRQ(ierr);
+  ierr = method.set_fes_multiIndex(&refinedMoFemElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.set_fes_data_multiIndex(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.set_adjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
@@ -4304,9 +4319,9 @@ PetscErrorCode FieldCore::loop_dofs(const string &problem_name,const string &fie
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem not in database %s",problem_name.c_str());
   ierr = method.set_fields(&moabFields); CHKERRQ(ierr);
-  ierr = method.set_ents_multiIndex(&entsMoabField); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&refinedMoFemEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.set_dofs_multiIndex(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.set_fes_multiIndex(&finiteElements); CHKERRQ(ierr);
+  ierr = method.set_fes_multiIndex(&refinedMoFemElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.set_fes_data_multiIndex(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.set_adjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   dofs_by_name *dofs;
@@ -4341,9 +4356,9 @@ PetscErrorCode FieldCore::loop_dofs(const string &field_name,EntMethod &method,i
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = method.set_fields(&moabFields); CHKERRQ(ierr);
-  ierr = method.set_ents_multiIndex(&entsMoabField); CHKERRQ(ierr);
+  ierr = method.set_ents_multiIndex(&refinedMoFemEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.set_dofs_multiIndex(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.set_fes_multiIndex(&finiteElements); CHKERRQ(ierr);
+  ierr = method.set_fes_multiIndex(&refinedMoFemElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.set_fes_data_multiIndex(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.set_adjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator miit,hi_miit;

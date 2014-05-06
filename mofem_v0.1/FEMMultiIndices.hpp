@@ -245,12 +245,6 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
   typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
   typedef interface_MoFEMFiniteElement<MoFEMFiniteElement> interface_type_MoFEMFiniteElement;
-  /*const UId* tag_row_uids_data;
-  int tag_row_uids_size;
-  const UId* tag_col_uids_data;
-  int tag_col_uids_size;
-  const UId* tag_data_uids_data;
-  int tag_data_uids_size;*/
   DofMoFEMEntity_multiIndex_uid_view row_dof_view;
   DofMoFEMEntity_multiIndex_uid_view col_dof_view;
   DofMoFEMEntity_multiIndex_uid_view data_dof_view;
@@ -268,6 +262,7 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   inline DofIdx get_nb_dofs_row() const { return row_dof_view.size(); }
   inline DofIdx get_nb_dofs_col() const { return col_dof_view.size(); }
   inline DofIdx get_nb_dofs_data() const { return data_dof_view.size(); }
+  inline const FEDofMoFEMEntity_multiIndex& get_data_dofs() const { return data_dofs; };
   friend ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e);
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
@@ -311,6 +306,7 @@ struct interface_EntMoFEMFiniteElement:public interface_MoFEMFiniteElement<T>,in
   inline EntityID get_ent_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ent_id(); }
   inline EntityType get_ent_type() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ent_type(); }
   //
+  inline const FEDofMoFEMEntity_multiIndex& get_data_dofs() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_data_dofs(); };
   inline DofIdx get_nb_dofs_row() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_row(); }
   inline DofIdx get_nb_dofs_col() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_col(); }
   inline DofIdx get_nb_dofs_data() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_data(); }
@@ -330,6 +326,8 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
   FENumeredDofMoFEMEntity_multiIndex cols_dofs;
   NumeredMoFEMFiniteElement(const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr): interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement>(EntMoFEMFiniteElement_ptr),part(-1) {};
   inline unsigned int get_part() const { return part; };
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return rows_dofs; };
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return cols_dofs; };
   friend ostream& operator<<(ostream& os,const NumeredMoFEMFiniteElement& e) {
     os << "part " << e.part << " " << *(e.fe_ptr);
     return os;
@@ -342,6 +340,8 @@ struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteEleme
   const T *ptr;
   interface_NumeredMoFEMFiniteElement(const T *_ptr): interface_EntMoFEMFiniteElement<T>(_ptr) {};
   inline unsigned int get_part() const { return ptr->get_part(); }
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return ptr->get_rows_dofs(); };
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return ptr->get_cols_dofs(); };
 };
 
 /**

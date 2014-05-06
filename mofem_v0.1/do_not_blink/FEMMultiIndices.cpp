@@ -83,6 +83,11 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
   int side_number,sense,offset;
   rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
   if(side_number==-1) {
+
+    if(moab.type_from_handle(ent)==MBVERTEX) {
+      THROW_AT_LINE("Huston we have problem, vertex (specified by ent) is not part of prism, that is impossible (top tip: check your prisms)");
+    } 
+
     //get prism connectivity
     int num_nodes;
     const EntityHandle* conn;
