@@ -126,10 +126,10 @@ int main(int argc, char *argv[]) {
 		int ll = 1;
         
 		//*****INTERFACE INSERTION******
-//        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,cit)) {
-        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
-//            std::size_t interfaceFound=cit->get_Cubit_name().find("interface");
-//            if (interfaceFound==std::string::npos) continue;
+        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,cit)) {
+//        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
+            std::size_t interfaceFound=cit->get_Cubit_name().find("interface");
+            if (interfaceFound==std::string::npos) continue;
             
             ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
             EntityHandle cubit_meshset = cit->get_meshset();
