@@ -594,9 +594,18 @@ PetscErrorCode FieldCore::partition_create_Mat(
 	    }
 	  }
 	  dofs_vec.push_back(idx);
+	  if(idx<0) {
+	    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+	  }
+	  if(idx>=p_miit->get_nb_dofs_col()) {
+	    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+	  }
 	}
 	sort(dofs_vec.begin(),dofs_vec.end());
       }
+      //if(dofs_vec.size()==0) {
+	//SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"zero dofs at row %d",Tag::get_index(miit_row));
+      //}
       j.insert(j.end(),dofs_vec.begin(),dofs_vec.end());
     }
     //build adj matrix
