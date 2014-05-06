@@ -1157,7 +1157,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_partition_problems(F
   PetscErrorCode ierr;
 
   //partition
-  ierr = mField.partition_problem("CCT_ALL_MATRIX"); CHKERRQ(ierr);
+  ierr = mField.simple_partition_problem("CCT_ALL_MATRIX",0); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   //partition

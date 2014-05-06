@@ -32,5 +32,3 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/potential_flow")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/thermal_conductivity")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_cube")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/Trans_RVE")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/new_clamped_wire_interface")
-

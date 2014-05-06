@@ -471,7 +471,7 @@ struct FieldCore: public FieldInterface {
 
   //templates
   template<typename Tag> 
-  PetscErrorCode partition_create_Mat(
+  PetscErrorCode create_Mat(
     const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,const bool no_diagonals = true,int verb = -1);
   
   //low level finite element data
@@ -493,7 +493,7 @@ struct FieldCore: public FieldInterface {
 #endif
 
 template<typename Tag> 
-PetscErrorCode FieldCore::partition_create_Mat(
+PetscErrorCode FieldCore::create_Mat(
     const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
     const bool no_diagonals,int verb) {
     PetscFunctionBegin;
@@ -532,7 +532,7 @@ PetscErrorCode FieldCore::partition_create_Mat(
       ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
       ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
       if(verb > 0) {
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tpartition_create_Mat: row lower %d row upper %d\n",rstart,rend);
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tcreate_Mat: row lower %d row upper %d\n",rstart,rend);
 	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       }
       miit_row = dofs_row_by_idx.lower_bound(rstart);
@@ -588,16 +588,31 @@ PetscErrorCode FieldCore::partition_create_Mat(
 	cvit = dofs_col_view.begin();
 	for(;cvit!=dofs_col_view.end();cvit++) {
 	  int idx = Tag::get_index(*cvit);
-	  if(no_diagonals) {
-	    if(idx == Tag::get_index(miit_row)) {
-	      continue;
-	    }
-	  }
 	  dofs_vec.push_back(idx);
+	  if(idx<0) {
+	    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+	  }
+	  if(idx>=p_miit->get_nb_dofs_col()) {
+	    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+	  }
 	}
 	sort(dofs_vec.begin(),dofs_vec.end());
       }
-      j.insert(j.end(),dofs_vec.begin(),dofs_vec.end());
+      //if(dofs_vec.size()==0) {
+	//SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"zero dofs at row %d",Tag::get_index(miit_row));
+      //}
+      j.reserve(j.size()+dofs_vec.size());
+      vector<DofIdx>::iterator diit,hi_diit;
+      diit = dofs_vec.begin();
+      hi_diit = dofs_vec.end();
+      for(;diit!=hi_diit;diit++) {
+	if(no_diagonals) {
+	  if(*diit == Tag::get_index(miit_row)) {
+	    continue;
+	  }
+	}
+	j.push_back(*diit);
+      }
     }
     //build adj matrix
     i.push_back(j.size());

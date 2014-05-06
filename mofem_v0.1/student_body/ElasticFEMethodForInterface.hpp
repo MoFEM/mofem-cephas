@@ -255,7 +255,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     PetscFunctionBegin;
     ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
 
-    cout<<" hi from ElasticFEMethod Interface "<<endl;
+//    cout<<" hi from ElasticFEMethod Interface "<<endl;
     ierr = RhsAndLhs(); CHKERRQ(ierr);
 
     ierr = OpStudentEnd(); CHKERRQ(ierr);

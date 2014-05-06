@@ -711,7 +711,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 	Range eit_faces;
 	rval = mField.get_moab().get_adjacencies(&*eit,1,2,false,eit_faces); CHKERR_PETSC(rval);
     	eit_faces = intersect(eit_faces,crack_front_tets_faces);
-	int T_test = 2;
+	unsigned int T_test = 2;
 	if(mesh_level_tets_skin_faces_edges.find(*eit)!=mesh_level_tets_skin_faces_edges.end()) {
 	  T_test = 1;
 	} 
@@ -1051,18 +1051,13 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   BitRefLevel inheret_ents_from_level,inheret_ents_from_level_mask;
   if(!meshIntefaceBitLevels.empty()) {
     inheret_ents_from_level.set(meshIntefaceBitLevels.back());
-    {
-      int *p = meshIntefaceBitLevels.begin();
-      for(;p!=meshIntefaceBitLevels.end();p++) {
-	inheret_ents_from_level_mask.set(*p);
-      }
-    }
-    inheret_ents_from_level_mask.set(BITREFLEVEL_SIZE-1);
+    inheret_ents_from_level.set(BITREFLEVEL_SIZE-1);
   }
+  inheret_ents_from_level_mask.set();
 
   Range interface_elements;
   ierr = mField.get_entities_by_type_and_ref_level(
-    inheret_ents_from_level_mask,BitRefLevel().set(),MBTET,interface_elements); CHKERRQ(ierr);
+    inheret_ents_from_level,inheret_ents_from_level_mask,MBTET,interface_elements); CHKERRQ(ierr);
   ierr = mField.seed_finite_elements(interface_elements); CHKERRQ(ierr);
 
   EntityHandle bit_meshset;
@@ -1087,8 +1082,9 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
     BitRefLevel last_ref = BitRefLevel().set(last_ref_bit);
   
     ierr = mField.get_msId_3dENTS_split_sides(
-      bit_meshset,last_ref,inheret_ents_from_level,
-      inheret_ents_from_level_mask,meshset_interface,false,true); CHKERRQ(ierr);
+      bit_meshset,last_ref,
+      inheret_ents_from_level,inheret_ents_from_level_mask,
+      meshset_interface,false,true); CHKERRQ(ierr);
 
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
@@ -1752,8 +1748,14 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   ierr = mField.remove_ents_from_finite_element("C_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("CTC_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("dCT_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_finite_element("C_CRACK_SURFACE_ELEM",0,MBTRI); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_finite_element("CTC_CRACK_SURFACE_ELEM",0,MBTRI); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_finite_element("CandCT_CRACK_SURFACE_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACK_TANGENT_CONSTRAIN",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_field("LAMBDA_CRACK_TANGENT_CONSTRAIN",0,MBVERTEX); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_field("LAMBDA_CRACK_SURFACE",0,MBVERTEX); CHKERRQ(ierr);
 
   //BitRefLevel maskPreserv;
   //ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
@@ -1762,6 +1764,7 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
  
   BitRefLevel not_split_face_ref_level;
   not_split_face_ref_level.set(face_splitting.meshIntefaceBitLevels.back());
+  not_split_face_ref_level.set(BITREFLEVEL_SIZE-1);
   not_split_face_ref_level.flip();
   ierr = mField.remove_ents_from_finite_element_by_bit_ref(not_split_face_ref_level,not_split_face_ref_level,1); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field_by_bit_ref(not_split_face_ref_level,not_split_face_ref_level,1); CHKERRQ(ierr);
