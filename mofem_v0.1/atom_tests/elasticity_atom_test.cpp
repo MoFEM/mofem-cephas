@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
   };
 
 
-  CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
+  CubitDisplacementDirihletBC_ZerosRowsColumns myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   //Assemble F and Aij
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
 //  }
 
   //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-//  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(moab,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+//  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
 //  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
 
 //  PetscSynchronizedFlush(PETSC_COMM_WORLD);

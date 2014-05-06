@@ -67,6 +67,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   mesh_smoothing_atom_test_compare
   mesh_insert_interface_atom_test_compare
   mesh_insert_T_interface_atom_test_compare
+  mesh_insert_T_4seasons_interface_atom_test_compare
   mesh_refine_atom_test_compare
   nonlinear_elasticity_atom_pressure_compare
   nonlinear_elasticity_atom_sheer_force_compare

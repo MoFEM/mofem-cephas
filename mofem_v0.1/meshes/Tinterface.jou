@@ -10,10 +10,9 @@ webcut volume 1 with plane zplane imprint merge
 imprint tolerant volume all
 merge volume all
 
-create cfd_bc name "cfd_bc1" interface on surface 24  
-create cfd_bc name "cfd_bc2" interface on surface 33 35
-create cfd_bc name "cfd_bc4" interface on surface 32 36
-create cfd_bc name "cfd_bc5" interface on surface 29 
+create cfd_bc name "cfd_bc1" interface on surface 24 33 35 
+create cfd_bc name "cfd_bc2" interface on surface 32 36
+create cfd_bc name "cfd_bc3" interface on surface 29 
 
 block 1 volume 1  
 block 2 volume 2 

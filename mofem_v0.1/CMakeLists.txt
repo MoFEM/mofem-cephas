@@ -38,7 +38,7 @@ project(MoFEM C Fortran CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
-set(MoFEM_VERSION_BUILD 2)
+set(MoFEM_VERSION_BUILD 3)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
@@ -91,6 +91,7 @@ if(TAO_LIBRARY)
 endif(TAO_LIBRARY)
 
 include_directories("${PROJECT_SOURCE_DIR}")
+include_directories("${PROJECT_SOURCE_DIR}/face_splitting")
 include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
 include_directories("${PROJECT_SOURCE_DIR}/student_body")
 include_directories("${PROJECT_SOURCE_DIR}/projections")
@@ -105,8 +106,14 @@ add_library(mofem_Field
   third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
   do_not_blink/CoreDataStructures.cpp
+  do_not_blink/EntsMultiIndices.cpp
+  do_not_blink/DofsMultiIndices.cpp
+  do_not_blink/FEMMultiIndices.cpp
+  do_not_blink/ProblemsMultiIndices.cpp
+  do_not_blink/BCMultiIndices.cpp
   do_not_blink/TETRefine.cpp
   do_not_blink/FieldCore.cpp
+  do_not_blink/FieldCore_MeshRefinment.cpp
   FEM.c
   H1.c
   Hdiv.c
@@ -126,6 +133,10 @@ add_library(mofem_complex_for_lazy
   complex_for_lazy/FEMethod_ComplexForLazy.cpp
   complex_for_lazy/FEMethod_SurfaceConstrains.cpp
   complex_for_lazy/ConfigurationalFractureMechanics.cpp
+)
+
+add_library(mofem_face_splitting
+  face_splitting/FaceSplittingTool.cpp
 )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")

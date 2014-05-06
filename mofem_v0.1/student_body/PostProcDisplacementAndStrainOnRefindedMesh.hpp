@@ -38,10 +38,11 @@ struct PostProcOnRefMesh_Base {
     int max_level;
     vector<EntityHandle> meshset_level;
     bool init_ref;
+    bool do_broadcast;
 
     PostProcOnRefMesh_Base(): 
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
-      max_level(0),init_ref(false) {
+      max_level(0),init_ref(false),do_broadcast(true) {
       PetscBool flg = PETSC_TRUE;
       PetscOptionsGetInt(PETSC_NULL,"-my_max_pot_proc_ref_level",&max_level,&flg);
       meshset_level.resize(max_level+1);
@@ -76,12 +77,12 @@ struct PostProcOnRefMesh_Base {
       for(int ll = 0;ll<max_level;ll++) {
 	PetscPrintf(PETSC_COMM_WORLD,"Refine Level %d\n",ll);
 	rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[ll]); CHKERR_PETSC(rval);
-	ierr = mField_ref.refine_get_ents(BitRefLevel().set(ll),BitRefLevel().set(),meshset_level[ll]); CHKERRQ(ierr);
+	ierr = mField_ref.get_entities_by_ref_level(BitRefLevel().set(ll),BitRefLevel().set(),meshset_level[ll]); CHKERRQ(ierr);
 	ierr = mField_ref.add_verices_in_the_middel_of_edges(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
 	ierr = mField_ref.refine_TET(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
       }
       rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[max_level]); CHKERR_PETSC(rval);
-      ierr = mField_ref.refine_get_ents(BitRefLevel().set(max_level),BitRefLevel().set(),meshset_level[max_level]); CHKERRQ(ierr);
+      ierr = mField_ref.get_entities_by_ref_level(BitRefLevel().set(max_level),BitRefLevel().set(),meshset_level[max_level]); CHKERRQ(ierr);
 
       std::vector<double> ref_coords;
       rval = moab_ref.get_vertex_coordinates(ref_coords); CHKERR_PETSC(rval);
@@ -94,13 +95,15 @@ struct PostProcOnRefMesh_Base {
 
     PetscErrorCode do_postproc() {
       PetscFunctionBegin;
-      ErrorCode rval;
       ParallelComm* pcomm_post_proc = ParallelComm::get_pcomm(&moab_post_proc,MYPCOMM_INDEX);
       if(pcomm_post_proc == NULL) pcomm_post_proc =  new ParallelComm(&moab_post_proc,PETSC_COMM_WORLD);
-      for(unsigned int rr = 1; rr<pcomm_post_proc->size();rr++) {
+      if(do_broadcast) {
+	ErrorCode rval;
 	Range tets;
 	rval = moab_post_proc.get_entities_by_type(0,MBTET,tets); CHKERR_PETSC(rval);
-	rval = pcomm_post_proc->broadcast_entities(rr,tets); CHKERR(rval);
+	for(unsigned int rr = 0; rr<pcomm_post_proc->size();rr++) {
+	  rval = pcomm_post_proc->broadcast_entities(rr,tets); CHKERR(rval);
+	}
       }
       PetscFunctionReturn(0);
     }
@@ -280,13 +283,17 @@ struct PostProcFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh
 
 struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinOnRefMesh {
 
+	FieldInterface& mField;
+
   double lambda,mu;
 
   ublas::matrix<double> D,D_lambda,D_mu;
 
   Tag th_stress,th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3;
+	bool propeties_from_BlockSet_Mat_ElasticSet;
+	
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(
-    Interface& _moab,string _field_name,double _lambda,double _mu): PostProcDisplacemenysAndStarinOnRefMesh(_moab,_field_name),lambda(_lambda),mu(_mu) {
+    FieldInterface& _mField, string _field_name,double _lambda,double _mu): PostProcDisplacemenysAndStarinOnRefMesh(_mField.get_moab(),_field_name),mField(_mField),lambda(_lambda),mu(_mu) {
     double def_VAL2[3] = { 0.0, 0.0, 0.0 };
     rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
@@ -306,11 +313,63 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
     for(int rr = 0;rr<6;rr++) {
       D_mu(rr,rr) = rr<3 ? 2 : 1;
     }
-    D = lambda*D_lambda + mu*D_mu;
+//    D = lambda*D_lambda + mu*D_mu;
+		
+
+		propeties_from_BlockSet_Mat_ElasticSet = false;
+		for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+			propeties_from_BlockSet_Mat_ElasticSet = true;
+		}
 
 
   }
 
+	virtual PetscErrorCode calulateD(double _lambda,double _mu) {
+		PetscFunctionBegin;
+		
+		D = _lambda*D_lambda + _mu*D_mu;
+		//cerr << D_lambda << endl;
+		//cerr << D_mu << endl;
+		//cerr << D << endl;
+		
+		PetscFunctionReturn(0);
+	}
+	
+	PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
+		PetscFunctionBegin;
+		
+		*_lambda = lambda;
+		*_mu = mu;
+		
+		
+		if(propeties_from_BlockSet_Mat_ElasticSet) {
+			EntityHandle ent = fe_ptr->get_ent();
+			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+				
+				Mat_Elastic mydata;
+				ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+				
+				Range meshsets;
+				rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+				meshsets.insert(it->meshset);
+				for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+					if( moab.contains_entities(*mit,&ent,1) ) {
+						*_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
+						*_mu = MU(mydata.data.Young,mydata.data.Poisson);
+						PetscFunctionReturn(0);
+					}
+				}
+				
+		}
+			
+		SETERRQ(PETSC_COMM_SELF,1,"Element is not in elestic block, however you run linear elastic analysis with that element\n"
+							"top tip: check if you update block sets after mesh refinments or interface insertion");
+			
+		}
+		
+		PetscFunctionReturn(0);
+	}
+	
   vector< ublas::matrix<FieldData> > invH;
   vector< FieldData > detH;
 
@@ -319,6 +378,11 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
       //Loop over elements
       ierr = do_operator(); CHKERRQ(ierr);
+		
+			//Calculated D Matrix
+			double _lambda,_mu;
+			ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
+			ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
 
       //Higher order approximation of geometry
       ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);

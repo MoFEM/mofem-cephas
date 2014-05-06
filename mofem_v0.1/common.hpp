@@ -168,16 +168,22 @@ typedef PetscInt DofIdx;
 typedef int FEIdx;
 typedef int EntIdx;
 typedef int EntPart;
-//typedef uint128_t UId;
-typedef checked_uint128_t UId;
-typedef bitset<6> BitRefEdges;
-typedef bitset<128/*max number of refinments*/> BitRefLevel;
-typedef bitset<32/*max number of fields*/> BitFieldId;
 typedef PetscScalar FieldData;
-typedef bitset<32/*max number of finite elements*/> BitFEId;
-typedef bitset<32/*max number of problems*/> BitProblemId;
 typedef short ApproximationOrder;
 typedef short ApproximationRank;
+//typedef uint128_t UId;
+typedef checked_uint128_t UId;
+
+#define BITREFEDGES_SIZE 6 /*number of edges on tets*/
+#define BITREFLEVEL_SIZE 128 /*max number of refinments*/
+#define BITFIELDID_SIZE 32 /*max number of fields*/
+#define BITFEID_SIZE 32 /*max number of finite elements*/
+#define BITPROBLEMID_SIZE 32 /*max number of problems*/
+typedef bitset<BITREFEDGES_SIZE> BitRefEdges;
+typedef bitset<BITREFLEVEL_SIZE> BitRefLevel;
+typedef bitset<BITFIELDID_SIZE> BitFieldId;
+typedef bitset<BITFEID_SIZE> BitFEId;
+typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
 
 //ENUMS
 /// approximation space 
@@ -253,6 +259,13 @@ struct hashbit
   return value.to_ulong(); } };
 
 }
+
+struct mofem_exception {
+  virtual const char* what() const throw() {
+    return "somthing goes wrong";
+  }
+};
+
 
 //MULTIINDICES
 #include "TagMultiIndices.hpp"

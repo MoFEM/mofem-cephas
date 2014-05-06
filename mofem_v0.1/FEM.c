@@ -264,11 +264,13 @@ PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const do
   }
   PetscFunctionReturn(0);
 }
-void ShapeDiffMBTET(double *diffN) {
+PetscErrorCode ShapeDiffMBTET(double *diffN) {
+  PetscFunctionBegin;
   diffN[0] = diffN_MBTET0x; diffN[1] = diffN_MBTET0y; diffN[2] = diffN_MBTET0z;
   diffN[3] = diffN_MBTET1x; diffN[4] = diffN_MBTET1y; diffN[5] = diffN_MBTET1z;
   diffN[6] = diffN_MBTET2x; diffN[7] = diffN_MBTET2y; diffN[8] = diffN_MBTET2z;
   diffN[9] = diffN_MBTET3x; diffN[10] = diffN_MBTET3y; diffN[11] = diffN_MBTET3z;
+  PetscFunctionReturn(0);
 }
 PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords) {
   PetscFunctionBegin;
@@ -435,7 +437,9 @@ PetscErrorCode InvertComplexSymmMatrix3by3(__CLPK_doublecomplex *xC) {
 PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *det_xF) {
   PetscFunctionBegin;
   __CLPK_integer IPIV[4];
-  if(lapack_zgetrf(3,3,xF,3,IPIV) != 0) SETERRQ(PETSC_COMM_SELF,1,"lapack_zgetrf(3,3,xF,3,IPIV) != 0");
+  if(lapack_zgetrf(3,3,xF,3,IPIV) != 0) {
+    SETERRQ(PETSC_COMM_SELF,1,"lapack_zgetrf(3,3,xF,3,IPIV) != 0");
+  }
   double complex det = 1;
   int i = 0,j = 0;
   for(; i<3; i++) {

@@ -55,6 +55,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     DispData.resize(1+6+2);
     };
 
+  const double *G_TRI_W;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
@@ -64,8 +65,12 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    g_NTRI.resize(3*13);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+    //g_NTRI.resize(3*28);
+    //ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
+    //G_TRI_W = G_TRI_W28;
+    g_NTRI.resize(3*37);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X37,G_TRI_Y37,37); 
+    G_TRI_W = G_TRI_W37;
 
     PetscFunctionReturn(0);
   }
@@ -140,7 +145,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 	    if(gg == 0) {
 	      K(rr,cc) = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
 	    }
-	    double w = area3*G_TRI_W13[gg];
+	    double w = area3*G_TRI_W[gg];
 	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
 	    K(rr,cc) += prod(NTD , col_Mat ); 
 	  }
@@ -317,13 +322,13 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 
       for(int ll = 0;ll<max_level;ll++) {
 	PetscPrintf(PETSC_COMM_WORLD,"Refine Level %d\n",ll);
-	rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[ll]); CHKERR_PETSC(rval);
-	ierr = mField_ref.refine_get_ents(BitRefLevel().set(ll),BitRefLevel().set(),meshset_level[ll]); CHKERRQ(ierr);
+	rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset_level[ll]); CHKERR_PETSC(rval);
+	ierr = mField_ref.get_entities_by_ref_level(BitRefLevel().set(ll),BitRefLevel().set(),meshset_level[ll]); CHKERRQ(ierr);
 	ierr = mField_ref.add_verices_in_the_middel_of_edges(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
 	ierr = mField_ref.refine_PRISM(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
       }
-      rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[max_level]); CHKERR_PETSC(rval);
-      ierr = mField_ref.refine_get_ents(BitRefLevel().set(max_level),BitRefLevel().set(),meshset_level[max_level]); CHKERRQ(ierr);
+      rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset_level[max_level]); CHKERR_PETSC(rval);
+      ierr = mField_ref.get_entities_by_ref_level(BitRefLevel().set(max_level),BitRefLevel().set(),meshset_level[max_level]); CHKERRQ(ierr);
 
       //if(pcomm->rank()==0) {
 	//moab_ref.write_file("debug.vtk","VTK",""); CHKERR_PETSC(rval);

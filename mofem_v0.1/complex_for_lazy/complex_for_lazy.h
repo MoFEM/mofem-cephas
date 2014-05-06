@@ -66,7 +66,7 @@ PetscErrorCode Calulate_Stresses_at_GaussPoint(
   int *order_T_edge,int *order_T_face,int order_T_volume,
   double *dofs_T,double *dofs_T_edge[],double *dofs_T_face[],double *dofs_T_volume,
   //
-  double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,double *themp,
+  double *F,double *Piola1Stress,double *CauhyStress,double *EshelbyStress,double *Psi,double *J,double *themp,
   int gg);
 PetscErrorCode Fint_Hh_hierarchical(
   int *order_max_edge,int *order_max_face,int order_max_volume,
@@ -220,6 +220,7 @@ PetscErrorCode KExt_HH_hierarchical(double eps,int order,int *order_edge,
 //quality
 void set_qual_ver(int ver);
 int get_qual_ver();
+PetscErrorCode get_edges_from_elem_coords(double *coords,double *coords_edges);
 PetscErrorCode quality_volume_length_F(double alpha,double *alpha2,double gamma,double *diffN,
   double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
   double *F,double *iF);

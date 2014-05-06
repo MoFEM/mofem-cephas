@@ -114,14 +114,14 @@ int main(int argc, char *argv[]) {
 
   if(step == 1) {
     Range CubitSideSets_meshsets;
-    ierr = mField.get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
 
     //ref meshset ref level 0
     ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
     EntityHandle meshset_level0;
     rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
     ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-    ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     //add finite element ARC_LENGTH meshset to refinment database (all ref bit leveles)
     ierr = mField.seed_ref_level_MESHSET(meshset_FE_ARC_LENGTH,BitRefLevel().set()); CHKERRQ(ierr);
     //finally add created meshset to the ARC_LENGTH finite element
-    ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGTH,"ARC_LENGTH"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGTH,"ARC_LENGTH",false); CHKERRQ(ierr);
 
     //set app. order
     ierr = mField.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
@@ -279,9 +279,16 @@ int main(int argc, char *argv[]) {
 			PoissonRatio=mydata.data.Poisson;
 		}
 	}
-	
+
   Range NodeSet1;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
+	EntityHandle meshset = cit->get_meshset();
+	Range nodes;
+	rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERR_THROW(rval);
+	NodeSet1.merge(nodes);
+  }
+
+  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
 
   ArcComplexForLazyElasticFEMethod MyFE(mField,&myDirihletBC,

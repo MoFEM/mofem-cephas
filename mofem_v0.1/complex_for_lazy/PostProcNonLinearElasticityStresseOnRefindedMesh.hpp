@@ -31,11 +31,12 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
   FEMethod_ComplexForLazy &fe_method;
 
-  Tag th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions;
+  Tag th_F,th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions;
   PostProcStressNonLinearElasticity(Interface& _moab,FEMethod_ComplexForLazy &_fe_method): 
     PostProcDisplacementsOnRefMesh(_moab,_fe_method.spatial_field_name),fe_method(_fe_method) {
 
     double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0 };
+    rval = moab_post_proc.tag_get_handle("F_VAL",9,MB_TYPE_DOUBLE,th_F,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("CAUCHY_STRESS_VAL",9,MB_TYPE_DOUBLE,th_cauchy_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("PIOLA1_STRESS_VAL",9,MB_TYPE_DOUBLE,th_piola_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("ESHELBY_STRESS_VAL",9,MB_TYPE_DOUBLE,th_eshelby_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
@@ -131,6 +132,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       int gg =0;
       for(;mit!=node_map.end();mit++) {
 
+	ublas::matrix< double > F(3,3);
 	ublas::matrix< double > Piola1Stress(3,3);
 	ublas::matrix< double > CauhyStress(3,3);
 	ublas::matrix< double > EshelbyStress(3,3);
@@ -149,9 +151,14 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	      _thermal_expansion,1,
 	      &g_NTET[0],&fe_method.edgeN[0],&fe_method.faceN[0],fe_method.volumeN,
 	      NULL,NULL,order_T_volume, &fe_method.dofs_temp.data()[0],NULL,NULL,NULL,
-	      &*Piola1Stress.data().begin(),&*CauhyStress.data().begin(),&*EshelbyStress.data().begin(),&Psi,&J,&themp,gg); CHKERRQ(ierr);
+	      &*F.data().begin(),
+	      &*Piola1Stress.data().begin(),
+	      &*CauhyStress.data().begin(),
+	      &*EshelbyStress.data().begin(),
+	      &Psi,&J,&themp,gg); CHKERRQ(ierr);
 	gg++;
 
+	rval = moab_post_proc.tag_set_data(th_F,&mit->second,1,&(F.data()[0])); CHKERR_PETSC(rval);
 	rval = moab_post_proc.tag_set_data(th_cauchy_stress,&mit->second,1,&(CauhyStress.data()[0])); CHKERR_PETSC(rval);
 	rval = moab_post_proc.tag_set_data(th_piola_stress,&mit->second,1,&(Piola1Stress.data()[0])); CHKERR_PETSC(rval);
 	rval = moab_post_proc.tag_set_data(th_eshelby_stress,&mit->second,1,&(EshelbyStress.data()[0])); CHKERR_PETSC(rval);
@@ -168,6 +175,11 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	  for(;vit!=data.end();vit++,mit++) {
 	    rval = moab_post_proc.tag_set_data(th_positions,&mit->second,1,&vit->data()[0]); CHKERR_PETSC(rval);
 	  }
+	}
+
+	if(get_PhysicalEquationNumber()==eberleinholzapfel1) {
+
+
 	}
 
       }

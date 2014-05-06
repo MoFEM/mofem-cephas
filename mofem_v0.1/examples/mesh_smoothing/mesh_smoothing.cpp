@@ -37,11 +37,15 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
  
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+
+  const char *option;
+  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  BARRIER_RANK_START(pcomm) 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  BARRIER_RANK_END(pcomm) 
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -52,7 +56,7 @@ int main(int argc, char *argv[]) {
   FieldInterface& mField = core;
 
   Range CubitSideSets_meshsets;
-  ierr = mField.get_CubitBCType_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -61,7 +65,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.refine_get_ents(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   BitRefLevel problem_level = bit_level0;
 
@@ -72,7 +76,7 @@ int main(int argc, char *argv[]) {
   }
 
   EntityHandle skin_faces_meshset;
-  ierr = mField.get_msId_meshset(102,SideSet,skin_faces_meshset); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_meshset(102,SideSet,skin_faces_meshset); CHKERRQ(ierr);
   ierr = mField.seed_ref_level_2D(skin_faces_meshset,bit_level0); CHKERRQ(ierr);
 
   if(meshref == PETSC_TRUE) {
@@ -82,7 +86,7 @@ int main(int argc, char *argv[]) {
     Range edges_to_refine;
     rval = moab.get_entities_by_type(meshset_level0,MBEDGE,edges_to_refine);  CHKERR_PETSC(rval);
     for(Range::iterator eit = edges_to_refine.begin();eit!=edges_to_refine.end();eit++) {
-      int numb = rand() % 2;
+      int numb = *eit % 2;
       if(numb == 0) {
 	ierr = moab.add_entities(meshset_ref_edges,&*eit,1); CHKERRQ(ierr);
       }
@@ -95,14 +99,14 @@ int main(int argc, char *argv[]) {
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
       EntityHandle cubit_meshset = cubit_it->meshset; 
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-      ierr = mField.refine_get_childern(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level1,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level1,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_level1,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
     }
 
     /*EntityHandle refined_sideset_faces_meshset;
     rval = moab.create_meshset(MESHSET_SET,refined_sideset_faces_meshset); CHKERR_PETSC(rval);	
-    ierr = mField.refine_get_ents(bit_level1,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTRI,refined_sideset_faces_meshset); CHKERRQ(ierr);
     
     Range SurfacesFaces;
     ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
