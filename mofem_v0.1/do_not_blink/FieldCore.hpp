@@ -588,11 +588,6 @@ PetscErrorCode FieldCore::partition_create_Mat(
 	cvit = dofs_col_view.begin();
 	for(;cvit!=dofs_col_view.end();cvit++) {
 	  int idx = Tag::get_index(*cvit);
-	  if(no_diagonals) {
-	    if(idx == Tag::get_index(miit_row)) {
-	      continue;
-	    }
-	  }
 	  dofs_vec.push_back(idx);
 	  if(idx<0) {
 	    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
@@ -606,7 +601,18 @@ PetscErrorCode FieldCore::partition_create_Mat(
       //if(dofs_vec.size()==0) {
 	//SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"zero dofs at row %d",Tag::get_index(miit_row));
       //}
-      j.insert(j.end(),dofs_vec.begin(),dofs_vec.end());
+      j.reserve(j.size()+dofs_vec.size());
+      vector<DofIdx>::iterator diit,hi_diit;
+      diit = dofs_vec.begin();
+      hi_diit = dofs_vec.end();
+      for(;diit!=hi_diit;diit++) {
+	if(no_diagonals) {
+	  if(*diit == Tag::get_index(miit_row)) {
+	    continue;
+	  }
+	}
+	j.push_back(*diit);
+      }
     }
     //build adj matrix
     i.push_back(j.size());
