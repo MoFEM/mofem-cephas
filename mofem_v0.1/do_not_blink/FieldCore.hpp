@@ -601,7 +601,6 @@ PetscErrorCode FieldCore::create_Mat(
       //if(dofs_vec.size()==0) {
 	//SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"zero dofs at row %d",Tag::get_index(miit_row));
       //}
-      j.reserve(j.size()+dofs_vec.size());
       vector<DofIdx>::iterator diit,hi_diit;
       diit = dofs_vec.begin();
       hi_diit = dofs_vec.end();
