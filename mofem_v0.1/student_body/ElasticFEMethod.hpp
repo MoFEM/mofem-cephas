@@ -680,6 +680,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
+      //cout<<" hi from ElasticFEMethod "<<endl;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
 

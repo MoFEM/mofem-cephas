@@ -195,7 +195,9 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
 //        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
 //        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[row_mat][ii]<<" ";
 //        cout<<"\n\n\n"<<endl;
-//        
+//        std::string wait;
+//        std::cin >> wait;
+
         // Find row and colum indices for Edges
         vector<int> FaceEdgeSense;
         vector<int> FaceEdgeOrder;
@@ -504,7 +506,7 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
         //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
         ublas::vector<FieldData> applied_strain;
         applied_strain.resize(6);
-        applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=1.0;
+        applied_strain(0)=1.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
         applied_strain(3)=0.0; applied_strain(4)=0.0; applied_strain(5)=0.0;
         //cout<<"area "<<area << endl;
         
@@ -572,7 +574,7 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
     
       PetscErrorCode operator()() {
       PetscFunctionBegin;
-//        cout<<"Hi from class"<<endl;
+//        cout<<"Hi from class ElasticFE_RVELagrange_Disp"<<endl;
         
         ierr = GetN_and_Indices(); CHKERRQ(ierr);
         ierr = Get_H_mat();
