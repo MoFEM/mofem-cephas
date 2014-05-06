@@ -692,16 +692,12 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     //check if face at edge create T-connection
     {
 
-      Range chop_tets_edges;
-      rval = mField.get_moab().get_adjacencies(
-	chop_tets,1,false,chop_tets_edges,Interface::UNION); CHKERR_PETSC(rval);
       Range crack_front_tets_edges;
       rval = mField.get_moab().get_adjacencies(
 	crack_front_tets,1,false,crack_front_tets_edges,Interface::UNION); CHKERR_PETSC(rval);
       Range crack_front_tets_faces_edges;
       rval = mField.get_moab().get_adjacencies(
 	crack_front_tets_faces,1,false,crack_front_tets_faces_edges,Interface::UNION); CHKERR_PETSC(rval);
-      crack_front_tets_faces_edges = intersect(crack_front_tets_faces_edges,chop_tets_edges);
       crack_front_tets_faces_edges = intersect(crack_front_tets_faces_edges,crack_front_edges_nodes_edges);
       crack_front_tets_faces_edges = subtract(crack_front_tets_faces_edges,crack_front_edges);
       crack_front_tets_faces_edges = subtract(crack_front_tets_faces_edges,crack_front_tets_edges);
