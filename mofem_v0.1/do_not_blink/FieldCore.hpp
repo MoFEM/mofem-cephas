@@ -471,7 +471,7 @@ struct FieldCore: public FieldInterface {
 
   //templates
   template<typename Tag> 
-  PetscErrorCode partition_create_Mat(
+  PetscErrorCode create_Mat(
     const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,const bool no_diagonals = true,int verb = -1);
   
   //low level finite element data
@@ -493,7 +493,7 @@ struct FieldCore: public FieldInterface {
 #endif
 
 template<typename Tag> 
-PetscErrorCode FieldCore::partition_create_Mat(
+PetscErrorCode FieldCore::create_Mat(
     const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
     const bool no_diagonals,int verb) {
     PetscFunctionBegin;
@@ -532,7 +532,7 @@ PetscErrorCode FieldCore::partition_create_Mat(
       ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
       ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
       if(verb > 0) {
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tpartition_create_Mat: row lower %d row upper %d\n",rstart,rend);
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tcreate_Mat: row lower %d row upper %d\n",rstart,rend);
 	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       }
       miit_row = dofs_row_by_idx.lower_bound(rstart);

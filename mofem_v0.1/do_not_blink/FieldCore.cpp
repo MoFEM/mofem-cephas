@@ -2480,7 +2480,7 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
     PetscPrintf(PETSC_COMM_WORLD,"\tcreate Adj matrix\n");
   }
   try {
-    ierr = partition_create_Mat<Idx_mi_tag>(name,&Adj,MATMPIADJ,&i,&j,PETSC_NULL,true,verb); CHKERRQ(ierr);
+    ierr = create_Mat<Idx_mi_tag>(name,&Adj,MATMPIADJ,&i,&j,PETSC_NULL,true,verb); CHKERRQ(ierr);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   } catch (const std::exception& ex) {
@@ -3810,7 +3810,7 @@ PetscErrorCode FieldCore::MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   PetscInt *_i,*_j;
-  ierr = partition_create_Mat<Part_mi_tag>(name,Aij,MATMPIAIJ,&_i,&_j,PETSC_NULL,false,verb); CHKERRQ(ierr);
+  ierr = create_Mat<Part_mi_tag>(name,Aij,MATMPIAIJ,&_i,&_j,PETSC_NULL,false,verb); CHKERRQ(ierr);
   ierr = PetscFree(_i); CHKERRQ(ierr);
   ierr = PetscFree(_j); CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -3818,7 +3818,7 @@ PetscErrorCode FieldCore::MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,
 PetscErrorCode FieldCore::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  ierr = partition_create_Mat<PetscGlobalIdx_mi_tag>(name,Aij,MATAIJ,i,j,v,false,verb); CHKERRQ(ierr);
+  ierr = create_Mat<PetscGlobalIdx_mi_tag>(name,Aij,MATAIJ,i,j,v,false,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
