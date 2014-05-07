@@ -246,7 +246,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
 	  ublas::matrix<FieldData> &col_Mat = VelColNMatrix[gg];
-	  double w = rho*V*G_W_TET[gg];
+	  double w = rho*V*G_TET_W[gg];
 	  if(gg == 0) {
 	    Mass[rr] = w*prod( trans(row_Mat), col_Mat );
 	  } else {
@@ -264,7 +264,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       for(int gg = 0;gg<g_dim;gg++) {
 	ublas::matrix<FieldData> &row_Mat = VelRowNMatrix[gg];
 	ublas::matrix<FieldData> &col_Mat = VelColNMatrix[gg];
-	double w = rho*V*G_W_TET[gg];
+	double w = rho*V*G_TET_W[gg];
 	if(gg == 0) {
 	  VV = w*prod( trans(row_Mat), col_Mat );
 	} else {
@@ -284,7 +284,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = VelRowNMatrix[gg];
 	  ublas::matrix<FieldData> &col_Mat = (colNMatrices[cc])[gg];
-	  double w = rho*V*G_W_TET[gg];
+	  double w = rho*V*G_TET_W[gg];
 	  if(gg == 0) {
 	    VU[cc] = -w*prod( trans(row_Mat), col_Mat );
 	  } else {
@@ -299,15 +299,8 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     // COPUPLING_VU - last
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-
-//      g_NTET.resize(4*45);
-//      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-//      G_W_TET = G_TET_W45;
-//      g_NTRI.resize(3*13);
-//      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
-//      G_W_TRI = G_TRI_W13;
-			
-			ierr = ElasticFEMethod::preProcess(); CHKERRQ(ierr);
+		
+      ierr = ElasticFEMethod::preProcess(); CHKERRQ(ierr);
 
       if(fe_name=="STIFFNESS") {
 	// See FEAP - - A Finite Element Analysis Program

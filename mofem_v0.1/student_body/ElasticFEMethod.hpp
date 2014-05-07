@@ -156,11 +156,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-	vector<double> g_NTET, g_NTRI;
-	double *G_W_TRI;
-	double *G_W_TET;
-	vector<double> G_W_TRI_vec;
-	vector<double> G_W_TET_vec;
+    vector<double> g_NTET, g_NTRI;
+    const double *G_TRI_W;
+    const double *G_TET_W;
   
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -168,40 +166,13 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       ierr = PetscTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-//      g_NTET.resize(4*45);
-//      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-//      G_W_TET = G_TET_W45;
-//      g_NTRI.resize(3*28);
-//      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28);
-//      G_W_TRI = G_TRI_W28;
-			
-			const int sizeGMruleTRI = gm_rule_size ( gm_rule, 2 );
-			vector<double> G_X_TRI_vec(sizeGMruleTRI,0);
-			vector<double> G_Y_TRI_vec(sizeGMruleTRI,0);
-			G_W_TRI_vec.resize(sizeGMruleTRI);
-			double *G_X_TRI, *G_Y_TRI;
-			G_X_TRI = &*G_X_TRI_vec.begin();
-			G_Y_TRI = &*G_Y_TRI_vec.begin();
-			G_W_TRI = &*G_W_TRI_vec.begin();
-			
-			ierr = Grundmann_Moeller_integration_points_2D_TRI(gm_rule,G_X_TRI,G_Y_TRI,G_W_TRI); CHKERRQ(ierr);
-			g_NTRI.resize(3*sizeGMruleTRI);
-			ierr = ShapeMBTRI(&g_NTRI[0],G_X_TRI,G_Y_TRI,sizeGMruleTRI); CHKERRQ(ierr);
 
-			const int sizeGMruleTET = gm_rule_size ( gm_rule, 3 );
-			vector<double> G_X_TET_vec(sizeGMruleTET,0);
-			vector<double> G_Y_TET_vec(sizeGMruleTET,0);
-			vector<double> G_Z_TET_vec(sizeGMruleTET,0);
-			G_W_TET_vec.resize(sizeGMruleTET);
-			double *G_X_TET, *G_Y_TET, *G_Z_TET;
-			G_X_TET = &*G_X_TET_vec.begin();
-			G_Y_TET = &*G_Y_TET_vec.begin();
-			G_Z_TET = &*G_Z_TET_vec.begin();
-			G_W_TET = &*G_W_TET_vec.begin();
-			
-			ierr = Grundmann_Moeller_integration_points_3D_TET(gm_rule,G_X_TET,G_Y_TET,G_Z_TET,G_W_TET); CHKERRQ(ierr);
-			g_NTET.resize(4*sizeGMruleTET);
-			ierr = ShapeMBTET(&g_NTET[0],G_X_TET,G_Y_TET,G_Z_TET,sizeGMruleTET); CHKERRQ(ierr);
+      g_NTET.resize(4*45);
+      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+      G_TET_W = G_TET_W45;
+      g_NTRI.resize(3*28);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28);
+      G_TRI_W = G_TRI_W28;
 			
       // See FEAP - - A Finite Element Analysis Program
       D_lambda.resize(6,6);
@@ -311,10 +282,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    }
 	    area_at_Gauss_pt = cblas_dnrm2(3,Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
-	    w = area_at_Gauss_pt*G_W_TRI[gg];
+	    w = area_at_Gauss_pt*G_TRI_W[gg];
 	    traction_at_Gauss_pt += (pressure/(2*area_at_Gauss_pt))*Normals_at_Gauss_pts[gg];
 	  } else {
-	    w = area*G_W_TRI[gg];
+	    w = area*G_TRI_W[gg];
 	    traction_at_Gauss_pt += (pressure/area)*normal;
 	  }
 
@@ -535,7 +506,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	if(RowGlob[rr].size()==0) continue;
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-	  double w = V*G_W_TET[gg];
+	  double w = V*G_TET_W[gg];
 	  if(detH.size()>0) {
 	    w *= detH[gg];
 	  }
@@ -660,7 +631,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  VoightStrain[3] = 2*Strain(0,1);
 	  VoightStrain[4] = 2*Strain(1,2);
 	  VoightStrain[5] = 2*Strain(2,0);
-	  double w = V*G_W_TET[gg];
+	  double w = V*G_TET_W[gg];
 	  ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
 	  //BT * VoigtStress
 	  f_int.resize(row_mat);

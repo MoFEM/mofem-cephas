@@ -342,6 +342,8 @@ typedef multi_index_container<
       tag<MoABEnt_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FENumeredDofMoFEMEntity::get_ent> >,
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref> >,
+    ordered_non_unique< 
+      tag<PetscGlobalIdx_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_NumeredDofMoFEMEntity,DofIdx,&FENumeredDofMoFEMEntity::get_petsc_gloabl_dof_idx> >,
     ordered_non_unique<
       tag<Composite_Name_Type_And_Side_Number_mi_tag>, 
       composite_key<

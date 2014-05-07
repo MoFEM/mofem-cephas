@@ -473,7 +473,7 @@ namespace MoFEM {
 						VoightStrain[3] = 2*Strain(0,1);
 						VoightStrain[4] = 2*Strain(1,2);
 						VoightStrain[5] = 2*Strain(2,0);
-						double w = V*G_W_TET[gg];
+						double w = V*G_TET_W[gg];
 						ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
 						//BT * VoigtStress
 						f_int.resize(row_mat);
@@ -532,7 +532,7 @@ namespace MoFEM {
 				if(RowGlob[rr].size()==0) continue;
 				for(int gg = 0;gg<g_dim;gg++) {
 					ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-					double w = V*G_W_TET[gg];
+					double w = V*G_TET_W[gg];
 					if(detH.size()>0) {
 						w *= detH[gg];
 					}
@@ -755,7 +755,7 @@ namespace MoFEM {
 						VoightStrain[3] = 2*Strain(0,1);
 						VoightStrain[4] = 2*Strain(1,2);
 						VoightStrain[5] = 2*Strain(2,0);
-						double w = V*G_W_TET[gg];
+						double w = V*G_TET_W[gg];
 						ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
 						//BT * VoigtStress
 						f_int.resize(row_mat);
@@ -815,7 +815,7 @@ namespace MoFEM {
 				if(RowGlob[rr].size()==0) continue;
 				for(int gg = 0;gg<g_dim;gg++) {
 					ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-					double w = V*G_W_TET[gg];
+					double w = V*G_TET_W[gg];
 					if(detH.size()>0) {
 						w *= detH[gg];
 					}
@@ -1121,7 +1121,7 @@ namespace MoFEM {
 						VoightStrain[3] = 2*Strain(0,1);
 						VoightStrain[4] = 2*Strain(1,2);
 						VoightStrain[5] = 2*Strain(2,0);
-						double w = V*G_W_TET[gg];
+						double w = V*G_TET_W[gg];
 						ublas::vector<FieldData> VoightStress = prod(w*D_At_GaussPoint[gg],VoightStrain);
 						//BT * VoigtStress
 						f_int.resize(row_mat);
@@ -1180,7 +1180,7 @@ namespace MoFEM {
 				if(RowGlob[rr].size()==0) continue;
 				for(int gg = 0;gg<g_dim;gg++) {
 					ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-					double w = V*G_W_TET[gg];
+					double w = V*G_TET_W[gg];
 					if(detH.size()>0) {
 						w *= detH[gg];
 					}
@@ -1480,7 +1480,7 @@ namespace MoFEM {
 						VoightStrain[3] = 2*Strain(0,1);
 						VoightStrain[4] = 2*Strain(1,2);
 						VoightStrain[5] = 2*Strain(2,0);
-						double w = V*G_W_TET[gg];
+						double w = V*G_TET_W[gg];
 						ublas::vector<FieldData> VoightStress = prod(w*D_At_GaussPoint[gg],VoightStrain);
 						//BT * VoigtStress
 						f_int.resize(row_mat);
@@ -1539,7 +1539,7 @@ namespace MoFEM {
 				if(RowGlob[rr].size()==0) continue;
 				for(int gg = 0;gg<g_dim;gg++) {
 					ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-					double w = V*G_W_TET[gg];
+					double w = V*G_TET_W[gg];
 					if(detH.size()>0) {
 						w *= detH[gg];
 					}

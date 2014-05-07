@@ -19,7 +19,7 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "ForcesAndSurcesCore.hpp"
+#include "ForceForce.hpp"
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -74,17 +74,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = mField.add_field("FIELD1",H1,1); CHKERRQ(ierr);
-  ierr = mField.add_field("FIELD2",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("TEST_FE"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = mField.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("TEST_FE","FIELD2"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("TEST_FE","FIELD2"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("TEST_FE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("TEST_FE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("TEST_FE","DISPLACEMENT"); CHKERRQ(ierr);
 
   //Problem
   ierr = mField.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -98,8 +96,7 @@ int main(int argc, char *argv[]) {
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"FIELD2"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"DISPLACEMENT"); CHKERRQ(ierr);
   //add entities to finite element
   ierr = mField.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
 
@@ -107,14 +104,10 @@ int main(int argc, char *argv[]) {
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 5;
-  ierr = mField.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTET,"FIELD2",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"FIELD2",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"FIELD2",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD2",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -135,75 +128,16 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  struct ForcesAndSurcesCore_TestFE: public ForcesAndSurcesCore {
+  Vec F;
+  ierr = mField.VecCreateGhost("TETS_PROBLEM",Row,&F); CHKERRQ(ierr);
 
-    ErrorCode rval;
-    PetscErrorCode ierr;
+  BodyFroce fe1(mField,F);
+  ierr = VecZeroEntries(F); CHKERRQ(ierr);
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
-    typedef stream<TeeDevice> TeeStream;
-
-    ofstream ofs;
-    TeeDevice my_tee; 
-    TeeStream my_split;
-
-    ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
-      ForcesAndSurcesCore(_mField), 
-      ofs("forces_and_surces_getting_orders_indices_atom_test.txt"),
-      my_tee(cout, ofs),my_split(my_tee) {};
-
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
-    }
-
-    dataForcesAndSurcesCore data;
-
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      my_split << "\n\nNEXT ELEM\n\n";
-
-      ierr = getEdgesSense(data); CHKERRQ(ierr);
-      ierr = getFacesSense(data); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesOrder(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getOrderVolume(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getTetRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFaceNodes(data); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
-      my_split << "FIELD1:\n";
-      my_split << data << endl;
-
-      ierr = getEdgesOrder(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFacesOrder(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getOrderVolume(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getColNodesIndices(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getEdgeColIndices(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFacesColIndices(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTetColIndices(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFaceNodes(data); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
-      my_split << "FIELD2:\n";
-      my_split << data << endl;
-
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-
-      my_split.close();
-
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  ForcesAndSurcesCore_TestFE fe1(mField);
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+
+  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

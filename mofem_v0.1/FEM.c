@@ -108,9 +108,11 @@ PetscErrorCode Shape_invJac(double *Jac) {
 #define diffN_MBTRI2y ( 1 )
 
 PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TRI_X,double *G_TRI_Y,double *G_TRI_W){
-	PetscFunctionBegin;
+  PetscFunctionBegin;
 
-	int dim_num=2;
+  PetscErrorCode ierr;
+
+  int dim_num=2;
   int point;
   int point_num;
   double *w;
@@ -128,24 +130,29 @@ PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TR
 	
   point_num = gm_rule_size ( rule, dim_num );
 	
-  w = ( double * ) malloc ( point_num * sizeof ( double ) );
-  x = ( double * ) malloc ( dim_num * point_num * sizeof ( double ) );
+  ierr = PetscMalloc(point_num*sizeof(double),&w); CHKERRQ(ierr);
+  ierr = PetscMalloc(dim_num*point_num*sizeof(double),&x); CHKERRQ(ierr);
 	
   gm_rule_set ( rule, dim_num, point_num, w, x );
 	
-	for ( point = 0; point < point_num; point++ ){
-		G_TRI_X[point] = x[0+point*dim_num];
-		G_TRI_Y[point] = x[1+point*dim_num];
-		G_TRI_W[point] = w[point];
-	}
+  for( point = 0; point < point_num; point++ ){
+      G_TRI_X[point] = x[0+point*dim_num];
+      G_TRI_Y[point] = x[1+point*dim_num];
+      G_TRI_W[point] = w[point];
+  }
+
+  ierr = PetscFree(w); CHKERRQ(ierr);
+  ierr = PetscFree(x); CHKERRQ(ierr);
 	
-	PetscFunctionReturn(0);
-};
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TET_X,double *G_TET_Y,double *G_TET_Z, double *G_TET_W){
-	PetscFunctionBegin;
+  PetscFunctionBegin;
 	
-	int dim_num=3;
+  PetscErrorCode ierr;
+
+  int dim_num=3;
   int point;
   int point_num;
   double *w;
@@ -157,65 +164,22 @@ PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TE
 		
   point_num = gm_rule_size ( rule, dim_num );
 
-  w = ( double * ) malloc ( point_num * sizeof ( double ) );
-  x = ( double * ) malloc ( dim_num * point_num * sizeof ( double ) );
-	
+  ierr = PetscMalloc(point_num*sizeof(double),&w); CHKERRQ(ierr);
+  ierr = PetscMalloc(dim_num*point_num*sizeof(double),&x); CHKERRQ(ierr);
+
   gm_rule_set ( rule, dim_num, point_num, w, x );
-	for ( point = 0; point < point_num; point++ ){
-		G_TET_X[point] = x[0+point*dim_num];
-		G_TET_Y[point] = x[1+point*dim_num];
-		G_TET_Z[point] = x[2+point*dim_num];
-		G_TET_W[point] = w[point];
-	}
+  for(point = 0; point < point_num; point++ ){
+      G_TET_X[point] = x[0+point*dim_num];
+      G_TET_Y[point] = x[1+point*dim_num];
+      G_TET_Z[point] = x[2+point*dim_num];
+      G_TET_W[point] = w[point];
+  }
 
+  ierr = PetscFree(w); CHKERRQ(ierr);
+  ierr = PetscFree(x); CHKERRQ(ierr);
 
-	PetscFunctionReturn(0);
-};
-
-PetscErrorCode GetIntegrationPointsMBTRI(const int G_DIM,const double **G_TRI_X,const double **G_TRI_Y,const double **G_TRI_W){
-	PetscFunctionBegin;
-	if (G_DIM==1) {
-		*G_TRI_X = G_TRI_X1;
-		*G_TRI_Y = G_TRI_Y1;
-		*G_TRI_W = G_TRI_W1;}
-	else if (G_DIM==3) {
-		*G_TRI_X = G_TRI_X3;
-		*G_TRI_Y = G_TRI_Y3;
-		*G_TRI_W = G_TRI_W3;}
-	else if (G_DIM==4) {
-		*G_TRI_X = G_TRI_X4;
-		*G_TRI_Y = G_TRI_Y4;
-		*G_TRI_W = G_TRI_W4;}
-	else if (G_DIM==7) {
-		*G_TRI_X = G_TRI_X7;
-		*G_TRI_Y = G_TRI_Y7;
-		*G_TRI_W = G_TRI_W7;}
-	else if (G_DIM==13) {
-		*G_TRI_X = G_TRI_X13;
-		*G_TRI_Y = G_TRI_Y13;
-		*G_TRI_W = G_TRI_W13;}
-	else if (G_DIM==19) {
-		*G_TRI_X = G_TRI_X19;
-		*G_TRI_Y = G_TRI_Y19;
-		*G_TRI_W = G_TRI_W19;}
-	else if (G_DIM==28) {
-		*G_TRI_X = G_TRI_X28;
-		*G_TRI_Y = G_TRI_Y28;
-		*G_TRI_W = G_TRI_W28;}
-	else if (G_DIM==37) {
-		*G_TRI_X = G_TRI_X37;
-		*G_TRI_Y = G_TRI_Y37;
-		*G_TRI_W = G_TRI_W37;}
-	else if (G_DIM==286) {
-		*G_TRI_X = G_TRI_X286;
-		*G_TRI_Y = G_TRI_Y286;
-		*G_TRI_W = G_TRI_W286;}
-	else{
-		SETERRQ1(PETSC_COMM_SELF,1,"Abscissas and weight functions for %d Gauss points do not exist! \n \t\t Check FEM.h for integration gauss pt of triangles",G_DIM);
-	}
-	PetscFunctionReturn(0);
+  PetscFunctionReturn(0);
 }
-
 PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM) {
   PetscFunctionBegin;
   int ii = 0;

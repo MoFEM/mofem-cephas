@@ -58,10 +58,6 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 		DispData.resize(1+6+2);
 	};
 
-	double *G_TRI_W,*G_TET_W;
-	vector<double> G_TRI_W_vec;
-	vector<double> G_TET_W_vec;
-
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
@@ -69,45 +65,13 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 
     ierr = PetscTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-//    g_NTET.resize(4*45);
-//    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    //g_NTRI.resize(3*28);
-    //ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
-    //G_TRI_W = G_TRI_W28;
-//		const double *G_TRI_X,*G_TRI_Y;
-//		ierr = GetIntegrationPointsMBTRI(no_gauss_points,&G_TRI_X,&G_TRI_Y,&G_TRI_W);
-//		
-//		g_NTRI.resize(3*no_gauss_points);
-//    ShapeMBTRI(&g_NTRI[0],G_TRI_X,G_TRI_Y,no_gauss_points);
+    g_NTET.resize(4*45);
+    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+    G_TET_W = G_TET_W45;
+    g_NTRI.resize(3*28);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
+    G_TRI_W = G_TRI_W28;
 
-		const int sizeGMruleTRI = gm_rule_size ( gm_rule, 2 );
-		vector<double> G_TRI_X_vec(sizeGMruleTRI,0);
-		vector<double> G_TRI_Y_vec(sizeGMruleTRI,0);
-		G_TRI_W_vec.resize(sizeGMruleTRI);
-		double *G_TRI_X, *G_TRI_Y;
-		G_TRI_X = &*G_TRI_X_vec.begin();
-		G_TRI_Y = &*G_TRI_Y_vec.begin();
-		G_TRI_W = &*G_TRI_W_vec.begin();
-
-		ierr = Grundmann_Moeller_integration_points_2D_TRI(gm_rule,G_TRI_X,G_TRI_Y,G_TRI_W); CHKERRQ(ierr);
-		g_NTRI.resize(3*sizeGMruleTRI);
-		ierr = ShapeMBTRI(&g_NTRI[0],G_TRI_X,G_TRI_Y,sizeGMruleTRI); CHKERRQ(ierr);
-		
-		const int sizeGMruleTET = gm_rule_size ( gm_rule, 3 );
-		vector<double> G_TET_X_vec(sizeGMruleTET,0);
-		vector<double> G_TET_Y_vec(sizeGMruleTET,0);
-		vector<double> G_TET_Z_vec(sizeGMruleTET,0);
-		G_TET_W_vec.resize(sizeGMruleTET);
-		double *G_TET_X, *G_TET_Y, *G_TET_Z;
-		G_TET_X = &*G_TET_X_vec.begin();
-		G_TET_Y = &*G_TET_Y_vec.begin();
-		G_TET_Z = &*G_TET_Z_vec.begin();
-		G_TET_W = &*G_TET_W_vec.begin();
-
-		ierr = Grundmann_Moeller_integration_points_3D_TET(gm_rule,G_TET_X,G_TET_Y,G_TET_Z,G_TET_W); CHKERRQ(ierr);
-		g_NTET.resize(4*sizeGMruleTET);
-		ierr = ShapeMBTET(&g_NTET[0],G_TET_X,G_TET_Y,G_TET_Z,sizeGMruleTET); CHKERRQ(ierr);
-		
     PetscFunctionReturn(0);
   }
 

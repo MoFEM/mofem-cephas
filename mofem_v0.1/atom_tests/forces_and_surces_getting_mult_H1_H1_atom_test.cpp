@@ -162,32 +162,43 @@ int main(int argc, char *argv[]) {
       PetscErrorCode doWork(
 	int row_side,int col_side,
 	EntityType row_type,EntityType col_type,
-	ublas::vector<DofIdx> &row_indices,ublas::vector<DofIdx> &col_indices,
-	ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N) {
+	dataForcesAndSurcesCore::entData &row_data,
+	dataForcesAndSurcesCore::entData &col_data) {
 	PetscFunctionBegin;
 
-	int nb_row_dofs = rows_N.size2();
-	int nb_col_dofs = cols_N.size2();
+	int nb_row_dofs = row_data.N.size2();
+	int nb_col_dofs = col_data.N.size2();
 
-	NN.resize(nb_row_dofs,nb_col_dofs);
 	my_split << row_side << " " << col_side << " " << row_type << " " << col_type << endl;
+	my_split << "nb_row_dofs " << nb_row_dofs << " nb_col_dofs " << nb_col_dofs << endl;
+	NN.resize(nb_row_dofs,nb_col_dofs);
+
 
   	my_split.precision(2);
-	my_split << rows_N << endl;
-	my_split << cols_N << endl;
+	my_split << row_data.N << endl;
+	my_split << col_data.N << endl;
 
-	for(unsigned int gg = 0;gg<rows_N.size1();gg++) {
+	for(unsigned int gg = 0;gg<row_data.N.size1();gg++) {
 
 	  bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
 
 	  cblas_dger(CblasRowMajor,
-	  nb_row_dofs,nb_col_dofs,
-	    1,&rows_N(gg,0),1,&cols_N(gg,0),1,
+	    nb_row_dofs,nb_col_dofs,
+	    1,&row_data.N(gg,0),1,&col_data.N(gg,0),1,
 	    &*NN.data().begin(),nb_col_dofs);
   
 	  my_split << "gg " << gg << " : ";
 	  my_split.precision(2);
 	  my_split << NN << endl;
+
+	  if(row_type == MBVERTEX) {
+	    my_split << row_data.diffN << endl;
+	  } else {
+	    typedef ublas::array_adaptor<FieldData> storage_t;
+	    storage_t st(nb_row_dofs*3,&row_data.diffN(gg,0));
+	    ublas::matrix<FieldData,ublas::row_major,storage_t> digNatGaussPt(nb_row_dofs,3,st);
+	    my_split << endl << digNatGaussPt << endl;
+	  }
 
 	}
 
@@ -238,7 +249,13 @@ int main(int argc, char *argv[]) {
       ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
-      ierr = op.opNH1NH1(data_row,data_col); CHKERRQ(ierr);
+      try {
+	ierr = op.opNH1NH1(data_row,data_col); CHKERRQ(ierr);
+      } catch (exception& ex) {
+	ostringstream ss;
+	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
 
       PetscFunctionReturn(0);
     }

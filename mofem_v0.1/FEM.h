@@ -53,12 +53,6 @@ void print_mat_complex(__CLPK_doublecomplex *M,int m,int n);
 /// \param G_DIM number of Gauss points
 /// calulate shape function of MBTRI
 PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM);
-/// select integration point for MBTRI for specific no of gauss points
-PetscErrorCode GetIntegrationPointsMBTRI(const int G_DIM,const double **G_TRI_X,const double **G_TRI_Y,const double **G_TRI_W);
-///Compute weights and integration points for 2D Triangle using Grundmann_Moeller rule
-PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule, double *G_TRI_X, double *G_TRI_Y, double *G_TRI_W);
-///Compute weights and integration points for 3D Tet using Grundmann_Moeller rule
-PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TRI_X,double *G_TRI_Y,double *G_TRI_Z, double *G_TRI_W);
 /// calulate direvatives of shape functions
 PetscErrorCode ShapeDiffMBTRI(double *diffN);
 
@@ -152,6 +146,13 @@ PetscErrorCode ShapeFaceNormalMBTRI_complex(double *diffN,__CLPK_doublecomplex *
 PetscErrorCode MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *xA);
 PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF);
 PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *det_xF);
+
+
+//integration
+///Compute weights and integration points for 2D Triangle using Grundmann_Moeller rule
+PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TRI_X,double *G_TRI_Y,double *G_TRI_W);
+///Compute weights and integration points for 3D Tet using Grundmann_Moeller rule
+PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TET_X,double *G_TET_Y,double *G_TET_Z, double *G_TET_W);
 
 //http://people.sc.fsu.edu/~jburkardt/datasets/quadrature_rules_tet/quadrature_rules_tet.html
 //TRI
