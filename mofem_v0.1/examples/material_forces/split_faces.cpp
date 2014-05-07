@@ -97,9 +97,9 @@ int main(int argc, char *argv[]) {
 
 	//find faces for split
 	FaceSplittingTools face_splitting(mField);
-	ierr = main_select_faces_for_splitting(mField,face_splitting,0); CHKERRQ(ierr);
+	ierr = main_select_faces_for_splitting(mField,face_splitting,10); CHKERRQ(ierr);
 	//do splittig
-	ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,0); CHKERRQ(ierr);
+	ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,10); CHKERRQ(ierr);
 	
 	//rebuild fields, finite elementa and problems
 	ierr = main_face_splitting_restart(mField,conf_prob); CHKERRQ(ierr);
