@@ -322,10 +322,49 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
   for(;fit!=crack_front_edges_nodes_edges_faces.end();) {
     Range fit_edges;
     rval = mField.get_moab().get_adjacencies(&*fit,1,1,false,fit_edges); CHKERR_PETSC(rval);
-    if(intersect(fit_edges,crack_front_edges).size()<2) {
+    fit_edges = intersect(fit_edges,crack_front_edges);
+    if(fit_edges.size()<2) {
       fit = crack_front_edges_nodes_edges_faces.erase(fit);
     } else {
-      fit++;
+      if(fit_edges.size()==2) {
+	EntityHandle edge0 = fit_edges[0];
+	EntityHandle edge1 = fit_edges[1];
+	Range fit_edges0_nodes;
+	rval = mField.get_moab().get_connectivity(&edge0,1,fit_edges0_nodes,true); CHKERR_PETSC(rval);
+	Range fit_edges1_nodes;
+	rval = mField.get_moab().get_connectivity(&edge1,1,fit_edges1_nodes,true); CHKERR_PETSC(rval);
+	Range corner = intersect(fit_edges0_nodes,fit_edges1_nodes);
+	Range node0 = subtract(fit_edges0_nodes,corner);
+	Range node1 = subtract(fit_edges1_nodes,corner);
+	if(corner.size()!=1) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	}
+	if(node0.size()!=1) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	}
+	if(node1.size()!=1) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	}
+        ublas::vector<double,ublas::bounded_array<double,3> > coords_corner;
+	coords_corner.resize(3);
+	rval = mField.get_moab().get_coords(corner,&*coords_corner.data().begin()); CHKERR_PETSC(rval);
+        ublas::vector<double,ublas::bounded_array<double,3> > coords_node0;
+	coords_node0.resize(3);
+	rval = mField.get_moab().get_coords(node0,&*coords_node0.data().begin()); CHKERR_PETSC(rval);
+        ublas::vector<double,ublas::bounded_array<double,3> > coords_node1;
+	coords_node1.resize(3);
+	rval = mField.get_moab().get_coords(node1,&*coords_node1.data().begin()); CHKERR_PETSC(rval);
+	coords_node0 -= coords_corner;
+	coords_node1 -= coords_corner;
+	double dot = inner_prod(coords_node0,coords_node1);
+	if(dot<0.0) {
+	  fit = crack_front_edges_nodes_edges_faces.erase(fit);
+	} else {
+	  fit++;
+	}
+      } else {
+	fit++;
+      }
     }
   }
   
