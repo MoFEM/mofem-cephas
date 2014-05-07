@@ -404,6 +404,7 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
       rval = mField.get_moab().add_entities(out_meshset,common_tets_faces); CHKERR_PETSC(rval);
       rval = mField.get_moab().add_entities(out_meshset,crack_front_edges_nodes_edges_faces); CHKERR_PETSC(rval);
       rval = mField.get_moab().write_file("crack_front_tets.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     }
   }
 
@@ -459,6 +460,25 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
   rval = mField.get_moab().get_adjacencies(
     crack_surface_edges,3,false,crack_surface_edges_tets,Interface::UNION); CHKERR_PETSC(rval);
   crack_surface_edges_tets = intersect(crack_surface_edges_tets,mesh_level_tets);
+
+  if(verb>100) {
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_front_tets.size() %d\n",crack_front_tets.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_front_tets_nodes.size() %d\n",crack_front_tets_nodes.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_front_tets_faces.size() %d\n",crack_front_tets_faces.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_front_edges.size() %d\n",crack_front_edges.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_front_edges_nodes.size() %d\n",crack_front_edges_nodes.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_front_edges_nodes_tets.size() %d\n",crack_front_edges_nodes_tets.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_front_edges_nodes_faces.size() %d\n",crack_front_edges_nodes_faces.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_front_edges_nodes_edges.size() %d\n",crack_front_edges_nodes_edges.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_surface.size() %d\n",crack_surface.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_surface_edges.size() %d\n",crack_surface_edges.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"crack_surface_edges_tets.size() %d\n",crack_surface_edges_tets.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"mesh_level_tets.size() %d\n",mesh_level_tets.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"mesh_level_nodes.size() %d\n",mesh_level_nodes.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"mesh_level_edges.size() %d\n",mesh_level_edges.size());
+    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"mesh_level_tris.size() %d\n",mesh_level_tris.size());
+    PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+  }
 
   Range _crack_front_tets_faces_;
   Range _crack_front_tets_edges_;
@@ -552,6 +572,14 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 
     if(intersect(_nodes_on_skin_surface_,crack_front_edges_nodes).size()>0) {
       SETERRQ(PETSC_COMM_SELF,1,"should not happen");
+    }
+
+    if(verb>100) {
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\n",_nodes_on_skin_surface_.size());
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"_nodes_on_skin_surface_.size() %d\n",_nodes_on_skin_surface_.size());
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"_crack_front_free_faces_nodes_.size() %d\n",_crack_front_free_faces_nodes_.size());
+      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"_crack_front_body_skin_edges_nodes_.size() %d\n",_crack_front_body_skin_edges_nodes_.size());
+      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
     }
 
     //if(_nodes_on_skin_surface_.empty()) {
@@ -692,7 +720,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     if(chop_tets.empty()) {
       SETERRQ(PETSC_COMM_SELF,1,"it is empty, algorithm is stack");
     }
-    //test if chop tets create single block, if not this node is on the edge dividing to groups of tetrahedrals
+    /*//test if chop tets create single block, if not this node is on the edge dividing to groups of tetrahedrals
     if(chop_tets.size()>1) {
       Range seen_chop_tets;
       seen_chop_tets.insert(*chop_tets.begin());
@@ -708,7 +736,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 	//chop tets do not create single block
 	continue;
       }
-    }
+    }*/
 
     //remove choped tets
     //unsigned int nb_crack_front_tets = crack_front_tets.size();
@@ -771,6 +799,9 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
       }
     }
 
+    rval = mField.get_moab().get_connectivity(crack_front_tets,crack_front_tets_nodes,true); CHKERR_PETSC(rval);
+    crack_front_tets_nodes = subtract(crack_front_tets_nodes,crack_front_edges_nodes);
+
     if(verb>=0) {
       PetscPrintf(PETSC_COMM_WORLD," (%d) %u (%u) <%u> [%4.4f]",
 	ii++,crack_front_tets_nodes.size(),_nodes_on_skin_surface_.size(),crack_front_tets.size(),min_nit_q);
@@ -778,7 +809,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     
     debug_ii++;
 
-    if(verb>1) {
+    if(verb>0) {
       ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
       if(pcomm->rank()==0) {
 
@@ -812,6 +843,8 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
       }
 
     }	
+
+    PetscBarrier(PETSC_NULL);
 
     if(crack_front_tets_faces.size() == nb_crack_front_tets_faces) { 
       SETERRQ(PETSC_COMM_SELF,1,"it is empty, algorithm is stack");
@@ -1712,7 +1745,7 @@ PetscErrorCode main_select_faces_for_splitting(FieldInterface& mField,FaceSplitt
 
   if(verb>0) {
 
-    if(pcomm->rank()==0) {
+    if(pcomm->rank()==1) {
 
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
