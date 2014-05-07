@@ -164,7 +164,6 @@ int main(int argc, char *argv[]) {
 		}
 	}
 		
-      
 		//******REFINE MESH*****//
 		for (int ref_lev=1; ref_lev<mesh_refinement_level+1; ref_lev++ ) {
 			

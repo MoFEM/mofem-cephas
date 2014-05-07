@@ -82,6 +82,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = PetscTime(&v2); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
+		
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscFunctionReturn(0);
   }
@@ -255,7 +256,6 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     PetscFunctionBegin;
     ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
 
-//    cout<<" hi from ElasticFEMethod Interface "<<endl;
     ierr = RhsAndLhs(); CHKERRQ(ierr);
 
     ierr = OpStudentEnd(); CHKERRQ(ierr);
@@ -382,7 +382,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
-
+			
       //cerr << nodes_on_face3.size() << " " << g_NTRI.size() << " " << coords_at_Gauss_nodes.size() << endl;
       if(6*nodes_on_face3.size()!=g_NTRI.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 

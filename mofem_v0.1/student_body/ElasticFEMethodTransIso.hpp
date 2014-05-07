@@ -1908,7 +1908,7 @@ namespace MoFEM {
 			normalized_phi.resize(GradU_at_GaussPt.size());
 			ierr = ComputeGradient(normalized_phi); CHKERRQ(ierr);
 			
-			//cout<<GradU_at_GaussPt.size()<<endl;
+//			cout<<GradU_at_GaussPt.size()<<endl;
       
 			for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
 				

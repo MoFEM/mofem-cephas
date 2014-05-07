@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
 		
 		Range LatestRefinedPrisms;
 		rval = moab.get_entities_by_type(out_meshset, MBPRISM,LatestRefinedPrisms,true); CHKERR_PETSC(rval);
+	
 		cout<<"No of Prisms/Interfaces = "<<LatestRefinedPrisms.size()<<endl;
 	
     BitRefLevel problem_bit_level = bit_levels.back();
@@ -166,6 +167,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
   
+	Range prims_on_problem_bit_level;
+	ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims_on_problem_bit_level); CHKERRQ(ierr);
+	mField.seed_finite_elements(prims_on_problem_bit_level);
+	
     /***/
     //Define problem
     
@@ -198,7 +203,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
-    
+  
     //set refinment level for problem
     ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
 
@@ -207,12 +212,7 @@ int main(int argc, char *argv[]) {
     
     //add entitities (by tets) to the field
     ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
-    
-    Range prims_on_problem_bit_level;
-    ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims_on_problem_bit_level); CHKERRQ(ierr);
-    mField.seed_finite_elements(prims_on_problem_bit_level);
-
-    
+  
     //add finite elements entities
     ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Elastic,"ELASTIC",true); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Trans_ISO,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
     double YoungModulusZ;
     double PoissonRatioPZ;
     double ShearModulusZP;
-    double YoungModulus;
+    double YoungModulus=135000;
     double PoissonRatio;
     double alpha;
     
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
 //        }
     }
   
-	alpha = 0.01;
+	alpha = 10000;
 	
     InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
     MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
@@ -344,12 +344,12 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
-    
+  
+		ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+		PetscSynchronizedFlush(PETSC_COMM_WORLD);
+	ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
+	PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
     
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -361,9 +361,9 @@ int main(int argc, char *argv[]) {
   
 
     //Matrix View
-    //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-    //std::string wait;
-    //std::cin >> wait;
+    MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+    std::string wait;
+    std::cin >> wait;
     
     //Solver
     KSP solver;
@@ -388,14 +388,14 @@ int main(int argc, char *argv[]) {
         rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
         ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
         ierr = mField.problem_get_FE("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",out_meshset); CHKERRQ(ierr);
-//        ierr = mField.problem_get_FE("ELASTIC_MECHANICS","INTERFACE",out_meshset); CHKERRQ(ierr);
+        ierr = mField.problem_get_FE("ELASTIC_MECHANICS","INTERFACE",out_meshset); CHKERRQ(ierr);
         rval = moab.write_file(outName,"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
         rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     }
     
-    TranIso_PostProc_FibreDirRot_OnRefMesh fe_post_proc_method(mField, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
+    TranIso_PostProc_FibreDirRot_OnRefMesh fe_post_proc_method( mField, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
     
-//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
     
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
