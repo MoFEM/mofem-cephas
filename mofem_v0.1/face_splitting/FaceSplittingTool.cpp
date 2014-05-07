@@ -318,6 +318,8 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
   rval = mField.get_moab().get_adjacencies(
     crack_front_edges_nodes_edges_faces_nodes,2,false,crack_front_edges_nodes_edges_faces_nodes_faces,Interface::UNION); CHKERR_PETSC(rval);
   crack_front_edges_nodes_edges_faces = subtract(crack_front_edges_nodes_edges_faces,crack_front_edges_nodes_edges_faces_nodes_faces);
+  //reject faces at corner which angles are smaller than PI
+  //edges at corner should be not-conbex 
   Range::iterator fit = crack_front_edges_nodes_edges_faces.begin();
   for(;fit!=crack_front_edges_nodes_edges_faces.end();) {
     Range fit_edges;
