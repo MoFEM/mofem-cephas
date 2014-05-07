@@ -334,30 +334,49 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
 	Range fit_edges1_nodes;
 	rval = mField.get_moab().get_connectivity(&edge1,1,fit_edges1_nodes,true); CHKERR_PETSC(rval);
 	Range corner = intersect(fit_edges0_nodes,fit_edges1_nodes);
-	Range node0 = subtract(fit_edges0_nodes,corner);
-	Range node1 = subtract(fit_edges1_nodes,corner);
 	if(corner.size()!=1) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
-	if(node0.size()!=1) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	Range corner_faces;
+	rval = mField.get_moab().get_adjacencies(corner,2,false,corner_faces); CHKERR_PETSC(rval);
+	corner_faces = intersect(corner_faces,crack_surface);
+	Range corner_edges;
+	rval = mField.get_moab().get_adjacencies(corner,1,false,corner_edges); CHKERR_PETSC(rval);
+	double angle = 0;
+	Range::iterator fiit = corner_faces.begin();
+	for(;fiit!=corner_faces.end();fiit++) {
+	  Range fiit_edges;
+	  rval = mField.get_moab().get_adjacencies(&*fiit,1,1,false,fiit_edges); CHKERR_PETSC(rval);
+	  fiit_edges = intersect(fiit_edges,corner_edges);
+	  edge0 = fiit_edges[0];
+	  edge1 = fiit_edges[1];
+	  fit_edges0_nodes.clear();
+	  rval = mField.get_moab().get_connectivity(&edge0,1,fit_edges0_nodes,true); CHKERR_PETSC(rval);
+	  fit_edges1_nodes.clear();
+	  rval = mField.get_moab().get_connectivity(&edge1,1,fit_edges1_nodes,true); CHKERR_PETSC(rval);
+	  Range node0 = subtract(fit_edges0_nodes,corner);
+	  Range node1 = subtract(fit_edges1_nodes,corner);
+	  if(node0.size()!=1) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
+	  if(node1.size()!=1) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
+	  ublas::vector<double,ublas::bounded_array<double,3> > coords_corner;
+	  coords_corner.resize(3);
+	  rval = mField.get_moab().get_coords(corner,&*coords_corner.data().begin()); CHKERR_PETSC(rval);
+	  ublas::vector<double,ublas::bounded_array<double,3> > coords_node0;
+	  coords_node0.resize(3);
+	  rval = mField.get_moab().get_coords(node0,&*coords_node0.data().begin()); CHKERR_PETSC(rval);
+	  ublas::vector<double,ublas::bounded_array<double,3> > coords_node1;
+	  coords_node1.resize(3);
+	  rval = mField.get_moab().get_coords(node1,&*coords_node1.data().begin()); CHKERR_PETSC(rval);
+	  coords_node0 -= coords_corner;
+	  coords_node1 -= coords_corner;
+	  double dot = inner_prod(coords_node0,coords_node1)/(norm_2(coords_node0)*norm_2(coords_node0));
+	  angle += acos(dot);
 	}
-	if(node1.size()!=1) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	}
-        ublas::vector<double,ublas::bounded_array<double,3> > coords_corner;
-	coords_corner.resize(3);
-	rval = mField.get_moab().get_coords(corner,&*coords_corner.data().begin()); CHKERR_PETSC(rval);
-        ublas::vector<double,ublas::bounded_array<double,3> > coords_node0;
-	coords_node0.resize(3);
-	rval = mField.get_moab().get_coords(node0,&*coords_node0.data().begin()); CHKERR_PETSC(rval);
-        ublas::vector<double,ublas::bounded_array<double,3> > coords_node1;
-	coords_node1.resize(3);
-	rval = mField.get_moab().get_coords(node1,&*coords_node1.data().begin()); CHKERR_PETSC(rval);
-	coords_node0 -= coords_corner;
-	coords_node1 -= coords_corner;
-	double dot = inner_prod(coords_node0,coords_node1);
-	if(dot<0.0) {
+	if(angle<M_PI) {
 	  fit = crack_front_edges_nodes_edges_faces.erase(fit);
 	} else {
 	  fit++;
@@ -844,7 +863,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 
     }	
 
-    PetscBarrier(PETSC_NULL);
+    //PetscBarrier(PETSC_NULL);
 
     if(crack_front_tets_faces.size() == nb_crack_front_tets_faces) { 
       SETERRQ(PETSC_COMM_SELF,1,"it is empty, algorithm is stack");
@@ -1765,7 +1784,7 @@ PetscErrorCode main_select_faces_for_splitting(FieldInterface& mField,FaceSplitt
   }
 
   ierr = face_splitting.getCrackFrontTets(true,10); CHKERRQ(ierr);
-  PetscBarrier(PETSC_NULL);
+  //PetscBarrier(PETSC_NULL);
   ierr = face_splitting.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true,10); CHKERRQ(ierr);
   ierr = face_splitting.selectCrackFaces(true); CHKERRQ(ierr);
 
