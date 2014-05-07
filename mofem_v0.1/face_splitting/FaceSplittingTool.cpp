@@ -343,10 +343,12 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
 
   if(createMeshset) {
     rval = mField.get_moab().create_meshset(MESHSET_SET,crackFrontTests); CHKERR_PETSC(rval);
+    rval = mField.get_moab().create_meshset(MESHSET_SET,selectedCrackFaces); CHKERR_PETSC(rval);
   }
   ierr = mField.get_moab().add_entities(crackFrontTests,common_tets); CHKERRQ(ierr);
   ierr = mField.get_moab().add_entities(crackFrontTests,common_tets_faces); CHKERRQ(ierr);
   ierr = mField.get_moab().add_entities(crackFrontTests,crack_front_edges_nodes_edges_faces); CHKERRQ(ierr);
+  ierr = mField.get_moab().add_entities(selectedCrackFaces,crack_front_edges_nodes_edges_faces); CHKERRQ(ierr);
 
   //add nodes at new crack front
   Range common_tets_faces_nodes;
@@ -800,10 +802,6 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 }
 PetscErrorCode FaceSplittingTools::selectCrackFaces(bool createMeshset,int verb) {
   PetscFunctionBegin;
-  if(createMeshset) {
-    rval = mField.get_moab().create_meshset(MESHSET_SET,selectedCrackFaces); CHKERR_PETSC(rval);
-  }
-  //
   Range crack_front_edges;
   ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
   Range crack_front_edges_nodes;
