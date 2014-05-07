@@ -400,8 +400,8 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-      //rval = mField.get_moab().add_entities(out_meshset,common_tets); CHKERR_PETSC(rval);
-      //rval = mField.get_moab().add_entities(out_meshset,common_tets_faces); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,common_tets); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,common_tets_faces); CHKERR_PETSC(rval);
       rval = mField.get_moab().add_entities(out_meshset,crack_front_edges_nodes_edges_faces); CHKERR_PETSC(rval);
       rval = mField.get_moab().write_file("crack_front_tets.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     }
