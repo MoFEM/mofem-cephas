@@ -3415,6 +3415,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  if(nb_sub_steps >= 10) break;
 
 	} while(nn-1 != nb_sub_steps);
+	ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 	ierr = VecDestroy(&D_tmp_mesh_positions); CHKERRQ(ierr);
 	ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
@@ -3425,6 +3426,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	conf_prob.material_FirelWall->
 	  operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
 	ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+
 
 	//solve spatial problem
 	ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
