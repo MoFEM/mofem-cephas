@@ -24,9 +24,11 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
+
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
 #include "RVEVolume.hpp"
+
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 

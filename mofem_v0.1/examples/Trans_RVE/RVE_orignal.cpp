@@ -27,10 +27,6 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
-#include "ElasticFE_RVELagrange_Disp.hpp"
-#include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
-#include "RVEVolume.hpp"
-
 #include "ElasticFEMethodForInterface.hpp"
 
 using namespace MoFEM;
@@ -180,14 +176,11 @@ int main(int argc, char *argv[]) {
     
     //Fields
     ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-    ierr = mField.add_field("Lagrange_mul_disp",H1,3); CHKERRQ(ierr);
     
     //FE
     ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
     ierr = mField.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
     ierr = mField.add_finite_element("INTERFACE"); CHKERRQ(ierr);
-    ierr = mField.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
-
     //Define rows/cols and element data
     ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
@@ -203,28 +196,13 @@ int main(int argc, char *argv[]) {
     
     ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","POTENTIAL_FIELD"); CHKERRQ(ierr);
     
-    
-    //C row as Lagrange_mul_disp and col as DISPLACEMENT
-    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
-    
-    //CT col as Lagrange_mul_disp and row as DISPLACEMENT
-    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
-    
-    //As for stress we need both displacement and temprature (Lukasz)
-    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
-
-     //define problems
+    //define problems
     ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     
     //set finite elements for problem
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
-
     
     //set refinment level for problem
     ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
@@ -239,19 +217,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Elastic,"ELASTIC",true); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Trans_ISO,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
-    
-    Range SurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
-    ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
-    
-    //to create meshset from range
-    EntityHandle BoundFacesMeshset;
-    rval = moab.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
-	rval = moab.add_entities(BoundFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_field_by_TRIs(BoundFacesMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
-
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
     ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
@@ -259,10 +224,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
     
-    ierr = mField.set_field_order(0,MBTRI,"Lagrange_mul_disp",order); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBEDGE,"Lagrange_mul_disp",order); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBVERTEX,"Lagrange_mul_disp",1); CHKERRQ(ierr);
-
     /****/
     //build database
     
@@ -331,7 +292,7 @@ int main(int argc, char *argv[]) {
     double YoungModulusZ;
     double PoissonRatioPZ;
     double ShearModulusZP;
-    double YoungModulus;
+    double YoungModulus=135000;
     double PoissonRatio;
     double alpha;
     
@@ -373,14 +334,12 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    alpha = 1e8;
+	//alpha = 10000;
     cout<<"alpha   = "<<alpha<<endl;
 	
     InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
     MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
     TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F);
-    ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,&myDirihletBC,Aij,D,F);
-    
     
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -393,8 +352,6 @@ int main(int argc, char *argv[]) {
 	PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
     
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -404,10 +361,10 @@ int main(int argc, char *argv[]) {
     ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     
     
-//    //Matrix View
-//    MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-//    std::string wait;
-//    std::cin >> wait;
+    //Matrix View
+    //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+    //std::string wait;
+    //std::cin >> wait;
     
     //Solver
     KSP solver;
@@ -424,33 +381,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
     
-    
-    //Calculation of Homogenized stress
-    //====================================================================================================================================
-    double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
-    Vec RVE_volume_Vec;
-    ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
-    ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
-    
-    RVEVolume MyRVEVol(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), RVE_volume_Vec);
-    RVEVolumeTrans MyRVEVolTrans(mField,&myDirihletBC,Aij,D,F, RVE_volume_Vec);
-
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyRVEVolTrans);  CHKERRQ(ierr);
-    
-    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
-    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
-    cout<<"Actual RVE_volume = "<< 3*0.3*0.78<<endl;  //Lx=3, Ly=0.3; Lz=0.78
-    
-    
-//    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,&myDirihletBC,Aij,D,F,&RVE_volume);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-    //====================================================================================================================================
- 
-    
-     PostProcVertexMethod ent_method(moab);
+    PostProcVertexMethod ent_method(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
     
     if(pcomm->rank()==0) {

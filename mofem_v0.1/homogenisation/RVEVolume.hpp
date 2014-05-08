@@ -53,7 +53,40 @@ namespace MoFEM {
         }
     };
 
+  
     
+    struct RVEVolumeTrans: public TranIsotropicFibreDirRotElasticFEMethod {
+        Vec RVE_volume_Vec;
+        
+        RVEVolumeTrans(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F, Vec _RVE_volume_Vec):
+        TranIsotropicFibreDirRotElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F), RVE_volume_Vec(_RVE_volume_Vec){};
+        
+        
+        PetscErrorCode postProcess() {
+            PetscFunctionBegin;
+            ierr = VecAssemblyBegin(RVE_volume_Vec); CHKERRQ(ierr);
+            ierr = VecAssemblyEnd(RVE_volume_Vec); CHKERRQ(ierr);
+            PetscFunctionReturn(0);
+        }
+        
+        PetscErrorCode operator()() {
+            PetscFunctionBegin;
+            ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+            
+            int Indices[1];  Indices[0]=pcomm->rank();
+            double Vol_elm[1];  Vol_elm[0]=V;
+            ierr = VecSetValues(RVE_volume_Vec,1,Indices,Vol_elm,ADD_VALUES); CHKERRQ(ierr);
+            
+            ierr = OpStudentEnd(); CHKERRQ(ierr);
+            PetscFunctionReturn(0);
+        }
+    };
+    
+    
+    
+    
+    
+
 }
 
 #endif //__RVEVolume_HPP__

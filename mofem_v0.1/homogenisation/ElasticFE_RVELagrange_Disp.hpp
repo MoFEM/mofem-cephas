@@ -507,7 +507,7 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
         ublas::vector<FieldData> applied_strain;
         applied_strain.resize(6);
         applied_strain(0)=1.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
-        applied_strain(3)=0.0; applied_strain(4)=0.0; applied_strain(5)=0.0;
+        applied_strain(3)=0.0; applied_strain(4)=0.0; applied_strain(5)=1.0;
         //cout<<"area "<<area << endl;
         
         
