@@ -1058,10 +1058,14 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
     ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,surfaces_faces,true); CHKERRQ(ierr);
     Range surfaces_nodes;
     rval = mField.get_moab().get_connectivity(surfaces_faces,surfaces_nodes,true); CHKERR_PETSC(rval);
-    Range FrontTangentNodes = subtract(crack_front_nodes,surfaces_nodes);
+    //Range FrontTangentNodes = subtract(crack_front_nodes,surfaces_nodes);
+    //rval = mField.get_moab().create_meshset(MESHSET_SET,crackFrontTangentConstrains); CHKERR_PETSC(rval);	
+    //rval = mField.get_moab().add_entities(crackFrontTangentConstrains,FrontTangentNodes); CHKERR_PETSC(rval);
+    //ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Tangent Nodes = %d\n",FrontTangentNodes.size()); CHKERRQ(ierr);
     rval = mField.get_moab().create_meshset(MESHSET_SET,crackFrontTangentConstrains); CHKERR_PETSC(rval);	
-    rval = mField.get_moab().add_entities(crackFrontTangentConstrains,FrontTangentNodes); CHKERR_PETSC(rval);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Tangent Nodes = %d\n",FrontTangentNodes.size()); CHKERRQ(ierr);
+    rval = mField.get_moab().add_entities(crackFrontTangentConstrains,crack_front_nodes); CHKERR_PETSC(rval);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Crack Front Nodes = %d\n",crack_front_nodes.size()); CHKERRQ(ierr);
+
 
     Range crack_surfaces_edge_faces;
     rval = mField.get_moab().get_adjacencies(
