@@ -25,6 +25,9 @@ install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/arc_length.sh
 install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/convergence_study.sh 
   DESTINATION mofem/benchmarks/brick_slice
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
+install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/face_split_arc_length.sh 
+  DESTINATION mofem/benchmarks/brick_slice
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
 #script for making plots for torsion example only
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brick_slice.cub

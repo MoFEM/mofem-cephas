@@ -19,6 +19,10 @@ while test $# -gt 0; do
 			echo "-d, --dir=DIR_NAME"
                         exit 0
                         ;;
+		--showme) 
+			export SHOWME=1
+			shift
+			;;
                 -f)
                         shift
                         if test $# -gt 0; then
@@ -129,10 +133,12 @@ while test $# -gt 0; do
         esac
 done
 
-echo "Line command ..." | tee log
-echo $0 $ARGS | tee -a log
-echo | tee -a log
-echo "Satrt time: "`date` | tee -a log
+if [ -z ${SHOWME+x} ]; then
+  echo "Line command ..." | tee log
+  echo $0 $ARGS | tee -a log
+  echo | tee -a log
+  echo "Satrt time: "`date` | tee -a log
+fi
 
 if [ -z ${FILE+x} ]; then 
   echo "Mesh file is unset, convergence_study --help"
@@ -177,8 +183,10 @@ if [ -z ${DIR_NAME+x} ]; then
   export DIR_NAME=material_forces_"$DIR_PREFIX"_"$DIR_SURFIX"
 fi
 
-if [ ! -d $DIR_NAME ]; then
-  mkdir $DIR_NAME
+if [ -z ${SHOWME+x} ]; then
+  if [ ! -d $DIR_NAME ]; then
+    mkdir $DIR_NAME
+  fi
 fi
 
 for order in `echo $ORDERS | sed -e 's/,/ /g'`
@@ -186,38 +194,64 @@ do
   for ref_level in `echo $REF | sed -e 's/,/ /g'`
   do
 
-    echo | tee -a $DIR_NAME/log_griffith_forces
-    echo average griffith force order $order ref level $ref_level | tee -a $DIR_NAME/log_griffith_forces
-    echo | tee -a $DIR_NAME/log_griffith_forces
+    if [ -z ${SHOWME+x} ]; then
+      echo | tee -a $DIR_NAME/log_griffith_forces
+      echo average griffith force order $order ref level $ref_level | tee -a $DIR_NAME/log_griffith_forces
+      echo | tee -a $DIR_NAME/log_griffith_forces
+    fi
 
-    $MPIRUN $BIN_PATH/spatial_problem \
+    COMMAND1="$MPIRUN $BIN_PATH/spatial_problem \
       -my_file $FILE -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package $PCFACTOR \
       -ksp_atol 1e-14 -ksp_rtol 1e-12 -ksp_monitor \
       -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 10 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
-      -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_pot_proc_ref_level 0 -log_summary 2>&1 | tee -a $DIR_NAME/log_solution
-    if [ $? -ne 0 ]; then
-      exit $?
+      -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_pot_proc_ref_level 0 -log_summary"
+
+    if [ -z ${SHOWME+x} ]; then
+      exec $COMMAND1 2>&1 | tee -a $DIR_NAME/log_solution
+      if [ $? -ne 0 ]; then
+	exit $?
+      fi
     fi
 
-    $BIN_PATH/material_force \
+    if [ ! -z ${SHOWME+x} ]; then
+      echo $COMMAND1
+    fi
+
+    COMMAND2="$BIN_PATH/material_force \
       -my_file out_spatial.h5m \
 	-ksp_type fgmres -pc_type lu -ksp_atol 1e-14 -ksp_rtol 1e-12 \
 	-ksp_monitor -log_summary \
-	-my_gc $GC -pc_factor_mat_solver_package $PCFACTOR 2>&1 | tee -a $DIR_NAME/log_griffith_forces
-    if [ $? -ne 0 ]; then
-      exit $?
+	-my_gc $GC -pc_factor_mat_solver_package $PCFACTOR 2>&1 | tee -a $DIR_NAME/log_griffith_forces"
+
+    if [ -z ${SHOWME+x} ]; then
+      exec $COMMAND2 2>&1 | tee -a $DIR_NAME/log_griffith_forces
+      if [ $? -ne 0 ]; then
+	exit $?
+      fi
+    fi
+
+    if [ ! -z ${SHOWME+x} ]; then
+      echo $COMMAND2
+    fi
+
+    if [ -z ${SHOWME+x} ]; then
+      mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
+      mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk 
+      mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk 
+      mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
+      mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
+    fi
+
+    if [ ! -z ${SHOWME+x} ]; then
+      echo mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
+      echo mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk 
+      echo mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk 
+      echo mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
+      echo mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
     fi
 
 
-    mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
-    mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk 
-    mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk 
-    mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
-    mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
-
   done
-
-
 
 done
 

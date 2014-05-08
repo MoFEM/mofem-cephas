@@ -105,10 +105,32 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   //set direction if crack or interface surface
   Range adj_side_elems;
   BitRefLevel bit = problem_ptr->get_BitRefLevel();
-  bit.set(BITREFLEVEL_SIZE-1);
   ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,0); CHKERRQ(ierr);
   adj_side_elems = adj_side_elems.subset_by_type(MBTET);
+  if(adj_side_elems.size()==0) {
+    Range adj_tets_on_surface;
+    BitRefLevel bit_tet_on_surface;
+    bit_tet_on_surface.set(BITREFLEVEL_SIZE-1);
+    ierr = mField.get_adjacencies(bit_tet_on_surface,&face,1,3,adj_tets_on_surface,Interface::INTERSECT,0); CHKERRQ(ierr);
+    adj_side_elems.insert(*adj_tets_on_surface.begin());
+  }
   if(adj_side_elems.size()!=1) {
+    adj_side_elems.clear();
+    ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,5); CHKERRQ(ierr);
+    Range::iterator it = adj_side_elems.begin();
+    for(;it!=adj_side_elems.end();it++) {	
+      Range nodes;
+      rval = moab.get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
+      PetscPrintf(PETSC_COMM_WORLD,"%lu %lu %lu %lu\n",nodes[0],nodes[1],nodes[2],nodes[3]);
+    }
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    if(pcomm->rank()==0) {
+      EntityHandle out_meshset;
+      rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,adj_side_elems); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,&face,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().write_file("debug_error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    }
     SETERRQ1(PETSC_COMM_SELF,1,"expect 1 tet but is %u",adj_side_elems.size());
   }
   EntityHandle side_elem = *adj_side_elems.begin();

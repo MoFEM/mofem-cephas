@@ -410,7 +410,7 @@ ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e) {
 
 
 template <typename MOFEM_DOFS,typename MOFEM_DOFS_VIEW>
-static PetscErrorCode get_fe_MoFEMFiniteElement_dof_uid_view(
+static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
     const DofMoFEMEntity_multiIndex_uid_view &fe_dofs_view,
     const MOFEM_DOFS &mofem_dofs,
     MOFEM_DOFS_VIEW &mofem_dofs_view,
@@ -433,62 +433,62 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_uid_view(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_fe_MoFEMFiniteElement_dof_uid_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_MoFEMFiniteElement_dof_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_fe_MoFEMFiniteElement_dof_uid_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_MoFEMFiniteElement_dof_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_data_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_data_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_fe_MoFEMFiniteElement_dof_uid_view(data_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_MoFEMFiniteElement_dof_view(data_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_fe_MoFEMFiniteElement_dof_uid_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_MoFEMFiniteElement_dof_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_fe_MoFEMFiniteElement_dof_uid_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_MoFEMFiniteElement_dof_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_fe_MoFEMFiniteElement_dof_uid_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_MoFEMFiniteElement_dof_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_uid_view(
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_fe_MoFEMFiniteElement_dof_uid_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_MoFEMFiniteElement_dof_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
