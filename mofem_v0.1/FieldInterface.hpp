@@ -446,6 +446,16 @@ struct FieldInterface {
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
+  /**\brief add ref level to entities
+   *
+   */
+  virtual PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
+
+  /**\brief add ref level to entities
+   *
+   */
+  virtual PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
+
   /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
