@@ -911,7 +911,6 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
 
   Interface& moab = mField.get_moab();
 
-  surfaces_faces = intersect(surfaces_faces,level_tris);
   ierr = mField.seed_finite_elements(surfaces_faces); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TRIs(surfaces_faces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TRIs(surfaces_faces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
