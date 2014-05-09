@@ -155,7 +155,7 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
     int side;
     rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
     if(side == 1) {
-      __CLPK_doublecomplex xdot = { -1,0 };
+      __CLPK_doublecomplex xdot = { -0.5,0 };
       cblas_zscal(3,&xdot,x_normal,1);
     }
   }
@@ -350,7 +350,7 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
       if(use_projection_from_crack_front) {
 	for(int nn = 0;nn<3;nn++) {
 	  if(crackFrontEdgesNodes.find(conn_face[nn])!=crackFrontEdgesNodes.end()) {
-	  double projection[3];
+	    double projection[3];
 	    rval = mField.get_moab().tag_get_data(th_projection,&conn_face[nn],1,projection); CHKERR_PETSC(rval);
 	    for(int dd = 0;dd<3;dd++) {
 	      coords[nn*3+dd] = projection[dd];
