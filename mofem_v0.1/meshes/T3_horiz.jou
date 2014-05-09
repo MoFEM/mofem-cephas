@@ -55,7 +55,7 @@ nodeset 101 vertex 65 66 56 57 55 58 remove
 
 #Boundary surfaces  
 sideset 102 surface all  
-sideset 102 surface 73 74 81 remove
+sideset 102 surface 73 74 81  7 17   remove
 
 #Crack surface
 sideset 200 surface 73
@@ -75,5 +75,6 @@ mesh surface 73
 mesh volume all 
 
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/T3_horiz.cub" overwrite
+
 
 
