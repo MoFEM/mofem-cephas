@@ -66,11 +66,12 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
   BitRefLevel def_bit_level = 0;
   rval = moab.tag_get_handle("_RefBitLevel",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
     th_RefBitLevel,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); CHKERR_THROW(rval);
+  BitRefLevel def_bit_level_mask = BitRefLevel().set();
+  rval = moab.tag_get_handle("_RefBitLevelMask",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
+    th_RefBitLevel_Mask,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_mask); CHKERR_THROW(rval);
   BitRefEdges def_bit_egde = 0;
   rval = moab.tag_get_handle("_RefBitEdge",sizeof(BitRefEdges),MB_TYPE_OPAQUE,
     th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_egde); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_RefFEMeshset",1,MB_TYPE_HANDLE,
-    th_RefFEMeshset,MB_TAG_CREAT|MB_TAG_SPARSE,&root_meshset);
     
   //Tags Field
   const unsigned long int def_id = 0;
@@ -1746,6 +1747,18 @@ PetscErrorCode FieldCore::modify_problem_ref_level_set_bit(const string &name_pr
   if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::modify_problem_dof_mask_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name& set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name::iterator miit = set.find(name_problem);
+  ostringstream ss;
+  ss << name_problem;
+  if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,1,"this problem <%s> is there",ss.str().c_str());
+  bool success = set.modify(miit,problem_change_ref_level_bit_dof_mask_set(bit));
+  if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &EntFe,int verb) {
   PetscFunctionBegin;
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
@@ -2291,6 +2304,9 @@ PetscErrorCode FieldCore::build_problems(int verb) {
     miit4 = dofs_rows.get<1>().lower_bound(1);
     hi_miit4 = dofs_rows.get<1>().upper_bound(1);
     for(;miit4!=hi_miit4;miit4++) {
+      if(((*miit4)->get_BitRefLevel()&p_miit->get_DofMask_BitRefLevel())!=(*miit4)->get_BitRefLevel()) {
+	continue;
+      }
       success = moFEMProblems.modify(p_miit,problem_row_change(&**miit4));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     }
@@ -2299,6 +2315,9 @@ PetscErrorCode FieldCore::build_problems(int verb) {
     miit5 = dofs_cols.get<1>().lower_bound(1);
     hi_miit5 = dofs_cols.get<1>().upper_bound(1);
     for(;miit5!=hi_miit5;miit5++) {
+      if(((*miit5)->get_BitRefLevel()&p_miit->get_DofMask_BitRefLevel())!=(*miit5)->get_BitRefLevel()) {
+	continue;
+      }
       success = moFEMProblems.modify(p_miit,problem_col_change(&**miit5));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     }
