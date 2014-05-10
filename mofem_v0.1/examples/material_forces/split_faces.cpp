@@ -21,6 +21,8 @@
 #include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
 #include "FaceSplittingTool.hpp"
+#include "PostProcVertexMethod.hpp"
+
 
 using namespace MoFEM;
 
@@ -81,12 +83,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_fields(); CHKERRQ(ierr);
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
-	{ //cat mesh
-  
+        {
 	  FaceSplittingTools face_splitting(mField);
 	  ierr = main_refine_and_meshcat(mField,face_splitting,false); CHKERRQ(ierr);
 	  ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
-
 	}
 
 	//project and set coords
@@ -97,9 +97,9 @@ int main(int argc, char *argv[]) {
 
 	//find faces for split
 	FaceSplittingTools face_splitting(mField);
-	ierr = main_select_faces_for_splitting(mField,face_splitting,10); CHKERRQ(ierr);
+	ierr = main_select_faces_for_splitting(mField,face_splitting,0); CHKERRQ(ierr);
 	//do splittig
-	ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,10); CHKERRQ(ierr);
+	ierr = main_split_faces_and_update_field_and_elements(mField,face_splitting,0); CHKERRQ(ierr);
 	
 	//rebuild fields, finite elementa and problems
 	ierr = main_face_splitting_restart(mField,conf_prob); CHKERRQ(ierr);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 	ierr = conf_prob.set_material_positions(mField); CHKERRQ(ierr);
  
 	/*//debuging
-	ierr = mField.partition_check_matrix_fill_in("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",1); CHKERRQ(ierr);
+	ierr = mField.partition_check_matrix_fill_in("MESH_SMOOTHING_PROBLEM",1); CHKERRQ(ierr);
 	ierr = mField.partition_check_matrix_fill_in("ELASTIC_MECHANICS",1); CHKERRQ(ierr);
 	ierr = mField.partition_check_matrix_fill_in("COUPLED_PROBLEM",1); CHKERRQ(ierr);*/
 
@@ -128,10 +128,10 @@ int main(int argc, char *argv[]) {
 	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
 	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
 	Vec D_tmp_mesh_positions;
-	ierr = mField.VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
-	ierr = mField.set_local_VecCreateGhost("MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = conf_prob.front_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
-	ierr = conf_prob.surface_projection_data(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+	ierr = mField.VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
+	ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = conf_prob.front_projection_data(mField,"MESH_SMOOTHING_PROBLEM"); CHKERRQ(ierr);
+	ierr = conf_prob.surface_projection_data(mField,"MESH_SMOOTHING_PROBLEM"); CHKERRQ(ierr);
 	Range tets;
 	ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
 
@@ -171,12 +171,12 @@ int main(int argc, char *argv[]) {
 	    double alpha = (double)nn/(double)nb_sub_steps;
 	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
 	    //project nodes on crack surface
-	    ierr = conf_prob.project_form_th_projection_tag(mField,"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS"); CHKERRQ(ierr);
+	    ierr = conf_prob.project_form_th_projection_tag(mField,"MESH_SMOOTHING_PROBLEM"); CHKERRQ(ierr);
 	    bool flg;
 	    ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
 	    if(!flg) {
 	      ierr = mField.set_global_VecCreateGhost(
-		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		"MESH_SMOOTHING_PROBLEM",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	      nb_sub_steps++;
 	      break;
@@ -188,13 +188,13 @@ int main(int argc, char *argv[]) {
 	      ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
 	      if(reason < 0 || !flg) {
 		ierr = mField.set_global_VecCreateGhost(
-		  "MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		  "MESH_SMOOTHING_PROBLEM",
 		  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 		nb_sub_steps++;
 		break;
 	      }
 	      ierr = mField.set_local_VecCreateGhost(
-		"MATERIAL_MECHANICS_LAGRANGE_MULTIPLAIERS",
+		"MESH_SMOOTHING_PROBLEM",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
 	    }
@@ -203,6 +203,7 @@ int main(int argc, char *argv[]) {
 	  if(nb_sub_steps >= 10) break;
 
 	} while(nn-1 != nb_sub_steps);
+	ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 	ierr = VecDestroy(&D_tmp_mesh_positions); CHKERRQ(ierr);
 	ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
@@ -213,6 +214,7 @@ int main(int argc, char *argv[]) {
 	conf_prob.material_FirelWall->
 	  operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
 	ierr = conf_prob.set_spatial_positions(mField); CHKERRQ(ierr);
+
 
 	//solve spatial problem
 	ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
@@ -230,17 +232,16 @@ int main(int argc, char *argv[]) {
 	ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
 	ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
-	/*if(pcomm->rank()==0) {
-	  EntityHandle out_meshset;
-	  rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	  //ierr = mField.problem_get_FE("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
-	  ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS");
+  ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
 
-	  ostringstream ss;
-	  ss << "debug_spatial_solution_" << step << ".vtk";
-	  rval = mField.get_moab().write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	  rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-	}*/
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

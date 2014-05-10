@@ -77,6 +77,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode thermal_field(FieldInterface& mField);
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
   PetscErrorCode material_problem_definition(FieldInterface& mField);
+  PetscErrorCode mesh_smoothing_problem_definition(FieldInterface& mField);
   PetscErrorCode coupled_problem_definition(FieldInterface& mField);
   PetscErrorCode arclength_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_problem_definition(FieldInterface& mField);
@@ -116,11 +117,14 @@ struct ConfigurationalFractureMechanics {
 
   struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {
   
-    Range& CornersNodes;
+    Range& cornersNodes;
+
     bool fixAllSpatialDispacements;
-    CubitDisplacementDirihletBC_Coupled (FieldInterface& _mField,const string _problem_name,Range &_CornersNodes): 
-      CubitDisplacementDirihletBC(_mField,_problem_name,"None"),CornersNodes(_CornersNodes),fixAllSpatialDispacements(false) {}
-  
+    CubitDisplacementDirihletBC_Coupled(FieldInterface& _mField,const string _problem_name,
+      Range &_cornersNodes): 
+      CubitDisplacementDirihletBC(_mField,_problem_name,"None"),
+      cornersNodes(_cornersNodes),fixAllSpatialDispacements(false) {}
+
     PetscErrorCode SetDirihletBC_to_ElementIndicies(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
     PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(

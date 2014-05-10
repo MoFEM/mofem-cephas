@@ -307,6 +307,7 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
   crack_front_edges_nodes_edges_faces = intersect(crack_front_edges_nodes_edges_faces,crack_front_edges_faces);
   Range crack_surface;
   ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surface,true); CHKERRQ(ierr);
+  crack_surface = intersect(crack_surface,mesh_level_tris);
   crack_front_edges_nodes_edges_faces = subtract(crack_front_edges_nodes_edges_faces,crack_surface);
   Range crack_surface_nodes;
   rval = mField.get_moab().get_connectivity(crack_surface,crack_surface_nodes,true); CHKERR_PETSC(rval);
@@ -317,6 +318,7 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
   Range crack_front_edges_nodes_edges_faces_nodes_faces;
   rval = mField.get_moab().get_adjacencies(
     crack_front_edges_nodes_edges_faces_nodes,2,false,crack_front_edges_nodes_edges_faces_nodes_faces,Interface::UNION); CHKERR_PETSC(rval);
+  crack_front_edges_nodes_edges_faces_nodes_faces = intersect(crack_front_edges_nodes_edges_faces_nodes_faces,mesh_level_tris);
   crack_front_edges_nodes_edges_faces = subtract(crack_front_edges_nodes_edges_faces,crack_front_edges_nodes_edges_faces_nodes_faces);
   //reject faces at corner which angles are smaller than PI
   //edges at corner should be not-conbex 
@@ -331,11 +333,11 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
       if(fit_edges.size()==2) {
 	EntityHandle edge0 = fit_edges[0];
 	EntityHandle edge1 = fit_edges[1];
-	Range fit_edges0_nodes;
-	rval = mField.get_moab().get_connectivity(&edge0,1,fit_edges0_nodes,true); CHKERR_PETSC(rval);
-	Range fit_edges1_nodes;
-	rval = mField.get_moab().get_connectivity(&edge1,1,fit_edges1_nodes,true); CHKERR_PETSC(rval);
-	Range corner = intersect(fit_edges0_nodes,fit_edges1_nodes);
+	Range edges0_nodes;
+	rval = mField.get_moab().get_connectivity(&edge0,1,edges0_nodes,true); CHKERR_PETSC(rval);
+	Range edges1_nodes;
+	rval = mField.get_moab().get_connectivity(&edge1,1,edges1_nodes,true); CHKERR_PETSC(rval);
+	Range corner = intersect(edges0_nodes,edges1_nodes);
 	if(corner.size()!=1) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
@@ -345,19 +347,23 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
 	Range corner_edges;
 	rval = mField.get_moab().get_adjacencies(corner,1,false,corner_edges); CHKERR_PETSC(rval);
 	double angle = 0;
+	//cerr << "\n\n";
 	Range::iterator fiit = corner_faces.begin();
 	for(;fiit!=corner_faces.end();fiit++) {
 	  Range fiit_edges;
 	  rval = mField.get_moab().get_adjacencies(&*fiit,1,1,false,fiit_edges); CHKERR_PETSC(rval);
 	  fiit_edges = intersect(fiit_edges,corner_edges);
+	  if(fiit_edges.size()!=2) {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
 	  edge0 = fiit_edges[0];
 	  edge1 = fiit_edges[1];
-	  fit_edges0_nodes.clear();
-	  rval = mField.get_moab().get_connectivity(&edge0,1,fit_edges0_nodes,true); CHKERR_PETSC(rval);
-	  fit_edges1_nodes.clear();
-	  rval = mField.get_moab().get_connectivity(&edge1,1,fit_edges1_nodes,true); CHKERR_PETSC(rval);
-	  Range node0 = subtract(fit_edges0_nodes,corner);
-	  Range node1 = subtract(fit_edges1_nodes,corner);
+	  edges0_nodes.clear();
+	  rval = mField.get_moab().get_connectivity(&edge0,1,edges0_nodes,true); CHKERR_PETSC(rval);
+	  edges1_nodes.clear();
+	  rval = mField.get_moab().get_connectivity(&edge1,1,edges1_nodes,true); CHKERR_PETSC(rval);
+	  Range node0 = subtract(edges0_nodes,corner);
+	  Range node1 = subtract(edges1_nodes,corner);
 	  if(node0.size()!=1) {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  }
@@ -375,8 +381,9 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
 	  rval = mField.get_moab().get_coords(node1,&*coords_node1.data().begin()); CHKERR_PETSC(rval);
 	  coords_node0 -= coords_corner;
 	  coords_node1 -= coords_corner;
-	  double dot = inner_prod(coords_node0,coords_node1)/(norm_2(coords_node0)*norm_2(coords_node0));
+	  double dot = inner_prod(coords_node0,coords_node1)/(norm_2(coords_node0)*norm_2(coords_node1));
 	  angle += acos(dot);
+	  //cerr << "dot " << dot << " acos " << acos(dot)*180/M_PI << " angle " << angle*180/M_PI << endl;
 	}
 	if(angle<M_PI) {
 	  fit = crack_front_edges_nodes_edges_faces.erase(fit);
@@ -1834,11 +1841,14 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   ierr = mField.remove_ents_from_finite_element("C_CRACK_SURFACE_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("CTC_CRACK_SURFACE_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("CandCT_CRACK_SURFACE_ELEM",0,MBTRI); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_finite_element("CandCT_CRACK_SURFACE_ELEM_WITH_CRACK_FRONT",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACK_TANGENT_CONSTRAIN",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACK_TANGENT_CONSTRAIN",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACK_SURFACE",0,MBVERTEX); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_field("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT",0,MBVERTEX); CHKERRQ(ierr);
+
 
   //BitRefLevel maskPreserv;
   //ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
