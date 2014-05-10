@@ -1841,11 +1841,14 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   ierr = mField.remove_ents_from_finite_element("C_CRACK_SURFACE_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("CTC_CRACK_SURFACE_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("CandCT_CRACK_SURFACE_ELEM",0,MBTRI); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_finite_element("CandCT_CRACK_SURFACE_ELEM_WITH_CRACK_FRONT",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACK_TANGENT_CONSTRAIN",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACK_TANGENT_CONSTRAIN",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACK_SURFACE",0,MBVERTEX); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_field("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT",0,MBVERTEX); CHKERRQ(ierr);
+
 
   //BitRefLevel maskPreserv;
   //ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);

@@ -22,9 +22,6 @@ target_link_libraries(spatial_problem mofem_complex_for_lazy mofem_face_splittin
 add_executable(material_force material_force.cpp)
 target_link_libraries(material_force mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(material_problem material_problem.cpp)
-target_link_libraries(material_problem mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
-
 add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
 target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
 
