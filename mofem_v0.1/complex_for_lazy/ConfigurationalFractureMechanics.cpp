@@ -1867,6 +1867,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     }
     if(dd != 6) SETERRQ1(PETSC_COMM_SELF,1,"can not find griffith force vector at node %ld",diit->get_ent());
     double j = norm_2(material_force)/(norm_2(griffith_force)/gc);
+    map_ent_j[ent] = j;
     if(diit->get_part()==pcomm->rank()) {
       ierr = VecSetValue(JVec,diit->get_petsc_gloabl_dof_idx(),j,INSERT_VALUES); CHKERRQ(ierr);
     }
