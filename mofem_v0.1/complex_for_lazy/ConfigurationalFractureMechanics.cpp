@@ -1020,6 +1020,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
   ierr = mField.add_field("LAMBDA_CRACKFRONT_AREA",H1,1,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_field("LAMBDA_CRACK_TANGENT_CONSTRAIN",H1,1,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_field("GRIFFITH_FORCE",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_field("GRIFFITH_FORCE_TANGENT",H1,3,MF_ZERO); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("C_CRACKFRONT_AREA_ELEM",MF_ZERO); CHKERRQ(ierr);
@@ -1671,22 +1672,26 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = VecNorm(QTGriffithForceVec,NORM_2,&nrm2_griffith_force);   CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_QTGriffithForceVec = %6.4e\n",nrm2_griffith_force); CHKERRQ(ierr);
 
-  //Tangent front froce
-  C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(mField,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
-
-  ierr = MatZeroEntries(projFrontCtx->C); CHKERRQ(ierr);
+  //tangent front froce
+  matPROJ_ctx projFrontCtx_tangent(mField,problem,"C_CRACKFRONT_MATRIX");
+  ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
+  C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(mField,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
+  ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
-  ierr = MatAssemblyBegin(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-  ierr = MatMultTranspose(projFrontCtx->C,LambdaVec,GriffithForceVec); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatMultTranspose(projFrontCtx_tangent.C,LambdaVec,GriffithForceVec); CHKERRQ(ierr);
   ierr = MatMult(Q,GriffithForceVec,QTGriffithForceVec); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(QTGriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(QTGriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost(
+    problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE_TANGENT",Row,QTGriffithForceVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_tangent(
     mField.get_moab(),"MESH_NODE_POSITIONS",QTGriffithForceVec,"GRIFFITH_TANGENT_FORCE");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Col,ent_method_tangent); CHKERRQ(ierr);
+  ierr = MatDestroy(&projFrontCtx_tangent.C); CHKERRQ(ierr);
 
+  //cleaning
   ierr = MatDestroy(&Q); CHKERRQ(ierr);
   ierr = VecDestroy(&LambdaVec); CHKERRQ(ierr);
   ierr = VecDestroy(&GriffithForceVec); CHKERRQ(ierr);
@@ -1707,8 +1712,14 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   Vec F_Griffith;
   ierr = mField.VecCreateGhost(problem,Row,&F_Griffith); CHKERRQ(ierr);
   ierr = mField.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE",Row,F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  Vec LambdaVec;
+  Vec F_Griffith_Tangent;
+  ierr = mField.VecCreateGhost(problem,Row,&F_Griffith_Tangent); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost(
+    problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE_TANGENT",Row,F_Griffith_Tangent,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  Vec LambdaVec,LambdaVec_Tangent;
   ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Row,&LambdaVec); CHKERRQ(ierr);
+  ierr = VecDuplicate(LambdaVec,&LambdaVec_Tangent); CHKERRQ(ierr);
 
   Mat Q;
   {
@@ -1763,24 +1774,63 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     ierr = MatShellSetOperation(RT,MATOP_MULT,(void(*)(void))matRT_mult_shell); CHKERRQ(ierr);
   }
   
+  //calulate tangent griffith force
+  matPROJ_ctx projFrontCtx_tangent(mField,problem,"C_CRACKFRONT_MATRIX");
+  ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
+  C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(mField,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
+  ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  Mat RT_Tangent;
+  {
+    int N,n;
+    int M,m;
+    ierr = VecGetSize(F_Material,&N); CHKERRQ(ierr);
+    ierr = VecGetLocalSize(F_Material,&n); CHKERRQ(ierr);
+    ierr = VecGetSize(LambdaVec_Tangent,&M); CHKERRQ(ierr);
+    ierr = VecGetLocalSize(LambdaVec_Tangent,&m); CHKERRQ(ierr);
+    ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&projFrontCtx_tangent,&RT_Tangent); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(RT_Tangent,MATOP_MULT,(void(*)(void))matRT_mult_shell); CHKERRQ(ierr);
+  }
+
+  //clualte griffith forces
   double gc = 1;
-  PetscBool flg;
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
-  //if(flg != PETSC_TRUE) {
-  //    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
-  //}
+  PetscBool flg_gc;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg_gc); CHKERRQ(ierr);
 
   ierr = projFrontCtx->InitQorP(F_Material); CHKERRQ(ierr);
+  ierr = projFrontCtx_tangent.InitQorP(F_Material); CHKERRQ(ierr);
+
   // unit of LambdaVec [ N * 1/m = N*m/m^2 = J/m^2 ]
   ierr = VecScale(F_Material,-1./gc); CHKERRQ(ierr);
   ierr = MatMult(RT,F_Material,LambdaVec); CHKERRQ(ierr);  
+  ierr = MatMult(RT_Tangent,F_Material,LambdaVec_Tangent); CHKERRQ(ierr);  
   ierr = VecScale(F_Material,gc); CHKERRQ(ierr);
   ierr = VecScale(LambdaVec,gc); CHKERRQ(ierr);
-
+  ierr = VecScale(LambdaVec_Tangent,gc); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(LambdaVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(LambdaVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("C_CRACKFRONT_MATRIX",Row,LambdaVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(LambdaVec_Tangent,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(LambdaVec_Tangent,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+  //get pointer to problem
+  const MoFEMProblem *problem_ptr;
+  ierr = mField.get_problem("C_CRACKFRONT_MATRIX",&problem_ptr); CHKERRQ(ierr);
+  //make maps to save griffith forces
+  ierr = mField.set_global_VecCreateGhost("C_CRACKFRONT_MATRIX",Row,LambdaVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  map<EntityHandle,double> g_map;
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
+    g_map[diit->get_ent()] = diit->get_FieldData();
+  }
+  ierr = mField.set_global_VecCreateGhost("C_CRACKFRONT_MATRIX",Row,LambdaVec_Tangent,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  map<EntityHandle,double> g_tangent_map;
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
+    g_tangent_map[diit->get_ent()] = diit->get_FieldData();
+  }
+
+  //vector of matrerial force magnitudes
   Vec JVec;
   ierr = VecDuplicate(LambdaVec,&JVec); CHKERRQ(ierr);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -1789,16 +1839,19 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   coords.resize(3);
   PetscPrintf(PETSC_COMM_WORLD,"\n\ngriffith force\n\n");
 
-  Tag th_g;
+  Tag th_g,th_g_tangent;
   const double def_val = 0;
-  rval = mField.get_moab().tag_get_handle("G",1,MB_TYPE_DOUBLE,th_g,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_THROW(rval);
+  rval = mField.get_moab().tag_get_handle(
+    "G1",1,MB_TYPE_DOUBLE,th_g,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_THROW(rval);
+  rval = mField.get_moab().tag_get_handle(
+    "G3",1,MB_TYPE_DOUBLE,th_g_tangent,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_THROW(rval);
 
-  map_ent_g.clear();
-  map_ent_j.clear();
-  const MoFEMProblem *problem_ptr;
-  ierr = mField.get_problem("C_CRACKFRONT_MATRIX",&problem_ptr); CHKERRQ(ierr);
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
     EntityHandle ent = diit->get_ent();
+    double g_val = g_map[ent];
+    double g_tangent_val = fabs(g_tangent_map[ent]);
+    rval = mField.get_moab().tag_set_data(th_g,&ent,1,&g_val); CHKERR_PETSC(rval);
+    rval = mField.get_moab().tag_set_data(th_g_tangent,&ent,1,&g_tangent_val); CHKERR_PETSC(rval);
     rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERR_PETSC(rval);
     int dd = 0;
     ublas::vector<double,ublas::bounded_array<double,9> > material_force(3);
@@ -1818,25 +1871,31 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
       ierr = VecSetValue(JVec,diit->get_petsc_gloabl_dof_idx(),j,INSERT_VALUES); CHKERRQ(ierr);
     }
     ostringstream ss;
-    ss << "griffith force at ";
-    ss << "ent " << diit->get_ent();
+    ss << "griffith force at ent ";
+    ss << setw(5) << ent;
+    //coords
     ss << "\tcoords";
     ss << " " << setw(10) << setprecision(4) << coords[0];
     ss << " " << setw(10) << setprecision(4) << coords[1];
     ss << " " << setw(10) << setprecision(4) << coords[2];
-    ss << "\t\tg " << scientific << setprecision(4) << diit->get_FieldData();
+    //g 
+    ss << "\t\tg1 " << scientific << setprecision(4) << g_val;
     ss << " / " << scientific << setprecision(4) << j;
-    ss << " ( " << scientific << setprecision(4) << diit->get_FieldData()/j << " )";
-    if(flg == PETSC_TRUE) {
-      ss << "\t relative error (gc-g)/gc " << scientific << setprecision(4) << (gc-diit->get_FieldData())/gc;
+    ss << " ( " << scientific << setprecision(4) << g_val/j << " )";
+    //g normal g1^2 + g2^2 + g3^2 = j^2 
+    double g_normal = sqrt(fmax(pow(j,2) - pow(g_val,2) - pow(g_tangent_val,2),0));
+    ss << "\t\tg2 " << scientific << setprecision(4) << g_normal;
+    ss << " ( " << scientific << setprecision(4) << g_normal/j << " )";
+    //g tangent
+    ss << "\t\tg3 " << scientific << setprecision(4) << g_tangent_val;
+    ss << " ( " << scientific << setprecision(4) << g_tangent_val/j << " )";
+    if(flg_gc == PETSC_TRUE) {
+      ss << "\t relative error (gc-g)/gc ";
+      ss << scientific << setprecision(4) << (gc-g_val)/gc;
       ss << " / " << scientific << setprecision(4) << (gc-j)/gc;
     }
     ss << endl; 
     PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
-    double val = diit->get_FieldData();
-    map_ent_g[ent] = val;
-    map_ent_j[ent] = j;
-    rval = mField.get_moab().tag_set_data(th_g,&ent,1,&val); CHKERR_PETSC(rval);
   }
 
   ierr = VecSum(LambdaVec,&ave_g); CHKERRQ(ierr);
@@ -1888,9 +1947,16 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
 
   ierr = MatDestroy(&Q); CHKERRQ(ierr);
   ierr = MatDestroy(&RT); CHKERRQ(ierr);
+  ierr = MatDestroy(&RT_Tangent); CHKERRQ(ierr);
   ierr = VecDestroy(&F_Griffith); CHKERRQ(ierr);
+  ierr = VecDestroy(&F_Griffith_Tangent); CHKERRQ(ierr);
   ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
   ierr = VecDestroy(&LambdaVec); CHKERRQ(ierr);
+  ierr = VecDestroy(&LambdaVec_Tangent); CHKERRQ(ierr);
+
+  ierr = projFrontCtx_tangent.DestroyQorP(); CHKERRQ(ierr);
+  ierr = projFrontCtx_tangent.DestroyQTKQ(); CHKERRQ(ierr);
+  ierr = MatDestroy(&projFrontCtx_tangent.C); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

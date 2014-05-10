@@ -338,9 +338,10 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	double iSpinA[9];
 	ierr = Spin(iSpinA,iA); CHKERRQ(ierr); // unit [1/m]
 	__CLPK_doublecomplex xSpinA[9];
-	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr);
+	// make spin matrix to calulate cross product
+	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr); 
 	__CLPK_doublecomplex xT[3];
-	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinA,3,x_normal,1,&x_zero,xT,1);
+	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinA,3,x_normal,1,&x_zero,xT,1); // unit [1/m]
 	if(T != NULL) {
 	  T[3*nn + 0] = xT[0].r;
 	  T[3*nn + 1] = xT[1].r;
