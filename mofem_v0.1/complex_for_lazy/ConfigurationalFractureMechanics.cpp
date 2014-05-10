@@ -1846,6 +1846,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   rval = mField.get_moab().tag_get_handle(
     "G3",1,MB_TYPE_DOUBLE,th_g_tangent,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_THROW(rval);
 
+  map_ent_j.clear();
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
     EntityHandle ent = diit->get_ent();
     double g_val = g_map[ent];
