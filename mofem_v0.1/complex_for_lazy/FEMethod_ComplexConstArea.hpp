@@ -338,9 +338,10 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	double iSpinA[9];
 	ierr = Spin(iSpinA,iA); CHKERRQ(ierr); // unit [1/m]
 	__CLPK_doublecomplex xSpinA[9];
-	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr);
+	// make spin matrix to calulate cross product
+	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr); 
 	__CLPK_doublecomplex xT[3];
-	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinA,3,x_normal,1,&x_zero,xT,1);
+	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinA,3,x_normal,1,&x_zero,xT,1); // unit [1/m]
 	if(T != NULL) {
 	  T[3*nn + 0] = xT[0].r;
 	  T[3*nn + 1] = xT[1].r;
@@ -450,6 +451,61 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
   
+};
+
+struct C_FRONT_TANGENT_FEMethod: public C_CONSTANT_AREA_FEMethod {
+
+  C_FRONT_TANGENT_FEMethod(FieldInterface& _mField,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
+    C_CONSTANT_AREA_FEMethod(_mField,_C,_Q,_lambda_field_name,_verbose) {}
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    try {
+      ierr = getData(true,false); CHKERRQ(ierr);
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+    try {
+      ublas::vector<double,ublas::bounded_array<double,9> > ELEM_CONSTRAIN(9);
+      ierr = calcDirevatives(
+	&*diffNTRI.data().begin(),&*dofs_X.data().begin(),NULL,
+	NULL,NULL,&*ELEM_CONSTRAIN.data().begin(),NULL); CHKERRQ(ierr);
+      //take in account face orientation in respect crack surface
+      Tag th_interface_side;
+      rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
+      int side;
+      rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
+      if(side == 1) {
+	ELEM_CONSTRAIN *= -1;
+      }
+      for(int nn = 0;nn<3;nn++) {
+	if(lambda_dofs_row_indx[nn]==-1) continue;
+	for(int NN = 0;NN<3;NN++) {
+	  if(NN!=nn) continue;
+	  if(Q == PETSC_NULL) {
+	  ierr = MatSetValues(C,
+	    1,&(lambda_dofs_row_indx.data()[nn]),
+	    3,&(disp_dofs_col_idx.data()[3*NN]),
+	    &ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  if(Q != PETSC_NULL) {
+	    if(mapV.find(lambda_dofs_row_indx[nn])==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    ierr = VecSetValues(mapV[lambda_dofs_row_indx[nn]],
+	      3,&(disp_dofs_col_idx.data()[3*NN]),
+	      &ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
+	  }
+	}	
+      }
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    } 
+    PetscFunctionReturn(0);
+  }
+
 };
 
 /** 
@@ -660,12 +716,12 @@ struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
 };
 
-struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
+struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
 
   FEMethod_DriverComplexForLazy_MeshSmoothing *mesh_fe_ptr;
   const double eps;
 
-  TangentFrontConstrain_FEMethod(FieldInterface& _mField,
+  TangentWithMeshSmoothingFrontConstrain_FEMethod(FieldInterface& _mField,
     FEMethod_DriverComplexForLazy_MeshSmoothing *_mesh_fe_ptr,
     string _lambda_field_name,int _verbose = 0):
     C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),
@@ -717,16 +773,15 @@ struct TangentFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
     try {
-      //tag create
-      Tag th_interface_side;
-      rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
-      int side;
-      rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
       ublas::vector<double,ublas::bounded_array<double,9> > ELEM_CONSTRAIN1(9);
       ierr = calcDirevatives(
 	&*diffNTRI.data().begin(),&*dofs_X.data().begin(),
 	NULL,NULL,NULL,&*ELEM_CONSTRAIN1.data().begin(),NULL); CHKERRQ(ierr);
       //take in account face orientation in respect crack surface
+      Tag th_interface_side;
+      rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
+      int side;
+      rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
       if(side == 1) {
 	ELEM_CONSTRAIN1 *= -1;
       }

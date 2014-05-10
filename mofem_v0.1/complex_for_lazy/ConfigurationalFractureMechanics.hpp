@@ -50,8 +50,6 @@ struct ConfigurationalFractureMechanics {
     FW_thermal_field
   };
 
-  EntityHandle crackForntMeshset;
-  EntityHandle crackFrontTangentConstrains;
   matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
 
   BitRefLevel *ptr_bit_level0;
@@ -98,6 +96,7 @@ struct ConfigurationalFractureMechanics {
 
   double aRea,lambda,energy;
   int nb_un_freez_nodes;
+  bool freeze_all_but_one;
   PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,const double da,const double fraction_treshold = 5e-2);
 
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
