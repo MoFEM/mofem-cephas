@@ -50,8 +50,6 @@ struct ConfigurationalFractureMechanics {
     FW_thermal_field
   };
 
-  EntityHandle crackForntMeshset;
-  EntityHandle crackFrontTangentConstrains;
   matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
 
   BitRefLevel *ptr_bit_level0;
@@ -77,6 +75,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode thermal_field(FieldInterface& mField);
   PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
   PetscErrorCode material_problem_definition(FieldInterface& mField);
+  PetscErrorCode mesh_smoothing_problem_definition(FieldInterface& mField);
   PetscErrorCode coupled_problem_definition(FieldInterface& mField);
   PetscErrorCode arclength_problem_definition(FieldInterface& mField);
   PetscErrorCode constrains_problem_definition(FieldInterface& mField);
@@ -97,6 +96,7 @@ struct ConfigurationalFractureMechanics {
 
   double aRea,lambda,energy;
   int nb_un_freez_nodes;
+  bool freeze_all_but_one;
   PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,const double da,const double fraction_treshold = 5e-2);
 
   PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
@@ -116,11 +116,14 @@ struct ConfigurationalFractureMechanics {
 
   struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {
   
-    Range& CornersNodes;
+    Range& cornersNodes;
+
     bool fixAllSpatialDispacements;
-    CubitDisplacementDirihletBC_Coupled (FieldInterface& _mField,const string _problem_name,Range &_CornersNodes): 
-      CubitDisplacementDirihletBC(_mField,_problem_name,"None"),CornersNodes(_CornersNodes),fixAllSpatialDispacements(false) {}
-  
+    CubitDisplacementDirihletBC_Coupled(FieldInterface& _mField,const string _problem_name,
+      Range &_cornersNodes): 
+      CubitDisplacementDirihletBC(_mField,_problem_name,"None"),
+      cornersNodes(_cornersNodes),fixAllSpatialDispacements(false) {}
+
     PetscErrorCode SetDirihletBC_to_ElementIndicies(
       FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
     PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
