@@ -300,14 +300,14 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface() {
   rval = mField.get_moab().get_connectivity(mesh_level_tets,nodes,true); CHKERR_PETSC(rval);
   ierr = calculateDistanceFromCrackSurface(nodes,1.); CHKERRQ(ierr);
   //if(verb>0) {
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  /*  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       rval = mField.get_moab().add_entities(out_meshset,mesh_level_tets); CHKERR_PETSC(rval);
       rval = mField.get_moab().write_file("distances.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-    }
+    }*/
   //}
   PetscFunctionReturn(0);
 }
