@@ -199,21 +199,6 @@ PetscErrorCode ShapeFaceDiffNormal_MBTRI(double *diffN,const double *coords,doub
       -1.,Spin_diffX_eta,3,B_ksi,9,1.,diff_normal,9);
   PetscFunctionReturn(0);
 }
-void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac) {
-  int ii,jj,kk;
-  bzero(Jac,sizeof(double)*9);
-  for(ii = 0; ii<3; ii++) 	//shape func.
-    for(jj = 0; jj<3; jj++) 	//space
-      for(kk = 0; kk<3; kk++) 	//direvative of shape func.
-	Jac[ jj*3+kk ] += 
-	  diffN[ ii*3+kk ]*coords[ ii*3+jj ];
-}
-void ShapeDiffMBTRIinvJ(double *diffN,double *invJac,double *diffNinvJac) {
-  int ii = 0;
-  for(;ii<3; ii++) {
-   cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,invJac,3,&diffN[ii*3],1,0.,&diffNinvJac[ii*3],1);
-  }
-}
 
 //MBTET
 #define N_MBTET0(x, y, z) ( 1.-x-y-z )
@@ -816,7 +801,7 @@ double Shape_intVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,
   double detJac_at_Gauss_Points[G_DIM];
   ierr = ShapeMBTETQ_detJac_at_Gauss_Points(detJac_at_Gauss_Points,diffN,coords,G_DIM); CHKERRQ(ierr);
   for(; ii<G_DIM; ii++) {
-    vol += G_TET_W[ii]*(detJac_at_Gauss_Points[ii]);
+    vol += G_TET_W[ii]*(detJac_at_Gauss_Points[ii])/6;
   }
   return vol;
 }
