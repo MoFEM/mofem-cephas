@@ -57,7 +57,7 @@ nodeset 101 vertex 60 56 55 59 remove
   
 #Boundary surfaces    
 sideset 102 surface all    
-sideset 102 surface 76 70 72 remove  
+sideset 102 surface 76 70 72 7 17 remove  
   
 #Crack surface 
 sideset 200 surface 70 
@@ -76,4 +76,5 @@ volume 8 10 size auto factor 8
 #mesh surface 70 
 mesh volume all  
   
-#save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/T3_horiz_assym.cub" overwrite  
+#save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/T3_corner_notch.cub" overwrite  
+
