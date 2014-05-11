@@ -1884,10 +1884,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
     ss << "\t\tg1 " << scientific << setprecision(4) << g_val;
     ss << " / " << scientific << setprecision(4) << j;
     ss << " ( " << scientific << setprecision(4) << g_val/j << " )";
-    //g normal g1^2 + g2^2 + g3^2 = j^2 
-    double g_normal = sqrt(fmax(pow(j,2) - pow(g_val,2) - pow(g_tangent_val,2),0));
-    ss << "\t\tg2 " << scientific << setprecision(4) << g_normal;
-    ss << " ( " << scientific << setprecision(4) << g_normal/j << " )";
     //g tangent
     ss << "\t\tg3 " << scientific << setprecision(4) << g_tangent_val;
     ss << " ( " << scientific << setprecision(4) << g_tangent_val/j << " )";
