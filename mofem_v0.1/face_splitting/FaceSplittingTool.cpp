@@ -43,10 +43,24 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
 
   rval = moab_distance_from_crack_surface.delete_mesh(); CHKERR_PETSC(rval);
 
+  Tag th_freez;
+  rval = mField.get_moab().tag_get_handle("FROZEN_NODE",th_freez); CHKERR_PETSC(rval);
+
+  Tag th_normal;
+  double def_VAL[4] = { 0,0,0,0 };
+  rval = moab_distance_from_crack_surface.tag_get_handle(
+    "NORMAL",4,MB_TYPE_DOUBLE,th_normal,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+
   //material prositions
   const DofMoFEMEntity_multiIndex *dofs_moabfield_ptr;
   ierr = mField.get_dofs(&dofs_moabfield_ptr); CHKERRQ(ierr);
   typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dof_iterator;
+
+  Range crack_front_edges;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  crack_front_edges = intersect(crack_front_edges,mesh_level_edges);
+  Range crack_front_edges_nodes;
+  rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
 
   Range nodes;
   rval = mField.get_moab().get_connectivity(entities,nodes,true); CHKERR_PETSC(rval);
@@ -65,14 +79,57 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
     }
     //create coords in moab for kdTree 
     rval = moab_distance_from_crack_surface.create_vertex(coords,map_nodes[*nit]); CHKERR_PETSC(rval);
+
+    int freez;
+    mField.get_moab().tag_get_data(th_freez,&*nit,1,&freez);
+
+    if(freez == 0 && crack_front_edges_nodes.find(*nit)!=crack_front_edges_nodes.end() ) {
+
+      dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("GRIFFITH_FORCE_TANGENT",*nit));
+      hi_dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("GRIFFITH_FORCE_TANGENT",*nit));	
+      if(distance(dit,hi_dit)!=3) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+
+      double tangent[3] = { 0,0,0 };
+      for(;dit!=hi_dit;dit++) {
+	tangent[dit->get_dof_rank()] = dit->get_FieldData();
+      }
+      double tangent_nrm2 =  cblas_dnrm2(3,tangent,1);
+      cblas_dscal(3,1./tangent_nrm2,tangent,1);
+      //cerr << "tangent_nrm2 " << tangent_nrm2 << endl;
+
+      dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MATERIAL_FORCE",*nit));
+      hi_dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MATERIAL_FORCE",*nit));	
+      if(distance(dit,hi_dit)!=3) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+
+      double force[3] = { 0,0,0 };
+      for(;dit!=hi_dit;dit++) {
+	force[dit->get_dof_rank()] = dit->get_FieldData();
+      }
+      double force_nrm2 = cblas_dnrm2(3,force,1);
+      cblas_dscal(3,1./force_nrm2,force,1);
+      //cerr << "force_nrm2 " << force_nrm2 << endl;
+
+      double Spin_tangent[9] = { 0,0,0, 0,0,0, 0,0,0 };
+      ierr = Spin(Spin_tangent,tangent); CHKERRQ(ierr);
+      double normal[4] = { 0,0,0,1 };
+      cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1,Spin_tangent,3,force,1,0,normal,1); 
+    
+      rval = moab_distance_from_crack_surface.tag_set_data(th_normal,&map_nodes[*nit],1,normal); CHKERR_PETSC(rval);
+
+    }
+
   }
 
   double diffN[3*2];
   ierr = ShapeDiffMBTRI(diffN); CHKERRQ(ierr);
-
-  Tag th_normal;
-  double def_VAL[3] = { 0,0,0 };
-  rval = moab_distance_from_crack_surface.tag_get_handle("NORMAL",3,MB_TYPE_DOUBLE,th_normal,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
 
   Range new_entities;
   for(Range::iterator eit = entities.begin();eit!=entities.end();eit++) {
@@ -151,27 +208,80 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
   Tag th_normal;
   rval = moab_distance_from_crack_surface.tag_get_handle("NORMAL",th_normal); CHKERR_THROW(rval);
 
+  //material prositions
+  const DofMoFEMEntity_multiIndex *dofs_moabfield_ptr;
+  ierr = mField.get_dofs(&dofs_moabfield_ptr); CHKERRQ(ierr);
+  typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dof_iterator;
+
+
   for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
     double coords[3]; 
     rval = mField.get_moab().get_coords(&*nit,1,coords); CHKERR_PETSC(rval);
+    dof_iterator dit = 
+      dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));
+    dof_iterator hi_dit = 
+      dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));	
+    if(distance(dit,hi_dit)==3) {
+      //get coords from material field
+      for(;dit!=hi_dit;dit++) {
+	coords[dit->get_dof_rank()] = dit->get_FieldData();
+      }
+    }
     double closest_point_out[3];
     EntityHandle triangle_out;
     rval = kdTree_DistanceFromCrackSurface.closest_triangle(
       kdTree_rootMeshset_DistanceFromCrackSurface,coords,closest_point_out,triangle_out); CHKERR_PETSC(rval);
+    int num_nodes; 
+    const EntityHandle* conn;
+    rval = mField.get_moab().get_connectivity(triangle_out,conn,num_nodes,true); CHKERR_PETSC(rval);
+    double face_coords[9];
+    rval = mField.get_moab().get_coords(conn,3,face_coords); CHKERR_PETSC(rval);
+    for(int nn = 0;nn<3;nn++) {
+      dof_iterator dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));
+      dof_iterator hi_dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn[nn]));	
+      if(distance(dit,hi_dit)==3) {
+	for(;dit!=hi_dit;dit++) {
+	  face_coords[3*nn+dit->get_dof_rank()] = dit->get_FieldData();
+	}
+      }
+    }
+    double normals[4*3];
+    rval = moab_distance_from_crack_surface.tag_get_data(th_normal,conn,3,normals); CHKERR_PETSC(rval);
+    double min_dist = -1;
     double distance[3];
-    cblas_dcopy(3,coords,1,distance,1);
-    cblas_daxpy(3,-1,closest_point_out,1,distance,1);
-    double normal[3];
-    rval = moab_distance_from_crack_surface.tag_get_data(th_normal,&triangle_out,1,normal); CHKERR_PETSC(rval);
-    double dot = -cblas_ddot(3,normal,1,distance,1);
-    //double d = copysign(cblas_dnrm2(3,distance,1),dot);
-    double projection[3];
-    cblas_dcopy(3,coords,1,projection,1);
-    cblas_daxpy(3,alpha*dot,normal,1,projection,1);
-    rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
-    rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
+    for(int nn = 0;nn<3;nn++) {
+      if(normals[nn*4+3]==0) continue;
+      cblas_dcopy(3,coords,1,distance,1);
+      cblas_daxpy(3,-1,&face_coords[3*nn],1,distance,1);
+      double dist = cblas_dnrm2(3,distance,1);
+      if(min_dist<0) {
+	min_dist = dist;
+      } else {
+	min_dist = fmin(dist,min_dist);
+      }
+      double dot = -cblas_ddot(3,&normals[nn*4],1,distance,1);
+      double projection[3];
+      cblas_dcopy(3,coords,1,projection,1);
+      cblas_daxpy(3,alpha*dot,normals,1,projection,1);
+      rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
+      rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
+    }
+    if(min_dist<0) {	
+      cblas_dcopy(3,coords,1,distance,1);
+      cblas_daxpy(3,-1,closest_point_out,1,distance,1);
+      double normal[3];
+      rval = moab_distance_from_crack_surface.tag_get_data(th_normal,&triangle_out,1,normal); CHKERR_PETSC(rval);
+      double dot = -cblas_ddot(3,normal,1,distance,1);
+      //cerr << dot << endl;
+      double projection[3];
+      cblas_dcopy(3,coords,1,projection,1);
+      cblas_daxpy(3,alpha*dot,normal,1,projection,1);
+      rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
+      rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
+    }
   }
-
   PetscFunctionReturn(0);
 }
 PetscErrorCode FaceSplittingTools::calculateDistanceCrackFrontNodesFromCrackSurface(double alpha) {
@@ -189,6 +299,16 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface() {
   Range nodes;
   rval = mField.get_moab().get_connectivity(mesh_level_tets,nodes,true); CHKERR_PETSC(rval);
   ierr = calculateDistanceFromCrackSurface(nodes,1.); CHKERRQ(ierr);
+  //if(verb>0) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    if(pcomm->rank()==0) {
+      EntityHandle out_meshset;
+      rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,mesh_level_tets); CHKERR_PETSC(rval);
+      rval = mField.get_moab().write_file("distances.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    }
+  //}
   PetscFunctionReturn(0);
 }
 PetscErrorCode FaceSplittingTools::getOpositeForntEdges(bool createMeshset) {
@@ -1815,7 +1935,8 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACK_SURFACE",0,MBVERTEX); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_field("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT",0,MBVERTEX); CHKERRQ(ierr);
-
+  ierr = mField.remove_ents_from_field("GRIFFITH_FORCE",0,MBVERTEX); CHKERRQ(ierr);
+  ierr = mField.remove_ents_from_field("GRIFFITH_FORCE_TANGENT",0,MBVERTEX); CHKERRQ(ierr);
 
   //BitRefLevel maskPreserv;
   //ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
