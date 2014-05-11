@@ -126,7 +126,8 @@ int main(int argc, char *argv[]) {
 	ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 	SNESLineSearch linesearch;
 	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
-	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+	//ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
 	Vec D_tmp_mesh_positions;
 	ierr = mField.VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
 	ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
