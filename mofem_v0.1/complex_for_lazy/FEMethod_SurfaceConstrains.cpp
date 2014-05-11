@@ -64,20 +64,24 @@ void C_SURFACE_FEMethod::run_in_constructor() {
     dC_MAT_ELEM.resize(3,9);
     dCT_MAT_ELEM.resize(9,9);
     //crack front nodes
-    Range crack_front_edges;
-    mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true);
-    mField.get_moab().get_connectivity(crack_front_edges,crackFrontEdgesNodes,true);
-    //projected nodes
-    mField.get_moab().tag_get_handle(
-      "PROJECTION_CRACK_SURFACE",3,MB_TYPE_DOUBLE,th_projection,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL);
+    if(mField.check_msId_meshset(201,SideSet)) {
+      Range crack_front_edges;
+      mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true);
+      mField.get_moab().get_connectivity(crack_front_edges,crackFrontEdgesNodes,true);
+      //projected nodes
+      mField.get_moab().tag_get_handle(
+	"PROJECTION_CRACK_SURFACE",3,MB_TYPE_DOUBLE,th_projection,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL);
+    }
   }
  
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose): 
-    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name) {
+    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name),
+    use_projection_from_crack_front(false) {
     run_in_constructor();
   }
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose): 
-    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE") {
+    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE"),
+    use_projection_from_crack_front(false) {
     run_in_constructor();
   }
 
