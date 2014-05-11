@@ -446,6 +446,16 @@ struct FieldInterface {
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
+  /**\brief add ref level to entities
+   *
+   */
+  virtual PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
+
+  /**\brief add ref level to entities
+   *
+   */
+  virtual PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
+
   /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
@@ -838,7 +848,7 @@ struct FieldInterface {
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief set ref level for problem
-    *
+   *
    * if same finite element is solved using different level of refinements, than the level of refinement has to be specificied to problem in query
    *
    * \param name Problem name
@@ -851,8 +861,13 @@ struct FieldInterface {
    ierr = mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2); CHKERRQ(ierr);
    *\endcode
    * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
-  */
+   */
   virtual PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
+
+  /** \brief set dof mask ref level for problem
+   *
+   */
+  virtual PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /// list problems
   virtual PetscErrorCode list_problem() const = 0;
