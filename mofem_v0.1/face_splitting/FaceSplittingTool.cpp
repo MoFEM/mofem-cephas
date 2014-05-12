@@ -148,7 +148,7 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
     rval = moab_distance_from_crack_surface.get_connectivity(new_elem,conn,num_nodes,true); CHKERR_PETSC(rval);
     double coords[3*num_nodes]; 
     rval = moab_distance_from_crack_surface.get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
-    double normal[3];
+    double normal[4] = { 0,0,0,1 };
     ierr = ShapeFaceNormalMBTRI(diffN,coords,normal); CHKERRQ(ierr);
     double nrm2 = cblas_dnrm2(3,normal,1);
     cblas_dscal(3,1./nrm2,normal,1);
