@@ -126,8 +126,12 @@ int main(int argc, char *argv[]) {
 	ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 	SNESLineSearch linesearch;
 	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
-	//ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
-	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
+	bool use_l2_instead_of_bt = true;
+	if(use_l2_instead_of_bt) {
+	  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+	} else {
+	  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
+	}
 	Vec D_tmp_mesh_positions;
 	ierr = mField.VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
 	ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -191,8 +195,16 @@ int main(int argc, char *argv[]) {
 		ierr = mField.set_global_VecCreateGhost(
 		  "MESH_SMOOTHING_PROBLEM",
 		  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-		nb_sub_steps++;
-		break;
+		if(use_l2_instead_of_bt) {
+		  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
+		  use_l2_instead_of_bt = false;
+		  nn--;
+		} else {	  
+		  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+		  use_l2_instead_of_bt = true;
+		  nb_sub_steps++;
+		  break;
+		}
 	      }
 	      ierr = mField.set_local_VecCreateGhost(
 		"MESH_SMOOTHING_PROBLEM",
