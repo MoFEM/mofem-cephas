@@ -3391,20 +3391,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	      ierr = mField.set_global_VecCreateGhost(
 		"MESH_SMOOTHING_PROBLEM",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-	      if(use_l2_instead_of_bt) {
-		  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
-		  use_l2_instead_of_bt = false;
-		  nn--;
-	      } else {	  
-		  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
-		  use_l2_instead_of_bt = true;
-		  nb_sub_steps++;
-		  break;
-	      }
-
+	      nb_sub_steps++;
+	      break;
 	    } else {
-
 	      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes);  CHKERRQ(ierr);
 	      SNESConvergedReason reason;
 	      ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
@@ -3413,8 +3402,16 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 		ierr = mField.set_global_VecCreateGhost(
 		  "MESH_SMOOTHING_PROBLEM",
 		  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-		nb_sub_steps++;
-		break;
+		if(use_l2_instead_of_bt) {
+		  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
+		  use_l2_instead_of_bt = false;
+		  nn--;
+		} else {	  
+		  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+		  use_l2_instead_of_bt = true;
+		  nb_sub_steps++;
+		  break;
+		}
 	      }
 	      ierr = mField.set_local_VecCreateGhost(
 		"MESH_SMOOTHING_PROBLEM",
