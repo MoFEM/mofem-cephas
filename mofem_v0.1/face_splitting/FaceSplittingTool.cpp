@@ -261,12 +261,14 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
       } else {
 	min_dist = fmin(dist,min_dist);
       }
-      double dot = -cblas_ddot(3,&normals[nn*4],1,distance,1);
-      double projection[3];
-      cblas_dcopy(3,coords,1,projection,1);
-      cblas_daxpy(3,alpha*dot,normals,1,projection,1);
-      rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
-      rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
+      if(dist == min_dist) {
+	double dot = -cblas_ddot(3,&normals[nn*4],1,distance,1);
+	double projection[3];
+	cblas_dcopy(3,coords,1,projection,1);
+	cblas_daxpy(3,alpha*dot,normals,1,projection,1);
+	rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
+	rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
+      }
     }
     if(min_dist<0) {	
       cblas_dcopy(3,coords,1,distance,1);
