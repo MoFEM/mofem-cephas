@@ -3378,7 +3378,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  }
 	};
 
-	int nb_sub_steps = 1;
+	int nb_sub_steps = 3;
 	int nn;
 	do { 
 
