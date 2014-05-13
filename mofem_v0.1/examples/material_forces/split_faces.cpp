@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 	  }
 	};
 
-	int nb_sub_steps = 1;
+	int nb_sub_steps = 2;
 	int nn;
 	do { 
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 	  for(;nn<=nb_sub_steps;nn++) {
 
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %d out of %d\n",nn,nb_sub_steps); CHKERRQ(ierr);
-	    double alpha = (double)nn/(double)nb_sub_steps;
+	    double alpha = fmin((double)nn/(double)nb_sub_steps,1);
 	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
 	    //project nodes on crack surface
 	    ierr = conf_prob.project_form_th_projection_tag(mField,"MESH_SMOOTHING_PROBLEM"); CHKERRQ(ierr);
@@ -209,6 +209,7 @@ int main(int argc, char *argv[]) {
 	      ierr = mField.set_local_VecCreateGhost(
 		"MESH_SMOOTHING_PROBLEM",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	      
 
 	    }
 	  }
