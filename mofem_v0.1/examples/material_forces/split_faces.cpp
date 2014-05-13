@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 	  }
 	};
 
-	int nb_sub_steps = 2;
+	int nb_sub_steps = 3;
 	int nn;
 	do { 
 
