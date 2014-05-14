@@ -593,8 +593,9 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
   Range _crack_front_body_skin_edges_;
   Range _crack_front_body_skin_edges_nodes_;
   Range _crack_front_tets_skin_faces_;
+  Range _other_crack_front_tets_faces_;
+  Range _other_crack_front_tets_faces_edges_;
   Range _nodes_on_skin_surface_;
-
 
   int debug_ii = 0;
 
@@ -636,6 +637,14 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     rval = mField.get_moab().get_adjacencies(
       _crack_front_body_skin_faces_,1,false,_crack_front_body_skin_faces_edges_,Interface::UNION); CHKERR_PETSC(rval); 
 
+    //Take skin of front tets. 
+    _crack_front_tets_skin_faces_.clear();
+    rval = skin.find_skin(crack_front_tets,false,_crack_front_tets_skin_faces_); CHKERR_PETSC(rval);
+    _crack_front_tets_skin_faces_ = intersect(_crack_front_tets_skin_faces_,crack_front_edges_nodes_faces);
+    _other_crack_front_tets_faces_ = subtract(_crack_front_tets_faces_,_crack_front_tets_skin_faces_);
+    rval = mField.get_moab().get_adjacencies(
+      _other_crack_front_tets_faces_,1,false,_other_crack_front_tets_faces_edges_,Interface::UNION); CHKERR_PETSC(rval); 
+
     //body surface edges
     _crack_front_tets_edges_.clear();
     rval = mField.get_moab().get_adjacencies(
@@ -645,6 +654,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     _crack_front_body_skin_edges_ = intersect(_crack_front_tets_edges_,mesh_level_tets_skin_faces_edges);
     //get the edges on body skin which are not adges on any face on body skin
     //removing node adjacent to such edge will crate gap in extenended crack surface
+    _crack_front_body_skin_edges_ = subtract(_crack_front_body_skin_edges_,_other_crack_front_tets_faces_edges_);
     _crack_front_body_skin_edges_ = subtract(_crack_front_body_skin_edges_,_crack_front_body_skin_faces_edges_);
     //get nodes on body skin which can not be removed
     _crack_front_body_skin_edges_nodes_.clear();
@@ -660,12 +670,9 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
       }
     }
 
-    //Take skin of front tets. Then get adkjacent nodes to skin faces. Subtract from those nodes
+    //Get adjacent nodes to skin faces. Subtract from those nodes
     //nodes on crack front and nodes of free edges.
     _nodes_on_skin_surface_.clear();
-    _crack_front_tets_skin_faces_.clear();
-    rval = skin.find_skin(crack_front_tets,false,_crack_front_tets_skin_faces_); CHKERR_PETSC(rval);
-    _crack_front_tets_skin_faces_ = intersect(_crack_front_tets_skin_faces_,crack_front_edges_nodes_faces);
     rval = mField.get_moab().get_connectivity(_crack_front_tets_skin_faces_,_nodes_on_skin_surface_,true); CHKERR_PETSC(rval);
     _nodes_on_skin_surface_ = intersect(_nodes_on_skin_surface_,crack_front_tets_nodes); 
     _nodes_on_skin_surface_ = subtract(_nodes_on_skin_surface_,crack_front_edges_nodes);

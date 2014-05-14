@@ -83,6 +83,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_fields(); CHKERRQ(ierr);
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out0.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+
+
         {
 	  FaceSplittingTools face_splitting(mField);
 	  ierr = main_refine_and_meshcat(mField,face_splitting,false); CHKERRQ(ierr);
