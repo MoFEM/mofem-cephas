@@ -1556,10 +1556,15 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   ierr = VecAXPY(D,1.,QTdD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  ierr = mField.set_local_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  PostProcVertexMethod ent_method_res(mField.get_moab(),"MESH_NODE_POSITIONS",D,"PROJECTION_CRACK_SURFACE");
-  ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Col,ent_method_res); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method(mField.get_moab(),"MESH_NODE_POSITIONS",D,"PROJECTION_CRACK_SURFACE");
+  ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Col,ent_method); CHKERRQ(ierr);
+
+  ierr = mField.set_global_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
 
   VecDestroy(&D);
   VecDestroy(&dD);
@@ -3334,7 +3339,12 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 	SNESLineSearch linesearch;
 	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
-	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
+	bool use_l2_instead_of_bt = true;
+	if(use_l2_instead_of_bt) {
+	  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+	} else {
+	  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
+	}
 	Vec D_tmp_mesh_positions;
 	ierr = mField.VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
 	ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -3368,7 +3378,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  }
 	};
 
-	int nb_sub_steps = 1;
+	int nb_sub_steps = 3;
 	int nn;
 	do { 
 
@@ -3389,7 +3399,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	      nb_sub_steps++;
 	      break;
 	    } else {
-
 	      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes);  CHKERRQ(ierr);
 	      SNESConvergedReason reason;
 	      ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
@@ -3398,8 +3407,16 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 		ierr = mField.set_global_VecCreateGhost(
 		  "MESH_SMOOTHING_PROBLEM",
 		  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-		nb_sub_steps++;
-		break;
+		if(use_l2_instead_of_bt) {
+		  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
+		  use_l2_instead_of_bt = false;
+		  nn--;
+		} else {	  
+		  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+		  use_l2_instead_of_bt = true;
+		  nb_sub_steps++;
+		  break;
+		}
 	      }
 	      ierr = mField.set_local_VecCreateGhost(
 		"MESH_SMOOTHING_PROBLEM",

@@ -148,7 +148,7 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
     rval = moab_distance_from_crack_surface.get_connectivity(new_elem,conn,num_nodes,true); CHKERR_PETSC(rval);
     double coords[3*num_nodes]; 
     rval = moab_distance_from_crack_surface.get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
-    double normal[3];
+    double normal[4] = { 0,0,0,1 };
     ierr = ShapeFaceNormalMBTRI(diffN,coords,normal); CHKERRQ(ierr);
     double nrm2 = cblas_dnrm2(3,normal,1);
     cblas_dscal(3,1./nrm2,normal,1);
@@ -261,12 +261,14 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
       } else {
 	min_dist = fmin(dist,min_dist);
       }
-      double dot = -cblas_ddot(3,&normals[nn*4],1,distance,1);
-      double projection[3];
-      cblas_dcopy(3,coords,1,projection,1);
-      cblas_daxpy(3,alpha*dot,normals,1,projection,1);
-      rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
-      rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
+      if(dist == min_dist) {
+	double dot = -cblas_ddot(3,&normals[nn*4],1,distance,1);
+	double projection[3];
+	cblas_dcopy(3,coords,1,projection,1);
+	cblas_daxpy(3,alpha*dot,normals,1,projection,1);
+	rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
+	rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
+      }
     }
     if(min_dist<0) {	
       cblas_dcopy(3,coords,1,distance,1);
