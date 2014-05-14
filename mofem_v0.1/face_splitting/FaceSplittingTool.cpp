@@ -251,35 +251,48 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
     rval = moab_distance_from_crack_surface.tag_get_data(th_normal,conn,3,normals); CHKERR_PETSC(rval);
     double min_dist = -1;
     double distance[3];
+    cblas_dcopy(3,coords,1,distance,1);
     for(int nn = 0;nn<3;nn++) {
       if(normals[nn*4+3]==0) continue;
-      cblas_dcopy(3,coords,1,distance,1);
       cblas_daxpy(3,-1,&face_coords[3*nn],1,distance,1);
-      double dist = cblas_dnrm2(3,distance,1);
+      double dist0 = cblas_dnrm2(3,distance,1);
       if(min_dist<0) {
-	min_dist = dist;
+	min_dist = dist0;
       } else {
-	min_dist = fmin(dist,min_dist);
+	min_dist = fmin(dist0,min_dist);
       }
-      if(dist == min_dist) {
+      if(dist0 == min_dist) {
 	double dot = -cblas_ddot(3,&normals[nn*4],1,distance,1);
 	double projection[3];
-	cblas_dcopy(3,coords,1,projection,1);
+	cblas_dcopy(3,distance,1,projection,1);
 	cblas_daxpy(3,alpha*dot,normals,1,projection,1);
+	double dist1 = cblas_dnrm2(3,projection,1);
+	if(dist0>0) {
+	  cblas_dscal(3,dist1/dist0,projection,1);
+	}
+	cblas_daxpy(3,1.,&face_coords[3*nn],1,projection,1);
+	//cerr << "dist1/dist0 " << dist0 << " " << dist1  << " " << dot << " ";
+	//cerr << projection[0] << " " << projection[1] << " " << projection[2] << endl;
 	rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
 	rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
       }
     }
     if(min_dist<0) {	
-      cblas_dcopy(3,coords,1,distance,1);
       cblas_daxpy(3,-1,closest_point_out,1,distance,1);
+      double dist0 = cblas_dnrm2(3,distance,1);
       double normal[3];
       rval = moab_distance_from_crack_surface.tag_get_data(th_normal,&triangle_out,1,normal); CHKERR_PETSC(rval);
       double dot = -cblas_ddot(3,normal,1,distance,1);
-      //cerr << dot << endl;
       double projection[3];
-      cblas_dcopy(3,coords,1,projection,1);
+      cblas_dcopy(3,distance,1,projection,1);
       cblas_daxpy(3,alpha*dot,normal,1,projection,1);
+      double dist1 = cblas_dnrm2(3,projection,1);
+      if(dist0>0) {
+	cblas_dscal(3,dist1/dist0,projection,1);
+      }
+      cblas_daxpy(3,1.,closest_point_out,1,projection,1);
+      //cerr << "dist1/dist0 " << dist0 << " " << dist1  << " " << dot << " ";
+      //cerr << projection[0] << " " << projection[1] << " " << projection[2] << endl;
       rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
       rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
     }
