@@ -22,6 +22,7 @@
 
 #include <boost/numeric/ublas/symmetric.hpp>
 #include "ElasticFEMethod.hpp"
+#include "ElasticFEMethodTransIso.hpp"
 
 
 namespace MoFEM {
