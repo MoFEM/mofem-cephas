@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    //alpha = 1e8;
+//    alpha = 1e8;
     cout<<"alpha   = "<<alpha<<endl;
 	
     InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
