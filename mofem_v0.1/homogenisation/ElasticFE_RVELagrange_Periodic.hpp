@@ -477,7 +477,7 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
             ublas::vector<FieldData> applied_strain;
             applied_strain.resize(6);
             applied_strain(0)=0.0;  applied_strain(1)=0.0; applied_strain(2)=0.0;
-            applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=1.0;
+            applied_strain(3)=0.0 ; applied_strain(4)=1.0; applied_strain(5)=0.0;
 //            cout<<"area "<<area << endl;
             
             for(int rr=0; rr<row_mat; rr++){
