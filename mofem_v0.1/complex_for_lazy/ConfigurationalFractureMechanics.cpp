@@ -1487,7 +1487,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInter
 }
 
 
-PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(FieldInterface& mField,string problem,bool do_not_project) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -1562,15 +1562,19 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   ierr = VecAXPY(D,1.,QTdD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  //ierr = mField.set_local_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+ 
+  //not project nodes on crack surface 
+  if(do_not_project) {
+    ierr = mField.set_local_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  }
   ierr = mField.set_global_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(mField.get_moab(),"MESH_NODE_POSITIONS",D,"PROJECTION_CRACK_SURFACE");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Col,ent_method); CHKERRQ(ierr);
 
-  //ierr = mField.set_global_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
+  if(do_not_project) {
+    ierr = mField.set_global_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  }
 
   VecDestroy(&D);
   VecDestroy(&dD);
@@ -3384,6 +3388,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  }
 	};
 
+	bool do_not_project = true;
 	int nb_sub_steps = 3;
 	int nn;
 	do { 
@@ -3392,10 +3397,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  for(;nn<=nb_sub_steps;nn++) {
 
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %d out of %d\n",nn,nb_sub_steps); CHKERRQ(ierr);
-	    double alpha = (double)nn/(double)nb_sub_steps;
+	    double alpha = fmin((double)nn/(double)nb_sub_steps,1);
 	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
 	    //project nodes on crack surface
-	    ierr = conf_prob.project_form_th_projection_tag(mField,"MESH_SMOOTHING_PROBLEM"); CHKERRQ(ierr);
+	    ierr = conf_prob.project_form_th_projection_tag(mField,"MESH_SMOOTHING_PROBLEM",do_not_project); CHKERRQ(ierr);
 	    bool flg;
 	    ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
 	    if(!flg) {
@@ -3405,6 +3410,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	      nb_sub_steps++;
 	      break;
 	    } else {
+
 	      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes);  CHKERRQ(ierr);
 	      SNESConvergedReason reason;
 	      ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
@@ -3427,6 +3433,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	      ierr = mField.set_local_VecCreateGhost(
 		"MESH_SMOOTHING_PROBLEM",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	      if(nn==nb_sub_steps && do_not_project) {
+		do_not_project = false;
+		break;
+	      }
 
 	    }
 	  }
