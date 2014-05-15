@@ -27,7 +27,7 @@
 #include "ElasticFEMethodTransIso.hpp"
 #include "ElasticFEMethodForInterface.hpp"
 
-#include "ElasticFE_RVELagrange_traction.hpp"
+#include "ElasticFE_RVELagrange_Traction.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Traction.hpp"
 #include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"
 #include "ElasticFE_RVELagrange_RigidBodyRotation.hpp"
