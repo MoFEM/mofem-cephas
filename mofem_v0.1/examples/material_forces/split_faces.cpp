@@ -222,6 +222,7 @@ int main(int argc, char *argv[]) {
 	      if(nn==nb_sub_steps && do_not_project) {
 		ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 		do_not_project = false;
+		nb_sub_steps = 1;
 		break;
 	      }
 
