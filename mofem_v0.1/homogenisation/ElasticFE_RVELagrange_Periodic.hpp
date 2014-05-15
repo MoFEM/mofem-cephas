@@ -29,8 +29,8 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
 
     
     ElasticFE_RVELagrange_Periodic(
-                                   FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F):
-    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F){};
+                                   FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData>_applied_strain):
+    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F, _applied_strain){};
     
     
     vector<vector<vector<DofIdx> > > RowGlob;  //The outer vector is of size 2 (one for -ve triangles and one for +ve triangles)
@@ -472,12 +472,6 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
 //            cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
 //            std::string wait;
 //            std::cin >> wait;
-            
-            //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
-            ublas::vector<FieldData> applied_strain;
-            applied_strain.resize(6);
-            applied_strain(0)=0.0;  applied_strain(1)=0.0; applied_strain(2)=0.0;
-            applied_strain(3)=0.0 ; applied_strain(4)=0.0; applied_strain(5)=1.0;
 //            cout<<"area "<<area << endl;
             
             for(int rr=0; rr<row_mat; rr++){

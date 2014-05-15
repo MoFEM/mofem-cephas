@@ -27,8 +27,8 @@ namespace MoFEM {
 
 struct ElasticFE_RVELagrange_RigidBodyTranslation: public ElasticFE_RVELagrange_Disp {
 
-    ElasticFE_RVELagrange_RigidBodyTranslation(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F):
-    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F){};
+    ElasticFE_RVELagrange_RigidBodyTranslation(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData> _applied_strain):
+    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F, _applied_strain){};
     
     virtual PetscErrorCode GetN_and_Indices() {
         PetscFunctionBegin;

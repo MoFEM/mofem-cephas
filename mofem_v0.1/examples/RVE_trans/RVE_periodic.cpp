@@ -119,6 +119,16 @@ int main(int argc, char *argv[]) {
     char outName2[PETSC_MAX_PATH_LEN]="out_post_proc.vtk";
     ierr = PetscOptionsGetString(PETSC_NULL,"-my_post_out",outName2,sizeof(outName2),&flg); CHKERRQ(ierr);
     
+    //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
+    double myapplied_strain[6];
+    int nmax=6;
+    ierr = PetscOptionsGetRealArray(PETSC_NULL,"-myapplied_strain",myapplied_strain,&nmax,&flg); CHKERRQ(ierr);
+    ublas::vector<FieldData> applied_strain;
+    applied_strain.resize(6);
+    cblas_dcopy(6, &myapplied_strain[0], 1, &applied_strain(0), 1);
+    //    cout<<"applied_strain ="<<applied_strain<<endl;
+
+    
     //Read mesh to MOAB
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
@@ -706,9 +716,9 @@ int main(int argc, char *argv[]) {
     MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
     TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F);
     
-    ElasticFE_RVELagrange_Periodic MyFE_RVELagrangePeriodic(mField,&myDirihletBC,Aij,D,F);
-    ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField,&myDirihletBC,Aij,D,F);
-    ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,&myDirihletBC,Aij,D,F);
+    ElasticFE_RVELagrange_Periodic MyFE_RVELagrangePeriodic(mField,&myDirihletBC,Aij,D,F,applied_strain);
+    ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField,&myDirihletBC,Aij,D,F,applied_strain);
+    ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,&myDirihletBC,Aij,D,F,applied_strain);
 
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -775,7 +785,7 @@ int main(int argc, char *argv[]) {
     cout<<"Actual RVE_volume = "<< 3*0.3*0.78<<endl;  //Lx=3, Ly=0.3; Lz=0.78
     
 //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(mField,&myDirihletBC,Aij,D,F,&RVE_volume);
+    ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(mField,&myDirihletBC,Aij,D,F,&RVE_volume,applied_strain);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressPeriodic);  CHKERRQ(ierr);
 
     //====================================================================================================================================

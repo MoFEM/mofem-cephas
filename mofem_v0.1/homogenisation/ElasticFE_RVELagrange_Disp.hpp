@@ -29,12 +29,13 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
     FieldInterface& mField;
     Mat Aij;
     Vec F;
+    ublas::vector<FieldData> applied_strain;
 
     bool propeties_from_BlockSet_Mat_ElasticSet;
     ElasticFE_RVELagrange_Disp(
-      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F):
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain):
       FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
-      Aij(_Aij),F(_F){
+      Aij(_Aij),F(_F), applied_strain(_applied_strain){
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
 
@@ -503,14 +504,7 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
 //        cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
 //        cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
         
-        //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
-        ublas::vector<FieldData> applied_strain;
-        applied_strain.resize(6);
-        applied_strain(0)=0.0; applied_strain(1)=0.0; applied_strain(2)=0.0;
-        applied_strain(3)=0.0; applied_strain(4)=0.0; applied_strain(5)=1.0;
         //cout<<"area "<<area << endl;
-        
-        
         for(int rr=0; rr<row_mat; rr++){
             for(int gg = 0;gg<g_TRI_dim;gg++) {
                 double w = area*G_W_TRI[gg];
