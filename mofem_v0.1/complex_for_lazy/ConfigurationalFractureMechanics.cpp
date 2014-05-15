@@ -898,7 +898,8 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
     ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
   }*/
 
-  Range level_tris,level_edges,level_nodes;
+  Range level_tets,level_tris,level_edges,level_nodes;
+  ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
   ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBVERTEX,level_nodes); CHKERRQ(ierr);
   ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
   ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
@@ -909,10 +910,15 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
   corners_nodes = intersect(corners_nodes,level_nodes);
   ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,surfaces_faces,true); CHKERRQ(ierr);
-  surfaces_faces = intersect(surfaces_faces,level_tris);
+  Skinner skin(&mField.get_moab());
+  Range skin_faces; 
+  rval = skin.find_skin(level_tets,false,skin_faces); CHKERR(rval);
+  surfaces_faces = intersect(surfaces_faces,skin_faces);
+
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",corners_edges.size()); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",corners_nodes.size()); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",surfaces_faces.size()); CHKERRQ(ierr);
+
 
   Range crack_surfaces_faces,crack_front_edges;
   ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surfaces_faces,true); CHKERRQ(ierr);
@@ -940,7 +946,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
     ss2 << "CandCT_SURFACE_ELEM_msId_" << msId;
     Range surfaces_faces_msId;
     ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SideSet,2,surfaces_faces_msId,true); CHKERRQ(ierr);
-    surfaces_faces_msId = intersect(surfaces_faces_msId,level_tris);
+    surfaces_faces_msId = intersect(surfaces_faces_msId,skin_faces);
     ierr = mField.seed_finite_elements(surfaces_faces_msId); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet ( mdId =  %d ) = %d\n",msId,surfaces_faces_msId.size()); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(surfaces_faces_msId,ss0.str()); CHKERRQ(ierr);
@@ -1481,7 +1487,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInter
 }
 
 
-PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(FieldInterface& mField,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(FieldInterface& mField,string problem,bool do_not_project) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -1556,15 +1562,19 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   ierr = VecAXPY(D,1.,QTdD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  ierr = mField.set_local_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+ 
+  //not project nodes on crack surface 
+  if(do_not_project) {
+    ierr = mField.set_local_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  }
   ierr = mField.set_global_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(mField.get_moab(),"MESH_NODE_POSITIONS",D,"PROJECTION_CRACK_SURFACE");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Col,ent_method); CHKERRQ(ierr);
 
-  ierr = mField.set_global_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
+  if(do_not_project) {
+    ierr = mField.set_global_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  }
 
   VecDestroy(&D);
   VecDestroy(&dD);
@@ -1680,7 +1690,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   //tangent front froce
   matPROJ_ctx projFrontCtx_tangent(mField,problem,"C_CRACKFRONT_MATRIX");
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
-  C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(mField,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
+  C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(mField,projFrontCtx_tangent.C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -1694,7 +1704,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = mField.set_other_global_VecCreateGhost(
     problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE_TANGENT",Row,GriffithForceVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_tangent(
-    mField.get_moab(),"MESH_NODE_POSITIONS",QTGriffithForceVec,"GRIFFITH_TANGENT_FORCE");
+    mField.get_moab(),"MESH_NODE_POSITIONS",GriffithForceVec,"GRIFFITH_TANGENT_FORCE");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Col,ent_method_tangent); CHKERRQ(ierr);
   ierr = MatDestroy(&projFrontCtx_tangent.C); CHKERRQ(ierr);
 
@@ -3378,6 +3388,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  }
 	};
 
+	bool do_not_project = true;
 	int nb_sub_steps = 3;
 	int nn;
 	do { 
@@ -3386,10 +3397,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  for(;nn<=nb_sub_steps;nn++) {
 
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"Mesh projection substep = %d out of %d\n",nn,nb_sub_steps); CHKERRQ(ierr);
-	    double alpha = (double)nn/(double)nb_sub_steps;
+	    double alpha = fmin((double)nn/(double)nb_sub_steps,1);
 	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
 	    //project nodes on crack surface
-	    ierr = conf_prob.project_form_th_projection_tag(mField,"MESH_SMOOTHING_PROBLEM"); CHKERRQ(ierr);
+	    ierr = conf_prob.project_form_th_projection_tag(mField,"MESH_SMOOTHING_PROBLEM",do_not_project); CHKERRQ(ierr);
 	    bool flg;
 	    ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
 	    if(!flg) {
@@ -3399,6 +3410,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	      nb_sub_steps++;
 	      break;
 	    } else {
+
 	      ierr = conf_prob.solve_mesh_smooting_problem(mField,&snes);  CHKERRQ(ierr);
 	      SNESConvergedReason reason;
 	      ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
@@ -3421,6 +3433,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	      ierr = mField.set_local_VecCreateGhost(
 		"MESH_SMOOTHING_PROBLEM",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	      if(nn==nb_sub_steps && do_not_project) {
+		do_not_project = false;
+		break;
+	      }
 
 	    }
 	  }
