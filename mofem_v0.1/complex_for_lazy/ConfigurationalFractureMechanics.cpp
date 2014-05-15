@@ -3435,6 +3435,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	      if(nn==nb_sub_steps && do_not_project) {
 		do_not_project = false;
+		nb_sub_steps = 1;
 		break;
 	      }
 
