@@ -1690,7 +1690,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   //tangent front froce
   matPROJ_ctx projFrontCtx_tangent(mField,problem,"C_CRACKFRONT_MATRIX");
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
-  C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(mField,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
+  C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(mField,projFrontCtx_tangent.C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -1704,7 +1704,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = mField.set_other_global_VecCreateGhost(
     problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE_TANGENT",Row,GriffithForceVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_tangent(
-    mField.get_moab(),"MESH_NODE_POSITIONS",QTGriffithForceVec,"GRIFFITH_TANGENT_FORCE");
+    mField.get_moab(),"MESH_NODE_POSITIONS",GriffithForceVec,"GRIFFITH_TANGENT_FORCE");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Col,ent_method_tangent); CHKERRQ(ierr);
   ierr = MatDestroy(&projFrontCtx_tangent.C); CHKERRQ(ierr);
 

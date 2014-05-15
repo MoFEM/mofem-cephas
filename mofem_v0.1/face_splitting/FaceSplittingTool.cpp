@@ -97,8 +97,8 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       for(;dit!=hi_dit;dit++) {
 	tangent[dit->get_dof_rank()] = dit->get_FieldData();
       }
-      double tangent_nrm2 =  cblas_dnrm2(3,tangent,1);
-      cblas_dscal(3,1./tangent_nrm2,tangent,1);
+      //double tangent_nrm2 =  cblas_dnrm2(3,tangent,1);
+      //cblas_dscal(3,1./tangent_nrm2,tangent,1);
       //cerr << "tangent_nrm2 " << tangent_nrm2 << endl;
 
       dit = 
@@ -113,14 +113,17 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       for(;dit!=hi_dit;dit++) {
 	force[dit->get_dof_rank()] = dit->get_FieldData();
       }
-      double force_nrm2 = cblas_dnrm2(3,force,1);
-      cblas_dscal(3,1./force_nrm2,force,1);
+      //double force_nrm2 = cblas_dnrm2(3,force,1);
+      //cblas_dscal(3,1./force_nrm2,force,1);
       //cerr << "force_nrm2 " << force_nrm2 << endl;
 
       double Spin_tangent[9] = { 0,0,0, 0,0,0, 0,0,0 };
       ierr = Spin(Spin_tangent,tangent); CHKERRQ(ierr);
       double normal[4] = { 0,0,0,1 };
       cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,-1,Spin_tangent,3,force,1,0,normal,1); 
+      double nrm2 = cblas_dnrm2(3,normal,1);
+      cblas_dscal(3,1./nrm2,normal,1);
+      //cerr << "norm: " << normal[0] << " " << normal[1] << " " << normal[2] << endl;
     
       rval = moab_distance_from_crack_surface.tag_set_data(th_normal,&map_nodes[*nit],1,normal); CHKERR_PETSC(rval);
 
@@ -235,10 +238,10 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
     int num_nodes; 
     const EntityHandle* conn;
     rval = moab_distance_from_crack_surface.get_connectivity(triangle_out,conn,num_nodes,true); CHKERR_PETSC(rval);
-    double face_coords[9];
+    double face_coords[num_nodes*3];
     rval = moab_distance_from_crack_surface.get_coords(conn,num_nodes,face_coords); CHKERR_PETSC(rval);
-    double normals[4*3];
-    rval = moab_distance_from_crack_surface.tag_get_data(th_normal,conn,3,normals); CHKERR_PETSC(rval);
+    double normals[num_nodes*4];
+    rval = moab_distance_from_crack_surface.tag_get_data(th_normal,conn,num_nodes,normals); CHKERR_PETSC(rval);
 
     double min_dist = -1;
     double distance[3];
@@ -256,7 +259,7 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
 	double dot = -cblas_ddot(3,&normals[nn*4],1,distance,1);
 	double projection[3];
 	cblas_dcopy(3,distance,1,projection,1);
-	cblas_daxpy(3,alpha*dot,normals,1,projection,1);
+	cblas_daxpy(3,alpha*dot,&normals[nn*4],1,projection,1);
 	double dist1 = cblas_dnrm2(3,projection,1);
 	if(dist0>0) {
 	  cblas_dscal(3,dist1/dist0,projection,1);
