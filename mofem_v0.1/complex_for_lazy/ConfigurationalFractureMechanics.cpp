@@ -1557,13 +1557,13 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = mField.set_local_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  //ierr = mField.set_local_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(mField.get_moab(),"MESH_NODE_POSITIONS",D,"PROJECTION_CRACK_SURFACE");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Col,ent_method); CHKERRQ(ierr);
 
-  ierr = mField.set_global_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  //ierr = mField.set_global_VecCreateGhost(problem,Col,QTdD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 
   VecDestroy(&D);
