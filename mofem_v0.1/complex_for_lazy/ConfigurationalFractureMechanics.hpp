@@ -107,7 +107,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode delete_front_projection_data(FieldInterface& mField);
   PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
 
-  PetscErrorCode project_form_th_projection_tag(FieldInterface& mField,string problem);
+  PetscErrorCode project_form_th_projection_tag(FieldInterface& mField,string problem,bool do_not_project = false);
 
   map<EntityHandle,double> map_ent_g,map_ent_j;
   PetscScalar ave_g,min_g,max_g;

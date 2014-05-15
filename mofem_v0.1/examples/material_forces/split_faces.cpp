@@ -174,6 +174,7 @@ int main(int argc, char *argv[]) {
 	  }
 	};
 
+	bool do_not_project = true;
 	int nb_sub_steps = 3;
 	int nn;
 	do { 
@@ -185,7 +186,7 @@ int main(int argc, char *argv[]) {
 	    double alpha = fmin((double)nn/(double)nb_sub_steps,1);
 	    ierr = face_splitting.calculateDistanceCrackFrontNodesFromCrackSurface(alpha); CHKERRQ(ierr);
 	    //project nodes on crack surface
-	    ierr = conf_prob.project_form_th_projection_tag(mField,"MESH_SMOOTHING_PROBLEM"); CHKERRQ(ierr);
+	    ierr = conf_prob.project_form_th_projection_tag(mField,"MESH_SMOOTHING_PROBLEM",do_not_project); CHKERRQ(ierr);
 	    bool flg;
 	    ierr = CheckForNegatieVolume::F(mField,tets,flg); CHKERRQ(ierr);
 	    if(!flg) {
@@ -218,7 +219,12 @@ int main(int argc, char *argv[]) {
 	      ierr = mField.set_local_VecCreateGhost(
 		"MESH_SMOOTHING_PROBLEM",
 		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	      
+	      if(nn==nb_sub_steps && do_not_project) {
+		ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
+		do_not_project = false;
+		nb_sub_steps = 1;
+		break;
+	      }
 
 	    }
 	  }
