@@ -137,7 +137,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 		set_PhysicalEquationNumber(eberleinholzapfel1);
 		EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
 		EberleinHolzapfel1_mat_parameters.k1 = mydata.data.User2;
-		EberleinHolzapfel1_mat_parameters.k2 = mydata.data.User2;
+		EberleinHolzapfel1_mat_parameters.k2 = 0;
 		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.User3;
 		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.User4;
 		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.User5;
