@@ -178,7 +178,11 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	}
 
 	if(get_PhysicalEquationNumber()==eberleinholzapfel1) {
-
+	  ctx_EberleinHolzapfel1 *material_data = (ctx_EberleinHolzapfel1*)fe_method.ptr_matctx;
+	  ublas::vector<double> a1;
+	  a1.resize(3);
+	  //copy fibre 1 direction into vcetor a1
+	  cblas_dcopy(3,&material_data->fibre_vector_a1[0],1,&*a1.data().begin(),1);
 
 	}
 
