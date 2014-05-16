@@ -488,7 +488,7 @@ struct FieldCore: public FieldInterface {
 
 //templates
 
-#define PARALLEL_PARTITIONING 0
+#define PARALLEL_PARTITIONING 1
 #if PARALLEL_PARTITIONING
   #define PARTITIONING_MPIADJ_COMM PETSC_COMM_WORLD
 #else 
