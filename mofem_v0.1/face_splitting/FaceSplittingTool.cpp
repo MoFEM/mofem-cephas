@@ -474,7 +474,13 @@ PetscErrorCode FaceSplittingTools::getCrackFrontTets(bool createMeshset,int verb
     } else {
       if(fit_edges.size()==2) {
 	if(intersect(free_fit_edges,common_tets_edges).empty()) {
-	  fit = crack_front_edges_nodes_edges_faces.erase(fit); 
+	  Range fit_tets;
+	  rval = mField.get_moab().get_adjacencies(&*fit,1,3,false,fit_tets); CHKERR_PETSC(rval);
+	  if(intersect(fit_tets,crack_surface_nodes_without_front_tets).size()>0) {
+	    fit = crack_front_edges_nodes_edges_faces.erase(fit); 
+	  } else {
+	    fit++;
+	  }
 	} else {
 	  fit++;
 	}
