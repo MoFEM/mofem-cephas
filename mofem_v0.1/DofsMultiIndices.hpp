@@ -124,6 +124,7 @@ struct FEDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_DofMoFEMEntity<Do
   FEDofMoFEMEntity(
     SideNumber *_side_number_ptr,
     const DofMoFEMEntity *_DofMoFEMEntity_ptr);
+  FEDofMoFEMEntity(boost::tuple<SideNumber *,const DofMoFEMEntity *> t);
   friend ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e);
 };
 

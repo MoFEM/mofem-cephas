@@ -1783,13 +1783,8 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
 	case NoField:
 	{
 	  SideNumber *side_number_ptr = EntFe.get_side_number_ptr(moab,(*viit_data)->get_ent());
-	  FEDofMoFEMEntity FEDof(side_number_ptr,&**viit_data);
 	  //add dofs to finite element multi_index database
-	  pair<FEDofMoFEMEntity_multiIndex::iterator,bool> p;
-	  p = data_dofs.insert(FEDof);
-	  if(!p.second) {
-	    //SETERRQ(PETSC_COMM_SELF,1,"insertion unsucessfull");
-	  }
+	  data_dofs.get<Unique_mi_tag>().insert(data_dofs.end(),boost::make_tuple(side_number_ptr,&**viit_data));
 	}
 	break;
 	default:

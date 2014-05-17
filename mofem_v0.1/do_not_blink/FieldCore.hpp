@@ -563,7 +563,8 @@ PetscErrorCode FieldCore::create_Mat(
     vector<DofIdx> dofs_vec;
     NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
     // loop local rows
-    i.reserve(distance(miit_row,hi_miit_row)+1);
+    unsigned int rows_to_fill = distance(miit_row,hi_miit_row);
+    i.reserve( rows_to_fill+1 );
     for(;miit_row!=hi_miit_row;miit_row++) {
       i.push_back(j.size());
       if(strcmp(type,MATMPIADJ)==0) {
@@ -610,8 +611,14 @@ PetscErrorCode FieldCore::create_Mat(
       //if(dofs_vec.size()==0) {
 	//SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"zero dofs at row %d",Tag::get_index(miit_row));
       //}
-      if(j.capacity()<j.size()+dofs_vec.size()) {
-	j.reserve(j.capacity()+dofs_vec.size());
+      unsigned int reserve_threhold_after_nth_rows_fill  = 90;
+      if( reserve_threhold_after_nth_rows_fill*i.size() > rows_to_fill ) {
+	if( j.capacity() < j.size() + dofs_vec.size() ) {
+	  unsigned int average_row_fill = j.size()/i.size() + j.size() % i.size();
+	  if( j.capacity() < rows_to_fill*average_row_fill ) {
+	    j.reserve( nb_dofs_row*average_row_fill );
+	 }
+	}
       }
       vector<DofIdx>::iterator diit,hi_diit;
       diit = dofs_vec.begin();

@@ -69,6 +69,10 @@ ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   return os;
 }
 
+FEDofMoFEMEntity::FEDofMoFEMEntity(boost::tuple<SideNumber *,const DofMoFEMEntity *> t):
+  BaseFEDofMoFEMEntity(t.get<0>()), interface_DofMoFEMEntity<DofMoFEMEntity>(t.get<1>()) {}
+
+
 FEDofMoFEMEntity::FEDofMoFEMEntity(
   SideNumber *_side_number_ptr,
   const DofMoFEMEntity *_DofMoFEMEntity_ptr): 
