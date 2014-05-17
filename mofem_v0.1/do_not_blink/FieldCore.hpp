@@ -611,13 +611,11 @@ PetscErrorCode FieldCore::create_Mat(
       //if(dofs_vec.size()==0) {
 	//SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"zero dofs at row %d",Tag::get_index(miit_row));
       //}
-      unsigned int reserve_threhold_after_nth_rows_fill  = 90;
-      if( reserve_threhold_after_nth_rows_fill*i.size() > rows_to_fill ) {
-	if( j.capacity() < j.size() + dofs_vec.size() ) {
-	  unsigned int average_row_fill = j.size()/i.size() + j.size() % i.size();
-	  if( j.capacity() < rows_to_fill*average_row_fill ) {
-	    j.reserve( nb_dofs_row*average_row_fill );
-	 }
+      if( j.capacity() < j.size() + dofs_vec.size() ) {
+	unsigned int nb_nonzero = j.size() + dofs_vec.size();
+	unsigned int average_row_fill = nb_nonzero/i.size() + nb_nonzero % i.size();
+	if( j.capacity() < rows_to_fill*average_row_fill ) {
+	  j.reserve( nb_dofs_row*average_row_fill );
 	}
       }
       vector<DofIdx>::iterator diit,hi_diit;
