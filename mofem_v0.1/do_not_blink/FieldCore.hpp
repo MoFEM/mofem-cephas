@@ -615,7 +615,7 @@ PetscErrorCode FieldCore::create_Mat(
 	unsigned int nb_nonzero = j.size() + dofs_vec.size();
 	unsigned int average_row_fill = nb_nonzero/i.size() + nb_nonzero % i.size();
 	if( j.capacity() < rows_to_fill*average_row_fill ) {
-	  j.reserve( nb_dofs_row*average_row_fill );
+	  j.reserve( rows_to_fill*average_row_fill );
 	}
       }
       vector<DofIdx>::iterator diit,hi_diit;
