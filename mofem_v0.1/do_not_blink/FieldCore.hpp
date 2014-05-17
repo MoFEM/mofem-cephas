@@ -484,6 +484,8 @@ struct FieldCore: public FieldInterface {
   PetscLogEvent USER_EVENT_preProcess;
   PetscLogEvent USER_EVENT_operator;
   PetscLogEvent USER_EVENT_postProcess;
+  PetscLogEvent USER_EVENT_createMat;
+
 };
 
 //templates
@@ -500,6 +502,8 @@ PetscErrorCode FieldCore::create_Mat(
     const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
     const bool no_diagonals,int verb) {
     PetscFunctionBegin;
+    PetscLogEventBegin(USER_EVENT_createMat,0,0,0,0);
+
     if(verb==-1) verb = verbose;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
@@ -650,6 +654,8 @@ PetscErrorCode FieldCore::create_Mat(
     } else {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_NULL,"not implemented");
     }
+
+    PetscLogEventEnd(USER_EVENT_createMat,0,0,0,0);
     PetscFunctionReturn(0);
   }
 

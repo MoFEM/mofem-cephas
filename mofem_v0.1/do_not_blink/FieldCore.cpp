@@ -182,6 +182,8 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
   PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
   PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
   PetscLogEventRegister("FE_postProcess",0,&USER_EVENT_postProcess);
+  PetscLogEventRegister("FielCore_createMat",0,&USER_EVENT_createMat);
+
 }
 FieldCore::~FieldCore() {
 }
