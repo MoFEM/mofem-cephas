@@ -1766,7 +1766,6 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
   FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(EntFe.data_dofs);
   //clear data dofs multiindex //FIXME should be cleaned when dofs are cleaned form datasets
-  data_dofs.clear();
   DofMoFEMEntity_multiIndex_active_view data_view;
   ierr = EntFe.get_MoFEMFiniteElement_data_dof_view(dofsMoabField,data_view,Interface::UNION); CHKERRQ(ierr);
   DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator viit_data,hi_viit_data;
@@ -1827,9 +1826,9 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
     &EntFe.col_dof_view, 
     &EntFe.data_dof_view
   };
-  for(int ss = 0;ss<Last;ss++) {
+  /*for(int ss = 0;ss<Last;ss++) {
     MoFEMFiniteElement_dof_uid_view[ss]->clear();
-  }
+  }*/
   //lopp over all fields in database
   for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
     // common field id for Row, Col and Data
@@ -4572,6 +4571,17 @@ PetscErrorCode FieldCore::clear_dofs_fields(const BitRefLevel &bit,const BitRefL
 	dit++;
 	continue;
       }
+      MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
+      ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(dit->get_MoFEMEntity_ptr()->get_unique_id());
+      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(dit->get_MoFEMEntity_ptr()->get_unique_id());
+      for(;ait!=hi_ait;ait++) {
+  	EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr;
+	EntMoFEMFiniteElement_ptr = const_cast<EntMoFEMFiniteElement *>(ait->EntMoFEMFiniteElement_ptr);
+	EntMoFEMFiniteElement_ptr->row_dof_view.erase(dit->get_unique_id());
+	EntMoFEMFiniteElement_ptr->col_dof_view.erase(dit->get_unique_id());
+	EntMoFEMFiniteElement_ptr->data_dof_view.erase(dit->get_unique_id());
+	EntMoFEMFiniteElement_ptr->data_dofs.get<Unique_mi_tag>().erase(dit->get_unique_id());
+      }
       dit = dofsMoabField.erase(dit);
     }
   }
@@ -4586,6 +4596,17 @@ PetscErrorCode FieldCore::clear_dofs_fields(const string &name,const Range ents,
     dit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(name,*eit));
     hi_dit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(name,*eit));
     for(;dit!=hi_dit;) {
+      MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
+      ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(dit->get_MoFEMEntity_ptr()->get_unique_id());
+      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(dit->get_MoFEMEntity_ptr()->get_unique_id());
+      for(;ait!=hi_ait;ait++) {
+  	EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr;
+	EntMoFEMFiniteElement_ptr = const_cast<EntMoFEMFiniteElement *>(ait->EntMoFEMFiniteElement_ptr);
+	EntMoFEMFiniteElement_ptr->row_dof_view.erase(dit->get_unique_id());
+	EntMoFEMFiniteElement_ptr->col_dof_view.erase(dit->get_unique_id());
+	EntMoFEMFiniteElement_ptr->data_dof_view.erase(dit->get_unique_id());
+	EntMoFEMFiniteElement_ptr->data_dofs.get<Unique_mi_tag>().erase(dit->get_unique_id());
+      }
       dit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
     }
   }
@@ -4943,7 +4964,7 @@ PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const Bi
 	if(ents_to_delete.find(ent) != ents_to_delete.end()) {
 	  continue;
 	}
-	ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+	/*ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 	if(pcomm->rank()==0) {
 	  EntityHandle out_meshset;
 	  rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -4956,12 +4977,12 @@ PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const Bi
 	ss << "child:\n" << *pit << endl;
 	ss << "parent:\n" << RefMoFEMEntity(moab,*eit) << endl;
 	SETERRQ1(PETSC_COMM_SELF,1,
-	  "entity can not be removed, it is parent for some other entity\n%s",ss.str().c_str());
-	/*bool success = refinedMoFemEntities.modify(
+	  "entity can not be removed, it is parent for some other entity\n%s",ss.str().c_str());*/
+	bool success = refinedMoFemEntities.modify(
 	  refinedMoFemEntities.project<0>(pit),RefMoFEMEntity_change_remove_parent(moab));
 	if(!success) {
 	  SETERRQ(PETSC_COMM_SELF,1,"mofification unsucessfull");
-	}*/
+	}
       }
     }
   }
