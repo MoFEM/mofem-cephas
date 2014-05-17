@@ -2269,6 +2269,7 @@ PetscErrorCode FieldCore::build_problems(int verb) {
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,1,"entFEAdjacencies not build");
   MoFEMProblem_multiIndex::iterator p_miit = moFEMProblems.begin();
   //iterate problems
+  DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
   for(;p_miit!=moFEMProblems.end();p_miit++) {
     if(p_miit->get_BitRefLevel().none()) {
       SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",p_miit->get_name().c_str());
@@ -2279,7 +2280,9 @@ PetscErrorCode FieldCore::build_problems(int verb) {
     //miit2 iterator for finite elements
     EntMoFEMFiniteElement_multiIndex::iterator miit2 = finiteElementsMoFEMEnts.begin();
     EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = finiteElementsMoFEMEnts.end();
-    DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
+    //DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
+    dofs_rows.clear();
+    dofs_cols.clear();
     EntMoFEMFiniteElement_multiIndex::iterator miit3 = miit2;
     //iterate all finite elemen entities in database
     for(;miit3!=hi_miit2;miit3++) {
@@ -2711,6 +2714,7 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
     MoFEMEntity *MoFEMEntity_ptr = NULL;
     NumeredDofMoFEMEntity_multiIndex::iterator miit_row = dofs_row.begin();
     NumeredDofMoFEMEntity_multiIndex::iterator hi_miit_row = dofs_row.end();
+    NumeredDofMoFEMEntity_multiIndex_uid_view row_dof_view;
     for(;miit_row!=hi_miit_row;miit_row++) {
       if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->field_ptr->field_ptr->get_unique_id()) ) {
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->field_ptr->field_ptr);
@@ -2730,7 +2734,8 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
 	    // if entity is not problem refinment level
 	    continue; 
 	  }
-	  NumeredDofMoFEMEntity_multiIndex_uid_view row_dof_view;
+	  //NumeredDofMoFEMEntity_multiIndex_uid_view row_dof_view;
+	  row_dof_view.clear();
 	  ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_row_dof_view( 
 	    dofs_row,row_dof_view,Interface::UNION); CHKERRQ(ierr);
 	  NumeredDofMoFEMEntity_multiIndex_uid_view::iterator rdvit;
@@ -2752,6 +2757,7 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
     MoFEMEntity *MoFEMEntity_ptr = NULL;
     NumeredDofMoFEMEntity_multiIndex::iterator miit_col = dofs_col.begin();
     NumeredDofMoFEMEntity_multiIndex::iterator hi_miit_col = dofs_col.end();
+    NumeredDofMoFEMEntity_multiIndex_uid_view col_dof_view;
     for(;miit_col!=hi_miit_col;miit_col++) {
       if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_col->field_ptr->field_ptr->get_unique_id()) ) {
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_col->field_ptr->field_ptr);
@@ -2771,7 +2777,8 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
 	    // if entity is not problem refinment level
 	    continue; 
 	  }
-	  NumeredDofMoFEMEntity_multiIndex_uid_view col_dof_view;
+	  //NumeredDofMoFEMEntity_multiIndex_uid_view col_dof_view;
+	  col_dof_view.clear();
 	  ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_view( 
 	    dofs_col,col_dof_view,Interface::UNION); CHKERRQ(ierr);
 	  NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cdvit;
