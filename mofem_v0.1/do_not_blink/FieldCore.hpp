@@ -557,7 +557,9 @@ PetscErrorCode FieldCore::create_Mat(
     MoFEMEntity *MoFEMEntity_ptr = NULL;
     vector<PetscInt> i,j;
     vector<DofIdx> dofs_vec;
+    NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
     // loop local rows
+    i.reserve(distance(miit_row,hi_miit_row)+1);
     for(;miit_row!=hi_miit_row;miit_row++) {
       i.push_back(j.size());
       if(strcmp(type,MATMPIADJ)==0) {
@@ -571,7 +573,7 @@ PetscErrorCode FieldCore::create_Mat(
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->get_MoFEMEntity_ptr());
 	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
-	NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
+	dofs_col_view.clear();
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	  if(adj_miit->by_other&by_row) {
 	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
@@ -604,6 +606,9 @@ PetscErrorCode FieldCore::create_Mat(
       //if(dofs_vec.size()==0) {
 	//SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"zero dofs at row %d",Tag::get_index(miit_row));
       //}
+      if(j.capacity()<j.size()+dofs_vec.size()) {
+	j.reserve(j.capacity()+MoFEMEntity_ptr->get_nb_dofs_on_ent());
+      }
       vector<DofIdx>::iterator diit,hi_diit;
       diit = dofs_vec.begin();
       hi_diit = dofs_vec.end();
