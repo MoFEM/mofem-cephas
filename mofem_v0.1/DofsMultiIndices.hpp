@@ -140,6 +140,8 @@ struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDof
   FENumeredDofMoFEMEntity(
     SideNumber *_side_number_ptr,
     const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr);
+  FENumeredDofMoFEMEntity(
+    boost::tuple<SideNumber *,const NumeredDofMoFEMEntity *> t);
   friend ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e);
 };
 
@@ -417,7 +419,14 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique< 
       const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_dof_idx> >
-  > > NumeredDofMoFEMEntity_multiIndex_uid_view;
+  > > NumeredDofMoFEMEntity_multiIndex_uid_view_ordered;
+
+typedef multi_index_container<
+  const NumeredDofMoFEMEntity*,
+  indexed_by<
+    hashed_unique< 
+      const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_dof_idx> >
+  > > NumeredDofMoFEMEntity_multiIndex_uid_view_hashed;
 
 struct DofMoFEMEntity_active_change {
   bool active;

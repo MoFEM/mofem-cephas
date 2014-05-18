@@ -285,10 +285,16 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
+    const int operation_type = Interface::UNION) const;
+  PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
+    const int operation_type = Interface::UNION) const;
+  PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_uid_side_number(
     Interface &moab,const UId uid,
