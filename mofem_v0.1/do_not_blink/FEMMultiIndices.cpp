@@ -433,7 +433,7 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
 	mofem_it = mofem_dofs.get<Unique_mi_tag>().find(uid);
       }
       if(mofem_it != mofem_it_end) {
-	mofem_dofs_view.insert(mofem_dofs_view.end(),&*mofem_it);
+	mofem_dofs_view.insert(&*mofem_it);
 	mofem_it++;
       }
     }
@@ -485,7 +485,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
 }
 
 PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -494,7 +494,24 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
 }
 
 PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
+    const int operation_type) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = get_fe_MoFEMFiniteElement_dof_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
+    const int operation_type) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = get_fe_MoFEMFiniteElement_dof_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;

@@ -561,7 +561,7 @@ PetscErrorCode FieldCore::create_Mat(
     MoFEMEntity *MoFEMEntity_ptr = NULL;
     vector<PetscInt> i,j;
     vector<DofIdx> dofs_vec;
-    NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
+    NumeredDofMoFEMEntity_multiIndex_uid_view_hashed dofs_col_view;
     // loop local rows
     unsigned int rows_to_fill = distance(miit_row,hi_miit_row);
     i.reserve( rows_to_fill+1 );
@@ -594,7 +594,7 @@ PetscErrorCode FieldCore::create_Mat(
 	  }
 	}
 	dofs_vec.resize(0);
-	NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cvit;
+	NumeredDofMoFEMEntity_multiIndex_uid_view_hashed::iterator cvit;
 	cvit = dofs_col_view.begin();
 	for(;cvit!=dofs_col_view.end();cvit++) {
 	  int idx = Tag::get_index(*cvit);

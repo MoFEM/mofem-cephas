@@ -753,7 +753,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	}
       }
       if(dofs_x_volume.size()!=0) {
-	  assert(RowGlobSpatial[i_volume].size() == (unsigned int)3*NBVOLUME_H1(order_x_volume));
 	  Fint_h_volume.resize(dofs_x_volume.size());
 	  iFint_h_volume.resize(dofs_x_volume.size());
       }
