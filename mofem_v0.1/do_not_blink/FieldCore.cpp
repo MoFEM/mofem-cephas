@@ -3966,8 +3966,9 @@ PetscErrorCode FieldCore::set_global_VecCreateGhost(const string &name,RowColDat
       ierr = VecScatterEnd(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       PetscInt size;
       ierr = VecGetSize(V_glob,&size); CHKERRQ(ierr);
-      if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency: nb. of dofs and declared nb. dofs in database");
-      if(size!=distance(miit,hi_miit)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency: nb. of dofs and declared nb. dofs in database");
+      if(size!=nb_dofs) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency: nb. of dofs and declared nb. dofs in database");
+      }
       PetscScalar *array;
       ierr = VecGetArray(V_glob,&array); CHKERRQ(ierr);
       switch (mode) {
