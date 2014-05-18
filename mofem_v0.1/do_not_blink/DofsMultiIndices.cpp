@@ -69,6 +69,10 @@ ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   return os;
 }
 
+FEDofMoFEMEntity::FEDofMoFEMEntity(boost::tuple<SideNumber *,const DofMoFEMEntity *> t):
+  BaseFEDofMoFEMEntity(t.get<0>()), interface_DofMoFEMEntity<DofMoFEMEntity>(t.get<1>()) {}
+
+
 FEDofMoFEMEntity::FEDofMoFEMEntity(
   SideNumber *_side_number_ptr,
   const DofMoFEMEntity *_DofMoFEMEntity_ptr): 
@@ -85,6 +89,10 @@ FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
   SideNumber *_side_number_ptr,
   const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr): 
   BaseFEDofMoFEMEntity(_side_number_ptr), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(_NumeredDofMoFEMEntity_ptr) {}
+FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
+  boost::tuple<SideNumber *,const NumeredDofMoFEMEntity *> t): 
+  BaseFEDofMoFEMEntity(t.get<0>()), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(t.get<1>()) {}
+
 ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e) {
   os << "local dof MoFEMFiniteElement idx " 
     << "side_number " << e.side_number_ptr->side_number << " "

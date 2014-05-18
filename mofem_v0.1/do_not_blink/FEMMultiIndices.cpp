@@ -408,7 +408,6 @@ ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e) {
   return os;
 }
 
-
 template <typename MOFEM_DOFS,typename MOFEM_DOFS_VIEW>
 static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
     const DofMoFEMEntity_multiIndex_uid_view &fe_dofs_view,
@@ -416,15 +415,26 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
     MOFEM_DOFS_VIEW &mofem_dofs_view,
     const int operation_type) {
   PetscFunctionBegin;
+  UId uid;
+  typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
+  DofMoFEMEntity_multiIndex_uid_view::iterator it,it_end;
   if(operation_type==Interface::UNION) {
-    DofMoFEMEntity_multiIndex_uid_view::iterator it;
+    mofem_it = mofem_dofs.get<Unique_mi_tag>().begin();
+    mofem_it_end = mofem_dofs.get<Unique_mi_tag>().end();
     it = fe_dofs_view.begin();
-    for(;it!=fe_dofs_view.end();it++) {
-      UId uid = (*it)->get_unique_id();
-      typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it;
-      mofem_it = mofem_dofs.get<Unique_mi_tag>().find(uid);
-      if(mofem_it != mofem_dofs.get<Unique_mi_tag>().end()) {
+    it_end = fe_dofs_view.end();
+    for(;it!=it_end;it++) {
+      uid = (*it)->get_unique_id();
+      if(mofem_it != mofem_it_end) {
+	if(mofem_it->get_unique_id() != uid) {
+	  mofem_it = mofem_dofs.get<Unique_mi_tag>().find(uid);
+	}
+      } else {
+	mofem_it = mofem_dofs.get<Unique_mi_tag>().find(uid);
+      }
+      if(mofem_it != mofem_it_end) {
 	mofem_dofs_view.insert(&*mofem_it);
+	mofem_it++;
       }
     }
   } else {
@@ -475,7 +485,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
 }
 
 PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -484,7 +494,24 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
 }
 
 PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view &dofs_view,
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
+    const int operation_type) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = get_fe_MoFEMFiniteElement_dof_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
+    const int operation_type) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = get_fe_MoFEMFiniteElement_dof_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
+    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
