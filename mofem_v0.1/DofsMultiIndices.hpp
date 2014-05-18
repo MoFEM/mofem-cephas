@@ -84,6 +84,7 @@ struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
   DofIdx petsc_gloabl_dof_idx;
   DofIdx petsc_local_dof_idx;
   unsigned int part;
+  inline DofIdx get_dof_idx() const { return dof_idx; }
   inline DofIdx get_petsc_gloabl_dof_idx() const { return petsc_gloabl_dof_idx;  }
   inline DofIdx get_petsc_local_dof_idx() const { return petsc_local_dof_idx; }
   inline unsigned int get_part() const { return part;  }
@@ -99,7 +100,7 @@ struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
 template <typename T>
 struct interface_NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<T> {
   interface_NumeredDofMoFEMEntity(const T *_ptr): interface_DofMoFEMEntity<T>(_ptr) {};
-  inline DofIdx get_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->dof_idx; }
+  inline DofIdx get_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_dof_idx(); }
   inline DofIdx get_petsc_gloabl_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_petsc_gloabl_dof_idx();  }
   inline DofIdx get_petsc_local_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_petsc_local_dof_idx(); }
   inline unsigned int get_part() const { return interface_DofMoFEMEntity<T>::field_ptr->get_part();  }
@@ -415,7 +416,7 @@ typedef multi_index_container<
   const NumeredDofMoFEMEntity*,
   indexed_by<
     ordered_unique< 
-      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&NumeredDofMoFEMEntity::get_unique_id> >
+      const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_dof_idx> >
   > > NumeredDofMoFEMEntity_multiIndex_uid_view;
 
 struct DofMoFEMEntity_active_change {
