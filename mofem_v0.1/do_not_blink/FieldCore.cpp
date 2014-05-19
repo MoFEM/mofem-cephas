@@ -1765,6 +1765,7 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
   PetscFunctionBegin;
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,1,"fields not build");
   FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(EntFe.data_dofs);
+  //data_dofs.clear();
   //clear data dofs multiindex //FIXME should be cleaned when dofs are cleaned form datasets
   DofMoFEMEntity_multiIndex_active_view data_view;
   ierr = EntFe.get_MoFEMFiniteElement_data_dof_view(dofsMoabField,data_view,Interface::UNION); CHKERRQ(ierr);
@@ -1826,6 +1827,10 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
     &EntFe.col_dof_view, 
     &EntFe.data_dof_view
   };
+  int nb_view_dofs[Last];
+  for(int ss = 0;ss<Last;ss++) {
+    nb_view_dofs[ss] = 0;
+  }
   /*for(int ss = 0;ss<Last;ss++) {
     MoFEMFiniteElement_dof_uid_view[ss]->clear();
   }*/
@@ -2097,8 +2102,14 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	dof_set_type::iterator ents_miit3 = ents_miit2;
 	for(;ents_miit3!=ents_hi_miit2;ents_miit3++) {
 	  MoFEMFiniteElement_dof_uid_view[ss]->insert(&*ents_miit3);
+	  nb_view_dofs[ss]++;
 	}
       }
+    }
+  }
+  for(int ss = 0;ss<Last;ss++) {
+    if(nb_view_dofs[ss] != MoFEMFiniteElement_dof_uid_view[ss]->size()) {
+      SETERRQ(PETSC_COMM_SELF,1,"data insonsistency"); 
     }
   }
   if(verb>2) {
