@@ -484,11 +484,13 @@ struct FieldCore: public FieldInterface {
   PetscLogEvent USER_EVENT_preProcess;
   PetscLogEvent USER_EVENT_operator;
   PetscLogEvent USER_EVENT_postProcess;
+  PetscLogEvent USER_EVENT_createMat;
+
 };
 
 //templates
 
-#define PARALLEL_PARTITIONING 0
+#define PARALLEL_PARTITIONING 1
 #if PARALLEL_PARTITIONING
   #define PARTITIONING_MPIADJ_COMM PETSC_COMM_WORLD
 #else 
@@ -500,6 +502,8 @@ PetscErrorCode FieldCore::create_Mat(
     const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
     const bool no_diagonals,int verb) {
     PetscFunctionBegin;
+    PetscLogEventBegin(USER_EVENT_createMat,0,0,0,0);
+
     if(verb==-1) verb = verbose;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
@@ -557,7 +561,10 @@ PetscErrorCode FieldCore::create_Mat(
     MoFEMEntity *MoFEMEntity_ptr = NULL;
     vector<PetscInt> i,j;
     vector<DofIdx> dofs_vec;
+    NumeredDofMoFEMEntity_multiIndex_uid_view_hashed dofs_col_view;
     // loop local rows
+    unsigned int rows_to_fill = distance(miit_row,hi_miit_row);
+    i.reserve( rows_to_fill+1 );
     for(;miit_row!=hi_miit_row;miit_row++) {
       i.push_back(j.size());
       if(strcmp(type,MATMPIADJ)==0) {
@@ -571,7 +578,7 @@ PetscErrorCode FieldCore::create_Mat(
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->get_MoFEMEntity_ptr());
 	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
-	NumeredDofMoFEMEntity_multiIndex_uid_view dofs_col_view;
+	dofs_col_view.clear();
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	  if(adj_miit->by_other&by_row) {
 	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
@@ -587,7 +594,7 @@ PetscErrorCode FieldCore::create_Mat(
 	  }
 	}
 	dofs_vec.resize(0);
-	NumeredDofMoFEMEntity_multiIndex_uid_view::iterator cvit;
+	NumeredDofMoFEMEntity_multiIndex_uid_view_hashed::iterator cvit;
 	cvit = dofs_col_view.begin();
 	for(;cvit!=dofs_col_view.end();cvit++) {
 	  int idx = Tag::get_index(*cvit);
@@ -604,6 +611,13 @@ PetscErrorCode FieldCore::create_Mat(
       //if(dofs_vec.size()==0) {
 	//SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"zero dofs at row %d",Tag::get_index(miit_row));
       //}
+      if( j.capacity() < j.size() + dofs_vec.size() ) {
+	unsigned int nb_nonzero = j.size() + dofs_vec.size();
+	unsigned int average_row_fill = nb_nonzero/i.size() + nb_nonzero % i.size();
+	if( j.capacity() < rows_to_fill*average_row_fill ) {
+	  j.reserve( rows_to_fill*average_row_fill );
+	}
+      }
       vector<DofIdx>::iterator diit,hi_diit;
       diit = dofs_vec.begin();
       hi_diit = dofs_vec.end();
@@ -645,6 +659,8 @@ PetscErrorCode FieldCore::create_Mat(
     } else {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_NULL,"not implemented");
     }
+
+    PetscLogEventEnd(USER_EVENT_createMat,0,0,0,0);
     PetscFunctionReturn(0);
   }
 
