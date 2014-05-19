@@ -1985,6 +1985,11 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
+  BitRefLevel maskPreserv_flip;
+  ierr = face_splitting.getMask(maskPreserv_flip); CHKERRQ(ierr);
+  maskPreserv_flip.flip();
+  ierr = mField.build_adjacencies(maskPreserv_flip); CHKERRQ(ierr);
+
   //remove all crack front elements
   ierr = mField.remove_ents_from_finite_element("C_TANGENT_ELEM",0,MBTRI); CHKERRQ(ierr);
   ierr = mField.remove_ents_from_finite_element("C_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
