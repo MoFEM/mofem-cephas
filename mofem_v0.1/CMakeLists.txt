@@ -140,6 +140,10 @@ add_library(mofem_face_splitting
   face_splitting/FaceSplittingTool.cpp
 )
 
+add_library(mofem_forces_and_sources
+  forces_and_sources/ForcesAndSurcesCore.cpp
+)
+
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")
