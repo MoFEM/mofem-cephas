@@ -1827,7 +1827,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
     &EntFe.col_dof_view, 
     &EntFe.data_dof_view
   };
-  int nb_view_dofs[Last];
+  unsigned int nb_view_dofs[Last];
   for(int ss = 0;ss<Last;ss++) {
     nb_view_dofs[ss] = 0;
   }
