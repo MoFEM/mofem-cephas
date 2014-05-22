@@ -147,9 +147,8 @@ int main(int argc, char *argv[]) {
     TeeDevice my_tee; 
     TeeStream my_split;
 
-
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
-      ForcesAndSurcesCore(_mField), 
+      ForcesAndSurcesCore(_mField,_data_), 
       ofs("forces_and_surces_getting_orders_indices_atom_test.txt"),
       my_tee(cout, ofs),my_split(my_tee) {};
 
@@ -162,65 +161,65 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
       my_split << "\n\nNEXT ELEM\n\n";
       ierr = getEdgesSense(); CHKERRQ(ierr);
-      my_split << "edgesSense: " << edgesSense << endl;
+      my_split << "edgesSense: " << data.edgesSense << endl;
       ierr = getFacesSense(); CHKERRQ(ierr);
-      my_split << "facesSense: " << facesSense << endl;
+      my_split << "facesSense: " << data.facesSense << endl;
       ierr = getEdgesOrder("FIELD1"); CHKERRQ(ierr);
-      my_split << "FIELD1 edgesOrder: " << edgesOrder << endl;
+      my_split << "FIELD1 edgesOrder: " << data.edgesOrder << endl;
       ierr = getEdgesOrder("FIELD2"); CHKERRQ(ierr);
-      my_split << "FIELD2 edgesOrder: " << edgesOrder << endl;
+      my_split << "FIELD2 edgesOrder: " << data.edgesOrder << endl;
       ierr = getFacesOrder("FIELD1"); CHKERRQ(ierr);
-      my_split << "FIELD1 facesOrder: " << facesOrder << endl;
+      my_split << "FIELD1 facesOrder: " << data.facesOrder << endl;
       ierr = getFacesOrder("FIELD2"); CHKERRQ(ierr);
-      my_split << "FIELD2 facesOrder: " << facesOrder << endl;
+      my_split << "FIELD2 facesOrder: " << data.facesOrder << endl;
       ierr = getOrderVolume("FIELD1"); CHKERRQ(ierr);
-      my_split << "FIELD1 volumeOrder: " << volumeOrder << endl;
+      my_split << "FIELD1 volumeOrder: " << data.volumeOrder << endl;
       ierr = getOrderVolume("FIELD2"); CHKERRQ(ierr);
-      my_split << "FIELD2 volumeOrder: " << volumeOrder << endl;
+      my_split << "FIELD2 volumeOrder: " << data.volumeOrder << endl;
       ierr = getRowNodesIndices("FIELD1"); CHKERRQ(ierr);
-      my_split << "FIELD1 rowNodesIndices: " << rowNodesIndices << endl;
+      my_split << "FIELD1 rowNodesIndices: " << data.rowNodesIndices << endl;
       ierr = getColNodesIndices("FIELD2"); CHKERRQ(ierr);
-      my_split << "FIELD2 colNodesIndices: " << colNodesIndices << endl;
+      my_split << "FIELD2 colNodesIndices: " << data.colNodesIndices << endl;
       ierr = getEdgeRowIndices("FIELD1"); CHKERRQ(ierr);
       for(int ee = 0;ee<6;ee++) {
-	my_split << "FIELD1 " << ee << " " << rowEdgesIndcies[ee] << endl;
+	my_split << "FIELD1 " << ee << " " << data.rowEdgesIndcies[ee] << endl;
       }
       ierr = getEdgeColIndices("FIELD2"); CHKERRQ(ierr);
       for(int ee = 0;ee<6;ee++) {
-	my_split << "FIELD2 " << ee << " " << colEdgesIndcies[ee] << endl;
+	my_split << "FIELD2 " << ee << " " << data.colEdgesIndcies[ee] << endl;
       }
       ierr = getFacesRowIndices("FIELD1"); CHKERRQ(ierr);
       for(int ff = 0;ff<4;ff++) {
-	my_split << "FIELD2 " << ff << " " <<  rowFacesIndcies[ff] << endl;
+	my_split << "FIELD2 " << ff << " " <<  data.rowFacesIndcies[ff] << endl;
       }
       ierr = getFacesColIndices("FIELD2"); CHKERRQ(ierr);
       for(int ff = 0;ff<4;ff++) {
-	my_split << "FIELD2 " << ff << " " <<  colFacesIndcies[ff] << endl;
+	my_split << "FIELD2 " << ff << " " <<  data.colFacesIndcies[ff] << endl;
       }
       ierr = getTetRowIndices("FIELD1"); CHKERRQ(ierr);
-      my_split << "FIELD1 " << rowTetIndcies << endl;
+      my_split << "FIELD1 " << data.rowTetIndcies << endl;
       ierr = getTetColIndices("FIELD2"); CHKERRQ(ierr);
-      my_split << "FIELD1 " << colTetIndcies << endl;
+      my_split << "FIELD1 " << data.colTetIndcies << endl;
 
       ierr = getFaceNodes(); CHKERRQ(ierr);
-      my_split << "facesNodes " << facesNodes << endl;
+      my_split << "facesNodes " << data.facesNodes << endl;
 
       ierr = shapeTETFunctions_H1(G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
       my_split.precision(2);
-      my_split << "Nnodes_H1 " << Nnodes_H1 << endl;
-      my_split << "diffNodes_H1 " << diffNnodes_H1 << endl;
+      my_split << "Nnodes_H1 " << data.Nnodes_H1 << endl;
+      my_split << "diffNodes_H1 " << data.diffNnodes_H1 << endl;
       for(int ee = 0;ee<6;ee++) {
-	my_split << "Nedges_H1 ee = " << ee << " " << Nedges_H1[ee] << endl;
+	my_split << "Nedges_H1 ee = " << ee << " " << data.Nedges_H1[ee] << endl;
       }
       for(int ff = 0;ff<4;ff++) {
-	my_split << "Nedges_H1 ff = " << ff << " " << Nfaces_H1[ff] << endl;
+	my_split << "Nedges_H1 ff = " << ff << " " << data.Nfaces_H1[ff] << endl;
       }
-      my_split << "Nvolume_H1 " << Nvolume_H1 << endl;
+      my_split << "Nvolume_H1 " << data.Nvolume_H1 << endl;
 
       ierr = shapeTETFunctions_L2(G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
-      my_split << "Nnodes_L2 " << Nnodes_H1 << endl;
-      my_split << "diffNodes_L2 " << diffNnodes_H1 << endl;
-      my_split << "Nvolume_L2 " << Nvolume_H1 << endl;
+      my_split << "Nnodes_L2 " << data.Nnodes_H1 << endl;
+      my_split << "diffNodes_L2 " << data.diffNnodes_H1 << endl;
+      my_split << "Nvolume_L2 " << data.Nvolume_H1 << endl;
 
       PetscFunctionReturn(0);
     }
@@ -232,6 +231,9 @@ int main(int argc, char *argv[]) {
 
       PetscFunctionReturn(0);
     }
+
+    private:
+    dataForcesAndSurcesCore _data_;
 
   };
 

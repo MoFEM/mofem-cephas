@@ -34,9 +34,9 @@ PetscErrorCode ForcesAndSurcesCore::getEdgesSense() {
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(MBEDGE);
     SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(MBEDGE);
-    edgesSense.resize(distance(siit,hi_siit));
+    data.edgesSense.resize(distance(siit,hi_siit));
     for(;siit!=hi_siit;siit++) {
-      edgesSense[siit->side_number] = siit->sense;
+      data.edgesSense[siit->side_number] = siit->sense;
     }
     PetscFunctionReturn(0);
   }
@@ -46,9 +46,9 @@ PetscErrorCode ForcesAndSurcesCore::getFacesSense() {
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(MBTRI);
     SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(MBTRI);
-    facesSense.resize(distance(siit,hi_siit));
+    data.facesSense.resize(distance(siit,hi_siit));
     for(;siit!=hi_siit;siit++) {
-      facesSense[siit->side_number] = siit->sense;
+      data.facesSense[siit->side_number] = siit->sense;
     }
     PetscFunctionReturn(0);
   }
@@ -56,7 +56,7 @@ PetscErrorCode ForcesAndSurcesCore::getFacesSense() {
 PetscErrorCode ForcesAndSurcesCore::getEdgesOrder(const string &field_name) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
-    edgesOrder.resize(side_table.get<2>().count(MBEDGE));
+    data.edgesOrder.resize(side_table.get<2>().count(MBEDGE));
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type &data_dofs =
       const_cast<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type&>(
 	fe_ptr->get_data_dofs().get<Composite_Name_And_Type_mi_tag>());
@@ -66,7 +66,7 @@ PetscErrorCode ForcesAndSurcesCore::getEdgesOrder(const string &field_name) {
     for(;dit!=hi_dit;dit++) {
       ApproximationOrder ent_order = dit->get_max_order();
       int side_number = dit->side_number_ptr->side_number;
-      edgesOrder[side_number] = edgesOrder[side_number] > ent_order ? edgesOrder[side_number] : ent_order;
+      data.edgesOrder[side_number] = data.edgesOrder[side_number] > ent_order ? data.edgesOrder[side_number] : ent_order;
     }
     PetscFunctionReturn(0);
   }
@@ -74,7 +74,7 @@ PetscErrorCode ForcesAndSurcesCore::getEdgesOrder(const string &field_name) {
 PetscErrorCode ForcesAndSurcesCore::getFacesOrder(const string &field_name) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
-    facesOrder.resize(side_table.get<2>().count(MBTRI));
+    data.facesOrder.resize(side_table.get<2>().count(MBTRI));
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type &data_dofs =
       const_cast<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type&>(
 	fe_ptr->get_data_dofs().get<Composite_Name_And_Type_mi_tag>());
@@ -84,7 +84,7 @@ PetscErrorCode ForcesAndSurcesCore::getFacesOrder(const string &field_name) {
     for(;dit!=hi_dit;dit++) {
       ApproximationOrder ent_order = dit->get_max_order();
       int side_number = dit->side_number_ptr->side_number;
-      facesOrder[side_number] = facesOrder[side_number] > ent_order ? facesOrder[side_number] : ent_order;
+      data.facesOrder[side_number] = data.facesOrder[side_number] > ent_order ? data.facesOrder[side_number] : ent_order;
     }
     PetscFunctionReturn(0);
   }
@@ -97,11 +97,11 @@ PetscErrorCode ForcesAndSurcesCore::getOrderVolume(const string &field_name) {
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator dit,hi_dit;
     dit = data_dofs.lower_bound(boost::make_tuple(field_name,MBTET));
     hi_dit = data_dofs.upper_bound(boost::make_tuple(field_name,MBTET));
-    volumeOrder = -1;
+    data.volumeOrder = -1;
     for(;dit!=hi_dit;dit++) {
       ApproximationOrder ent_order = dit->get_max_order();
       int side_number = dit->side_number_ptr->side_number;
-      volumeOrder = volumeOrder > ent_order ? volumeOrder : ent_order;
+      data.volumeOrder = data.volumeOrder > ent_order ? data.volumeOrder : ent_order;
     }
     PetscFunctionReturn(0);
   }
@@ -124,14 +124,14 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(const string &field_name,FEN
 PetscErrorCode ForcesAndSurcesCore::getRowNodesIndices(const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getNodesIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),rowNodesIndices); CHKERRQ(ierr);
+    ierr = getNodesIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),data.rowNodesIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode ForcesAndSurcesCore::getColNodesIndices(const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getNodesIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),colNodesIndices); CHKERRQ(ierr);
+    ierr = getNodesIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),data.colNodesIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -150,7 +150,8 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(const string &field_name,FENu
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getTypeIndices(const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,vector<ublas::vector<int> > &indices) {
+PetscErrorCode ForcesAndSurcesCore::getTypeIndices(const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,
+  ublas::vector<ublas::vector<int> > &indices) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
@@ -166,42 +167,42 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(const string &field_name,FENu
 PetscErrorCode ForcesAndSurcesCore::getEdgeRowIndices(const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBEDGE,rowEdgesIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBEDGE,data.rowEdgesIndcies); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode ForcesAndSurcesCore::getEdgeColIndices(const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBEDGE,colEdgesIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBEDGE,data.colEdgesIndcies); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode ForcesAndSurcesCore::getFacesRowIndices(const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTRI,rowFacesIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTRI,data.rowFacesIndcies); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode ForcesAndSurcesCore::getFacesColIndices(const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTRI,colFacesIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTRI,data.colFacesIndcies); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode ForcesAndSurcesCore::getTetRowIndices(const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTET,0,rowTetIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTET,0,data.rowTetIndcies); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode ForcesAndSurcesCore::getTetColIndices(const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTET,0,colTetIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTET,0,data.colTetIndcies); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -209,7 +210,7 @@ PetscErrorCode ForcesAndSurcesCore::getFaceNodes() {
     PetscFunctionBegin;
     //PetscAttachDebugger();
     ErrorCode rval;
-    facesNodes.resize(4,3);
+    data.facesNodes.resize(4,3);
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
     const int cannonical_face_sense_p1[4][3] = { {0,1,3}, {1,2,3}, {0,3,2}/**/, {0,2,1}/**/ }; //secon index is offset (positive sense)
     const int cannonical_face_sense_m1[4][3] = { {0,3,1}, {1,3,2}, {0,2,3}, {0,1,2} }; //second index is offset (negative sense)
@@ -233,7 +234,7 @@ PetscErrorCode ForcesAndSurcesCore::getFaceNodes() {
 	face_conn[1] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][0] : cannonical_face_sense_m1[side->side_number][2];
 	face_conn[2] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][1] : cannonical_face_sense_m1[side->side_number][0];
       }
-      for(int nn = 0;nn<3;nn++) facesNodes(side->side_number,nn) = face_conn[nn]; 
+      for(int nn = 0;nn<3;nn++) data.facesNodes(side->side_number,nn) = face_conn[nn]; 
       {
 	const EntityHandle *conn_tet;
 	int num_nodes_tet;
@@ -258,50 +259,50 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
 
     PetscErrorCode ierr;
 
-    Nnodes_H1.resize(G_DIM,4);
-    ierr = ShapeMBTET(&*Nnodes_H1.data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
-    diffNnodes_H1.resize(4,3);
-    ierr = ShapeDiffMBTET(&*diffNnodes_H1.data().begin()); CHKERRQ(ierr);
+    data.Nnodes_H1.resize(G_DIM,4);
+    ierr = ShapeMBTET(&*data.Nnodes_H1.data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
+    data.diffNnodes_H1.resize(4,3);
+    ierr = ShapeDiffMBTET(&*data.diffNnodes_H1.data().begin()); CHKERRQ(ierr);
 
     //edges
-    if(edgesSense.size()!=6) {
+    if(data.edgesSense.size()!=6) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    if(edgesOrder.size()!=6) {
+    if(data.edgesOrder.size()!=6) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    Nedges_H1.resize(6);
+    data.Nedges_H1.resize(6);
     double *_H1edgeN_[6];
     for(int ee = 0;ee<6;ee++) {
-      Nedges_H1[ee].resize(G_DIM,NBEDGE_H1(edgesOrder[ee]));
-      _H1edgeN_[ee] = &*Nedges_H1[ee].data().begin();
+      data.Nedges_H1[ee].resize(G_DIM,NBEDGE_H1(data.edgesOrder[ee]));
+      _H1edgeN_[ee] = &*data.Nedges_H1[ee].data().begin();
     }
     ierr = H1_EdgeShapeFunctions_MBTET(
-      &*edgesSense.data().begin(),&*edgesOrder.data().begin(),&*Nnodes_H1.data().begin(),diffNnodes_H1.data().begin(),_H1edgeN_,NULL,G_DIM); CHKERRQ(ierr);
+      &*data.edgesSense.data().begin(),&*data.edgesOrder.data().begin(),&*data.Nnodes_H1.data().begin(),data.diffNnodes_H1.data().begin(),_H1edgeN_,NULL,G_DIM); CHKERRQ(ierr);
 
     //faces
-    if(facesOrder.size()!=4) {
+    if(data.facesOrder.size()!=4) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    Nfaces_H1.resize(4);
+    data.Nfaces_H1.resize(4);
     double *_H1faceN_[4];
     for(int ff = 0;ff<4;ff++) {
-      Nfaces_H1[ff].resize(G_DIM,NBFACE_H1(facesOrder[ff]));
-      _H1faceN_[ff] = &*Nfaces_H1[ff].data().begin();
+      data.Nfaces_H1[ff].resize(G_DIM,NBFACE_H1(data.facesOrder[ff]));
+      _H1faceN_[ff] = &*data.Nfaces_H1[ff].data().begin();
     }
-    if(facesNodes.size1() != 4) {
+    if(data.facesNodes.size1() != 4) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    if(facesNodes.size2() != 3) {
+    if(data.facesNodes.size2() != 3) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
     ierr = H1_FaceShapeFunctions_MBTET(
-      &*facesNodes.data().begin(),&*facesOrder.data().begin(),
-      &*Nnodes_H1.data().begin(),diffNnodes_H1.data().begin(),_H1faceN_,NULL,G_DIM); CHKERRQ(ierr);
+      &*data.facesNodes.data().begin(),&*data.facesOrder.data().begin(),
+      &*data.Nnodes_H1.data().begin(),data.diffNnodes_H1.data().begin(),_H1faceN_,NULL,G_DIM); CHKERRQ(ierr);
 
     //volume
-    Nvolume_H1.resize(G_DIM,NBVOLUME_H1(volumeOrder));
-    ierr = H1_VolumeShapeFunctions_MBTET(volumeOrder,&*Nnodes_H1.data().begin(),diffNnodes_H1.data().begin(),&*Nvolume_H1.data().begin(),NULL,G_DIM); CHKERRQ(ierr);
+    data.Nvolume_H1.resize(G_DIM,NBVOLUME_H1(data.volumeOrder));
+    ierr = H1_VolumeShapeFunctions_MBTET(data.volumeOrder,&*data.Nnodes_H1.data().begin(),data.diffNnodes_H1.data().begin(),&*data.Nvolume_H1.data().begin(),NULL,G_DIM); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -311,16 +312,16 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_L2(const double *G_X,const
 
     PetscErrorCode ierr;
 
-    Nnodes_L2.resize(G_DIM,4);
-    ierr = ShapeMBTET(&*Nnodes_L2.data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
-    diffNnodes_L2.resize(4,3);
-    ierr = ShapeDiffMBTET(&*diffNnodes_L2.data().begin()); CHKERRQ(ierr);
+    data.Nnodes_L2.resize(G_DIM,4);
+    ierr = ShapeMBTET(&*data.Nnodes_L2.data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
+    data.diffNnodes_L2.resize(4,3);
+    ierr = ShapeDiffMBTET(&*data.diffNnodes_L2.data().begin()); CHKERRQ(ierr);
 
-    Nvolume_L2.resize(G_DIM,NBVOLUME_L2(volumeOrder));
-    ierr = L2_ShapeFunctions_MBTET(volumeOrder,&*Nnodes_L2.data().begin(),&*diffNnodes_L2.data().begin(),&*Nvolume_L2.data().begin(),NULL,G_DIM); CHKERRQ(ierr);
+    data.Nvolume_L2.resize(G_DIM,NBVOLUME_L2(data.volumeOrder));
+    ierr = L2_ShapeFunctions_MBTET(
+      data.volumeOrder,&*data.Nnodes_L2.data().begin(),&*data.diffNnodes_L2.data().begin(),&*data.Nvolume_L2.data().begin(),NULL,G_DIM); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-
 
 PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
     ApproximationOrder order,const double *G_X,const double *G_Y,const int G_DIM) {
@@ -331,12 +332,9 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
     PetscFunctionReturn(0);
   }
 
-
 PetscErrorCode mult_H1_H1::calculate_H1_H1_nonsymetric(double *G_W) {
     PetscFunctionBegin;
-    if(B1_Nnodes.size1() != B2_Nnodes.size2()) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-    }
+
     int G_DIM = B1_Nnodes.size1();
 
     H1_H1_nodes.resize(B1_Nnodes.size2(),B2_Nnodes.size2());
@@ -351,19 +349,19 @@ PetscErrorCode mult_H1_H1::calculate_H1_H1_nonsymetric(double *G_W) {
 	&*H1_H1_nodes.data().begin(),H1_H1_nodes.size2());
 
     }
+
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode mult_H1_H1::calculate_H1_H1_symmetric(double *G_W) {
     PetscFunctionBegin;
+
+
     if(B1_Nnodes.size1() != B2_Nnodes.size2()) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
     int G_DIM = B1_Nnodes.size1();
 
-    H1_H1_nodes.resize(B1_Nnodes.size2(),B2_Nnodes.size2());
-    ublas::noalias(H1_H1_nodes) 
-	= ublas::zero_matrix<FieldData>( H1_H1_nodes.size1(),H1_H1_nodes.size2() );
 
     for(int gg = 0;gg<G_DIM;gg++) {
 
@@ -373,6 +371,8 @@ PetscErrorCode mult_H1_H1::calculate_H1_H1_symmetric(double *G_W) {
 
     }
     PetscFunctionReturn(0);
+
+
   }
 
 
