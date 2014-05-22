@@ -2299,7 +2299,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = SNESSetApplicationContext(*snes,&arc_snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetFunction(*snes,F,SnesRhs,&arc_snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetJacobian(*snes,ShellK,K,SnesMat,&arc_snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   PetscReal my_tol;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_tol",&my_tol,&flg); CHKERRQ(ierr);
   if(flg == PETSC_TRUE) {
@@ -2348,6 +2347,19 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = arc_elem.calulate_lambda_int(); CHKERRQ(ierr);
   ierr = arc_ctx.set_s(arc_elem.lambda_int+da/arc_elem.aRea0); CHKERRQ(ierr);
 
+  SNESLineSearch linesearch;
+  ierr = SNESGetLineSearch(*snes,&linesearch); CHKERRQ(ierr);
+  PetscReal atol,rtol,stol;
+  PetscInt maxit,maxf;
+  ierr = SNESGetTolerances(*snes,&atol,&rtol,&stol,&maxit,&maxf); CHKERRQ(ierr);
+
+  ierr = SNESSetTolerances(*snes,atol,rtol,stol,1,maxf); CHKERRQ(ierr);
+  ierr = SNESSetConvergenceTest(*snes,SNESSkipConverged,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBASIC); CHKERRQ(ierr);
+  ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
+  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
+  ierr = SNESSetTolerances(*snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
+  ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
@@ -3203,7 +3215,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	}
       }
       //set line sercher L2 for not converged state
-      if(reason < 0) {
+      /*if(reason < 0) {
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"* set L2 linesercher\n",_da_); CHKERRQ(ierr);
 	//set line sercher L2 for not converged state
 	ierr = SNESDestroy(&snes); CHKERRQ(ierr);
@@ -3213,7 +3225,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
 	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
 	line_searcher_set = true;
-      }
+      }*/
     }
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
