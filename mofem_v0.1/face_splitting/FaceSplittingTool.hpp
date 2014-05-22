@@ -143,6 +143,8 @@ struct FaceSplittingTools {
   EntityHandle chopTetsFaces;
   EntityHandle selectedCrackFaces;
 
+  PetscErrorCode getCrackFrontEntities(bool createMeshset,bool get_tets,bool get_faces,int verb = 0);
+  PetscErrorCode getCrackFrontFaces(bool createMeshset,int verb = 0);
   PetscErrorCode getCrackFrontTets(bool createMeshset,int verb = 0);
   PetscErrorCode chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(bool createMeshset,int verb = 0);
   PetscErrorCode selectCrackFaces(bool createMeshset,int verb = 0);
