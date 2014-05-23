@@ -1971,7 +1971,7 @@ PetscErrorCode main_select_faces_for_splitting(FieldInterface& mField,FaceSplitt
   ierr = face_splitting.getCrackFrontTets(true,0); CHKERRQ(ierr);
   ierr = face_splitting.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true,0); CHKERRQ(ierr);
   ierr = face_splitting.selectCrackFaces(true); CHKERRQ(ierr);
-  ierr = face_splitting.getCrackFrontFaces(true,10); CHKERRQ(ierr);
+  ierr = face_splitting.getCrackFrontFaces(true,0); CHKERRQ(ierr);
 
   if(verb>0) {
 
