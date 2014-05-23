@@ -1,7 +1,7 @@
 # Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
 # The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
 # It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
+# by other institutions. If you use this software pleas cite my work. 
 #
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
