@@ -1304,13 +1304,22 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   PetscBool flg = PETSC_TRUE;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&MySpatialFE.thermal_expansion,&flg); CHKERRQ(ierr);
 
+  PetscReal my_tol;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_tol",&my_tol,&flg); CHKERRQ(ierr);
+  if(flg == PETSC_TRUE) {
+    PetscReal atol,rtol,stol;
+    PetscInt maxit,maxf;
+    ierr = SNESGetTolerances(*snes,&atol,&rtol,&stol,&maxit,&maxf); CHKERRQ(ierr);
+    atol = my_tol;
+    rtol = atol*1e2;
+    ierr = SNESSetTolerances(*snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
+  }
 
   SnesCtx snes_ctx(mField,"ELASTIC_MECHANICS");
   
   ierr = SNESSetApplicationContext(*snes,&snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetFunction(*snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetJacobian(*snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetFromOptions(*snes); CHKERRQ(ierr);
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MySpatialFE));
@@ -2299,7 +2308,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = SNESSetApplicationContext(*snes,&arc_snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetFunction(*snes,F,SnesRhs,&arc_snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetJacobian(*snes,ShellK,K,SnesMat,&arc_snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   PetscReal my_tol;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_tol",&my_tol,&flg); CHKERRQ(ierr);
   if(flg == PETSC_TRUE) {
@@ -2348,6 +2356,19 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = arc_elem.calulate_lambda_int(); CHKERRQ(ierr);
   ierr = arc_ctx.set_s(arc_elem.lambda_int+da/arc_elem.aRea0); CHKERRQ(ierr);
 
+  SNESLineSearch linesearch;
+  ierr = SNESGetLineSearch(*snes,&linesearch); CHKERRQ(ierr);
+  PetscReal atol,rtol,stol;
+  PetscInt maxit,maxf;
+  ierr = SNESGetTolerances(*snes,&atol,&rtol,&stol,&maxit,&maxf); CHKERRQ(ierr);
+
+  ierr = SNESSetTolerances(*snes,atol,rtol,stol,1,maxf); CHKERRQ(ierr);
+  ierr = SNESSetConvergenceTest(*snes,SNESSkipConverged,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBASIC); CHKERRQ(ierr);
+  ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
+  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
+  ierr = SNESSetTolerances(*snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
+  ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
@@ -2834,6 +2855,7 @@ PetscErrorCode main_spatial_solution(FieldInterface& mField,ConfigurationalFract
 
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
   ierr = conf_prob.solve_spatial_problem(mField,&snes); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
@@ -2993,6 +3015,7 @@ PetscErrorCode main_rescale_load_factor(FieldInterface& mField,ConfigurationalFr
   SNES snes;
   //solve spatial problem
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);  
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
   ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
@@ -3166,6 +3189,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	{
 	  SNES snes_spatial;
 	  ierr = SNESCreate(PETSC_COMM_WORLD,&snes_spatial); CHKERRQ(ierr);  
+	  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 	  ierr = conf_prob.solve_spatial_problem(mField,&snes_spatial,false); CHKERRQ(ierr);
 	  ierr = SNESDestroy(&snes_spatial); CHKERRQ(ierr);
 	  ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
@@ -3203,7 +3227,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	}
       }
       //set line sercher L2 for not converged state
-      if(reason < 0) {
+      /*if(reason < 0) {
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"* set L2 linesercher\n",_da_); CHKERRQ(ierr);
 	//set line sercher L2 for not converged state
 	ierr = SNESDestroy(&snes); CHKERRQ(ierr);
@@ -3213,7 +3237,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
 	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
 	line_searcher_set = true;
-      }
+      }*/
     }
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
