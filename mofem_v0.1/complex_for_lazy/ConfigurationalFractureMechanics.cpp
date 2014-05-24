@@ -3134,42 +3134,36 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
       nb_sub_steps = 20;
     }
 
-    bool first_step_converged = false;
-    bool not_converged_state = false;
-    bool line_searcher_set = false;
-    double _da_ = 0;
+    bool at_least_one_step_converged = false;
+    conf_prob.freeze_all_but_one = false;
+    double _da_ = (aa == 0) ? 0 : da;
     for(int ii = 0;ii<nb_sub_steps;ii++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
-      if(ii == 0) {
-	conf_prob.freeze_all_but_one = false;
-	ierr = conf_prob.solve_coupled_problem(mField,&snes,(aa == 0) ? 0 : da); CHKERRQ(ierr);
-      } else {
-	ierr = conf_prob.solve_coupled_problem(mField,&snes,_da_); CHKERRQ(ierr);
-      }
+      ierr = conf_prob.solve_coupled_problem(mField,&snes,_da_); CHKERRQ(ierr);
       int its;
       ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
       if(its == 0) break;
       SNESConvergedReason reason;
       ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
       if(reason > 0) {
-	conf_prob.freeze_all_but_one = false;
-	if(aa > 0 && ii == 0) {
-	  int its_d;
-	  ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
-	  if(flg != PETSC_TRUE) {
-	    its_d = 8;
-	  }
-	  double gamma = 0.5,reduction = 1;
-	  reduction = pow((double)its_d/(double)(its+1),gamma);
-	  const double max_da_reduction = 10;
-	  if(reduction<1 || da < max_da_reduction*da_0) {
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
-	    da = fmin(da*reduction,max_da_reduction*da_0);
+	if(da > 0) {
+	  if(aa > 0 && ii == 0) {
+	    int its_d;
+	    ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+	    if(flg != PETSC_TRUE) {
+	      its_d = 8;
+	    }
+	    double gamma = 0.5,reduction = 1;
+	    reduction = pow((double)its_d/(double)(its+1),gamma);
+	    const double max_da_reduction = 10;
+	    if(reduction<1 || da < max_da_reduction*da_0) {
+	      ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
+	      da = fmin(da*reduction,max_da_reduction*da_0);
+	    }
 	  }
 	}
-	_da_ = 0;
-	first_step_converged = true;
-	not_converged_state = false;
+	at_least_one_step_converged = true;
+	conf_prob.freeze_all_but_one = false;
 	ierr = mField.set_local_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	load_factor0 = load_factor;
 	ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
@@ -3180,8 +3174,8 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	ierr = conf_prob.delete_surface_projection_data(mField); CHKERRQ(ierr);
 	ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
+	_da_ = 0;
       } else {
-	not_converged_state = true;
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
 	ierr = mField.set_global_VecCreateGhost("COUPLED_PROBLEM",Col,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	load_factor = load_factor0;
@@ -3199,45 +3193,27 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  ierr = conf_prob.griffith_force_vector(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	}
-	if(!first_step_converged) {
+	if(!at_least_one_step_converged) {
 	  if(da > 0) {
 	    da = 0.5*da;
 	    _da_ = da;
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
 	  } 
-	} else {
-	  if(da>0) {
-	    if(not_converged_state) {
-	      _da_+= 0.1*da;
-	      ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e\n",_da_); CHKERRQ(ierr);
-	    }
-	  }
 	}
-      }
-      //just split and make animation going
-      if(reason < 0 && odd_face_split != 0) {
-	if(line_searcher_set) {
+	if(_da_ == 0) {
 	  if(conf_prob.freeze_all_but_one) {
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* use spatial solution only and split faces\n"); CHKERRQ(ierr);
-	    break;
+	    if(odd_face_split != 0) {
+	      ierr = PetscPrintf(PETSC_COMM_WORLD,"* unable to converge"); CHKERRQ(ierr);
+	      break;
+	    } else {
+	      SETERRQ(PETSC_COMM_SELF,1,"* unable to converge");
+	    }
 	  } else {
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* freez all but one\n"); CHKERRQ(ierr);
 	    conf_prob.freeze_all_but_one = true;
 	  }
 	}
       }
-      //set line sercher L2 for not converged state
-      /*if(reason < 0) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"* set L2 linesercher\n",_da_); CHKERRQ(ierr);
-	//set line sercher L2 for not converged state
-	ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-	ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-	ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
-	SNESLineSearch linesearch;
-	ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
-	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
-	line_searcher_set = true;
-      }*/
     }
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
