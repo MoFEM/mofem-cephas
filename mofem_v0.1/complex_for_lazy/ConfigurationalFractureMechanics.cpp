@@ -3138,7 +3138,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
     conf_prob.freeze_all_but_one = false;
     double _da_ = (aa == 0) ? 0 : da;
     for(int ii = 0;ii<nb_sub_steps;ii++) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D\n\n",ii); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D _da_ = %6.4e\n\n",ii,_da_); CHKERRQ(ierr);
       ierr = conf_prob.solve_coupled_problem(mField,&snes,_da_); CHKERRQ(ierr);
       int its;
       ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
