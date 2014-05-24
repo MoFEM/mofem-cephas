@@ -246,6 +246,29 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
   ierr = mField.get_dofs(&dofs_moabfield_ptr); CHKERRQ(ierr);
   typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dof_iterator;
 
+  for(Range::iterator nit = outer_surface_skin_nodes.begin();nit!=outer_surface_skin_nodes.end();nit++) {
+
+    double coords[3]; 
+    rval = mField.get_moab().get_coords(&*nit,1,coords); CHKERR_PETSC(rval);
+
+    double closest_point_out[3];
+    EntityHandle triangle_out;
+    rval = kdTree_DistanceFromCrackSurface.closest_triangle(
+      kdTree_rootMeshset_DistanceFromCrackSurface,coords,closest_point_out,triangle_out); CHKERR_PETSC(rval);
+    int num_nodes; 
+    const EntityHandle* conn;
+    rval = moab_distance_from_crack_surface.get_connectivity(triangle_out,conn,num_nodes,true); CHKERR_PETSC(rval);
+    double normals[num_nodes*4];
+    rval = moab_distance_from_crack_surface.tag_get_data(th_normal,conn,num_nodes,normals); CHKERR_PETSC(rval);
+
+    for(int nn = 0;nn<3;nn++) {
+      if(normals[nn*4+3]==0) continue;
+      normals[nn*4+3] = 0;
+    }
+ 
+    rval = moab_distance_from_crack_surface.tag_set_data(th_normal,conn,num_nodes,normals); CHKERR_PETSC(rval);
+
+  }
 
   for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
 
@@ -278,7 +301,6 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
     double distance[3];
     cblas_dcopy(3,coords,1,distance,1);
     double min_dist = -1;
-    if(outer_surface_skin_nodes.find(*nit)!=outer_surface_skin_nodes.end()) {
 
     for(int nn = 0;nn<3;nn++) {
       if(normals[nn*4+3]==0) continue;
@@ -304,7 +326,7 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
 	rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
 	rval = mField.get_moab().tag_set_data(th_projection,&*nit,1,projection); CHKERR_PETSC(rval);
       }
-    }
+
 
     }
     if(min_dist<0) {	
