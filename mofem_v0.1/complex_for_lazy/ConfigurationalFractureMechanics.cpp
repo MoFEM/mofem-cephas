@@ -1846,9 +1846,9 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   ierr = mField.get_problem("C_CRACKFRONT_MATRIX",&problem_ptr); CHKERRQ(ierr);
   //make maps to save griffith forces
   ierr = mField.set_global_VecCreateGhost("C_CRACKFRONT_MATRIX",Row,LambdaVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  map<EntityHandle,double> g_map;
+  map_ent_g.clear();
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
-    g_map[diit->get_ent()] = diit->get_FieldData();
+    map_ent_g[diit->get_ent()] = diit->get_FieldData();
   }
   ierr = mField.set_global_VecCreateGhost("C_CRACKFRONT_MATRIX",Row,LambdaVec_Tangent,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   map<EntityHandle,double> g_tangent_map;
@@ -1875,7 +1875,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   map_ent_j.clear();
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
     EntityHandle ent = diit->get_ent();
-    double g_val = g_map[ent];
+    double g_val = map_ent_g[ent];
     double g_tangent_val = fabs(g_tangent_map[ent]);
     rval = mField.get_moab().tag_set_data(th_g,&ent,1,&g_val); CHKERR_PETSC(rval);
     rval = mField.get_moab().tag_set_data(th_g_tangent,&ent,1,&g_tangent_val); CHKERR_PETSC(rval);
@@ -1992,6 +1992,11 @@ PetscErrorCode MySnesConvernceTest(SNES snes,int it,double xnorm,double gnorm,do
   const PetscReal div = 10e3;
   if(fnorm > div) {
     *reason = SNES_DIVERGED_FUNCTION_DOMAIN;
+  }
+  if(it>0) {
+    SNESLineSearch linesearch;
+    ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
+    ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
@@ -2181,7 +2186,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   const int def_order = 0;
   rval = mField.get_moab().tag_get_handle("FROZEN_NODE",1,MB_TYPE_INTEGER,th_freez,MB_TAG_CREAT|MB_TAG_SPARSE,&def_order); CHKERR_PETSC(rval);
 
-  Range corners_edges,corners_nodes,unfreez_nodes;
+  Range corners_edges,corners_nodes;
   ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
   Range corners_edgesNodes;
@@ -2193,17 +2198,35 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   corners_nodes.merge(nodes_to_block);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"freeze front nodes:\n");
-  nb_un_freez_nodes = 0;
-  bool freez_the_rest = false;
+  double max_g_j;
+  EntityHandle max_g_j_ent = 0;
   for(
     map<EntityHandle,double>::iterator mit = map_ent_j.begin();
     mit!=map_ent_j.end();mit++) {
     double fraction = (max_j-mit->second)/max_j;
-    //(fmin(max_j,gc)-mit->second)/fmin(max_j,gc);
+    double g_j = map_ent_g[mit->first]/mit->second;
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-      "front node = %ld max_g = %6.4e g = %6.4e (%6.4e)",
-      mit->first,max_j,mit->second,fraction); CHKERRQ(ierr);
-    if(fraction > fraction_treshold || freez_the_rest) {
+      "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f",
+      mit->first,max_j,mit->second,fraction,g_j); CHKERRQ(ierr);
+    bool freez_or_not_to_freez;
+    if(fraction > fraction_treshold) {
+      freez_or_not_to_freez = true;
+    } else {
+      freez_or_not_to_freez = false;
+      if(max_g_j_ent==0) {
+	max_g_j = g_j;
+	max_g_j_ent = mit->first;
+      } else {
+	if(g_j > max_g_j) {
+	  max_g_j = g_j;
+	  max_g_j_ent = mit->first;
+	}
+      }
+    }
+    if(freeze_all_but_one) {
+      freez_or_not_to_freez = freeze_all_but_one;
+    } 
+    if(freez_or_not_to_freez) {
       ierr = PetscPrintf(PETSC_COMM_WORLD," freeze\n");
       corners_nodes.insert(mit->first);
       int freez = 1;
@@ -2214,22 +2237,26 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
       EntityHandle node = mit->first;
       rval = mField.get_moab().tag_get_data(th_freez,&node,1,&freez); CHKERR_PETSC(rval);
       if(freez == 0) {
-	unfreez_nodes.insert(mit->first);
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
-	freez_the_rest = freeze_all_but_one;
       } else if(freez == 1) {
 	ierr = PetscPrintf(PETSC_COMM_WORLD," unfreeze\n");
 	int freez = 0;
 	rval = mField.get_moab().tag_set_data(th_freez,&node,1,&freez); CHKERR_PETSC(rval);
-	nb_un_freez_nodes++;
       } 
     }
   }
+  if(freeze_all_but_one) {
+    if(max_g_j_ent == 0) {
+      SETERRQ(PETSC_COMM_SELF,1,"imosible case, at least one node shold not break");
+    }
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\nunfreez %ld g/j = %4.3f\n",max_g_j_ent,max_g_j);
+    int freez = 0;
+    rval = mField.get_moab().tag_set_data(th_freez,&max_g_j_ent,1,&freez); CHKERR_PETSC(rval);
+    corners_nodes.erase(max_g_j_ent);
+  }
+
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
-  //if(nb_un_freez_nodes) {
-    //corners_nodes.insert(unfreez_nodes.begin(),unfreez_nodes.end());
-  //}
 
   CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"COUPLED_PROBLEM",corners_nodes);
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
@@ -2362,12 +2389,13 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   PetscInt maxit,maxf;
   ierr = SNESGetTolerances(*snes,&atol,&rtol,&stol,&maxit,&maxf); CHKERRQ(ierr);
 
-  ierr = SNESSetTolerances(*snes,atol,rtol,stol,1,maxf); CHKERRQ(ierr);
+  /*ierr = SNESSetTolerances(*snes,atol,rtol,stol,1,maxf); CHKERRQ(ierr);
   ierr = SNESSetConvergenceTest(*snes,SNESSkipConverged,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBASIC); CHKERRQ(ierr);
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
-  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
-  ierr = SNESSetTolerances(*snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
+  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);*/
+  //ierr = SNESSetTolerances(*snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
+  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
   ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
@@ -3194,7 +3222,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	  ierr = conf_prob.griffith_g(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	}
 	if(!at_least_one_step_converged) {
-	  if(da > 0) {
+	  if(da > 0 && aa > 0) {
 	    da = 0.5*da;
 	    _da_ = da;
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
