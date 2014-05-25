@@ -2395,7 +2395,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);*/
   //ierr = SNESSetTolerances(*snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
-  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+  //ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBASIC); CHKERRQ(ierr);
   ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
