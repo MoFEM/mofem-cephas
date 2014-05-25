@@ -3200,10 +3200,12 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	    ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, set da = %6.4e ( 0.5 )\n",_da_); CHKERRQ(ierr);
 	  } 
 	}
+	///PetscAttachDebugger();
+
 	if(_da_ == 0) {
 	  if(conf_prob.freeze_all_but_one) {
 	    if(odd_face_split != 0) {
-	      ierr = PetscPrintf(PETSC_COMM_WORLD,"* unable to converge"); CHKERRQ(ierr);
+	      ierr = PetscPrintf(PETSC_COMM_WORLD,"* unable to converge\n"); CHKERRQ(ierr);
 	      break;
 	    } else {
 	      SETERRQ(PETSC_COMM_SELF,1,"* unable to converge");
