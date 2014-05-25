@@ -2217,7 +2217,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 	max_g_j = g_j;
 	max_g_j_ent = mit->first;
       } else {
-	if(g_j > max_g_j) {
+	if(g_j < max_g_j) {
 	  max_g_j = g_j;
 	  max_g_j_ent = mit->first;
 	}
