@@ -2090,10 +2090,10 @@ PetscErrorCode main_select_faces_for_splitting(FieldInterface& mField,FaceSplitt
 
   }
 
-  ierr = face_splitting.getCrackFrontTets(true,10); CHKERRQ(ierr);
-  ierr = face_splitting.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true,10); CHKERRQ(ierr);
-  ierr = face_splitting.selectCrackFaces(true); CHKERRQ(ierr);
-  ierr = face_splitting.getCrackFrontFaces(true,10); CHKERRQ(ierr);
+  ierr = face_splitting.getCrackFrontTets(true,verb); CHKERRQ(ierr);
+  ierr = face_splitting.chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(true,verb); CHKERRQ(ierr);
+  ierr = face_splitting.selectCrackFaces(true,verb); CHKERRQ(ierr);
+  ierr = face_splitting.getCrackFrontFaces(true,verb); CHKERRQ(ierr);
 
   if(verb>0) {
 
