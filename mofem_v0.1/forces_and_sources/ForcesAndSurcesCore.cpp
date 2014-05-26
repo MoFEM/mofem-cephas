@@ -354,12 +354,10 @@ PetscErrorCode dataOperator::operator()(
   PetscErrorCode ierr;
 
   int G_DIM = row_data.nodesNH1.size1();
-  for(int gg = 0;gg<G_DIM;gg++) {
-    ierr = doWork(
-	gg,-1,-1,MBVERTEX,MBVERTEX,
+  ierr = doWork(
+	-1,-1,MBVERTEX,MBVERTEX,
 	row_data.nodesIndices,col_data.nodesIndices,
 	row_data.nodesNH1,col_data.nodesNH1); CHKERRQ(ierr);
-  }
 
   for(int ee = 0;ee<row_data.edgesNH1.size();ee++) {
     int G_DIM = row_data.edgesNH1[ee].size1();
@@ -367,45 +365,37 @@ PetscErrorCode dataOperator::operator()(
     if(G_DIM != G_DIM_NODES) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    for(int gg = 0;gg<G_DIM;gg++) {
-      ierr = doWork(
-	gg,ee,-1,MBEDGE,MBVERTEX,
+    ierr = doWork(
+	ee,-1,MBEDGE,MBVERTEX,
 	row_data.edgesIndcies[ee],col_data.nodesIndices,
 	row_data.edgesNH1[ee],col_data.nodesNH1); CHKERRQ(ierr);
-    }
     int G_DIM_VOLUME = row_data.volumeNH1.size1();
     if(G_DIM != G_DIM_VOLUME) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    for(int gg = 0;gg<G_DIM;gg++) {
-      ierr = doWork(
-	gg,ee,-1,MBEDGE,MBTET,
+    ierr = doWork(
+	ee,-1,MBEDGE,MBTET,
 	row_data.edgesIndcies[ee],col_data.volumeIndices,
 	row_data.edgesNH1[ee],col_data.volumeNH1); CHKERRQ(ierr);
-    }
     for(int EE = 0;EE<row_data.edgesNH1.size();EE++) {
       int G_DIM_EE = row_data.edgesNH1[EE].size1();
       if(G_DIM != G_DIM_EE) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      for(int gg = 0;gg<G_DIM;gg++) {
-	ierr = doWork(
-	  gg,ee,EE,MBEDGE,MBEDGE,
+      ierr = doWork(
+	  ee,EE,MBEDGE,MBEDGE,
 	  row_data.edgesIndcies[ee],col_data.edgesIndcies[EE],
 	  row_data.edgesNH1[ee],col_data.edgesNH1[EE]); CHKERRQ(ierr);
-      }
     }
     for(int FF = 0;FF<row_data.facesNH1.size();FF++) {
       int G_DIM_FF = row_data.facesNH1[FF].size1();
       if(G_DIM != G_DIM_FF) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      for(int gg = 0;gg<G_DIM;gg++) {
-	ierr = doWork(
-	  gg,ee,FF,MBEDGE,MBTRI,
+      ierr = doWork(
+	  ee,FF,MBEDGE,MBTRI,
 	  row_data.edgesIndcies[ee],col_data.facesIndices[FF],
 	  row_data.edgesNH1[ee],col_data.facesNH1[FF]); CHKERRQ(ierr);
-      }
     }
   }
 
@@ -415,45 +405,37 @@ PetscErrorCode dataOperator::operator()(
     if(G_DIM != G_DIM_NODES) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    for(int gg = 0;gg<G_DIM;gg++) {
-      ierr = doWork(
-	gg,ff,-1,MBTRI,MBVERTEX,
+    ierr = doWork(
+	ff,-1,MBTRI,MBVERTEX,
 	row_data.facesIndices[ff],col_data.nodesIndices,
 	row_data.facesNH1[ff],col_data.nodesNH1); CHKERRQ(ierr);
-    }
     int G_DIM_VOLUME = row_data.volumeNH1.size1();
     if(G_DIM != G_DIM_VOLUME) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    for(int gg = 0;gg<G_DIM;gg++) {
-      ierr = doWork(
-	gg,ff,-1,MBTRI,MBTET,
+    ierr = doWork(
+	ff,-1,MBTRI,MBTET,
 	row_data.facesIndices[ff],col_data.volumeIndices,
 	row_data.facesNH1[ff],col_data.volumeNH1); CHKERRQ(ierr);
-    }
     for(int EE = 0;EE<row_data.edgesNH1.size();EE++) {
       int G_DIM_EE = row_data.edgesNH1[EE].size1();
       if(G_DIM != G_DIM_EE) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      for(int gg = 0;gg<G_DIM;gg++) {
-	ierr = doWork(
-	  gg,ff,EE,MBTRI,MBEDGE,
+      ierr = doWork(
+	  ff,EE,MBTRI,MBEDGE,
 	  row_data.facesIndices[ff],col_data.edgesIndcies[EE],
 	  row_data.facesNH1[ff],col_data.edgesNH1[EE]); CHKERRQ(ierr);
-      }
     }
     for(int FF = 0;FF<row_data.facesNH1.size();FF++) {
       int G_DIM_FF = row_data.facesNH1[ff].size1();
       if(G_DIM != G_DIM_FF) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      for(int gg = 0;gg<G_DIM;gg++) {
-	ierr = doWork(
-	  gg,ff,FF,MBTRI,MBTRI,
+      ierr = doWork(
+	  ff,FF,MBTRI,MBTRI,
 	  row_data.facesIndices[ff],col_data.facesIndices[FF],
 	  row_data.facesNH1[ff],col_data.facesNH1[FF]); CHKERRQ(ierr);
-      }
     }
   }
 
@@ -461,19 +443,14 @@ PetscErrorCode dataOperator::operator()(
   {
 
     int G_DIM = row_data.volumeNH1.size1();
-    for(int gg = 0;gg<G_DIM;gg++) {
-      ierr = doWork(
-	gg,-1,-1,MBTET,MBTET,
+    ierr = doWork(
+	-1,-1,MBTET,MBTET,
 	row_data.volumeIndices,col_data.volumeIndices,
 	row_data.volumeNH1,col_data.volumeNH1); CHKERRQ(ierr);
-    }
-    int nb_cols_nodes = row_data.nodesNH1.size2();
-    for(int gg = 0;gg<G_DIM;gg++) {
-      ierr = doWork(
-	gg,-1,-1,MBTET,MBVERTEX,
+    ierr = doWork(
+	-1,-1,MBTET,MBVERTEX,
 	row_data.volumeIndices,col_data.nodesIndices,
 	row_data.volumeNH1,col_data.nodesNH1); CHKERRQ(ierr);
-    }
 
   }
 
@@ -481,30 +458,25 @@ PetscErrorCode dataOperator::operator()(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode mult_H1_H1::doWork(
-    int gg,int side1,int side2,
-    EntityType row_type,EntityType col_type,
-    ublas::vector<DofIdx> &row_indices,ublas::vector<DofIdx> &col_indices,
-    ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N) {
+
+
+PetscErrorCode dataOperator::operator()(
+    dataForcesAndSurcesCore &data) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
 
-  int nb_row_dofs = rows_N.size2();
-  int nb_col_dofs = rows_N.size2();
-
-  NN.resize(nb_row_dofs,nb_col_dofs);
-  bzero(NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
-
-  cblas_dger(CblasRowMajor,
-    nb_row_dofs,nb_col_dofs,
-      1,&rows_N(gg,0),1,&cols_N(gg,0),1,
-      &*NN.data().begin(),nb_row_dofs);
+  ierr = doWork(-1,MBVERTEX,data.nodesIndices,data.nodesNH1); CHKERRQ(ierr);
+  for(int ee = 0;ee<data.edgesNH1.size();ee++) {
+    ierr = doWork(
+      ee,MBEDGE,data.edgesIndcies[ee],data.edgesNH1[ee]); CHKERRQ(ierr);
+  }
+  for(int ff = 0;ff<data.facesNH1.size();ff++) {
+    ierr = doWork(
+      ff,MBTRI,data.facesIndices[ff],data.facesNH1[ff]); CHKERRQ(ierr);
+  }
+  ierr = doWork(
+    -1,MBTET,data.volumeIndices,
+    data.volumeNH1); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
-
-
 }
-
-
-
-
-

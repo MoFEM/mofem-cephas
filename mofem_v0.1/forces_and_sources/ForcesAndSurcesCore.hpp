@@ -119,27 +119,31 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 struct dataOperator {
 
   virtual PetscErrorCode doWork(
-    int gg,int side1,int side2,
+    int row_side,int col_side,
     EntityType row_type,EntityType col_type,
     ublas::vector<DofIdx> &row_indices,ublas::vector<DofIdx> &col_indices,
-    ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N) = 0;
-
+    ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    PetscFunctionReturn(0);
+  }
   PetscErrorCode operator()(dataForcesAndSurcesCore &row_data,dataForcesAndSurcesCore &col_data);
 
+
+  virtual PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    ublas::vector<DofIdx> &indices,
+    ublas::matrix<FieldData> &N) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()(dataForcesAndSurcesCore &data);
+
+
 };
 
-struct mult_H1_H1: public dataOperator {
-
-  mult_H1_H1() {};
-
-  ublas::matrix<FieldData> NN;
-  PetscErrorCode doWork(
-    int gg,int side1,int side2,
-    EntityType row_type,EntityType col_type,
-    ublas::vector<DofIdx> &row_indices,ublas::vector<DofIdx> &col_indices,
-    ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N);
-
-};
 
 }
 

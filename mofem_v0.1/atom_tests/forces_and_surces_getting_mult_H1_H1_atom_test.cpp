@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
       ublas::matrix<FieldData> NN;
 
       PetscErrorCode doWork(
-	int gg,int row_side,int col_side,
+	int row_side,int col_side,
 	EntityType row_type,EntityType col_type,
 	ublas::vector<DofIdx> &row_indices,ublas::vector<DofIdx> &col_indices,
 	ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N) {
@@ -172,14 +172,17 @@ int main(int argc, char *argv[]) {
 	NN.resize(nb_row_dofs,nb_col_dofs);
 	bzero(NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
 
-	cblas_dger(CblasRowMajor,
-	nb_row_dofs,nb_col_dofs,
-	  1,&rows_N(gg,0),1,&cols_N(gg,0),1,
-	  &*NN.data().begin(),nb_row_dofs);
+	for(unsigned int gg = 0;gg<rows_N.size2();gg++) {
+	  cblas_dger(CblasRowMajor,
+	  nb_row_dofs,nb_col_dofs,
+	    1,&rows_N(gg,0),1,&cols_N(gg,0),1,
+	    &*NN.data().begin(),nb_row_dofs);
+  
+	  my_split << gg << " " << row_side << " " << col_side << " " << row_type << " " << col_type << endl;
+	  my_split << NN << endl;
+	  my_split << endl;
 
-	my_split << gg << " " << row_side << " " << col_side << " " << row_type << " " << col_type << endl;
-	my_split << NN << endl;
-	my_split << endl;
+	}
 
 	PetscFunctionReturn(0);
       }
