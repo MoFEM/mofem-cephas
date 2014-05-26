@@ -143,30 +143,96 @@ int main(int argc, char *argv[]) {
     typedef tee_device<ostream, ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    ofstream ofs;
-    TeeDevice my_tee; 
-    TeeStream my_split;
+    struct my_mult_H1_H1: public dataOperator {
+
+      ofstream ofs;
+      TeeDevice my_tee; 
+      TeeStream my_split;
+
+      my_mult_H1_H1():
+	ofs("forces_and_surces_getting_mult_H1_H1_atom_test.txt"),
+	my_tee(cout, ofs),my_split(my_tee) {};
+
+      ~my_mult_H1_H1() {
+        my_split.close();
+      }
+
+      ublas::matrix<FieldData> NN;
+
+      PetscErrorCode doWork(
+	int gg,int row_side,int col_side,
+	EntityType row_type,EntityType col_type,
+	ublas::vector<DofIdx> &row_indices,ublas::vector<DofIdx> &col_indices,
+	ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N) {
+	PetscFunctionBegin;
+
+	int nb_row_dofs = rows_N.size2();
+	int nb_col_dofs = rows_N.size2();
+
+	NN.resize(nb_row_dofs,nb_col_dofs);
+	bzero(NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
+
+	cblas_dger(CblasRowMajor,
+	nb_row_dofs,nb_col_dofs,
+	  1,&rows_N(gg,0),1,&cols_N(gg,0),1,
+	  &*NN.data().begin(),nb_row_dofs);
+
+	my_split << gg << " " << row_side << " " << col_side << " " << row_type << " " << col_type << endl;
+	my_split << NN << endl;
+	my_split << endl;
+
+	PetscFunctionReturn(0);
+      }
+
+    };
+
+    my_mult_H1_H1 op;
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
-      ForcesAndSurcesCore(_mField,_data_), 
-      ofs("forces_and_surces_getting_orders_indices_atom_test.txt"),
-      my_tee(cout, ofs),my_split(my_tee) {};
+      ForcesAndSurcesCore(_mField) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
 
+    dataForcesAndSurcesCore data_row,data_col;
+
     PetscErrorCode operator()() {
       PetscFunctionBegin;
+
+      ierr = getEdgesSense(data_row); CHKERRQ(ierr);
+      ierr = getFacesSense(data_row); CHKERRQ(ierr);
+      ierr = getEdgesSense(data_col); CHKERRQ(ierr);
+      ierr = getFacesSense(data_col); CHKERRQ(ierr);
+
+      ierr = getEdgesOrder(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesOrder(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getFacesOrder(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getFacesOrder(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getOrderVolume(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getOrderVolume(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
+      ierr = getEdgeRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgeColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getFacesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getFacesColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getFaceNodes(data_row); CHKERRQ(ierr);
+      ierr = getFaceNodes(data_col); CHKERRQ(ierr);
+
+      ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
+      ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
+
+      ierr = op(data_row,data_col); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-
-      my_split.close();
 
       PetscFunctionReturn(0);
     }

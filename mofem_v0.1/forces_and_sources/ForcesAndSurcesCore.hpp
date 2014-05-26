@@ -38,77 +38,107 @@ namespace MoFEM {
 
 
 struct dataForcesAndSurcesCore {
+  //sense
   ublas::vector<int> edgesSense;
   ublas::vector<int> facesSense;
-  ublas::vector<int> edgesOrder;
-  ublas::vector<int> facesOrder;
-  ublas::vector<int> rowNodesIndices,colNodesIndices;
-  ublas::vector<ublas::vector<int> > rowEdgesIndcies;
-  ublas::vector<ublas::vector<int> > colEdgesIndcies;
-  ublas::vector<ublas::vector<int> > rowFacesIndcies;
-  ublas::vector<ublas::vector<int> > colFacesIndcies;
-  ublas::vector<int> rowTetIndcies,colTetIndcies;
-  ublas::matrix<int> facesNodes;
-  ublas::matrix<FieldData> Nnodes_H1,diffNnodes_H1;
-  vector<ublas::matrix<FieldData> > Nedges_H1;
-  vector<ublas::matrix<FieldData> > Nfaces_H1;
-  ublas::matrix<FieldData> Nvolume_H1;
-  ublas::matrix<FieldData> Nnodes_L2,diffNnodes_L2;
-  ublas::matrix<FieldData> Nvolume_L2;
-  int volumeOrder;
+  //order
+  ublas::vector<ApproximationOrder> edgesOrder;
+  ublas::vector<ApproximationOrder> facesOrder;
+  DofIdx volumeOrder;
+  //indices
+  ublas::vector<DofIdx> nodesIndices;
+  ublas::vector<ublas::vector<DofIdx> > edgesIndcies;
+  ublas::vector<ublas::vector<DofIdx> > facesIndices;
+  ublas::vector<DofIdx> volumeIndices;
+  //face volume nodes
+  ublas::matrix<DofIdx> facesNodes;
+  //field data
+  //h1
+  ublas::matrix<FieldData> nodesNH1,diffNodesNH1;
+  vector<ublas::matrix<FieldData> > edgesNH1;
+  vector<ublas::matrix<FieldData> > facesNH1;
+  ublas::matrix<FieldData> volumeNH1;
+  //l2
+  ublas::matrix<FieldData> nodesNL2,diffNodesNL2;
+  ublas::matrix<FieldData> volumeNL2;
 };
 
 struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
-
-  dataForcesAndSurcesCore &data;
-
   FieldInterface& mField;
-  ForcesAndSurcesCore(FieldInterface& _mField,dataForcesAndSurcesCore &_data): 
-    mField(_mField),data(_data) {};
+  ForcesAndSurcesCore(FieldInterface& _mField): 
+    mField(_mField) {};
 
-  PetscErrorCode getEdgesSense();
-  PetscErrorCode getFacesSense();
-  PetscErrorCode getEdgesOrder(const string &field_name);
-  PetscErrorCode getFacesOrder(const string &field_name);
+  PetscErrorCode getEdgesSense(dataForcesAndSurcesCore &data);
+  PetscErrorCode getFacesSense(dataForcesAndSurcesCore &data);
+  PetscErrorCode getEdgesOrder(dataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getFacesOrder(dataForcesAndSurcesCore &data,const string &field_name);
 
+  PetscErrorCode getOrderVolume(dataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getNodesIndices(
+    dataForcesAndSurcesCore &data,
+    const string &field_name,
+    FENumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices);
+  PetscErrorCode getRowNodesIndices(
+    dataForcesAndSurcesCore &data,
+    const string &field_name);
+  PetscErrorCode getColNodesIndices(
+    dataForcesAndSurcesCore &data,
+    const string &field_name);
+  PetscErrorCode getTypeIndices(
+    dataForcesAndSurcesCore &data,
+    const string &field_name,
+    FENumeredDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,int side_number,ublas::vector<int> &indices);
+  PetscErrorCode getTypeIndices(
+    dataForcesAndSurcesCore &data,
+    const string &field_name,
+    FENumeredDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,ublas::vector<ublas::vector<int> > &indices);
+  PetscErrorCode getEdgeRowIndices(dataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgeColIndices(dataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getFacesRowIndices(dataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getFacesColIndices(dataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetRowIndices(dataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetColIndices(dataForcesAndSurcesCore &data,const string &field_name);
 
-  PetscErrorCode getOrderVolume(const string &field_name);
-  PetscErrorCode getNodesIndices(const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices);
-  PetscErrorCode getRowNodesIndices(const string &field_name);
-  PetscErrorCode getColNodesIndices(const string &field_name);
-  PetscErrorCode getTypeIndices(const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<int> &indices);
-  PetscErrorCode getTypeIndices(const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,ublas::vector<ublas::vector<int> > &indices);
-  PetscErrorCode getEdgeRowIndices(const string &field_name);
-  PetscErrorCode getEdgeColIndices(const string &field_name);
-  PetscErrorCode getFacesRowIndices(const string &field_name);
-  PetscErrorCode getFacesColIndices(const string &field_name);
-  PetscErrorCode getTetRowIndices(const string &field_name);
-  PetscErrorCode getTetColIndices(const string &field_name);
-
-  PetscErrorCode getFaceNodes();
+  PetscErrorCode getFaceNodes(dataForcesAndSurcesCore &data);
 
   PetscErrorCode shapeTETFunctions_H1(
+    dataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
-  PetscErrorCode shapeTETFunctions_L2(const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+  PetscErrorCode shapeTETFunctions_L2(
+    dataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
   PetscErrorCode shapeTRIFunctions_H1(
+    dataForcesAndSurcesCore &data,
     ApproximationOrder order,const double *G_X,const double *G_Y,const int G_DIM);
 
-  
 };
 
-struct mult_H1_H1 {
+struct dataOperator {
 
+  virtual PetscErrorCode doWork(
+    int gg,int side1,int side2,
+    EntityType row_type,EntityType col_type,
+    ublas::vector<DofIdx> &row_indices,ublas::vector<DofIdx> &col_indices,
+    ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N) = 0;
 
-  dataForcesAndSurcesCore &data_row,&data_col;
-  mult_H1_H1(
-    dataForcesAndSurcesCore &_data_row,
-    dataForcesAndSurcesCore &_data_col): 
-    data_row(_data_row),data_col(data_col) {};
+  PetscErrorCode operator()(dataForcesAndSurcesCore &row_data,dataForcesAndSurcesCore &col_data);
 
-  PetscErrorCode calculate_H1_H1_nonsymetric(double *G_W);
-  PetscErrorCode calculate_H1_H1_symmetric(double *G_W);
-    
+};
+
+struct mult_H1_H1: public dataOperator {
+
+  mult_H1_H1() {};
+
+  ublas::matrix<FieldData> NN;
+  PetscErrorCode doWork(
+    int gg,int side1,int side2,
+    EntityType row_type,EntityType col_type,
+    ublas::vector<DofIdx> &row_indices,ublas::vector<DofIdx> &col_indices,
+    ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N);
+
 };
 
 }

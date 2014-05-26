@@ -29,7 +29,7 @@
 using namespace boost::numeric;
 using namespace MoFEM;
 
-PetscErrorCode ForcesAndSurcesCore::getEdgesSense() {
+PetscErrorCode ForcesAndSurcesCore::getEdgesSense(dataForcesAndSurcesCore &data) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(MBEDGE);
@@ -41,7 +41,7 @@ PetscErrorCode ForcesAndSurcesCore::getEdgesSense() {
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getFacesSense() {
+PetscErrorCode ForcesAndSurcesCore::getFacesSense(dataForcesAndSurcesCore &data) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(MBTRI);
@@ -53,7 +53,7 @@ PetscErrorCode ForcesAndSurcesCore::getFacesSense() {
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getEdgesOrder(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getEdgesOrder(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
     data.edgesOrder.resize(side_table.get<2>().count(MBEDGE));
@@ -71,7 +71,7 @@ PetscErrorCode ForcesAndSurcesCore::getEdgesOrder(const string &field_name) {
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getFacesOrder(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getFacesOrder(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
     data.facesOrder.resize(side_table.get<2>().count(MBTRI));
@@ -89,7 +89,7 @@ PetscErrorCode ForcesAndSurcesCore::getFacesOrder(const string &field_name) {
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getOrderVolume(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getOrderVolume(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type &data_dofs =
       const_cast<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type&>(
@@ -106,7 +106,9 @@ PetscErrorCode ForcesAndSurcesCore::getOrderVolume(const string &field_name) {
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getNodesIndices(const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices) {
+PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
+    dataForcesAndSurcesCore &data,
+    const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices) {
     PetscFunctionBegin;
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX));
@@ -121,21 +123,24 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(const string &field_name,FEN
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getRowNodesIndices(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getRowNodesIndices(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getNodesIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),data.rowNodesIndices); CHKERRQ(ierr);
+    ierr = getNodesIndices(
+      data,field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),data.nodesIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getColNodesIndices(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getColNodesIndices(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getNodesIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),data.colNodesIndices); CHKERRQ(ierr);
+    ierr = getNodesIndices(data,field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),data.nodesIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getTypeIndices(const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<int> &indices) {
+PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
+  dataForcesAndSurcesCore &data,
+  const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<int> &indices) {
     PetscFunctionBegin;
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
@@ -150,7 +155,9 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(const string &field_name,FENu
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getTypeIndices(const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,
+PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
+  dataForcesAndSurcesCore &data,
+  const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,
   ublas::vector<ublas::vector<int> > &indices) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -159,54 +166,57 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(const string &field_name,FENu
     SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(type);
     indices.resize(side_table.get<2>().count(type));
     for(;siit!=hi_siit;siit++) {
-      ierr = getTypeIndices(field_name,dofs,type,siit->side_number,indices[siit->side_number]); CHKERRQ(ierr);
+      ierr = getTypeIndices(data,field_name,dofs,type,siit->side_number,indices[siit->side_number]); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getEdgeRowIndices(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getEdgeRowIndices(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBEDGE,data.rowEdgesIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(
+      data,field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBEDGE,data.edgesIndcies); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getEdgeColIndices(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getEdgeColIndices(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBEDGE,data.colEdgesIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(
+      data,field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBEDGE,data.edgesIndcies); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getFacesRowIndices(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getFacesRowIndices(
+    dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTRI,data.rowFacesIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(data,field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTRI,data.facesIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getFacesColIndices(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getFacesColIndices(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTRI,data.colFacesIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(data,field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTRI,data.facesIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getTetRowIndices(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getTetRowIndices(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTET,0,data.rowTetIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(data,field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTET,0,data.volumeIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getTetColIndices(const string &field_name) {
+PetscErrorCode ForcesAndSurcesCore::getTetColIndices(dataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTET,0,data.colTetIndcies); CHKERRQ(ierr);
+    ierr = getTypeIndices(data,field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTET,0,data.volumeIndices); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getFaceNodes() {
+PetscErrorCode ForcesAndSurcesCore::getFaceNodes(dataForcesAndSurcesCore &data) {
     PetscFunctionBegin;
     //PetscAttachDebugger();
     ErrorCode rval;
@@ -254,15 +264,16 @@ PetscErrorCode ForcesAndSurcesCore::getFaceNodes() {
   }
 
 PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
+    dataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM) {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
 
-    data.Nnodes_H1.resize(G_DIM,4);
-    ierr = ShapeMBTET(&*data.Nnodes_H1.data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
-    data.diffNnodes_H1.resize(4,3);
-    ierr = ShapeDiffMBTET(&*data.diffNnodes_H1.data().begin()); CHKERRQ(ierr);
+    data.nodesNH1.resize(G_DIM,4);
+    ierr = ShapeMBTET(&*data.nodesNH1.data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
+    data.diffNodesNH1.resize(4,3);
+    ierr = ShapeDiffMBTET(&*data.diffNodesNH1.data().begin()); CHKERRQ(ierr);
 
     //edges
     if(data.edgesSense.size()!=6) {
@@ -271,24 +282,24 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
     if(data.edgesOrder.size()!=6) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    data.Nedges_H1.resize(6);
+    data.edgesNH1.resize(6);
     double *_H1edgeN_[6];
     for(int ee = 0;ee<6;ee++) {
-      data.Nedges_H1[ee].resize(G_DIM,NBEDGE_H1(data.edgesOrder[ee]));
-      _H1edgeN_[ee] = &*data.Nedges_H1[ee].data().begin();
+      data.edgesNH1[ee].resize(G_DIM,NBEDGE_H1(data.edgesOrder[ee]));
+      _H1edgeN_[ee] = &*data.edgesNH1[ee].data().begin();
     }
     ierr = H1_EdgeShapeFunctions_MBTET(
-      &*data.edgesSense.data().begin(),&*data.edgesOrder.data().begin(),&*data.Nnodes_H1.data().begin(),data.diffNnodes_H1.data().begin(),_H1edgeN_,NULL,G_DIM); CHKERRQ(ierr);
+      &*data.edgesSense.data().begin(),&*data.edgesOrder.data().begin(),&*data.nodesNH1.data().begin(),data.diffNodesNH1.data().begin(),_H1edgeN_,NULL,G_DIM); CHKERRQ(ierr);
 
     //faces
     if(data.facesOrder.size()!=4) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    data.Nfaces_H1.resize(4);
+    data.facesNH1.resize(4);
     double *_H1faceN_[4];
     for(int ff = 0;ff<4;ff++) {
-      data.Nfaces_H1[ff].resize(G_DIM,NBFACE_H1(data.facesOrder[ff]));
-      _H1faceN_[ff] = &*data.Nfaces_H1[ff].data().begin();
+      data.facesNH1[ff].resize(G_DIM,NBFACE_H1(data.facesOrder[ff]));
+      _H1faceN_[ff] = &*data.facesNH1[ff].data().begin();
     }
     if(data.facesNodes.size1() != 4) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -298,32 +309,36 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
     }
     ierr = H1_FaceShapeFunctions_MBTET(
       &*data.facesNodes.data().begin(),&*data.facesOrder.data().begin(),
-      &*data.Nnodes_H1.data().begin(),data.diffNnodes_H1.data().begin(),_H1faceN_,NULL,G_DIM); CHKERRQ(ierr);
+      &*data.nodesNH1.data().begin(),data.diffNodesNH1.data().begin(),_H1faceN_,NULL,G_DIM); CHKERRQ(ierr);
 
     //volume
-    data.Nvolume_H1.resize(G_DIM,NBVOLUME_H1(data.volumeOrder));
-    ierr = H1_VolumeShapeFunctions_MBTET(data.volumeOrder,&*data.Nnodes_H1.data().begin(),data.diffNnodes_H1.data().begin(),&*data.Nvolume_H1.data().begin(),NULL,G_DIM); CHKERRQ(ierr);
+    data.volumeNH1.resize(G_DIM,NBVOLUME_H1(data.volumeOrder));
+    ierr = H1_VolumeShapeFunctions_MBTET(
+      data.volumeOrder,&*data.nodesNH1.data().begin(),data.diffNodesNH1.data().begin(),&*data.volumeNH1.data().begin(),NULL,G_DIM); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
   
-PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_L2(const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM) {
+PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_L2(
+    dataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM) {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
 
-    data.Nnodes_L2.resize(G_DIM,4);
-    ierr = ShapeMBTET(&*data.Nnodes_L2.data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
-    data.diffNnodes_L2.resize(4,3);
-    ierr = ShapeDiffMBTET(&*data.diffNnodes_L2.data().begin()); CHKERRQ(ierr);
+    data.nodesNL2.resize(G_DIM,4);
+    ierr = ShapeMBTET(&*data.nodesNL2.data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
+    data.diffNodesNL2.resize(4,3);
+    ierr = ShapeDiffMBTET(&*data.diffNodesNL2.data().begin()); CHKERRQ(ierr);
 
-    data.Nvolume_L2.resize(G_DIM,NBVOLUME_L2(data.volumeOrder));
+    data.volumeNL2.resize(G_DIM,NBVOLUME_L2(data.volumeOrder));
     ierr = L2_ShapeFunctions_MBTET(
-      data.volumeOrder,&*data.Nnodes_L2.data().begin(),&*data.diffNnodes_L2.data().begin(),&*data.Nvolume_L2.data().begin(),NULL,G_DIM); CHKERRQ(ierr);
+      data.volumeOrder,&*data.nodesNL2.data().begin(),&*data.diffNodesNL2.data().begin(),&*data.volumeNL2.data().begin(),NULL,G_DIM); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
+    dataForcesAndSurcesCore &data,
     ApproximationOrder order,const double *G_X,const double *G_Y,const int G_DIM) {
     PetscFunctionBegin;
     
@@ -332,47 +347,164 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode mult_H1_H1::calculate_H1_H1_nonsymetric(double *G_W) {
-    PetscFunctionBegin;
 
-    int G_DIM = B1_Nnodes.size1();
+PetscErrorCode dataOperator::operator()(
+    dataForcesAndSurcesCore &row_data,dataForcesAndSurcesCore &col_data) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
 
-    H1_H1_nodes.resize(B1_Nnodes.size2(),B2_Nnodes.size2());
-    ublas::noalias(H1_H1_nodes) 
-	= ublas::zero_matrix<FieldData>( H1_H1_nodes.size1(),H1_H1_nodes.size2() );
-
-    for(int gg = 0;gg<G_DIM;gg++) {
-
-      cblas_dger(
-	CblasRowMajor,B1_Nnodes.size2(),B2_Nnodes.size2(),
-	G_W[gg],&B1_Nnodes(gg,0),1,&B2_Nnodes(gg,0),1,
-	&*H1_H1_nodes.data().begin(),H1_H1_nodes.size2());
-
-    }
-
-    PetscFunctionReturn(0);
+  int G_DIM = row_data.nodesNH1.size1();
+  for(int gg = 0;gg<G_DIM;gg++) {
+    ierr = doWork(
+	gg,-1,-1,MBVERTEX,MBVERTEX,
+	row_data.nodesIndices,col_data.nodesIndices,
+	row_data.nodesNH1,col_data.nodesNH1); CHKERRQ(ierr);
   }
 
-PetscErrorCode mult_H1_H1::calculate_H1_H1_symmetric(double *G_W) {
-    PetscFunctionBegin;
-
-
-    if(B1_Nnodes.size1() != B2_Nnodes.size2()) {
+  for(int ee = 0;ee<row_data.edgesNH1.size();ee++) {
+    int G_DIM = row_data.edgesNH1[ee].size1();
+    int G_DIM_NODES = row_data.nodesNH1.size1();
+    if(G_DIM != G_DIM_NODES) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
-    int G_DIM = B1_Nnodes.size1();
-
-
     for(int gg = 0;gg<G_DIM;gg++) {
-
-      cblas_dspr(CblasRowMajor,CblasUpper,
-	B1_Nnodes.size2(),G_W[gg],&B1_Nnodes(gg,0),1,
-	&*H1_H1_nodes.data().begin());
-
+      ierr = doWork(
+	gg,ee,-1,MBEDGE,MBVERTEX,
+	row_data.edgesIndcies[ee],col_data.nodesIndices,
+	row_data.edgesNH1[ee],col_data.nodesNH1); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    int G_DIM_VOLUME = row_data.volumeNH1.size1();
+    if(G_DIM != G_DIM_VOLUME) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    }
+    for(int gg = 0;gg<G_DIM;gg++) {
+      ierr = doWork(
+	gg,ee,-1,MBEDGE,MBTET,
+	row_data.edgesIndcies[ee],col_data.volumeIndices,
+	row_data.edgesNH1[ee],col_data.volumeNH1); CHKERRQ(ierr);
+    }
+    for(int EE = 0;EE<row_data.edgesNH1.size();EE++) {
+      int G_DIM_EE = row_data.edgesNH1[EE].size1();
+      if(G_DIM != G_DIM_EE) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      for(int gg = 0;gg<G_DIM;gg++) {
+	ierr = doWork(
+	  gg,ee,EE,MBEDGE,MBEDGE,
+	  row_data.edgesIndcies[ee],col_data.edgesIndcies[EE],
+	  row_data.edgesNH1[ee],col_data.edgesNH1[EE]); CHKERRQ(ierr);
+      }
+    }
+    for(int FF = 0;FF<row_data.facesNH1.size();FF++) {
+      int G_DIM_FF = row_data.facesNH1[FF].size1();
+      if(G_DIM != G_DIM_FF) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      for(int gg = 0;gg<G_DIM;gg++) {
+	ierr = doWork(
+	  gg,ee,FF,MBEDGE,MBTRI,
+	  row_data.edgesIndcies[ee],col_data.facesIndices[FF],
+	  row_data.edgesNH1[ee],col_data.facesNH1[FF]); CHKERRQ(ierr);
+      }
+    }
+  }
 
+  for(int ff = 0;ff<row_data.facesNH1.size();ff++) {
+    int G_DIM = row_data.facesNH1[ff].size1();
+    int G_DIM_NODES = row_data.nodesNH1.size1();
+    if(G_DIM != G_DIM_NODES) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    }
+    for(int gg = 0;gg<G_DIM;gg++) {
+      ierr = doWork(
+	gg,ff,-1,MBTRI,MBVERTEX,
+	row_data.facesIndices[ff],col_data.nodesIndices,
+	row_data.facesNH1[ff],col_data.nodesNH1); CHKERRQ(ierr);
+    }
+    int G_DIM_VOLUME = row_data.volumeNH1.size1();
+    if(G_DIM != G_DIM_VOLUME) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    }
+    for(int gg = 0;gg<G_DIM;gg++) {
+      ierr = doWork(
+	gg,ff,-1,MBTRI,MBTET,
+	row_data.facesIndices[ff],col_data.volumeIndices,
+	row_data.facesNH1[ff],col_data.volumeNH1); CHKERRQ(ierr);
+    }
+    for(int EE = 0;EE<row_data.edgesNH1.size();EE++) {
+      int G_DIM_EE = row_data.edgesNH1[EE].size1();
+      if(G_DIM != G_DIM_EE) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      for(int gg = 0;gg<G_DIM;gg++) {
+	ierr = doWork(
+	  gg,ff,EE,MBTRI,MBEDGE,
+	  row_data.facesIndices[ff],col_data.edgesIndcies[EE],
+	  row_data.facesNH1[ff],col_data.edgesNH1[EE]); CHKERRQ(ierr);
+      }
+    }
+    for(int FF = 0;FF<row_data.facesNH1.size();FF++) {
+      int G_DIM_FF = row_data.facesNH1[ff].size1();
+      if(G_DIM != G_DIM_FF) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      for(int gg = 0;gg<G_DIM;gg++) {
+	ierr = doWork(
+	  gg,ff,FF,MBTRI,MBTRI,
+	  row_data.facesIndices[ff],col_data.facesIndices[FF],
+	  row_data.facesNH1[ff],col_data.facesNH1[FF]); CHKERRQ(ierr);
+      }
+    }
+  }
+
+
+  {
+
+    int G_DIM = row_data.volumeNH1.size1();
+    for(int gg = 0;gg<G_DIM;gg++) {
+      ierr = doWork(
+	gg,-1,-1,MBTET,MBTET,
+	row_data.volumeIndices,col_data.volumeIndices,
+	row_data.volumeNH1,col_data.volumeNH1); CHKERRQ(ierr);
+    }
+    int nb_cols_nodes = row_data.nodesNH1.size2();
+    for(int gg = 0;gg<G_DIM;gg++) {
+      ierr = doWork(
+	gg,-1,-1,MBTET,MBVERTEX,
+	row_data.volumeIndices,col_data.nodesIndices,
+	row_data.volumeNH1,col_data.nodesNH1); CHKERRQ(ierr);
+    }
 
   }
+
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode mult_H1_H1::doWork(
+    int gg,int side1,int side2,
+    EntityType row_type,EntityType col_type,
+    ublas::vector<DofIdx> &row_indices,ublas::vector<DofIdx> &col_indices,
+    ublas::matrix<FieldData> &rows_N,ublas::matrix<FieldData> &cols_N) {
+  PetscFunctionBegin;
+
+  int nb_row_dofs = rows_N.size2();
+  int nb_col_dofs = rows_N.size2();
+
+  NN.resize(nb_row_dofs,nb_col_dofs);
+  bzero(NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
+
+  cblas_dger(CblasRowMajor,
+    nb_row_dofs,nb_col_dofs,
+      1,&rows_N(gg,0),1,&cols_N(gg,0),1,
+      &*NN.data().begin(),nb_row_dofs);
+
+  PetscFunctionReturn(0);
+
+
+}
+
+
+
 
 
