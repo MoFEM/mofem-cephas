@@ -167,22 +167,31 @@ int main(int argc, char *argv[]) {
 	PetscFunctionBegin;
 
 	int nb_row_dofs = rows_N.size2();
-	int nb_col_dofs = rows_N.size2();
+	int nb_col_dofs = cols_N.size2();
 
 	NN.resize(nb_row_dofs,nb_col_dofs);
-	bzero(NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
+	my_split << row_side << " " << col_side << " " << row_type << " " << col_type << endl;
 
-	for(unsigned int gg = 0;gg<rows_N.size2();gg++) {
+  	my_split.precision(2);
+	my_split << rows_N << endl;
+	my_split << cols_N << endl;
+
+	for(unsigned int gg = 0;gg<rows_N.size1();gg++) {
+
+	  bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
+
 	  cblas_dger(CblasRowMajor,
 	  nb_row_dofs,nb_col_dofs,
 	    1,&rows_N(gg,0),1,&cols_N(gg,0),1,
-	    &*NN.data().begin(),nb_row_dofs);
+	    &*NN.data().begin(),nb_col_dofs);
   
-	  my_split << gg << " " << row_side << " " << col_side << " " << row_type << " " << col_type << endl;
+	  my_split << "gg " << gg << " : ";
+	  my_split.precision(2);
 	  my_split << NN << endl;
-	  my_split << endl;
 
 	}
+
+	my_split << endl;
 
 	PetscFunctionReturn(0);
       }

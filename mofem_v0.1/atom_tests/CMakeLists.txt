@@ -246,7 +246,7 @@ add_test(forces_and_surces_getting_orders_indices_test_compare ${CMAKE_COMMAND} 
 add_test(forces_and_surces_getting_mult_H1_H1_test 
   ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_surces_getting_mult_H1_H1_atom_test -my_file elasticity_atom_test_01X_pressure.cub)
 add_test(forces_and_surces_getting_mult_H1_H1_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_surces_getting_mult_H1_H1_test.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_surces_getting_mult_H1_H1_test.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_surces_getting_mult_H1_H1_atom_test.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_surces_getting_mult_H1_H1_atom_test.txt)
 
 
