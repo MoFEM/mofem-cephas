@@ -129,7 +129,6 @@ struct dataOperator {
   }
   PetscErrorCode operator()(dataForcesAndSurcesCore &row_data,dataForcesAndSurcesCore &col_data);
 
-
   virtual PetscErrorCode doWork(
     int side,
     EntityType type,
