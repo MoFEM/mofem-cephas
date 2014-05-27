@@ -1993,6 +1993,17 @@ PetscErrorCode MySnesConvernceTest(SNES snes,int it,double xnorm,double gnorm,do
   if(fnorm > div) {
     *reason = SNES_DIVERGED_FUNCTION_DOMAIN;
   }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode MySnesConvernceTest_SNESLINESEARCHBT(SNES snes,int it,double xnorm,double gnorm,double fnorm,SNESConvergedReason *reason,void *void_ctx) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = SNESConvergedDefault(snes,it,xnorm,gnorm,fnorm,reason,PETSC_NULL); CHKERRQ(ierr);
+  const PetscReal div = 10e3;
+  if(fnorm > div) {
+    *reason = SNES_DIVERGED_FUNCTION_DOMAIN;
+  }
   if(it>0) {
     SNESLineSearch linesearch;
     ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
@@ -2397,7 +2408,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   //ierr = SNESSetTolerances(*snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
   //ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
   ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBASIC); CHKERRQ(ierr);
-  ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+  ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest_SNESLINESEARCHBT,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
