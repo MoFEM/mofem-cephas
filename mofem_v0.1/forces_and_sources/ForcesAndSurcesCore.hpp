@@ -127,7 +127,7 @@ struct dataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode operator()(dataForcesAndSurcesCore &row_data,dataForcesAndSurcesCore &col_data);
+  PetscErrorCode opNH1NH1(dataForcesAndSurcesCore &row_data,dataForcesAndSurcesCore &col_data);
 
   virtual PetscErrorCode doWork(
     int side,
@@ -138,7 +138,7 @@ struct dataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode operator()(dataForcesAndSurcesCore &data);
+  PetscErrorCode opNH1(dataForcesAndSurcesCore &data);
 
 
 };

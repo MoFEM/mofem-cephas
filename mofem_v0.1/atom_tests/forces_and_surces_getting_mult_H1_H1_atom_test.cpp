@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
       ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
-      ierr = op(data_row,data_col); CHKERRQ(ierr);
+      ierr = op.opNH1NH1(data_row,data_col); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }

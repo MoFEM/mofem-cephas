@@ -348,7 +348,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
   }
 
 
-PetscErrorCode dataOperator::operator()(
+PetscErrorCode dataOperator::opNH1NH1(
     dataForcesAndSurcesCore &row_data,dataForcesAndSurcesCore &col_data) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -460,8 +460,7 @@ PetscErrorCode dataOperator::operator()(
 
 
 
-PetscErrorCode dataOperator::operator()(
-    dataForcesAndSurcesCore &data) {
+PetscErrorCode dataOperator::opNH1(dataForcesAndSurcesCore &data) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
