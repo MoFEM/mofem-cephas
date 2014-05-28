@@ -100,6 +100,45 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       //double tangent_nrm2 =  cblas_dnrm2(3,tangent,1);
       //cblas_dscal(3,1./tangent_nrm2,tangent,1);
       //cerr << "tangent_nrm2 " << tangent_nrm2 << endl;
+      
+      Range nit_edges;
+      rval = mField.get_moab().get_adjacencies(&*nit,1,1,false,nit_edges); CHKERR_PETSC(rval);
+      nit_edges = intersect(nit_edges,crack_front_edges);
+      EntityHandle edge0 = nit_edges[0];
+      Range edge0_nodes;
+      rval = mField.get_moab().get_connectivity(&edge0,1,edge0_nodes,true); CHKERR_PETSC(rval);
+      if(edge0_nodes.size()>1) {
+	EntityHandle edge1 = nit_edges[1];
+	Range edge1_nodes;
+	rval = mField.get_moab().get_connectivity(&edge1,1,edge1_nodes,true); CHKERR_PETSC(rval);
+	Range common_node = intersect(edge0_nodes,edge1_nodes);
+	edge0_nodes.merge(edge1_nodes);
+	edge0_nodes = subtract(edge0_nodes,common_node);
+      }
+      dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[0]));
+      hi_dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[0]));	
+      if(distance(dit,hi_dit)!=3) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      double deltaX[3] = {0,0,0};
+      for(;dit!=hi_dit;dit++) {
+	deltaX[dit->get_dof_rank()] = dit->get_FieldData();
+      }
+      dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[1]));
+      hi_dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[1]));	
+      if(distance(dit,hi_dit)!=3) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      for(;dit!=hi_dit;dit++) {
+	deltaX[dit->get_dof_rank()] -= dit->get_FieldData();
+      }
+      double dot = copysign(1,cblas_ddot(3,deltaX,1,tangent,1));
+      cblas_dscal(3,dot,deltaX,1);
+
 
       dit = 
 	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MATERIAL_FORCE",*nit));
@@ -118,7 +157,7 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       //cerr << "force_nrm2 " << force_nrm2 << endl;
 
       double Spin_tangent[9] = { 0,0,0, 0,0,0, 0,0,0 };
-      ierr = Spin(Spin_tangent,tangent); CHKERRQ(ierr);
+      ierr = Spin(Spin_tangent,deltaX); CHKERRQ(ierr);
       double normal[4] = { 0,0,0,1 };
       cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,-1,Spin_tangent,3,force,1,0,normal,1); 
       double nrm2 = cblas_dnrm2(3,normal,1);
