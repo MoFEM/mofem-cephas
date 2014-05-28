@@ -333,7 +333,7 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
     //PetscAttachDebugger();
     //cerr << "vec_normals " << vec_normals << endl;
 
-    for(int nn = 0;nn<nit_edges_nodes.size();nn++) {
+    for(unsigned int nn = 0;nn<nit_edges_nodes.size();nn++) {
       if(vec_normals[nn*4+3]==0) continue;
       EntityHandle nn_node = nit_edges_nodes[nn];
       dit = dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",nn_node));
