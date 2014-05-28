@@ -200,7 +200,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    g_NTRI.resize(3*13);
+    g_NTRI.resize(3*28);
     ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
 
     switch(snes_ctx) {
