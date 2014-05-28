@@ -107,7 +107,7 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       EntityHandle edge0 = nit_edges[0];
       Range edge0_nodes;
       rval = mField.get_moab().get_connectivity(&edge0,1,edge0_nodes,true); CHKERR_PETSC(rval);
-      if(edge0_nodes.size()>1) {
+      if(nit_edges.size()>1) {
 	EntityHandle edge1 = nit_edges[1];
 	Range edge1_nodes;
 	rval = mField.get_moab().get_connectivity(&edge1,1,edge1_nodes,true); CHKERR_PETSC(rval);
