@@ -26,3 +26,5 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_concrete_beam")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/plate_stability")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/brick_slice")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/horizontal_crack")
+add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/comp_homogenisation")
+
