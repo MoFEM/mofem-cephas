@@ -231,7 +231,7 @@ static PetscErrorCode PiolaKirhoiff2_Kirchhoff(double lambda,double mu,__CLPK_do
   PetscFunctionReturn(0);
 }
 //Neo-Hookean form Bonet Book
-//Wc = (mu/2)*(Ic-3) + (lambda/2)*(ln(J))^2
+//Wc = (mu/2)*(Ic-3) - mu*ln(J) + (lambda/2)*(ln(J))^2
 static PetscErrorCode StrainEnergy_NeoHookean(double lambda,double mu,__CLPK_doublecomplex *xF,__CLPK_doublecomplex *xC,__CLPK_doublecomplex *xJ,__CLPK_doublecomplex *xPsi,void *ctx) {
   PetscFunctionBegin;
   int ii = 0;
