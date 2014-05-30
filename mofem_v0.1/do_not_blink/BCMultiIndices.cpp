@@ -520,6 +520,24 @@ ostream& operator<<(ostream& os,const Mat_Elastic& e)
         os << "User attribute 8 = " << e.data.User8 << endl << endl;
         return os;
     }
+
+ostream& operator<<(ostream& os,const Mat_Elastic_EberleinHolzapfel1& e)
+    {
+        os << endl << "Material Properties" << endl;
+        os << "-------------------" << endl;
+        os << "Young's modulus  = " << e.data.Young << endl;
+        os << "Poisson's ratio  = " << e.data.Poisson << endl;
+        os << "k1 = " << e.data.k1 << endl;
+        os << "k2 = " << e.data.k2 << endl;
+        os << "a0_x = " << e.data.a0x << endl;
+        os << "a0_y = " << e.data.a0y << endl;
+        os << "a0_z = " << e.data.a0z << endl;
+        os << "a1_x = " << e.data.a1x << endl;
+        os << "a1_y = " << e.data.a1y << endl;
+        os << "a1_Z = " << e.data.a1z << endl << endl;
+        return os;
+    }
+
     
 ostream& operator<<(ostream& os,const Mat_Thermal& e)
     {
