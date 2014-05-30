@@ -38,8 +38,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL) {};
 
     bool propeties_from_BlockSet_Mat_ElasticSet;
-		int no_gauss_points;
-		int gm_rule;
 	
     ElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
@@ -65,25 +63,23 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	VecSetOption(F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
       }
 
-				PetscBool flg = PETSC_TRUE;
-				PetscOptionsGetInt(PETSC_NULL,"-GDIM_at_interface",&no_gauss_points,&flg);
-				if(flg!=PETSC_TRUE) no_gauss_points = 37;
-				PetscOptionsGetInt(PETSC_NULL,"-GM_rule",&gm_rule,&flg);
-				if(flg!=PETSC_TRUE) gm_rule = 5;
+      g_NTET.resize(4*45);
+      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+      G_TET_W = G_TET_W45;
+      g_NTRI.resize(3*28);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
+      G_TRI_W = G_TRI_W28;
 				
-			propeties_from_BlockSet_Mat_ElasticSet = false;
+      propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 	propeties_from_BlockSet_Mat_ElasticSet = true;
       }
-			
 
     }; 
 
     ErrorCode rval;
     
     ParallelComm* pcomm;
-    PetscLogDouble t1,t2;
-    PetscLogDouble v1,v2;
 
     double lambda,mu;
     ublas::matrix<FieldData> D_lambda,D_mu,D;
@@ -162,10 +158,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
   
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
-      ierr = PetscTime(&v1); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
@@ -210,10 +202,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,F); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      ierr = PetscTime(&v2); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       PetscFunctionReturn(0);
     }
 

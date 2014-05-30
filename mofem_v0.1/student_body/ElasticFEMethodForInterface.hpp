@@ -61,10 +61,6 @@ struct InterfaceFEMethod: public ElasticFEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n",pcomm->rank(),v2-v1,t2-t1);
-
-    ierr = PetscTime(&v1); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
     G_TET_W = G_TET_W45;
@@ -80,9 +76,6 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     // Note MAT_FLUSH_ASSEMBLY
     ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = PetscTime(&v2); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscFunctionReturn(0);
   }
 
@@ -282,9 +275,6 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
-      ierr = PetscTime(&v1); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
       if(init_ref) PetscFunctionReturn(0);
       
@@ -610,8 +600,6 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      ierr = PetscTime(&v2); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       ParallelComm* pcomm_post_proc = ParallelComm::get_pcomm(&moab_post_proc,MYPCOMM_INDEX);
       if(pcomm_post_proc == NULL) pcomm_post_proc =  new ParallelComm(&moab_post_proc,PETSC_COMM_WORLD);
       for(unsigned int rr = 1; rr<pcomm_post_proc->size();rr++) {
@@ -619,7 +607,6 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 	rval = moab_post_proc.get_entities_by_type(0,MBPRISM,prisms); CHKERR_PETSC(rval);
 	rval = pcomm_post_proc->broadcast_entities(rr,prisms); CHKERR(rval);
       }
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       PetscFunctionReturn(0);
     }
 
