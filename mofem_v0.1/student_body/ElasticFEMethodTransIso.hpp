@@ -371,7 +371,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
-		virtual PetscErrorCode calulateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
+		virtual PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
       PetscFunctionBegin;
 			
 			///Get Stiffness Matrix
@@ -430,7 +430,7 @@ namespace MoFEM {
 				
 				double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
 				ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-				ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
+				ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 				
 				//Gradient at Gauss points;
 				vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -521,7 +521,7 @@ namespace MoFEM {
 			
 			double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
 			ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-			ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
+			ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 			
 			K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
@@ -652,7 +652,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 		//--------------------------------------------------------------------------------------------------------------------------------------------------//
-		virtual PetscErrorCode calulateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
+		virtual PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
       PetscFunctionBegin;
 			
 			///Get Stiffness Matrix
@@ -711,7 +711,7 @@ namespace MoFEM {
 				
 				double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
 				ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-				ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
+				ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 				
 				//Gradient at Gauss points;
 				vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -803,7 +803,7 @@ namespace MoFEM {
 			double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
 			
       ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-      ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
+      ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 						
 			K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
@@ -1005,7 +1005,7 @@ namespace MoFEM {
     }
 		//--------------------------------------------------------------------------------------------------------------------------------------------------//
 		vector< ublas::matrix<FieldData> > D_At_GaussPoint;
-		virtual PetscErrorCode calulateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
+		virtual PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
       PetscFunctionBegin;
 			
 			///Get Stiffness Matrix
@@ -1077,7 +1077,7 @@ namespace MoFEM {
 				
 				double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
 				ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-				ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
+				ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 				
 				//Gradient at Gauss points;
 				vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -1168,7 +1168,7 @@ namespace MoFEM {
 			
 			double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
       ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-      ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
+      ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 						
 			K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
@@ -1361,7 +1361,7 @@ namespace MoFEM {
     }
 		//--------------------------------------------------------------------------------------------------------------------------------------------------//
 		vector< ublas::matrix<FieldData> > D_At_GaussPoint;
-		virtual PetscErrorCode calulateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
+		virtual PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
       PetscFunctionBegin;
 			
 			///Get Stiffness Matrix
@@ -1433,7 +1433,7 @@ namespace MoFEM {
 				
 				double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
 				ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-				ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
+				ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 				
 				//Gradient at Gauss points;
 				vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -1524,7 +1524,7 @@ namespace MoFEM {
 			
 			double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
       ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-      ierr = calulateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
+      ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
 			
 			K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;

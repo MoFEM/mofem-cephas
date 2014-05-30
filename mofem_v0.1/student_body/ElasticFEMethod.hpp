@@ -104,7 +104,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     const double* G_W_TET;
     const double* G_W_TRI;
 
-    virtual PetscErrorCode calulateD(double _lambda,double _mu) {
+    virtual PetscErrorCode calculateD(double _lambda,double _mu) {
       PetscFunctionBegin;
 
       D = _lambda*D_lambda + _mu*D_mu;
@@ -489,7 +489,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       double _lambda,_mu;
       ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
-      ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+      ierr = calculateD(_lambda,_mu); CHKERRQ(ierr);
 
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
@@ -582,7 +582,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       double _lambda,_mu;
       ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
-      ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+      ierr = calculateD(_lambda,_mu); CHKERRQ(ierr);
 
       //Gradient at Gauss points; 
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
