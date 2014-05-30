@@ -96,7 +96,7 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
     const double* G_W_TET;
     const double* G_W_TRI;
 
-    virtual PetscErrorCode calulateD(double _Ther_Cond) {
+    virtual PetscErrorCode calculateD(double _Ther_Cond) {
       PetscFunctionBegin;
 
         //cout<<"D_lambda "<<D_lambda<<endl;
@@ -413,7 +413,7 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
       double Ther_Cond;
       ierr = GetMatParameters(&Ther_Cond); CHKERRQ(ierr);
       //cout<< "Ther_Cond "<<Ther_Cond<<endl;
-      ierr = calulateD(Ther_Cond); CHKERRQ(ierr);
+      ierr = calculateD(Ther_Cond); CHKERRQ(ierr);
 
       //cout<< "D "<<D<<endl;
       K.resize(row_mat,col_mat);
@@ -467,7 +467,7 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
       double Ther_Cond;
       ierr = GetMatParameters(&Ther_Cond); CHKERRQ(ierr);
       //cout<< "Ther_Cond "<<Ther_Cond<<endl;
-      ierr = calulateD(Ther_Cond); CHKERRQ(ierr);
+      ierr = calculateD(Ther_Cond); CHKERRQ(ierr);
       //cout<< "D "<<D<<endl;
 
       f_int.resize(row_mat);
