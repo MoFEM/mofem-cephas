@@ -75,16 +75,14 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = mField.add_field("FIELD1",H1,1); CHKERRQ(ierr);
-  ierr = mField.add_field("FIELD2",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("TEST_FE"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("TEST_FE","FIELD2"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("TEST_FE","FIELD1"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("TEST_FE","FIELD2"); CHKERRQ(ierr);
 
   //Problem
   ierr = mField.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -99,7 +97,6 @@ int main(int argc, char *argv[]) {
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
   ierr = mField.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"FIELD2"); CHKERRQ(ierr);
   //add entities to finite element
   ierr = mField.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
 
@@ -111,10 +108,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTET,"FIELD2",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"FIELD2",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"FIELD2",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD2",1); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -143,131 +136,108 @@ int main(int argc, char *argv[]) {
     typedef tee_device<ostream, ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    struct my_mult_H1_H1: public dataOperator {
+    ofstream ofs;
+    TeeDevice my_tee; 
+    TeeStream my_split;
 
-      ofstream ofs;
-      TeeDevice my_tee; 
-      TeeStream my_split;
+    struct PrintJacobian: public DataOperator {
 
-      my_mult_H1_H1():
-	ofs("forces_and_surces_getting_mult_H1_H1_atom_test.txt"),
-	my_tee(cout, ofs),my_split(my_tee) {};
+      TeeStream &my_split;
+      PrintJacobian(TeeStream &_my_split): my_split(_my_split) {};
 
-      ~my_mult_H1_H1() {
+      ~PrintJacobian() {
         my_split.close();
       }
 
-      ublas::matrix<FieldData> NN;
-
       PetscErrorCode doWork(
-	int row_side,int col_side,
-	EntityType row_type,EntityType col_type,
-	dataForcesAndSurcesCore::entData &row_data,
-	dataForcesAndSurcesCore::entData &col_data) {
+	int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
 	PetscFunctionBegin;
-
-	int nb_row_dofs = row_data.N.size2();
-	int nb_col_dofs = col_data.N.size2();
-
-	my_split << row_side << " " << col_side << " " << row_type << " " << col_type << endl;
-	my_split << "nb_row_dofs " << nb_row_dofs << " nb_col_dofs " << nb_col_dofs << endl;
-	NN.resize(nb_row_dofs,nb_col_dofs);
-
-
-  	my_split.precision(2);
-	my_split << row_data.N << endl;
-	my_split << col_data.N << endl;
-
-	for(unsigned int gg = 0;gg<row_data.N.size1();gg++) {
-
-	  bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
-
-	  cblas_dger(CblasRowMajor,
-	    nb_row_dofs,nb_col_dofs,
-	    1,&row_data.N(gg,0),1,&col_data.N(gg,0),1,
-	    &*NN.data().begin(),nb_col_dofs);
-  
-	  my_split << "gg " << gg << " : ";
-	  my_split.precision(2);
-	  my_split << NN << endl;
-
-	  if(row_type == MBVERTEX) {
-	    my_split << row_data.diffN << endl;
-	  } else {
-	    typedef ublas::array_adaptor<FieldData> storage_t;
-	    storage_t st(nb_row_dofs*3,&row_data.diffN(gg,0));
-	    ublas::matrix<FieldData,ublas::row_major,storage_t> digNatGaussPt(nb_row_dofs,3,st);
-	    my_split << endl << digNatGaussPt << endl;
-	  }
-
-	}
-
-	my_split << endl;
-
+	my_split << "side: " << side << " type: " << type << data.getDiffN() << endl;
 	PetscFunctionReturn(0);
       }
 
     };
 
-    my_mult_H1_H1 op;
+    ublas::matrix<double> invJac;
+    ublas::matrix<double> dataFIELD1;
+    ublas::matrix<double> dataDiffFIELD1;
+    ublas::vector<double> coords;
+    PrintJacobian opPrintJac;
+    OpSetJac opSetJac;
+    OpGetData opGetData_FIELD1;
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
-      ForcesAndSurcesCore(_mField) {};
+      ForcesAndSurcesCore(_mField),
+      ofs("forces_and_sources_calculate_jacobian.txt"),
+      my_tee(cout, ofs),my_split(my_tee),
+      opPrintJac(my_split),
+      opSetJac(invJac),
+      opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
 
-    dataForcesAndSurcesCore data_row,data_col;
+    DataForcesAndSurcesCore data;
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      ierr = getEdgesSense(data_row); CHKERRQ(ierr);
-      ierr = getFacesSense(data_row); CHKERRQ(ierr);
-      ierr = getEdgesSense(data_col); CHKERRQ(ierr);
-      ierr = getFacesSense(data_col); CHKERRQ(ierr);
+      ierr = getEdgesSense(data); CHKERRQ(ierr);
+      ierr = getFacesSense(data); CHKERRQ(ierr);
+      ierr = getEdgesOrder(data); CHKERRQ(ierr);
+      ierr = getFacesOrder(data); CHKERRQ(ierr);
+      ierr = getOrderVolume(data); CHKERRQ(ierr);
+      ierr = getFaceNodes(data); CHKERRQ(ierr);
+      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
-      ierr = getEdgesOrder(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFacesOrder(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesOrder(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getOrderVolume(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getOrderVolume(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
-      ierr = getEdgeRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFacesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTetRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getTetColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFaceNodes(data_row); CHKERRQ(ierr);
-      ierr = getFaceNodes(data_col); CHKERRQ(ierr);
+      ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgeRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetRowIndices(data,"FIELD1"); CHKERRQ(ierr);
 
-      ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
+      ierr = getNodesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgeFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getFacesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetFieldData(data,"FIELD1"); CHKERRQ(ierr);
+
+      EntityHandle ent = fe_ptr->get_ent();
+      int num_nodes;
+      const EntityHandle* conn;
+      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+      coords.resize(num_nodes*3);
+      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+
+      invJac.resize(3,3);
+      ierr = ShapeJacMBTET(&*data.nOdes.getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
+      ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
-	ierr = op.opNH1NH1(data_row,data_col); CHKERRQ(ierr);
+	ierr = opSetJac.opNH1(data); CHKERRQ(ierr);
+	ierr = opPrintJac.opNH1(data); CHKERRQ(ierr);
+	ierr = opGetData_FIELD1.opNH1(data); CHKERRQ(ierr);
       } catch (exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
+      my_split << "data FIELD1:" << endl;
+      my_split << dataFIELD1 << endl;
+      my_split << "data diff FIELD1:" << endl;
+      my_split << dataDiffFIELD1 << endl;
+
       PetscFunctionReturn(0);
     }
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-
       PetscFunctionReturn(0);
     }
 
     private:
-    dataForcesAndSurcesCore _data_;
+    DataForcesAndSurcesCore _data_;
 
   };
 

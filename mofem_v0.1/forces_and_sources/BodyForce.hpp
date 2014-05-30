@@ -27,111 +27,78 @@
 #ifndef __BODY_FORCE_HPP
 #define __BODY_FORCE_HPP
 
-#include "CoreForcesAndSurces.hpp"
+#include "ForcesAndSurcesCore.hpp"
+extern "C" {
+#include "gm_rule.h"
+}
 
 namespace MoFEM {
 
-struct BodyFroce: public CoreForcesAndSurces {
+struct BodyFroce: public ForcesAndSurcesCore {
 
-  struct opBodyForce: public dataOperator {
+  struct opBodyForce: public DataOperator {
 
+      Vec F;
       ublas::vector<double> &G_W;
-      opBodyForce(Vec _F,blas::vector<double> &_G_W): F(_F),G_W(_G_W) {}
+      opBodyForce(Vec _F,ublas::vector<double> &_G_W):  F(_F),G_W(_G_W) {}
+
+      Block_BodyForces blockData;
 
       double Volume;
-      ublas::matrix<FieldData> invJac;
-      ublas::matrix<FieldData> diffNinvJac;
 
       ublas::vector<FieldData> f;
       PetscErrorCode doWork(
 	int side,EntityType type,
-	dataForcesAndSurcesCore::entData &data) {
-
+	DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
+      PetscErrorCode ierr;
 
-      f.resize(indices.size());
-      bzero(&*f.data().begin(),indices.size()*sizeof(double));
-      for(int gg = 0;gg<N.size1();gg++) {
-	double val = G_W[gg]*Volume*data.density;
+      f.resize(data.getIndices().size());
+      bzero(&*f.data().begin(),data.getIndices().size()*sizeof(double));
+      for(int gg = 0;gg<data.getN().size1();gg++) {
       }
-      ierr = VecSetValues(F,indices.size(),&indices.data().begin(),&*f.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(F,data.getIndices().size(),&*data.getIndices().data().begin(),&*f.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
 
       }
-  }
-
-  struct opJacobian: public dataOperator {
-
-      ublas::matrix<FieldData> &invJac;
-      ublas::matrix<FieldData> Jac;
-
-      opBodyForce(ublas::matrix<FieldData>  _invJac): invJac(_invJac) {}
-
-      ublas::vector<FieldData> f;
-      PetscErrorCode doWork(
-	int side,EntityType type,
-	dataForcesAndSurcesCore::entData &data) {
-      PetscFunctionBegin;
-
-      invJac.resize(data.N.size1(),9);
-
-      Jac.resize(data.N.size1(),9);
-      if(type == MBVERTEX) {
-	bzero(&*Jac.data().begin(),Jac.size1()*Jac.size2()*sizeof(double));
-      }
-      typedef ublas::array_adaptor<FieldData> storage_t;
-
-      int nb_dofs = data.N.size2();
-      for(int gg = 0;gg<N.size1();gg++) {
-	storage_t st_jac(3*3,&Jac(gg,0));
-  	ublas::matrix<FieldData,ublas::row_major,storage_t> jac_at_GaussPt(3,3,st);
-	for(int i = 0;i<3;i++) {
-	  for(int j = 0;j<3;j++) {
-	    jac_at_GaussPt(i,j) +=
-	      cblas_ddot(nb_dofs,&data.diffN(gg,j),3,&data.fieldData(i),3);
-	  }
-	}
-      }
-
-      PetscFunctionReturn(0);
-      }
-
-  }
+  };
 
   opBodyForce opForce;
-  opJacobiab opJac;
+  const int msId;
 
   ublas::vector<double> G_X,G_Y,G_Z,G_W;
   ublas::vector<double> coords;
 
-  BodyFroce(mField &_mField,Vec _F): 
-    mField(_mField),opForce(F,G_W),
-    opJac(opForce.invJac) {}
+  BodyFroce(FieldInterface &_mField,Vec _F,const int _msId): 
+    ForcesAndSurcesCore(_mField),opForce(_F,G_W),msId(_msId) {}
 
-  dataForcesAndSurcesCore data;
-  dataForcesAndSurcesCore data_ho_gemetry;
+  DataForcesAndSurcesCore data;
+  DataForcesAndSurcesCore data_ho_gemetry;
 
   const CubitMeshSets *cubit_meshset_ptr;
   EntityHandle meshset;
 
-  PetscErroCode getBodyElements() {
+  PetscErrorCode getBodyElements() {
     PetscFunctionBegin;
-    ierr = mField.get_Cubit_msId(msId,BlockSet|Body_Force,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_attribute_data_structure(op.data); CHKERRQ(ierr);
+    PetscErrorCode ierr;
+    ierr = mField.get_Cubit_msId(msId,BlockSet|Block_BodyForcesSet,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->get_attribute_data_structure(opForce.blockData); CHKERRQ(ierr);
     meshset = cubit_meshset_ptr->get_meshset();
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ErrorCode rval;
 
     ierr = getEdgesSense(data); CHKERRQ(ierr);
     ierr = getFacesSense(data); CHKERRQ(ierr);
 
-    ierr = getEdgesOrder(data,"DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = getFacesOrder(data,"DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = getOrderVolume(data,"DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = getEdgesOrder(data); CHKERRQ(ierr);
+    ierr = getFacesOrder(data); CHKERRQ(ierr);
+    ierr = getOrderVolume(data); CHKERRQ(ierr);
     ierr = getRowNodesIndices(data,"DISPLACEMENT"); CHKERRQ(ierr);
     ierr = getEdgeRowIndices(data,"DISPLACEMENT"); CHKERRQ(ierr);
     ierr = getFacesRowIndices(data,"DISPLACEMENT"); CHKERRQ(ierr);
@@ -139,28 +106,13 @@ struct BodyFroce: public CoreForcesAndSurces {
     ierr = getFaceNodes(data); CHKERRQ(ierr);
 
     int order = 1;
-    order = max(order,*max_element(data_.edgesOrder.begin(),data.edgesOrder.end()));
-    order = max(order,*max_element(data.facesOrder.begin(),data.facesOrder.end()));
-    order = max(order,data.volumeOrder);
-  
-    int ho_geom_order = 1;
-    if(check_field("MESH_NODE_POSITIONS")) {
-    
-      ierr = getEdgesOrder(data_ho_gemetry,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-      ierr = getFacesOrder(data_ho_gemetry,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-      ierr = getOrderVolume(data_ho_gemetry,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-
-      ho_geom_order = max(ho_geom_order,*max_element(data_ho_gemetry_.edgesOrder.begin(),data_ho_gemetry.edgesOrder.end()));
-      ho_geom_order = max(ho_geom_order,*max_element(data_ho_gemetry.facesOrder.begin(),data_ho_gemetry.facesOrder.end()));
-      ho_geom_order = max(ho_geom_order,data_ho_gemetry.volumeOrder);
-
+    if(mField.check_field("MESH_NODE_POSITIONS")) {
       ierr = getNodesFieldData(data,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
       ierr = getEdgeFieldData(data,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
       ierr = getFacesFieldData(data,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
       ierr = getTetFieldData(data,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     }
 
-    order = max(order,ho_geom_order);
 
     int nb_gauss_pts = gm_rule_size(order,3);
     G_X.resize(nb_gauss_pts);
@@ -178,21 +130,16 @@ struct BodyFroce: public CoreForcesAndSurces {
     EntityHandle ent = fe_ptr->get_ent();
     int num_nodes;
     const EntityHandle* conn;
-    rval = moab.get_connectivity(eny,conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
     coords.resize(num_nodes*3);
-    rval = moab.get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
-    opForce.Volume = Shape_intVolumeMBTET(diffNTET,&*coords.data().begin()); 
+    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+    opForce.Volume = Shape_intVolumeMBTET(&*data.nOdes.getDiffN().data().begin(),&*coords.data().begin()); 
 
-    opForce.invJac.resize(3,3);
-    ierr = ShapeJacMBTET(diffNTET,&*_coords_.begin(),&*opForce.invJac.data().begin()); CHKERRQ(ierr);
-    ierr = Shape_invJac(&*opForce.invJac.data().begin()); CHKERRQ(ierr);
-    opForce.diffNinvJac.resize(4,3);
-    ierr = ShapeDiffMBTETinvJ(
-      &*data.nOdes.diffN.data().begin(),
-      &*opForce.invJac.data().begin(),&*opForce.diffNinvJac.data().begin()); CHKERRQ(ierr);
+    /*opForce.invJac.resize(3,3);
+    ierr = ShapeJacMBTET(&*data.nOdes.diffN.data().begin(),&*_coords_.begin(),&*opForce.invJac.data().begin()); CHKERRQ(ierr);
+    ierr = Shape_invJac(&*opForce.invJac.data().begin()); CHKERRQ(ierr);*/
 
-
-    ierr = op.opNH1NH1(data); CHKERRQ(ierr);
+    //ierr = op.opNH1NH1(data); CHKERRQ(ierr);
     
     PetscFunctionReturn(0);
   }
