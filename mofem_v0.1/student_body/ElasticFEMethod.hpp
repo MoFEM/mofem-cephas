@@ -102,8 +102,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     vector<DofIdx> DirihletBC;
 
     vector<double> g_NTET,g_NTRI;
-    const double* G_W_TET;
-    const double* G_W_TRI;
+    const double *G_TRI_W;
+    const double *G_TET_W;
 
     virtual PetscErrorCode calculateD(double _lambda,double _mu) {
       PetscFunctionBegin;
@@ -152,10 +152,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    vector<double> g_NTET, g_NTRI;
-    const double *G_TRI_W;
-    const double *G_TET_W;
-  
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
 

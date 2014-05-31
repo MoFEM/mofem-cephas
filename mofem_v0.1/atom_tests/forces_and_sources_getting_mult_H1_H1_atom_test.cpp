@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
     my_mult_H1_H1 op;
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
-      ForcesAndSurcesCore(_mField) {};
+      ForcesAndSurcesCore(_mField),data_row(MBTET),data_col(MBTET) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -266,8 +266,6 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
-    private:
-    DataForcesAndSurcesCore _data_;
 
   };
 

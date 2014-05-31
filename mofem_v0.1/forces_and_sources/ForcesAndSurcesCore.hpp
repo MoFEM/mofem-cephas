@@ -31,6 +31,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 using namespace boost::numeric;
 
@@ -39,6 +40,7 @@ namespace MoFEM {
 struct DataForcesAndSurcesCore {
 
   struct EntData {
+
     EntData(): sEnse(0),oRder(0) {};
     virtual int getSense() const { return sEnse; }
     virtual ApproximationOrder getOrder() const { return oRder; }
@@ -52,6 +54,9 @@ struct DataForcesAndSurcesCore {
     virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
     virtual ublas::matrix<FieldData>& getN() { return N; }
     virtual ublas::matrix<FieldData>& getDiffN() { return diffN; }
+
+    friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
+
     private:
     int sEnse;
     ApproximationOrder oRder;
@@ -59,58 +64,89 @@ struct DataForcesAndSurcesCore {
     ublas::vector<FieldData> fieldData;
     ublas::matrix<FieldData> N;
     ublas::matrix<FieldData> diffN;
-  };
 
-  virtual const EntData& getNodes() const { return nOdes; }
-  virtual const vector<EntData>& getEdges() const { return eDges; }
-  virtual const EntData& getEdges(int ee) const { return eDges[ee]; }
-  virtual const vector<EntData>& getFaces() const { return fAces; }
-  virtual const EntData& getFaces(int ff) const { return fAces[ff]; }
-  virtual const EntData& getVolume() const { return vOlume; }
-  virtual EntData& getNodes() { return nOdes; }
-  virtual vector<EntData>& getEdges() { return eDges; }
-  virtual EntData& getEdges(int ee) { return eDges[ee]; }
-  virtual vector<EntData>& getFaces() { return fAces; }
-  virtual EntData& getFaces(int ff) { return fAces[ff]; }
-  virtual EntData& getVolume() { return vOlume; }
+  };
 
   ublas::matrix<DofIdx> facesNodes;
 
+  boost::ptr_vector<EntData> nOdes;
+  boost::ptr_vector<EntData> eDges;
+  boost::ptr_vector<EntData> fAces;
+  boost::ptr_vector<EntData> vOlumes;
+
+  template<class T> 
+  void cOnstructor(EntityType type,T) {
+    
+    switch (type) {
+      case MBTET:
+	nOdes.push_back(new T());
+	for(int ee = 0;ee<6;ee++) {
+	  eDges.push_back(new T());
+	}
+	for(int ff = 0;ff<4;ff++) {
+	  fAces.push_back(new T());
+	}
+	vOlumes.push_back(new T());
+      break;
+      default:
+	throw("not implemenyed");
+    }
+
+  }
+  DataForcesAndSurcesCore(EntityType type) {
+    cOnstructor(type,EntData());
+  }
+
   friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore &e);
 
-  EntData nOdes;
-  vector<EntData> eDges;
-  vector<EntData> fAces;
-  EntData vOlume;
+  protected:
+  DataForcesAndSurcesCore() {}
 
 };
 
-/*struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore {
+struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
- struct DerivedEntData: public EntData {
+  struct DerivedEntData: public DataForcesAndSurcesCore::EntData {
+    DataForcesAndSurcesCore::EntData &entData;
+    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): entData(ent_data)  {}
+    virtual int getSense() const { return entData.getSense(); }
+    virtual ApproximationOrder getOrder() const { return entData.getOrder(); }
+    virtual const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
+    virtual const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
+    virtual const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
+    virtual const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
+    virtual int& getSense() { return entData.getSense(); }
+    virtual ApproximationOrder& getOrder() { return entData.getOrder(); }
+    virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
+    virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    virtual ublas::matrix<FieldData>& getN() { return entData.getN(); }
+    virtual ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
+
+    private:
     ublas::vector<DofIdx> iNdices;
     ublas::vector<FieldData> fieldData;
-    ublas::vector<FieldData>& getFieldData() { return iNdices; }
-    ublas::vector<FieldData>& getFieldData() { return fieldData; }
-    DerivedEntData(EntData &ent_data): EntData(ent_data) {}
+
   };
 
-  DerivedEntData nOdes;
-  vector<DerivedEntData> eDges;
-  vector<DerivedEntData> fAces;
-  DerivedEntData vOlume;
-  virtual EntData& getNodes() { return nOdes; }
-  virtual EntData& getEdges(int ee) { return eDges[ee]; }
-  virtual EntData& getFaces(int ff) { return fAces[ff]; }
-  virtual EntData& getVolume() { return vOlume; }
+  DerivedDataForcesAndSurcesCore(DataForcesAndSurcesCore &data): DataForcesAndSurcesCore() {
 
-  DerivedDataForcesAndSurcesCore(DataForcesAndSurcesCore &data);
+    boost::ptr_vector<EntData>::iterator it;
+    for(it = data.nOdes.begin();it!=data.nOdes.end();it++) {
+      nOdes.push_back(new DerivedEntData(*it));
+    }
+    for(it = data.eDges.begin();it!=data.eDges.end();it++) {
+      eDges.push_back(new DerivedEntData(*it));
+    }
+    for(it = data.fAces.begin();it!=data.fAces.end();it++) {
+      fAces.push_back(new DerivedEntData(*it));
+    }
+    for(it = data.vOlumes.begin();it!=data.vOlumes.end();it++) {
+      vOlumes.push_back(new DerivedEntData(*it));
+    }
+  }
 
-  friend ostream& operator<<(ostream& os,const DerivedDataForcesAndSurcesCore &e);
+};
 
-};*/
-
-ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
 
 struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
@@ -118,8 +154,8 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   ForcesAndSurcesCore(FieldInterface& _mField): 
     mField(_mField) {};
 
-  PetscErrorCode getSense(EntityType type,vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getOrder(EntityType type,vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getFacesSense(DataForcesAndSurcesCore &data);
@@ -144,8 +180,8 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     FENumeredDofMoFEMEntity_multiIndex &dofs,
     EntityType type,int side_number,ublas::vector<int> &indices);
   PetscErrorCode getTypeIndices(
-    const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,
-    vector<DataForcesAndSurcesCore::EntData> &data);
+    const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgeRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgeColIndices(DataForcesAndSurcesCore &data,const string &field_name);
@@ -162,8 +198,8 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     FEDofMoFEMEntity_multiIndex &dofs,
     EntityType type,int side_number,ublas::vector<FieldData> &ent_field_data);
   PetscErrorCode getTypeFieldData(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,EntityType type,
-    vector<DataForcesAndSurcesCore::EntData> &data);
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgeFieldData(DataForcesAndSurcesCore &data,const string &field_name);
@@ -246,10 +282,10 @@ struct OpGetData: public DataOperator {
 
 struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
-  VolumeH1H1ElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),opSetJac(invJac) {};
-
   DataForcesAndSurcesCore data;
+
+  VolumeH1H1ElementForcesAndSurcesCore(FieldInterface &_mField):
+    ForcesAndSurcesCore(_mField),opSetJac(invJac),data(MBTET) {};
 
   ErrorCode rval;
   PetscErrorCode ierr;

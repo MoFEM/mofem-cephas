@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
       my_tee(cout, ofs),my_split(my_tee),
       opPrintJac(my_split),
       opSetJac(invJac),
-      opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1) {};
+      opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1),data(MBTET) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
 
       invJac.resize(3,3);
-      ierr = ShapeJacMBTET(&*data.nOdes.getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
+      ierr = ShapeJacMBTET(&*data.nOdes[0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
       ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
@@ -236,8 +236,6 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
-    private:
-    DataForcesAndSurcesCore _data_;
 
   };
 

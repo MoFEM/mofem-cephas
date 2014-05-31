@@ -157,11 +157,12 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
-    DataForcesAndSurcesCore data;
-
     PetscErrorCode operator()() {
       PetscFunctionBegin;
+
       my_split << "\n\nNEXT ELEM\n\n";
+
+      DataForcesAndSurcesCore data(MBTET);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getFacesSense(data); CHKERRQ(ierr);
@@ -175,15 +176,18 @@ int main(int argc, char *argv[]) {
       ierr = getEdgeRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+
+      DerivedDataForcesAndSurcesCore derived_data(data);
+
+      ierr = getColNodesIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getEdgeColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getFacesColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+
       my_split << "FIELD1:\n";
       my_split << data << endl;
-
-      ierr = getColNodesIndices(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getEdgeColIndices(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFacesColIndices(data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTetColIndices(data,"FIELD2"); CHKERRQ(ierr);
       my_split << "FIELD2:\n";
-      my_split << data << endl;
+      my_split << derived_data << endl;
 
       PetscFunctionReturn(0);
     }
