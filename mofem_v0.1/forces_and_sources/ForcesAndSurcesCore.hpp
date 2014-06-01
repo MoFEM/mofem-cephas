@@ -74,28 +74,7 @@ struct DataForcesAndSurcesCore {
   boost::ptr_vector<EntData> fAces;
   boost::ptr_vector<EntData> vOlumes;
 
-  template<class T> 
-  void cOnstructor(EntityType type,T) {
-    
-    switch (type) {
-      case MBTET:
-	nOdes.push_back(new T());
-	for(int ee = 0;ee<6;ee++) {
-	  eDges.push_back(new T());
-	}
-	for(int ff = 0;ff<4;ff++) {
-	  fAces.push_back(new T());
-	}
-	vOlumes.push_back(new T());
-      break;
-      default:
-	throw("not implemenyed");
-    }
-
-  }
-  DataForcesAndSurcesCore(EntityType type) {
-    cOnstructor(type,EntData());
-  }
+  DataForcesAndSurcesCore(EntityType type);
 
   friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore &e);
 
@@ -128,25 +107,9 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
   };
 
-  DerivedDataForcesAndSurcesCore(DataForcesAndSurcesCore &data): DataForcesAndSurcesCore() {
-
-    boost::ptr_vector<EntData>::iterator it;
-    for(it = data.nOdes.begin();it!=data.nOdes.end();it++) {
-      nOdes.push_back(new DerivedEntData(*it));
-    }
-    for(it = data.eDges.begin();it!=data.eDges.end();it++) {
-      eDges.push_back(new DerivedEntData(*it));
-    }
-    for(it = data.fAces.begin();it!=data.fAces.end();it++) {
-      fAces.push_back(new DerivedEntData(*it));
-    }
-    for(it = data.vOlumes.begin();it!=data.vOlumes.end();it++) {
-      vOlumes.push_back(new DerivedEntData(*it));
-    }
-  }
+  DerivedDataForcesAndSurcesCore(DataForcesAndSurcesCore &data);
 
 };
-
 
 struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
@@ -283,33 +246,54 @@ struct OpGetData: public DataOperator {
 struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
+  DerivedDataForcesAndSurcesCore derived_data;
 
   VolumeH1H1ElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),opSetJac(invJac),data(MBTET) {};
+    ForcesAndSurcesCore(_mField),opSetJac(invJac),
+    data(MBTET),derived_data(data) {};
 
   ErrorCode rval;
   PetscErrorCode ierr;
+  ublas::vector<double> coords;
   ublas::matrix<double> invJac;
-  ublas::matrix<double> dataFIELD1;
-  ublas::matrix<double> dataDiffFIELD1;
   ublas::matrix<double> gaussPts;
   OpSetJac opSetJac;
+
+  map<string,ublas::matrix<FieldData> > map_data_at_GaussPt;
+  map<string,ublas::matrix<FieldData> > map_dataGrad_at_GaussPt;
 
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
     UserDataOperator(
       const string &_field_name):
-	row_field_name(_field_name),col_field_name(_field_name) {};
+	row_field_name(_field_name),col_field_name(_field_name),ptrFE(NULL) {};
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
-	row_field_name(_row_field_name),col_field_name(_col_field_name) {};
+	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
+
+    VolumeH1H1ElementForcesAndSurcesCore *ptrFE; 
+
   };
 
-  vector<UserDataOperator> vecUserOpNH1; 
-  vector<UserDataOperator> vecUserOpNH1NH1;
+  vector<UserDataOperator*> vecUserOpNH1; 
+  vector<UserDataOperator*> vecUserOpNH1NH1;
+
+  vector<UserDataOperator*>& get_op_to_do_NH1() { return vecUserOpNH1; }
+  vector<UserDataOperator*>& get_op_to_do_NH1NH1() { return vecUserOpNH1NH1; }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
 
   PetscErrorCode operator()();
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
   
 };
 

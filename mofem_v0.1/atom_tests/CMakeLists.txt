@@ -79,6 +79,9 @@ target_link_libraries(forces_and_sources_body_force_atom_test.cpp mofem_forces_a
 add_executable(forces_and_sources_calculate_jacobian forces_and_sources_calculate_jacobian.cpp)
 target_link_libraries(forces_and_sources_calculate_jacobian mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
+add_executable(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
+target_link_libraries(forces_and_sources_testing_volume_element mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
 add_executable(forces_and_sources_body_force_atom_test forces_and_sources_body_force_atom_test.cpp)
 target_link_libraries(forces_and_sources_body_force_atom_test mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
@@ -264,4 +267,9 @@ add_test(forces_and_sources_calculate_jacobian_test_compare ${CMAKE_COMMAND} -E 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_calculate_jacobian.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_calculate_jacobian.txt)
 
+add_test(forces_and_sources_testing_volume_element_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_volume_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt)
 

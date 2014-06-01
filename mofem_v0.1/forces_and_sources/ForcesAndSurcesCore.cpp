@@ -25,10 +25,55 @@
 
 
 #include "ForcesAndSurcesCore.hpp"
+extern "C" {
+#include "gm_rule.h"
+}
 
 using namespace boost::numeric;
 
 namespace MoFEM {
+
+template<class T> 
+void cOnstructor(DataForcesAndSurcesCore *data,EntityType type,T) {
+    
+    switch (type) {
+      case MBTET:
+	data->nOdes.push_back(new T());
+	for(int ee = 0;ee<6;ee++) {
+	  data->eDges.push_back(new T());
+	}
+	for(int ff = 0;ff<4;ff++) {
+	  data->fAces.push_back(new T());
+	}
+	data->vOlumes.push_back(new T());
+      break;
+      default:
+	throw("not implemenyed");
+    }
+
+}
+
+DataForcesAndSurcesCore::DataForcesAndSurcesCore(EntityType type) {
+  cOnstructor(this,type,EntData());
+}
+
+
+DerivedDataForcesAndSurcesCore::DerivedDataForcesAndSurcesCore(DataForcesAndSurcesCore &data): DataForcesAndSurcesCore() {
+
+    boost::ptr_vector<EntData>::iterator it;
+    for(it = data.nOdes.begin();it!=data.nOdes.end();it++) {
+      nOdes.push_back(new DerivedEntData(*it));
+    }
+    for(it = data.eDges.begin();it!=data.eDges.end();it++) {
+      eDges.push_back(new DerivedEntData(*it));
+    }
+    for(it = data.fAces.begin();it!=data.fAces.end();it++) {
+      fAces.push_back(new DerivedEntData(*it));
+    }
+    for(it = data.vOlumes.begin();it!=data.vOlumes.end();it++) {
+      vOlumes.push_back(new DerivedEntData(*it));
+    }
+  }
 
 ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e) {
   os << 
@@ -676,7 +721,12 @@ PetscErrorCode VolumeH1H1ElementForcesAndSurcesCore::operator()() {
   ierr = getOrderVolume(data); CHKERRQ(ierr);
   ierr = getFaceNodes(data); CHKERRQ(ierr);
 
-  /*int nb_gauss_pts = gm_rule_size(order,3);
+  int order = 1;
+  for(int ee = 0;ee<data.eDges.size();ee++) {
+    order = max(order,data.eDges[ee].getOrder());
+  }
+
+  int nb_gauss_pts = gm_rule_size(order,3);
   gaussPts.resize(4,nb_gauss_pts);
   ierr = Grundmann_Moeller_integration_points_3D_TET(
     order,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)); CHKERRQ(ierr);
@@ -690,7 +740,7 @@ PetscErrorCode VolumeH1H1ElementForcesAndSurcesCore::operator()() {
   coords.resize(num_nodes*3);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
   invJac.resize(3,3);
-  ierr = ShapeJacMBTET(&*data.nOdes[0].diffN.data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
+  ierr = ShapeJacMBTET(&*data.nOdes[0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
   ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
   try {
@@ -702,23 +752,62 @@ PetscErrorCode VolumeH1H1ElementForcesAndSurcesCore::operator()() {
   }
 
   for(
-    vector<UserDataOPerator>::iterator oit = vecUserOpNH1.begin();
+    vector<UserDataOperator*>::iterator oit = vecUserOpNH1.begin();
     oit != vecUserOpNH1.end(); oit++) {
 
-    ierr = getRowNodesIndices(data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getEdgeRowIndices(data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getFacesRowIndices(data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTetRowIndices(data,oit->col_field_name); CHKERRQ(ierr);
+    (*oit)->ptrFE = this;
+
+    ierr = getRowNodesIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+    ierr = getEdgeRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+    ierr = getFacesRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+    ierr = getTetRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+
+    ierr = getNodesFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getFacesFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getTetFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
 
     try {
-      ierr = opSetJac.opNH1(*oit); CHKERRQ(ierr);
+      ierr = (*oit)->opNH1(data); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
-  }*/
+  }
+
+  for(
+    vector<UserDataOperator*>::iterator oit = vecUserOpNH1NH1.begin();
+    oit != vecUserOpNH1NH1.end(); oit++) {
+
+    (*oit)->ptrFE = this;
+
+    ierr = getRowNodesIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+    ierr = getEdgeRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+    ierr = getFacesRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+    ierr = getTetRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+
+    ierr = getColNodesIndices(derived_data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeColIndices(derived_data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getFacesColIndices(derived_data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getTetColIndices(derived_data,(*oit)->col_field_name); CHKERRQ(ierr);
+
+    ierr = getNodesFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getFacesFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getTetFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
+
+    try {
+      ierr = (*oit)->opNH1NH1(data,derived_data); CHKERRQ(ierr);
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+
+  }
+
 
   PetscFunctionReturn(0);
 }

@@ -147,10 +147,14 @@ int main(int argc, char *argv[]) {
     TeeDevice my_tee; 
     TeeStream my_split;
 
+    DataForcesAndSurcesCore data;
+    DerivedDataForcesAndSurcesCore derived_data;
+
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
       ForcesAndSurcesCore(_mField), 
       ofs("forces_and_sources_getting_orders_indices_atom_test.txt"),
-      my_tee(cout, ofs),my_split(my_tee) {};
+      my_tee(cout, ofs),my_split(my_tee),
+      data(MBTET),derived_data(data) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -162,7 +166,6 @@ int main(int argc, char *argv[]) {
 
       my_split << "\n\nNEXT ELEM\n\n";
 
-      DataForcesAndSurcesCore data(MBTET);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getFacesSense(data); CHKERRQ(ierr);
@@ -176,8 +179,6 @@ int main(int argc, char *argv[]) {
       ierr = getEdgeRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-
-      DerivedDataForcesAndSurcesCore derived_data(data);
 
       ierr = getColNodesIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgeColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
