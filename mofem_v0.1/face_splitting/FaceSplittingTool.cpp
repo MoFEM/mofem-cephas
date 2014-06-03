@@ -492,7 +492,7 @@ PetscErrorCode FaceSplittingTools::getOpositeForntEdges(bool createMeshset,int v
   }
 
   if(verb>0) {
-    if(pcomm->rank()==1) {
+    if(pcomm->rank()==0) {
       rval = mField.get_moab().write_file("opositeFrontEdges.vtk","VTK","",&opositeFrontEdges,1); CHKERR_PETSC(rval);
     }
   }
