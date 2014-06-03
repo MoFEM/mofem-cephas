@@ -739,9 +739,17 @@ PetscErrorCode VolumeH1H1ElementForcesAndSurcesCore::operator()() {
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
   coords.resize(num_nodes*3);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+  vOlume = Shape_intVolumeMBTET(&*data.nOdes[0].getDiffN().data().begin(),&*coords.data().begin()); 
   invJac.resize(3,3);
   ierr = ShapeJacMBTET(&*data.nOdes[0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
   ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
+
+  coordsAtGaussPts.resize(nb_gauss_pts,3);
+  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    for(int dd = 0;dd<3;dd++) {
+      coordsAtGaussPts(gg,dd) = cblas_ddot(4,&data.nOdes[0].getN()(gg,0),1,&coords[dd],3);
+    }
+  }
 
   try {
     ierr = opSetJac.opNH1(data); CHKERRQ(ierr);

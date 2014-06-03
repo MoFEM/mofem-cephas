@@ -79,7 +79,6 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   thermal_conductivity_atom_compare
   projection_from_10node_tet_atom_compare
   cubit_meshset_loop_test_compare
-  field_functions_test_compare
   forces_and_sources_getting_orders_indices_test_compare
   forces_and_sources_getting_mult_H1_H1_test_compare
   forces_and_sources_calculate_jacobian_test_compare

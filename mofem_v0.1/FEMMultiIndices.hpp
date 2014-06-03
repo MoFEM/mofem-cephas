@@ -328,8 +328,8 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
   inline unsigned int get_part() const { return part; };
   inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return rows_dofs; };
   inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return cols_dofs; };
-  PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity *dof_ptr) const;
-  PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity *dof_ptr) const;
+  PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
+  PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
   friend ostream& operator<<(ostream& os,const NumeredMoFEMFiniteElement& e) {
     os << "part " << e.part << " " << *(e.fe_ptr);
     return os;

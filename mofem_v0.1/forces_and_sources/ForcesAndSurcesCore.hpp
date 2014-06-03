@@ -64,7 +64,7 @@ struct DataForcesAndSurcesCore {
     ublas::vector<FieldData> fieldData;
     ublas::matrix<FieldData> N;
     ublas::matrix<FieldData> diffN;
-
+    
   };
 
   ublas::matrix<DofIdx> facesNodes;
@@ -88,18 +88,8 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
   struct DerivedEntData: public DataForcesAndSurcesCore::EntData {
     DataForcesAndSurcesCore::EntData &entData;
     DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): entData(ent_data)  {}
-    virtual int getSense() const { return entData.getSense(); }
-    virtual ApproximationOrder getOrder() const { return entData.getOrder(); }
-    virtual const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
-    virtual const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
-    virtual const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
-    virtual const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
-    virtual int& getSense() { return entData.getSense(); }
-    virtual ApproximationOrder& getOrder() { return entData.getOrder(); }
-    virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
-    virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
-    virtual ublas::matrix<FieldData>& getN() { return entData.getN(); }
-    virtual ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
+    const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
+    ublas::vector<DofIdx>& getIndices() { return iNdices; }
 
     private:
     ublas::vector<DofIdx> iNdices;
@@ -254,13 +244,12 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   ErrorCode rval;
   PetscErrorCode ierr;
+  double vOlume;
   ublas::vector<double> coords;
   ublas::matrix<double> invJac;
   ublas::matrix<double> gaussPts;
+  ublas::matrix<double> coordsAtGaussPts;
   OpSetJac opSetJac;
-
-  map<string,ublas::matrix<FieldData> > map_data_at_GaussPt;
-  map<string,ublas::matrix<FieldData> > map_dataGrad_at_GaussPt;
 
   struct UserDataOperator: public DataOperator {
     string row_field_name;
