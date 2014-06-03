@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -119,7 +119,6 @@ int main(int argc, char *argv[]) {
     char outName2[PETSC_MAX_PATH_LEN]="out_post_proc.vtk";
     ierr = PetscOptionsGetString(PETSC_NULL,"-my_post_out",outName2,sizeof(outName2),&flg); CHKERRQ(ierr);
     
-    
     //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
     double myapplied_strain[6];
     int nmax=6;
@@ -127,7 +126,7 @@ int main(int argc, char *argv[]) {
     ublas::vector<FieldData> applied_strain;
     applied_strain.resize(6);
     cblas_dcopy(6, &myapplied_strain[0], 1, &applied_strain(0), 1);
-    //    cout<<"applied_strain ="<<applied_strain<<endl;
+    cout<<"applied_strain ="<<applied_strain<<endl;
 
     
     //Read mesh to MOAB
@@ -245,6 +244,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_field("Lagrange_mul_disp_rigid_trans",NoField,3); CHKERRQ(ierr);  //To control the rigid body motion (3 Traslations and 3 rotations)
     ierr = mField.add_field("Lagrange_mul_disp_rigid_rotation",NoField,3); CHKERRQ(ierr); //Controla 3 rigid body rotations about x, y and z axis
 
+    
     //FE
     ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
     ierr = mField.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
@@ -294,6 +294,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
     //============================================================================================================
 
+    
     //Define rows/cols and element data for C2 and C2T (for lagrange multipliers to contol the rigid body rotations)
     //============================================================================================================
     //C2 row as Lagrange_elem_rigid_trans and col as DISPLACEMENT
@@ -309,7 +310,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
     //============================================================================================================
 
-    
      //define problems
     ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     
@@ -344,6 +344,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
 
+    
     //=======================================================================================================
     //Add Periodic Prisims Between Triangles on -ve and +ve faces to implement periodic bounary conditions
     //=======================================================================================================
@@ -379,7 +380,7 @@ int main(int argc, char *argv[]) {
         if(TriCen[1]>=0) TriCen[1]=double(int(TriCen[1]*roundfact+0.5))/roundfact;  else TriCen[1]=double(int(TriCen[1]*roundfact-0.5))/roundfact;
         if(TriCen[2]>=0) TriCen[2]=double(int(TriCen[2]*roundfact+0.5))/roundfact;  else TriCen[2]=double(int(TriCen[2]*roundfact-0.5))/roundfact;
 //        if(count1>2264){
-//            cout<<"it= "<<*it <<"   TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
+//            cout<<"   TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
 //        }
         count1++;
         //fill the multi-index container with centriod coordinates and triangle handles
@@ -427,7 +428,7 @@ int main(int argc, char *argv[]) {
         Face_CenPos_Handle_varPos.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
     }
     
-    
+
 //    typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;
 //    Tri_Hand_iterator Tri_Pos;
 //    count1=1;
@@ -438,7 +439,7 @@ int main(int argc, char *argv[]) {
 
     
     
-////    //Find minimum and maximum X, Y and Z coordinates of the RVE (using multi-index container)
+//    //Find minimum and maximum X, Y and Z coordinates of the RVE (using multi-index container)
     double XcoordMin, YcoordMin, ZcoordMin, XcoordMax, YcoordMax, ZcoordMax;
     typedef Face_CenPos_Handle_multiIndex::index<xcoord_tag>::type::iterator Tri_Xcoord_iterator;
     typedef Face_CenPos_Handle_multiIndex::index<ycoord_tag>::type::iterator Tri_Ycoord_iterator;
@@ -454,14 +455,14 @@ int main(int argc, char *argv[]) {
     YcoordMax_it=Face_CenPos_Handle_varPos.get<ycoord_tag>().end();    YcoordMax_it--; YcoordMax=YcoordMax_it->ycoord;
     ZcoordMin_it=Face_CenPos_Handle_varNeg.get<zcoord_tag>().begin();                  ZcoordMin=ZcoordMin_it->zcoord;
     ZcoordMax_it=Face_CenPos_Handle_varPos.get<zcoord_tag>().end();    ZcoordMax_it--; ZcoordMax=ZcoordMax_it->zcoord;
+
+    cout<<"XcoordMin "<<XcoordMin << "      XcoordMax "<<XcoordMax <<endl;
+    cout<<"YcoordMin "<<YcoordMin << "      YcoordMax "<<YcoordMax <<endl;
+    cout<<"ZcoordMin "<<ZcoordMin << "      ZcoordMax "<<ZcoordMax <<endl;
     
-//    cout<<"XcoordMin "<<XcoordMin << "      XcoordMax "<<XcoordMax <<endl;
-//    cout<<"YcoordMin "<<YcoordMin << "      YcoordMax "<<YcoordMax <<endl;
-//    cout<<"ZcoordMin "<<ZcoordMin << "      ZcoordMax "<<ZcoordMax <<endl;
-    
-//    XcoordMin =-1.5;      XcoordMax =1.5;
-//    YcoordMin =-0.15;      YcoordMax =0.15;
-//    ZcoordMin =-0.195;      ZcoordMax =0.585;
+    XcoordMin =-1.5;      XcoordMax =1.5;
+    YcoordMin =-0.15;      YcoordMax =0.15;
+    ZcoordMin =-0.195;      ZcoordMax =0.585;
 
     //Creating Prisims between triangles on -ve and +ve faces
     typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;
@@ -479,12 +480,13 @@ int main(int argc, char *argv[]) {
         Tri_Neg=Face_CenPos_Handle_varNeg.get<Tri_Hand_tag>().find(*it);
 //        cout<<"Tri_Neg->xcoord= "<<Tri_Neg->xcoord << "   Tri_Neg->ycoord "<< Tri_Neg->ycoord << "   Tri_Neg->zcoord= "<< Tri_Neg->zcoord <<endl;
         //corresponding +ve triangle
-        if(Tri_Neg->xcoord==XcoordMin){XPos=XcoordMax;              YPos=Tri_Neg->ycoord;  ZPos=Tri_Neg->zcoord;};
-        if(Tri_Neg->ycoord==YcoordMin){XPos=YPos=Tri_Neg->xcoord;   YPos=YcoordMax;        ZPos=Tri_Neg->zcoord;};
-        if(Tri_Neg->zcoord==ZcoordMin){XPos=YPos=Tri_Neg->xcoord;   YPos=Tri_Neg->ycoord;  ZPos=ZcoordMax;      };
-        Tri_Pos=Face_CenPos_Handle_varPos.get<Composite_xyzcoord>().find(boost::make_tuple(XPos, YPos, ZPos));
+        if(Tri_Neg->xcoord==XcoordMin){XPos=XcoordMax;         YPos=Tri_Neg->ycoord;  ZPos=Tri_Neg->zcoord;};
+        if(Tri_Neg->ycoord==YcoordMin){XPos=Tri_Neg->xcoord;   YPos=YcoordMax;        ZPos=Tri_Neg->zcoord;};
+        if(Tri_Neg->zcoord==ZcoordMin){XPos=Tri_Neg->xcoord;   YPos=Tri_Neg->ycoord;  ZPos=ZcoordMax;      };
         
 //        cout<<"Tri_Neg->xcoord= "<<Tri_Neg->xcoord << "   Tri_Neg->ycoord "<< Tri_Neg->ycoord << "   Tri_Neg->zcoord= "<< Tri_Neg->zcoord <<endl;
+//        cout<<"XPos= "<<XPos << "   YPos "<< YPos << "   ZPos= "<< ZPos <<endl;
+        Tri_Pos=Face_CenPos_Handle_varPos.get<Composite_xyzcoord>().find(boost::make_tuple(XPos, YPos, ZPos));
 //        cout<<"Tri_Pos->xcoord= "<<Tri_Pos->xcoord << "   Tri_Pos->ycoord "<< Tri_Pos->ycoord << "   Tri_Pos->zcoord= "<< Tri_Pos->zcoord <<endl;
 
         //+ve and -ve nodes and their coords (+ve and -ve tiangles nodes can have matching problems, which can produce twisted prism)
@@ -504,7 +506,7 @@ int main(int argc, char *argv[]) {
 //        for(int ii=0; ii<3; ii++){
 //            cout<<"xcoord= "<<CoordNodePos[3*ii] << "   ycoord= "<< CoordNodePos[3*ii+1] << "   zcoord= "<< CoordNodePos[3*ii+2] <<endl;
 //        }
-        
+
         //Match exact nodes to each other to avoide the problem of twisted prisms
         double XNodeNeg, YNodeNeg, ZNodeNeg, XNodePos, YNodePos, ZNodePos;
         for(int ii=0; ii<3; ii++){
@@ -551,7 +553,7 @@ int main(int argc, char *argv[]) {
 //        sss << "Prism" << count << ".vtk"; count++;
 //        rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset1,1); CHKERR_PETSC(rval);
     }
-    
+
 
     //cout<<"PrismRange "<<PrismRange<<endl;
     //Saving prisms in interface.vtk
@@ -559,7 +561,7 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,out_meshset1); CHKERR_PETSC(rval);
     rval = moab.add_entities(out_meshset1,PrismRange); CHKERR_PETSC(rval);
     rval = moab.write_file("Prisms.vtk","VTK","",&out_meshset1,1); CHKERR_PETSC(rval);
-
+    cout << "Prisms.vtk output" <<endl;
     
     //Adding Prisims to Element Lagrange_elem (to loop over these prisims)
     EntityHandle PrismRangeMeshset;
@@ -700,7 +702,7 @@ int main(int argc, char *argv[]) {
         }
     }
     
-//    alpha = 1;
+//    alpha = 500;
     cout<<"alpha   = "<<alpha<<endl;
 	
     MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
@@ -772,13 +774,21 @@ int main(int argc, char *argv[]) {
     cout<<"Final RVE_volume = "<< RVE_volume <<endl;
     cout<<"Actual RVE_volume = "<< 3*0.3*0.78<<endl;  //Lx=3, Ly=0.3; Lz=0.78
     
+    //create a vector for 6 components of homogenized stress
+    Vec Stress_Homo;
+    ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
+    ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+
 //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(mField,&myDirihletBC,Aij,D,F,&RVE_volume,applied_strain);
+    ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(mField,&myDirihletBC,Aij,D,F,&RVE_volume,applied_strain, Stress_Homo);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressPeriodic);  CHKERRQ(ierr);
+
+    if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
     //====================================================================================================================================
  
-    
+
      PostProcVertexMethod ent_method(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
     

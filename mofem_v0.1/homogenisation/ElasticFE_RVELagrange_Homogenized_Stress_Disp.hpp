@@ -28,11 +28,11 @@ namespace MoFEM {
 struct ElasticFE_RVELagrange_Homogenized_Stress_Disp: public ElasticFE_RVELagrange_Disp {
 
     Vec DVec;
-    Vec Stress_Homo;
     double *RVE_volume;
+    Vec Stress_Homo;
 
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume,ublas::vector<FieldData> _applied_strain):
-    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F, _applied_strain), DVec(_D),RVE_volume(_RVE_volume){};
+    ElasticFE_RVELagrange_Homogenized_Stress_Disp(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume,ublas::vector<FieldData> _applied_strain, Vec& _Stress_Homo):
+    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F, _applied_strain), DVec(_D),RVE_volume(_RVE_volume), Stress_Homo(_Stress_Homo){};
     
     
     
@@ -42,11 +42,6 @@ struct ElasticFE_RVELagrange_Homogenized_Stress_Disp: public ElasticFE_RVELagran
         PetscSynchronizedFlush(PETSC_COMM_WORLD);
         ierr = PetscTime(&v1); CHKERRQ(ierr);
         ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-        
-        //create a vector for 6 components of homogenized stress
-        ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
-        ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-
         PetscFunctionReturn(0);
     }
 
@@ -62,8 +57,6 @@ struct ElasticFE_RVELagrange_Homogenized_Stress_Disp: public ElasticFE_RVELagran
         PetscSynchronizedFlush(PETSC_COMM_WORLD);
         
         ierr = VecScale(Stress_Homo, 1.0/(*RVE_volume)); CHKERRQ(ierr);
-        if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
-        ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
         
         PetscFunctionReturn(0);
     }

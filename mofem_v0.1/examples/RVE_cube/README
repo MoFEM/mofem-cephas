@@ -7,10 +7,9 @@ Check before run
 Example run
 ===========
 
-make && mpirun -np 1 ./RVE_Cube_Disp -my_file ~/Desktop/RVE_Meshes/Cube_RVE/Cube_RVE_Disp.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
+make && mpirun -np 1 ./RVE_Cube_Disp -my_file ~/Desktop/RVE_Meshes/Cube_RVE/Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
-make && mpirun -np 1 ./RVE_Cube_Traction -my_file ~/Desktop/RVE_Meshes/Cube_RVE/Cube_RVE_Traction.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
+make && mpirun -np 1 ./RVE_Cube_Traction -my_file ~/Desktop/RVE_Meshes/Cube_RVE/Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
-make && mpirun -np 1 ./RVE_Cube_Periodic -my_file ~/Desktop/RVE_Meshes/Cube_RVE/Cube_RVE_Periodic.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
-
+make && mpirun -np 1 ./RVE_Cube_Periodic -my_file ~/Desktop/RVE_Meshes/Cube_RVE/Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 

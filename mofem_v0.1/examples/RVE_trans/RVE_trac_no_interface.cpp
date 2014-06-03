@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -493,9 +493,18 @@ int main(int argc, char *argv[]) {
     cout<<"Final RVE_volume = "<< RVE_volume <<endl;
     cout<<"Actual RVE_volume = "<< 3*0.3*0.78<<endl;  //Lx=3, Ly=0.3; Lz=0.78
     
+    //create a vector for 6 components of homogenized stress
+    Vec Stress_Homo;
+    ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
+    ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+
 //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTraction(mField,&myDirihletBC,Aij,D,F,&RVE_volume,applied_strain);
+    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTraction(mField,&myDirihletBC,Aij,D,F,&RVE_volume,applied_strain, Stress_Homo);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTraction);  CHKERRQ(ierr);
+
+    if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
     //=============================================================================================================================================
  
     

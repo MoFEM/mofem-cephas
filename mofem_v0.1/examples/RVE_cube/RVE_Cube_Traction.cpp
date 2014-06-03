@@ -195,8 +195,8 @@ int main(int argc, char *argv[]) {
     //add finite elements entities
     ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
     Range SurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(103,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
     ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
@@ -343,9 +343,19 @@ int main(int argc, char *argv[]) {
     ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
     cout<<"Final RVE_volume = "<< RVE_volume <<endl;
 
+    //create a vector for 6 components of homogenized stress
+    Vec Stress_Homo;
+    ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
+    ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+
 ////    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTraction(mField,&myDirihletBC,Aij,D,F,&RVE_volume,applied_strain);
+    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTraction(mField,&myDirihletBC,Aij,D,F,&RVE_volume,applied_strain, Stress_Homo);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTraction);  CHKERRQ(ierr);
+    
+    if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+    
     //=======================================================================================================================================================
     
   PostProcVertexMethod ent_method(moab);

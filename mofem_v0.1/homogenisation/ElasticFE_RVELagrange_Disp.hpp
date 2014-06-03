@@ -49,15 +49,15 @@ struct ElasticFE_RVELagrange_Disp: public FEMethod_UpLevelStudent {
       rowNMatrices.resize(1+3+1);
       ColGlob.resize(1+3+1);
     
-      g_TRI_dim = 13;
-      g_NTRI.resize(3*g_TRI_dim);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,g_TRI_dim);
-      G_W_TRI = G_TRI_W13;
-
-//      g_TRI_dim = 28;
+//      g_TRI_dim = 13;
 //      g_NTRI.resize(3*g_TRI_dim);
-//      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
-//      G_W_TRI = G_TRI_W28;
+//      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,g_TRI_dim);
+//      G_W_TRI = G_TRI_W13;
+
+      g_TRI_dim = 28;
+      g_NTRI.resize(3*g_TRI_dim);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
+      G_W_TRI = G_TRI_W28;
           
     
       row_mat=0;  //row_mat=0 for nodes   [1,2,3] for edges, 4 for face (for triangle)

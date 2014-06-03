@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
