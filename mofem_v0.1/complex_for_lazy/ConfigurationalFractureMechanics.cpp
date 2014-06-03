@@ -2011,6 +2011,22 @@ PetscErrorCode MySnesConvernceTest_SNESLINESEARCHBT(SNES snes,int it,double xnor
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode MySnesConvernceTest_SNESLINESEARCHL2(SNES snes,int it,double xnorm,double gnorm,double fnorm,SNESConvergedReason *reason,void *void_ctx) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = SNESConvergedDefault(snes,it,xnorm,gnorm,fnorm,reason,PETSC_NULL); CHKERRQ(ierr);
+  const PetscReal div = 10e3;
+  if(fnorm > div) {
+    *reason = SNES_DIVERGED_FUNCTION_DOMAIN;
+  }
+  if(it>0) {
+    SNESLineSearch linesearch;
+    ierr = SNESGetLineSearch(snes,&linesearch); CHKERRQ(ierr);
+    ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+  }
+  PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(FieldInterface& mField,SNES *snes) {
   PetscFunctionBegin;
@@ -2400,19 +2416,23 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   PetscInt maxit,maxf;
   ierr = SNESGetTolerances(*snes,&atol,&rtol,&stol,&maxit,&maxf); CHKERRQ(ierr);
 
-  /*ierr = SNESSetTolerances(*snes,atol,rtol,stol,1,maxf); CHKERRQ(ierr);
-  ierr = SNESSetConvergenceTest(*snes,SNESSkipConverged,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBASIC); CHKERRQ(ierr);
-  ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
-  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);*/
-  //ierr = SNESSetTolerances(*snes,atol,rtol,stol,maxit,maxf); CHKERRQ(ierr);
-  //ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
   ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBASIC); CHKERRQ(ierr);
   ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest_SNESLINESEARCHBT,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+  SNESConvergedReason reason;
+  ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
+  if(reason < 0) {
+    ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
+    ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest_SNESLINESEARCHL2,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
+    ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
+    int its;
+    ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+  }
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   *(MySpatialFE.t_val) = arc_ctx.get_FieldData();
@@ -2436,9 +2456,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     "COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",Col,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
   energy = 0.5*lambda*energy;
-
-  SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
 
   int verb = 1;
   if(reason>=0) {
@@ -3349,7 +3366,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 	{ //cat mesh
   
 	  FaceSplittingTools face_splitting(mField);
-	  ierr = main_refine_and_meshcat(mField,face_splitting,false); CHKERRQ(ierr);
+	  ierr = main_refine_and_meshcat(mField,face_splitting); CHKERRQ(ierr);
 	  ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
 
 	}
