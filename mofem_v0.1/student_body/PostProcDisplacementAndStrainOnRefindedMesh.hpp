@@ -324,7 +324,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
   }
 
-	virtual PetscErrorCode calulateD(double _lambda,double _mu) {
+	virtual PetscErrorCode calculateD(double _lambda,double _mu) {
 		PetscFunctionBegin;
 		
 		D = _lambda*D_lambda + _mu*D_mu;
@@ -382,7 +382,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 			//Calculated D Matrix
 			double _lambda,_mu;
 			ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
-			ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+			ierr = calculateD(_lambda,_mu); CHKERRQ(ierr);
 
       //Higher order approximation of geometry
       ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);

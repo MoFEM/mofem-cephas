@@ -133,27 +133,29 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 		set_PhysicalEquationNumber(neohookean);
 		}
 		break;
-	      case 13: {
-		set_PhysicalEquationNumber(eberleinholzapfel1);
-		EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
-		EberleinHolzapfel1_mat_parameters.k1 = mydata.data.User2;
-		EberleinHolzapfel1_mat_parameters.k2 = 0;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.User3;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.User4;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.User5;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.User6;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.User7;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.User8;
-		*ptr_matctx = &EberleinHolzapfel1_mat_parameters;
-		}
-		break;
 	      default: {
-		SETERRQ(PETSC_COMM_SELF,1,
-		  "Materail not defined (Attribute 3):\n"
-		  "\t10 = hooke\n"
-		  "\t11 = stvenant_kirchhoff\n"
-		  "\t12 = neohookean\n"
-		  "\t13 = eberleinholzapfel1\n");
+		if(it->get_Cubit_name().compare(0,29,"MAT_ELASTIC_EberleinHolzapfel") == 0) {
+		  Mat_Elastic_EberleinHolzapfel1 mydata;
+		  ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);     
+		  set_PhysicalEquationNumber(eberleinholzapfel1);
+		  EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
+		  EberleinHolzapfel1_mat_parameters.k1 = mydata.data.k1;
+		  EberleinHolzapfel1_mat_parameters.k2 = mydata.data.k2;
+		  EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.a0x;
+		  EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.a0y;
+		  EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.a0z;
+		  EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.a1x;
+		  EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.a1y;
+		  EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.a1z;
+		  *ptr_matctx = &EberleinHolzapfel1_mat_parameters;
+		} else {
+		  SETERRQ(PETSC_COMM_SELF,1,
+		    "Materail not defined (Attribute 3):\n"
+		    "\t10 = hooke\n"
+		    "\t11 = stvenant_kirchhoff\n"
+		    "\t12 = neohookean\n"
+		    "\tname is MAT_ELASTIC_EberleinHolzapfel = eberleinholzapfel1\n");
+		}
 	      }
 	    }
 	  }

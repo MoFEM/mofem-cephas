@@ -289,7 +289,7 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
             
             double _lambda,_mu;
             ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
-            //ierr = calulateD(_lambda,_mu); CHKERRQ(ierr);
+            //ierr = calculateD(_lambda,_mu); CHKERRQ(ierr);
             
             //Gradient at Gauss points; 
             vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -372,7 +372,7 @@ struct TranIsotropicElasticFEMethod: public ElasticFEMethod {
         PetscFunctionReturn(0);
     }
     
-    PetscErrorCode calulateD(double _lambda,double _mu) {
+    PetscErrorCode calculateD(double _lambda,double _mu) {
         PetscFunctionBegin;
         PetscFunctionReturn(0);
     }
