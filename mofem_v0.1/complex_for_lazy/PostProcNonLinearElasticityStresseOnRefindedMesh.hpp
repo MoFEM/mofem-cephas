@@ -31,8 +31,8 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
   FEMethod_ComplexForLazy &fe_method;
 
-  Tag th_F,th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions;
-  PostProcStressNonLinearElasticity(Interface& _moab,FEMethod_ComplexForLazy &_fe_method): 
+  Tag th_F,th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions,th_fibreDirection1,th_fibreDirection2;
+  PostProcStressNonLinearElasticity(Interface& _moab,FEMethod_ComplexForLazy &_fe_method):
     PostProcDisplacementsOnRefMesh(_moab,_fe_method.spatial_field_name),fe_method(_fe_method) {
 
     double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0 };
@@ -45,6 +45,9 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
     rval = moab_post_proc.tag_get_handle("TEMPERATURE_VAL",1,MB_TYPE_DOUBLE,th_themp,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
     rval = moab_post_proc.tag_get_handle("MESH_NODAL_POSITIONS_VAL",3,MB_TYPE_DOUBLE,th_positions,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+
+    rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION_1",3,MB_TYPE_DOUBLE,th_fibreDirection1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION_2",3,MB_TYPE_DOUBLE,th_fibreDirection2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
   }
 
@@ -96,12 +99,12 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	if(fe_method.diffH1edgeNinvJac[ee].size()==0) {
 	  fe_method.diff_edgeNinvJac[ee] = NULL;
 	} else {
-	 fe_method.diff_edgeNinvJac[ee] = &(fe_method.diffH1edgeNinvJac[ee])[0]; 
+	 fe_method.diff_edgeNinvJac[ee] = &(fe_method.diffH1edgeNinvJac[ee])[0];
 	}
 	if(fe_method.H1edgeN[ee].size()==0) {
 	  fe_method.edgeN[ee] = NULL;
 	} else {
-	  fe_method.edgeN[ee] = &(fe_method.H1edgeN[ee])[0]; 
+	  fe_method.edgeN[ee] = &(fe_method.H1edgeN[ee])[0];
 	}
       }
       int ff = 0;
@@ -117,7 +120,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	if(fe_method.H1faceN[ff].size()==0) {
 	  fe_method.faceN[ff] = NULL;
 	} else {
-	  fe_method.faceN[ff] = &(fe_method.H1faceN[ff])[0]; 
+	  fe_method.faceN[ff] = &(fe_method.H1faceN[ff])[0];
 	}
       }
       fe_method.diff_volumeNinvJac = &fe_method.diffH1elemNinvJac[0];
@@ -143,10 +146,10 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	      &fe_method.maxOrderEdgeH1[0],&fe_method.maxOrderFaceH1[0],fe_method.maxOrderElemH1,
 	      &fe_method.order_X_edges[0],&fe_method.order_X_faces[0],fe_method.order_X_volume,
 	      &fe_method.order_x_edges[0],&fe_method.order_x_faces[0],fe_method.order_x_volume,
-	      fe_method.V,_lambda,_mu,fe_method.ptr_matctx, 
-	      &fe_method.diffNTETinvJac[0],&fe_method.diff_edgeNinvJac[0],&fe_method.diff_faceNinvJac[0],fe_method.diff_volumeNinvJac, 
-	      &fe_method.dofs_X.data()[0],&fe_method.dofs_X_edge[0],&fe_method.dofs_X_face[0],&*fe_method.dofs_X_volume.data().begin(), 
-	      &*fe_method.dofs_x.data().begin(),&fe_method.dofs_x_edge[0],&fe_method.dofs_x_face[0],&*fe_method.dofs_x_volume.data().begin(), 
+	      fe_method.V,_lambda,_mu,fe_method.ptr_matctx,
+	      &fe_method.diffNTETinvJac[0],&fe_method.diff_edgeNinvJac[0],&fe_method.diff_faceNinvJac[0],fe_method.diff_volumeNinvJac,
+	      &fe_method.dofs_X.data()[0],&fe_method.dofs_X_edge[0],&fe_method.dofs_X_face[0],&*fe_method.dofs_X_volume.data().begin(),
+	      &*fe_method.dofs_x.data().begin(),&fe_method.dofs_x_edge[0],&fe_method.dofs_x_face[0],&*fe_method.dofs_x_volume.data().begin(),
 	      //temperature
 	      _thermal_expansion,1,
 	      &g_NTET[0],&fe_method.edgeN[0],&fe_method.faceN[0],fe_method.volumeN,
@@ -178,11 +181,23 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	}
 
 	if(get_PhysicalEquationNumber()==eberleinholzapfel1) {
-	  ctx_EberleinHolzapfel1 *material_data = (ctx_EberleinHolzapfel1*)fe_method.ptr_matctx;
-	  ublas::vector<double> a1;
-	  a1.resize(3);
-	  //copy fibre 1 direction into vcetor a1
-	  cblas_dcopy(3,&material_data->fibre_vector_a1[0],1,&*a1.data().begin(),1);
+      ctx_EberleinHolzapfel1 *material_data = (ctx_EberleinHolzapfel1*)fe_method.ptr_matctx;
+      //fibre vector direction 1
+      ublas::vector<double> a1;
+      a1.resize(3);
+      //copy fibre 1 direction into vector a1
+      cblas_dcopy(3,&material_data->fibre_vector_a1[0],1,&*a1.data().begin(),1);
+      //a1 current configuration
+      a1=prod(F,a1);
+      rval = moab_post_proc.tag_set_data(th_fibreDirection1,&mit->second,1,&*a1.data().begin()); CHKERR_PETSC(rval);
+      //fibre vector direction 2
+      ublas::vector<double> a2;
+      a2.resize(3);
+      //copy fibre 2 direction into vector a2
+      cblas_dcopy(3,&material_data->fibre_vector_a2[0],1,&*a2.data().begin(),1);
+      //a2 current configuration
+      a2=prod(F,a2);
+      rval = moab_post_proc.tag_set_data(th_fibreDirection2,&mit->second,1,&*a2.data().begin()); CHKERR_PETSC(rval);
 
 	}
 
