@@ -185,20 +185,24 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 	if(get_PhysicalEquationNumber()==eberleinholzapfel1) {
       ctx_EberleinHolzapfel1 *material_data = (ctx_EberleinHolzapfel1*)fe_method.ptr_matctx;
       //fibre vector direction 1
+      ublas::vector<double> A1;
       ublas::vector<double> a1;
+      A1.resize(3);
       a1.resize(3);
       //copy fibre 1 direction into vector a1
-      cblas_dcopy(3,&material_data->fibre_vector_a1[0],1,&*a1.data().begin(),1);
+      cblas_dcopy(3,&material_data->fibre_vector_a1[0],1,&*A1.data().begin(),1);
       //a1 current configuration
-      a1=prod(F,a1);
+      a1=prod(F,A1);
       rval = moab_post_proc.tag_set_data(th_fibreDirection1,&mit->second,1,&*a1.data().begin()); CHKERR_PETSC(rval);
       //fibre vector direction 2
+      ublas::vector<double> A2;
       ublas::vector<double> a2;
+      A2.resize(3);
       a2.resize(3);
       //copy fibre 2 direction into vector a2
-      cblas_dcopy(3,&material_data->fibre_vector_a2[0],1,&*a2.data().begin(),1);
+      cblas_dcopy(3,&material_data->fibre_vector_a2[0],1,&*A2.data().begin(),1);
       //a2 current configuration
-      a2=prod(F,a2);
+      a2=prod(F,A2);
       rval = moab_post_proc.tag_set_data(th_fibreDirection2,&mit->second,1,&*a2.data().begin()); CHKERR_PETSC(rval);
 
       //Fibre Stretch 1
