@@ -633,6 +633,26 @@ PetscErrorCode FaceSplittingTools::getCrackFrontEntities(bool createMeshset,bool
       }
     }
 
+    /*int nb_common_tets;
+    do {
+      nb_common_tets = common_tets.size();
+      Range common_tets_skin;
+      rval = skin.find_skin(common_tets,false,common_tets_skin); CHKERR(rval);
+      Range common_tets_skin_tets;
+      rval = mField.get_moab().get_adjacencies(common_tets_skin,3,false,common_tets_skin_tets,Interface::UNION); CHKERR_PETSC(rval);
+      common_tets_skin_tets = subtract(common_tets_skin_tets,common_tets);
+      common_tets_skin_tets = subtract(common_tets_skin_tets,crack_surface_nodes_without_front_tets);
+      common_tets_skin_tets = intersect(common_tets_skin_tets,crack_front_edges_nodes_tets);
+      for(Range::iterator tit = common_tets_skin_tets.begin();tit != common_tets_skin_tets.end(); tit++) {
+        Range tit_faces;
+        rval = mField.get_moab().get_adjacencies(&*tit,1,2,false,tit_faces); CHKERR_PETSC(rval);
+        if(intersect(tit_faces,common_tets_skin).size()>1) {
+  	common_tets.insert(*tit);
+        }
+      }
+    } while(nb_common_tets != common_tets.size());*/
+
+    //this removing test which hannging in single node or edge
     Range::iterator tit;
     tit = common_tets.begin();
     for(;tit!=common_tets.end();) {
