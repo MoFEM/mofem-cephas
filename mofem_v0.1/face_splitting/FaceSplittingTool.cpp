@@ -492,7 +492,7 @@ PetscErrorCode FaceSplittingTools::getOpositeForntEdges(bool createMeshset,int v
   }
 
   if(verb>0) {
-    if(pcomm->rank()==1) {
+    if(pcomm->rank()==0) {
       rval = mField.get_moab().write_file("opositeFrontEdges.vtk","VTK","",&opositeFrontEdges,1); CHKERR_PETSC(rval);
     }
   }
@@ -633,6 +633,26 @@ PetscErrorCode FaceSplittingTools::getCrackFrontEntities(bool createMeshset,bool
       }
     }
 
+    /*int nb_common_tets;
+    do {
+      nb_common_tets = common_tets.size();
+      Range common_tets_skin;
+      rval = skin.find_skin(common_tets,false,common_tets_skin); CHKERR(rval);
+      Range common_tets_skin_tets;
+      rval = mField.get_moab().get_adjacencies(common_tets_skin,3,false,common_tets_skin_tets,Interface::UNION); CHKERR_PETSC(rval);
+      common_tets_skin_tets = subtract(common_tets_skin_tets,common_tets);
+      common_tets_skin_tets = subtract(common_tets_skin_tets,crack_surface_nodes_without_front_tets);
+      common_tets_skin_tets = intersect(common_tets_skin_tets,crack_front_edges_nodes_tets);
+      for(Range::iterator tit = common_tets_skin_tets.begin();tit != common_tets_skin_tets.end(); tit++) {
+        Range tit_faces;
+        rval = mField.get_moab().get_adjacencies(&*tit,1,2,false,tit_faces); CHKERR_PETSC(rval);
+        if(intersect(tit_faces,common_tets_skin).size()>1) {
+  	common_tets.insert(*tit);
+        }
+      }
+    } while(nb_common_tets != common_tets.size());*/
+
+    //this removing test which hannging in single node or edge
     Range::iterator tit;
     tit = common_tets.begin();
     for(;tit!=common_tets.end();) {
@@ -2144,7 +2164,7 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
 
   BitRefLevel maskPreserv;
   ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
-  ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv); CHKERRQ(ierr);
+  ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv,false); CHKERRQ(ierr);
   ierr = face_splitting.squashIndices(0); CHKERRQ(ierr);
  
   BitRefLevel not_split_face_ref_level;
