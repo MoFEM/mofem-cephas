@@ -4933,7 +4933,7 @@ PetscErrorCode FieldCore::remove_ents_by_bit_ref(const BitRefLevel &bit,const Bi
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent,int verb) {
   PetscFunctionBegin;
   Range ents_to_delete;
   rval = moab.get_entities_by_handle(0,ents_to_delete,false); CHKERR_PETSC(rval);
@@ -4957,7 +4957,7 @@ PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const Bi
       eit++;
     }
   }
-  { //remove parent
+  if(remove_parent) { //remove parent
     Range::iterator eit = ents_to_delete.begin();
     for(;eit != ents_to_delete.end();eit++) {
       RefMoFEMEntity_multiIndex::index<MoABEnt_MoABEnt_mi_tag>::type::iterator pit,hi_pit;
