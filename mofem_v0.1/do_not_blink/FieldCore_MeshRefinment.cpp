@@ -295,12 +295,12 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
     bitset<8> ref_tets_bit(0);
     ref_ent_by_composite::iterator miit_composite = by_composite.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
     ref_ent_by_composite::iterator hi_miit_composite = by_composite.upper_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
-    if(miit_composite!=hi_miit_composite) {
+    /*if(miit_composite!=hi_miit_composite) {
       if(distance(miit_composite,hi_miit_composite)!=(unsigned int)nb_new_tets) {
 	SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %u != %u",
 	  distance(miit_composite,hi_miit_composite),(unsigned int)nb_new_tets);
       }
-    }
+    }*/
     if(distance(miit_composite,hi_miit_composite)==(unsigned int)nb_new_tets) {
       for(int tt = 0;miit_composite!=hi_miit_composite;miit_composite++,tt++) {
 	EntityHandle tet = miit_composite->get_ref_ent();
@@ -329,7 +329,20 @@ PetscErrorCode FieldCore::refine_TET(const Range &_tets,const BitRefLevel &bit,c
       //if this element was not refined or was refined with diffrent patterns of splitted edges create new elements
       for(int tt = 0;tt<nb_new_tets;tt++) {
 	if(!ref_tets_bit.test(tt)) {
-	  rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERR_PETSC(rval);
+	  if(miit_composite!=hi_miit_composite) {
+	    Range new_tets_conns_tet;
+	    rval = moab.get_adjacencies(&new_tets_conns[4*tt],4,2,false,new_tets_conns_tet); CHKERR_PETSC(rval);
+	    if(new_tets_conns_tet.empty()) {
+	      rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERR_PETSC(rval);
+	    } else {
+	      if(new_tets_conns_tet.size()!=1) {
+		SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      }
+	      ref_tets[tt] = new_tets_conns_tet[0];
+	    }
+	  } else {
+	    rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERR_PETSC(rval);
+	  }
 	  int ref_type[2];
 	  ref_type[0] = parent_edges_bit.count();
 	  ref_type[1] = sub_type; 

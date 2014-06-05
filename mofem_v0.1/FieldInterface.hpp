@@ -517,7 +517,7 @@ struct FieldInterface {
 
   /** \brief delete enttities form mofem and moab database 
     */
-  virtual PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent = false,int verb = -1) = 0;
 
   /** \brief remove entities form mofem database
     */
