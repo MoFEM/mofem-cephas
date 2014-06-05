@@ -33,7 +33,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod { //FieldInterface::FEMethod {
+struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod { 
 
   FieldInterface& mField;
   string field_name;
@@ -145,8 +145,8 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
 	on_tag.c_str(),field_rank,MB_TYPE_DOUBLE,
 	th,MB_TAG_CREAT|MB_TAG_SPARSE,&*def_VAL.data().begin()); CHKERR_THROW(rval);
     }
-    L.resize(6);
-    ierr = Lagrange_basis(5,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
+    L.resize(max_ApproximationOrder+1);
+    ierr = Lagrange_basis(max_ApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -184,6 +184,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
     if(mField.get_moab().type_from_handle(edge)!=MBEDGE) {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only elements which are type of MBEDGE"); 
     }
+
     int num_nodes;
     const EntityHandle* conn; 
     rval = mField.get_moab().get_connectivity(edge,conn,num_nodes,false); CHKERR_PETSC(rval);
@@ -193,11 +194,12 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
     if(num_nodes == 2) {
       PetscFunctionReturn(0);
     }
+
     double approx_val = 0.25*L[dof_ptr->get_dof_order()]*dof_ptr->get_FieldData();;
     if(on_coords) {
       coords.resize(num_nodes*3);
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin());  CHKERR(rval);
-      if(dof_ptr->get_EntDofIdx() == 0) { //FIXME
+      if(dof_ptr->get_EntDofIdx() == dof_ptr->get_dof_rank()) { //add only one when higher order terms present
 	double ave_mid = (coords[3*0+dof_ptr->get_dof_rank()] + coords[3*1+dof_ptr->get_dof_rank()])*0.5;
 	coords[2*3+dof_ptr->get_dof_rank()] = ave_mid;
       }
@@ -210,7 +212,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       if(tag_size != dof_ptr->get_max_rank()) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      if(dof_ptr->get_EntDofIdx() == 0) { //FIXME
+      if(dof_ptr->get_EntDofIdx() == dof_ptr->get_dof_rank()) { //add only one when higher order terms present
 	double ave_mid = (tag_value[0][dof_ptr->get_dof_rank()] + tag_value[1][dof_ptr->get_dof_rank()])*0.5;
 	tag_value[2][dof_ptr->get_dof_rank()] = ave_mid;
       }

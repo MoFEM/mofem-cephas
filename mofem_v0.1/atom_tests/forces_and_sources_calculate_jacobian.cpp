@@ -214,9 +214,9 @@ int main(int argc, char *argv[]) {
       ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
-	ierr = opSetJac.opNH1(data); CHKERRQ(ierr);
-	ierr = opPrintJac.opNH1(data); CHKERRQ(ierr);
-	ierr = opGetData_FIELD1.opNH1(data); CHKERRQ(ierr);
+	ierr = opSetJac.op(data); CHKERRQ(ierr);
+	ierr = opPrintJac.op(data); CHKERRQ(ierr);
+	ierr = opGetData_FIELD1.op(data); CHKERRQ(ierr);
       } catch (exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;

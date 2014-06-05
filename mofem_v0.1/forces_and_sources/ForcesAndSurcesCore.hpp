@@ -90,6 +90,17 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): entData(ent_data)  {}
     const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
     ublas::vector<DofIdx>& getIndices() { return iNdices; }
+    const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
+    ublas::vector<FieldData>& getFieldData() { return fieldData; }
+
+    int getSense() const { return entData.getSense(); }
+    ApproximationOrder getOrder() const { return entData.getOrder(); }
+    const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
+    const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
+    int& getSense() { return entData.getSense(); }
+    ApproximationOrder& getOrder() { return entData.getOrder(); }
+    ublas::matrix<FieldData>& getN() { return entData.getN(); }
+    ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
 
     private:
     ublas::vector<DofIdx> iNdices;
@@ -184,7 +195,7 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode opNH1NH1(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data);
+  PetscErrorCode opSymmetric(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data);
 
   virtual PetscErrorCode doWork(
     int side,
@@ -194,7 +205,7 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode opNH1(DataForcesAndSurcesCore &data);
+  PetscErrorCode op(DataForcesAndSurcesCore &data);
 
 
 };

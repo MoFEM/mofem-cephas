@@ -80,7 +80,7 @@ add_executable(forces_and_sources_testing_volume_element forces_and_sources_test
 target_link_libraries(forces_and_sources_testing_volume_element mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 add_executable(forces_and_sources_testing_field_approximation forces_and_sources_testing_field_approximation.cpp) 
-target_link_libraries(forces_and_sources_testing_field_approximation mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+target_link_libraries(forces_and_sources_testing_field_approximation mofem_forces_and_sources mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(forces_and_sources_body_force_atom_test forces_and_sources_body_force_atom_test.cpp)
 target_link_libraries(forces_and_sources_body_force_atom_test mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
@@ -265,4 +265,11 @@ add_test(forces_and_sources_testing_volume_element_test
 add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_volume_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt)
+
+add_test(forces_and_sources_testing_field_approximation_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_field_approximation -my_file elasticity_atom_test_01X_pressure.cub 
+  -ksp_monitor -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist )
+add_test(forces_and_sources_testing_field_approximation_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_field_approximation.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_field_approximation.txt)
 

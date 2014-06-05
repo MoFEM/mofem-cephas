@@ -300,7 +300,7 @@ struct FieldCore: public FieldInterface {
   string get_BitFieldId_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const string& name) const;
-  bool check_field(const string& name) const;
+    bool check_field(const string& name) const;
   const MoFEMField* get_field_structure(const string& name);
 
   //MoFEMFiniteElement

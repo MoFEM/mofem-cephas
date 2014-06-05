@@ -27,6 +27,10 @@
 #include <fstream>
 #include <iostream>
 
+#include "PostProcVertexMethod.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "Projection10NodeCoordsOnField.hpp"
+
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -41,9 +45,9 @@ struct MyFunApprox {
   ublas::vector<double> result;
   ublas::vector<double>& operator()(double x, double y, double z) {
     result.resize(3);
-    result[0] = x*x;
-    result[1] = y*y;
-    result[3] = z*z;
+    result[0] = x;
+    result[1] = y;
+    result[2] = z;
     return result;
   }     
 
@@ -118,10 +122,9 @@ int main(int argc, char *argv[]) {
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 3;
-  ierr = mField.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTET,"FIELD1",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
 
   /****/
@@ -143,56 +146,90 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  FieldApproximation<MyFunApprox> field_approximation(mField,"TEST_PROBLEM");
+  Mat A;
+  ierr = mField.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
+  Vec D,F;
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",Col,&D); CHKERRQ(ierr);
+
+  MyFunApprox function_evaluator;
+  FieldApproximation<MyFunApprox> field_approximation(mField);
+  field_approximation.loopMatrixAndVector(
+    "TEST_PROBLEM","TEST_FE","FIELD1",A,F,function_evaluator);
+
+  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  KSP solver;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,A,A,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+  ierr = KSPSetUp(solver); CHKERRQ(ierr);
+
+  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
+
+  PostProcDisplacementsOnRefMesh fe_postproc(moab,"FIELD1");
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe_postproc);  CHKERRQ(ierr);
+  if(pcomm->rank()==0) {
+    rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
+  }
+
+  EntityHandle fe_meshset = mField.get_finite_element_meshset("TEST_FE");
+  Range tets;
+  rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+  Range tets_edges;
+  rval = moab.get_adjacencies(tets,1,false,tets_edges,Interface::UNION); CHKERR(rval);
+  EntityHandle edges_meshset;
+  rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERR_PETSC(rval);
+  rval = moab.add_entities(edges_meshset,tets); CHKERR_PETSC(rval);
+  rval = moab.add_entities(edges_meshset,tets_edges); CHKERR_PETSC(rval);
+  rval = moab.convert_entities(edges_meshset,true,false,false); CHKERR_PETSC(rval);
+
+  ProjectionFieldOn10NodeTet ent_method_field1_on_10nodeTet(mField,"FIELD1",true,false,"FIELD1");
+  ierr = mField.loop_dofs("FIELD1",ent_method_field1_on_10nodeTet); CHKERRQ(ierr);
+  ent_method_field1_on_10nodeTet.set_nodes = false;
+  ierr = mField.loop_dofs("FIELD1",ent_method_field1_on_10nodeTet); CHKERRQ(ierr);
+
+  //PostProcVertexMethod post_proc(moab,"FIELD1");
+  //ierr = mField.loop_dofs("TEST_PROBLEM","FIELD1",Row,post_proc); CHKERRQ(ierr);
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("TEST_PROBLEM","TEST_FE",out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_testing_volume_element.txt");
+  ofstream ofs("forces_and_sources_testing_field_approximation.txt");
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
-  /*struct MyOp: public VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator {
+  const MoFEMProblem *problem_ptr;
+  ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
+  map<EntityHandle,double> m0,m1,m2;
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
 
-    TeeStream &my_split;
-    MyOp(TeeStream &_my_split):
-      VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD2"),
-      my_split(_my_split) {}
+    //my_split.precision(3);
+    //my_split.setf(std::ios::fixed);
+    //my_split << dit->get_petsc_gloabl_dof_idx() << " " << dit->get_FieldData() << endl;
 
-    PetscErrorCode doWork(
-      int side,
-      EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
-      my_split << "NH1" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode doWork(
-      int row_side,int col_side,
-      EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
-      PetscFunctionBegin;
-      my_split << "NH1NH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "NH1NH1" << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << row_data << endl;
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  MyOp op(my_split);
-
-  fe1.get_op_to_do_NH1().push_back(&op);
-  fe1.get_op_to_do_NH1NH1().push_back(&op);
-
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);*/
+  }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

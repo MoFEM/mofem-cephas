@@ -47,37 +47,16 @@ struct FieldApproximation {
   VolumeH1H1ElementForcesAndSurcesCore fe;
 
   FieldApproximation(
-    FieldInterface &m_field,
-    const string &problem_name):
-    mField(m_field),problemName(problemName),
-    fe(m_field) {}
-
-  Mat A;
-  Vec D,F;
-
-  PetscErrorCode createMatrixAndVector() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = mField.VecCreateGhost(problemName,Row,&F); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost(problemName,Col,&D); CHKERRQ(ierr);
-    ierr = mField.MatCreateMPIAIJWithArrays(problemName,&A); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode deleteMatrixAndVector() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = VecDestroy(&D); CHKERRQ(ierr);
-    ierr = VecDestroy(&F); CHKERRQ(ierr);
-    ierr = MatDestroy(&A); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+    FieldInterface &m_field):
+    mField(m_field),fe(m_field) {}
 
   struct OpApprox: public VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator {
 
     Mat &A;
     Vec &F;
+    FUNEVAL &functionEvaluator;
 
-    OpApprox(const string &field_name,Mat _A,Vec _F):
+    OpApprox(const string &field_name,Mat &_A,Vec &_F,FUNEVAL &function_evaluator):
       VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
       A(_A),F(_F),functionEvaluator(function_evaluator) {}
 
@@ -91,25 +70,27 @@ struct FieldApproximation {
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
+      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+
       PetscErrorCode ierr;
 
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = ptrFE->fe_ptr->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
 
-      int nb_row_dofs = row_data.getN().size2();
-      int nb_col_dofs = col_data.getN().size2();
+      int nb_row_dofs = row_data.getIndices().size()/rank;
+      int nb_col_dofs = col_data.getIndices().size()/rank;
 
       NN.resize(nb_row_dofs,nb_col_dofs);
       bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
-
+      
       for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-	double val = ptrFE->vOlume*ptrFE->gaussPts(gg,4);
+	double val = ptrFE->vOlume*ptrFE->gaussPts(3,gg);
 	cblas_dger(CblasRowMajor,
 	    nb_row_dofs,nb_col_dofs,
 	    val,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
 	    &*NN.data().begin(),nb_col_dofs);
-
       }
 
       for(int rr = 0;rr < rank; rr++) {
@@ -122,17 +103,18 @@ struct FieldApproximation {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
 
-
 	int nb_rows;
 	int nb_cols;
 	int *rows;
 	int *cols;
 	double *data = &*NN.data().begin();
 
+	ublas::vector<DofIdx> row_indices,col_indices;
+
 	if(rank > 1) {
 
-	  ublas::vector<DofIdx> row_indices( ublas::vector_slice<ublas::vector<DofIdx> >(row_data.getIndices(), ublas::slice(rr, rank, row_data.getIndices().size())));
-	  ublas::vector<DofIdx> col_indices( ublas::vector_slice<ublas::vector<DofIdx> >(col_data.getIndices(), ublas::slice(rr, rank, col_data.getIndices().size())));
+	  row_indices = ublas::vector_slice<ublas::vector<DofIdx> >(row_data.getIndices(), ublas::slice(rr, rank, row_data.getIndices().size()/rank));
+	  col_indices = ublas::vector_slice<ublas::vector<DofIdx> >(col_data.getIndices(), ublas::slice(rr, rank, col_data.getIndices().size()/rank));
 
 	  nb_rows = row_indices.size();
 	  nb_cols = col_indices.size();
@@ -150,8 +132,14 @@ struct FieldApproximation {
 
 	ierr = MatSetValues(A,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
 
-      }
+	if(row_type != col_type) {
+	  NN = trans(NN);
+	  data = &*NN.data().begin();
+	  ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,data,ADD_VALUES); CHKERRQ(ierr);
+	}
 
+
+      }
 
       PetscFunctionReturn(0);	
     }
@@ -162,16 +150,27 @@ struct FieldApproximation {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
+      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+
       PetscErrorCode ierr;
+
+      //PetscAttachDebugger();
 
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = ptrFE->fe_ptr->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
 
-      int nb_row_dofs = data.getN().size2();
+      int nb_row_dofs = data.getIndices().size()/rank;
       
       Nf.resize(data.getIndices().size());
-    bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(double));
+      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(double));
+
+      if(ptrFE->coordsAtGaussPts.size1()!=data.getN().size1()) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      if(ptrFE->coordsAtGaussPts.size2()!=3) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
       
@@ -179,40 +178,19 @@ struct FieldApproximation {
 	double y = ptrFE->coordsAtGaussPts(gg,1);
 	double z = ptrFE->coordsAtGaussPts(gg,2);
 	ublas::vector<FieldData> fun_val = functionEvaluator(x,y,z);
-	double val = ptrFE->vOlume*ptrFE->gaussPts(gg,4);
-	
 	if(fun_val.size() != rank) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
+
+	double val = ptrFE->vOlume*ptrFE->gaussPts(3,gg);
 	for(int rr = 0;rr<rank;rr++) {
 	  cblas_daxpy(nb_row_dofs,val*fun_val[rr],&data.getN()(gg,0),1,&Nf[rr],rank);
 	}
 
       }
 
-      for(int rr = 0;rr < rank; rr++) {
-
-	int nb_rows;
-	int *rows;
-	double *f_data = &*Nf.data().begin();
-
-	if(rank > 1) {
-
-	  ublas::vector<DofIdx> indices( ublas::vector_slice<ublas::vector<DofIdx> >(data.getIndices(), ublas::slice(rr, rank, data.getIndices().size())));
-
-	  nb_rows = indices.size();
-	  rows = &*indices.data().begin();
-
-	} else {
-
-	  nb_rows = data.getIndices().size();
-	  rows = &*data.getIndices().data().begin();
-
-	}
-
-	ierr = VecSetValues(F,nb_rows,rows,f_data,ADD_VALUES); CHKERRQ(ierr);
-      
-      }
+      ierr = VecSetValues(F,data.getIndices().size(),
+	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -220,18 +198,23 @@ struct FieldApproximation {
 
   };
 
-  PetscErrorCode computeMatrixAndVector() {
+  PetscErrorCode loopMatrixAndVector(
+    const string &problem_name,const string &fe_name,const string &field_name,Mat A,Vec F,
+    FUNEVAL &function_evaluator) {
     PetscFunctionBegin;
-
-    OpApprox approx(my_split);
-    fe1.get_op_to_do_NH1().push_back(&op);
-    fe1.get_op_to_do_NH1NH1().push_back(&op);
-
-
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode solevProblem() {
-    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    OpApprox op(field_name,A,F,function_evaluator);
+    fe.get_op_to_do_NH1().push_back(&op);
+    fe.get_op_to_do_NH1NH1().push_back(&op);
+    MatZeroEntries(A);
+    VecZeroEntries(F);
+    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements(problem_name,"TEST_FE",fe);  CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

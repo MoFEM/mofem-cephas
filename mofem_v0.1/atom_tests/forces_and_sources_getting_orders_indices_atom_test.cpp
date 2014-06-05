@@ -180,13 +180,14 @@ int main(int argc, char *argv[]) {
       ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetRowIndices(data,"FIELD1"); CHKERRQ(ierr);
 
+      my_split << "FIELD1:\n";
+      my_split << data << endl;
+
       ierr = getColNodesIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgeColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getFacesColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getTetColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
 
-      my_split << "FIELD1:\n";
-      my_split << data << endl;
       my_split << "FIELD2:\n";
       my_split << derived_data << endl;
 

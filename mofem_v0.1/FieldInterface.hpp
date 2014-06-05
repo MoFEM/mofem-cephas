@@ -654,7 +654,7 @@ struct FieldInterface {
   /// \brief list entities in the field
   virtual PetscErrorCode list_field() const = 0;
 
-  /** \brief create field meshset
+  /** \brief get field meshsett
    *
    * \param name of Field
    * Example:\code
@@ -780,6 +780,13 @@ struct FieldInterface {
    * \param verrbose level
    */
   virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const string &name,EntityType type,int verb = -1) = 0;
+
+  
+  /** get finite element meshset
+   *
+   */
+  virtual EntityHandle get_finite_element_meshset(const string& name) const = 0;
+
 
   /** \brief remove elements from given refinment level to finite element database
    *
