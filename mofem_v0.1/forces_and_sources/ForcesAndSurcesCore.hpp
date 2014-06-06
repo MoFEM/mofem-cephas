@@ -279,8 +279,8 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   vector<UserDataOperator*> vecUserOpNH1; 
   vector<UserDataOperator*> vecUserOpNH1NH1;
 
-  vector<UserDataOperator*>& get_op_to_do_NH1() { return vecUserOpNH1; }
-  vector<UserDataOperator*>& get_op_to_do_NH1NH1() { return vecUserOpNH1NH1; }
+  vector<UserDataOperator*>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  vector<UserDataOperator*>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;

@@ -529,6 +529,9 @@ PetscErrorCode DataOperator::opSymmetric(
   ierr = doWork(
     -1,-1,MBVERTEX,MBVERTEX,
     row_data.nOdes[0],col_data.nOdes[0]); CHKERRQ(ierr);
+  ierr = doWork(
+    -1,-1,MBVERTEX,MBTET,
+    row_data.nOdes[0],col_data.vOlumes[0]); CHKERRQ(ierr);
 
   for(int ee = 0;ee<row_data.eDges.size();ee++) {
     int G_DIM = row_data.eDges[ee].getN().size1();
@@ -546,7 +549,7 @@ PetscErrorCode DataOperator::opSymmetric(
     ierr = doWork(
 	ee,-1,MBEDGE,MBTET,
 	row_data.eDges[ee],col_data.vOlumes[0]); CHKERRQ(ierr);
-    for(int EE = 0;EE<col_data.eDges.size();EE++) {
+    for(int EE = ee;EE<col_data.eDges.size();EE++) {
       int G_DIM_EE = col_data.eDges[EE].getN().size1();
       if(G_DIM != G_DIM_EE) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -582,7 +585,7 @@ PetscErrorCode DataOperator::opSymmetric(
     ierr = doWork(
 	ff,-1,MBTRI,MBTET,
 	row_data.fAces[ff],col_data.vOlumes[0]); CHKERRQ(ierr);
-    for(int FF = 0;FF<col_data.fAces.size();FF++) {
+    for(int FF = ff;FF<col_data.fAces.size();FF++) {
       int G_DIM_FF = col_data.fAces[FF].getN().size1();
       if(G_DIM != G_DIM_FF) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");

@@ -47,7 +47,7 @@ struct MyFunApprox {
     result.resize(3);
     result[0] = x;
     result[1] = y;
-    result[2] = z;
+    result[2] = z*z*z;
     return result;
   }     
 
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 3;
-  ierr = mField.set_field_order(root_set,MBTET,"FIELD1",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
@@ -203,8 +203,6 @@ int main(int argc, char *argv[]) {
   ent_method_field1_on_10nodeTet.set_nodes = false;
   ierr = mField.loop_dofs("FIELD1",ent_method_field1_on_10nodeTet); CHKERRQ(ierr);
 
-  //PostProcVertexMethod post_proc(moab,"FIELD1");
-  //ierr = mField.loop_dofs("TEST_PROBLEM","FIELD1",Row,post_proc); CHKERRQ(ierr);
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);

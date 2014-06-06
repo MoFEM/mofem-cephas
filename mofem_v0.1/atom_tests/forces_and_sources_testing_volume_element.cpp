@@ -180,8 +180,8 @@ int main(int argc, char *argv[]) {
 
   MyOp op(my_split);
 
-  fe1.get_op_to_do_NH1().push_back(&op);
-  fe1.get_op_to_do_NH1NH1().push_back(&op);
+  fe1.get_op_to_do_Rhs().push_back(&op);
+  fe1.get_op_to_do_Lhs().push_back(&op);
 
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
