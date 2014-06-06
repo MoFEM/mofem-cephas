@@ -118,37 +118,23 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 	if( moab.contains_entities(*mit,&ent,1) ) {
 	  *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
 	  *_mu = MU(mydata.data.Young,mydata.data.Poisson);
-	  int material_type = (int)mydata.data.User1;
-	  if(material_type>=10) {
-	    switch(material_type) {
-	      case 10: {
-		set_PhysicalEquationNumber(hooke);
-		}
-		break;
-	      case 11: {
-		set_PhysicalEquationNumber(stvenant_kirchhoff);
-		}
-		break;
-	      case 12: {
-		set_PhysicalEquationNumber(neohookean);
-		}
-		break;
-	      default: {
-		if(it->get_Cubit_name().compare(0,29,"MAT_ELASTIC_EberleinHolzapfel") == 0) {
-		  Mat_Elastic_EberleinHolzapfel1 mydata;
-		  ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);     
-		  set_PhysicalEquationNumber(eberleinholzapfel1);
-		  EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
-		  EberleinHolzapfel1_mat_parameters.k1 = mydata.data.k1;
-		  EberleinHolzapfel1_mat_parameters.k2 = mydata.data.k2;
-		  EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.a0x;
-		  EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.a0y;
-		  EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.a0z;
-		  EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.a1x;
-		  EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.a1y;
-		  EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.a1z;
-		  *ptr_matctx = &EberleinHolzapfel1_mat_parameters;
-		} else {
+	  if(it->get_Cubit_name().compare(0,11,"MAT_ELASTIC") == 0) {
+	    int material_type = (int)mydata.data.User1;
+	    if(material_type>=10) {
+	      switch(material_type) {
+		case 10: {
+		  set_PhysicalEquationNumber(hooke);
+		  }
+		  break;
+		case 11: {
+		  set_PhysicalEquationNumber(stvenant_kirchhoff);
+		  }
+		  break;
+		case 12: {
+		  set_PhysicalEquationNumber(neohookean);
+		  }
+		  break;
+		default: {
 		  SETERRQ(PETSC_COMM_SELF,1,
 		    "Materail not defined (Attribute 3):\n"
 		    "\t10 = hooke\n"
@@ -158,8 +144,23 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
 		}
 	      }
 	    }
+	  } else if(it->get_Cubit_name().compare(0,29,"MAT_ELASTIC_EberleinHolzapfel") == 0) {
+	    Mat_Elastic_EberleinHolzapfel1 mydata;
+	    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);     
+	    set_PhysicalEquationNumber(eberleinholzapfel1);
+	    EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
+	    EberleinHolzapfel1_mat_parameters.k1 = mydata.data.k1;
+	    EberleinHolzapfel1_mat_parameters.k2 = mydata.data.k2;
+	    EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.a0x;
+	    EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.a0y;
+	    EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.a0z;
+	    EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.a1x;
+	    EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.a1y;
+	    EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.a1z;
+	    *ptr_matctx = &EberleinHolzapfel1_mat_parameters;
+	  } else {
+	    SETERRQ(PETSC_COMM_SELF,1, "unknown material"); 
 	  }
-
 	  PetscFunctionReturn(0);  
 	}
       }
