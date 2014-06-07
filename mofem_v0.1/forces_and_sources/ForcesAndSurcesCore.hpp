@@ -210,10 +210,10 @@ struct DataOperator {
 
 };
 
-struct OpSetJac: public DataOperator {
+struct OpSetInvJac: public DataOperator {
 
   ublas::matrix<double> &invJac;
-  OpSetJac(ublas::matrix<double> &_invJac): invJac(_invJac) {}
+  OpSetInvJac(ublas::matrix<double> &_invJac): invJac(_invJac) {}
 
   ublas::matrix<FieldData> diffNinvJac;
   PetscErrorCode doWork(
@@ -250,7 +250,7 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derived_data;
 
   VolumeH1H1ElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),opSetJac(invJac),
+    ForcesAndSurcesCore(_mField),opSetInvJac(invJac),
     data(MBTET),derived_data(data) {};
 
   ErrorCode rval;
@@ -260,7 +260,7 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> invJac;
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
-  OpSetJac opSetJac;
+  OpSetInvJac opSetInvJac;
 
   struct UserDataOperator: public DataOperator {
     string row_field_name;
@@ -276,11 +276,11 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   };
 
-  vector<UserDataOperator*> vecUserOpNH1; 
-  vector<UserDataOperator*> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
+  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
 
-  vector<UserDataOperator*>& get_op_to_do_Rhs() { return vecUserOpNH1; }
-  vector<UserDataOperator*>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;

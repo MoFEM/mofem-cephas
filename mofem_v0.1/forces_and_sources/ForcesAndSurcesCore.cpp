@@ -629,7 +629,7 @@ PetscErrorCode DataOperator::op(DataForcesAndSurcesCore &data) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpSetJac::doWork(
+PetscErrorCode OpSetInvJac::doWork(
     int side,
     EntityType type,
     DataForcesAndSurcesCore::EntData &data) {
@@ -681,7 +681,7 @@ PetscErrorCode OpGetData::doWork(
   PetscErrorCode ierr;
 
   if(data.getFieldData().size() == 0) {
-    SETERRQ(PETSC_COMM_SELF,1,"no data");
+    PetscFunctionReturn(0);
   }
 
   int nb_dofs = data.getFieldData().size();
@@ -751,7 +751,7 @@ PetscErrorCode VolumeH1H1ElementForcesAndSurcesCore::operator()() {
   }
 
   try {
-    ierr = opSetJac.op(data); CHKERRQ(ierr);
+    ierr = opSetInvJac.op(data); CHKERRQ(ierr);
   } catch (exception& ex) {
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -759,23 +759,23 @@ PetscErrorCode VolumeH1H1ElementForcesAndSurcesCore::operator()() {
   }
 
   for(
-    vector<UserDataOperator*>::iterator oit = vecUserOpNH1.begin();
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNH1.begin();
     oit != vecUserOpNH1.end(); oit++) {
 
-    (*oit)->ptrFE = this;
+    oit->ptrFE = this;
 
-    ierr = getRowNodesIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
-    ierr = getEdgeRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
-    ierr = getFacesRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
-    ierr = getTetRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+    ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getEdgeRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getFacesRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getTetRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
 
-    ierr = getNodesFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
-    ierr = getEdgeFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
-    ierr = getFacesFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
-    ierr = getTetFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getFacesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTetFieldData(data,oit->col_field_name); CHKERRQ(ierr);
 
     try {
-      ierr = (*oit)->op(data); CHKERRQ(ierr);
+      ierr = oit->op(data); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -785,28 +785,28 @@ PetscErrorCode VolumeH1H1ElementForcesAndSurcesCore::operator()() {
   }
 
   for(
-    vector<UserDataOperator*>::iterator oit = vecUserOpNH1NH1.begin();
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNH1NH1.begin();
     oit != vecUserOpNH1NH1.end(); oit++) {
 
-    (*oit)->ptrFE = this;
+    oit->ptrFE = this;
 
-    ierr = getRowNodesIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
-    ierr = getEdgeRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
-    ierr = getFacesRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
-    ierr = getTetRowIndices(data,(*oit)->row_field_name); CHKERRQ(ierr);
+    ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getEdgeRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getFacesRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getTetRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
 
-    ierr = getColNodesIndices(derived_data,(*oit)->col_field_name); CHKERRQ(ierr);
-    ierr = getEdgeColIndices(derived_data,(*oit)->col_field_name); CHKERRQ(ierr);
-    ierr = getFacesColIndices(derived_data,(*oit)->col_field_name); CHKERRQ(ierr);
-    ierr = getTetColIndices(derived_data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getColNodesIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeColIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getFacesColIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTetColIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
 
-    ierr = getNodesFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
-    ierr = getEdgeFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
-    ierr = getFacesFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
-    ierr = getTetFieldData(data,(*oit)->col_field_name); CHKERRQ(ierr);
+    ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getFacesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTetFieldData(data,oit->col_field_name); CHKERRQ(ierr);
 
     try {
-      ierr = (*oit)->opSymmetric(data,derived_data); CHKERRQ(ierr);
+      ierr = oit->opSymmetric(data,derived_data); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

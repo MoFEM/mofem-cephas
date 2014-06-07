@@ -28,53 +28,94 @@
 #define __BODY_FORCE_HPP
 
 #include "ForcesAndSurcesCore.hpp"
-extern "C" {
-#include "gm_rule.h"
-}
 
 namespace MoFEM {
 
-struct BodyFroce: public ForcesAndSurcesCore {
+struct BodyFroceConstantField {
 
-  struct opBodyForce: public DataOperator {
+  FieldInterface &mField;
+  VolumeH1H1ElementForcesAndSurcesCore fe;
+
+  VolumeH1H1ElementForcesAndSurcesCore& getLoopFe() { return fe; }
+
+  BodyFroceConstantField(
+    FieldInterface &m_field):
+    mField(m_field),fe(m_field) {}
+
+  struct OpBodyForce: public VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator {
+
+    Vec F;
+    Block_BodyForces &dAta;
+    OpBodyForce(const string field_name,Vec _F,Block_BodyForces &data):
+      VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
+      F(_F),dAta(data) {}
+
+    ublas::vector<FieldData> Nf;
 
     PetscErrorCode doWork(
-	int side,EntityType type,
-	DataForcesAndSurcesCore::EntData &data) {
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
+
+      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+
       PetscErrorCode ierr;
 
+      const FENumeredDofMoFEMEntity *dof_ptr;
+      ierr = ptrFE->fe_ptr->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      int rank = dof_ptr->get_max_rank();
+
+      int nb_row_dofs = data.getIndices().size()/rank;
+      
+      Nf.resize(data.getIndices().size());
+      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
+
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+
+	double val = ptrFE->vOlume*ptrFE->gaussPts(3,gg);
+	for(int rr = 0;rr<rank;rr++) {
+
+	  double acc;
+	  if(rank == 0) {
+	    acc = dAta.data.acceleration_x;
+	  } else if(rank == 1) {
+	    acc = dAta.data.acceleration_y;
+	  } else if(rank == 2) {
+	    acc = dAta.data.acceleration_z;
+	  } else {
+	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  }
+	  acc *= dAta.data.density;
+
+	  cblas_daxpy(nb_row_dofs,val*acc,&data.getN()(gg,0),1,&Nf[rr],rank);
+
+	}
+
+      }
+
+      ierr = VecSetValues(F,data.getIndices().size(),
+	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
 
+
   };
 
-  opBodyForce opForce;
-  int msId;
-
-  BodyFroce(FieldInterface &_mField,Vec _F,const int _msId): 
-    ForcesAndSurcesCore(_mField),opForce(),msId(_msId) {}
-
-  const CubitMeshSets *cubit_meshset_ptr;
-  EntityHandle meshset;
-  PetscErrorCode getBodyElements() {
+  PetscErrorCode addBlock(const string field_name,Vec &F,int ms_id) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = mField.get_Cubit_msId(msId,BlockSet|Block_BodyForcesSet,&cubit_meshset_ptr); CHKERRQ(ierr);
-    //ierr = cubit_meshset_ptr->get_attribute_data_structure(opForce.blockData); CHKERRQ(ierr);
-    meshset = cubit_meshset_ptr->get_meshset();
+    const CubitMeshSets *cubit_meshset_ptr;
+    ierr = mField.get_Cubit_msId(ms_id,BlockSet|Block_BodyForcesSet,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);     
+    fe.get_op_to_do_Rhs().push_back(new OpBodyForce(field_name,F,mapData[ms_id]));
+    fe.get_op_to_do_Lhs().push_back(new OpBodyForce(field_name,F,mapData[ms_id]));
     PetscFunctionReturn(0);
-  }
+  } 
 
-  PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ErrorCode rval;
 
-    
-    PetscFunctionReturn(0);
-  }
+  private:
+
+  map<int,Block_BodyForces> mapData;
 
 };
 

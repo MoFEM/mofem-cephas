@@ -47,7 +47,7 @@ struct MyFunApprox {
     result.resize(3);
     result[0] = x;
     result[1] = y;
-    result[2] = z*z*z;
+    result[2] = z*z;
     return result;
   }     
 
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("TEST_PROBLEM",Col,&D); CHKERRQ(ierr);
 
   MyFunApprox function_evaluator;
-  FieldApproximation<MyFunApprox> field_approximation(mField);
+  FieldApproximationH1<MyFunApprox> field_approximation(mField);
   field_approximation.loopMatrixAndVector(
     "TEST_PROBLEM","TEST_FE","FIELD1",A,F,function_evaluator);
 
@@ -181,11 +181,11 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = MatDestroy(&A); CHKERRQ(ierr);
 
-  PostProcDisplacementsOnRefMesh fe_postproc(moab,"FIELD1");
+  /*PostProcDisplacementsOnRefMesh fe_postproc(moab,"FIELD1");
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe_postproc);  CHKERRQ(ierr);
   if(pcomm->rank()==0) {
     rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }
+  }*/
 
   EntityHandle fe_meshset = mField.get_finite_element_meshset("TEST_FE");
   Range tets;
@@ -218,14 +218,24 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
+  Range nodes;
+  rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR(rval);
+  ublas::matrix<double> nodes_vals;
+  nodes_vals.resize(nodes.size(),3);
+  rval = moab.tag_get_data(
+    ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERR(rval);
+  my_split.precision(3);
+  my_split.setf(std::ios::fixed);
+  my_split << nodes_vals << endl;
+
   const MoFEMProblem *problem_ptr;
   ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
   map<EntityHandle,double> m0,m1,m2;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
 
-    //my_split.precision(3);
-    //my_split.setf(std::ios::fixed);
-    //my_split << dit->get_petsc_gloabl_dof_idx() << " " << dit->get_FieldData() << endl;
+    my_split.precision(3);
+    my_split.setf(std::ios::fixed);
+    my_split << dit->get_petsc_gloabl_dof_idx() << " " << dit->get_FieldData() << endl;
 
   }
 

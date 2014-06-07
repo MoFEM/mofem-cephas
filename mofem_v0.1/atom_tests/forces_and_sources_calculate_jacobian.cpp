@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
     ublas::matrix<double> dataDiffFIELD1;
     ublas::vector<double> coords;
     PrintJacobian opPrintJac;
-    OpSetJac opSetJac;
+    OpSetInvJac opSetInvJac;
     OpGetData opGetData_FIELD1;
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
       ofs("forces_and_sources_calculate_jacobian.txt"),
       my_tee(cout, ofs),my_split(my_tee),
       opPrintJac(my_split),
-      opSetJac(invJac),
+      opSetInvJac(invJac),
       opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1),data(MBTET) {};
 
     PetscErrorCode preProcess() {
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
       ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
-	ierr = opSetJac.op(data); CHKERRQ(ierr);
+	ierr = opSetInvJac.op(data); CHKERRQ(ierr);
 	ierr = opPrintJac.op(data); CHKERRQ(ierr);
 	ierr = opGetData_FIELD1.op(data); CHKERRQ(ierr);
       } catch (exception& ex) {

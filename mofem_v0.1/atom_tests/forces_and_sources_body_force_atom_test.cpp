@@ -131,10 +131,9 @@ int main(int argc, char *argv[]) {
   Vec F;
   ierr = mField.VecCreateGhost("TETS_PROBLEM",Row,&F); CHKERRQ(ierr);
 
-  BodyFroce fe1(mField,F,1);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
+  BodyFroceConstantField body_forces_methods;
 
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);

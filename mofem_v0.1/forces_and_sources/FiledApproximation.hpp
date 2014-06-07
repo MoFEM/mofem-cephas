@@ -40,13 +40,13 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 template<typename FUNEVAL>
-struct FieldApproximation {
+struct FieldApproximationH1 {
 
   FieldInterface &mField;
   const string problemName;
   VolumeH1H1ElementForcesAndSurcesCore fe;
 
-  FieldApproximation(
+  FieldApproximationH1(
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
@@ -165,8 +165,6 @@ struct FieldApproximation {
       PetscFunctionReturn(0);	
     }
 
-
-
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -184,7 +182,7 @@ struct FieldApproximation {
       int nb_row_dofs = data.getIndices().size()/rank;
       
       Nf.resize(data.getIndices().size());
-      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(double));
+      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
       if(ptrFE->coordsAtGaussPts.size1()!=data.getN().size1()) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -224,9 +222,8 @@ struct FieldApproximation {
     FUNEVAL &function_evaluator) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    OpApprox op(field_name,A,F,function_evaluator);
-    fe.get_op_to_do_Rhs().push_back(&op);
-    fe.get_op_to_do_Lhs().push_back(&op);
+    fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
     MatZeroEntries(A);
     VecZeroEntries(F);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
