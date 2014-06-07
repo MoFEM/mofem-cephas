@@ -72,25 +72,28 @@ struct BodyFroceConstantField {
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
 	double val = ptrFE->vOlume*ptrFE->gaussPts(3,gg);
+	//cerr <<  ptrFE->vOlume << " " << ptrFE->gaussPts(3,gg) << " " << data.getN().size1() << endl << endl;
+
 	for(int rr = 0;rr<rank;rr++) {
 
 	  double acc;
-	  if(rank == 0) {
+	  if(rr == 0) {
 	    acc = dAta.data.acceleration_x;
-	  } else if(rank == 1) {
+	  } else if(rr == 1) {
 	    acc = dAta.data.acceleration_y;
-	  } else if(rank == 2) {
+	  } else if(rr == 2) {
 	    acc = dAta.data.acceleration_z;
 	  } else {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  }
 	  acc *= dAta.data.density;
-
 	  cblas_daxpy(nb_row_dofs,val*acc,&data.getN()(gg,0),1,&Nf[rr],rank);
 
 	}
 
       }
+    
+      //cerr << Nf << endl;
 
       ierr = VecSetValues(F,data.getIndices().size(),
 	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
@@ -105,10 +108,9 @@ struct BodyFroceConstantField {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_Cubit_msId(ms_id,BlockSet|Block_BodyForcesSet,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId(ms_id,BlockSet,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);     
     fe.get_op_to_do_Rhs().push_back(new OpBodyForce(field_name,F,mapData[ms_id]));
-    fe.get_op_to_do_Lhs().push_back(new OpBodyForce(field_name,F,mapData[ms_id]));
     PetscFunctionReturn(0);
   } 
 

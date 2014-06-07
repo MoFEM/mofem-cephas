@@ -82,8 +82,8 @@ target_link_libraries(forces_and_sources_testing_volume_element mofem_forces_and
 add_executable(forces_and_sources_testing_field_approximation forces_and_sources_testing_field_approximation.cpp) 
 target_link_libraries(forces_and_sources_testing_field_approximation mofem_forces_and_sources mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(forces_and_sources_body_force_atom_test forces_and_sources_body_force_atom_test.cpp)
-target_link_libraries(forces_and_sources_body_force_atom_test mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_executable(forces_and_sources_body_force_atom forces_and_sources_body_force_atom_test.cpp)
+target_link_libraries(forces_and_sources_body_force_atom mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
@@ -115,6 +115,7 @@ cm_export_file("../meshes/cub_thermal_problem.cub" export_atom_tests)
 cm_export_file("../meshes/sphere.cub" export_atom_tests)
 cm_export_file("../meshes/loop_atom.cub" export_atom_tests)
 cm_export_file("../meshes/tri_axial_cube_atom.cub" export_atom_tests)
+cm_export_file("../meshes/elasticity_atom_test_body_force.cub" export_atom_tests)
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
@@ -272,4 +273,11 @@ add_test(forces_and_sources_testing_field_approximation_test
 add_test(forces_and_sources_testing_field_approximation_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_field_approximation.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_field_approximation.txt)
+
+add_test(forces_and_sources_body_force_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_body_force_atom -my_file elasticity_atom_test_body_force.cub)
+add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_body_force_atom_test.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_body_force_atom_test.txt)
+
 

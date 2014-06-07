@@ -53,10 +53,6 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
-  //Create MoFEM (Joseph) database
-  FieldCore core(moab);
-  FieldInterface& mField = core;
-
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -65,6 +61,10 @@ int main(int argc, char *argv[]) {
   BARRIER_RANK_START(pcomm) 
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   BARRIER_RANK_END(pcomm) 
+
+  //Create MoFEM (Joseph) database
+  FieldCore core(moab);
+  FieldInterface& mField = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
@@ -100,10 +100,9 @@ int main(int argc, char *argv[]) {
   //add entities to finite element
   ierr = mField.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
 
-
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 5;
+  int order = 2;
   ierr = mField.set_field_order(root_set,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
@@ -129,14 +128,47 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = mField.VecCreateGhost("TETS_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
+
+  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef stream<TeeDevice> TeeStream;
+  ofstream ofs("forces_and_sources_body_force_atom_test.txt");
+  TeeDevice my_tee(cout, ofs); 
+  TeeStream my_split(my_tee);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  BodyFroceConstantField body_forces_methods;
+  BodyFroceConstantField body_forces_methods(mField);
 
-
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
+    Block_BodyForces mydata;
+    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+    my_split << mydata << endl;
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+  }
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Col,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+  const MoFEMProblem *problem_ptr;
+  ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
+  map<EntityHandle,double> m0,m1,m2;
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
+
+    if(dit->get_dof_rank()!=1) continue;
+
+    my_split.precision(3);
+    my_split.setf(std::ios::fixed);
+    my_split << dit->get_petsc_gloabl_dof_idx() << " " << dit->get_FieldData() << endl;
+
+  }
+
+  double sum = 0;
+  ierr = VecSum(F,&sum); CHKERRQ(ierr);
+  my_split << endl << "Sum : " << setprecision(3) << sum << endl;
+
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

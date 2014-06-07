@@ -18,8 +18,13 @@ cubit.cmd('create Displacement on vertex 4 dof 1 dof 2 fix 0')
 cubit.cmd('create Displacement on vertex 8 dof 1 fix 0')
 
 #!BodyForce
-
-
+cubit.cmd('block 2 volume 1') 
+cubit.cmd('block 2 name "BODY_FORCES")
+cubit.cmd('block 2 attribute count 4')
+cubit.cmd('block 2 attribute index 1 1.')
+cubit.cmd('block 2 attribute index 2 0.')
+cubit.cmd('block 2 attribute index 3 1.')
+cubit.cmd('block 2 attribute index 4 0.')
 
 #!Mesh
 cubit.cmd('volume 1  size 1')
@@ -27,5 +32,5 @@ cubit.cmd('volume 1 scheme Tetmesh')
 cubit.cmd('mesh volume 1')
 
 
-#cubit.cmd('save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/elasticity_atom_test_01X_pressure.cub" overwrite')
+#cubit.cmd('save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/elasticity_atom_test_body_force.cub" overwrite')
 
