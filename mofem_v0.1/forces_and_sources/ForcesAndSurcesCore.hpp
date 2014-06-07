@@ -262,6 +262,8 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> coordsAtGaussPts;
   OpSetInvJac opSetInvJac;
 
+  virtual int getRule(int order) { return order; };
+
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
@@ -278,7 +280,6 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
-
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
 
@@ -286,15 +287,59 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
   }
-
   PetscErrorCode operator()();
-
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
   }
 
   
+};
+
+struct TriangleH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+
+  DataForcesAndSurcesCore data;
+  DerivedDataForcesAndSurcesCore derived_data;
+
+  TriangleH1H1ElementForcesAndSurcesCore(FieldInterface &_mField):
+    ForcesAndSurcesCore(_mField),data(MBTRI),derived_data(data) {};
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  double aRea;;
+  ublas::vector<double> coords;
+  ublas::matrix<double> gaussPts;
+  ublas::matrix<double> coordsAtGaussPts;
+
+  virtual int getRule(int order) { return order; };
+
+  struct UserDataOperator: public DataOperator {
+    string row_field_name;
+    string col_field_name;
+    UserDataOperator(
+      const string &_field_name):
+	row_field_name(_field_name),col_field_name(_field_name),ptrFE(NULL) {};
+    UserDataOperator(
+      const string &_row_field_name,const string &_col_field_name):
+	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
+    TriangleH1H1ElementForcesAndSurcesCore *ptrFE; 
+  };
+
+  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
+  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()();
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
 };
 
 }

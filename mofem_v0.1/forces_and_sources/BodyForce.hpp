@@ -34,9 +34,14 @@ namespace MoFEM {
 struct BodyFroceConstantField {
 
   FieldInterface &mField;
-  VolumeH1H1ElementForcesAndSurcesCore fe;
 
-  VolumeH1H1ElementForcesAndSurcesCore& getLoopFe() { return fe; }
+  struct MyVolumeFE: public VolumeH1H1ElementForcesAndSurcesCore {
+    MyVolumeFE(FieldInterface &_mField): VolumeH1H1ElementForcesAndSurcesCore(_mField) {}
+    int getRule(int order) { return ceil(order/2); };
+  };
+
+  MyVolumeFE fe;
+  MyVolumeFE& getLoopFe() { return fe; }
 
   BodyFroceConstantField(
     FieldInterface &m_field):
