@@ -369,7 +369,10 @@ struct TriangleH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getNormal() { return ptrFE->normal; }
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
-    inline ublas::matrix<double>& coordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline ublas::matrix<FieldData>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
+    inline ublas::matrix<FieldData>& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
+    inline ublas::matrix<FieldData>& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(TriangleH1H1ElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;

@@ -88,6 +88,9 @@ target_link_libraries(forces_and_sources_body_force_atom mofem_forces_and_source
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
+add_executable(forces_and_sources_testing_triangle_element forces_and_sources_testing_triangle_element.cpp)
+target_link_libraries(forces_and_sources_testing_triangle_element mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)
@@ -288,4 +291,11 @@ add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test
 add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_higher_order_skin_normals_atom.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_higher_order_skin_normals_atom.txt)
+
+add_test(forces_and_sources_testing_triangle_element_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_triangle_element -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_triangle_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_triangle_element.txt)
+
 

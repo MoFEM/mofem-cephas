@@ -26,6 +26,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "Projection10NodeCoordsOnField.hpp"
+
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -74,16 +76,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = mField.add_field("FIELD1",H1,1); CHKERRQ(ierr);
-  ierr = mField.add_field("FIELD2",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("FIELD1",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("TEST_FE"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("TEST_FE","FIELD2"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("TEST_FE","FIELD2"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("TEST_FE","FIELD1"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
 
   //Problem
   ierr = mField.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -93,15 +94,17 @@ int main(int argc, char *argv[]) {
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
-
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
   ierr = mField.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"FIELD2"); CHKERRQ(ierr);
   //add entities to finite element
-  ierr = mField.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
-
+  Range tets;
+  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERR_PETSC(rval);
+  Skinner skin(&mField.get_moab());
+  Range tets_skin;
+  rval = skin.find_skin(tets,false,tets_skin); CHKERR(rval);
+  ierr = mField.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -110,15 +113,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTET,"FIELD2",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"FIELD2",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"FIELD2",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD2",1); CHKERRQ(ierr);
 
   /****/
   //build database
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
+  //set FIELD1 from positions of 10 node tets
+  Projection10NodeCoordsOnField ent_method(mField,"FIELD1");
+  ierr = mField.loop_dofs("FIELD1",ent_method); CHKERRQ(ierr);
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
@@ -134,20 +136,20 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  VolumeH1H1ElementForcesAndSurcesCore fe1(mField);
+  TriangleH1H1ElementForcesAndSurcesCore fe1(mField);
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_testing_volume_element.txt");
+  ofstream ofs("forces_and_sources_testing_triangle_element.txt");
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
-  struct MyOp: public VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator {
+  struct MyOp: public TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator {
 
     TeeStream &my_split;
     MyOp(TeeStream &_my_split):
-      VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD2"),
+      TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1"),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -158,9 +160,13 @@ int main(int argc, char *argv[]) {
       my_split << "NH1" << endl;
       my_split << "side: " << side << " type: " << type << endl;
       my_split << data << endl;
-      my_split << setprecision(3) << getVolume() << endl;
       my_split << setprecision(3) << getCoords() << endl;
       my_split << setprecision(3) << getCoordsAtGaussPts() << endl;
+      my_split << setprecision(3) << getArea() << endl;
+      my_split << setprecision(3) << getNormal() << endl;
+      my_split << setprecision(3) << getNormals_at_GaussPt() << endl;
+      my_split << setprecision(3) << getTangent1_at_GaussPt() << endl;
+      my_split << setprecision(3) << getTangent2_at_GaussPt() << endl;
       PetscFunctionReturn(0);
     }
 
@@ -185,6 +191,7 @@ int main(int argc, char *argv[]) {
   fe1.get_op_to_do_Lhs().push_back(new MyOp(my_split));
 
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

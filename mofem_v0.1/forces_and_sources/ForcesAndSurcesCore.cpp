@@ -89,10 +89,10 @@ ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e) {
     "iNdices: " << e.getIndices() << endl;
   os.precision(2);
   os << 
-    "fieldData: " << e.getFieldData() << endl;
+    "fieldData: " << std::fixed << e.getFieldData() << endl;
   os <<
-    "N: " << e.getN() << endl <<
-    "diffN: " << e.getDiffN();
+    "N: " << std::fixed << e.getN() << endl <<
+    "diffN: " << std::fixed << e.getDiffN();
   return os;
 }
 
@@ -982,6 +982,13 @@ PetscErrorCode TriangleH1H1ElementForcesAndSurcesCore::operator()() {
     &*coords.data().begin(),&*normal.data().begin()); CHKERRQ(ierr);
   aRea = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
 
+  coordsAtGaussPts.resize(nb_gauss_pts,3);
+  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    for(int dd = 0;dd<3;dd++) {
+      coordsAtGaussPts(gg,dd) = cblas_ddot(3,&data.nOdes[0].getN()(gg,0),1,&coords[dd],3);
+    }
+  }
+
   if(mField.check_field(meshPositionsFieldName)) {
     ierr = getNodesFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getEdgeFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
@@ -1005,12 +1012,10 @@ PetscErrorCode TriangleH1H1ElementForcesAndSurcesCore::operator()() {
     ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getEdgeRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getFacesRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
-    ierr = getTetRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
 
     ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getEdgeFieldData(data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getFacesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTetFieldData(data,oit->col_field_name); CHKERRQ(ierr);
 
     try {
       ierr = oit->op(data); CHKERRQ(ierr);
@@ -1031,17 +1036,14 @@ PetscErrorCode TriangleH1H1ElementForcesAndSurcesCore::operator()() {
     ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getEdgeRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getFacesRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
-    ierr = getTetRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
 
     ierr = getColNodesIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getEdgeColIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getFacesColIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTetColIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
 
     ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getEdgeFieldData(data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getFacesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTetFieldData(data,oit->col_field_name); CHKERRQ(ierr);
 
     try {
       ierr = oit->opSymmetric(data,derived_data); CHKERRQ(ierr);
