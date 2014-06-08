@@ -33,3 +33,5 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/thermal_conductivity")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_cube")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_trans")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/rope")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_cube_with_inclusion")
+
