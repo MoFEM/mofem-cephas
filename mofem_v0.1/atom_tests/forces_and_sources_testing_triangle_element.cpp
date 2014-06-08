@@ -157,6 +157,14 @@ int main(int argc, char *argv[]) {
       EntityType type,
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
+
+      const double eps = 1e-4;
+      for(
+	ublas::unbounded_array<double>::iterator it = getNormal().data().begin();
+	it!=getNormal().data().end();it++) {
+	*it = fabs(*it)<eps ? 0.0 : *it;
+      }
+
       my_split << "NH1" << endl;
       my_split << "side: " << side << " type: " << type << endl;
       my_split << data << endl;

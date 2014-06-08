@@ -215,8 +215,8 @@ int main(int argc, char *argv[]) {
   typedef stream<TeeDevice> TeeStream;
 
   ofstream ofs("forces_and_sources_testing_field_approximation.txt");
-  TeeDevice my_tee(cout, ofs); 
-  TeeStream my_split(my_tee);
+  TeeDevice tee(cout, ofs); 
+  TeeStream my_split(tee);
 
   Range nodes;
   rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR(rval);
@@ -224,8 +224,17 @@ int main(int argc, char *argv[]) {
   nodes_vals.resize(nodes.size(),3);
   rval = moab.tag_get_data(
     ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERR(rval);
+  
+
+  const double eps = 1e-4;
+
   my_split.precision(3);
   my_split.setf(std::ios::fixed);
+  for(
+    ublas::unbounded_array<double>::iterator it = nodes_vals.data().begin();
+    it!=nodes_vals.data().end();it++) {
+    *it = fabs(*it)<eps ? 0.0 : *it;
+  }
   my_split << nodes_vals << endl;
 
   const MoFEMProblem *problem_ptr;
@@ -233,9 +242,11 @@ int main(int argc, char *argv[]) {
   map<EntityHandle,double> m0,m1,m2;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
 
+
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
-    my_split << dit->get_petsc_gloabl_dof_idx() << " " << dit->get_FieldData() << endl;
+    double val = fabs(dit->get_FieldData())<eps ? 0.0 : dit->get_FieldData();
+    my_split << dit->get_petsc_gloabl_dof_idx() << " " << val << endl;
 
   }
 
