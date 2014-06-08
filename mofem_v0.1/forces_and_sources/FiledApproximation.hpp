@@ -77,7 +77,7 @@ struct FieldApproximationH1 {
       PetscErrorCode ierr;
 
       const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = ptrFE->fe_ptr->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = row_data.getIndices().size()/rank;
@@ -87,7 +87,7 @@ struct FieldApproximationH1 {
       bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
       
       for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-	double val = ptrFE->vOlume*ptrFE->gaussPts(3,gg);
+	double val = getVolume()*getGaussPts()(3,gg);
 	cblas_dger(CblasRowMajor,
 	    nb_row_dofs,nb_col_dofs,
 	    val,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
@@ -176,7 +176,7 @@ struct FieldApproximationH1 {
       //PetscAttachDebugger();
 
       const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = ptrFE->fe_ptr->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
@@ -184,24 +184,24 @@ struct FieldApproximationH1 {
       Nf.resize(data.getIndices().size());
       bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
-      if(ptrFE->coordsAtGaussPts.size1()!=data.getN().size1()) {
+      if(getCoordsAtGaussPts().size1()!=data.getN().size1()) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      if(ptrFE->coordsAtGaussPts.size2()!=3) {
+      if(getCoordsAtGaussPts().size2()!=3) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
       
-	double x = ptrFE->coordsAtGaussPts(gg,0);
-	double y = ptrFE->coordsAtGaussPts(gg,1);
-	double z = ptrFE->coordsAtGaussPts(gg,2);
+	double x = getCoordsAtGaussPts()(gg,0);
+	double y = getCoordsAtGaussPts()(gg,1);
+	double z = getCoordsAtGaussPts()(gg,2);
 	ublas::vector<FieldData> fun_val = functionEvaluator(x,y,z);
 	if(fun_val.size() != rank) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
 
-	double val = ptrFE->vOlume*ptrFE->gaussPts(3,gg);
+	double val = getVolume()*getGaussPts()(3,gg);
 	for(int rr = 0;rr<rank;rr++) {
 	  cblas_daxpy(nb_row_dofs,val*fun_val[rr],&data.getN()(gg,0),1,&Nf[rr],rank);
 	}

@@ -66,7 +66,7 @@ struct BodyFroceConstantField {
       PetscErrorCode ierr;
 
       const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = ptrFE->fe_ptr->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
@@ -76,9 +76,7 @@ struct BodyFroceConstantField {
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = ptrFE->vOlume*ptrFE->gaussPts(3,gg);
-	//cerr <<  ptrFE->vOlume << " " << ptrFE->gaussPts(3,gg) << " " << data.getN().size1() << endl << endl;
-
+	double val = getVolume()*getGaussPts()(3,gg);
 	for(int rr = 0;rr<rank;rr++) {
 
 	  double acc;

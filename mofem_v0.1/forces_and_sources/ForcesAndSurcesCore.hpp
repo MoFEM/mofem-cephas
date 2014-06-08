@@ -273,7 +273,17 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
 	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
-
+    inline double getVolume() { return ptrFE->vOlume; }
+    inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+    inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
+    inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
+    PetscErrorCode setPtrFE(VolumeH1H1ElementForcesAndSurcesCore *ptr) { 
+      PetscFunctionBegin;
+      ptrFE = ptr;
+      PetscFunctionReturn(0);
+    }
+    private:
     VolumeH1H1ElementForcesAndSurcesCore *ptrFE; 
 
   };
@@ -324,9 +334,17 @@ struct TriangleH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
   DerivedDataForcesAndSurcesCore derived_data;
+  string meshPositionsFieldName;
+
+  ublas::matrix<FieldData> nOrmals_at_GaussPt;
+  ublas::matrix<FieldData> tAngent1_at_GaussPt;
+  ublas::matrix<FieldData> tAngent2_at_GaussPt;
+  OpGetNormals opHONormals;
 
   TriangleH1H1ElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTRI),derived_data(data) {};
+    ForcesAndSurcesCore(_mField),data(MBTRI),derived_data(data),
+    meshPositionsFieldName("MESH_NODE_POSITIONS"),
+    opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt) {};
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -347,6 +365,18 @@ struct TriangleH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
 	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
+    inline double getArea() { return ptrFE->aRea; }
+    inline ublas::vector<double>& getNormal() { return ptrFE->normal; }
+    inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+    inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
+    inline ublas::matrix<double>& coordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
+    PetscErrorCode setPtrFE(TriangleH1H1ElementForcesAndSurcesCore *ptr) { 
+      PetscFunctionBegin;
+      ptrFE = ptr;
+      PetscFunctionReturn(0);
+    }
+    private:
     TriangleH1H1ElementForcesAndSurcesCore *ptrFE; 
   };
 
