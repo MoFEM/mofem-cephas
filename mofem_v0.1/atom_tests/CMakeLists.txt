@@ -283,4 +283,9 @@ add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E com
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_body_force_atom_test.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_body_force_atom_test.txt)
 
+add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_higher_order_skin_normals_atom -my_file sphere.cub)
+add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_higher_order_skin_normals_atom.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_higher_order_skin_normals_atom.txt)
 

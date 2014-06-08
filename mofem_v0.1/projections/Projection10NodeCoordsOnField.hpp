@@ -69,6 +69,9 @@ struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod {
     if(dof_ptr->get_ent_type() != MBEDGE) {
       PetscFunctionReturn(0);
     }
+    if(dof_ptr->get_EntDofIdx() != dof_ptr->get_dof_rank()) {
+      PetscFunctionReturn(0);
+    }
     EntityHandle edge = dof_ptr->get_ent();
     if(mField.get_moab().type_from_handle(edge)!=MBEDGE) {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only elements which are type of MBEDGE"); 
@@ -99,9 +102,9 @@ struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod {
     // Dof = (mid_node_coord-ave_mid_coord)/edge_shape_function_val
     Dof.resize(3);
     ublas::noalias(Dof) = diff_node_coord/edge_shape_function_val;
-    if(dof_ptr->get_dof_order() != 2) {
+    /*if(dof_ptr->get_dof_order() != 2) {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only fileds which are order 2"); 
-    }
+    }*/
     if(dof_ptr->get_max_rank() != 3) {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only fields which are rank 3"); 
     }

@@ -307,8 +307,8 @@ struct OpGetNormals: public DataOperator {
     ublas::matrix<FieldData> &_tAngent1_at_GaussPt,
     ublas::matrix<FieldData> &_tAngent2_at_GaussPt): 
     nOrmals_at_GaussPt(_nOrmals_at_GaussPt),
-    tAngent1_at_GaussPt(_nOrmals_at_GaussPt),
-    tAngent2_at_GaussPt(_nOrmals_at_GaussPt) {}
+    tAngent1_at_GaussPt(_tAngent1_at_GaussPt),
+    tAngent2_at_GaussPt(_tAngent2_at_GaussPt) {}
 
   ublas::matrix<FieldData> sPin;
   PetscErrorCode doWork(
@@ -316,7 +316,7 @@ struct OpGetNormals: public DataOperator {
     EntityType type,
     DataForcesAndSurcesCore::EntData &data);
 
-  PetscErrorCode calculateNormal();
+  PetscErrorCode calculateNormals();
 
 };
 

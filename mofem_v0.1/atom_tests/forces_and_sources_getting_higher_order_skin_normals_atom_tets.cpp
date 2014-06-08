@@ -26,6 +26,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "Projection10NodeCoordsOnField.hpp"
+
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -116,6 +118,9 @@ int main(int argc, char *argv[]) {
   //build database
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
+  //set FIELD1 from positions of 10 node tets
+  Projection10NodeCoordsOnField ent_method(mField,"FIELD1");
+  ierr = mField.loop_dofs("FIELD1",ent_method); CHKERRQ(ierr);
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
@@ -177,17 +182,19 @@ int main(int argc, char *argv[]) {
 
       ierr = shapeTRIFunctions_H1(data,G_TRI_X4,G_TRI_Y4,4); CHKERRQ(ierr);
 
-      my_split << data << endl;
-
       try {
 	ierr = op.op(data); CHKERRQ(ierr);
+	ierr = op.calculateNormals(); CHKERRQ(ierr);
       } catch (exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-
+      my_split.precision(3);
+      my_split << "normals: " << nOrmals_at_GaussPt << endl;
+      my_split << "tangent1: " << tAngent1_at_GaussPt << endl;
+      my_split << "tangent2: " << tAngent2_at_GaussPt << endl;
 
       PetscFunctionReturn(0);
     }

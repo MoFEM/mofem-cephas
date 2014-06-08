@@ -144,7 +144,9 @@ PetscErrorCode ForcesAndSurcesCore::getOrder(EntityType type,boost::ptr_vector<D
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
     if(data.size() != side_table.get<2>().count(type)) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      SETERRQ2(PETSC_COMM_SELF,1,
+	"data inconsistency %d != %d",
+	data.size(),side_table.get<2>().count(type));
     }
     FEDofMoFEMEntity_multiIndex::index<EntType_mi_tag>::type &data_dofs =
       const_cast<FEDofMoFEMEntity_multiIndex::index<EntType_mi_tag>::type&>(fe_ptr->get_data_dofs().get<EntType_mi_tag>());
@@ -898,15 +900,10 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
   if(data.getFieldData().size()==0)  PetscFunctionReturn(0);
   PetscErrorCode ierr;
   
-  nOrmals_at_GaussPt.resize(data.getN().size1(),3);
-  tAngent1_at_GaussPt.resize(data.getN().size1(),3);
-  tAngent2_at_GaussPt.resize(data.getN().size1(),3);
-
   switch (type) {
     case MBVERTEX: {
-      bzero(&*nOrmals_at_GaussPt.data().begin(),nOrmals_at_GaussPt.data().size()*sizeof(FieldData));
-      bzero(&*tAngent1_at_GaussPt.data().begin(),nOrmals_at_GaussPt.data().size()*sizeof(FieldData));
-      bzero(&*tAngent2_at_GaussPt.data().begin(),nOrmals_at_GaussPt.data().size()*sizeof(FieldData));
+      tAngent1_at_GaussPt.resize(data.getN().size1(),3);
+      tAngent2_at_GaussPt.resize(data.getN().size1(),3);
       for(int gg = 0;gg<data.getN().size1();gg++) {
 	for(int nn = 0;nn<3;nn++) {
 	  tAngent1_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,0),2,&data.getFieldData()[nn],3);
@@ -919,8 +916,10 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
     case MBTRI: {
      for(int gg = 0;gg<data.getN().size1();gg++) {
 	for(int nn = 0;nn<3;nn++) {
-	  tAngent1_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(gg,0),2,&data.getFieldData()[nn],3);
-	  tAngent2_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(gg,1),2,&data.getFieldData()[nn],3);
+	  //cerr << data.getDiffN() << endl;
+	  //cerr << data.getFieldData() << endl;
+	  tAngent1_at_GaussPt(gg,nn) += cblas_ddot(data.getN().size2(),&data.getDiffN()(gg,0),2,&data.getFieldData()[nn],3);
+	  tAngent2_at_GaussPt(gg,nn) += cblas_ddot(data.getN().size2(),&data.getDiffN()(gg,1),2,&data.getFieldData()[nn],3);
 	}
       }
     }
@@ -932,19 +931,19 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpGetNormals::calculateNormal() {
+PetscErrorCode OpGetNormals::calculateNormals() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
   sPin.resize(3,3);
   bzero(&*sPin.data().begin(),9*sizeof(FieldData));
-
+  nOrmals_at_GaussPt.resize(tAngent1_at_GaussPt.size1(),3);
   for(int gg = 0;gg<tAngent1_at_GaussPt.size1();gg++) {
-    ierr = Spin(&tAngent1_at_GaussPt(gg,0),&*sPin.data().begin()); CHKERRQ(ierr);
+    ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPt(gg,0)); CHKERRQ(ierr);
     cblas_dgemv(
       CblasRowMajor,CblasNoTrans,3,3,1.,
-	&*sPin.data().begin(),3,&tAngent2_at_GaussPt(gg,0),1,0.,
-	&nOrmals_at_GaussPt(gg,0),1);
+      &*sPin.data().begin(),3,&tAngent2_at_GaussPt(gg,0),1,0.,
+      &nOrmals_at_GaussPt(gg,0),1);
   }
 
   PetscFunctionReturn(0);
