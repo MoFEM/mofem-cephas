@@ -1567,6 +1567,7 @@ PetscErrorCode FieldCore::add_ents_to_finite_element_by_TRIs(const Range& tris,c
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   const EntityHandle idm = get_finite_element_meshset(id);
+  ierr = seed_finite_elements(tris); CHKERRQ(ierr);
   rval = moab.add_entities(idm,tris.subset_by_type(MBTRI)); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }

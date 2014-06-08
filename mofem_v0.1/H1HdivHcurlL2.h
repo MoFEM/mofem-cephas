@@ -67,7 +67,7 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
  * \param p of edges
  */
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM);
-PetscErrorCode H1_FaceShapeFunctions_MBTRI(int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM);
+PetscErrorCode H1_FaceShapeFunctions_MBTRI(const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM);
 PetscErrorCode H1_EdgeShapeFunctions_MBTET(int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM);
 PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM);
 PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM);

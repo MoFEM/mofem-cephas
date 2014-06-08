@@ -180,7 +180,7 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
   PetscErrorCode shapeTRIFunctions_H1(
     DataForcesAndSurcesCore &data,
-    ApproximationOrder order,const double *G_X,const double *G_Y,const int G_DIM);
+    const double *G_X,const double *G_Y,const int G_DIM);
 
 };
 
@@ -296,6 +296,30 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   
 };
 
+struct OpGetNormals: public DataOperator {
+
+  ublas::matrix<FieldData> &nOrmals_at_GaussPt;
+  ublas::matrix<FieldData> &tAngent1_at_GaussPt;
+  ublas::matrix<FieldData> &tAngent2_at_GaussPt;
+
+  OpGetNormals(
+    ublas::matrix<FieldData> &_nOrmals_at_GaussPt,
+    ublas::matrix<FieldData> &_tAngent1_at_GaussPt,
+    ublas::matrix<FieldData> &_tAngent2_at_GaussPt): 
+    nOrmals_at_GaussPt(_nOrmals_at_GaussPt),
+    tAngent1_at_GaussPt(_nOrmals_at_GaussPt),
+    tAngent2_at_GaussPt(_nOrmals_at_GaussPt) {}
+
+  ublas::matrix<FieldData> sPin;
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data);
+
+  PetscErrorCode calculateNormal();
+
+};
+
 struct TriangleH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
@@ -307,6 +331,7 @@ struct TriangleH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ErrorCode rval;
   PetscErrorCode ierr;
   double aRea;;
+  ublas::vector<double> normal;
   ublas::vector<double> coords;
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
