@@ -156,9 +156,12 @@ int main(int argc, char *argv[]) {
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ofstream ofs("forces_and_sources_body_force_atom_test.txt");
+  ostringstream out_file_name;
+  ofstream ofs("forces_and_sources_neumann_force_atom_test.txt");
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
+
+  int _sum_ = 0;
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForces> neumann_forces;
@@ -172,6 +175,7 @@ int main(int argc, char *argv[]) {
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
+    _sum_ += data.data.value1*(data.data.value3+data.data.value4+data.data.value5);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
     ostringstream fe_name;
@@ -183,6 +187,7 @@ int main(int argc, char *argv[]) {
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
+    _sum_ += data.data.value1;
   }
   boost::ptr_map<string,NeummanForces>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
@@ -197,8 +202,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
 
-    if(dit->get_dof_rank()!=1) continue;
-
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
     my_split << dit->get_petsc_gloabl_dof_idx() << " " << dit->get_FieldData() << endl;
@@ -207,7 +210,7 @@ int main(int argc, char *argv[]) {
 
   double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
-  my_split << endl << "Sum : " << setprecision(3) << sum << endl;
+  my_split << endl << "Sum : " << setprecision(3) << sum << " " << _sum_ << endl;
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 

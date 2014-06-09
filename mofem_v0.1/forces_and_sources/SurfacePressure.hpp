@@ -50,10 +50,10 @@ struct NeummanForces {
   
   struct OpNeumannForce: public TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator {
 
-    Vec F;
+    Vec &F;
     force_cubit_bc_data &dAta;
 
-    OpNeumannForce(const string field_name,Vec _F,force_cubit_bc_data &data):
+    OpNeumannForce(const string field_name,Vec &_F,force_cubit_bc_data &data):
       TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data) {}
 
@@ -110,11 +110,11 @@ struct NeummanForces {
 
   struct OpNeumannPreassure: public TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator {
 
-    Vec F;
+    Vec &F;
     pressure_cubit_bc_data &dAta;
     bool ho_geometry;
 
-    OpNeumannPreassure(const string field_name,Vec _F,pressure_cubit_bc_data &data):
+    OpNeumannPreassure(const string field_name,Vec &_F,pressure_cubit_bc_data &data):
       TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),ho_geometry(false) {}
 
@@ -137,12 +137,12 @@ struct NeummanForces {
       Nf.resize(data.getIndices().size());
       bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
-      cerr << getNormal() << endl;
-      cerr << getNormals_at_GaussPt() << endl;
+      //cerr << getNormal() << endl;
+      //cerr << getNormals_at_GaussPt() << endl;
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = getArea()*getGaussPts()(2,gg);
+	double val = getGaussPts()(2,gg);
 	for(int rr = 0;rr<rank;rr++) {
 
 	  double force;
@@ -157,8 +157,9 @@ struct NeummanForces {
 
       }
     
+      /*cerr << "VecSetValues\n";
       cerr << Nf << endl;
-      cerr << data.getIndices() << endl;
+      cerr << data.getIndices() << endl;*/
       ierr = VecSetValues(F,data.getIndices().size(),
 	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
