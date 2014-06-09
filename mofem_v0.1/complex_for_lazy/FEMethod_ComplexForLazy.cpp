@@ -32,8 +32,8 @@ namespace MoFEM {
 
 FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,
     analysis _type,
-    double _lambda,double _mu,double _thermal_expansion,int _verbose): 
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    double _lambda,double _mu,double _thermal_expansion,int _verbose):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
     type_of_analysis(_type),type_of_forces(conservative),
     lambda(_lambda),mu(_mu),thermal_expansion(_thermal_expansion),ptr_matctx(NULL),
     eps(1e-10),thermal_load_factor(1),
@@ -85,7 +85,7 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,BaseDir
   g_TET_W = G_TET_W45;
   //
   g_NTRI.resize(3*13);
-  ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13); 
+  ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13);
   g_TRI_dim = 13;
   g_TRI_W = G_TRI_W13;
 
@@ -109,67 +109,65 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 
       Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);     
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
 
       Range meshsets;
       rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
       meshsets.insert(it->meshset);
       for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-	if( moab.contains_entities(*mit,&ent,1) ) {
-	  *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
-	  *_mu = MU(mydata.data.Young,mydata.data.Poisson);
-	  int material_type = (int)mydata.data.User1;
-	  if(material_type>=10) {
-	    switch(material_type) {
-	      case 10: {
-		set_PhysicalEquationNumber(hooke);
-		}
-		break;
-	      case 11: {
-		set_PhysicalEquationNumber(stvenant_kirchhoff);
-		}
-		break;
-	      case 12: {
-		set_PhysicalEquationNumber(neohookean);
-		}
-		break;
-	      case 13: {
-		set_PhysicalEquationNumber(eberleinholzapfel1);
-		EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
-		EberleinHolzapfel1_mat_parameters.k1 = mydata.data.User2;
-		EberleinHolzapfel1_mat_parameters.k2 = mydata.data.User2;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.User3;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.User4;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.User5;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.User6;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.User7;
-		EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.User8;
-		*ptr_matctx = &EberleinHolzapfel1_mat_parameters;
-		}
-		break;
-	      default: {
-		SETERRQ(PETSC_COMM_SELF,1,
-		  "Materail not defined (Attribute 3):\n"
-		  "\t10 = hooke\n"
-		  "\t11 = stvenant_kirchhoff\n"
-		  "\t12 = neohookean\n"
-		  "\t13 = eberleinholzapfel1\n");
-	      }
-	    }
-	  }
-
-	  PetscFunctionReturn(0);  
-	}
+        if( moab.contains_entities(*mit,&ent,1) ) {
+          *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
+          *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+          int material_type = (int)mydata.data.User1;
+          if(it->get_Cubit_name().compare(0,29,"MAT_ELASTIC_EberleinHolzapfel") == 0) {
+            Mat_Elastic_EberleinHolzapfel1 mydata;
+            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+            set_PhysicalEquationNumber(eberleinholzapfel1);
+            EberleinHolzapfel1_mat_parameters.eq_solid = neohookean;
+            EberleinHolzapfel1_mat_parameters.k1 = mydata.data.k1;
+            EberleinHolzapfel1_mat_parameters.k2 = mydata.data.k2;
+            EberleinHolzapfel1_mat_parameters.fibre_vector_a1[0] = mydata.data.a0x;
+            EberleinHolzapfel1_mat_parameters.fibre_vector_a1[1] = mydata.data.a0y;
+            EberleinHolzapfel1_mat_parameters.fibre_vector_a1[2] = mydata.data.a0z;
+            EberleinHolzapfel1_mat_parameters.fibre_vector_a2[0] = mydata.data.a1x;
+            EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.a1y;
+            EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.a1z;
+            *ptr_matctx = &EberleinHolzapfel1_mat_parameters;
+          }
+          else {
+            if(material_type>=10) {
+              switch(material_type) {
+                case 10: {
+                           set_PhysicalEquationNumber(hooke);
+                         }
+                         break;
+                case 11: {
+                           set_PhysicalEquationNumber(stvenant_kirchhoff);
+                         }
+                         break;
+                case 12: {
+                           set_PhysicalEquationNumber(neohookean);
+                         }
+                         break;
+                default: {
+                           SETERRQ(PETSC_COMM_SELF,1,
+                               "Materail not defined (Attribute 3):\n"
+                               "\t10 = hooke\n"
+                               "\t11 = stvenant_kirchhoff\n"
+                               "\t12 = neohookean\n"
+                               "\tname is MAT_ELASTIC_EberleinHolzapfel = eberleinholzapfel1\n");
+                         }
+              }
+            }
+          }
+          PetscFunctionReturn(0);
+        }
       }
-
     }
-
     SETERRQ(PETSC_COMM_SELF,1,
-      "Element is not in elastic block, however you run non-linear elastic analysis with that element\n"
-      "top tip: check if you update block sets after mesh refinments or interface insertion");
-
+        "Element is not in elastic block, however you run non-linear elastic analysis with that element\n"
+        "top tip: check if you update block sets after mesh refinments or interface insertion");
   }
-
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
@@ -179,13 +177,13 @@ PetscErrorCode FEMethod_ComplexForLazy::OpComplexForLazyStart() {
     ierr = PetscOptionsGetReal("","-my_alpha2",&alpha2,&flg_alpha2); CHKERRQ(ierr);
     ierr = PetscOptionsGetReal("","-my_gamma",&gamma,&flg_gamma); CHKERRQ(ierr);
     double def_quality = -1;
-    rval = moab.tag_get_handle("QUALITY0",1,MB_TYPE_DOUBLE,th_quality0,MB_TAG_CREAT|MB_TAG_SPARSE,&def_quality); 
+    rval = moab.tag_get_handle("QUALITY0",1,MB_TYPE_DOUBLE,th_quality0,MB_TAG_CREAT|MB_TAG_SPARSE,&def_quality);
     if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
     CHKERR(rval);
-    rval = moab.tag_get_handle("QUALITY",1,MB_TYPE_DOUBLE,th_quality,MB_TAG_CREAT|MB_TAG_SPARSE,&def_quality); 
+    rval = moab.tag_get_handle("QUALITY",1,MB_TYPE_DOUBLE,th_quality,MB_TAG_CREAT|MB_TAG_SPARSE,&def_quality);
     if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
     CHKERR(rval);
-    rval = moab.tag_get_handle("B",1,MB_TYPE_DOUBLE,th_b,MB_TAG_CREAT|MB_TAG_SPARSE,&def_quality); 
+    rval = moab.tag_get_handle("B",1,MB_TYPE_DOUBLE,th_b,MB_TAG_CREAT|MB_TAG_SPARSE,&def_quality);
     if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
     CHKERR(rval);
     EntityHandle ent = fe_ptr->get_ent();
@@ -221,7 +219,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesRow(
       ierr = GetRowGlobalIndices(field_name,MBTET,RowGlob[1+ee+ff]); CHKERRQ(ierr);
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
-      } 
+      }
     }
     break;
     default:
@@ -231,7 +229,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesRow(
       ostringstream ss;
       ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetIndicesCol(
@@ -260,7 +258,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesCol(
       ierr = GetColGlobalIndices(field_name,MBTET,ColGlob[1+ee+ff]); CHKERRQ(ierr);
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
-      } 
+      }
     }
     break;
     default:
@@ -270,7 +268,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesCol(
       ostringstream ss;
       ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetIndices(
@@ -310,7 +308,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	  dofs_edge[ee] = &dofs_edge_data[ee].data()[0];
 	  assert(dofs_edge_data[ee].size() == 3*(unsigned int)NBEDGE_H1(order_edges[ee]));
 	  map<UId,FieldData> map_edge_dofs;
-	  for(;eiit!=hi_eiit;eiit++) dofs_edge_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData(); 
+	  for(;eiit!=hi_eiit;eiit++) dofs_edge_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData();
 	  if(diffH1edgeNinvJac[ee].size() < (unsigned int)NBEDGE_H1(order_edges[ee])) {
 	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
 	  }
@@ -330,7 +328,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	  order_faces[ff] = fiit->get_max_order();
 	  dofs_face[ff] = &dofs_face_data[ff].data()[0];
 	  assert(dofs_face_data[ff].size() == 3*(unsigned int)NBFACE_H1(order_faces[ff]));
-	  for(;fiit!=hi_fiit;fiit++) dofs_face_data[ff][fiit->get_EntDofIdx()] = fiit->get_FieldData(); 
+	  for(;fiit!=hi_fiit;fiit++) dofs_face_data[ff][fiit->get_EntDofIdx()] = fiit->get_FieldData();
 	  if(diffH1faceNinvJac[ff].size() < (unsigned int)NBFACE_H1(order_faces[ff])) {
 	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
 	  }
@@ -347,7 +345,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	order_volume = viit->get_max_order();
 	dofs_volume.resize(distance(viit,hi_viit));
 	assert(dofs_volume.size() == (unsigned int)3*NBVOLUME_H1(order_volume));
-	for(;viit!=hi_viit;viit++) dofs_volume[viit->get_EntDofIdx()] = viit->get_FieldData(); 
+	for(;viit!=hi_viit;viit++) dofs_volume[viit->get_EntDofIdx()] = viit->get_FieldData();
 	if(diffH1elemNinvJac.size() < (unsigned int)NBVOLUME_H1(order_volume)) {
 	  SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
 	}
@@ -362,11 +360,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       if(field_name == spatial_field_name) {
 	if(distance(niit,hi_niit)!=12) {
 	  EntityHandle ent = fe_ptr->get_ent();
-	  const EntityHandle* conn; 
-	  int num_nodes; 
+	  const EntityHandle* conn;
+	  int num_nodes;
 	  rval = moab.get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
 	  PetscPrintf(PETSC_COMM_WORLD,"== sides ==\n");
-	  SideNumber_multiIndex::nth_index<2>::type &sides = 
+	  SideNumber_multiIndex::nth_index<2>::type &sides =
 	    const_cast<SideNumber_multiIndex::nth_index<2>::type&>(fe_ptr->get_side_number_table().get<2>());
 	  SideNumber_multiIndex::nth_index<2>::type::iterator sit,hi_sit;
 	  sit = sides.lower_bound(MBVERTEX);
@@ -419,11 +417,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	}
       }
       for(int dd = 0;niit!=hi_niit;niit++,dd++) {
-	dofs_nodes[3*niit->side_number_ptr->side_number+niit->get_EntDofIdx()] = niit->get_FieldData(); 
+	dofs_nodes[3*niit->side_number_ptr->side_number+niit->get_EntDofIdx()] = niit->get_FieldData();
       }
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
-      } 
+      }
     }  break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"sorry.. I don't know what to do");
@@ -432,7 +430,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       ostringstream ss;
       ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 
@@ -471,18 +469,18 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
   case MBTET: {
     int ee = 0;
     for(;ee<6;ee++) {
-      diff_edgeNinvJac[ee] = &*diffH1edgeNinvJac[ee].begin(); 
-      edgeN[ee] = &*H1edgeN[ee].begin(); 
+      diff_edgeNinvJac[ee] = &*diffH1edgeNinvJac[ee].begin();
+      edgeN[ee] = &*H1edgeN[ee].begin();
     }
     int ff = 0;
     for(;ff<4;ff++) {
       diff_faceNinvJac[ff] = &*diffH1faceNinvJac[ff].begin();
-      faceN[ff] = &*H1faceN[ff].begin(); 
+      faceN[ff] = &*H1faceN[ff].begin();
     }
     diff_volumeNinvJac = &*diffH1elemNinvJac.begin();
     volumeN = &*H1elemN.begin();
-    double center[3]; 
-    tetcircumcenter_tp(&coords[0],&coords[3],&coords[6],&coords[9],center,NULL,NULL,NULL); 
+    double center[3];
+    tetcircumcenter_tp(&coords[0],&coords[3],&coords[6],&coords[9],center,NULL,NULL,NULL);
     cblas_daxpy(3,-1,&coords[0],1,center,1);
     double r = cblas_dnrm2(3,center,1);
     int g_dim = get_dim_gNTET();
@@ -565,7 +563,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator fiit;
 	fiit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().find(boost::make_tuple(spatial_field_name,MBTRI,ff));
 	if(fiit==data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().end()) {
-	  order_x_faces[ff] = 0; 
+	  order_x_faces[ff] = 0;
 	} else {
 	  order_x_faces[ff] = fiit->get_max_order();
 	}
@@ -589,7 +587,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
       dofs_X_volume,dofs_X,
       material_field_name); CHKERRQ(ierr);
     ierr = GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
-    unsigned int sub_analysis_type[3] = { 
+    unsigned int sub_analysis_type[3] = {
       spatail_analysis, material_analysis, mesh_quality_analysis };
     double _lambda,_mu,_thermal_expansion;
     if( (spatail_analysis|material_analysis)&type_of_analysis ) {
@@ -604,9 +602,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	    V,eps*r,_lambda,_mu,ptr_matctx,
-	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0],
 	    &dofs_X[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
-	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	    //temperature
 	    _thermal_expansion,thermal_load_factor,
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
@@ -618,46 +616,46 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
-	    V,eps*r,_lambda,_mu,ptr_matctx, 
-	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	    V,eps*r,_lambda,_mu,ptr_matctx,
+	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0],
 	    &dofs_X[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
-	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	    //temperature
 	    _thermal_expansion,thermal_load_factor,
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
-	    &Khedge[0],&KHedge[0],Khh_edgeedge,Khh_faceedge,Khh_volumeedge, 
+	    &Khedge[0],&KHedge[0],Khh_edgeedge,Khh_faceedge,Khh_volumeedge,
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	  ierr = Tangent_hh_hierachical_face(
 	    &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
-	    V,eps*r,_lambda,_mu,ptr_matctx, 
-	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	    &dofs_X[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(), 
-	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	    V,eps*r,_lambda,_mu,ptr_matctx,
+	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0],
+	    &dofs_X[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
+	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	    //temperature
 	    _thermal_expansion,thermal_load_factor,
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
-	    &Khface[0],&KHface[0],Khh_edgeface,Khh_faceface,Khh_volumeface, 
+	    &Khface[0],&KHface[0],Khh_edgeface,Khh_faceface,Khh_volumeface,
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	  ierr = Tangent_hh_hierachical_volume(
 	    &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
-	    V,eps*r,_lambda,_mu,ptr_matctx, 
-	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],diff_volumeNinvJac, 
+	    V,eps*r,_lambda,_mu,ptr_matctx,
+	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],diff_volumeNinvJac,
 	    &dofs_X[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
-	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	    //temperature
 	    _thermal_expansion,thermal_load_factor,
 	    &g_NTET[0],&edgeN[0],&faceN[0],volumeN, //shape functions
 	    NULL,NULL,_order_T_volume, &dofs_temp.data()[0],NULL,NULL,NULL,
 	    //
-	    &*Khvolume.data().begin(),&*KHvolume.data().begin(),Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(), 
+	    &*Khvolume.data().begin(),&*KHvolume.data().begin(),Khh_edgevolume,Khh_facevolume,&*Khh_volumevolume.data().begin(),
 	    g_dim,g_TET_W); CHKERRQ(ierr);
 	}
 	break;
@@ -667,7 +665,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	    &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	    &order_x_edges[0],&order_x_faces[0],order_x_volume,
 	    V,eps*r,_lambda,_mu,ptr_matctx,
-	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	    &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0],
 	    &dofs_X[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
 	    &dofs_x[0],&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	    //temperature
@@ -683,8 +681,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  if(!flg_alpha2) SETERRQ(PETSC_COMM_SELF,1,"-my_alpha2 is not set");
 	  if(!flg_gamma) SETERRQ(PETSC_COMM_SELF,1,"-my_gamma is not set");
 	  KHH.resize(12,12);
-	  double coords_edges[2*3*6]; 
-	  double alpha2_array[4] = { alpha2,alpha2,alpha2,alpha2 }; 
+	  double coords_edges[2*3*6];
+	  double alpha2_array[4] = { alpha2,alpha2,alpha2,alpha2 };
 	  ierr = get_edges_from_elem_coords(&coords[0],coords_edges); CHKERRQ(ierr);
 	  ierr = quality_volume_length_K(eps*r,V,alpha2_array,gamma,&diffNTETinvJac[0],coords_edges,&dofs_X.data()[0],NULL,&*KHH.data().begin(),NULL); CHKERRQ(ierr);
 	}
@@ -701,7 +699,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     ostringstream ss;
     ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
@@ -711,13 +709,13 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
     case MBTET: {
       int ee = 0;
       for(;ee<6;ee++) {
-  	diff_edgeNinvJac[ee] = &(diffH1edgeNinvJac[ee])[0]; 
-	edgeN[ee] = &*H1edgeN[ee].begin(); 
+  	diff_edgeNinvJac[ee] = &(diffH1edgeNinvJac[ee])[0];
+	edgeN[ee] = &*H1edgeN[ee].begin();
       }
       int ff = 0;
       for(;ff<4;ff++) {
         diff_faceNinvJac[ff] = &(diffH1faceNinvJac[ff])[0];
-	faceN[ff] = &*H1faceN[ff].begin(); 
+	faceN[ff] = &*H1faceN[ff].begin();
       }
       diff_volumeNinvJac = &diffH1elemNinvJac[0];
       volumeN = &*H1elemN.begin();
@@ -753,7 +751,6 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	}
       }
       if(dofs_x_volume.size()!=0) {
-	  assert(RowGlobSpatial[i_volume].size() == (unsigned int)3*NBVOLUME_H1(order_x_volume));
 	  Fint_h_volume.resize(dofs_x_volume.size());
 	  iFint_h_volume.resize(dofs_x_volume.size());
       }
@@ -764,8 +761,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	dofs_X_volume,dofs_X,
 	material_field_name); CHKERRQ(ierr);
       ierr = GetDofs_Termal_FromElementData(); CHKERRQ(ierr);
-      unsigned int sub_analysis_type[5] = { 
-	spatail_analysis, material_analysis, mesh_quality_analysis, scaled_themp_direvative_spatial, scaled_themp_direvative_material 
+      unsigned int sub_analysis_type[5] = {
+	spatail_analysis, material_analysis, mesh_quality_analysis, scaled_themp_direvative_spatial, scaled_themp_direvative_material
       };
       double _lambda,_mu,_thermal_expansion;
       if( (spatail_analysis|material_analysis|scaled_themp_direvative_spatial|scaled_themp_direvative_material)&type_of_analysis ) {
@@ -779,10 +776,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	      &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	      &order_x_edges[0],&order_x_faces[0],order_x_volume,
-	      V,_lambda,_mu,ptr_matctx, 
-	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
-	      &dofs_X.data()[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(), 
-	      &*dofs_x.data().begin(),&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      V,_lambda,_mu,ptr_matctx,
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0],
+	      &dofs_X.data()[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
+	      &*dofs_x.data().begin(),&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	      NULL,NULL,
 	      //temperature
 	      _thermal_expansion,thermal_load_factor,eps,
@@ -801,10 +798,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	      &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	      &order_x_edges[0],&order_x_faces[0],order_x_volume,
-	      V,_lambda,_mu,ptr_matctx, 
-	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	      V,_lambda,_mu,ptr_matctx,
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0],
 	      &dofs_X.data()[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
-	      &*dofs_x.data().begin(),&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      &*dofs_x.data().begin(),&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	      NULL,NULL,
 	      //temperature
 	      _thermal_expansion,thermal_load_factor,0,
@@ -830,8 +827,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	    if(order_X_volume!=0) {
 	      SETERRQ(PETSC_COMM_SELF,1,"not working for higher order tets");
 	    }
-	    double coords_edges[2*3*6]; 
-	    double alpha2_array[4] = { alpha2,alpha2,alpha2,alpha2 }; 
+	    double coords_edges[2*3*6];
+	    double alpha2_array[4] = { alpha2,alpha2,alpha2,alpha2 };
 	    ierr = get_edges_from_elem_coords(&coords[0],coords_edges); CHKERRQ(ierr);
 	    ierr = quality_volume_length_F(V,alpha2_array,gamma,&diffNTETinvJac[0],coords_edges,
 	      &dofs_X.data()[0],NULL,NULL,NULL,quality0,quality,b,
@@ -843,10 +840,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	      &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	      &order_x_edges[0],&order_x_faces[0],order_x_volume,
-	      V,_lambda,_mu,ptr_matctx, 
-	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	      V,_lambda,_mu,ptr_matctx,
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0],
 	      &dofs_X.data()[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
-	      &*dofs_x.data().begin(),&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      &*dofs_x.data().begin(),&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	      NULL,NULL,
 	      //temperature
 	      _thermal_expansion,thermal_load_factor,eps,
@@ -866,10 +863,10 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &maxOrderEdgeH1[0],&maxOrderFaceH1[0],maxOrderElemH1,
 	      &order_X_edges[0],&order_X_faces[0],order_X_volume,
 	      &order_x_edges[0],&order_x_faces[0],order_x_volume,
-	      V,_lambda,_mu,ptr_matctx, 
-	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0], 
+	      V,_lambda,_mu,ptr_matctx,
+	      &diffNTETinvJac[0],&diff_edgeNinvJac[0],&diff_faceNinvJac[0],&diff_volumeNinvJac[0],
 	      &dofs_X.data()[0],&dofs_X_edge[0],&dofs_X_face[0],&*dofs_X_volume.data().begin(),
-	      &*dofs_x.data().begin(),&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(), 
+	      &*dofs_x.data().begin(),&dofs_x_edge[0],&dofs_x_face[0],&*dofs_x_volume.data().begin(),
 	      NULL,NULL,
 	      //temperature
 	      _thermal_expansion,thermal_load_factor,eps,
@@ -884,7 +881,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      g_dim,g_TET_W); CHKERRQ(ierr);
 	  }
 	  break;
-	  default: 
+	  default:
 	    continue;
       }
     }
@@ -896,7 +893,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
     ostringstream ss;
     ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face) {
@@ -906,8 +903,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
   FaceNodeIndices.resize(9);
   fill(FaceNodeIndices.begin(),FaceNodeIndices.end(),-1);
   FaceNodeData.resize(9);
-  const EntityHandle* conn_face; 
-  int num_nodes; 
+  const EntityHandle* conn_face;
+  int num_nodes;
   rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
   int nn = 0,dd = 0;
   for(;nn<3;nn++) {
@@ -919,14 +916,14 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(spatial_field_name,conn_face[nn]));
     for(;niit!=hi_niit;niit++,col_niit++,dd++) {
       if(col_niit->get_petsc_gloabl_dof_idx() != niit->get_petsc_gloabl_dof_idx()) {
-	SETERRQ(PETSC_COMM_SELF,1,"this implementation is not working for diffrent ordering of columns and rows"); 
+	SETERRQ(PETSC_COMM_SELF,1,"this implementation is not working for diffrent ordering of columns and rows");
       }
       FaceNodeIndices[nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_petsc_gloabl_dof_idx();
       FaceNodeData[nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_FieldData();
     }
   }
   if(dd != 9) {
-    SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET"); 
+    SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET");
   }
   dofs_iterator fiit,hi_fiit;
   fiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(spatial_field_name,face));
@@ -994,7 +991,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData(EntityHandle face)
     ostringstream ss;
     ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,double *t_edge[],double *t_face) {
@@ -1006,11 +1003,11 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
   int ee = 0;
   for(;ee<3;ee++) {
     if(FaceEdgeIndices_data[ee].size()>0) {
-      if((unsigned int)3*NBEDGE_H1(FaceEdgeOrder[ee])!=FaceEdgeIndices_data[ee].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+      if((unsigned int)3*NBEDGE_H1(FaceEdgeOrder[ee])!=FaceEdgeIndices_data[ee].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       FExt_edge_data[ee].resize(FaceEdgeIndices_data[ee].size());
       FExt_edge[ee] = &*(FExt_edge_data[ee].data().begin());
     } else {
-      if(NBEDGE_H1(FaceEdgeOrder[ee])!=0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency"); 
+      if(NBEDGE_H1(FaceEdgeOrder[ee])!=0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       FExt_edge[ee] = NULL;
     }
   }
@@ -1050,7 +1047,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt(EntityHandle face,double *t,doub
       ostringstream ss;
       ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *t,double *t_edge[],double *t_face) {
@@ -1065,7 +1062,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
       int num_nodes;
       rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
-      double center[3]; 
+      double center[3];
       tricircumcenter3d_tp(&coords_face.data()[0],&coords_face.data()[3],&coords_face.data()[6],center,NULL,NULL);
       cblas_daxpy(3,-1,&coords_face.data()[0],1,center,1);
       double r = cblas_dnrm2(3,center,1);
@@ -1114,7 +1111,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
           &g_NTRI[0],&N_face[0],N_edge,&diffNTRI[0],&diffN_face[0],diffN_edge,
           t,t_edge,t_face,&*FaceNodeData.data().begin(),EdgeData,&*FaceData.data().begin(),
           &*KExt_hface.data().begin(),KExt_edgeface,&*KExt_faceface.data().begin(),
-          g_TRI_dim,g_TRI_W); CHKERRQ(ierr); 
+          g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
       }
       break;
     case nonconservative:
@@ -1125,7 +1122,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt(EntityHandle face,double *
       ostringstream ss;
       ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHandle face) {
@@ -1136,8 +1133,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
   FaceNodeIndices_Material.resize(9);
   fill(FaceNodeIndices_Material.begin(),FaceNodeIndices_Material.end(),-1);
   FaceNodeData_Material.resize(9);
-  const EntityHandle* conn_face; 
-  int num_nodes; 
+  const EntityHandle* conn_face;
+  int num_nodes;
   rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
   int nn = 0,dd = 0;
   for(;nn<3;nn++) {
@@ -1154,7 +1151,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
     }
   }
   if(dd != 9) {
-    SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET"); 
+    SETERRQ(PETSC_COMM_SELF,1,"face is not adjacent to this TET");
   }
   data_dofs_iterator fiit,hi_fiit;
   fiit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(material_field_name,face));
@@ -1214,7 +1211,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFaceIndicesAndData_Material(EntityHan
     ostringstream ss;
     ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,double *t,double *t_edge[],double *t_face) {
@@ -1233,7 +1230,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,doubl
 	&*FExt_Material.begin(),NULL,g_TRI_dim,g_TRI_W); CHKERRQ(ierr);
       break;
     case nonconservative:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented"); 
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       break;
   }
   FExt_Material *= -1;
@@ -1241,7 +1238,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFExt_Material(EntityHandle face,doubl
       ostringstream ss;
       ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face,double *t,double *t_edge[],double *t_face) {
@@ -1256,7 +1253,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face
         int num_nodes;
         rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
         rval = moab.get_coords(conn_face,num_nodes,&*coords_face.begin()); CHKERR_PETSC(rval);
-	double center[3]; 
+	double center[3];
 	tricircumcenter3d_tp(&coords_face.data()[0],&coords_face.data()[3],&coords_face.data()[6],center,NULL,NULL);
 	cblas_daxpy(3,-1,&coords_face.data()[0],1,center,1);
 	double r = cblas_dnrm2(3,center,1);
@@ -1270,14 +1267,14 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangentExt_Material(EntityHandle face
       }
       break;
     case nonconservative:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented"); 
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       break;
     }
   } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  } 
+  }
   PetscFunctionReturn(0);
 }
 

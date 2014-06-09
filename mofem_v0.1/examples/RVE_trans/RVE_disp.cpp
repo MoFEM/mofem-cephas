@@ -354,9 +354,9 @@ int main(int argc, char *argv[]) {
         //Get block name
         string name = it->get_Cubit_name();
         
-        if (name.compare(0,12,"MAT_TRANSISO") == 0)
+        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
         {
-            Mat_TransIso mydata;
+            Mat_Elastic_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             cout << mydata;
             YoungModulusP=mydata.data.Youngp;

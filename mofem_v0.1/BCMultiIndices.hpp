@@ -48,10 +48,9 @@ enum Cubit_BC {
   InterfaceSet = 1<<11,
   UnknownCubitName = 1<< 12,
   Mat_ElasticSet = 1<<13,
-  Mat_TransIsoSet = 1<<14,
-  Mat_InterfSet = 1 <<15,
-  Mat_ThermalSet = 1<<16,
-  Block_BodyForcesSet = 1<<17,
+  Mat_InterfSet = 1 <<14,
+  Mat_ThermalSet = 1<<15,
+  Block_BodyForcesSet = 1<<16,
   LastSet
 };
 
@@ -104,7 +103,7 @@ struct BlockSet_generic_attributes: public generic_attribute_data {
       PetscFunctionReturn(0);
     }
     
-    /*! \brief Print Mat_Elastic data
+    /*! \brief Print data
      */
     friend ostream& operator<<(ostream& os,const BlockSet_generic_attributes& e);
     
@@ -236,36 +235,42 @@ struct Block_BodyForces: public generic_attribute_data {
     
     
     
-/*! \struct Mat_TransIso
+/*! \struct Mat_Elastic_TransIso
  *  \brief Transverse Isotropic material data structure
  */
-struct Mat_TransIso: public generic_attribute_data {
+  struct Mat_Elastic_TransIso: public Mat_Elastic {
     struct __attribute__ ((packed)) _data_{
-        double Youngp; // Young's modulus in xy plane (Ep)
-        double Youngz; // Young's modulus in z-direction (Ez)
-        double Poissonp; // Poisson's ratio in xy plane (vp)
-        double Poissonpz; // Poisson's ratio in z-direction (vpz)
-        double Shearzp; // Shear modulus in z-direction (Gzp)
-     };
+      double Youngp; // Young's modulus in xy plane (Ep)
+      double Youngz; // Young's modulus in z-direction (Ez)
+      double Poissonp; // Poisson's ratio in xy plane (vp)
+      double Poissonpz; // Poisson's ratio in z-direction (vpz)
+      double Shearzp; // Shear modulus in z-direction (Gzp)
+    };
     
     _data_ data;
     
-    const Cubit_BC_bitset type;
-    Mat_TransIso(): type(Mat_TransIsoSet) {};
+    const unsigned int min_number_of_atributes;
+    Mat_Elastic_TransIso(): Mat_Elastic(),min_number_of_atributes(5) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
-        PetscFunctionBegin;
-        //Fill data
-        if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
-        memcpy(&data, &attributes[0], sizeof(data));
-        PetscFunctionReturn(0);
+      PetscFunctionBegin;
+      //Fill data
+      if(attributes.size()<min_number_of_atributes) {
+        SETERRQ(PETSC_COMM_SELF,1,"All material data not defined");
+      }
+      if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+      memcpy(&data, &attributes[0], sizeof(data));
+      bzero(&data,sizeof(data));
+      memcpy(&data, &attributes[0],8*attributes.size());
+      
+      PetscFunctionReturn(0);
     }
     
-    /*! \brief Print Mat_TransIso data
+    /*! \brief Print Mat_Elastic_TransIso data
      */
-    friend ostream& operator<<(ostream& os,const Mat_TransIso& e);
+    friend ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e);
     
-};
+  };
 
     /*! \struct Mat_Interf
      *  \brief Linear interface data structure
@@ -296,6 +301,49 @@ struct Mat_TransIso: public generic_attribute_data {
         friend ostream& operator<<(ostream& os,const Mat_Interf& e);
         
     };
+
+/*! \struct Mat_Elastic with Fibres
+ *  \brief Elastic material data structure
+ */
+struct Mat_Elastic_EberleinHolzapfel1: public Mat_Elastic {
+    struct __attribute__ ((packed)) _data_{
+        double Young; // Young's modulus
+        double Poisson; // Poisson's ratio
+        double k1; // User attribute 1
+        double k2; // User attribute 2
+        double a0x; // User attribute 3
+        double a0y; // User attribute 4
+        double a0z; // User attribute 5
+        double a1x; // User attribute 6
+        double a1y; // User attribute 7
+        double a1z; // User attribute 8
+    };
+    
+    _data_ data;
+    
+    const unsigned int min_number_of_atributes;
+    Mat_Elastic_EberleinHolzapfel1(): Mat_Elastic(),min_number_of_atributes(10) {};
+    
+    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+        PetscFunctionBegin;
+        if(attributes.size()<min_number_of_atributes) {
+	  SETERRQ(PETSC_COMM_SELF,1,"All material data not defined");
+	}
+        if(8*attributes.size()>sizeof(data)) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+	}
+	bzero(&data,sizeof(data));
+        memcpy(&data, &attributes[0],8*attributes.size());
+        PetscFunctionReturn(0);
+    }
+    
+    /*! \brief Print Mat_Elastic data
+     */
+    friend ostream& operator<<(ostream& os,const Mat_Elastic_EberleinHolzapfel1& e);
+    
+};
+
+
     
 /*! \struct generic_cubit_bc_data
  *  \brief Generic bc data structure
@@ -726,7 +774,7 @@ struct CubitMeshSets {
    *                    ...
    *                    (10) User attribute 8
    *
-   * MAT_TRANSISO / 5 / (1) Young's modulus in xy plane (Ep)
+   * MAT_ELASTIC_TRANSISO / 5 / (1) Young's modulus in xy plane (Ep)
    *                    (2) Young's modulus in z-direction (Ez)
    *                    (3) Poisson's ratio in xy plane (vp)
    *                    (4) Poisson's ratio in z-direction (vpz)

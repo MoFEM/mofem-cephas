@@ -200,7 +200,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    g_NTRI.resize(3*13);
+    g_NTRI.resize(3*28);
     ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
 
     switch(snes_ctx) {
@@ -689,6 +689,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 
   virtual PetscErrorCode calulate_lambda_int(double &_lambda_int_) {
     PetscFunctionBegin;
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
     dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
     hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problem_ptr->get_nb_local_dofs_row());
@@ -702,6 +703,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     array_int_lambda[0] = 0;
     for(;dit!=hi_dit;dit++) {
       if(dit->get_ent_type() != MBVERTEX) continue;
+      if(pcomm->rank() != dit->get_part()) continue;
       if(Nodes3.find(dit->get_ent())!=Nodes3.end()) {
 	array_int_lambda[0] += array[dit->petsc_local_dof_idx];
       }
@@ -709,6 +711,8 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 	array_int_lambda[0] -= array[dit->petsc_local_dof_idx];
       }
     }
+    //PetscSynchronizedPrintf(PETSC_COMM_WORLD,
+    //  "array_int_lambda[0] = %6.4ee\n",array_int_lambda[0]);
     ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
     ierr = VecRestoreArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(GhostLambdaInt,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -717,6 +721,10 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     ierr = VecGhostUpdateEnd(GhostLambdaInt,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     _lambda_int_ = arc_ptr->alpha*array_int_lambda[0] + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
+    /*PetscSynchronizedPrintf(PETSC_COMM_WORLD,
+      "array_int_lambda[0] = %6.4e arc_ptr->F_lambda2 = %6.4e\n",
+      array_int_lambda[0],arc_ptr->F_lambda2);
+    PetscSynchronizedFlush(PETSC_COMM_WORLD);*/
     ierr = VecRestoreArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -755,7 +763,8 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 	//calulate residual for arc length row
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(F,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
+	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e s = %6.4e\n",
+	  arc_ptr->res_lambda,lambda_int,arc_ptr->s);
       }
       break; 
       case ctx_SNESSetJacobian: {

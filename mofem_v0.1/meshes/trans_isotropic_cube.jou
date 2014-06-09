@@ -38,7 +38,7 @@ block 2 volume 1
 #nodeset 6 name 'ZeroPressure'
 
 #!Add material name and description
-block 1 name "MAT_TRANSISO_1" 
+block 1 name "MAT_ELASTIC_TRANSISO_1" 
 block 2 name "PotentialFlow" 
 
 block 1 description 'Transverse Isotropic material properties' 

@@ -44,6 +44,10 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   vector<double> g_NTRI;
   const double *G_TRI_W;
 
+  Tag th_projection;
+  Range crackFrontEdgesNodes;
+  bool use_projection_from_crack_front;
+
   C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose = 0);
   C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose = 0);
   void run_in_constructor();
@@ -138,20 +142,26 @@ struct C_SURFACE_FEMethod_ForSnes: public C_FEMethod_ForSnes {
   C_SURFACE_FEMethod MatMethod;
   g_SURFACE_FEMethod FMethod;
   bool nonlinear;
+  bool use_projection_from_crack_front;
+
 
   C_SURFACE_FEMethod_ForSnes(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
    mField(_mField),
     MatMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL),
-    FMethod(_mField,_dirihlet_bc_method_ptr,snes_f),nonlinear(false) {}
+    FMethod(_mField,_dirihlet_bc_method_ptr,snes_f),
+    nonlinear(false),use_projection_from_crack_front(false) {}
 
   C_SURFACE_FEMethod_ForSnes(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,string _lambda_field_name,int _verbose = 0):
    mField(_mField),
     MatMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,_lambda_field_name),
-    FMethod(_mField,_dirihlet_bc_method_ptr,snes_f,_lambda_field_name),nonlinear(false) {}
+    FMethod(_mField,_dirihlet_bc_method_ptr,snes_f,_lambda_field_name),
+    nonlinear(false),use_projection_from_crack_front(false) {}
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
+    MatMethod.use_projection_from_crack_front = use_projection_from_crack_front;
+    FMethod.use_projection_from_crack_front = use_projection_from_crack_front; 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
 	FMethod.g = snes_f;

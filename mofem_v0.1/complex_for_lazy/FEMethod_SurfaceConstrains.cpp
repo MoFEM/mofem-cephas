@@ -63,14 +63,25 @@ void C_SURFACE_FEMethod::run_in_constructor() {
     CT_MAT_ELEM.resize(9,3);
     dC_MAT_ELEM.resize(3,9);
     dCT_MAT_ELEM.resize(9,9);
+    //crack front nodes
+    if(mField.check_msId_meshset(201,SideSet)) {
+      Range crack_front_edges;
+      mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true);
+      mField.get_moab().get_connectivity(crack_front_edges,crackFrontEdgesNodes,true);
+      //projected nodes
+      mField.get_moab().tag_get_handle(
+	"PROJECTION_CRACK_SURFACE",3,MB_TYPE_DOUBLE,th_projection,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL);
+    }
   }
  
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose): 
-    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name) {
+    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name),
+    use_projection_from_crack_front(false) {
     run_in_constructor();
   }
 C_SURFACE_FEMethod::C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose): 
-    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE") {
+    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE"),
+    use_projection_from_crack_front(false) {
     run_in_constructor();
   }
 
@@ -123,6 +134,14 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
       rval = moab.get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
       PetscPrintf(PETSC_COMM_WORLD,"%lu %lu %lu %lu\n",nodes[0],nodes[1],nodes[2],nodes[3]);
     }
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    if(pcomm->rank()==0) {
+      EntityHandle out_meshset;
+      rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,adj_side_elems); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,&face,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().write_file("debug_error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    }
     SETERRQ1(PETSC_COMM_SELF,1,"expect 1 tet but is %u",adj_side_elems.size());
   }
   EntityHandle side_elem = *adj_side_elems.begin();
@@ -131,6 +150,16 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
     rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
     if(sense == -1) {
       __CLPK_doublecomplex xdot = { -1,0 };
+      cblas_zscal(3,&xdot,x_normal,1);
+    }
+  }
+  if(use_projection_from_crack_front) {
+    Tag th_interface_side;
+    rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
+    int side;
+    rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
+    if(side == 1) {
+      __CLPK_doublecomplex xdot = { -0.5,0 };
       cblas_zscal(3,&xdot,x_normal,1);
     }
   }
@@ -322,6 +351,17 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
 	  this,dof_global_row_indices,dof_global_col_indices,DirihletBC); CHKERRQ(ierr);
       }
       rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+      if(use_projection_from_crack_front) {
+	for(int nn = 0;nn<3;nn++) {
+	  if(crackFrontEdgesNodes.find(conn_face[nn])!=crackFrontEdgesNodes.end()) {
+	    double projection[3];
+	    rval = mField.get_moab().tag_get_data(th_projection,&conn_face[nn],1,projection); CHKERR_PETSC(rval);
+	    for(int dd = 0;dd<3;dd++) {
+	      coords[nn*3+dd] = projection[dd];
+	    }
+	  }
+	}
+      }
       if(!nonlinear) {
 	ublas::noalias(ent_dofs_data) = coords;
       }

@@ -171,8 +171,8 @@ typedef int EntPart;
 typedef PetscScalar FieldData;
 typedef short ApproximationOrder;
 typedef short ApproximationRank;
-//typedef uint128_t UId;
-typedef checked_uint128_t UId;
+typedef uint128_t UId;
+//typedef checked_uint128_t UId;
 
 #define BITREFEDGES_SIZE 6 /*number of edges on tets*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinments*/
@@ -255,10 +255,8 @@ struct eqbit {
 
 template <typename id_type> 
 struct hashbit 
-{ inline bool operator()(const id_type& value) const {
+{ inline unsigned int operator()(const id_type& value) const {
   return value.to_ulong(); } };
-
-}
 
 struct mofem_exception {
   virtual const char* what() const throw() {
@@ -266,6 +264,7 @@ struct mofem_exception {
   }
 };
 
+}
 
 //MULTIINDICES
 #include "TagMultiIndices.hpp"

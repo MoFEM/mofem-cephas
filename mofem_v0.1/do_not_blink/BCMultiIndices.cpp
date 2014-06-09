@@ -306,8 +306,6 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,Cubit_
         type |= Mat_ElasticSet; }
     else if (name.compare(0,11,"MAT_THERMAL") == 0) {
         type |= Mat_ThermalSet; }
-    else if (name.compare(0,12,"MAT_TRANSISO") == 0) {
-        type |= Mat_TransIsoSet; }
     else if (name.compare(0,10,"MAT_INTERF") == 0) {
         type |= Mat_InterfSet; }
     else if (name.compare(0,11,"BODY_FORCES") == 0) {
@@ -520,6 +518,24 @@ ostream& operator<<(ostream& os,const Mat_Elastic& e)
         os << "User attribute 8 = " << e.data.User8 << endl << endl;
         return os;
     }
+
+ostream& operator<<(ostream& os,const Mat_Elastic_EberleinHolzapfel1& e)
+    {
+        os << endl << "Material Properties" << endl;
+        os << "-------------------" << endl;
+        os << "Young's modulus  = " << e.data.Young << endl;
+        os << "Poisson's ratio  = " << e.data.Poisson << endl;
+        os << "k1 = " << e.data.k1 << endl;
+        os << "k2 = " << e.data.k2 << endl;
+        os << "a0_x = " << e.data.a0x << endl;
+        os << "a0_y = " << e.data.a0y << endl;
+        os << "a0_z = " << e.data.a0z << endl;
+        os << "a1_x = " << e.data.a1x << endl;
+        os << "a1_y = " << e.data.a1y << endl;
+        os << "a1_Z = " << e.data.a1z << endl << endl;
+        return os;
+    }
+
     
 ostream& operator<<(ostream& os,const Mat_Thermal& e)
     {
@@ -554,7 +570,7 @@ ostream& operator<<(ostream& os,const Block_BodyForces& e)
     }
 
     
-ostream& operator<<(ostream& os,const Mat_TransIso& e)
+ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e)
 {
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;

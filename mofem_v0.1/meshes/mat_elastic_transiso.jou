@@ -15,5 +15,5 @@ cubit.cmd('block 1 attribute index 4 0.2')
 cubit.cmd('block 1 attribute index 5 300')
 
 #!Add material name and description
-cubit.cmd('block 1 name "MAT_TRANSISO_1" ')
+cubit.cmd('block 1 name "MAT_ELASTIC_TRANSISO_1" ')
 cubit.cmd('block 1 description 'Transverse Isotropic material properties' ')
