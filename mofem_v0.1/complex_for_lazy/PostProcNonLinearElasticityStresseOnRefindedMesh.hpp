@@ -62,9 +62,9 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
       ierr = fe_method.set_problem(problem_ptr); CHKERRQ(ierr);
       ierr = fe_method.set_fields(moabfields); CHKERRQ(ierr);
-      ierr = fe_method.set_ents_multiIndex(ents_moabfield); CHKERRQ(ierr);
+      ierr = fe_method.set_ents_multiIndex(refinedMoFemEntities,ents_moabfield); CHKERRQ(ierr);
       ierr = fe_method.set_dofs_multiIndex(dofs_moabfield); CHKERRQ(ierr);
-      ierr = fe_method.set_fes_multiIndex(finite_elements); CHKERRQ(ierr);
+      ierr = fe_method.set_fes_multiIndex(refinedMoFemElements,finite_elements); CHKERRQ(ierr);
       ierr = fe_method.set_fes_data_multiIndex(finite_elements_moabents); CHKERRQ(ierr);
       ierr = fe_method.set_adjacencies(fem_adjacencies); CHKERRQ(ierr);
 

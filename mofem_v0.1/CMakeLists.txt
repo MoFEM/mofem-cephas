@@ -96,6 +96,7 @@ include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
 include_directories("${PROJECT_SOURCE_DIR}/student_body")
 include_directories("${PROJECT_SOURCE_DIR}/projections")
 include_directories("${PROJECT_SOURCE_DIR}/complex_for_lazy")
+include_directories("${PROJECT_SOURCE_DIR}/forces_and_sources")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
@@ -105,6 +106,7 @@ add_library(mofem_Field
   SnesCtx.cpp
   third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
+  third_party/gm_rule.c
   do_not_blink/CoreDataStructures.cpp
   do_not_blink/EntsMultiIndices.cpp
   do_not_blink/DofsMultiIndices.cpp
@@ -137,6 +139,10 @@ add_library(mofem_complex_for_lazy
 
 add_library(mofem_face_splitting
   face_splitting/FaceSplittingTool.cpp
+)
+
+add_library(mofem_forces_and_sources
+  forces_and_sources/ForcesAndSurcesCore.cpp
 )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")

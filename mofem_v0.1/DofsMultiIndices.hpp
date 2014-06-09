@@ -269,6 +269,8 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref> >,
     ordered_non_unique<
+      tag<EntType_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type> >,
+    ordered_non_unique<
       tag<Composite_Name_Type_And_Side_Number_mi_tag>, 
       composite_key<
 	FEDofMoFEMEntity,
@@ -280,7 +282,7 @@ typedef multi_index_container<
 	  >
       > >,
     ordered_non_unique<
-      tag<Composite_mi_tag2>, 
+      tag<Composite_Name_And_Type_mi_tag>, 
       composite_key<
 	FEDofMoFEMEntity,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
@@ -340,6 +342,8 @@ typedef multi_index_container<
       tag<MoABEnt_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FENumeredDofMoFEMEntity::get_ent> >,
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref> >,
+    ordered_non_unique< 
+      tag<PetscGlobalIdx_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_NumeredDofMoFEMEntity,DofIdx,&FENumeredDofMoFEMEntity::get_petsc_gloabl_dof_idx> >,
     ordered_non_unique<
       tag<Composite_Name_Type_And_Side_Number_mi_tag>, 
       composite_key<
@@ -352,7 +356,7 @@ typedef multi_index_container<
 	  >
       > >,
     ordered_non_unique<
-      tag<Composite_mi_tag2>, 
+      tag<Composite_Name_And_Type_mi_tag>, 
       composite_key<
 	FENumeredDofMoFEMEntity,
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref>,

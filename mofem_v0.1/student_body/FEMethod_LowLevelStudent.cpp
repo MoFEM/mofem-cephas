@@ -478,7 +478,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
     ParentMethod = new FEMethod_LowLevelStudent(moab,verbose);
     ierr = ParentMethod->set_problem(problem_ptr); CHKERRQ(ierr);
     ierr = ParentMethod->set_dofs_multiIndex(dofs_moabfield); CHKERRQ(ierr);
-    ierr = ParentMethod->set_fes_multiIndex(finite_elements); CHKERRQ(ierr);
+    ierr = ParentMethod->set_fes_multiIndex(refinedMoFemElements,finite_elements); CHKERRQ(ierr);
     ierr = ParentMethod->set_fes_data_multiIndex(finite_elements_moabents); CHKERRQ(ierr);
     ierr = ParentMethod->set_adjacencies(fem_adjacencies); CHKERRQ(ierr);
     ierr = ParentMethod->preProcess(); CHKERRQ(ierr);

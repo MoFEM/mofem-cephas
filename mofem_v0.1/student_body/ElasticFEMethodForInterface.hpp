@@ -27,6 +27,9 @@
 #include "FEMethod_UpLevelStudent.hpp"
 #include "cholesky.hpp"
 #include <petscksp.h>
+extern "C" {
+#include <gm_rule.h>
+}
 
 #include "ElasticFEMethod.hpp"
 #include "PostProcVertexMethod.hpp"
@@ -36,7 +39,7 @@ namespace MoFEM {
 
 struct InterfaceFEMethod: public ElasticFEMethod {
 
-  double YoungModulus; 
+  double YoungModulus;
   ublas::matrix<double> R;
   ublas::matrix<double> Dglob;
   double tangent1[3],tangent2[3];
@@ -50,27 +53,20 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     };
 
   InterfaceFEMethod(
-      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _YoungModulus): 
-	ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0),YoungModulus(_YoungModulus) {
-    DispData.resize(1+6+2);
-    };
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _YoungModulus):
+	ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0),YoungModulus(_YoungModulus){
+		DispData.resize(1+6+2);
+	};
 
-  const double *G_TRI_W;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n",pcomm->rank(),v2-v1,t2-t1);
-
-    ierr = PetscTime(&v1); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     g_NTET.resize(4*45);
     ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    //g_NTRI.resize(3*28);
-    //ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
-    //G_TRI_W = G_TRI_W28;
-    g_NTRI.resize(3*37);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X37,G_TRI_Y37,37); 
-    G_TRI_W = G_TRI_W37;
+    G_TET_W = G_TET_W45;
+    g_NTRI.resize(3*28);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
+    G_TRI_W = G_TRI_W28;
 
     PetscFunctionReturn(0);
   }
@@ -80,9 +76,6 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     // Note MAT_FLUSH_ASSEMBLY
     ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = PetscTime(&v2); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscFunctionReturn(0);
   }
 
@@ -134,6 +127,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 
   virtual PetscErrorCode LhsInt() {
     PetscFunctionBegin;
+		
     int g_dim = g_NTRI.size()/3;
     K.resize(row_mat,col_mat);
     for(int rr = 0;rr<row_mat;rr++) {
@@ -281,9 +275,6 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
-      ierr = PetscTime(&v1); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
       if(init_ref) PetscFunctionReturn(0);
       
@@ -609,8 +600,6 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      ierr = PetscTime(&v2); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       ParallelComm* pcomm_post_proc = ParallelComm::get_pcomm(&moab_post_proc,MYPCOMM_INDEX);
       if(pcomm_post_proc == NULL) pcomm_post_proc =  new ParallelComm(&moab_post_proc,PETSC_COMM_WORLD);
       for(unsigned int rr = 1; rr<pcomm_post_proc->size();rr++) {
@@ -618,7 +607,6 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
 	rval = moab_post_proc.get_entities_by_type(0,MBPRISM,prisms); CHKERR_PETSC(rval);
 	rval = pcomm_post_proc->broadcast_entities(rr,prisms); CHKERR(rval);
       }
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       PetscFunctionReturn(0);
     }
 

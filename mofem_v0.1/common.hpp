@@ -169,8 +169,8 @@ typedef int FEIdx;
 typedef int EntIdx;
 typedef int EntPart;
 typedef PetscScalar FieldData;
-typedef short ApproximationOrder;
-typedef short ApproximationRank;
+typedef int ApproximationOrder;
+typedef int ApproximationRank;
 typedef uint128_t UId;
 //typedef checked_uint128_t UId;
 
