@@ -61670,3 +61670,155 @@
    fun:_ZN5MoFEM9FieldCore17partition_problemERKSsi
    fun:main
 }
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore24simple_partition_problemERKSsii
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_hash_table_set_value_uint32
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Attr_put
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore24simple_partition_problemERKSsii
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:orte_iof_base_write_output
+   obj:*
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   obj:/usr/bin/orterun
+   obj:/usr/bin/orterun
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore24simple_partition_problemERKSsii
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_hash_table_set_value_uint32
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Attr_put
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore24simple_partition_problemERKSsii
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:ompi_attr_create_keyval
+   fun:PMPI_Keyval_create
+   fun:PetscViewerASCIIGetStdout
+   fun:PetscViewerASCIIOpen
+   fun:KSPSetFromOptions
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:ompi_attr_create_keyval
+   fun:PMPI_Keyval_create
+   fun:PetscViewerASCIIOpen
+   fun:PetscViewerASCIIGetStdout
+   fun:PetscViewerASCIIOpen
+   fun:KSPSetFromOptions
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN9__gnu_cxx13new_allocatorImE8allocateEmPKv
+   fun:_ZNSt12_Vector_baseImSaImEE11_M_allocateEm
+   fun:_ZNSt6vectorImSaImEE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPmS1_EERKm
+   fun:_ZNSt6vectorImSaImEE6insertEN9__gnu_cxx17__normal_iteratorIPmS1_EERKm
+   fun:_ZN4moab14AEntityFactory13add_adjacencyEmmb
+   fun:_ZN4moab10range_toolINS_5Range19const_pair_iteratorEE22ranged_insert_entitiesERNS_7MeshSet5CountERNS4_11CompactListES2_S2_mPNS_14AEntityFactoryE
+   fun:_ZN4moab7MeshSet20insert_entity_rangesERKNS_5RangeEmPNS_14AEntityFactoryE
+   fun:_ZN4moab7MeshSet12add_entitiesERKNS_5RangeEmPNS_14AEntityFactoryE
+   fun:_ZN4moab4Core12add_entitiesEmRKNS_5RangeE
+   fun:_ZN5MoFEM9FieldCore34add_ents_to_finite_element_by_TETsEmSt6bitsetILm32EEb
+   fun:_ZN5MoFEM9FieldCore34add_ents_to_finite_element_by_TETsEmRKSsb
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN9__gnu_cxx13new_allocatorImE8allocateEmPKv
+   fun:_ZNSt12_Vector_baseImSaImEE11_M_allocateEm
+   fun:_ZNSt6vectorImSaImEE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPmS1_EERKm
+   fun:_ZNSt6vectorImSaImEE9push_backERKm
+   fun:_ZN4moab14AEntityFactory13add_adjacencyEmmb
+   fun:_ZN4moab10range_toolINS_5Range19const_pair_iteratorEE22ranged_insert_entitiesERNS_7MeshSet5CountERNS4_11CompactListES2_S2_mPNS_14AEntityFactoryE
+   fun:_ZN4moab7MeshSet20insert_entity_rangesERKNS_5RangeEmPNS_14AEntityFactoryE
+   fun:_ZN4moab7MeshSet12add_entitiesERKNS_5RangeEmPNS_14AEntityFactoryE
+   fun:_ZN4moab4Core12add_entitiesEmRKNS_5RangeE
+   fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsERKN4moab5RangeESt6bitsetILm32EEi
+   fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsEmSt6bitsetILm32EEi
+   fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsEmRKSsi
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN4moab14AEntityFactory15get_adjacenciesEmRPSt6vectorImSaImEEb
+   fun:_ZN4moab14AEntityFactory13add_adjacencyEmmb
+   fun:_ZN4moab10range_toolINS_5Range19const_pair_iteratorEE22ranged_insert_entitiesERNS_7MeshSet5CountERNS4_11CompactListES2_S2_mPNS_14AEntityFactoryE
+   fun:_ZN4moab7MeshSet20insert_entity_rangesERKNS_5RangeEmPNS_14AEntityFactoryE
+   fun:_ZN4moab7MeshSet12add_entitiesERKNS_5RangeEmPNS_14AEntityFactoryE
+   fun:_ZN4moab4Core12add_entitiesEmRKNS_5RangeE
+   fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsERKN4moab5RangeESt6bitsetILm32EEi
+   fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsEmSt6bitsetILm32EEi
+   fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsEmRKSsi
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN4moab14AEntityFactory15get_adjacenciesEmRPSt6vectorImSaImEEb
+   fun:_ZN4moab14AEntityFactory13add_adjacencyEmmb
+   fun:_ZN4moab10range_toolINS_5Range19const_pair_iteratorEE22ranged_insert_entitiesERNS_7MeshSet5CountERNS4_11CompactListES2_S2_mPNS_14AEntityFactoryE
+   fun:_ZN4moab7MeshSet20insert_entity_rangesERKNS_5RangeEmPNS_14AEntityFactoryE
+   fun:_ZN4moab7MeshSet12add_entitiesERKNS_5RangeEmPNS_14AEntityFactoryE
+   fun:_ZN4moab4Core12add_entitiesEmRKNS_5RangeE
+   fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsERKN4moab5RangeESt6bitsetILm32EEi
+   fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsEmSt6bitsetILm32EEi
+   fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsEmRKSsi
+   fun:main
+}
