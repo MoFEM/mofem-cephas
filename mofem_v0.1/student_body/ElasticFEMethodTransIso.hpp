@@ -310,16 +310,16 @@ namespace MoFEM {
 		
 		int noAA;
     double *AxVector, *AxAngle;
-		bool propeties_from_BlockSet_Mat_TransIsoSet;
+		bool propeties_from_BlockSet_Mat_ElasticSet;
     
     TranIsotropicAxisAngleRotElasticFEMethod(
 																						 FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
 																						 int _noAA, double *_AxVector, double *_AxAngle):
     ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle)  {
 			
-			propeties_from_BlockSet_Mat_TransIsoSet = false;
-			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
-				propeties_from_BlockSet_Mat_TransIsoSet = true;
+			propeties_from_BlockSet_Mat_ElasticSet = false;
+			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+				propeties_from_BlockSet_Mat_ElasticSet = true;
 			}
     };
 		
@@ -339,27 +339,29 @@ namespace MoFEM {
 		virtual PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
       PetscFunctionBegin;
 			
-      if(propeties_from_BlockSet_Mat_TransIsoSet) {
+      if(propeties_from_BlockSet_Mat_ElasticSet) {
 				EntityHandle ent = fe_ptr->get_ent();
-				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
+				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 					
-					Mat_TransIso mydata;
-					ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-					
-					Range meshsets;
-					rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-					meshsets.insert(it->meshset);
-					for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-						if( moab.contains_entities(*mit,&ent,1) ) {
-							*_E_p = mydata.data.Youngp;
-							*_E_z = mydata.data.Youngz;
-							*_nu_p = mydata.data.Poissonp;
-							*_nu_pz = mydata.data.Poissonpz;
-							*_G_zp = mydata.data.Shearzp;
-							PetscFunctionReturn(0);
-						}
+          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+            
+            Mat_Elastic_TransIso mydata;
+            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+            
+            Range meshsets;
+            rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+            meshsets.insert(it->meshset);
+            for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+              if( moab.contains_entities(*mit,&ent,1) ) {
+                *_E_p = mydata.data.Youngp;
+                *_E_z = mydata.data.Youngz;
+                *_nu_p = mydata.data.Poissonp;
+                *_nu_pz = mydata.data.Poissonpz;
+                *_G_zp = mydata.data.Shearzp;
+                PetscFunctionReturn(0);
+              }
+            }
 					}
-					
 				}
 				
 				SETERRQ(PETSC_COMM_SELF,1,
@@ -602,16 +604,16 @@ namespace MoFEM {
     int noAA;
     double *AxVector, *AxAngle;
 		ArcLengthCtx *arc_ptr;
-		bool propeties_from_BlockSet_Mat_TransIsoSet;
+		bool propeties_from_BlockSet_Mat_ElasticSet;
 		
 		ArcLengthTranIsotropicAxisAngleRotElasticFEMethod(
 																											FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
 																											int _noAA, double *_AxVector, double *_AxAngle,ArcLengthCtx *_arc_ptr):
 		ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle),arc_ptr(_arc_ptr) {
 			
-			propeties_from_BlockSet_Mat_TransIsoSet = false;
-			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
-				propeties_from_BlockSet_Mat_TransIsoSet = true;
+			propeties_from_BlockSet_Mat_ElasticSet = false;
+			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+				propeties_from_BlockSet_Mat_ElasticSet = true;
 			}
 			
 		};
@@ -620,27 +622,29 @@ namespace MoFEM {
 		virtual PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
       PetscFunctionBegin;
 			
-      if(propeties_from_BlockSet_Mat_TransIsoSet) {
+      if(propeties_from_BlockSet_Mat_ElasticSet) {
 				EntityHandle ent = fe_ptr->get_ent();
-				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
+				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 					
-					Mat_TransIso mydata;
-					ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-					
-					Range meshsets;
-					rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-					meshsets.insert(it->meshset);
-					for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-						if( moab.contains_entities(*mit,&ent,1) ) {
-							*_E_p = mydata.data.Youngp;
-							*_E_z = mydata.data.Youngz;
-							*_nu_p = mydata.data.Poissonp;
-							*_nu_pz = mydata.data.Poissonpz;
-							*_G_zp = mydata.data.Shearzp;
-							PetscFunctionReturn(0);
-						}
+          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+            
+            Mat_Elastic_TransIso mydata;
+            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+            
+            Range meshsets;
+            rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+            meshsets.insert(it->meshset);
+            for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+              if( moab.contains_entities(*mit,&ent,1) ) {
+                *_E_p = mydata.data.Youngp;
+                *_E_z = mydata.data.Youngz;
+                *_nu_p = mydata.data.Poissonp;
+                *_nu_pz = mydata.data.Poissonpz;
+                *_G_zp = mydata.data.Shearzp;
+                PetscFunctionReturn(0);
+              }
+            }
 					}
-					
 				}
 				
 				SETERRQ(PETSC_COMM_SELF,1,
@@ -952,15 +956,15 @@ namespace MoFEM {
 	struct TranIsotropicFibreDirRotElasticFEMethod: public ElasticFEMethod {
 		
     Tag th_fibre_dir;
-		bool propeties_from_BlockSet_Mat_TransIsoSet;
+		bool propeties_from_BlockSet_Mat_ElasticSet;
     
     TranIsotropicFibreDirRotElasticFEMethod(
                                             FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F):
     ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0) {
-			
-			propeties_from_BlockSet_Mat_TransIsoSet = false;
-			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
-				propeties_from_BlockSet_Mat_TransIsoSet = true;
+    
+			propeties_from_BlockSet_Mat_ElasticSet = false;
+			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+				propeties_from_BlockSet_Mat_ElasticSet = true;
 			}
 			
 			double def_VAL2[3] = {0,0,0};
@@ -972,27 +976,29 @@ namespace MoFEM {
 		virtual PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
       PetscFunctionBegin;
 			
-      if(propeties_from_BlockSet_Mat_TransIsoSet) {
+      if(propeties_from_BlockSet_Mat_ElasticSet) {
 				EntityHandle ent = fe_ptr->get_ent();
-				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
+				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 					
-					Mat_TransIso mydata;
-					ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-					
-					Range meshsets;
-					rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-					meshsets.insert(it->meshset);
-					for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-						if( moab.contains_entities(*mit,&ent,1) ) {
-							*_E_p = mydata.data.Youngp;
-							*_E_z = mydata.data.Youngz;
-							*_nu_p = mydata.data.Poissonp;
-							*_nu_pz = mydata.data.Poissonpz;
-							*_G_zp = mydata.data.Shearzp;
-							PetscFunctionReturn(0);
-						}
+          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+            
+            Mat_Elastic_TransIso mydata;
+            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+            
+            Range meshsets;
+            rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+            meshsets.insert(it->meshset);
+            for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+              if( moab.contains_entities(*mit,&ent,1) ) {
+                *_E_p = mydata.data.Youngp;
+                *_E_z = mydata.data.Youngz;
+                *_nu_p = mydata.data.Poissonp;
+                *_nu_pz = mydata.data.Poissonpz;
+                *_G_zp = mydata.data.Shearzp;
+                PetscFunctionReturn(0);
+              }
+            }
 					}
-					
 				}
 				
 				SETERRQ(PETSC_COMM_SELF,1,
@@ -1308,15 +1314,15 @@ namespace MoFEM {
 		ArcLengthTranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField): ElasticFEMethod(_mField) {};
 		
 		ArcLengthCtx *arc_ptr;
-		bool propeties_from_BlockSet_Mat_TransIsoSet;
+		bool propeties_from_BlockSet_Mat_ElasticSet;
 		Tag th_fibre_dir;
 		
 		ArcLengthTranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ArcLengthCtx *_arc_ptr):
 		ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), arc_ptr(_arc_ptr){
 			
-			propeties_from_BlockSet_Mat_TransIsoSet = false;
-			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
-				propeties_from_BlockSet_Mat_TransIsoSet = true;
+			propeties_from_BlockSet_Mat_ElasticSet = false;
+			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+				propeties_from_BlockSet_Mat_ElasticSet = true;
 			}
 			
 			double def_VAL2[3] = {0,0,0};
@@ -1328,27 +1334,29 @@ namespace MoFEM {
 		virtual PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
       PetscFunctionBegin;
 			
-      if(propeties_from_BlockSet_Mat_TransIsoSet) {
+      if(propeties_from_BlockSet_Mat_ElasticSet) {
 				EntityHandle ent = fe_ptr->get_ent();
-				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_TransIsoSet,it)) {
+				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 					
-					Mat_TransIso mydata;
-					ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-					
-					Range meshsets;
-					rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-					meshsets.insert(it->meshset);
-					for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-						if( moab.contains_entities(*mit,&ent,1) ) {
-							*_E_p = mydata.data.Youngp;
-							*_E_z = mydata.data.Youngz;
-							*_nu_p = mydata.data.Poissonp;
-							*_nu_pz = mydata.data.Poissonpz;
-							*_G_zp = mydata.data.Shearzp;
-							PetscFunctionReturn(0);
-						}
+          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+            
+            Mat_Elastic_TransIso mydata;
+            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+            
+            Range meshsets;
+            rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+            meshsets.insert(it->meshset);
+            for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+              if( moab.contains_entities(*mit,&ent,1) ) {
+                *_E_p = mydata.data.Youngp;
+                *_E_z = mydata.data.Youngz;
+                *_nu_p = mydata.data.Poissonp;
+                *_nu_pz = mydata.data.Poissonpz;
+                *_G_zp = mydata.data.Shearzp;
+                PetscFunctionReturn(0);
+              }
+            }
 					}
-					
 				}
 				
 				SETERRQ(PETSC_COMM_SELF,1,

@@ -56,7 +56,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   cubit_bc_atom_test_bcoverlap01_compare
   cubit_bc_atom_test_interf01_compare
   cubit_bc_atom_test_mat_elastic_compare
-  cubit_bc_atom_test_mat_transiso_compare
+  cubit_bc_atom_test_mat_elastic_transiso_compare
   cubit_bc_atom_test_mat_interf_compare
   cubit_bc_atom_test_inlet_outlet_compare
   elasticity_atom_test_01X_compare
