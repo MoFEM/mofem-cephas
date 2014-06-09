@@ -61542,5 +61542,131 @@
    obj:/bin/dash
    fun:(below main)
 }
-
-
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore24simple_partition_problemERKSsii
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_hash_table_set_value_uint32
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Attr_put
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore24simple_partition_problemERKSsii
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:orte_iof_base_write_output
+   obj:*
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   obj:/usr/bin/orterun
+   obj:/usr/bin/orterun
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:orte_iof_base_write_output
+   obj:*
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   obj:/usr/bin/orterun
+   obj:/usr/bin/orterun
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore10create_MatINS_10Idx_mi_tagEEEiRKSsPP6_p_MatPKcPPiSB_PPdbi
+   fun:_ZN5MoFEM9FieldCore17partition_problemERKSsi
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_hash_table_set_value_uint32
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Attr_put
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore10create_MatINS_10Idx_mi_tagEEEiRKSsPP6_p_MatPKcPPiSB_PPdbi
+   fun:_ZN5MoFEM9FieldCore17partition_problemERKSsi
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:ompi_attr_create_keyval
+   fun:PMPI_Keyval_create
+   fun:PetscViewerASCIIGetStdout
+   fun:PetscViewerASCIIOpen
+   fun:KSPSetFromOptions
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:ompi_attr_create_keyval
+   fun:PMPI_Keyval_create
+   fun:PetscViewerASCIIOpen
+   fun:PetscViewerASCIIGetStdout
+   fun:PetscViewerASCIIOpen
+   fun:KSPSetFromOptions
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore10create_MatINS_10Idx_mi_tagEEEiRKSsPP6_p_MatPKcPPiSB_PPdbi
+   fun:_ZN5MoFEM9FieldCore17partition_problemERKSsi
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_hash_table_set_value_uint32
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Attr_put
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM9FieldCore10create_MatINS_10Idx_mi_tagEEEiRKSsPP6_p_MatPKcPPiSB_PPdbi
+   fun:_ZN5MoFEM9FieldCore17partition_problemERKSsi
+   fun:main
+}
