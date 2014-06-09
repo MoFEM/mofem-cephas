@@ -235,10 +235,10 @@ struct Block_BodyForces: public generic_attribute_data {
     
     
     
-/*! \struct Mat_TransIso
+/*! \struct Mat_Elastic_TransIso
  *  \brief Transverse Isotropic material data structure
  */
-  struct Mat_TransIso: public Mat_Elastic {
+  struct Mat_Elastic_TransIso: public Mat_Elastic {
     struct __attribute__ ((packed)) _data_{
       double Youngp; // Young's modulus in xy plane (Ep)
       double Youngz; // Young's modulus in z-direction (Ez)
@@ -250,7 +250,7 @@ struct Block_BodyForces: public generic_attribute_data {
     _data_ data;
     
     const unsigned int min_number_of_atributes;
-    Mat_TransIso(): Mat_Elastic(),min_number_of_atributes(5) {};
+    Mat_Elastic_TransIso(): Mat_Elastic(),min_number_of_atributes(5) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
       PetscFunctionBegin;
@@ -266,9 +266,9 @@ struct Block_BodyForces: public generic_attribute_data {
       PetscFunctionReturn(0);
     }
     
-    /*! \brief Print Mat_TransIso data
+    /*! \brief Print Mat_Elastic_TransIso data
      */
-    friend ostream& operator<<(ostream& os,const Mat_TransIso& e);
+    friend ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e);
     
   };
 
@@ -774,7 +774,7 @@ struct CubitMeshSets {
    *                    ...
    *                    (10) User attribute 8
    *
-   * MAT_TRANSISO / 5 / (1) Young's modulus in xy plane (Ep)
+   * MAT_ELASTIC_TRANSISO / 5 / (1) Young's modulus in xy plane (Ep)
    *                    (2) Young's modulus in z-direction (Ez)
    *                    (3) Poisson's ratio in xy plane (vp)
    *                    (4) Poisson's ratio in z-direction (vpz)

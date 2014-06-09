@@ -343,9 +343,9 @@ namespace MoFEM {
 				EntityHandle ent = fe_ptr->get_ent();
 				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 					
-          if(it->get_Cubit_name().compare(0,12,"MAT_TRANSISO") == 0) {
+          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
             
-            Mat_TransIso mydata;
+            Mat_Elastic_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             
             Range meshsets;
@@ -626,9 +626,9 @@ namespace MoFEM {
 				EntityHandle ent = fe_ptr->get_ent();
 				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 					
-          if(it->get_Cubit_name().compare(0,12,"MAT_TRANSISO") == 0) {
+          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
             
-            Mat_TransIso mydata;
+            Mat_Elastic_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             
             Range meshsets;
@@ -980,9 +980,9 @@ namespace MoFEM {
 				EntityHandle ent = fe_ptr->get_ent();
 				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 					
-          if(it->get_Cubit_name().compare(0,12,"MAT_TRANSISO") == 0) {
+          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
             
-            Mat_TransIso mydata;
+            Mat_Elastic_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             
             Range meshsets;
@@ -1338,9 +1338,9 @@ namespace MoFEM {
 				EntityHandle ent = fe_ptr->get_ent();
 				for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 					
-          if(it->get_Cubit_name().compare(0,12,"MAT_TRANSISO") == 0) {
+          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
             
-            Mat_TransIso mydata;
+            Mat_Elastic_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             
             Range meshsets;

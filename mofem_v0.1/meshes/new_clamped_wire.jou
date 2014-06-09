@@ -8,7 +8,7 @@ block 1 attribute index 1 200000
 block 1 attribute index 2 0.3
 
 block 2 volume 1 2 3
-block 2 name "MAT_TRANSISO_1" 
+block 2 name "MAT_ELASTIC_TRANSISO_1" 
 
 block 2 attribute count 5
 #Young's modulus in xy plane (Ep)
