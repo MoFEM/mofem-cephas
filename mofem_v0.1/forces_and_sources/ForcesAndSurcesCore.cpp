@@ -771,16 +771,24 @@ PetscErrorCode OpGetData::doWork(
   if(type == MBVERTEX) {
     bzero(&*data_at_GaussPt.data().begin(),data.getN().size1()*rank*sizeof(FieldData));
     bzero(&*dataGrad_at_GaussPt.data().begin(),data.getN().size1()*rank*dim*sizeof(FieldData));
+    for(int rr = 0;rr<rank;rr++) {
+      for(int dd = 0;dd<dim;dd++) {
+	dataGrad_at_GaussPt(0,dim*rr+dd) = cblas_ddot(nb_dofs/rank,&data.getDiffN()(0,dd),dim,&data.getFieldData()[rr],rank);
+      }
+    }
   }
   for(int gg = 0;gg<data.getN().size1();gg++) {
     for(int rr = 0;rr<rank;rr++) {
       data_at_GaussPt(gg,rr) = cblas_ddot(nb_dofs/rank,&data.getN()(gg,0),1,&data.getFieldData()[rr],rank);
       for(int dd = 0;dd<dim;dd++) {
-	dataGrad_at_GaussPt(gg,dim*rr+dd) = cblas_ddot(nb_dofs/rank,&data.getDiffN()(gg,dd),1,&data.getFieldData()[rr],rank);
+	if(type == MBVERTEX) {
+	  dataGrad_at_GaussPt(gg,dim*rr+dd) = dataGrad_at_GaussPt(0,dim*rr+dd);
+	} else {
+	  dataGrad_at_GaussPt(gg,dim*rr+dd) = cblas_ddot(nb_dofs/rank,&data.getDiffN()(gg,dd),dim,&data.getFieldData()[rr],rank);
+	}
       }
     }
   }
-
   PetscFunctionReturn(0);
 }
 
