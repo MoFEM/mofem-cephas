@@ -116,8 +116,8 @@ struct FieldApproximationH1 {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
 
-	int nb_rows;
-	int nb_cols;
+	unsigned int nb_rows;
+	unsigned int nb_cols;
 	int *rows;
 	int *cols;
 
@@ -178,7 +178,7 @@ struct FieldApproximationH1 {
 
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      int rank = dof_ptr->get_max_rank();
+      unsigned int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
       
@@ -203,7 +203,7 @@ struct FieldApproximationH1 {
 	}
 
 	double val = getVolume()*getGaussPts()(3,gg);
-	for(int rr = 0;rr<rank;rr++) {
+	for(unsigned int rr = 0;rr<rank;rr++) {
 	  cblas_daxpy(nb_row_dofs,val*fun_val[rr],&data.getN()(gg,0),1,&Nf[rr],rank);
 	}
 
