@@ -27,6 +27,8 @@
 #include<FEM.h>
 #include<H1HdivHcurlL2.h>
 
+#include <gm_rule.h>
+
 #define EPS 1e-12
 void print_mat(double *M,int m,int n) {
   int ii,jj;

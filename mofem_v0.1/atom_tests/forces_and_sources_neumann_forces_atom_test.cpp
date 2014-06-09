@@ -102,7 +102,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM",fe_name.str()); CHKERRQ(ierr);
 
-    EntityHandle meshset = it->get_meshset();
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
     ierr = mField.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);
@@ -120,7 +119,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM",fe_name.str()); CHKERRQ(ierr);
 
-    EntityHandle meshset = it->get_meshset();
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
     ierr = mField.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);

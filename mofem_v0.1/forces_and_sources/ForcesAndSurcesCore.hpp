@@ -238,7 +238,7 @@ struct OpGetData: public DataOperator {
     ApproximationRank _rank,unsigned int _dim = 3): 
       data_at_GaussPt(_data_at_GaussPt),
       dataGrad_at_GaussPt(_dataGrad_at_GaussPt),
-      rank(_rank),dim(_dim) {}
+      dim(_dim),rank(_rank) {}
 
   PetscErrorCode doWork(
     int side,
@@ -251,11 +251,11 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
   DerivedDataForcesAndSurcesCore derived_data;
+  OpSetInvJac opSetInvJac;
 
   VolumeH1H1ElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),opSetInvJac(invJac),
-    data(MBTET),derived_data(data) { };
-  ~VolumeH1H1ElementForcesAndSurcesCore() {}
+    ForcesAndSurcesCore(_mField),data(MBTET),derived_data(data),opSetInvJac(invJac) { };
+  virtual ~VolumeH1H1ElementForcesAndSurcesCore() {}
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -264,7 +264,6 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> invJac;
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
-  OpSetInvJac opSetInvJac;
 
   virtual int getRule(int order) { return order; };
 
