@@ -48,10 +48,9 @@ enum Cubit_BC {
   InterfaceSet = 1<<11,
   UnknownCubitName = 1<< 12,
   Mat_ElasticSet = 1<<13,
-  Mat_TransIsoSet = 1<<14,
-  Mat_InterfSet = 1 <<15,
-  Mat_ThermalSet = 1<<16,
-  Block_BodyForcesSet = 1<<17,
+  Mat_InterfSet = 1 <<14,
+  Mat_ThermalSet = 1<<15,
+  Block_BodyForcesSet = 1<<16,
   LastSet
 };
 
@@ -239,33 +238,39 @@ struct Block_BodyForces: public generic_attribute_data {
 /*! \struct Mat_TransIso
  *  \brief Transverse Isotropic material data structure
  */
-struct Mat_TransIso: public generic_attribute_data {
+  struct Mat_TransIso: public Mat_Elastic {
     struct __attribute__ ((packed)) _data_{
-        double Youngp; // Young's modulus in xy plane (Ep)
-        double Youngz; // Young's modulus in z-direction (Ez)
-        double Poissonp; // Poisson's ratio in xy plane (vp)
-        double Poissonpz; // Poisson's ratio in z-direction (vpz)
-        double Shearzp; // Shear modulus in z-direction (Gzp)
-     };
+      double Youngp; // Young's modulus in xy plane (Ep)
+      double Youngz; // Young's modulus in z-direction (Ez)
+      double Poissonp; // Poisson's ratio in xy plane (vp)
+      double Poissonpz; // Poisson's ratio in z-direction (vpz)
+      double Shearzp; // Shear modulus in z-direction (Gzp)
+    };
     
     _data_ data;
     
-    const Cubit_BC_bitset type;
-    Mat_TransIso(): type(Mat_TransIsoSet) {};
+    const unsigned int min_number_of_atributes;
+    Mat_TransIso(): Mat_Elastic(),min_number_of_atributes(5) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
-        PetscFunctionBegin;
-        //Fill data
-        if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
-        memcpy(&data, &attributes[0], sizeof(data));
-        PetscFunctionReturn(0);
+      PetscFunctionBegin;
+      //Fill data
+      if(attributes.size()<min_number_of_atributes) {
+        SETERRQ(PETSC_COMM_SELF,1,"All material data not defined");
+      }
+      if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+      memcpy(&data, &attributes[0], sizeof(data));
+      bzero(&data,sizeof(data));
+      memcpy(&data, &attributes[0],8*attributes.size());
+      
+      PetscFunctionReturn(0);
     }
     
     /*! \brief Print Mat_TransIso data
      */
     friend ostream& operator<<(ostream& os,const Mat_TransIso& e);
     
-};
+  };
 
     /*! \struct Mat_Interf
      *  \brief Linear interface data structure
