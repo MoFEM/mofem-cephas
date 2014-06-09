@@ -208,19 +208,7 @@ struct FieldCore: public FieldInterface {
         ss << data;
         PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BlockSet|Mat_TransIsoSet,it)) {
-        Mat_TransIso data;
-        ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
-        ostringstream ss;
-        ss << *it << endl;
-        ss << data;
-	Range tets;
-	rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-	ss << "MAT_TRANSISO msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
-	ss << endl;
-        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    }
-
+    
     PetscFunctionReturn(0);
   }
 
