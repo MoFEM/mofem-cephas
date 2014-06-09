@@ -364,8 +364,8 @@ struct ElasticFE_RVELagrange_Periodic: public ElasticFE_RVELagrange_Disp {
                 H_mat[ff][rr].resize(num_col,num_col);
                 H_mat[ff][rr].clear();
                 for(int ii = 0; ii<num_col; ii++) {
-                    if(ff==0) H_mat[ff][rr](ii,ii) = +1.0;
-                    else H_mat[ff][rr](ii,ii) = -1.0;
+                    if(ff==0) H_mat[ff][rr](ii,ii) = -1.0;
+                    else H_mat[ff][rr](ii,ii) = +1.0;
                 }
 //                cout<<"H_mat "<<H_mat[ff][rr]<<endl;
             }
