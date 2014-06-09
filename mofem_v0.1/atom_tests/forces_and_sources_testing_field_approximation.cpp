@@ -152,10 +152,12 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("TEST_PROBLEM",Col,&D); CHKERRQ(ierr);
 
+  {
   MyFunApprox function_evaluator;
   FieldApproximationH1<MyFunApprox> field_approximation(mField);
   field_approximation.loopMatrixAndVector(
     "TEST_PROBLEM","TEST_FE","FIELD1",A,F,function_evaluator);
+  }
 
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

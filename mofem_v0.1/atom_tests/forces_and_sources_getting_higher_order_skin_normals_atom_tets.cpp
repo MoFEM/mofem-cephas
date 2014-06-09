@@ -141,30 +141,29 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
+    ublas::matrix<FieldData> nOrmals_at_GaussPt;
+    ublas::matrix<FieldData> tAngent1_at_GaussPt;
+    ublas::matrix<FieldData> tAngent2_at_GaussPt;
+    DataForcesAndSurcesCore data;
+    OpGetNormals op;
+
     typedef tee_device<ostream, ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
-
     ofstream ofs;
     TeeDevice my_tee; 
     TeeStream my_split;
 
-    ublas::matrix<FieldData> nOrmals_at_GaussPt;
-    ublas::matrix<FieldData> tAngent1_at_GaussPt;
-    ublas::matrix<FieldData> tAngent2_at_GaussPt;
-    OpGetNormals op;
-
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
       ForcesAndSurcesCore(_mField),data(MBTRI),
+      op(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt),
       ofs("forces_and_sources_getting_higher_order_skin_normals_atom.txt"),
-      my_tee(cout,ofs),my_split(my_tee),
-      op(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt) {};
+      my_tee(cout,ofs),my_split(my_tee) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
 
-    DataForcesAndSurcesCore data;
 
 
     PetscErrorCode operator()() {

@@ -42,6 +42,7 @@ struct DataForcesAndSurcesCore {
   struct EntData {
 
     EntData(): sEnse(0),oRder(0) {};
+    virtual ~EntData() {}
     virtual int getSense() const { return sEnse; }
     virtual ApproximationOrder getOrder() const { return oRder; }
     virtual const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
@@ -75,6 +76,7 @@ struct DataForcesAndSurcesCore {
   boost::ptr_vector<EntData> vOlumes;
 
   DataForcesAndSurcesCore(EntityType type);
+  virtual ~DataForcesAndSurcesCore() {}
 
   friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore &e);
 
@@ -117,6 +119,7 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   FieldInterface& mField;
   ForcesAndSurcesCore(FieldInterface& _mField): 
     mField(_mField) {};
+  virtual ~ForcesAndSurcesCore() {}
 
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
   PetscErrorCode getOrder(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
@@ -235,7 +238,7 @@ struct OpGetData: public DataOperator {
     ApproximationRank _rank,unsigned int _dim = 3): 
       data_at_GaussPt(_data_at_GaussPt),
       dataGrad_at_GaussPt(_dataGrad_at_GaussPt),
-      rank(_rank),dim(_dim) {}
+      dim(_dim),rank(_rank) {}
 
   PetscErrorCode doWork(
     int side,
@@ -248,10 +251,11 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
   DerivedDataForcesAndSurcesCore derived_data;
+  OpSetInvJac opSetInvJac;
 
   VolumeH1H1ElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),opSetInvJac(invJac),
-    data(MBTET),derived_data(data) {};
+    ForcesAndSurcesCore(_mField),data(MBTET),derived_data(data),opSetInvJac(invJac) { };
+  virtual ~VolumeH1H1ElementForcesAndSurcesCore() {}
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -260,7 +264,6 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> invJac;
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
-  OpSetInvJac opSetInvJac;
 
   virtual int getRule(int order) { return order; };
 
@@ -273,6 +276,7 @@ struct VolumeH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
 	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
+    virtual ~UserDataOperator() {}
     inline double getVolume() { return ptrFE->vOlume; }
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
@@ -365,6 +369,7 @@ struct TriangleH1H1ElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
 	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
+    virtual ~UserDataOperator() {}
     inline double getArea() { return ptrFE->aRea; }
     inline ublas::vector<double>& getNormal() { return ptrFE->normal; }
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }

@@ -59,6 +59,7 @@ struct FieldApproximationH1 {
     OpApprox(const string &field_name,Mat &_A,Vec &_F,FUNEVAL &function_evaluator):
       VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
       A(_A),F(_F),functionEvaluator(function_evaluator) {}
+    ~OpApprox() {}
 
     ublas::matrix<FieldData> NN;
     ublas::matrix<FieldData> transNN;

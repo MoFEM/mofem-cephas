@@ -1301,6 +1301,8 @@ void timestamp ( void )
   size_t len;
   time_t now;
 
+  (void)(len);
+
   now = time ( NULL );
   tm = localtime ( &now );
 

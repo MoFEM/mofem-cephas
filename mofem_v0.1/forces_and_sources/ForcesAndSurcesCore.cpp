@@ -189,7 +189,6 @@ PetscErrorCode ForcesAndSurcesCore::getOrderVolume(DataForcesAndSurcesCore &data
     data.vOlumes[0].getOrder() = -1;
     for(;dit!=hi_dit;dit++) {
       ApproximationOrder ent_order = dit->get_max_order();
-      int side_number = dit->side_number_ptr->side_number;
       data.vOlumes[0].getOrder() = data.vOlumes[0].getOrder() > ent_order ? data.vOlumes[0].getOrder() : ent_order;
     }
     PetscFunctionReturn(0);
@@ -205,7 +204,6 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
     for(;dit!=hi_dit;dit++) {
       int idx = dit->get_petsc_gloabl_dof_idx();
       int side_number = dit->side_number_ptr->side_number;
-      int field_rank = dit->get_max_rank();
       nodes_indices[side_number*dit->get_max_rank()+dit->get_dof_rank()] = idx;
     }
     PetscFunctionReturn(0);
@@ -235,7 +233,6 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
     indices.resize(0);
     for(;dit!=hi_dit;dit++) {
       int idx = dit->get_petsc_gloabl_dof_idx();
-      int side_number = dit->side_number_ptr->side_number;
       indices.resize(dit->get_nb_dofs_on_ent());
       indices[dit->get_EntDofIdx()] = idx;
     } 
@@ -317,7 +314,6 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
     for(;dit!=hi_dit;dit++) {
       FieldData val = dit->get_FieldData();
       int side_number = dit->side_number_ptr->side_number;
-      int field_rank = dit->get_max_rank();
       nodes_field_data[side_number*dit->get_max_rank()+dit->get_dof_rank()] = val;
     }
     PetscFunctionReturn(0);
@@ -339,7 +335,6 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
     hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
     for(;dit!=hi_dit;dit++) {
       FieldData val = dit->get_FieldData();
-      int side_number = dit->side_number_ptr->side_number;
       ent_field_data.resize(dit->get_nb_dofs_on_ent());
       ent_field_data[dit->get_EntDofIdx()] = val;
     } 
@@ -590,7 +585,7 @@ PetscErrorCode DataOperator::opSymmetric(
   ierr = doWork(
     -1,-1,MBVERTEX,MBVERTEX,
     row_data.nOdes[0],col_data.nOdes[0]); CHKERRQ(ierr);
-  for(int VV = 0;VV<col_data.vOlumes.size();VV++) {
+  for(unsigned int VV = 0;VV<col_data.vOlumes.size();VV++) {
     int G_DIM_VOLUME = col_data.vOlumes[VV].getN().size1();
     if(G_DIM != G_DIM_VOLUME) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -600,7 +595,7 @@ PetscErrorCode DataOperator::opSymmetric(
       row_data.nOdes[0],col_data.vOlumes[VV]); CHKERRQ(ierr);
   }
 
-  for(int ee = 0;ee<row_data.eDges.size();ee++) {
+  for(unsigned int ee = 0;ee<row_data.eDges.size();ee++) {
     int G_DIM = row_data.eDges[ee].getN().size1();
     int G_DIM_NODES = col_data.nOdes[0].getN().size1();
     if(G_DIM != G_DIM_NODES) {
@@ -609,7 +604,7 @@ PetscErrorCode DataOperator::opSymmetric(
     ierr = doWork(
 	ee,-1,MBEDGE,MBVERTEX,
 	row_data.eDges[ee],col_data.nOdes[0]); CHKERRQ(ierr);
-    for(int VV = 0;VV<col_data.vOlumes.size();VV++) {
+    for(unsigned int VV = 0;VV<col_data.vOlumes.size();VV++) {
       int G_DIM_VOLUME = col_data.vOlumes[VV].getN().size1();
       if(G_DIM != G_DIM_VOLUME) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -618,7 +613,7 @@ PetscErrorCode DataOperator::opSymmetric(
 	ee,VV,MBEDGE,MBTET,
 	row_data.eDges[ee],col_data.vOlumes[VV]); CHKERRQ(ierr);
     }
-    for(int EE = ee;EE<col_data.eDges.size();EE++) {
+    for(unsigned int EE = ee;EE<col_data.eDges.size();EE++) {
       int G_DIM_EE = col_data.eDges[EE].getN().size1();
       if(G_DIM != G_DIM_EE) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -627,7 +622,7 @@ PetscErrorCode DataOperator::opSymmetric(
 	  ee,EE,MBEDGE,MBEDGE,
 	  row_data.eDges[ee],col_data.eDges[EE]); CHKERRQ(ierr);
     }
-    for(int FF = 0;FF<col_data.fAces.size();FF++) {
+    for(unsigned int FF = 0;FF<col_data.fAces.size();FF++) {
       int G_DIM_FF = col_data.fAces[FF].getN().size1();
       if(G_DIM != G_DIM_FF) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -638,7 +633,7 @@ PetscErrorCode DataOperator::opSymmetric(
     }
   }
 
-  for(int ff = 0;ff<row_data.fAces.size();ff++) {
+  for(unsigned int ff = 0;ff<row_data.fAces.size();ff++) {
     int G_DIM = row_data.fAces[ff].getN().size1();
     int G_DIM_NODES = col_data.nOdes[0].getN().size1();
     if(G_DIM != G_DIM_NODES) {
@@ -647,7 +642,7 @@ PetscErrorCode DataOperator::opSymmetric(
     ierr = doWork(
 	ff,-1,MBTRI,MBVERTEX,
 	row_data.fAces[ff],col_data.nOdes[0]); CHKERRQ(ierr);
-    for(int VV = 0;VV<col_data.vOlumes.size();VV++) {
+    for(unsigned int VV = 0;VV<col_data.vOlumes.size();VV++) {
       int G_DIM_VOLUME = col_data.vOlumes[VV].getN().size1();
       if(G_DIM != G_DIM_VOLUME) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -656,7 +651,7 @@ PetscErrorCode DataOperator::opSymmetric(
 	ff,VV,MBTRI,MBTET,
 	row_data.fAces[ff],col_data.vOlumes[VV]); CHKERRQ(ierr);
     }
-    for(int FF = ff;FF<col_data.fAces.size();FF++) {
+    for(unsigned int FF = ff;FF<col_data.fAces.size();FF++) {
       int G_DIM_FF = col_data.fAces[FF].getN().size1();
       if(G_DIM != G_DIM_FF) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -667,9 +662,9 @@ PetscErrorCode DataOperator::opSymmetric(
     }
   }
 
-  for(int vv = 0;vv<row_data.vOlumes.size();vv++) {
+  for(unsigned int vv = 0;vv<row_data.vOlumes.size();vv++) {
     int G_DIM = row_data.vOlumes[0].getN().size1();
-    for(int VV = 0;VV<col_data.vOlumes.size();VV++) {
+    for(unsigned int VV = 0;VV<col_data.vOlumes.size();VV++) {
       int G_DIM_VOLUME = col_data.vOlumes[VV].getN().size1();
       if(G_DIM != G_DIM_VOLUME) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -687,16 +682,16 @@ PetscErrorCode DataOperator::op(DataForcesAndSurcesCore &data) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
-  for(int nn = 0;nn<data.nOdes.size();nn++) {
+  for(unsigned int nn = 0;nn<data.nOdes.size();nn++) {
     ierr = doWork(-1,MBVERTEX,data.nOdes[nn]); CHKERRQ(ierr);
   }
-  for(int ee = 0;ee<data.eDges.size();ee++) {
+  for(unsigned int ee = 0;ee<data.eDges.size();ee++) {
     ierr = doWork(ee,MBEDGE,data.eDges[ee]); CHKERRQ(ierr);
   }
-  for(int ff = 0;ff<data.fAces.size();ff++) {
+  for(unsigned int ff = 0;ff<data.fAces.size();ff++) {
     ierr = doWork(ff,MBTRI,data.fAces[ff]); CHKERRQ(ierr);
   }
-  for(int vv = 0;vv<data.vOlumes.size();vv++) {
+  for(unsigned int vv = 0;vv<data.vOlumes.size();vv++) {
     ierr = doWork(-1,MBTET,data.vOlumes[vv]); CHKERRQ(ierr);
   }
 
@@ -711,8 +706,8 @@ PetscErrorCode OpSetInvJac::doWork(
   PetscErrorCode ierr;
 
   diffNinvJac.resize(data.getDiffN().size1(),data.getDiffN().size2());
-  int nb_gauss_pts = data.getN().size1();
-  int nb_dofs = data.getN().size2();
+  unsigned int nb_gauss_pts = data.getN().size1();
+  unsigned int nb_dofs = data.getN().size2();
   if(type!=MBVERTEX) {
     if(nb_dofs != data.getDiffN().size2()/3) {
       SETERRQ2(PETSC_COMM_SELF,1,
@@ -732,8 +727,8 @@ PetscErrorCode OpSetInvJac::doWork(
     case MBEDGE:
     case MBTRI:
     case MBTET: {
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	for(int dd = 0;dd<nb_dofs;dd++) {
+      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+	for(unsigned int dd = 0;dd<nb_dofs;dd++) {
 	  cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
 	    &*invJac.data().begin(),3,&data.getDiffN()(gg,3*dd),1,0.,&diffNinvJac(gg,3*dd),1); 
 	}
@@ -752,13 +747,12 @@ PetscErrorCode OpSetInvJac::doWork(
 PetscErrorCode OpGetData::doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
 
   if(data.getFieldData().size() == 0) {
     PetscFunctionReturn(0);
   }
 
-  int nb_dofs = data.getFieldData().size();
+  unsigned int nb_dofs = data.getFieldData().size();
   if(nb_dofs > data.getN().size2()) {
     SETERRQ2(PETSC_COMM_SELF,1,
       "data inconsistency nb_dofs >= data.N.size2() %u >= %u",nb_dofs,data.getN().size2());
@@ -771,16 +765,24 @@ PetscErrorCode OpGetData::doWork(
   if(type == MBVERTEX) {
     bzero(&*data_at_GaussPt.data().begin(),data.getN().size1()*rank*sizeof(FieldData));
     bzero(&*dataGrad_at_GaussPt.data().begin(),data.getN().size1()*rank*dim*sizeof(FieldData));
-  }
-  for(int gg = 0;gg<data.getN().size1();gg++) {
     for(int rr = 0;rr<rank;rr++) {
-      data_at_GaussPt(gg,rr) = cblas_ddot(nb_dofs/rank,&data.getN()(gg,0),1,&data.getFieldData()[rr],rank);
-      for(int dd = 0;dd<dim;dd++) {
-	dataGrad_at_GaussPt(gg,dim*rr+dd) = cblas_ddot(nb_dofs/rank,&data.getDiffN()(gg,dd),1,&data.getFieldData()[rr],rank);
+      for(unsigned int dd = 0;dd<dim;dd++) {
+	dataGrad_at_GaussPt(0,dim*rr+dd) = cblas_ddot(nb_dofs/rank,&data.getDiffN()(0,dd),dim,&data.getFieldData()[rr],rank);
       }
     }
   }
-
+  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+    for(int rr = 0;rr<rank;rr++) {
+      data_at_GaussPt(gg,rr) = cblas_ddot(nb_dofs/rank,&data.getN()(gg,0),1,&data.getFieldData()[rr],rank);
+      for(unsigned int dd = 0;dd<dim;dd++) {
+	if(type == MBVERTEX) {
+	  dataGrad_at_GaussPt(gg,dim*rr+dd) = dataGrad_at_GaussPt(0,dim*rr+dd);
+	} else {
+	  dataGrad_at_GaussPt(gg,dim*rr+dd) = cblas_ddot(nb_dofs/rank,&data.getDiffN()(gg,dd),dim,&data.getFieldData()[rr],rank);
+	}
+      }
+    }
+  }
   PetscFunctionReturn(0);
 }
 
@@ -795,7 +797,7 @@ PetscErrorCode VolumeH1H1ElementForcesAndSurcesCore::operator()() {
   ierr = getFaceNodes(data); CHKERRQ(ierr);
 
   int order = 1;
-  for(int ee = 0;ee<data.eDges.size();ee++) {
+  for(unsigned int ee = 0;ee<data.eDges.size();ee++) {
     order = max(order,data.eDges[ee].getOrder());
   }
 
@@ -898,11 +900,10 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
   PetscFunctionBegin;
   
   if(data.getFieldData().size()==0)  PetscFunctionReturn(0);
-  PetscErrorCode ierr;
   
   switch (type) {
     case MBVERTEX: {
-      for(int gg = 0;gg<data.getN().size1();gg++) {
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 	for(int nn = 0;nn<3;nn++) {
 	  tAngent1_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,0),2,&data.getFieldData()[nn],3);
 	  tAngent2_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,1),2,&data.getFieldData()[nn],3);
@@ -927,7 +928,7 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
       if(data.getFieldData().size() > 3*data.getN().size2()) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      for(int gg = 0;gg<data.getN().size1();gg++) {
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 	for(int nn = 0;nn<3;nn++) {
 	  tAngent1_at_GaussPt(gg,nn) += cblas_ddot(data.getN().size2(),&data.getDiffN()(gg,0),2,&data.getFieldData()[nn],3);
 	  tAngent2_at_GaussPt(gg,nn) += cblas_ddot(data.getN().size2(),&data.getDiffN()(gg,1),2,&data.getFieldData()[nn],3);
@@ -949,7 +950,7 @@ PetscErrorCode OpGetNormals::calculateNormals() {
   sPin.resize(3,3);
   bzero(&*sPin.data().begin(),9*sizeof(FieldData));
   nOrmals_at_GaussPt.resize(tAngent1_at_GaussPt.size1(),3);
-  for(int gg = 0;gg<tAngent1_at_GaussPt.size1();gg++) {
+  for(unsigned int gg = 0;gg<tAngent1_at_GaussPt.size1();gg++) {
     ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPt(gg,0)); CHKERRQ(ierr);
     cblas_dgemv(
       CblasRowMajor,CblasNoTrans,3,3,1.,
@@ -969,7 +970,7 @@ PetscErrorCode TriangleH1H1ElementForcesAndSurcesCore::operator()() {
   ierr = getFacesOrder(data); CHKERRQ(ierr);
 
   int order = 1;
-  for(int ee = 0;ee<data.eDges.size();ee++) {
+  for(unsigned int ee = 0;ee<data.eDges.size();ee++) {
     order = max(order,data.eDges[ee].getOrder());
   }
 
