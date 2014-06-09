@@ -114,9 +114,10 @@ struct NeummanForces {
     pressure_cubit_bc_data &dAta;
     bool ho_geometry;
 
-    OpNeumannPreassure(const string field_name,Vec &_F,pressure_cubit_bc_data &data):
+    OpNeumannPreassure(const string field_name,Vec &_F,
+      pressure_cubit_bc_data &data,bool _ho_geometry = false):
       TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data),ho_geometry(false) {}
+      F(_F),dAta(data),ho_geometry(_ho_geometry) {}
 
     ublas::vector<FieldData> Nf;
 
@@ -178,13 +179,13 @@ struct NeummanForces {
     PetscFunctionReturn(0);
   }
 
-   PetscErrorCode addPreassure(const string field_name,Vec &F,int ms_id) {
+   PetscErrorCode addPreassure(const string field_name,Vec &F,int ms_id,bool ho_geometry = false) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_Cubit_msId(ms_id,SideSet,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id]); CHKERRQ(ierr);
-    fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id]));
+    fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],ho_geometry));
     PetscFunctionReturn(0);
   }
 

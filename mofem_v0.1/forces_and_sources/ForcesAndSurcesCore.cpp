@@ -902,8 +902,6 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
   
   switch (type) {
     case MBVERTEX: {
-      tAngent1_at_GaussPt.resize(data.getN().size1(),3);
-      tAngent2_at_GaussPt.resize(data.getN().size1(),3);
       for(int gg = 0;gg<data.getN().size1();gg++) {
 	for(int nn = 0;nn<3;nn++) {
 	  tAngent1_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,0),2,&data.getFieldData()[nn],3);
@@ -914,10 +912,23 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
     break;
     case MBEDGE:     
     case MBTRI: {
-     for(int gg = 0;gg<data.getN().size1();gg++) {
+      /*cerr << side << " " << type << endl;
+      cerr << data.getN() << endl;
+      cerr << data.getDiffN() << endl;
+      cerr << data.getFieldData() << endl;
+      cerr << tAngent1_at_GaussPt << endl;
+      cerr << tAngent2_at_GaussPt << endl;*/
+      if(data.getN().size1() != data.getN().size1()) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      if(2*data.getN().size2() != data.getDiffN().size2()) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      if(data.getFieldData().size() > 3*data.getN().size2()) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      for(int gg = 0;gg<data.getN().size1();gg++) {
 	for(int nn = 0;nn<3;nn++) {
-	  //cerr << data.getDiffN() << endl;
-	  //cerr << data.getFieldData() << endl;
 	  tAngent1_at_GaussPt(gg,nn) += cblas_ddot(data.getN().size2(),&data.getDiffN()(gg,0),2,&data.getFieldData()[nn],3);
 	  tAngent2_at_GaussPt(gg,nn) += cblas_ddot(data.getN().size2(),&data.getDiffN()(gg,1),2,&data.getFieldData()[nn],3);
 	}
@@ -990,12 +1001,15 @@ PetscErrorCode TriangleH1H1ElementForcesAndSurcesCore::operator()() {
   }
 
   if(mField.check_field(meshPositionsFieldName)) {
+    nOrmals_at_GaussPt.resize(nb_gauss_pts,3);
+    tAngent1_at_GaussPt.resize(nb_gauss_pts,3);
+    tAngent2_at_GaussPt.resize(nb_gauss_pts,3);
     ierr = getNodesFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getEdgeFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getFacesFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
     try {
       ierr = opHONormals.op(data); CHKERRQ(ierr);
-      ierr = opHONormals.calculateNormals(); CHKERRQ(ierr);
+      //ierr = opHONormals.calculateNormals(); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

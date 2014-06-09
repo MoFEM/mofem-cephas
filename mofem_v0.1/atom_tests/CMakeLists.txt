@@ -301,4 +301,20 @@ add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAN
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_triangle_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_triangle_element.txt)
 
+add_test(forces_and_sources_neumann_elasticity_atom_test_01X_pressure
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_atom -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_neumann_elasticity_atom_test_01X_pressure_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_elasticity_atom_test_01X_pressure.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_elasticity_atom_test_01X_pressure.cub.txt)
+add_test(forces_and_sources_neumann_elasticity_atom_test_01X
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_atom -my_file elasticity_atom_test_01X.cub)
+add_test(forces_and_sources_neumann_elasticity_atom_test_01X_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_elasticity_atom_test_01X.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_elasticity_atom_test_01X.cub.txt)
+add_test(forces_and_sources_neumann_sphre_pressure_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_atom -my_file sphere.cub)
+add_test(forces_and_sources_neumann_sphre_pressure_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_sphere.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_sphere.cub.txt)
+
 

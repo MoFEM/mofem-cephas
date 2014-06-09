@@ -23,17 +23,16 @@
 #include "SurfacePressure.hpp"
 #include <boost/ptr_container/ptr_map.hpp>
 
-
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
 
+#include "Projection10NodeCoordsOnField.hpp"
+
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
-
-
 
 using namespace MoFEM;
 
@@ -80,6 +79,8 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+
   //Problem
   ierr = mField.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   //set refinment level for problem
@@ -89,6 +90,7 @@ int main(int argc, char *argv[]) {
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
   ierr = mField.add_ents_to_field_by_TETs(root_set,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
 
@@ -115,6 +117,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_row(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM",fe_name.str()); CHKERRQ(ierr);
 
     EntityHandle meshset = it->get_meshset();
@@ -131,11 +134,19 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(root_set,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   /****/
   //build database
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
+  //set FIELD1 from positions of 10 node tets
+  Projection10NodeCoordsOnField ent_method(mField,"MESH_NODE_POSITIONS");
+  ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
+
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
@@ -156,12 +167,11 @@ int main(int argc, char *argv[]) {
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ostringstream out_file_name;
-  ofstream ofs("forces_and_sources_neumann_force_atom_test.txt");
+  ostringstream txt_name;
+  txt_name << "forces_and_sources_" << mesh_file_name << ".txt";
+  ofstream ofs(txt_name.str().c_str());
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
-
-  int _sum_ = 0;
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForces> neumann_forces;
@@ -175,7 +185,6 @@ int main(int argc, char *argv[]) {
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
-    _sum_ += data.data.value1*(data.data.value3+data.data.value4+data.data.value5);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
     ostringstream fe_name;
@@ -187,7 +196,6 @@ int main(int argc, char *argv[]) {
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
-    _sum_ += data.data.value1;
   }
   boost::ptr_map<string,NeummanForces>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
@@ -198,19 +206,23 @@ int main(int argc, char *argv[]) {
 
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Row,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
+  const double eps = 1e-4;
+
   const MoFEMProblem *problem_ptr;
   ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
-    my_split << dit->get_petsc_gloabl_dof_idx() << " " << dit->get_FieldData() << endl;
+    double val = fabs(dit->get_FieldData())<eps ? 0.0 : dit->get_FieldData();
+    my_split << dit->get_petsc_gloabl_dof_idx() << " " << val << endl;
 
   }
 
   double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
-  my_split << endl << "Sum : " << setprecision(3) << sum << " " << _sum_ << endl;
+  sum = fabs(sum)<eps ? 0.0 : sum;
+  my_split << endl << "Sum : " << setprecision(3) << sum << endl;
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 

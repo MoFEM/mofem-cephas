@@ -182,6 +182,10 @@ int main(int argc, char *argv[]) {
 
       ierr = shapeTRIFunctions_H1(data,G_TRI_X4,G_TRI_Y4,4); CHKERRQ(ierr);
 
+      nOrmals_at_GaussPt.resize(4,3);
+      tAngent1_at_GaussPt.resize(4,3);
+      tAngent2_at_GaussPt.resize(4,3);
+
       try {
 	ierr = op.op(data); CHKERRQ(ierr);
 	ierr = op.calculateNormals(); CHKERRQ(ierr);

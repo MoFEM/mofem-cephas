@@ -242,7 +242,6 @@ int main(int argc, char *argv[]) {
   map<EntityHandle,double> m0,m1,m2;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
 
-
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
     double val = fabs(dit->get_FieldData())<eps ? 0.0 : dit->get_FieldData();
