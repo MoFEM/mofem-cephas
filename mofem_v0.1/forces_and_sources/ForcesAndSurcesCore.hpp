@@ -249,12 +249,13 @@ struct OpGetData: public DataOperator {
 
 struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
-  DataForcesAndSurcesCore data;
+  DataForcesAndSurcesCore data,other_data;
   DerivedDataForcesAndSurcesCore derived_data;
   OpSetInvJac opSetInvJac;
 
   TetElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTET),derived_data(data),opSetInvJac(invJac) { };
+    ForcesAndSurcesCore(_mField),data(MBTET),other_data(MBTET),
+    derived_data(data),opSetInvJac(invJac) { };
   virtual ~TetElementForcesAndSurcesCore() {}
 
   ErrorCode rval;

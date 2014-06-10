@@ -820,6 +820,8 @@ PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
   ierr = ShapeJacMBTET(&*data.nOdes[0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
   ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
+  DataForcesAndSurcesCore *col_data = &derived_data;
+
   coordsAtGaussPts.resize(nb_gauss_pts,3);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
     for(int dd = 0;dd<3;dd++) {
@@ -840,6 +842,15 @@ PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
     oit != vecUserOpNH1.end(); oit++) {
 
     oit->setPtrFE(this);
+    BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
+    BitFieldId col_id = mField.get_field_structure(oit->col_field_name)->get_id();
+
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_row()&row_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no row field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&col_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
 
     ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getEdgeRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
@@ -866,16 +877,29 @@ PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
     oit != vecUserOpNH1NH1.end(); oit++) {
 
     oit->setPtrFE(this);
+    oit->setPtrFE(this);
+    BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
+    BitFieldId col_id = mField.get_field_structure(oit->col_field_name)->get_id();
+
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_row()&row_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no row field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_col()&col_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&col_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
 
     ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getEdgeRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getFacesRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getTetRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
 
-    ierr = getColNodesIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getEdgeColIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getFacesColIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTetColIndices(derived_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getColNodesIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeColIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getFacesColIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTetColIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
 
     ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getEdgeFieldData(data,oit->col_field_name); CHKERRQ(ierr);
@@ -883,7 +907,7 @@ PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
     ierr = getTetFieldData(data,oit->col_field_name); CHKERRQ(ierr);
 
     try {
-      ierr = oit->opSymmetric(data,derived_data); CHKERRQ(ierr);
+      ierr = oit->opSymmetric(data,*col_data); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
