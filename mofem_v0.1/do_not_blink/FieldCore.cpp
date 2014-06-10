@@ -1540,6 +1540,7 @@ PetscErrorCode FieldCore::add_ents_to_finite_element_by_EDGEs(const Range& edges
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   try {
+    ierr = seed_finite_elements(edges.subset_by_type(MBEDGE)); CHKERRQ(ierr);
     ierr = add_ents_to_finite_element_by_EDGEs(edges,get_BitFEId(name));  CHKERRQ(ierr);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -1550,6 +1551,7 @@ PetscErrorCode FieldCore::add_ents_to_finite_element_by_VERTICEs(const Range& ve
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   const EntityHandle idm = get_finite_element_meshset(id);
+  ierr = seed_finite_elements(vert.subset_by_type(MBVERTEX)); CHKERRQ(ierr);
   rval = moab.add_entities(idm,vert.subset_by_type(MBVERTEX)); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
@@ -1567,7 +1569,7 @@ PetscErrorCode FieldCore::add_ents_to_finite_element_by_TRIs(const Range& tris,c
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
   const EntityHandle idm = get_finite_element_meshset(id);
-  ierr = seed_finite_elements(tris); CHKERRQ(ierr);
+  ierr = seed_finite_elements(tris.subset_by_type(MBTRI)); CHKERRQ(ierr);
   rval = moab.add_entities(idm,tris.subset_by_type(MBTRI)); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }

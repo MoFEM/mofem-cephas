@@ -184,6 +184,8 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   PetscErrorCode shapeTRIFunctions_H1(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const int G_DIM);
+  PetscErrorCode shapeEDGEFunctions_H1(
+    DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM);
 
 };
 
@@ -249,12 +251,13 @@ struct OpGetData: public DataOperator {
 
 struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
-  DataForcesAndSurcesCore data;
+  DataForcesAndSurcesCore data,other_data;
   DerivedDataForcesAndSurcesCore derived_data;
   OpSetInvJac opSetInvJac;
 
   TetElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTET),derived_data(data),opSetInvJac(invJac) { };
+    ForcesAndSurcesCore(_mField),data(MBTET),other_data(MBTET),
+    derived_data(data),opSetInvJac(invJac) { };
   virtual ~TetElementForcesAndSurcesCore() {}
 
   ErrorCode rval;
@@ -386,6 +389,118 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     }
     private:
     TriElementForcesAndSurcesCore *ptrFE; 
+  };
+
+  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
+  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()();
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+
+  DataForcesAndSurcesCore data;
+  DerivedDataForcesAndSurcesCore derived_data;
+  string meshPositionsFieldName;
+
+  EdgeElementForcesAndSurcesCore(FieldInterface &_mField):
+    ForcesAndSurcesCore(_mField),data(MBEDGE),derived_data(data) {};
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  double lEngth;;
+  ublas::vector<double> dIrection;
+  ublas::vector<double> coords;
+  ublas::matrix<double> gaussPts;
+  ublas::matrix<double> coordsAtGaussPts;
+
+  virtual int getRule(int order) { return order; };
+
+  struct UserDataOperator: public DataOperator {
+    string row_field_name;
+    string col_field_name;
+    UserDataOperator(
+      const string &_field_name):
+	row_field_name(_field_name),col_field_name(_field_name),ptrFE(NULL) {};
+    UserDataOperator(
+      const string &_row_field_name,const string &_col_field_name):
+	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
+    virtual ~UserDataOperator() {}
+    inline double getLength() { return ptrFE->lEngth; }
+    inline ublas::vector<double>& getDirection() { return ptrFE->dIrection; }
+    inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+    inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
+    inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
+    PetscErrorCode setPtrFE(EdgeElementForcesAndSurcesCore *ptr) { 
+      PetscFunctionBegin;
+      ptrFE = ptr;
+      PetscFunctionReturn(0);
+    }
+    private:
+    EdgeElementForcesAndSurcesCore *ptrFE; 
+  };
+
+  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
+  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()();
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+
+  DataForcesAndSurcesCore data;
+  DerivedDataForcesAndSurcesCore derived_data;
+  string meshPositionsFieldName;
+
+  VertexElementForcesAndSurcesCore(FieldInterface &_mField):
+    ForcesAndSurcesCore(_mField),data(MBVERTEX),derived_data(data) {};
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  ublas::vector<double> coords;
+
+  struct UserDataOperator: public DataOperator {
+    string row_field_name;
+    string col_field_name;
+    UserDataOperator(
+      const string &_field_name):
+	row_field_name(_field_name),col_field_name(_field_name),ptrFE(NULL) {};
+    UserDataOperator(
+      const string &_row_field_name,const string &_col_field_name):
+	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
+    virtual ~UserDataOperator() {}
+    inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
+    PetscErrorCode setPtrFE(VertexElementForcesAndSurcesCore *ptr) { 
+      PetscFunctionBegin;
+      ptrFE = ptr;
+      PetscFunctionReturn(0);
+    }
+    private:
+    VertexElementForcesAndSurcesCore *ptrFE; 
   };
 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
