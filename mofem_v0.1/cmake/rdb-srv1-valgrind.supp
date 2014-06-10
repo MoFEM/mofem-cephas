@@ -61822,3 +61822,69 @@
    fun:_ZN5MoFEM9FieldCore25add_ents_to_field_by_TETsEmRKSsi
    fun:main
 }
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:PetscViewerASCIIGetStdout
+   fun:PETSC_VIEWER_STDOUT_
+   fun:PetscFinalize
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_hash_table_set_value_uint32
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Attr_put
+   fun:PetscCommDuplicate
+   fun:PetscViewerASCIIGetStdout
+   fun:PETSC_VIEWER_STDOUT_
+   fun:PetscFinalize
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN9__gnu_cxx13new_allocatorISsE8allocateEmPKv
+   fun:_ZNSt12_Vector_baseISsSaISsEE11_M_allocateEm
+   fun:_ZNSt6vectorISsSaISsEE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPSsS1_EERKSs
+   fun:_ZNSt6vectorISsSaISsEE9push_backERKSs
+   fun:_ZNSt20back_insert_iteratorISt6vectorISsSaISsEEEaSERKSs
+   fun:_ZNSt11__copy_moveILb0ELb0ESt26random_access_iterator_tagE8__copy_mIPSsSt20back_insert_iteratorISt6vectorISsSaISsEEEEET0_T_SA_S9_
+   fun:_ZSt13__copy_move_aILb0EPSsSt20back_insert_iteratorISt6vectorISsSaISsEEEET1_T0_S7_S6_
+   fun:_ZSt14__copy_move_a2ILb0EN9__gnu_cxx17__normal_iteratorIPSsSt6vectorISsSaISsEEEESt20back_insert_iteratorIS5_EET1_T0_SA_S9_
+   fun:_ZSt4copyIN9__gnu_cxx17__normal_iteratorIPSsSt6vectorISsSaISsEEEESt20back_insert_iteratorIS5_EET0_T_SA_S9_
+   fun:_ZN4moab6Tqdcfr18parse_acis_attribsEjRSt6vectorINS0_10AcisRecordESaIS2_EE
+   fun:_ZN4moab6Tqdcfr22interpret_acis_recordsERSt6vectorINS0_10AcisRecordESaIS2_EE
+   fun:_ZN4moab6Tqdcfr17read_acis_recordsEPKc
+   fun:_ZN4moab6Tqdcfr9load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   obj:*
+   fun:PMPI_Isend
+   fun:MatZeroRowsColumns_MPIAIJ
+   fun:MatZeroRowsColumns
+   fun:_ZN5MoFEM44CubitDisplacementDirihletBC_ZerosRowsColumns31SetDirihletBC_to_MatrixDiagonalEPNS_14FieldInterface8FEMethodEP6_p_Mat
+   fun:_ZN5MoFEM15ElasticFEMethod11postProcessEv
+   fun:_ZN5MoFEM9FieldCore20loop_finite_elementsERKSsS2_RNS_14FieldInterface8FEMethodEiii
+   fun:_ZN5MoFEM9FieldCore20loop_finite_elementsERKSsS2_RNS_14FieldInterface8FEMethodEi
+   fun:main
+}

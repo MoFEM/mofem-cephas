@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  TriangleH1H1ElementForcesAndSurcesCore fe1(mField);
+  TriElementForcesAndSurcesCore fe1(mField);
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -145,11 +145,11 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
-  struct MyOp: public TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator {
+  struct MyOp: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     TeeStream &my_split;
     MyOp(TeeStream &_my_split):
-      TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1"),
+      TriElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1"),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(

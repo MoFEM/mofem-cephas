@@ -44,20 +44,20 @@ struct FieldApproximationH1 {
 
   FieldInterface &mField;
   const string problemName;
-  VolumeH1H1ElementForcesAndSurcesCore fe;
+  TetElementForcesAndSurcesCore fe;
 
   FieldApproximationH1(
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
-  struct OpApprox: public VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator {
+  struct OpApprox: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     Mat &A;
     Vec &F;
     FUNEVAL &functionEvaluator;
 
     OpApprox(const string &field_name,Mat &_A,Vec &_F,FUNEVAL &function_evaluator):
-      VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
+      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       A(_A),F(_F),functionEvaluator(function_evaluator) {}
     ~OpApprox() {}
 
