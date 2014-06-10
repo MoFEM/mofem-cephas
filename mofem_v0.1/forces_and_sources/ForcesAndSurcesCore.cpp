@@ -833,6 +833,8 @@ PetscErrorCode OpGetData::doWork(
 PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
+  if(fe_ptr->get_ent_type() != MBTET) PetscFunctionReturn(0);
+
   ierr = getEdgesSense(data); CHKERRQ(ierr);
   ierr = getFacesSense(data); CHKERRQ(ierr);
   ierr = getEdgesOrder(data); CHKERRQ(ierr);
@@ -1032,6 +1034,8 @@ PetscErrorCode OpGetNormals::calculateNormals() {
 PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
+  if(fe_ptr->get_ent_type() != MBTRI) PetscFunctionReturn(0);
+
   ierr = getEdgesSense(data); CHKERRQ(ierr);
   ierr = getFacesSense(data); CHKERRQ(ierr);
   ierr = getEdgesOrder(data); CHKERRQ(ierr);
@@ -1144,6 +1148,8 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
 PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
+  if(fe_ptr->get_ent_type() != MBEDGE) PetscFunctionReturn(0);
+
   PetscErrorCode ierr;
 
   //PetscAttachDebugger();
@@ -1254,6 +1260,8 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
 PetscErrorCode VertexElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
+
+  if(fe_ptr->get_ent_type() != MBVERTEX) PetscFunctionReturn(0);
 
   EntityHandle ent = fe_ptr->get_ent();
   coords.resize(3);
