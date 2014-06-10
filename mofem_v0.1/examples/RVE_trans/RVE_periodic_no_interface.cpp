@@ -359,18 +359,16 @@ int main(int argc, char *argv[]) {
     double TriCen[3], coords_Tri[9];
     
     double roundfact=1000.0;
-    int count1=1;
     for(Range::iterator it = SurTrisNeg.begin(); it!=SurTrisNeg.end();  it++) {
 //        cout<<"count1 ="<<count1<<endl;
-        
         const EntityHandle* conn_face;  int num_nodes_Tri;
         
         //get nodes attached to the face
         rval = moab.get_connectivity(*it,conn_face,num_nodes_Tri,true); CHKERR_PETSC(rval);
         //get nodal coordinates
         rval = moab.get_coords(conn_face,num_nodes_Tri,coords_Tri); CHKERR_PETSC(rval);
-        
-        //Find triangle centriod
+      
+       //Find triangle centriod
         TriCen[0]= (coords_Tri[0]+coords_Tri[3]+coords_Tri[6])/3.0;
         TriCen[1]= (coords_Tri[1]+coords_Tri[4]+coords_Tri[7])/3.0;
         TriCen[2]= (coords_Tri[2]+coords_Tri[5]+coords_Tri[8])/3.0;
@@ -379,14 +377,9 @@ int main(int argc, char *argv[]) {
         if(TriCen[0]>=0) TriCen[0]=double(int(TriCen[0]*roundfact+0.5))/roundfact;  else TriCen[0]=double(int(TriCen[0]*roundfact-0.5))/roundfact; //-ve and +ve value
         if(TriCen[1]>=0) TriCen[1]=double(int(TriCen[1]*roundfact+0.5))/roundfact;  else TriCen[1]=double(int(TriCen[1]*roundfact-0.5))/roundfact;
         if(TriCen[2]>=0) TriCen[2]=double(int(TriCen[2]*roundfact+0.5))/roundfact;  else TriCen[2]=double(int(TriCen[2]*roundfact-0.5))/roundfact;
-//        if(count1>2264){
-//            cout<<"   TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
-//        }
-        count1++;
+        cout<<"   TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
         //fill the multi-index container with centriod coordinates and triangle handles
         Face_CenPos_Handle_varNeg.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
-//        for(int ii=0; ii<3; ii++) cout<<"TriCen "<<TriCen[ii]<<endl;
-//        cout<<endl<<endl;
     }
     
 //    typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;
@@ -403,8 +396,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,Tri_OldNewSurfPos,true); CHKERRQ(ierr);
     SurTrisPos = intersect(Tris_NewWholeMesh,Tri_OldNewSurfPos);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
-    
-    
+  
     for(Range::iterator it = SurTrisPos.begin(); it!=SurTrisPos.end();  it++) {
         const EntityHandle* conn_face;  int num_nodes_Tri;
         
@@ -422,8 +414,8 @@ int main(int argc, char *argv[]) {
         if(TriCen[0]>=0) TriCen[0]=double(int(TriCen[0]*roundfact+0.5))/roundfact;  else TriCen[0]=double(int(TriCen[0]*roundfact-0.5))/roundfact;
         if(TriCen[1]>=0) TriCen[1]=double(int(TriCen[1]*roundfact+0.5))/roundfact;  else TriCen[1]=double(int(TriCen[1]*roundfact-0.5))/roundfact;
         if(TriCen[2]>=0) TriCen[2]=double(int(TriCen[2]*roundfact+0.5))/roundfact;  else TriCen[2]=double(int(TriCen[2]*roundfact-0.5))/roundfact;
-//        cout<<"TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
-        
+        cout<<"TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
+      
         //fill the multi-index container with centriod coordinates and triangle handles
         Face_CenPos_Handle_varPos.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
     }
@@ -514,18 +506,9 @@ int main(int argc, char *argv[]) {
             if(Tri_Neg->ycoord==YcoordMin){XNodeNeg=CoordNodeNeg[3*ii]; YNodeNeg=YcoordMax;              ZNodeNeg=CoordNodeNeg[3*ii+2];};
             if(Tri_Neg->zcoord==ZcoordMin){XNodeNeg=CoordNodeNeg[3*ii]; YNodeNeg=CoordNodeNeg[3*ii+1];   ZNodeNeg=ZcoordMax;};
             for(int jj=0; jj<3; jj++){
-                //Round nodal coordinates to 3 dicimal places only for comparison
-                //round values to 3 disimal places
-                if(XNodeNeg>=0) XNodeNeg=double(int(XNodeNeg*roundfact+0.5))/roundfact;   else XNodeNeg=double(int(XNodeNeg*roundfact-0.5))/roundfact;
-                if(YNodeNeg>=0) YNodeNeg=double(int(YNodeNeg*roundfact+0.5))/roundfact;   else YNodeNeg=double(int(YNodeNeg*roundfact-0.5))/roundfact;
-                if(ZNodeNeg>=0) ZNodeNeg=double(int(ZNodeNeg*roundfact+0.5))/roundfact;   else ZNodeNeg=double(int(ZNodeNeg*roundfact-0.5))/roundfact;
-                
                 XNodePos=CoordNodePos[3*jj]; YNodePos=CoordNodePos[3*jj+1]; ZNodePos=CoordNodePos[3*jj+2];
-                if(XNodePos>=0) XNodePos=double(int(XNodePos*roundfact+0.5))/roundfact;   else XNodePos=double(int(XNodePos*roundfact-0.5))/roundfact;
-                if(YNodePos>=0) YNodePos=double(int(YNodePos*roundfact+0.5))/roundfact;   else YNodePos=double(int(YNodePos*roundfact-0.5))/roundfact;
-                if(ZNodePos>=0) ZNodePos=double(int(ZNodePos*roundfact+0.5))/roundfact;   else ZNodePos=double(int(ZNodePos*roundfact-0.5))/roundfact;
-                
-                if(XNodeNeg==XNodePos  &&  YNodeNeg==YNodePos  &&  ZNodeNeg==ZNodePos){
+              
+              if(XNodeNeg==XNodePos  &&  YNodeNeg==YNodePos  &&  ZNodeNeg==ZNodePos){
                     PrismNodes[3+ii]=TriNodesPos[jj];
                     break;
                 }

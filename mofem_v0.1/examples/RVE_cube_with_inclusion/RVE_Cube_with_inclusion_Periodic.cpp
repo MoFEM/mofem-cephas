@@ -135,7 +135,49 @@ int main(int argc, char *argv[]) {
     //Create MoFEM (Joseph) database
     FieldCore core(moab);
     FieldInterface& mField = core;
-    
+  
+  
+  //=======================================================================================================
+  //Seting nodal coordinates on the surface to make sure they are periodic
+  //=======================================================================================================
+  
+  Range SurTrisNeg1, SurTrisPos1;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,SideSet,2,SurTrisNeg1,true); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurTrisNeg1.size()); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurTrisPos1,true); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurTrisPos1.size()); CHKERRQ(ierr);
+  
+  Range SurNodesNeg,SurNodesPos;
+  rval = moab.get_connectivity(SurTrisNeg1,SurNodesNeg,true); CHKERR_PETSC(rval);
+  cout<<" All nodes on negative surfaces " << SurNodesNeg.size()<<endl;
+  rval = moab.get_connectivity(SurTrisPos1,SurNodesPos,true); CHKERR_PETSC(rval);
+  cout<<" All nodes on positive surfaces " << SurNodesPos.size()<<endl;
+  
+  
+  double roundfact=1000.0;   double coords_nodes[3];
+  //Populating the Multi-index container with nodes on -ve faces
+  for(Range::iterator nit = SurNodesNeg.begin(); nit!=SurNodesNeg.end();  nit++) {
+    rval = moab.get_coords(&*nit,1,coords_nodes);  CHKERR_PETSC(rval);
+    //round values to 3 disimal places
+    if(coords_nodes[0]>=0) coords_nodes[0]=double(int(coords_nodes[0]*roundfact+0.5))/roundfact;  else coords_nodes[0]=double(int(coords_nodes[0]*roundfact-0.5))/roundfact;
+    if(coords_nodes[1]>=0) coords_nodes[1]=double(int(coords_nodes[1]*roundfact+0.5))/roundfact;  else coords_nodes[1]=double(int(coords_nodes[1]*roundfact-0.5))/roundfact;
+    if(coords_nodes[2]>=0) coords_nodes[2]=double(int(coords_nodes[2]*roundfact+0.5))/roundfact;  else coords_nodes[2]=double(int(coords_nodes[2]*roundfact-0.5))/roundfact;
+    rval = moab.set_coords(&*nit,1,coords_nodes);  CHKERR_PETSC(rval);
+    //      cout<<"   coords_nodes[0]= "<<coords_nodes[0] << "   coords_nodes[1]= "<< coords_nodes[1] << "   coords_nodes[2]= "<< coords_nodes[2] <<endl;
+  }
+  
+  ///Populating the Multi-index container with nodes on +ve faces
+  for(Range::iterator nit = SurNodesPos.begin(); nit!=SurNodesPos.end();  nit++) {
+    rval = moab.get_coords(&*nit,1,coords_nodes);  CHKERR_PETSC(rval);
+    //round values to 3 disimal places
+    if(coords_nodes[0]>=0) coords_nodes[0]=double(int(coords_nodes[0]*roundfact+0.5))/roundfact;  else coords_nodes[0]=double(int(coords_nodes[0]*roundfact-0.5))/roundfact;
+    if(coords_nodes[1]>=0) coords_nodes[1]=double(int(coords_nodes[1]*roundfact+0.5))/roundfact;  else coords_nodes[1]=double(int(coords_nodes[1]*roundfact-0.5))/roundfact;
+    if(coords_nodes[2]>=0) coords_nodes[2]=double(int(coords_nodes[2]*roundfact+0.5))/roundfact;  else coords_nodes[2]=double(int(coords_nodes[2]*roundfact-0.5))/roundfact;
+    rval = moab.set_coords(&*nit,1,coords_nodes);  CHKERR_PETSC(rval);
+    //      cout<<"   coords_nodes[0]= "<<coords_nodes[0] << "   coords_nodes[1]= "<< coords_nodes[1] << "   coords_nodes[2]= "<< coords_nodes[2] <<endl;
+  }
+  //=======================================================================================================
+
     //ref meshset ref level 0
     ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
     
@@ -291,7 +333,6 @@ int main(int argc, char *argv[]) {
     Face_CenPos_Handle_multiIndex Face_CenPos_Handle_varNeg, Face_CenPos_Handle_varPos;
     double TriCen[3], coords_Tri[9];
     
-    double roundfact=1000.0;
     int count1=1;
     for(Range::iterator it = SurTrisNeg.begin(); it!=SurTrisNeg.end();  it++) {
         //        cout<<"count1 ="<<count1<<endl;
@@ -441,15 +482,7 @@ int main(int argc, char *argv[]) {
             for(int jj=0; jj<3; jj++){
                 //Round nodal coordinates to 3 dicimal places only for comparison
                 //round values to 3 disimal places
-                if(XNodeNeg>=0) XNodeNeg=double(int(XNodeNeg*roundfact+0.5))/roundfact;   else XNodeNeg=double(int(XNodeNeg*roundfact-0.5))/roundfact;
-                if(YNodeNeg>=0) YNodeNeg=double(int(YNodeNeg*roundfact+0.5))/roundfact;   else YNodeNeg=double(int(YNodeNeg*roundfact-0.5))/roundfact;
-                if(ZNodeNeg>=0) ZNodeNeg=double(int(ZNodeNeg*roundfact+0.5))/roundfact;   else ZNodeNeg=double(int(ZNodeNeg*roundfact-0.5))/roundfact;
-                
                 XNodePos=CoordNodePos[3*jj]; YNodePos=CoordNodePos[3*jj+1]; ZNodePos=CoordNodePos[3*jj+2];
-                if(XNodePos>=0) XNodePos=double(int(XNodePos*roundfact+0.5))/roundfact;   else XNodePos=double(int(XNodePos*roundfact-0.5))/roundfact;
-                if(YNodePos>=0) YNodePos=double(int(YNodePos*roundfact+0.5))/roundfact;   else YNodePos=double(int(YNodePos*roundfact-0.5))/roundfact;
-                if(ZNodePos>=0) ZNodePos=double(int(ZNodePos*roundfact+0.5))/roundfact;   else ZNodePos=double(int(ZNodePos*roundfact-0.5))/roundfact;
-                
                 if(XNodeNeg==XNodePos  &&  YNodeNeg==YNodePos  &&  ZNodeNeg==ZNodePos){
                     PrismNodes[3+ii]=TriNodesPos[jj];
                     break;
