@@ -31,7 +31,7 @@
 
 namespace MoFEM {
 
-struct NeummanForces {
+struct NeummanForcesSurface {
 
   FieldInterface &mField;
 
@@ -43,7 +43,7 @@ struct NeummanForces {
   MyTriangleFE fe;
   MyTriangleFE& getLoopFe() { return fe; }
 
-  NeummanForces(
+  NeummanForcesSurface(
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
@@ -193,6 +193,86 @@ struct NeummanForces {
 
   map<int,force_cubit_bc_data> mapForce;
   map<int,pressure_cubit_bc_data> mapPreassure;
+
+};
+
+struct MetaNeummanForces {
+
+  static PetscErrorCode addNeumannBCElements(
+    FieldInterface &mField,
+    const string problem_name,
+    const string field_name,
+    const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ErrorCode rval;
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+      ostringstream fe_name;
+      fe_name << "FORCE_FE_" << it->get_msId();
+      ierr = mField.add_finite_element(fe_name.str()); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_row(fe_name.str(),field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_col(fe_name.str(),field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data(fe_name.str(),field_name); CHKERRQ(ierr);
+      if(mField.check_field(mesh_nodals_positions)) {
+	ierr = mField.modify_finite_element_add_field_data(fe_name.str(),mesh_nodals_positions); CHKERRQ(ierr);
+      }
+      ierr = mField.modify_problem_add_finite_element(problem_name,fe_name.str()); CHKERRQ(ierr);
+      Range tris;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);
+    }
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+      ostringstream fe_name;
+      fe_name << "PRESSURE_FE_" << it->get_msId();
+      ierr = mField.add_finite_element(fe_name.str()); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_row(fe_name.str(),field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_col(fe_name.str(),field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data(fe_name.str(),field_name); CHKERRQ(ierr);
+      if(mField.check_field(mesh_nodals_positions)) {
+	ierr = mField.modify_finite_element_add_field_data(fe_name.str(),mesh_nodals_positions); CHKERRQ(ierr);
+      }
+      ierr = mField.modify_problem_add_finite_element(problem_name,fe_name.str()); CHKERRQ(ierr);
+      Range tris;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+
+  static PetscErrorCode setFiniteElementOperators( 
+    FieldInterface &mField,
+    boost::ptr_map<string,NeummanForcesSurface> &neumann_forces,
+    Vec &F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+      ostringstream fe_name;
+      fe_name << "FORCE_FE_" << it->get_msId();
+      string fe_name_str = fe_name.str();
+      neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
+      ierr = neumann_forces.at(fe_name_str).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
+      /*force_cubit_bc_data data;
+      ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+      my_split << *it << endl;
+      my_split << data << endl;*/
+    }
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+      ostringstream fe_name;
+      fe_name << "PRESSURE_FE_" << it->get_msId();
+      string fe_name_str = fe_name.str();
+      neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
+      bool ho_geometry = mField.check_field(mesh_nodals_positions);
+      neumann_forces.at(fe_name_str).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
+      /*pressure_cubit_bc_data data;
+      ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+      my_split << *it << endl;
+      my_split << data << endl;*/
+    }
+    PetscFunctionReturn(0);
+  }
+
 
 };
 

@@ -201,153 +201,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode NeumannBC_Faces(Vec F_ext,
-      double pressure,ublas::vector<FieldData,ublas::bounded_array<double,3> > traction,
-      Range& faces) {
-      PetscFunctionBegin;
-
-      SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
-      SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
-      SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-      for(;siit!=hi_siit;siit++) {
-	Range::iterator fit = find(faces.begin(),faces.end(),siit->ent);
-	if(fit==faces.end()) continue;
-
-	ierr = ShapeFunctions_TRI(siit->ent,g_NTRI);  CHKERRQ(ierr);
-
-	//nodes
-	vector<DofIdx>& RowGlob_nodes = RowGlob[0];
-	vector< ublas::matrix<FieldData> > FaceNMatrix_nodes;
-	ierr = GetGaussRowFaceNMatrix(siit->ent,"DISPLACEMENT",FaceNMatrix_nodes,MBVERTEX); CHKERRQ(ierr);
-	//copy(FaceNMatrix_nodes.begin(),FaceNMatrix_nodes.end(),ostream_iterator<ublas::matrix<FieldData> >(cerr," \n")); cerr << endl;
-
-	//edges
-	vector<vector<ublas::matrix<FieldData> > > FaceNMatrix_edges(6);
-	SideNumber_multiIndex::nth_index<1>::type::iterator siiit = side_table.get<1>().lower_bound(boost::make_tuple(MBEDGE,0));
-	SideNumber_multiIndex::nth_index<1>::type::iterator hi_siiit = side_table.get<1>().upper_bound(boost::make_tuple(MBEDGE,6));
-	for(;siiit!=hi_siiit;siiit++) {
-	  if(RowGlob[1+siiit->side_number].size()>0) {
-	    ierr = GetGaussRowFaceNMatrix(siit->ent,"DISPLACEMENT",FaceNMatrix_edges[siiit->side_number],MBEDGE,siiit->ent); CHKERRQ(ierr);
-	    //cerr << "ee ";
-	    //copy(FaceNMatrix_edges[siiit->side_number].begin(),FaceNMatrix_edges[siiit->side_number].end(),ostream_iterator<ublas::matrix<FieldData> >(cerr," \n")); cerr << endl;
-	  }
-	}
-
-	//faces
-	vector<DofIdx>& RowGlob_face = RowGlob[1+6+siit->side_number];
-	vector< ublas::matrix<FieldData> > FaceNMatrix_face;
-	if(RowGlob_face.size()>0) {
-	  ierr = GetGaussRowFaceNMatrix(siit->ent,"DISPLACEMENT",FaceNMatrix_face,MBTRI); CHKERRQ(ierr);
-	  //copy(FaceNMatrix_face.begin(),FaceNMatrix_face.end(),ostream_iterator<ublas::matrix<FieldData> >(cerr," \n")); cerr << endl;
-	}
-
-	//normal and area of trianagular face
-	const EntityHandle *conn_face;
-	int num_nodes_face;
-	rval = moab.get_connectivity(siit->ent,conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
-	double coords_face[9];
-	rval = moab.get_coords(conn_face,num_nodes_face,coords_face); CHKERR_PETSC(rval);
-	ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
-	ublas::vector<FieldData,ublas::bounded_array<double,3> > normal(3);
-	ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
-	double area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
-
-	//higher order face shape
-	vector< ublas::vector<FieldData> > Normals_at_Gauss_pts;
-	ierr = GetHierarchicalGeometryApproximation_FaceNormal(siit->ent,Normals_at_Gauss_pts);  CHKERRQ(ierr);
-
-	//calulate & assemble
-	int g_dim = get_dim_gNTRI();
-	for(int gg = 0;gg<g_dim;gg++) {
-	  ublas::vector<FieldData,ublas::bounded_array<double,3> > traction_at_Gauss_pt = traction;
-	  double w,area_at_Gauss_pt;
-	  if(Normals_at_Gauss_pts.size()>0) {
-	    if(Normals_at_Gauss_pts.size()!=(unsigned int)g_dim) {
-	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	    }
-	    area_at_Gauss_pt = cblas_dnrm2(3,Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
-	    w = area_at_Gauss_pt*G_TRI_W[gg];
-	    traction_at_Gauss_pt += (pressure/(2*area_at_Gauss_pt))*Normals_at_Gauss_pts[gg];
-	  } else {
-	    w = area*G_TRI_W[gg];
-	    traction_at_Gauss_pt += (pressure/area)*normal;
-	  }
-
-	  //nodes
-	  ublas::vector<FieldData> f_ext_nodes(FaceNMatrix_nodes[0].size2());
-	  f_ext_nodes = w*prod(trans(FaceNMatrix_nodes[gg]), traction_at_Gauss_pt);
-	  ierr = VecSetValues(F_ext,RowGlob_nodes.size(),&(RowGlob_nodes)[0],&(f_ext_nodes.data())[0],ADD_VALUES); CHKERRQ(ierr);
-
-	  //edges
-	  siiit = side_table.get<1>().lower_bound(boost::make_tuple(MBEDGE,0));
-	  for(;siiit!=hi_siiit;siiit++) {
-	    vector<DofIdx>& RowGlob_edge = RowGlob[1+siiit->side_number];
-	    if(RowGlob_edge.size()>0) {
-	      vector<ublas::matrix<FieldData> >& FaceNMatrix_edge = FaceNMatrix_edges[siiit->side_number];
-	      ublas::vector<FieldData> f_ext_edges = ublas::zero_vector<FieldData>(FaceNMatrix_edge[0].size2());
-	      f_ext_edges = w*prod(trans(FaceNMatrix_edge[gg]), traction_at_Gauss_pt);
-	      if(RowGlob_edge.size()!=f_ext_edges.size()) {
-		SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_edge.size()!=f_ext_edges.size()");
-	      }
-	      ierr = VecSetValues(F_ext,RowGlob_edge.size(),&(RowGlob_edge[0]),&(f_ext_edges.data())[0],ADD_VALUES); CHKERRQ(ierr);
-	    }
-	  }
-
-	  //face
-	  if(RowGlob_face.size()>0) {
-	    ublas::vector<FieldData> f_ext_face(FaceNMatrix_face[0].size2());
-	    f_ext_face = w*prod(trans(FaceNMatrix_face[gg]),traction_at_Gauss_pt);
-	    if(RowGlob_face.size()!=f_ext_face.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_face.size()!=f_ext_face.size()");
-	    ierr = VecSetValues(F_ext,RowGlob_face.size(),&(RowGlob_face)[0],&(f_ext_face.data())[0],ADD_VALUES); CHKERRQ(ierr);
-	  }
-	}
-      }	
-
-      PetscFunctionReturn(0);
-
-    }
-
-    virtual PetscErrorCode NeumannBC(Vec F) {
-      PetscFunctionBegin;
-      
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-	
-	ublas::vector<FieldData,ublas::bounded_array<double,3> > traction_glob(3,0);
-
-	force_cubit_bc_data mydata;
-	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-	Range faces;
-	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,faces,true); CHKERRQ(ierr);
-	/*ostringstream ss;
-	ss << *it << endl;
-	ss << mydata;
-	ss << "nb faces " << faces.size() << endl;
-	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
-
-	traction_glob[0] = mydata.data.value3;
-	traction_glob[1] = mydata.data.value4;
-	traction_glob[2] = mydata.data.value5;
-	traction_glob *= mydata.data.value1;
-  
-	ierr = NeumannBC_Faces(F,0,traction_glob,faces); CHKERRQ(ierr);
-
-      }
-
-      ublas::vector<FieldData,ublas::bounded_array<double,3> > traction_glob = ublas::zero_vector<FieldData>(3);
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-
-	pressure_cubit_bc_data mydata;
-	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-	Range faces;
-	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,faces,true); CHKERRQ(ierr);
-
-	ierr = NeumannBC_Faces(F,mydata.data.value1,traction_glob,faces); CHKERRQ(ierr);
-
-      }
-
-      PetscFunctionReturn(0);
-    }
-
     virtual PetscErrorCode GetMatricesRows() {
       PetscFunctionBegin;
       //indicies ROWS
@@ -548,19 +401,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     virtual PetscErrorCode Rhs() {
       PetscFunctionBegin;
       ierr = Fint(F); CHKERRQ(ierr);
-      ublas::vector<FieldData> f[row_mat];
-      int g_dim = g_NTET.size()/4;
-      for(int rr = 0;rr<row_mat;rr++) {
-	if(RowGlob[rr].size()==0) continue;
-	for(int gg = 0;gg<g_dim;gg++) {
-	  ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
-	  if(gg == 0) f[rr] = ublas::zero_vector<FieldData>(row_Mat.size2());
-	  ///f matrices
-	  // calulate body force (f.e. garvity force
-	}
-	if(RowGlob[rr].size()!=f[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
-      }
       PetscFunctionReturn(0);
     }
 
@@ -681,9 +521,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       //Assembly Aij and F
       ierr = RhsAndLhs(); CHKERRQ(ierr);
-
-      //Neumann Boundary Conditions
-      ierr = NeumannBC(F); CHKERRQ(ierr);
 
       ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);

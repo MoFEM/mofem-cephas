@@ -20,7 +20,7 @@ add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test mofem_Field ${PROJECT_LIBS})
 
 add_executable(elasticity_atom_test elasticity_atom_test.cpp)
-target_link_libraries(elasticity_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(elasticity_atom_test mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 add_executable(l2_approximation l2_approximation.cpp)
 target_link_libraries(l2_approximation mofem_student_body mofem_Field ${PROJECT_LIBS})

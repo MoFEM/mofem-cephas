@@ -172,12 +172,12 @@ int main(int argc, char *argv[]) {
   TeeStream my_split(my_tee);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  boost::ptr_map<string,NeummanForces> neumann_forces;
+  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
     ostringstream fe_name;
     fe_name << "FORCE_FE_" << it->get_msId();
     string fe_name_str = fe_name.str();
-    neumann_forces.insert(fe_name_str,new NeummanForces(mField));
+    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
     force_cubit_bc_data data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
@@ -188,14 +188,14 @@ int main(int argc, char *argv[]) {
     ostringstream fe_name;
     fe_name << "PRESSURE_FE_" << it->get_msId();
     string fe_name_str = fe_name.str();
-    neumann_forces.insert(fe_name_str,new NeummanForces(mField));
+    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
     pressure_cubit_bc_data data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
   }
-  boost::ptr_map<string,NeummanForces>::iterator mit = neumann_forces.begin();
+  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
     ierr = mField.loop_finite_elements("TEST_PROBLEM",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
