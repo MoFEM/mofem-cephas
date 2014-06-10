@@ -35,8 +35,8 @@ struct NeummanForces {
 
   FieldInterface &mField;
 
-  struct MyTriangleFE: public TriangleH1H1ElementForcesAndSurcesCore {
-    MyTriangleFE(FieldInterface &_mField): TriangleH1H1ElementForcesAndSurcesCore(_mField) {}
+  struct MyTriangleFE: public TriElementForcesAndSurcesCore {
+    MyTriangleFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
     int getRule(int order) { return ceil(order/2); };
   };
 
@@ -48,13 +48,13 @@ struct NeummanForces {
     mField(m_field),fe(m_field) {}
 
   
-  struct OpNeumannForce: public TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator {
+  struct OpNeumannForce: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     Vec &F;
     force_cubit_bc_data &dAta;
 
     OpNeumannForce(const string field_name,Vec &_F,force_cubit_bc_data &data):
-      TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data) {}
 
     ublas::vector<FieldData> Nf;
@@ -108,7 +108,7 @@ struct NeummanForces {
 
   };
 
-  struct OpNeumannPreassure: public TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator {
+  struct OpNeumannPreassure: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     Vec &F;
     pressure_cubit_bc_data &dAta;
@@ -116,7 +116,7 @@ struct NeummanForces {
 
     OpNeumannPreassure(const string field_name,Vec &_F,
       pressure_cubit_bc_data &data,bool _ho_geometry = false):
-      TriangleH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),ho_geometry(_ho_geometry) {}
 
     ublas::vector<FieldData> Nf;

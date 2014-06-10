@@ -786,7 +786,7 @@ PetscErrorCode OpGetData::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode VolumeH1H1ElementForcesAndSurcesCore::operator()() {
+PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
   ierr = getEdgesSense(data); CHKERRQ(ierr);
@@ -961,7 +961,7 @@ PetscErrorCode OpGetNormals::calculateNormals() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TriangleH1H1ElementForcesAndSurcesCore::operator()() {
+PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
   ierr = getEdgesSense(data); CHKERRQ(ierr);

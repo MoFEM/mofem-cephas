@@ -35,8 +35,8 @@ struct BodyFroceConstantField {
 
   FieldInterface &mField;
 
-  struct MyVolumeFE: public VolumeH1H1ElementForcesAndSurcesCore {
-    MyVolumeFE(FieldInterface &_mField): VolumeH1H1ElementForcesAndSurcesCore(_mField) {}
+  struct MyVolumeFE: public TetElementForcesAndSurcesCore {
+    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSurcesCore(_mField) {}
     int getRule(int order) { return ceil(order/2); };
   };
 
@@ -47,12 +47,12 @@ struct BodyFroceConstantField {
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
-  struct OpBodyForce: public VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator {
+  struct OpBodyForce: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     Vec F;
     Block_BodyForces &dAta;
     OpBodyForce(const string field_name,Vec _F,Block_BodyForces &data):
-      VolumeH1H1ElementForcesAndSurcesCore::UserDataOperator(field_name),
+      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data) {}
 
     ublas::vector<FieldData> Nf;
