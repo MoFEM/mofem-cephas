@@ -35,6 +35,41 @@ extern "C" {
 #define MU(E,NU) (0.5*E/(1.+NU))
 #define DELTA(NU_P,NU_PZ,E_P,E_Z) (((1+NU_P)*(1-NU_P-2*NU_PZ*(NU_PZ*E_Z/E_P)))/(E_P*E_P*E_Z))
 
+//MBTET
+#define N_MBTET0(x, y, z) ( 1.-x-y-z )
+#define N_MBTET1(x, y, z) ( x )
+#define N_MBTET2(x, y, z) ( y )
+#define N_MBTET3(x, y, z) ( z )
+#define diffN_MBTET0x ( -1. )
+#define diffN_MBTET0y ( -1. )
+#define diffN_MBTET0z ( -1. )
+#define diffN_MBTET1x ( 1 )
+#define diffN_MBTET1y ( 0 )
+#define diffN_MBTET1z ( 0 )
+#define diffN_MBTET2x ( 0 )
+#define diffN_MBTET2y ( 1 )
+#define diffN_MBTET2z ( 0 )
+#define diffN_MBTET3x ( 0 )
+#define diffN_MBTET3y ( 0 )
+#define diffN_MBTET3z ( 1 )
+
+//MBTRI
+#define N_MBTRI0(x, y) ( 1.-x-y )
+#define N_MBTRI1(x, y) ( x )
+#define N_MBTRI2(x, y) ( y )
+#define diffN_MBTRI0x ( -1. )
+#define diffN_MBTRI0y ( -1. )
+#define diffN_MBTRI1x ( 1 )
+#define diffN_MBTRI1y ( 0 )
+#define diffN_MBTRI2x ( 0 )
+#define diffN_MBTRI2y ( 1 )
+
+//MBEDGE
+#define N_MBEDGE0(x) ( 1.-(x) )
+#define N_MBEDGE1(x) (x) 
+#define diffN_MBEDGE0 (-1.)
+#define diffN_MBEDGE1 (1.) 
+
 #ifdef __cplusplus
 extern "C" {
 #endif

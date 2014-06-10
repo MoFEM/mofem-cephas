@@ -584,6 +584,38 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
 
 PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM) {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
+
+  data.nOdes[0].getN().resize(G_DIM,2);
+  ierr = ShapeMBEDGE(&*data.nOdes[0].getN().data().begin(),G_X,G_DIM); CHKERRQ(ierr);
+  data.nOdes[0].getDiffN().resize(2,1);
+  ierr = ShapeDiffMBEDGE(&*data.nOdes[0].getDiffN().data().begin()); CHKERRQ(ierr);
+
+  //cerr << data.nOdes[0].getN() << endl;
+  //cerr << data.nOdes[0].getDiffN() << endl;
+
+  int order = data.eDges[0].getOrder();
+  data.eDges[0].getN().resize(G_DIM,NBEDGE_H1(order));
+  data.eDges[0].getDiffN().resize(G_DIM,NBEDGE_H1(order));
+  if(data.eDges[0].getOrder()>1) {
+    double diff_s = 0.5;
+    for(int gg = 0;gg<G_DIM;gg++) {
+      double s = 2*G_X[gg]-1;
+      ierr = Lagrange_basis(NBEDGE_H1(order)-1,s,&diff_s,
+	&data.eDges[0].getN()(gg,0),&data.eDges[0].getDiffN()(gg,0),1); CHKERRQ(ierr);
+      for(unsigned int pp = 0;pp<data.eDges[0].getN().size2();pp++) {
+	double L = data.eDges[0].getN()(gg,pp);
+	double diffL = data.eDges[0].getDiffN()(gg,pp);
+	data.eDges[0].getN()(gg,pp) = data.nOdes[0].getN()(gg,0)*data.nOdes[0].getN()(gg,1)*L;
+	data.eDges[0].getDiffN()(gg,pp) = 
+	  ((+1.)*data.nOdes[0].getN()(gg,1)+data.nOdes[0].getN()(gg,0)*(-1.))*L + data.nOdes[0].getN()(gg,0)*data.nOdes[0].getN()(gg,1)*diffL;
+      }
+    }
+  }
+
+  //cerr << data.eDges[0].getN() << endl;
+  //cerr << data.eDges[0].getDiffN() << endl;
+
   PetscFunctionReturn(0);
 }
 
@@ -1112,14 +1144,110 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
 PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
+  PetscErrorCode ierr;
+
+  //PetscAttachDebugger();
+
   ierr = getEdgesOrder(data); CHKERRQ(ierr);
 
-  int order = 1;
-  for(unsigned int ee = 0;ee<data.eDges.size();ee++) {
-    order = max(order,data.eDges[ee].getOrder());
+  int order = data.eDges[0].getOrder();
+  int rule = getRule(order);
+  int nb_gauss_pts = gm_rule_size(rule,1);
+  gaussPts.resize(2,nb_gauss_pts);
+
+  ierr = Grundmann_Moeller_integration_points_1D_EDGE(rule,&gaussPts(0,0),&gaussPts(1,0)); CHKERRQ(ierr);
+  ierr = shapeEDGEFunctions_H1(data,&gaussPts(0,0),nb_gauss_pts); CHKERRQ(ierr);
+
+  EntityHandle ent = fe_ptr->get_ent();
+  int num_nodes;
+  const EntityHandle* conn;
+  rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+  coords.resize(num_nodes*3);
+  rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+
+  dIrection.resize(3);
+  cblas_dcopy(3,&coords[3],1,&*dIrection.data().begin(),1);
+  cblas_daxpy(3,-1.,&coords[0],1,&*dIrection.data().begin(),1);
+  lEngth = cblas_dnrm2(3,&*dIrection.data().begin(),1);
+
+  coordsAtGaussPts.resize(nb_gauss_pts,3);
+  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    for(int dd = 0;dd<3;dd++) {
+      coordsAtGaussPts(gg,dd) 
+	= N_MBEDGE0(gaussPts(0,gg))*coords[dd] + N_MBEDGE1(gaussPts(0,gg))*coords[3+dd]; 
+    }
+  }
+  //cerr << coordsAtGaussPts << endl;
+
+  DataForcesAndSurcesCore *col_data = &derived_data;
+
+  for(
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNH1.begin();
+    oit != vecUserOpNH1.end(); oit++) {
+
+    oit->setPtrFE(this);
+    BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
+    BitFieldId col_id = mField.get_field_structure(oit->col_field_name)->get_id();
+
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_row()&row_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no row field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&col_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+
+    ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getEdgeRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
+
+    ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+
+    try {
+      ierr = oit->op(data); CHKERRQ(ierr);
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+
   }
 
-  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  for(
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNH1NH1.begin();
+    oit != vecUserOpNH1NH1.end(); oit++) {
+
+    oit->setPtrFE(this);
+    BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
+    BitFieldId col_id = mField.get_field_structure(oit->col_field_name)->get_id();
+
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_row()&row_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no row field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_col()&col_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&col_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+
+    ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getEdgeRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
+
+    ierr = getColNodesIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeColIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
+
+    ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgeFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+
+    try {
+      ierr = oit->opSymmetric(data,*col_data); CHKERRQ(ierr);
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+
+  }
 
   PetscFunctionReturn(0);
 }
@@ -1193,7 +1321,6 @@ PetscErrorCode VertexElementForcesAndSurcesCore::operator()() {
     }
 
   }
-
 
   PetscFunctionReturn(0);
 }

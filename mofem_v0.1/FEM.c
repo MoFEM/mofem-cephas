@@ -99,16 +99,6 @@ PetscErrorCode Shape_invJac(double *Jac) {
 }
 
 //MBTRI
-#define N_MBTRI0(x, y) ( 1.-x-y )
-#define N_MBTRI1(x, y) ( x )
-#define N_MBTRI2(x, y) ( y )
-#define diffN_MBTRI0x ( -1. )
-#define diffN_MBTRI0y ( -1. )
-#define diffN_MBTRI1x ( 1 )
-#define diffN_MBTRI1y ( 0 )
-#define diffN_MBTRI2x ( 0 )
-#define diffN_MBTRI2y ( 1 )
-
 PetscErrorCode Grundmann_Moeller_integration_points_1D_EDGE(int rule,double *G_TRI_X,double *G_TRI_W) {
   PetscFunctionBegin;
 
@@ -138,8 +128,8 @@ PetscErrorCode Grundmann_Moeller_integration_points_1D_EDGE(int rule,double *G_T
   gm_rule_set ( rule, dim_num, point_num, w, x );
 	
   for( point = 0; point < point_num; point++ ){
-      G_TRI_X[point] = x[0+point*dim_num];
-      G_TRI_W[point] = w[point];
+    G_TRI_X[point] = x[0+point*dim_num];
+    G_TRI_W[point] = w[point];
   }
 
   ierr = PetscFree(w); CHKERRQ(ierr);
@@ -316,23 +306,6 @@ PetscErrorCode ShapeFaceDiffNormal_MBTRI(double *diffN,const double *coords,doub
 }
 
 //MBTET
-#define N_MBTET0(x, y, z) ( 1.-x-y-z )
-#define N_MBTET1(x, y, z) ( x )
-#define N_MBTET2(x, y, z) ( y )
-#define N_MBTET3(x, y, z) ( z )
-#define diffN_MBTET0x ( -1. )
-#define diffN_MBTET0y ( -1. )
-#define diffN_MBTET0z ( -1. )
-#define diffN_MBTET1x ( 1 )
-#define diffN_MBTET1y ( 0 )
-#define diffN_MBTET1z ( 0 )
-#define diffN_MBTET2x ( 0 )
-#define diffN_MBTET2y ( 1 )
-#define diffN_MBTET2z ( 0 )
-#define diffN_MBTET3x ( 0 )
-#define diffN_MBTET3y ( 0 )
-#define diffN_MBTET3z ( 1 )
-
 PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac) {
   PetscFunctionBegin;
   int ii,jj,kk;
@@ -424,24 +397,28 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F) {
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim) {
   PetscFunctionBegin;
   assert(fabs(s)<=1);
-  if(dim < 2) SETERRQ(PETSC_COMM_SELF,1,"dim < 2");
+  if(dim < 1) SETERRQ(PETSC_COMM_SELF,1,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
   if(p<0) SETERRQ(PETSC_COMM_SELF,1,"p < 0");
   L[0] = 1;
   if(diffL!=NULL) {
     diffL[0*(p+1)+0] = 0;
-    diffL[1*(p+1)+0] = 0;
-    if(dim == 3) diffL[2*(p+1)+0] = 0;
+    if(dim >= 2) {
+      diffL[1*(p+1)+0] = 0;
+      if(dim == 3) diffL[2*(p+1)+0] = 0;
+    }
   }
   if(p==0) PetscFunctionReturn(0);
   L[1] = s;
-  if(diffL!=NULL) {
-    if(diff_s==NULL) {
+  if(diffL != NULL) {
+    if(diff_s == NULL) {
       SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
     }
     diffL[0*(p+1)+1] = diff_s[0];
-    diffL[1*(p+1)+1] = diff_s[1];
-    if(dim == 3) diffL[2*(p+1)+1] = diff_s[2];
+    if(dim >= 2) {
+      diffL[1*(p+1)+1] = diff_s[1];
+      if(dim == 3) diffL[2*(p+1)+1] = diff_s[2];
+    }
   }
   if(p==1) PetscFunctionReturn(0);
   int l = 1;
@@ -454,9 +431,10 @@ PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *di
 	SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
       }
       diffL[0*(p+1)+l+1] = A*(s*diffL[0*(p+1)+l] + diff_s[0]*L[l]) - B*diffL[0*(p+1)+l-1]; 
-      diffL[1*(p+1)+l+1] = A*(s*diffL[1*(p+1)+l] + diff_s[1]*L[l]) - B*diffL[1*(p+1)+l-1]; 
-      if(dim == 2) continue;
-      diffL[2*(p+1)+l+1] = A*(s*diffL[2*(p+1)+l] + diff_s[2]*L[l]) - B*diffL[2*(p+1)+l-1];
+      if(dim >= 2) {
+	diffL[1*(p+1)+l+1] = A*(s*diffL[1*(p+1)+l] + diff_s[1]*L[l]) - B*diffL[1*(p+1)+l-1]; 
+	if(dim == 3) diffL[2*(p+1)+l+1] = A*(s*diffL[2*(p+1)+l] + diff_s[2]*L[l]) - B*diffL[2*(p+1)+l-1];
+      }
     }
   }
   PetscFunctionReturn(0);
@@ -706,6 +684,24 @@ PetscErrorCode Base_scale(
   PetscFunctionReturn(0);
 }
 
+//MBEDGE
+PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM) {
+  PetscFunctionBegin;
+  int ii = 0;
+  for(; ii<DIM; ii++) {
+    double x = G_X[ii];
+    N[2*ii+0] = N_MBEDGE0(x);
+    N[2*ii+1] = N_MBEDGE1(x);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ShapeDiffMBEDGE(double *diffN) {
+  PetscFunctionBegin;
+  diffN[0] = diffN_MBEDGE0;
+  diffN[1] = diffN_MBEDGE1;
+  PetscFunctionReturn(0);
+}
+
 //FIXME: NOT PROPERLY TESTED YET
 //HO 
 //MBTRIQ
@@ -765,28 +761,6 @@ PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double x,const double y) {
   diffN[9] = diffN_MBTRIQ4y(x,y);
   diffN[10] = diffN_MBTRIQ5x(x,y);
   diffN[11] = diffN_MBTRIQ5y(x,y);
-  PetscFunctionReturn(0);
-}
-
-//MBEDGE
-#define N_MBEDGE0(x) ( 1.-(x) )
-#define N_MBEDGE1(x) (x) 
-#define diffN_MBEDGE0 (-1.)
-#define diffN_MBEDGE1 (1.) 
-PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM) {
-  PetscFunctionBegin;
-  int ii = 0;
-  for(; ii<DIM; ii++) {
-    double x = G_X[ii];
-    N[2*ii+0] = N_MBEDGE0(x);
-    N[2*ii+1] = N_MBEDGE1(x);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode ShapeDiffMBEDGE(double *diffN) {
-  PetscFunctionBegin;
-  diffN[0] = diffN_MBEDGE0;
-  diffN[1] = diffN_MBEDGE1;
   PetscFunctionReturn(0);
 }
 

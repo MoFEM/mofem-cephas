@@ -420,6 +420,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ErrorCode rval;
   PetscErrorCode ierr;
   double lEngth;;
+  ublas::vector<double> dIrection;
   ublas::vector<double> coords;
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
@@ -437,6 +438,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
     inline double getLength() { return ptrFE->lEngth; }
+    inline ublas::vector<double>& getDirection() { return ptrFE->dIrection; }
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
