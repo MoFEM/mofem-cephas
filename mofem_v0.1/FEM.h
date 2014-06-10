@@ -127,8 +127,11 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
  */
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
 
-//10 Node Tet
+//2 Node edge
+PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM);
+PetscErrorCode ShapeDiffMBEDGE(double *diffN);
 
+//10 Node Tet
 PetscErrorCode ShapeMBTRIQ_GAUSS(double *N,const double *X,const double *Y,const int G_DIM);
 PetscErrorCode ShapeMBTRIQ(double *N,const double x,const double y);
 PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double x,const double y);
@@ -147,8 +150,9 @@ PetscErrorCode MakeComplexTensor(double *reA,double *imA,__CLPK_doublecomplex *x
 PetscErrorCode InvertComplexGradient(__CLPK_doublecomplex *xF);
 PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_doublecomplex *det_xF);
 
-
 //integration
+///Compute weights and integration points for edge using Grundmann_Moeller rule
+PetscErrorCode Grundmann_Moeller_integration_points_1D_EDGE(int rule,double *G_TRI_X,double *G_TRI_W);
 ///Compute weights and integration points for 2D Triangle using Grundmann_Moeller rule
 PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TRI_X,double *G_TRI_Y,double *G_TRI_W);
 ///Compute weights and integration points for 3D Tet using Grundmann_Moeller rule

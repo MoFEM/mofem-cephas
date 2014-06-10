@@ -46,14 +46,21 @@ void cOnstructor(DataForcesAndSurcesCore *data,EntityType type,T) {
 	  data->fAces.push_back(new T());
 	}
 	data->vOlumes.push_back(new T());
-      break;
+	break;
       case MBTRI:
 	data->nOdes.push_back(new T());
 	for(int ee = 0;ee<3;ee++) {
 	  data->eDges.push_back(new T());
 	}
 	data->fAces.push_back(new T());
-      break;
+	break;
+      case MBEDGE:
+	data->nOdes.push_back(new T());
+	data->eDges.push_back(new T());
+	break;
+      case MBVERTEX:
+	data->nOdes.push_back(new T());
+	break;
       default:
 	throw("not implemenyed");
     }
@@ -574,6 +581,11 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
 
     PetscFunctionReturn(0);
   }
+
+PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM) {
+  PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
 
 
 PetscErrorCode DataOperator::opSymmetric(
@@ -1096,6 +1108,96 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
+  PetscFunctionBegin;
+
+  ierr = getEdgesOrder(data); CHKERRQ(ierr);
+
+  int order = 1;
+  for(unsigned int ee = 0;ee<data.eDges.size();ee++) {
+    order = max(order,data.eDges[ee].getOrder());
+  }
+
+  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode VertexElementForcesAndSurcesCore::operator()() {
+  PetscFunctionBegin;
+
+  EntityHandle ent = fe_ptr->get_ent();
+  coords.resize(3);
+  rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERR_PETSC(rval);
+
+  DataForcesAndSurcesCore *col_data = &derived_data;
+
+  for(
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNH1.begin();
+    oit != vecUserOpNH1.end(); oit++) {
+
+    oit->setPtrFE(this);
+    BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
+    BitFieldId col_id = mField.get_field_structure(oit->col_field_name)->get_id();
+
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_row()&row_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no row field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&col_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+
+    ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+
+    try {
+      ierr = oit->op(data); CHKERRQ(ierr);
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+
+  }
+
+  for(
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNH1NH1.begin();
+    oit != vecUserOpNH1NH1.end(); oit++) {
+
+    oit->setPtrFE(this);
+    oit->setPtrFE(this);
+    BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
+    BitFieldId col_id = mField.get_field_structure(oit->col_field_name)->get_id();
+
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_row()&row_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no row field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_col()&col_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+    if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&col_id).none()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+    }
+
+    ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
+    ierr = getColNodesIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+
+    try {
+      ierr = oit->opSymmetric(data,*col_data); CHKERRQ(ierr);
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+
+  }
+
+
+  PetscFunctionReturn(0);
+}
+
 
 
 }

@@ -109,6 +109,45 @@ PetscErrorCode Shape_invJac(double *Jac) {
 #define diffN_MBTRI2x ( 0 )
 #define diffN_MBTRI2y ( 1 )
 
+PetscErrorCode Grundmann_Moeller_integration_points_1D_EDGE(int rule,double *G_TRI_X,double *G_TRI_W) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+
+  int dim_num=1;
+  int point;
+  int point_num;
+  double *w;
+  double *x;
+	
+//  GM_RULE_SET determines the weights and abscissas
+//  pof a Grundmann-Moeller quadrature rule for
+//  the DIM_NUM dimensional simplex,
+//  using a rule of in index RULE,
+//	  which will have degree of exactness 2*RULE+1.
+	
+//  printf ( "  Here we use DIM_NUM = %d\n", dim_num  );
+//  printf ( "  RULE = %d\n", rule );
+//  printf ( "  DEGREE = %d\n", 2 * rule + 1 );
+	
+  point_num = gm_rule_size ( rule, dim_num );
+	
+  ierr = PetscMalloc(point_num*sizeof(double),&w); CHKERRQ(ierr);
+  ierr = PetscMalloc(dim_num*point_num*sizeof(double),&x); CHKERRQ(ierr);
+	
+  gm_rule_set ( rule, dim_num, point_num, w, x );
+	
+  for( point = 0; point < point_num; point++ ){
+      G_TRI_X[point] = x[0+point*dim_num];
+      G_TRI_W[point] = w[point];
+  }
+
+  ierr = PetscFree(w); CHKERRQ(ierr);
+  ierr = PetscFree(x); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TRI_X,double *G_TRI_Y,double *G_TRI_W){
   PetscFunctionBegin;
 
@@ -726,6 +765,28 @@ PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double x,const double y) {
   diffN[9] = diffN_MBTRIQ4y(x,y);
   diffN[10] = diffN_MBTRIQ5x(x,y);
   diffN[11] = diffN_MBTRIQ5y(x,y);
+  PetscFunctionReturn(0);
+}
+
+//MBEDGE
+#define N_MBEDGE0(x) ( 1.-(x) )
+#define N_MBEDGE1(x) (x) 
+#define diffN_MBEDGE0 (-1.)
+#define diffN_MBEDGE1 (1.) 
+PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM) {
+  PetscFunctionBegin;
+  int ii = 0;
+  for(; ii<DIM; ii++) {
+    double x = G_X[ii];
+    N[2*ii+0] = N_MBEDGE0(x);
+    N[2*ii+1] = N_MBEDGE1(x);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ShapeDiffMBEDGE(double *diffN) {
+  PetscFunctionBegin;
+  diffN[0] = diffN_MBEDGE0;
+  diffN[1] = diffN_MBEDGE1;
   PetscFunctionReturn(0);
 }
 
