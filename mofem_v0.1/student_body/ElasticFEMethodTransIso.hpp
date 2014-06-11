@@ -576,9 +576,6 @@ namespace MoFEM {
       //Assembly Aij and F
       ierr = RhsAndLhs(); CHKERRQ(ierr);
 
-      //Neumann Boundary Conditions
-      ierr = NeumannBC(F); CHKERRQ(ierr);
-      
       ierr = OpStudentEnd(); CHKERRQ(ierr);
       
       PetscFunctionReturn(0);
@@ -892,15 +889,13 @@ namespace MoFEM {
         case ctx_SNESSetFunction: {
           //Assembly  F
           ierr = Fint(F); CHKERRQ(ierr);
-          //Neumann Boundary Conditions
-          ierr = NeumannBC(arc_ptr->F_lambda); CHKERRQ(ierr);
-        }
-          break;
+	}
+	break;
         case ctx_SNESSetJacobian: {
           //Assembly  F
           ierr = Lhs(); CHKERRQ(ierr);
         }
-          break;
+        break;
         default:
           SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
@@ -1275,7 +1270,6 @@ namespace MoFEM {
     }
     //--------------------------------------------------------------------------------------------------------------------------------------------------//
     PetscErrorCode operator()() {
-
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
@@ -1286,12 +1280,9 @@ namespace MoFEM {
       //Assembly Aij and F
       ierr = RhsAndLhs(); CHKERRQ(ierr);
       
-      //Neumann Boundary Conditions
-      ierr = NeumannBC(F); CHKERRQ(ierr);
-      
       ierr = OpStudentEnd(); CHKERRQ(ierr);
-      
-      PetscFunctionReturn(0); }
+      PetscFunctionReturn(0); 
+    }
     
   };
   
@@ -1662,15 +1653,13 @@ namespace MoFEM {
         case ctx_SNESSetFunction: {
           //Assembly  F
           ierr = Fint(F); CHKERRQ(ierr);
-          //Neumann Boundary Conditions
-          ierr = NeumannBC(arc_ptr->F_lambda); CHKERRQ(ierr);
         }
-          break;
+        break;
         case ctx_SNESSetJacobian: {
           //Assembly  F
           ierr = Lhs(); CHKERRQ(ierr);
         }
-          break;
+        break;
         default:
           SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }

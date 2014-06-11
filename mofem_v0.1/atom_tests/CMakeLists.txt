@@ -29,7 +29,7 @@ add_executable(hdiv_approximation hdiv_approximation.cpp)
 target_link_libraries(hdiv_approximation mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(trans_isotropic_test trans_isotropic_test.cpp)
-target_link_libraries(trans_isotropic_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(trans_isotropic_test mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 add_executable(mesh_smoothing_atom mesh_smoothing_atom.cpp)
 target_link_libraries(mesh_smoothing_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
