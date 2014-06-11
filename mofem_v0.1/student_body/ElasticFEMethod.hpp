@@ -30,20 +30,19 @@ namespace MoFEM {
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     FieldInterface& mField;
-    Mat Aij;
-    Vec Data,F;
-
-    ElasticFEMethod(
-      FieldInterface& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
-      Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL) {};
 
     bool propeties_from_BlockSet_Mat_ElasticSet;
 	
     ElasticFEMethod(
-      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec _X,Vec _F,
       double _lambda,double _mu): 
       FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
-      Aij(_Aij),Data(_D),F(_F),lambda(_lambda),mu(_mu) {
+      lambda(_lambda),mu(_mu) {
+
+      snes_B = &_Aij;
+      snes_x = _X;
+      snes_f = _F;
+
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
       RowGlob.resize(1+6+4+1);
@@ -57,18 +56,15 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       colDiffNMatrices.resize(1+6+4+1);
       colBMatrices.resize(1+6+4+1);
 
-      if(F!=PETSC_NULL) {
+      if(snes_f!=PETSC_NULL) {
 	//VEC & MAT Options
 	//If index is set to -1 ingonre its assembly
-	VecSetOption(F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+	VecSetOption(snes_f, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
       }
 
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
       G_TET_W = G_TET_W45;
-      g_NTRI.resize(3*28);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
-      G_TRI_W = G_TRI_W28;
 				
       propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
@@ -101,8 +97,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     vector<DofIdx> DirihletBC;
 
-    vector<double> g_NTET,g_NTRI;
-    const double *G_TRI_W;
+    vector<double> g_NTET;
     const double *G_TET_W;
 
     virtual PetscErrorCode calculateD(double _lambda,double _mu) {
@@ -116,7 +111,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
+    virtual PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
       PetscFunctionBegin;
 
       *_lambda = lambda;
@@ -149,44 +144,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       }
 
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-
-      g_NTET.resize(4*45);
-      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      G_TET_W = G_TET_W45;
-      g_NTRI.resize(3*28);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28);
-      G_TRI_W = G_TRI_W28;
-			
-      // See FEAP - - A Finite Element Analysis Program
-      D_lambda.resize(6,6);
-      D_lambda.clear();
-      for(int rr = 0;rr<3;rr++) {
-	for(int cc = 0;cc<3;cc++) {
-	  D_lambda(rr,cc) = 1;
-	}
-      }
-      D_mu.resize(6,6);
-      D_mu.clear();
-      for(int rr = 0;rr<6;rr++) {
-	D_mu(rr,rr) = rr<3 ? 2 : 1;
-      }
-
-      ierr = VecZeroEntries(Data); CHKERRQ(ierr);
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
-
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      // Note MAT_FLUSH_ASSEMBLY
-      ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -377,10 +334,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  if(ColGlob[cc].size()==0) continue;
 	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  if(rr!=cc) {
 	    K(cc,rr) = trans(K(rr,cc));
-	    ierr = MatSetValues(Aij,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(*snes_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	}
       }
@@ -389,7 +346,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     virtual PetscErrorCode Rhs() {
       PetscFunctionBegin;
-      ierr = Fint(F); CHKERRQ(ierr);
+      ierr = Fint(snes_f); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -500,16 +457,103 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+
+      g_NTET.resize(4*45);
+      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+      G_TET_W = G_TET_W45;
+			
+      // See FEAP - - A Finite Element Analysis Program
+      D_lambda.resize(6,6);
+      D_lambda.clear();
+      for(int rr = 0;rr<3;rr++) {
+	for(int cc = 0;cc<3;cc++) {
+	  D_lambda(rr,cc) = 1;
+	}
+      }
+      D_mu.resize(6,6);
+      D_mu.clear();
+      for(int rr = 0;rr<6;rr++) {
+	D_mu(rr,rr) = rr<3 ? 2 : 1;
+      }
+
+      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,snes_x); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+
+      switch(snes_ctx) {
+        case ctx_SNESNone: {
+	  // Note MAT_FLUSH_ASSEMBLY
+	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  //MatZeroRowsColumns works only after the final assembly
+	  ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*snes_B); CHKERRQ(ierr);
+	  //Rhs  
+	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        }
+	break;
+        case ctx_SNESSetFunction: {
+	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
+	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	}
+	break;
+        case ctx_SNESSetJacobian: {
+	  // Note MAT_FLUSH_ASSEMBLY
+	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  //MatZeroRowsColumns works only after the final assembly
+	  ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*snes_B); CHKERRQ(ierr);
+	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	}
+        break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+
+
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
-
       //Dirihlet Boundary Condition
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
-      //Assembly Aij and F
-      ierr = RhsAndLhs(); CHKERRQ(ierr);
+      switch(snes_ctx) {
+        case ctx_SNESNone: {
+	  ierr = RhsAndLhs(); CHKERRQ(ierr);
+        }
+        case ctx_SNESSetFunction: {
+	  ierr = Rhs(); CHKERRQ(ierr);
+	}
+	break;
+        case ctx_SNESSetJacobian: {
+	  ierr = Lhs(); CHKERRQ(ierr);
+	}
+        break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
 
       ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);

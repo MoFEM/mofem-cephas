@@ -368,46 +368,41 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create matrices
-    Vec D,F;
-    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
-    Mat Aij;
-    ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-    
-    CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
-    ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-    
-//    vector<double> attributes;
-    double YoungModulusP;
-    double PoissonRatioP;
-    double YoungModulusZ;
-    double PoissonRatioPZ;
-    double ShearModulusZP;
+  Vec D,F;
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
+  Mat Aij;
+  ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
+      
+  //vector<double> attributes;
+  double YoungModulusP;
+  double PoissonRatioP;
+  double YoungModulusZ;
+  double PoissonRatioPZ;
+  double ShearModulusZP;
 
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
-    {
-        cout << endl << *it << endl;
-        
-        //Get block name
-        string name = it->get_Cubit_name();
-        
-        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
-        {
-            Mat_Elastic_TransIso mydata;
-            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-            cout << mydata;
-            YoungModulusP=mydata.data.Youngp;
-            YoungModulusZ=mydata.data.Youngz;
-            PoissonRatioP=mydata.data.Poissonp;
-            PoissonRatioPZ=mydata.data.Poissonpz;
-            if (mydata.data.Shearzp!=0) {
-                ShearModulusZP=mydata.data.Shearzp;
-            }else{
-                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
-            
-        }
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
+    cout << endl << *it << endl;
+    
+    //Get block name
+    string name = it->get_Cubit_name();
+    
+    if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+      Mat_Elastic_TransIso mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      cout << mydata;
+      YoungModulusP=mydata.data.Youngp;
+      YoungModulusZ=mydata.data.Youngz;
+      PoissonRatioP=mydata.data.Poissonp;
+      PoissonRatioPZ=mydata.data.Poissonpz;
+      if (mydata.data.Shearzp!=0) {
+          ShearModulusZP=mydata.data.Shearzp;
+      }	else {
+        ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));
+      }  
     }
-  
+  }
+
   //Assemble F and Aij
     
   ///No of Axis/Angle of rotation
@@ -416,8 +411,13 @@ int main(int argc, char *argv[]) {
   double AxVector[6] = {/*1st Axis*/ 1,0,0 , /*2nd Axis*/ 0,1,0};
   ///Array of Rotational Angles
   double AxAngle[2] = {/*1st Angle*/ -0.25*M_PI ,/*2nd Angle*/ -0.25*M_PI};
+
+  CubitDisplacementDirihletBC_ZerosRowsColumns myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
+  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
     
   TranIsotropicAxisAngleRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,noAA,AxVector,AxAngle);
+  //ElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(1.,0.),MU(1.,0.));
+
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -439,13 +439,10 @@ int main(int argc, char *argv[]) {
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-
   //Matrix View
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
   //std::string wait;
   //std::cin >> wait;
-
 
   //Solver
   KSP solver;
@@ -473,8 +470,8 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh fe_fibre_post_proc_method( mField, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
-    
+  TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh fe_fibre_post_proc_method(
+    mField,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_fibre_post_proc_method);  CHKERRQ(ierr);
 
   PetscSynchronizedFlush(PETSC_COMM_WORLD);

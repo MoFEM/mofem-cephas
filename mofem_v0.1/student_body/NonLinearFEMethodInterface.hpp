@@ -57,23 +57,19 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
   enum interface_materials_context { ctx_IntLinearSoftening, ctx_InTBILinearSoftening, ctx_IntNone };
   interface_materials_context int_mat_ctx;
-
-  NonLinearInterfaceFEMethod(
-      FieldInterface& _mField,double _YoungModulus): 
-      InterfaceFEMethod(_mField,_YoungModulus),int_mat_ctx(ctx_IntLinearSoftening) {};
-
   double h,beta,ft,Gf,E0,g0,kappa1;
   enum interface_context { ctx_KappaUpdate = 1,  ctx_InterfaceNone = 2 };
   interface_context ctx_int;
 
   Tag th_damaged_prism;
 
-  Vec D;
   NonLinearInterfaceFEMethod(
-      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
-      double _YoungModulus,double _h,double _beta,double _ft,double _Gf,interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
-      InterfaceFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_YoungModulus),int_mat_ctx(_int_mat_ctx),
-      h(_h),beta(_beta),ft(_ft),Gf(_Gf),ctx_int(ctx_InterfaceNone),D(_D) {
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
+      Mat &_Aij,Vec _X,Vec _F,
+      double _YoungModulus,double _h,double _beta,double _ft,double _Gf,
+      interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
+      InterfaceFEMethod(_mField,_dirihlet_ptr,_Aij,_X,_F,_YoungModulus),
+      int_mat_ctx(_int_mat_ctx),h(_h),beta(_beta),ft(_ft),Gf(_Gf),ctx_int(ctx_InterfaceNone) {
 
     E0 = YoungModulus/h;
     g0 = ft/E0;
@@ -84,30 +80,6 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
       "DAMAGED_PRISM",1,MB_TYPE_INTEGER,th_damaged_prism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged); CHKERR_THROW(rval);
     
   };
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    g_NTET.resize(4*45);
-    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    G_TET_W = G_TET_W45;
-    g_NTRI.resize(3*28);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
-    G_TRI_W = G_TRI_W28;
-
-    switch(snes_ctx) {
-      case ctx_SNESNone: {}
-      break;
-      case ctx_SNESSetFunction: { }
-      break;
-      case ctx_SNESSetJacobian: { }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
 
   vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap;
   vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap_loc;
@@ -289,7 +261,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
   /** \brief calulate internal force vector
    *
    */
-  virtual PetscErrorCode RhsInt() {
+  PetscErrorCode RhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
     bool is_fully_damaged = true;
@@ -318,7 +290,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 	      ublas::vector<FieldData> f_int = prod(trans(N),w*traction);
 	      if(RowGlob[rr].size()==0) continue;
 	      if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	      ierr = VecSetValues(F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	      ierr = VecSetValues(snes_f,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	    }}
 	    break;
 	}
@@ -341,7 +313,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
   /** calulate elemement tangent matrix
    *
    */
-  virtual PetscErrorCode LhsInt() {
+  PetscErrorCode LhsInt() {
     PetscFunctionBegin;
     int g_dim = g_NTRI.size()/3;
     K.resize(row_mat,col_mat);
@@ -373,7 +345,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 	  if(ColGlob[cc].size()==0) continue;
 	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
     }
     PetscFunctionReturn(0);
@@ -390,7 +362,6 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
   }
 
   int iter;
-
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
@@ -418,8 +389,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
 
     switch(snes_ctx) {
-      case ctx_SNESNone: {
-      }
+      case ctx_SNESNone: {}
       break;
       case ctx_SNESSetJacobian: 
       case ctx_SNESSetFunction: { 
@@ -433,10 +403,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
     switch(snes_ctx) {
       break;
-      case ctx_SNESNone: {
-	ierr = RhsInt(); CHKERRQ(ierr);
-      }
-      break;
+      case ctx_SNESNone: 
       case ctx_SNESSetFunction: { 
 	ierr = RhsInt(); CHKERRQ(ierr);
       }
@@ -456,23 +423,6 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
   }
 
 
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    switch(snes_ctx) {
-      case ctx_SNESSetJacobian: { 
-	// Note MAT_FLUSH_ASSEMBLY
-	ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      }
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction:
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-    PetscFunctionReturn(0);
-  }
-
 };
 
 struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
@@ -480,8 +430,6 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  Mat Aij;
-  Vec F,D;
   ArcLengthCtx* arc_ptr;
   Vec GhostDiag,GhostLambdaInt;
   Range Faces3,Faces4;
@@ -490,8 +438,8 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 
   Tag th_damaged_prism;
 
-  ArcLengthIntElemFEMethod(Interface& _moab,Mat &_Aij,Vec& _F,Vec& _D,
-    ArcLengthCtx *_arc_ptr): FEMethod(),moab(_moab),Aij(_Aij),F(_F),D(_D),arc_ptr(_arc_ptr) {
+  ArcLengthIntElemFEMethod(Interface& _moab,
+    ArcLengthCtx *_arc_ptr): FEMethod(),moab(_moab),arc_ptr(_arc_ptr) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
@@ -560,12 +508,9 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
-	ierr = calulate_dx_and_dlambda(D); CHKERRQ(ierr);
+	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
 	ierr = calulate_db(); CHKERRQ(ierr);
 	ierr = calulate_lambda_int(lambda_int); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetJacobian: {
       }
       break;
       default:
@@ -574,7 +519,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode calulate_lambda_int(double &_lambda_int_) {
+  PetscErrorCode calulate_lambda_int(double &_lambda_int_) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
@@ -649,7 +594,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
       case ctx_SNESSetFunction: {
 	//calulate residual for arc length row
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
-	ierr = VecSetValue(F,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e s = %6.4e\n",
 	  arc_ptr->res_lambda,lambda_int,arc_ptr->s);
       }
@@ -658,7 +603,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 	//calulate diagonal therm
 	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValue(Aij,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValue(*snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
@@ -671,9 +616,6 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
-      }
-      break;
       case ctx_SNESSetJacobian: {
 	ierr = VecAssemblyBegin(GhostDiag); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(GhostDiag); CHKERRQ(ierr);
@@ -684,6 +626,8 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 	arc_ptr->diag = *diag;
 	ierr = VecRestoreArray(GhostDiag,&diag); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\tdiag = %6.4e\n",arc_ptr->diag);
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:
@@ -692,7 +636,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode calulate_dx_and_dlambda(Vec x) {
+  PetscErrorCode calulate_dx_and_dlambda(Vec &x) {
     PetscFunctionBegin;
     //dx
     ierr = VecCopy(x,arc_ptr->dx); CHKERRQ(ierr);
@@ -714,7 +658,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode calculate_init_dlambda(double *dlambda) {
+  PetscErrorCode calculate_init_dlambda(double *dlambda) {
 
       PetscFunctionBegin;
 
@@ -730,22 +674,22 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
       PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode set_dlambda_to_x(Vec x,double dlambda) {
+  PetscErrorCode set_dlambda_to_x(Vec &x,double dlambda) {
       PetscFunctionBegin;
 
       if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
-	    double *array;
-	    ierr = VecGetArray(x,&array); CHKERRQ(ierr);
-	    double lambda_old = array[arc_ptr->get_petsc_local_dof_idx()];
-	    if(!(dlambda == dlambda)) {
-	      ostringstream sss;
-	      sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
-	      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
-	    }
-	    array[arc_ptr->get_petsc_local_dof_idx()] = lambda_old + dlambda;
-	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-	      lambda_old, array[arc_ptr->get_petsc_local_dof_idx()], dlambda);
-	    ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
+	double *array;
+	ierr = VecGetArray(x,&array); CHKERRQ(ierr);
+	double lambda_old = array[arc_ptr->get_petsc_local_dof_idx()];
+	if(!(dlambda == dlambda)) {
+	  ostringstream sss;
+	  sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
+	  SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+	}
+	array[arc_ptr->get_petsc_local_dof_idx()] = lambda_old + dlambda;
+	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
+	  lambda_old, array[arc_ptr->get_petsc_local_dof_idx()], dlambda);
+	ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
       }
 
       PetscFunctionReturn(0);

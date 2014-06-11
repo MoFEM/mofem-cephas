@@ -244,7 +244,6 @@ int main(int argc, char *argv[]) {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
       ostringstream fe_name;
       fe_name << "FORCE_FE_" << it->get_msId();
-      ierr = mField.add_finite_element(fe_name.str()); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_row(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_col(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
@@ -252,7 +251,6 @@ int main(int argc, char *argv[]) {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
       ostringstream fe_name;
       fe_name << "PRESSURE_FE_" << it->get_msId();
-      ierr = mField.add_finite_element(fe_name.str()); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_row(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_col(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
@@ -261,7 +259,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
       Range tets;
@@ -319,8 +316,8 @@ int main(int argc, char *argv[]) {
   struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
     FieldInterface& mField;
     Range PostProcNodes;
-    MyArcLengthIntElemFEMethod(FieldInterface& _mField,Mat &_Aij,Vec& _F,Vec& _D,
-      ArcLengthCtx *_arc_ptr): ArcLengthIntElemFEMethod(_mField.get_moab(),_Aij,_F,_D,_arc_ptr),mField(_mField) {
+    MyArcLengthIntElemFEMethod(FieldInterface& _mField,ArcLengthCtx *_arc_ptr): 
+      ArcLengthIntElemFEMethod(_mField.get_moab(),_arc_ptr),mField(_mField) {
 
       for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
 	EntityHandle meshset = cit->get_meshset();
@@ -357,33 +354,28 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {
+  struct MyPrePostProcessFEMethodRhs: public FieldInterface::FEMethod {
     
     FieldInterface& mField;
-    Mat &Aij;
-    Vec &F;
     Vec &F_body_force;
     ArcLengthCtx *arc_ptr;
-    
-    MyPrePostProcessFEMethod(FieldInterface& _mField,
-      Mat _Aij,Vec _F,Vec _F_body_force,ArcLengthCtx *_arc_ptr):
-      mField(_mField),Aij(_Aij),F(_F),F_body_force(_F_body_force),arc_ptr(_arc_ptr) {}
+
+    MyPrePostProcessFEMethodRhs(FieldInterface& _mField,
+      Vec &_F_body_force,ArcLengthCtx *_arc_ptr):
+      mField(_mField),F_body_force(_F_body_force),
+      arc_ptr(_arc_ptr) {}
   
     PetscErrorCode ierr;
       
       PetscErrorCode preProcess() {
         PetscFunctionBegin;
         
+	//PetscAttachDebugger();
         switch(snes_ctx) {
-          case ctx_SNESNone:
           case ctx_SNESSetFunction: {
-            //F_lambda
-            ierr = VecZeroEntries(F); CHKERRQ(ierr);
-            ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          }
-          break;
-          case ctx_SNESSetJacobian: {
+            ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+            ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+            ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
           }
           break;
           default:
@@ -395,26 +387,21 @@ int main(int argc, char *argv[]) {
       
       PetscErrorCode postProcess() {
         PetscFunctionBegin;
-        
         switch(snes_ctx) {
-          case ctx_SNESNone: {}
           case ctx_SNESSetFunction: {
-            ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-            ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+            ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+            ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+            ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+            ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	    //add F_lambda
-	    ierr = VecAXPY(F,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	    ierr = VecAXPY(F_body_force,-1.,F_body_force); CHKERRQ(ierr);
+	    ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	    ierr = VecAXPY(snes_f,-1.,F_body_force); CHKERRQ(ierr);
 	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
 	    //snes_f norm
 	    double fnorm;
-	    ierr = VecNormBegin(F,NORM_2,&fnorm); CHKERRQ(ierr);	
-	    ierr = VecNormEnd(F,NORM_2,&fnorm);CHKERRQ(ierr);
+	    ierr = VecNormBegin(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
+	    ierr = VecNormEnd(snes_f,NORM_2,&fnorm);CHKERRQ(ierr);
 	    PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
-          }
-          break;
-          case ctx_SNESSetJacobian: {
           }
           break;
           default:
@@ -425,14 +412,15 @@ int main(int argc, char *argv[]) {
       }
   };
 
-  ArcLengthCtx* ArcCtx = new ArcLengthCtx(mField,"ELASTIC_MECHANICS");
-  MyArcLengthIntElemFEMethod* MyArcMethod_ptr = new MyArcLengthIntElemFEMethod(mField,Aij,F,D,ArcCtx);
-  MyArcLengthIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
-  ArcLengthSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
-  MyPrePostProcessFEMethod PrePostFE(mField,Aij,F,F_body_force,ArcCtx);
 
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+
+  ArcLengthCtx* ArcCtx = new ArcLengthCtx(mField,"ELASTIC_MECHANICS");
+  MyArcLengthIntElemFEMethod* MyArcMethod_ptr = new MyArcLengthIntElemFEMethod(mField,ArcCtx);
+  MyArcLengthIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
+  ArcLengthSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
+  MyPrePostProcessFEMethodRhs PrePostFERhs(mField,F_body_force,ArcCtx);
 
   ElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   NonLinearInterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus,h,beta,ft,Gf,NonLinearInterfaceFEMethod::ctx_IntLinearSoftening);
@@ -487,6 +475,9 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(ArcCtx->F_lambda); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(ArcCtx->F_lambda); CHKERRQ(ierr);
+  //F_lambda2
+  ierr = VecDot(ArcCtx->F_lambda,ArcCtx->F_lambda,&ArcCtx->F_lambda2); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",ArcCtx->F_lambda2);
 
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -507,16 +498,16 @@ int main(int argc, char *argv[]) {
 
   //Rhs
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE);
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFERhs);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
-  SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE);
+  SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFERhs);
 
   //Mat
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
 
   int its_d = 6;
