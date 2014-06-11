@@ -74,6 +74,53 @@ int main(int argc, char *argv[]) {
 		
   FieldCore core(moab);
   FieldInterface& mField = core;
+    
+    
+    
+    
+    //=======================================================================================================
+    //Seting nodal coordinates on the surface to make sure they are periodic
+    //=======================================================================================================
+    
+    Range SurTrisNeg, SurTrisPos;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(101,SideSet,2,SurTrisNeg,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurTrisPos,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
+    
+    Range SurNodesNeg,SurNodesPos;
+    rval = moab.get_connectivity(SurTrisNeg,SurNodesNeg,true); CHKERR_PETSC(rval);
+    cout<<" All nodes on negative surfaces " << SurNodesNeg.size()<<endl;
+    rval = moab.get_connectivity(SurTrisPos,SurNodesPos,true); CHKERR_PETSC(rval);
+    cout<<" All nodes on positive surfaces " << SurNodesPos.size()<<endl;
+    
+    
+    double roundfact=1000.0;   double coords_nodes[3];
+    //Populating the Multi-index container with nodes on -ve faces
+    for(Range::iterator nit = SurNodesNeg.begin(); nit!=SurNodesNeg.end();  nit++) {
+      rval = moab.get_coords(&*nit,1,coords_nodes);  CHKERR_PETSC(rval);
+      //round values to 3 disimal places
+      if(coords_nodes[0]>=0) coords_nodes[0]=double(int(coords_nodes[0]*roundfact+0.5))/roundfact;  else coords_nodes[0]=double(int(coords_nodes[0]*roundfact-0.5))/roundfact;
+      if(coords_nodes[1]>=0) coords_nodes[1]=double(int(coords_nodes[1]*roundfact+0.5))/roundfact;  else coords_nodes[1]=double(int(coords_nodes[1]*roundfact-0.5))/roundfact;
+      if(coords_nodes[2]>=0) coords_nodes[2]=double(int(coords_nodes[2]*roundfact+0.5))/roundfact;  else coords_nodes[2]=double(int(coords_nodes[2]*roundfact-0.5))/roundfact;
+      rval = moab.set_coords(&*nit,1,coords_nodes);  CHKERR_PETSC(rval);
+      //      cout<<"   coords_nodes[0]= "<<coords_nodes[0] << "   coords_nodes[1]= "<< coords_nodes[1] << "   coords_nodes[2]= "<< coords_nodes[2] <<endl;
+    }
+    
+    ///Populating the Multi-index container with nodes on +ve faces
+    for(Range::iterator nit = SurNodesPos.begin(); nit!=SurNodesPos.end();  nit++) {
+      rval = moab.get_coords(&*nit,1,coords_nodes);  CHKERR_PETSC(rval);
+      //round values to 3 disimal places
+      if(coords_nodes[0]>=0) coords_nodes[0]=double(int(coords_nodes[0]*roundfact+0.5))/roundfact;  else coords_nodes[0]=double(int(coords_nodes[0]*roundfact-0.5))/roundfact;
+      if(coords_nodes[1]>=0) coords_nodes[1]=double(int(coords_nodes[1]*roundfact+0.5))/roundfact;  else coords_nodes[1]=double(int(coords_nodes[1]*roundfact-0.5))/roundfact;
+      if(coords_nodes[2]>=0) coords_nodes[2]=double(int(coords_nodes[2]*roundfact+0.5))/roundfact;  else coords_nodes[2]=double(int(coords_nodes[2]*roundfact-0.5))/roundfact;
+      rval = moab.set_coords(&*nit,1,coords_nodes);  CHKERR_PETSC(rval);
+      //      cout<<"   coords_nodes[0]= "<<coords_nodes[0] << "   coords_nodes[1]= "<< coords_nodes[1] << "   coords_nodes[2]= "<< coords_nodes[2] <<endl;
+    }
+    //=======================================================================================================
+  
+    
+    
 
   //add fields
   ierr = mField.add_field("POTENTIAL_FIELD",H1,1); CHKERRQ(ierr);
@@ -358,7 +405,8 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out_potential_flow.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
-      
+    
+    
   PetscFinalize();
 
   } catch (const char* msg) {

@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
     ierr = mField.add_field("Lagrange_mul_disp",H1,3); CHKERRQ(ierr);  //For lagrange multipliers to control the periodic motion
     ierr = mField.add_field("Lagrange_mul_disp_rigid_trans",NoField,3); CHKERRQ(ierr);  //To control the rigid body motion (3 Traslations and 3 rotations)
-    ierr = mField.add_field("Lagrange_mul_disp_rigid_rotation",NoField,3); CHKERRQ(ierr); //Controla 3 rigid body rotations about x, y and z axis
+//    ierr = mField.add_field("Lagrange_mul_disp_rigid_rotation",NoField,3); CHKERRQ(ierr); //Controla 3 rigid body rotations about x, y and z axis
 
     
     //FE
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
     ierr = mField.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
     ierr = mField.add_finite_element("Lagrange_elem_rigid_trans"); CHKERRQ(ierr);//For rigid body control
-    ierr = mField.add_finite_element("Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
+//    ierr = mField.add_finite_element("Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
 
     //Define rows/cols and element data
     ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
@@ -295,20 +295,20 @@ int main(int argc, char *argv[]) {
     //============================================================================================================
 
     
-    //Define rows/cols and element data for C2 and C2T (for lagrange multipliers to contol the rigid body rotations)
-    //============================================================================================================
-    //C2 row as Lagrange_elem_rigid_trans and col as DISPLACEMENT
-    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
-    
-    //C2T col as Lagrange_elem_rigid_trans and row as DISPLACEMENT
-    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
-    
-    //As for stress we need both displacement and temprature (Lukasz)
-    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
-    //============================================================================================================
+//    //Define rows/cols and element data for C2 and C2T (for lagrange multipliers to contol the rigid body rotations)
+//    //============================================================================================================
+//    //C2 row as Lagrange_elem_rigid_trans and col as DISPLACEMENT
+//    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
+//    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
+//    
+//    //C2T col as Lagrange_elem_rigid_trans and row as DISPLACEMENT
+//    ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
+//    ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
+//    
+//    //As for stress we need both displacement and temprature (Lukasz)
+//    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
+//    ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
+//    //============================================================================================================
 
      //define problems
     ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
+//    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
 
     //set refinment level for problem
     ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
     ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
+//    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
 
     
     //=======================================================================================================
@@ -377,7 +377,7 @@ int main(int argc, char *argv[]) {
         if(TriCen[0]>=0) TriCen[0]=double(int(TriCen[0]*roundfact+0.5))/roundfact;  else TriCen[0]=double(int(TriCen[0]*roundfact-0.5))/roundfact; //-ve and +ve value
         if(TriCen[1]>=0) TriCen[1]=double(int(TriCen[1]*roundfact+0.5))/roundfact;  else TriCen[1]=double(int(TriCen[1]*roundfact-0.5))/roundfact;
         if(TriCen[2]>=0) TriCen[2]=double(int(TriCen[2]*roundfact+0.5))/roundfact;  else TriCen[2]=double(int(TriCen[2]*roundfact-0.5))/roundfact;
-        cout<<"   TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
+//        cout<<"   TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
         //fill the multi-index container with centriod coordinates and triangle handles
         Face_CenPos_Handle_varNeg.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
     }
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
         if(TriCen[0]>=0) TriCen[0]=double(int(TriCen[0]*roundfact+0.5))/roundfact;  else TriCen[0]=double(int(TriCen[0]*roundfact-0.5))/roundfact;
         if(TriCen[1]>=0) TriCen[1]=double(int(TriCen[1]*roundfact+0.5))/roundfact;  else TriCen[1]=double(int(TriCen[1]*roundfact-0.5))/roundfact;
         if(TriCen[2]>=0) TriCen[2]=double(int(TriCen[2]*roundfact+0.5))/roundfact;  else TriCen[2]=double(int(TriCen[2]*roundfact-0.5))/roundfact;
-        cout<<"TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
+//        cout<<"TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
       
         //fill the multi-index container with centriod coordinates and triangle handles
         Face_CenPos_Handle_varPos.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
@@ -693,7 +693,7 @@ int main(int argc, char *argv[]) {
     
     ElasticFE_RVELagrange_Periodic MyFE_RVELagrangePeriodic(mField,&myDirihletBC,Aij,D,F,applied_strain);
     ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField,&myDirihletBC,Aij,D,F,applied_strain);
-    ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,&myDirihletBC,Aij,D,F,applied_strain);
+//    ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,&myDirihletBC,Aij,D,F,applied_strain);
 
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -708,8 +708,8 @@ int main(int argc, char *argv[]) {
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",MyFE_RVELagrangeRigidBodyRotation);  CHKERRQ(ierr);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
+//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",MyFE_RVELagrangeRigidBodyRotation);  CHKERRQ(ierr);
+//    PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -722,7 +722,7 @@ int main(int argc, char *argv[]) {
 //    MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
 //    std::string wait;
 //    std::cin >> wait;
-    
+  
     //Solver
     KSP solver;
     ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);

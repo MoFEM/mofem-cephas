@@ -711,8 +711,8 @@ int main(int argc, char *argv[]) {
         }
     }
     
-//    alpha = 500;
-    cout<<"alpha   = "<<alpha<<endl;
+//    alpha = 50;
+//    cout<<"alpha   = "<<alpha<<endl;
 	
     InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
     MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
