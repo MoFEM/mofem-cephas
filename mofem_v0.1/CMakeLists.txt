@@ -104,6 +104,7 @@ link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
 add_library(mofem_Field 
   FieldInterface.cpp
   SnesCtx.cpp
+  TsCtx.cpp
   third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
   third_party/gm_rule.c

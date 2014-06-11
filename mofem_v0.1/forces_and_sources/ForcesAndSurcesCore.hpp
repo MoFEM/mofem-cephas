@@ -285,6 +285,7 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(TetElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -382,6 +383,8 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::matrix<FieldData>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
     inline ublas::matrix<FieldData>& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
     inline ublas::matrix<FieldData>& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
+    inline const TriElementForcesAndSurcesCore* getTriElementForcesAndSurcesCore() { return ptrFE; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(TriElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -443,6 +446,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(EdgeElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -494,6 +498,7 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(VertexElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;

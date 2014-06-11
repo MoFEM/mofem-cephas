@@ -24,7 +24,8 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
-#include "ElasticFEMethodForInterface.hpp"
+#include "ElasticFEMethodInterface.hpp"
+
 #include "SurfacePressure.hpp"
 #include "BodyForce.hpp"
 #include "PostProcVertexMethod.hpp"

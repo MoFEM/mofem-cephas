@@ -23,34 +23,31 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "ElasticFEMethodForDynamics.hpp"
+#include "ElasticFEMethodDynamics.hpp"
+#include "SurfacePressure.hpp"
 
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-struct MyBC: public DynamicNeumannBC {
+struct TimeForceScale: public NeummanForcesSurface::MethodsForOp {
 
-    PetscErrorCode f_CalcTraction(double ts_t,ublas::vector<double,ublas::bounded_array<double,3> >& traction) const {
-      PetscFunctionBegin;
-      
-      //Triangular loading over 10s (maximum at 5)
-      double scale = 0;
-      if(ts_t < 5.) scale = ts_t/5.;
-      if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
-      if(ts_t > 10.) scale = 0;
+  PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) {
+    PetscFunctionBegin;
 
-      //Set Direction of Traction On SideSet2
-      //traction[0] = 0; //X
-      //traction[1] = 0; //Y 
-      //traction[2] = scale; //Z*/
-      traction *= scale;
+    double ts_t = fe->ts_t;
+    
+    //Triangular loading over 10s (maximum at 5)
+    double scale = 0;
+    if(ts_t < 5.) scale = ts_t/5.;
+    if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
+    if(ts_t > 10.) scale = 0;
+    Nf *= scale;
 
-      PetscFunctionReturn(0);
-    }
+    PetscFunctionReturn(0);
+  }
 
 };
-
 
 int main(int argc, char *argv[]) {
 
@@ -181,6 +178,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",vel_order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"VELOCITIES",1); CHKERRQ(ierr);
 
+  ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+
   /****/
   //build database
 
@@ -226,17 +225,42 @@ int main(int argc, char *argv[]) {
   const double PoissonRatio = 0.;
   const double rho = 1;
 
-  MyBC mybc;
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  DynamicElasticFEMethod MyFE(&myDirihletBC,mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,&mybc);
+  DynamicElasticFEMethod MyFE(&myDirihletBC,mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho);
 
   TsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
+
+  //Neumann boundary conditions
+  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  ierr = MetaNeummanForces::setFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    ostringstream fe_name;
+    fe_name << "FORCE_FE_" << it->get_msId();
+    string fe_name_str = fe_name.str();
+    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
+    ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
+    neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
+
+  }
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    ostringstream fe_name;
+    fe_name << "PRESSURE_FE_" << it->get_msId();
+    string fe_name_str = fe_name.str();
+    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
+    ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+    neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
+  }
+  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  for(;mit!=neumann_forces.end();mit++) {
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(mit->first,&mit->second->getLoopFe()));
+  }
+
   TsCtx::loops_to_do_type& loops_to_do_Mat = TsCtx.get_loops_to_do_IJacobian();
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
@@ -275,7 +299,8 @@ int main(int argc, char *argv[]) {
   ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
   ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,
-    "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
+    "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",
+    steps,rejects,snesfails,ftime,nonlinits,linits);
 
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

@@ -214,74 +214,74 @@ struct PCShellCtx {
  * preProcess - zero F_lambda
  * postProcess - assembly F_lambda
  * Example: \code
-			SnesCtx::basic_method_to_do& preProcess_to_do_Rhs = SnesCtx.get_preProcess_to_do_Rhs();
-			SnesCtx::basic_method_to_do& postProcess_to_do_Rhs = SnesCtx.get_postProcess_to_do_Rhs();
-			SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE); //Zero F_lambda before looping over FEs
-			loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
-			loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
-			loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
-			SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE); //finally, assemble F_lambda
+      SnesCtx::basic_method_to_do& preProcess_to_do_Rhs = SnesCtx.get_preProcess_to_do_Rhs();
+      SnesCtx::basic_method_to_do& postProcess_to_do_Rhs = SnesCtx.get_postProcess_to_do_Rhs();
+      SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE); //Zero F_lambda before looping over FEs
+      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
+      loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
+      SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE); //finally, assemble F_lambda
   \endcode
  */
 struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
-	
-	FieldInterface& mField;
-	ArcLengthCtx *arc_ptr;
-	
-	PrePostProcessFEMethod_For_F_lambda(FieldInterface& _mField, ArcLengthCtx *_arc_ptr):
-		mField(_mField),arc_ptr(_arc_ptr) {}
+  
+  FieldInterface& mField;
+  ArcLengthCtx *arc_ptr;
+  
+  PrePostProcessFEMethod_For_F_lambda(FieldInterface& _mField, ArcLengthCtx *_arc_ptr):
+    mField(_mField),arc_ptr(_arc_ptr) {}
 
-	PetscErrorCode ierr;
-		
-		PetscErrorCode preProcess() {
-			PetscFunctionBegin;
-			
-			switch(snes_ctx) {
-				case ctx_SNESNone:
-				case ctx_SNESSetFunction: {
-					//F_lambda
-					ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
-					ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-					ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-				}
-					break;
-				case ctx_SNESSetJacobian: {
-				}
-					break;
-				default:
-					SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-			}
-			
-			PetscFunctionReturn(0);
-		}
-		
-		PetscErrorCode postProcess() {
-			PetscFunctionBegin;
-			
-			switch(snes_ctx) {
-				case ctx_SNESNone: {
-				}
-				case ctx_SNESSetFunction: {
-					//F_lambda
-					ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-					ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-					ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-					ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-					//F_lambda2
-					ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
-					PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
-				}
-					break;
-				case ctx_SNESSetJacobian: {
-				}
-					break;
-				default:
-					SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-			}
-			
-			PetscFunctionReturn(0);
-		}
-	};
+  PetscErrorCode ierr;
+    
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      
+      switch(snes_ctx) {
+        case ctx_SNESNone:
+        case ctx_SNESSetFunction: {
+          //F_lambda
+          ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        }
+        break;
+        case ctx_SNESSetJacobian: {
+        }
+        break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+      
+      PetscFunctionReturn(0);
+    }
+    
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      
+      switch(snes_ctx) {
+        case ctx_SNESNone: {
+        }
+        case ctx_SNESSetFunction: {
+          //F_lambda
+          ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+          //F_lambda2
+          ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+        }
+        break;
+        case ctx_SNESSetJacobian: {
+        }
+        break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+      
+      PetscFunctionReturn(0);
+    }
+};
 
 /**
  * apply oppertor for Arc Length precoditionet

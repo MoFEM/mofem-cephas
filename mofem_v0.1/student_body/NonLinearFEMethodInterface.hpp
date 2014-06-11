@@ -18,123 +18,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "FEMethod_UpLevelStudent.hpp"
-#include "ElasticFEMethod.hpp"
-#include "ElasticFEMethodForInterface.hpp"
-
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "ElasticFEMethodInterface.hpp"
 
 #include "SnesCtx.hpp"
 #include "ArcLengthTools.hpp"
 
 namespace MoFEM {
-
-struct ArcInterfaceElasticFEMethod: public ElasticFEMethod {
-
-  ArcInterfaceElasticFEMethod(FieldInterface& _mField): ElasticFEMethod(_mField) {};
-
-  ArcLengthCtx *arc_ptr;
-  ArcInterfaceElasticFEMethod(
-      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
-      double _lambda,double _mu,ArcLengthCtx *_arc_ptr): 
-      ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu),arc_ptr(_arc_ptr) {};
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    g_NTET.resize(4*45);
-    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    G_TET_W = G_TET_W45;
-    g_NTRI.resize(3*28);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28);
-    G_TRI_W = G_TRI_W28;
-		
-    // See FEAP - - A Finite Element Analysis Program
-    D_lambda = ublas::zero_matrix<FieldData>(6,6);
-    for(int rr = 0;rr<3;rr++) {
-	for(int cc = 0;cc<3;cc++) {
-	  D_lambda(rr,cc) = 1;
-	}
-    }
-    D_mu = ublas::zero_matrix<FieldData>(6,6);
-    for(int rr = 0;rr<6;rr++) {
-	D_mu(rr,rr) = rr<3 ? 2 : 1;
-    }
-    D = lambda*D_lambda + mu*D_mu;
-
-    PetscFunctionReturn(0);
-  }
-
-
-  PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-      DirihletBC.resize(0);
-
-      switch(snes_ctx) {
-	case ctx_SNESNone: {
-	}
-	break;
-	case ctx_SNESSetJacobian: 
-	case ctx_SNESSetFunction: { 
-	  //Dirihlet Boundary Condition
-	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
-	}
-	break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-
-      switch(snes_ctx) {
-	case ctx_SNESNone: 
-	case ctx_SNESSetFunction: {
-	  //Assembly  F
-	  ierr = Fint(F); CHKERRQ(ierr);
-	  //Neumann Boundary Conditions
-	  ierr = NeumannBC(arc_ptr->F_lambda); CHKERRQ(ierr);
-	}
-	break;
-	case ctx_SNESSetJacobian: {
-	  //Assembly  F
-	  ierr = Lhs(); CHKERRQ(ierr);
-	}
-	break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-  }
-
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case ctx_SNESNone: {
-      }
-      case ctx_SNESSetFunction: {
-      }
-      break;
-      case ctx_SNESSetJacobian: {
-	//Note MAT_FLUSH_ASSEMBLY
-	ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,Aij); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-};
 
 /** \brief Inteface element for damage with linear cohesive law
  *
@@ -164,12 +53,12 @@ struct ArcInterfaceElasticFEMethod: public ElasticFEMethod {
  * calculated.
  *
  */
-struct ArcInterfaceFEMethod: public InterfaceFEMethod {
+struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
   enum interface_materials_context { ctx_IntLinearSoftening, ctx_InTBILinearSoftening, ctx_IntNone };
   interface_materials_context int_mat_ctx;
 
-  ArcInterfaceFEMethod(
+  NonLinearInterfaceFEMethod(
       FieldInterface& _mField,double _YoungModulus): 
       InterfaceFEMethod(_mField,_YoungModulus),int_mat_ctx(ctx_IntLinearSoftening) {};
 
@@ -180,7 +69,7 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
   Tag th_damaged_prism;
 
   Vec D;
-  ArcInterfaceFEMethod(
+  NonLinearInterfaceFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
       double _YoungModulus,double _h,double _beta,double _ft,double _Gf,interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
       InterfaceFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_YoungModulus),int_mat_ctx(_int_mat_ctx),
@@ -569,23 +458,18 @@ struct ArcInterfaceFEMethod: public InterfaceFEMethod {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-
     switch(snes_ctx) {
-      case ctx_SNESNone: {
-      }
-      break;
-      case ctx_SNESSetFunction: {}
-      break;
-      case ctx_SNESSetJacobian: {
+      case ctx_SNESSetJacobian: { 
+	// Note MAT_FLUSH_ASSEMBLY
 	ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction:
       break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-
-
     PetscFunctionReturn(0);
   }
 
@@ -788,14 +672,6 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
-	//add F_lambda
-	ierr = VecAXPY(F,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
-	//snes_f norm
-	double fnorm;
-	ierr = VecNormBegin(F,NORM_2,&fnorm); CHKERRQ(ierr);	
-	ierr = VecNormEnd(F,NORM_2,&fnorm);CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
       }
       break;
       case ctx_SNESSetJacobian: {

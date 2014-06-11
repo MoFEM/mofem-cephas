@@ -17,7 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "ArcFEMethodForInterface.hpp"
+#include "NonLinearFEMethodInterface.hpp"
+#include "SurfacePressure.hpp"
+#include "BodyForce.hpp"
+
+#include "PostProcVertexMethod.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 
@@ -234,6 +239,35 @@ int main(int argc, char *argv[]) {
     ierr = mField.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
     ierr = mField.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);*/
 
+    //Elements with boundary conditions
+    ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+      ostringstream fe_name;
+      fe_name << "FORCE_FE_" << it->get_msId();
+      ierr = mField.add_finite_element(fe_name.str()); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_row(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_col(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
+    }
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+      ostringstream fe_name;
+      fe_name << "PRESSURE_FE_" << it->get_msId();
+      ierr = mField.add_finite_element(fe_name.str()); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_row(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_col(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
+    }
+    ierr = mField.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
+      Range tets;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+      ierr = mField.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
+    }
   }
 
   /****/
@@ -267,9 +301,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
 
   //create matrices
-  Vec F,D;
+  Vec F,F_body_force,D;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  ierr = VecDuplicate(F,&F_body_force); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
@@ -322,17 +357,85 @@ int main(int argc, char *argv[]) {
 
   };
 
+  struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {
+    
+    FieldInterface& mField;
+    Mat &Aij;
+    Vec &F;
+    Vec &F_body_force;
+    ArcLengthCtx *arc_ptr;
+    
+    MyPrePostProcessFEMethod(FieldInterface& _mField,
+      Mat _Aij,Vec _F,Vec _F_body_force,ArcLengthCtx *_arc_ptr):
+      mField(_mField),Aij(_Aij),F(_F),F_body_force(_F_body_force),arc_ptr(_arc_ptr) {}
+  
+    PetscErrorCode ierr;
+      
+      PetscErrorCode preProcess() {
+        PetscFunctionBegin;
+        
+        switch(snes_ctx) {
+          case ctx_SNESNone:
+          case ctx_SNESSetFunction: {
+            //F_lambda
+            ierr = VecZeroEntries(F); CHKERRQ(ierr);
+            ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+            ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          }
+          break;
+          case ctx_SNESSetJacobian: {
+          }
+          break;
+          default:
+            SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+        }
+        
+        PetscFunctionReturn(0);
+      }
+      
+      PetscErrorCode postProcess() {
+        PetscFunctionBegin;
+        
+        switch(snes_ctx) {
+          case ctx_SNESNone: {}
+          case ctx_SNESSetFunction: {
+            ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+            ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+            ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+            ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+	    //add F_lambda
+	    ierr = VecAXPY(F,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	    ierr = VecAXPY(F_body_force,-1.,F_body_force); CHKERRQ(ierr);
+	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
+	    //snes_f norm
+	    double fnorm;
+	    ierr = VecNormBegin(F,NORM_2,&fnorm); CHKERRQ(ierr);	
+	    ierr = VecNormEnd(F,NORM_2,&fnorm);CHKERRQ(ierr);
+	    PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
+          }
+          break;
+          case ctx_SNESSetJacobian: {
+          }
+          break;
+          default:
+            SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+        }
+        
+        PetscFunctionReturn(0);
+      }
+  };
+
   ArcLengthCtx* ArcCtx = new ArcLengthCtx(mField,"ELASTIC_MECHANICS");
   MyArcLengthIntElemFEMethod* MyArcMethod_ptr = new MyArcLengthIntElemFEMethod(mField,Aij,F,D,ArcCtx);
   MyArcLengthIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLengthSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
+  MyPrePostProcessFEMethod PrePostFE(mField,Aij,F,F_body_force,ArcCtx);
 
   CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  ArcInterfaceElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),ArcCtx);
-  ArcInterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus,h,beta,ft,Gf,ArcInterfaceFEMethod::ctx_IntLinearSoftening);
-	PrePostProcessFEMethod_For_F_lambda PrePostFE(mField,ArcCtx);
+  ElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  NonLinearInterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus,h,beta,ft,Gf,NonLinearInterfaceFEMethod::ctx_IntLinearSoftening);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
@@ -342,6 +445,48 @@ int main(int argc, char *argv[]) {
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)MatCtx,&ShellAij); CHKERRQ(ierr);
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
+
+  //body forces
+  BodyFroceConstantField body_forces_methods(mField);
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F_body_force,it->get_msId()); CHKERRQ(ierr);
+  }
+  ierr = VecZeroEntries(F_body_force); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F_body_force,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_body_force,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F_body_force); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F_body_force); CHKERRQ(ierr);
+
+  //surface forces
+  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    ostringstream fe_name;
+    fe_name << "FORCE_FE_" << it->get_msId();
+    string fe_name_str = fe_name.str();
+    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
+    ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",ArcCtx->F_lambda,it->get_msId());  CHKERRQ(ierr);
+  }
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    ostringstream fe_name;
+    fe_name << "PRESSURE_FE_" << it->get_msId();
+    string fe_name_str = fe_name.str();
+    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
+    ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",ArcCtx->F_lambda,it->get_msId()); CHKERRQ(ierr);
+  }
+  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  ierr = VecZeroEntries(ArcCtx->F_lambda); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  for(;mit!=neumann_forces.end();mit++) {
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+  }
+  ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(ArcCtx->F_lambda); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(ArcCtx->F_lambda); CHKERRQ(ierr);
 
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -362,12 +507,11 @@ int main(int argc, char *argv[]) {
 
   //Rhs
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-	SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE);
+  SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFE);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
-	SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE);
-
+  SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE);
 
   //Mat
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
@@ -396,26 +540,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,ArcCtx->dlambda);
     //
     ierr = ArcCtx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
-    ierr = VecZeroEntries(F); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecZeroEntries(ArcCtx->F_lambda); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyArcMethod);  CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(ArcCtx->F_lambda); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(ArcCtx->F_lambda); CHKERRQ(ierr);
-    ierr = VecDot(ArcCtx->F_lambda,ArcCtx->F_lambda,&ArcCtx->F_lambda2); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
   }
-
 
   for(;step<max_steps;step++) {
 
@@ -424,24 +549,6 @@ int main(int argc, char *argv[]) {
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
-      ierr = VecZeroEntries(F); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecZeroEntries(ArcCtx->F_lambda); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
-      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ARC_LENGTH",MyArcMethod);  CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(ArcCtx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(ArcCtx->F_lambda); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(ArcCtx->F_lambda); CHKERRQ(ierr);
-      ierr = VecDot(ArcCtx->F_lambda,ArcCtx->F_lambda,&ArcCtx->F_lambda2); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       double dlambda;
       ierr = MyArcMethod.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);
       ierr = MyArcMethod.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
@@ -489,11 +596,11 @@ int main(int argc, char *argv[]) {
     //Update History and Calulate Residual
     //Tell Interface method that kappa is upadated
     IntMyFE.snes_ctx = FieldInterface::FEMethod::ctx_SNESNone;
-    ierr = IntMyFE.set_ctx_int(ArcInterfaceFEMethod::ctx_KappaUpdate); CHKERRQ(ierr);
+    ierr = IntMyFE.set_ctx_int(NonLinearInterfaceFEMethod::ctx_KappaUpdate); CHKERRQ(ierr);
     //run this on all processors, so we could save history tags on all parts and restart
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE,0,pcomm->size());  CHKERRQ(ierr);
     //Standard procedure
-    ierr = IntMyFE.set_ctx_int(ArcInterfaceFEMethod::ctx_InterfaceNone); CHKERRQ(ierr);
+    ierr = IntMyFE.set_ctx_int(NonLinearInterfaceFEMethod::ctx_InterfaceNone); CHKERRQ(ierr);
     //Remove nodes of damaged prisms
     ierr = MyArcMethod.remove_damaged_prisms_nodes(); CHKERRQ(ierr);
 
@@ -573,10 +680,10 @@ int main(int argc, char *argv[]) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
-
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&F_body_force); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = SNESDestroy(&snes); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellAij); CHKERRQ(ierr);

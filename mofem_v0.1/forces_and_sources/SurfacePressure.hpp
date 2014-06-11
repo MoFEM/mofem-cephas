@@ -47,15 +47,36 @@ struct NeummanForcesSurface {
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
-  
+  struct MethodsForOp {
+
+    virtual PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
+
+    static PetscErrorCode applyScale(
+      const FieldInterface::FEMethod *fe,
+      boost::ptr_vector<MethodsForOp> &methodsOp,ublas::vector<FieldData> &Nf) {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      boost::ptr_vector<MethodsForOp>::iterator vit = methodsOp.begin();
+      for(;vit!=methodsOp.end();vit++) {
+	ierr = vit->scaleNf(fe,Nf); CHKERRQ(ierr);
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  boost::ptr_vector<MethodsForOp> methodsOp;
+
   struct OpNeumannForce: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     Vec &F;
     force_cubit_bc_data &dAta;
+    boost::ptr_vector<MethodsForOp> &methodsOp;
 
-    OpNeumannForce(const string field_name,Vec &_F,force_cubit_bc_data &data):
+    OpNeumannForce(const string field_name,Vec &_F,force_cubit_bc_data &data,
+      boost::ptr_vector<MethodsForOp> &methods_op):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data) {}
+      F(_F),dAta(data),methodsOp(methods_op) {}
 
     ublas::vector<FieldData> Nf;
 
@@ -97,9 +118,8 @@ struct NeummanForcesSurface {
 	}
 
       }
-    
-      //cerr << Nf << endl;
 
+      ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
       ierr = VecSetValues(F,data.getIndices().size(),
 	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
@@ -112,12 +132,14 @@ struct NeummanForcesSurface {
 
     Vec &F;
     pressure_cubit_bc_data &dAta;
+    boost::ptr_vector<MethodsForOp> &methodsOp;
     bool ho_geometry;
 
     OpNeumannPreassure(const string field_name,Vec &_F,
-      pressure_cubit_bc_data &data,bool _ho_geometry = false):
+      pressure_cubit_bc_data &data,boost::ptr_vector<MethodsForOp> &methods_op,
+      bool _ho_geometry = false):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data),ho_geometry(_ho_geometry) {}
+      F(_F),dAta(data),methodsOp(methods_op),ho_geometry(_ho_geometry) {}
 
     ublas::vector<FieldData> Nf;
 
@@ -161,6 +183,7 @@ struct NeummanForcesSurface {
       /*cerr << "VecSetValues\n";
       cerr << Nf << endl;
       cerr << data.getIndices() << endl;*/
+      ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
       ierr = VecSetValues(F,data.getIndices().size(),
 	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
@@ -175,7 +198,7 @@ struct NeummanForcesSurface {
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_Cubit_msId(ms_id,NodeSet,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapForce[ms_id]); CHKERRQ(ierr);
-    fe.get_op_to_do_Rhs().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id]));
+    fe.get_op_to_do_Rhs().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp));
     PetscFunctionReturn(0);
   }
 
@@ -185,11 +208,11 @@ struct NeummanForcesSurface {
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_Cubit_msId(ms_id,SideSet,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id]); CHKERRQ(ierr);
-    fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],ho_geometry));
+    fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
     PetscFunctionReturn(0);
   }
 
-  private:
+  protected:
 
   map<int,force_cubit_bc_data> mapForce;
   map<int,pressure_cubit_bc_data> mapPreassure;

@@ -45,12 +45,6 @@ PetscErrorCode ierr;
 
 namespace MoFEM {
 
-struct DynamicNeumannBC {
-
-  virtual PetscErrorCode f_CalcTraction(double ts_t,ublas::vector<double,ublas::bounded_array<double,3> >& traction) const = 0;
-
-};
-
 /** \brief FE method for elastic dynamics
   *
   * M*u'' + K*u - F = 0
@@ -76,7 +70,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 
     double rho;
     const int debug;
-    DynamicNeumannBC *bc;
 
     Vec GhostU,GhostK;
     Vec u_by_row;
@@ -85,10 +78,9 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     bool true_if_stiffnes_matrix_is_calulated;
 
     DynamicElasticFEMethod(BaseDirihletBC *_dirihlet_bc_method_ptr,FieldInterface& _mField,
-      Mat &_Aij,Vec _D,Vec& _F,double _lambda,double _mu,double _rho,DynamicNeumannBC *_bc): 
+      Mat &_Aij,Vec _D,Vec& _F,double _lambda,double _mu,double _rho): 
       ElasticFEMethod(_mField,_dirihlet_bc_method_ptr,_Aij,_D,_F,_lambda,_mu),
-      fe_post_proc_method(_mField,"DISPLACEMENT",_lambda,_mu),rho(_rho),debug(1),
-      bc(_bc) {
+      fe_post_proc_method(_mField,"DISPLACEMENT",_lambda,_mu),rho(_rho),debug(1){
 
       PetscInt ghosts[1] = { 0 };
       if(pcomm->rank() == 0) {
@@ -112,38 +104,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     PetscErrorCode SetDirihletBC_to_MatrixDiagonal() {
       PetscFunctionBegin;
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*ts_B); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
-
-    /// Set Neumann Boundary Conditions on SideSet2
-    PetscErrorCode NeumannBC(Vec F_ext) {
-      PetscFunctionBegin;
-    
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-	
-	ublas::vector<FieldData,ublas::bounded_array<double,3> > traction(3);
-
-	force_cubit_bc_data mydata;
-	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-	Range faces;
-	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),2,faces,true); CHKERRQ(ierr);
-	/*ostringstream ss;
-	ss << *it << endl;
-	ss << mydata;
-	ss << "nb faces " << faces.size() << endl;
-	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());*/
-
-	traction[0] = mydata.data.value3;
-	traction[1] = mydata.data.value4;
-	traction[2] = mydata.data.value5;
-	traction *= mydata.data.value1;
-
-	ierr = bc->f_CalcTraction(ts_t,traction); CHKERRQ(ierr);
-
-	ierr = NeumannBC_Faces(F,0,traction,faces); CHKERRQ(ierr);
-
-      }
-
       PetscFunctionReturn(0);
     }
 
@@ -515,7 +475,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	  case ctx_TSSetRHSJacobian: {
 	    } break;
 	  case ctx_TSSetIFunction: {
-	    ierr = NeumannBC(ts_F); CHKERRQ(ierr);
 	    ierr = Fint(ts_F); CHKERRQ(ierr);
 	  } break;
 	  case ctx_TSSetIJacobian: {
