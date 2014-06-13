@@ -64,11 +64,10 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
   Tag th_damaged_prism;
 
   NonLinearInterfaceFEMethod(
-      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
-      Mat &_Aij,Vec _X,Vec _F,
+      FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,
       double _YoungModulus,double _h,double _beta,double _ft,double _Gf,
       interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
-      InterfaceFEMethod(_mField,_dirihlet_ptr,_Aij,_X,_F,_YoungModulus),
+      InterfaceFEMethod(_mField,_Aij,_X,_F,_YoungModulus),
       int_mat_ctx(_int_mat_ctx),h(_h),beta(_beta),ft(_ft),Gf(_Gf),ctx_int(ctx_InterfaceNone) {
 
     E0 = YoungModulus/h;
@@ -387,20 +386,6 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
     rval = moab.tag_get_by_ptr(th_kappa,&fe_ent,1,tag_data_kappa); CHKERR_PETSC(rval);
     kappa = (double*)tag_data_kappa[0];
 
-
-    switch(snes_ctx) {
-      case ctx_SNESNone: {}
-      break;
-      case ctx_SNESSetJacobian: 
-      case ctx_SNESSetFunction: { 
-	//Apply Dirihlet BC
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-
     switch(snes_ctx) {
       break;
       case ctx_SNESNone: 
@@ -416,7 +401,6 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-
 
     ierr = OpStudentEnd(); CHKERRQ(ierr);
     PetscFunctionReturn(0);

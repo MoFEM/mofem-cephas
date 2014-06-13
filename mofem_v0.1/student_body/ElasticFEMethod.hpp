@@ -30,14 +30,10 @@ namespace MoFEM {
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     FieldInterface& mField;
-
     bool propeties_from_BlockSet_Mat_ElasticSet;
 	
-    ElasticFEMethod(
-      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec _X,Vec _F,
-      double _lambda,double _mu): 
-      FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
-      lambda(_lambda),mu(_mu) {
+    ElasticFEMethod( FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _lambda,double _mu): 
+      FEMethod_UpLevelStudent(_mField.get_moab(),1),mField(_mField),lambda(_lambda),mu(_mu) {
 
       snes_B = &_Aij;
       snes_x = _X;
@@ -467,7 +463,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	SETERRQ2(PETSC_COMM_SELF,1,"wrong rule %d %d",order,rule);
       }
       int nb_gauss_pts = gm_rule_size(rule,3);
-      if(gaussPts.size2() == nb_gauss_pts) {
+      if(gaussPts.size2() == (unsigned int)nb_gauss_pts) {
 	PetscFunctionReturn(0);
       }
       gaussPts.resize(4,nb_gauss_pts);
@@ -502,8 +498,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	D_mu(rr,rr) = rr<3 ? 2 : 1;
       }
 
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,snes_x); CHKERRQ(ierr);
-
       PetscFunctionReturn(0);
     }
 
@@ -515,14 +509,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  // Note MAT_FLUSH_ASSEMBLY
 	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  //MatZeroRowsColumns works only after the final assembly
-	  ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*snes_B); CHKERRQ(ierr);
-	  //Rhs  
-	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
 	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
         }
@@ -530,19 +516,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
         case ctx_SNESSetFunction: {
 	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	}
 	break;
         case ctx_SNESSetJacobian: {
 	  // Note MAT_FLUSH_ASSEMBLY
-	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  //MatZeroRowsColumns works only after the final assembly
-	  ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*snes_B); CHKERRQ(ierr);
 	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	}
@@ -560,8 +537,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = Get_g_NTET(); CHKERRQ(ierr);
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
-      //Dirihlet Boundary Condition
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
       switch(snes_ctx) {
         case ctx_SNESNone: {

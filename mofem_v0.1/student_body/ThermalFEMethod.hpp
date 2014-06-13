@@ -30,15 +30,13 @@ struct ThermalFEMethod: public FEMethod_UpLevelStudent {
     Mat Aij;
     Vec Data,F;
 
-    ThermalFEMethod(
-      FieldInterface& _mField): FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
-      Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL) {};
+    BaseDirihletBC *dirihlet_bc_method_ptr;
 
     ThermalFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
       double _Ther_Cond):
-      FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
-      Aij(_Aij),Data(_D),F(_F),Ther_Cond(_Ther_Cond) {
+      FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
+      Aij(_Aij),Data(_D),F(_F),dirihlet_bc_method_ptr(_dirihlet_ptr),Ther_Cond(_Ther_Cond) {
 
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
         

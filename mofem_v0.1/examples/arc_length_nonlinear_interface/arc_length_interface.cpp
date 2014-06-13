@@ -413,17 +413,15 @@ int main(int argc, char *argv[]) {
   };
 
 
-  CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-
   ArcLengthCtx* ArcCtx = new ArcLengthCtx(mField,"ELASTIC_MECHANICS");
   MyArcLengthIntElemFEMethod* MyArcMethod_ptr = new MyArcLengthIntElemFEMethod(mField,ArcCtx);
   MyArcLengthIntElemFEMethod& MyArcMethod = *MyArcMethod_ptr;
   ArcLengthSnesCtx SnesCtx(mField,"ELASTIC_MECHANICS",ArcCtx);
   MyPrePostProcessFEMethodRhs PrePostFERhs(mField,F_body_force,ArcCtx);
 
-  ElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  NonLinearInterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus,h,beta,ft,Gf,NonLinearInterfaceFEMethod::ctx_IntLinearSoftening);
+  DisplacementBCFEMethodPreAndPostProc MyDirihletBC(mField,"DISPLACEMENT",Aij,D,F);
+  ElasticFEMethod MyFE(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  NonLinearInterfaceFEMethod IntMyFE(mField,Aij,D,F,YoungModulus,h,beta,ft,Gf,NonLinearInterfaceFEMethod::ctx_IntLinearSoftening);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
@@ -498,17 +496,21 @@ int main(int argc, char *argv[]) {
 
   //Rhs
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
+  SnesCtx.get_preProcess_to_do_Rhs().push_back(&MyDirihletBC);
   SnesCtx.get_preProcess_to_do_Rhs().push_back(&PrePostFERhs);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
   SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFERhs);
+  SnesCtx.get_postProcess_to_do_Rhs().push_back(&MyDirihletBC);
 
   //Mat
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
+  SnesCtx.get_preProcess_to_do_Mat().push_back(&MyDirihletBC);
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&IntMyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&MyArcMethod));
+  SnesCtx.get_postProcess_to_do_Mat().push_back(&MyDirihletBC);
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;

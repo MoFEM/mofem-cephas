@@ -77,9 +77,8 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     bool linear_problem;
     bool true_if_stiffnes_matrix_is_calulated;
 
-    DynamicElasticFEMethod(BaseDirihletBC *_dirihlet_bc_method_ptr,FieldInterface& _mField,
-      Mat &_Aij,Vec _D,Vec& _F,double _lambda,double _mu,double _rho): 
-      ElasticFEMethod(_mField,_dirihlet_bc_method_ptr,_Aij,_D,_F,_lambda,_mu),
+    DynamicElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec& _F,double _lambda,double _mu,double _rho): 
+      ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu),
       fe_post_proc_method(_mField,"DISPLACEMENT",_lambda,_mu),rho(_rho),debug(1){
 
       PetscInt ghosts[1] = { 0 };
@@ -99,13 +98,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     };
   
     ~DynamicElasticFEMethod() {}
-
-
-    PetscErrorCode SetDirihletBC_to_MatrixDiagonal() {
-      PetscFunctionBegin;
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,*ts_B); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
 
     //This is for L2 space 
     vector<DofIdx> VelRowGlob;
@@ -414,9 +406,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    if( (!true_if_stiffnes_matrix_is_calulated)||(!linear_problem) ) {
 	      ierr = MatAssemblyBegin(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	      ierr = MatAssemblyEnd(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	      ierr = SetDirihletBC_to_MatrixDiagonal(); CHKERRQ(ierr);
-	      ierr = MatAssemblyBegin(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	      ierr = MatAssemblyEnd(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	      true_if_stiffnes_matrix_is_calulated = true;
 	    }
 	    *ts_flag = SAME_NONZERO_PATTERN; 
@@ -447,7 +436,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 
       if(fe_name=="STIFFNESS") {
 	ierr = GetMatrices(); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSTSMonitorSet: {
 	    ierr = Fint(); CHKERRQ(ierr);
@@ -510,7 +498,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	}
 	ierr = GetMatricesRows(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 	ierr = MassLhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSSetRHSFunction: {
@@ -603,7 +590,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       if(fe_name=="COPUPLING_VU") {
 	ierr = GetMatricesCols(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 	ierr = VULhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case ctx_TSSetRHSFunction: {

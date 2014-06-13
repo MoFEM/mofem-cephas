@@ -105,8 +105,8 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
 
   vector<ublas::vector<FieldData> > DispData;
 
-  InterfaceFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec _X,Vec _F,double _YoungModulus):
-    FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1),ToolsInterfaceFEMethod(),
+  InterfaceFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _YoungModulus):
+    FEMethod_UpLevelStudent(_mField.get_moab(),1),ToolsInterfaceFEMethod(),
     mField(_mField),YoungModulus(_YoungModulus) {
 
     snes_B = &_Aij;
@@ -242,8 +242,6 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
     ierr = CalcDglob(); CHKERRQ(ierr);
     //Calculate Matrices
     ierr = Matrices();    CHKERRQ(ierr);
-    //Apply Dirihlet BC
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
     //Assemble interface
     ierr = LhsInt(); CHKERRQ(ierr);

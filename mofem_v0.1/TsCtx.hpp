@@ -43,9 +43,13 @@ struct TsCtx {
   typedef vector<loop_pair_type > loops_to_do_type;
   loops_to_do_type loops_to_do_IJacobian;
   loops_to_do_type loops_to_do_IFunction;
-  loops_to_do_type loops_to_do_RHSFunction;
-  loops_to_do_type loops_to_do_RHSJacobian;
   loops_to_do_type loops_to_do_Monitor;
+
+  typedef vector<FieldInterface::BasicMethod*> basic_method_to_do;
+  basic_method_to_do preProcess_IJacobian;
+  basic_method_to_do postProcess_IJacobian;
+  basic_method_to_do preProcess_IFunction;
+  basic_method_to_do postProcess_IFunction;
 
   PetscLogEvent USER_EVENT_TsCtxRHSFunction;
   PetscLogEvent USER_EVENT_TsCtxRHSJacobian;
@@ -65,24 +69,23 @@ struct TsCtx {
 
   const FieldInterface& get_mField() const { return mField; }
   const Interface& get_moab() const { return moab; }
-  loops_to_do_type& get_loops_to_do_RHSFunction() { return loops_to_do_RHSFunction; }
-  loops_to_do_type& get_loops_to_do_RHSJacobian() { return loops_to_do_RHSJacobian; }
   loops_to_do_type& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
   loops_to_do_type& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }
   loops_to_do_type& get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
 
+  basic_method_to_do& get_preProcess_to_do_IFunction() { return preProcess_IFunction; }
+  basic_method_to_do& get_postProcess_to_do_IFunction() { return postProcess_IFunction; }
+  basic_method_to_do& get_preProcess_to_do_IJacobian() { return preProcess_IJacobian; }
+  basic_method_to_do& get_postProcess_to_do_IJacobian() { return postProcess_IJacobian; }
+
   friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
   friend PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec U_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx);
-  friend PetscErrorCode f_TSSetRHSFunction(TS ts,PetscReal t,Vec u,Vec F,void *ctx);
-  friend PetscErrorCode f_TSSetRHSJacobian(TS ts,PetscReal t,Vec u,Mat *A,Mat *B,MatStructure *flag,void *ctx);
   friend PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx);
 
 };
 
 PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
 PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx);
-PetscErrorCode f_TSSetRHSFunction(TS ts,PetscReal t,Vec u,Vec F,void *ctx);
-PetscErrorCode f_TSSetRHSJacobian(TS ts,PetscReal t,Vec u,Mat *A,Mat *B,MatStructure *flag,void *ctx);
 PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx);
 
 

@@ -37,8 +37,10 @@ namespace MoFEM {
 struct FEMethod_ComplexForLazy_Data: public FEMethod_UpLevelStudent {
 
   FieldInterface& mField;
+  BaseDirihletBC *dirihlet_bc_method_ptr;
+
   FEMethod_ComplexForLazy_Data(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
-    FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_bc_method_ptr,_verbose),mField(_mField) {}
+    FEMethod_UpLevelStudent(_mField.get_moab(),_verbose),mField(_mField),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr) {}
 
 };
 

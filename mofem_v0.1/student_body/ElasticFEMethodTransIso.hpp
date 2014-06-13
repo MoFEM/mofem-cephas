@@ -315,9 +315,9 @@ namespace MoFEM {
     double *AxVector, *AxAngle;
     bool propeties_from_BlockSet_Mat_ElasticSet;
     
-    TranIsotropicAxisAngleRotElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec _D,Vec _F,
+    TranIsotropicAxisAngleRotElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F,
                                              int _noAA, double *_AxVector, double *_AxAngle):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle)  {
+    ElasticFEMethod(_mField,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle)  {
       propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
         propeties_from_BlockSet_Mat_ElasticSet = true;
@@ -560,8 +560,8 @@ namespace MoFEM {
     Tag th_fibre_dir;
     bool propeties_from_BlockSet_Mat_ElasticSet;
     
-    TranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec _D,Vec _F):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0) {
+    TranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F):
+      ElasticFEMethod(_mField,_Aij,_D,_F,0,0) {
 
       propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
