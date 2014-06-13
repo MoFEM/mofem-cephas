@@ -29,11 +29,11 @@ make && mpirun -np 1 ./RVE_Cube_with_inclusion_Periodic -my_file ~/Documents/Pos
 Example run Textile RVE
 ======================================
 
-make && mpirun -np 1 ./RVE_Cube_with_inclusion_Disp -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/RVE_Cube_with_inclusion/Textile_RVE_fine.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+make && mpirun -np 1 ./RVE_Cube_with_inclusion_Disp -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/RVE_Cube_with_inclusion/Textile_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 0.0,0.0,1.0,0.0,0.0,0.0
 
-make && mpirun -np 1 ./RVE_Cube_with_inclusion_Periodic -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/RVE_Cube_with_inclusion/Textile_RVE_fine.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+make && mpirun -np 1 ./RVE_Cube_with_inclusion_Periodic -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/RVE_Cube_with_inclusion/Textile_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
-make && mpirun -np 1 ./RVE_Cube_with_inclusion_Traction -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/RVE_Cube_with_inclusion/Textile_RVE_fine.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+make && mpirun -np 1 ./RVE_Cube_with_inclusion_Traction -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/RVE_Cube_with_inclusion/Textile_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
 
 
