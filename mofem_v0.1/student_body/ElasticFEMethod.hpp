@@ -62,10 +62,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	VecSetOption(snes_f, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
       }
 
-      g_NTET.resize(4*45);
-      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      G_TET_W = G_TET_W45;
-				
       propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 	propeties_from_BlockSet_Mat_ElasticSet = true;
@@ -457,11 +453,39 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
+    ublas::matrix<double> gaussPts;
+    virtual PetscErrorCode Get_g_NTET() {
+      PetscFunctionBegin;
+
+      int order = 1;
+      for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,"DISPLACEMENT",dof)) {
+	order = max(order,dof->get_max_order());
+      }
+
+      int rule = max(0,order-1);
+      if( 2*rule + 1 < 2*(order-1) ) {
+	SETERRQ2(PETSC_COMM_SELF,1,"wrong rule %d %d",order,rule);
+      }
+      int nb_gauss_pts = gm_rule_size(rule,3);
+      if(gaussPts.size2() == nb_gauss_pts) {
+	PetscFunctionReturn(0);
+      }
+      gaussPts.resize(4,nb_gauss_pts);
+      ierr = Grundmann_Moeller_integration_points_3D_TET(
+	rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)); CHKERRQ(ierr);
+
+      g_NTET.resize(4*nb_gauss_pts);
+      ierr = ShapeMBTET(&g_NTET[0],&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+      G_TET_W = &gaussPts(3,0);
+
+      PetscFunctionReturn(0);
+    }
+
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
 
       g_NTET.resize(4*45);
-      ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
+      ierr = ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45); CHKERRQ(ierr);
       G_TET_W = G_TET_W45;
 			
       // See FEAP - - A Finite Element Analysis Program
@@ -530,10 +554,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-
-
     PetscErrorCode operator()() {
       PetscFunctionBegin;
+
+      ierr = Get_g_NTET(); CHKERRQ(ierr);
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);
       //Dirihlet Boundary Condition
