@@ -183,6 +183,9 @@ int main(int argc, char *argv[]) {
       my_split << "FIELD1:\n";
       my_split << data << endl;
 
+      ierr = getEdgesOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getFacesOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getOrderVolume(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getColNodesIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgeColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getFacesColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);

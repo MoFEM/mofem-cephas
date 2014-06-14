@@ -100,6 +100,9 @@ target_link_libraries(forces_and_sources_testing_vertex_element mofem_forces_and
 add_executable(forces_and_sources_neumann_forces_atom forces_and_sources_neumann_forces_atom_test.cpp)
 target_link_libraries(forces_and_sources_neumann_forces_atom mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
+add_executable(forces_and_sources_neumann_forces_complex_for_lazy_atom forces_and_sources_neumann_forces_complex_for_lazy_atom_test.cpp)
+target_link_libraries(forces_and_sources_neumann_forces_complex_for_lazy_atom mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)
@@ -334,4 +337,10 @@ add_test(forces_and_sources_neumann_sphre_pressure_test
 add_test(forces_and_sources_neumann_sphre_pressure_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_sphere.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_sphere.cub.txt)
+
+add_test(forces_and_sources_neumann_forces_complex_for_lazy_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_complex_for_lazy_atom -my_file sphere.cub)
+add_test(forces_and_sources_neumann_forces_complex_for_lazy_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_neumann_forces_complex_for_lazy_atom.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_neumann_forces_complex_for_lazy_atom.txt)
 

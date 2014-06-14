@@ -116,6 +116,8 @@ struct DisplacementBCFEMethodPreAndPostProc: public FieldInterface::FEMethod {
 	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatZeroRowsColumns(*snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
 	  ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
 	}
@@ -124,6 +126,8 @@ struct DisplacementBCFEMethodPreAndPostProc: public FieldInterface::FEMethod {
       }
       break;
       case ctx_SNESSetFunction: {
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
 	  ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
 	}

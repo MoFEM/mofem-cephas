@@ -38,7 +38,7 @@ project(MoFEM C Fortran CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
-set(MoFEM_VERSION_BUILD 3)
+set(MoFEM_VERSION_BUILD 4)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
@@ -135,6 +135,7 @@ add_library(mofem_complex_for_lazy
   complex_for_lazy/complex_for_lazy.c
   complex_for_lazy/FEMethod_ComplexForLazy.cpp
   complex_for_lazy/FEMethod_SurfaceConstrains.cpp
+  complex_for_lazy/SurfacePressureComplexForLazy.cpp
   complex_for_lazy/ConfigurationalFractureMechanics.cpp
 )
 

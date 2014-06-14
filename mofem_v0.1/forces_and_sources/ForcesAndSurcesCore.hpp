@@ -90,22 +90,24 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
   struct DerivedEntData: public DataForcesAndSurcesCore::EntData {
     DataForcesAndSurcesCore::EntData &entData;
-    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): entData(ent_data)  {}
+    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): 
+      entData(ent_data),oRder(0) {}
     const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
     ublas::vector<DofIdx>& getIndices() { return iNdices; }
     const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
     ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    ApproximationOrder getOrder() const { return oRder; }
+    ApproximationOrder& getOrder() { return oRder; }
 
     int getSense() const { return entData.getSense(); }
-    ApproximationOrder getOrder() const { return entData.getOrder(); }
     const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
     const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
     int& getSense() { return entData.getSense(); }
-    ApproximationOrder& getOrder() { return entData.getOrder(); }
     ublas::matrix<FieldData>& getN() { return entData.getN(); }
     ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
 
     private:
+    ApproximationOrder oRder;
     ublas::vector<DofIdx> iNdices;
     ublas::vector<FieldData> fieldData;
 
@@ -124,12 +126,17 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
   PetscErrorCode getOrder(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const string &field_name,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getFacesSense(DataForcesAndSurcesCore &data);
+
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data);
   PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data);
   PetscErrorCode getOrderVolume(DataForcesAndSurcesCore &data);
+  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getOrderVolume(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getNodesIndices(
     const string &field_name,

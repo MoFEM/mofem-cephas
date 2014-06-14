@@ -242,6 +242,8 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
       switch(ts_ctx) {
 	case ctx_TSSetIFunction: {
+	  ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
 	  for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
 	    ierr = VecSetValue(ts_F,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
 	  }

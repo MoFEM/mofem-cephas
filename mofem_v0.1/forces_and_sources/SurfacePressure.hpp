@@ -1,7 +1,7 @@
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  *
- * Test for linar elastic dynamics.
+ * Description: FIXME
  *
  * This is not exactly procedure for linear elatic dynamics, since jacobian is
  * evaluated at every time step and snes procedure is involved. However it is
