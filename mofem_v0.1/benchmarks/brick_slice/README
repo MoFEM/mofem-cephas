@@ -7,7 +7,7 @@ Check before run
 Note
 ====
 
-* Pleas note that E,gc and F_external are scaled such that, lambda*F_eternal has unit [ 0.1 kN ] !!!
+* Pleas note that E,gc and F_external are scaled such that, E has unit [ 1 N/mm2 ]
 * Mesh dimensions are in millimetres
 
 Example run
@@ -16,8 +16,8 @@ Example run
 1) Calculation of stress intensity factor K1
 
 * Calculation of Griffith energy and SIF for mode K1.
-* Calculate problem for three approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (cubic).
-* Calculate problem for three refinement levels (in proximity of crack front).
+* Calculate problem for four approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (cubic), 4 (quartic).
+* Calculate problem for one refinement level (in proximity of crack front).
 
 * convergence_study.sh NAME_OF_SCRIPT
 * -f NAME_OF_FILE 
@@ -28,25 +28,30 @@ Example run
 * -d directory name
 * -p number of processors
 
-./convergence_study.sh -f brick_slice.cub -l -1e-5 -o 1 -r 1 -d TEST_SIF -p 4 
+./convergence_study.sh -f brick_slice.cub -l -1 -g 2.3e-5 -o 1,2,3,4 -r 1 -p $NPROC
 
 2) Calculation of crack propagation
 
 * Crack propagation as an input file uses previously obtained solution from step (1)
 * Note that linear elements (1st order) have sheer locking, and usually give overstiff solution
+* There are two possible methods:
 
-Uasge: 
-./face_split_arc_length.sh -h
-run this for more information about options.
+Smooth crack propagation:
+./arc_length.sh -f $DIRNAME/out_spatial_2_1.h5m -a 0.5 -n 500 -g 2.3e-5 -t 1e-8 -i 12 -p $NPROC
 
-gc = 230 J/m^2 
-
-da = 1 mm^2 (this control arc-length, if too beek can generate
-oscillations at crack front at beginning of symmylation)
-
-./face_split_arc_length.sh -f TEST_SIF/out_spatial_1_1.h5m -a 1 -n 100 -g 2.3e-8 -d TEST_ARC_O1_R1 -t 1e-8 -p 4
+Crack propagation with face splitting:
+./face_split_arc_length.sh -f $DIRNAME/out_spatial_2_1.h5m -a 0.5 -n 500 -g 2.3e-5 -t 1e-8 -i 12 -p $NPROC
 
 Making plots
 ============
 
-echo '0 0 0 0' | tee gp && grep load_path: test_prop/log | awk '{print $4,-$6,$8,-2*$8/$6 }' | tee -a gp
+* plot_graphs.sh NAME_OF_SCRIPT 
+* -o APPROX_ORDERS_SEPARATED_BY_COMMAS 
+* -r REFINEMENT_LEVELS_SEPARATED_BY_COMMAS
+* -ent DESIRED_ENTITIY
+* -dim DESIRED_DIMENSION
+* -s SCALING_FACTOR
+
+The scaling factor is the product of the external load, the area over which the load is applied and the inverse of the scaling applied to E.
+
+./plot_graphs.sh -o 1,2,3,4 -r 1 -ent 1612 -dim 1 -s 1e4*2400*2.6e-4
