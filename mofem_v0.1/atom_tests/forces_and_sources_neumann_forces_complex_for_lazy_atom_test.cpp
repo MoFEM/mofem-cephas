@@ -21,7 +21,6 @@
 #include "FieldCore.hpp"
 #include "NeumannForces.hpp"
 #include "SurfacePressureComplexForLazy.hpp"
-#include <boost/ptr_container/ptr_map.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>

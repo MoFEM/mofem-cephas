@@ -1161,6 +1161,8 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
       SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
     }
 
+    try {
+
     //row indices
     ierr = getRowNodesIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getEdgeRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
@@ -1168,8 +1170,15 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     //col data
     ierr = getEdgesOrder(data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getFacesOrder(data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getNodesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getEdgeFieldData(data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getFacesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
+
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
 
     try {
       ierr = oit->op(data); CHKERRQ(ierr);
@@ -1199,6 +1208,8 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
       SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
     }
 
+    try {
+
     //row indices
     ierr = getEdgesOrder(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getFacesOrder(data,oit->row_field_name); CHKERRQ(ierr);
@@ -1212,8 +1223,15 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     //col data
     ierr = getEdgesOrder(derived_data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getFacesOrder(derived_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getNodesFieldData(derived_data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getEdgeFieldData(derived_data,oit->col_field_name); CHKERRQ(ierr);
     ierr = getFacesFieldData(derived_data,oit->col_field_name); CHKERRQ(ierr);
+
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
 
     try {
       ierr = oit->opSymmetric(data,derived_data); CHKERRQ(ierr);
@@ -1389,7 +1407,6 @@ PetscErrorCode VertexElementForcesAndSurcesCore::operator()() {
     boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNH1NH1.begin();
     oit != vecUserOpNH1NH1.end(); oit++) {
 
-    oit->setPtrFE(this);
     oit->setPtrFE(this);
     BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
     BitFieldId col_id = mField.get_field_structure(oit->col_field_name)->get_id();

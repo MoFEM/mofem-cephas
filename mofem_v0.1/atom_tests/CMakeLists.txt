@@ -41,7 +41,7 @@ add_executable(mesh_refine_atom mesh_refine_atom.cpp)
 target_link_libraries(mesh_refine_atom mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(nonlinear_elasticity_atom nonlinear_elasticity_atom.cpp)
-target_link_libraries(nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 add_executable(arc_length_nonlinear_elasticity_atom arc_length_nonlinear_elasticity_atom.cpp)
 target_link_libraries(arc_length_nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})

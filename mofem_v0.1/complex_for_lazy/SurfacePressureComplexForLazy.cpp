@@ -47,7 +47,8 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   switch (type) {
     case MBVERTEX: {
       if(data.getFieldData().size()!=9) {
-	SETERRQ(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices");
+	SETERRQ2(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices but is %d of field < %s >",
+	  data.getFieldData().size(),row_field_name.c_str());
       }
       myPtr->N = &*data.getN().data().begin();
       myPtr->diffN = &*data.getDiffN().data().begin();
@@ -163,7 +164,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   fExtFace.resize(data.fAces[0].getFieldData().size());
   fExtEdge.resize(3);
   for(int ee = 0;ee<3;ee++) {
-    int nb_edge_dofs = data.eDges[ee].getFieldData().size();
+    int nb_edge_dofs = dOfs_x_edge_indices[ee].size();
     if(nb_edge_dofs > 0) {
       fExtEdge[ee].resize(nb_edge_dofs);
       Fext_edge[ee] = &*fExtEdge[ee].data().begin();
@@ -173,13 +174,16 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   }
     
   //cerr << "dOfs_x: " << dOfs_x << endl;
+  //for(int ee = 0;ee<3;ee++) {
+    //cerr << dOfs_x_edge[ee] << endl;
+  //}
     
   switch(typeOfForces) {
     case CONSERVATIVE:
       ierr = Fext_h_hierarchical(
 	order_face,order_edge,//2
 	N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
-	t_loc,t_loc_edge,t_loc_face,//11
+	t_loc,NULL,NULL,//11
 	dofs_x,dofs_x_edge,dofs_x_face,//14
 	NULL,NULL,NULL,//17
 	&*fExtNode.data().begin(),Fext_edge,&*fExtFace.data().begin(),//20
@@ -190,7 +194,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
       ierr = Fext_h_hierarchical(
 	order_face,order_edge,//2
 	N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
-	t_loc,t_loc_edge,t_loc_face,//11
+	t_loc,NULL,NULL,//11
 	dofs_X,dofs_X_edge,dofs_X_face,//14
 	NULL,NULL,NULL,//17
 	&*fExtNode.data().begin(),Fext_edge,&*fExtFace.data().begin(),//20
@@ -201,9 +205,9 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
 
   //cerr << "fExtNode: " << fExtNode << endl;
   //cerr << "fExtFace: " << fExtFace << endl;
-  for(int ee = 0;ee<3;ee++) {
+  //for(int ee = 0;ee<3;ee++) {
     //cerr << "fExtEdge " << ee << " " << fExtEdge[ee] << endl;
-  }
+  //}
 
   ierr = VecSetValues(snes_f,
     9,dofs_x_indices,
@@ -212,6 +216,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
     dOfs_x_face_indices.size(),dofs_x_face_indices,
     &*fExtFace.data().begin(),ADD_VALUES); CHKERRQ(ierr);
   for(int ee = 0;ee<3;ee++) {
+    //cerr << dOfs_x_edge_indices[ee] << endl;
     ierr = VecSetValues(snes_f,
       dOfs_x_edge_indices[ee].size(),dofs_x_edge_indices[ee],
       Fext_edge[ee],ADD_VALUES); CHKERRQ(ierr);
@@ -246,7 +251,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   ierr = KExt_hh_hierarchical(
     r*eps,order_face,order_edge,
     N,N_face,N_edge,diffN,diffN_face,diffN_edge,
-    t_loc,t_loc_edge,t_loc_face,
+    t_loc,NULL,NULL,
     dofs_x,dofs_x_edge,dofs_x_face,
     &*kExtNodeNode.data().begin(),Kext_edge_node,&*kExtFaceNode.data().begin(),
     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
@@ -278,7 +283,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   ierr = KExt_hh_hierarchical_face(
     r*eps,order_face,order_edge,
     N,N_face,N_edge,diffN,diffN_face,diffN_edge,
-    t_loc,t_loc_edge,t_loc_face,
+    t_loc,NULL,NULL,
     dofs_x,dofs_x_edge,dofs_x_face,
     &*kExtNodeFace.data().begin(),Kext_edge_face,&*kExtFaceFace.data().begin(),
     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
@@ -319,7 +324,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   ierr = KExt_hh_hierarchical_edge(
     r*eps,order_face,order_edge,
     N,N_face,N_edge,diffN,diffN_face,diffN_edge,
-    t_loc,t_loc_edge,t_loc_face,
+    t_loc,NULL,NULL,
     dofs_x,dofs_x_edge,dofs_x_face,
     Kext_node_edge,Kext_edge_edge,Kext_face_edge,
     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
@@ -339,7 +344,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
       ierr = MatSetValues(*snes_B,
 	kExtEdgeEdge(EE,ee).size1(),dofs_x_edge_indices[EE],
 	kExtEdgeEdge(EE,ee).size2(),dofs_x_edge_indices[ee],
-	&*kExtEdgeEdge(EE,ee).data().begin(),ADD_VALUES); CHKERRQ(ierr);
+	Kext_edge_edge[EE][ee],ADD_VALUES); CHKERRQ(ierr);
     }
   }
 
@@ -352,7 +357,8 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseToFaceLoocalCoordSystem(ublas::vector<double> &tGlob) {
+
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseToFaceLoocalCoordSystem(ublas::matrix<double> &t_glob_nodal) {
   PetscFunctionBegin;
   double s1[3],s2[3],normal[3],q[9];
   ierr = ShapeFaceBaseMBTRI(diffN,&*coords.data().begin(),normal,s1,s2); CHKERRQ(ierr);
@@ -363,18 +369,76 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseTo
   cblas_dcopy(3,normal,1,&q[6],1);
   __CLPK_integer info;
   __CLPK_integer ipiv[3];
-  info = lapack_dgesv(3,3,q,3,ipiv,tGlob.data().begin(),3);
+  info = lapack_dgesv(3,3,q,3,ipiv,&*t_glob_nodal.data().begin(),3);
   if(info != 0) {
     SETERRQ1(PETSC_COMM_SELF,1,"error solve dgesv info = %d",info);
   }
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::
-  operator()() {
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTraction() {
+  PetscFunctionBegin;
+
+  try {
+
+  EntityHandle ent = fe_ptr->get_ent();
+  map<int,bCPreassure>::iterator mip = mapPreassure.begin();
+  tLoc.resize(3);
+  tLoc[0] = tLoc[1] = tLoc[2] = 0;
+  for(;mip!=mapPreassure.end();mip++) {
+    if(mip->second.tRis.find(ent)!=mip->second.tRis.end()) {
+      tLoc[2] -= mip->second.data.data.value1;
+    }
+  }
+  tLocNodal.resize(3,3);
+  for(int nn = 0;nn<3;nn++) {
+    for(int dd = 0;dd<3;dd++) {
+      tLocNodal(nn,dd) = tLoc[dd];
+    }
+  }
+
+  map<int,bCForce>::iterator mif = mapForce.begin();
+  for(;mif!=mapForce.end();mif++) {
+    if(mif->second.tRis.find(ent)!=mif->second.tRis.end()) {
+      tGlob.resize(3);
+      tGlob[0] = mif->second.data.data.value3;
+      tGlob[1] = mif->second.data.data.value4; 
+      tGlob[2] = mif->second.data.data.value5;
+      tGlob *= mif->second.data.data.value1;
+      tGlobNodal.resize(3,3);
+      for(int nn = 0;nn<3;nn++) {
+	for(int dd = 0;dd<3;dd++) {
+	  tGlobNodal(nn,dd) = tGlob[dd];
+	}
+      }
+      ierr = reBaseToFaceLoocalCoordSystem(tGlobNodal); CHKERRQ(ierr);
+      tLocNodal += tGlobNodal;
+    }
+  }
+
+  //cerr << tLocNodal << endl;
+
+  tLocNodal *= *sCale;
+  t_loc = &*tLocNodal.data().begin();
+  //cerr << "tLocNodal: " << tLocNodal << endl;
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator()() {
   PetscFunctionBegin;
 
   //cerr << "MyTriangleSpatialFE::operator()()\n";
+
+  try {
+
+  try {
 
   dofs_X = &*coords.data().begin();
   for(int ee = 0;ee<3;ee++) {
@@ -399,45 +463,14 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::
   dofs_x_face = NULL;
   idofs_x_face = NULL;
 
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
   ierr = TriElementForcesAndSurcesCore::operator()(); CHKERRQ(ierr);
-
-  //cerr << "gaussPts: " << gaussPts << endl;
-
-  tLoc.resize(3);
-  tLoc[0] = tLoc[1] = tLoc[2] = 0;
-  EntityHandle ent = fe_ptr->get_ent();
-
-  t_loc_face = NULL;
-  for(int ee = 0;ee<3;ee++) {
-    t_loc_edge[ee] = NULL;
-  }
-
-  map<int,bCPreassure>::iterator mip = mapPreassure.begin();
-  for(;mip!=mapPreassure.end();mip++) {
-    if(mip->second.tRis.find(ent)!=mip->second.tRis.end()) {
-      tLoc[2] -= mip->second.data.data.value1;
-    }
-  }
-  map<int,bCForce>::iterator mif = mapForce.begin();
-  for(;mif!=mapForce.end();mif++) {
-    if(mif->second.tRis.find(ent)!=mif->second.tRis.end()) {
-      tGlob[0] = mif->second.data.data.value3;
-      tGlob[1] = mif->second.data.data.value4; 
-      tGlob[2] = mif->second.data.data.value5;
-      tGlob *= mif->second.data.data.value1;
-      ierr = reBaseToFaceLoocalCoordSystem(tGlob); CHKERRQ(ierr);
-      tLoc += tGlob;
-    }
-  }
-
-  tLocNodal.resize(3,3);
-  for(int nn = 0;nn<3;nn++) {
-    for(int dd = 0;dd<3;dd++) {
-      tLocNodal(nn,dd) = tLoc[dd];
-    }
-  }
-  t_loc = &*tLocNodal.data().begin();
-  //cerr << "tLocNodal: " << tLocNodal << endl;
+  ierr = calcTraction(); CHKERRQ(ierr);
 
   switch(snes_ctx) {
     case ctx_SNESNone:
@@ -451,11 +484,16 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::
     break;
   }
 
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::
-  addForce(int ms_id) {
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce(int ms_id) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   const CubitMeshSets *cubit_meshset_ptr;
@@ -465,8 +503,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::
-  addPreassure(int ms_id) {
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreassure(int ms_id) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   const CubitMeshSets *cubit_meshset_ptr;
@@ -476,8 +513,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::
-  rHs() {
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
   PetscFunctionBegin;
 
   //cerr << "MyTriangleMaterialFE::rHs()\n";
@@ -499,7 +535,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::
   ierr = Fext_H_hierarchical(
     order_face_material,order_edge_material,//2
     N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
-    t_loc,t_loc_edge,t_loc_face,//11
+    t_loc,NULL,NULL,//11
     dofs_X,dofs_X_edge,dofs_X_face,//14
     NULL,
     &*fExtNode.begin(),NULL,
@@ -517,8 +553,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::
-  lHs() {
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::lHs() {
   PetscFunctionBegin;
 
   try {
@@ -533,7 +568,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::
   ierr = KExt_HH_hierarchical(
     r*eps,order_face_material,order_edge_material,
     N,N_face,N_edge,diffN,diffN_face,diffN_edge,
-    t_loc,t_loc_edge,t_loc_face,
+    t_loc,NULL,NULL,
     dofs_X,dofs_X_edge,dofs_X_face,
     &*kExtNodeNode.data().begin(),
     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);

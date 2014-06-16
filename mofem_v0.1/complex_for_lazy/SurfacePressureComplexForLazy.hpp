@@ -27,6 +27,7 @@
 #ifndef __COMPLEX_FOR_LAZY_NEUMANM_FORCES_HPP
 #define __COMPLEX_FOR_LAZY_NEUMANN_FORCES_HPP
 
+#include "NeumannForces.hpp"
 #include "ForcesAndSurcesCore.hpp"
 
 namespace MoFEM {
@@ -54,12 +55,13 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   struct MyTriangleSpatialFE: public TriElementForcesAndSurcesCore {
 
+    double *&sCale;
     enum FORCES { CONSERVATIVE = 1, NONCONSERVATIVE = 2};
     FORCES typeOfForces;
     const double eps;
 
-    MyTriangleSpatialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F): 
-      TriElementForcesAndSurcesCore(_mField),
+    MyTriangleSpatialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F,double *&scale): 
+      TriElementForcesAndSurcesCore(_mField),sCale(scale),
       typeOfForces(CONSERVATIVE),eps(1e-8) {
 
       snes_B = &_Aij;
@@ -107,10 +109,8 @@ struct NeummanForcesSurfaceComplexForLazy {
 
 
     ublas::vector<double> tLoc,tGlob;
-    ublas::matrix<double> tLocNodal;
-  
-    double *t_loc,*t_loc_face;
-    double *t_loc_edge[3];
+    ublas::matrix<double> tLocNodal,tGlobNodal;
+    double *t_loc;
 
     ublas::vector<int> dOfs_x_indices,dOfs_x_face_indices;
     ublas::vector<ublas::vector<int> > dOfs_x_edge_indices;
@@ -140,9 +140,9 @@ struct NeummanForcesSurfaceComplexForLazy {
     double *Kext_face_edge[3];
     double *Kext_edge_edge[3][3];
 
+    virtual PetscErrorCode calcTraction();
     virtual PetscErrorCode rHs();
     virtual PetscErrorCode lHs();
-    virtual PetscErrorCode reBaseToFaceLoocalCoordSystem(ublas::vector<double> &tGlob);
 
     PetscErrorCode operator()();
 
@@ -161,25 +161,52 @@ struct NeummanForcesSurfaceComplexForLazy {
     };
     map<int,bCPreassure> mapPreassure;
 
+    PetscErrorCode reBaseToFaceLoocalCoordSystem(ublas::matrix<double> &t_glob_nodal);
+
   };
 
   struct MyTriangleMaterialFE: public MyTriangleSpatialFE {
 
-    MyTriangleMaterialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F): 
-      MyTriangleSpatialFE(_mField,_Aij,_F) {}
+    MyTriangleMaterialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F,double *&scale): 
+      MyTriangleSpatialFE(_mField,_Aij,_F,scale) {}
 
     PetscErrorCode rHs();
     PetscErrorCode lHs();
 
   };
 
-
   FieldInterface &mField;
   MyTriangleSpatialFE feSpatial;
   MyTriangleMaterialFE feMaterial;
 
+  Tag thScale;
+
+  double *sCale;
+  PetscErrorCode setForceScale(double scale) {
+      PetscFunctionBegin;
+      *sCale = scale;
+      PetscFunctionReturn(0);
+  }
+
   NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat &_Aij,Vec _F): 
-    mField(m_field),feSpatial(m_field,_Aij,_F),feMaterial(m_field,_Aij,_F) {}
+    mField(m_field),
+    feSpatial(m_field,_Aij,_F,sCale),
+    feMaterial(m_field,_Aij,_F,sCale) {
+
+    ErrorCode rval;
+
+    double def_scale = 1.;
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+    rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale); 
+    if(rval == MB_ALREADY_ALLOCATED) {
+      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+    } else {
+      CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+    }
+
+  }
 
   MyTriangleSpatialFE& getLoopSpatialFe() { return feSpatial; }
   MyTriangleMaterialFE& getLoopMaterialFe() { return feMaterial; }
