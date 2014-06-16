@@ -7,5 +7,6 @@
 * v0.0.1 Start JosePH
 * v0.1.1 MoFEM is stabile enough to be used by other outside group. It is working version with Linear Elasticity, Non Linear Elasticity, Damage at interface element, Brittle Crack propagation, Lienar Dynamics, Potential Flow, Mesh Smoothing and Potential Flow.
 * v0.1.2 Solves several bugs. Higher order approximation of gemetry, projection from 10 Nodet Tetrahederal from/to hierarchical approximation basis. New atom tests and benchmarks and more.
+* v0.1.2 Face splitting for crack propagation. Several other changes.
 
 [Go to Home Page](https://bitbucket.org/likask/mofem-joseph/wiki/Home)
