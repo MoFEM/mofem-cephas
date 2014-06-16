@@ -1,0 +1,199 @@
+reset 
+
+###### FILE DESCRIPTION ##############
+# 
+# JOURNAL FILE FOR TEST BF420B of reference
+# R P Birkett CSDMC P71 AEA-RS-4168 Part 1
+# Hinkley Point B and Hunterston Geometry 
+# External loading scenario 
+# Created 14/5/2014 by Owen Booler AMEC 
+# Last Modified 14/5/2014 by Owen Booler AMEC
+#
+###### GEOMETRY##################
+#
+# creating the 45 degree sector Hunterston B fuel brick Geometry 
+create curve location 0 0 0 location 131.625 0 0
+create curve location 131.625 0 0 location 192.18 0 0
+create curve location 192.18 0 0 location 192.18 10.125 0
+create curve location 192.18 10.125 0 location 229.9 10.125 0
+create curve location 229.9 10.125 0 location 229.9 45.72995 0
+curve 1  copy rotate 45 about z 
+create curve location at vertex 12   direction curve 6  length 60.555
+create curve location at vertex 14   direction 1 -1 0 length 16.475
+create curve location at vertex 16   direction 1 1 0 length 37.72
+create curve location at vertex 18   direction 1 -1 0 length 29.255
+create curve location at vertex 20   location at vertex 10  
+create curve arc center vertex 11  12  2  
+delete Curve 1
+delete Curve 6
+create surface curve 7 12 3 2 4 5 11 10 9 8  
+#
+# Projecting 45 degree sector to make a 25mm thick octant
+# change distance to vary the thickness units in mm
+sweep surface 1  direction z  distance 25 
+#
+# Copy octant to create full 360 degree slice
+Volume 1  copy reflect y 
+Volume 1 2 copy rotate 90 about z 
+Volume 1 2 copy rotate 180 about z 
+Volume 1 2 copy rotate 270 about z 
+unite volume all 
+#
+# Put fillets into keyway corners radius = 1.6
+modify curve 17 99 27 53 38 188 203 234 219 128 143 174 159 68 114 83  blend radius 1.6
+# 
+## Create crack 
+# Simulating crack from test BF420B from ref: R P Birkett CSDMC P71 AEA-RS-4168 Part 1
+# Initial crack size will be 5mm long spanning full thickness of the brick slice. 
+create vertex on curve 277 279 midpoint
+create curve vertex 239 240 
+create curve location at vertex 240 direction surface 105 length -5
+create curve location at vertex 239 direction surface 105 length -5
+create curve vertex 244 242
+create surface curve 307 308 309 310
+create cylinder height 25 radius 5
+move Volume 10  location vertex 239  include_merged 
+move Volume 10  z 12.5 include_merged 
+chop volume 1 with volume 10
+webcut volume 11 with plane surface 113
+# Delete surface defining crack plane
+delete body 9
+#
+#Creating Loading Keys (Interstitial)
+create curve location 0 0 0 location 0 138 0 
+create curve location 0 138 0 location 138 138 0
+create curve location 138 138 0 location 138 101 0 
+create curve location 0 0 0 location 37 0 0  
+create curve location at vertex 272   direction 1 1 0 length 55.6777849
+create curve location at vertex 270   direction -1 -1 0 length 55.6777849
+create curve location at vertex 276   direction 1 -1 0 length 34
+create curve location at vertex 274   direction 1 -1 0 length 34
+create curve vertex 278 280
+Create surface curve 345 346 347 348 349 350 351 352 353   
+sweep surface 137 perpendicular distance 100.3
+align Volume 14  surface 145  with surface 64 
+align Volume 14  surface 144  with surface 124 
+Volume 14  copy reflect y 
+Volume 14  copy reflect x 
+Volume 16  copy reflect y 
+#
+# Creating Cross head plate for loading 
+brick x 30 y 520 z 120
+align Volume 18 surface 184  with surface 159 
+move Volume 18  General location between location surface 159   location surface 170  except x z include_merged 
+#
+# Creating extra vertices for loadpath
+create vertex on curve 453  midpoint 
+create vertex on curve 457  midpoint 
+#
+# Merge volumes 
+imprint volume all 
+merge volume all 
+#
+###### MATERIAL PROPERTIES ########################
+# 
+## Graphite Brick Slice
+block 1 volume 11 12 13
+block 1 name "MAT_ELASTIC_Graphite"
+block 1 attribute count 10 
+#Youngs Modulus E=10.9GPa
+#Applied Youngs Modulus = 10900*1e-4
+block 1 attribute index 1 1.09
+#Poissons ratio 
+block 1 attribute index 2 0.2
+#
+## Hardened steel keys 
+block 2 volume 18 14 17 15 16 
+block 2 name "MAT_ELASTIC_STEEL"
+block 2 attribute count 10 
+#Youngs Modulus E=210GPa
+#Applied Youngs Modulus = 210000*1e-4
+block 2 attribute index 1 21
+#Poissons ratio 
+block 2 attribute index 2 0.
+#
+####### BOUNDARY CONDITIONS ######################
+#
+Create Displacement name ' ' on surface 138 148 dof 1 dof 2 dof 3 fix 0
+#
+####### LOADING SCENARIO ########################
+#
+# BF420B Failed at a load of approximately 6200N 
+# Apply load either by force or pressure Hash (#) out the commands that 
+# are not appropriate
+#
+#Apply load as pressure P=F/A=6200/62400
+#Create Pressure on surface 186 magnitude 1
+#
+#Apply load as a force Ff=6200N
+#create force on surface 186 force value 6.2e-4 direction x
+#
+######## FRACTURE CONSTRAINTS ####################
+#
+# Create Block Set to plot load  vs dsplacement graphts 
+block 3 vertex 347 350 354 351 346 355
+block 3 name 'LoadPath'
+#
+# Creating Nodesets and Sidesets for fracture constraints 
+#
+# 101 - Vertices - Not crack 
+nodeset 101 vertex all 
+nodeset 101 vertex 257 258 259 260 remove
+#
+# 100 - Bounding Edges - Not crack 
+sideset 100 curve all 
+sideset 100 curve 329 330 331 332 343 335 341 336 313 315 remove 
+sideset 100 curve 241 12 remove
+#
+# 102 - Bounding Surfaces - Not crack 
+sideset 102 surface all 
+sideset 102 surface 127 130 134 11 remove 
+#
+# 10200 - 
+sideset 10200  surface 11
+#
+# 200 - Crack Surface 
+sideset 200 surface 127
+#
+# 201 - Crack front 
+sideset 201 curve 329
+#
+
+####
+brick x 20 y 20 z 120
+move surface 212 location surface 186 include_merged
+unite volume 18 19
+create force on surface 214 force value 6.2e-4 direction x
+####
+
+###### MESH DEFINITION ######################
+volume all scheme Tetmesh 
+# Global refinement 
+volume all size auto factor 7
+volume 11 13  size auto factor 7
+# Crack Mesh refinement 
+#curve 329  interval 15
+#curve 343  interval 2
+#curve 335  interval 2
+#curve 330  interval 2
+#curve 332  interval 2
+#curve 341  interval 2
+#curve 336  interval 2
+mesh volume all 
+#
+###### SAVE MODEL ########################
+#
+# Adapt this to the file and directory you wish to save 
+#
+save as "/projects/symphonyb/MOFEM_Dev/model dev/HNB_Brick/HNB_BF420B/Test_BF420B.cub" overwrite
+#
+#
+###### END OF FILE #########################
+
+
+
+
+
+
+
+
