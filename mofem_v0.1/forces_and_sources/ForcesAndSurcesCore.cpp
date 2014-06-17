@@ -1154,9 +1154,6 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
     BitFieldId col_id = mField.get_field_structure(oit->col_field_name)->get_id();
 
-    if((oit->getMoFEMFEPtr()->get_BitFieldId_row()&row_id).none()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"no row field < %s > on finite elemeny",oit->row_field_name.c_str());
-    }
     if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&col_id).none()) {
       SETERRQ1(PETSC_COMM_SELF,1,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
     }

@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("PRESSURE_PROBLEM"); CHKERRQ(ierr);
 
   //print bcs
-  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
-  ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_displacement_set(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_pressure_set(); CHKERRQ(ierr);
 
   //**** solve lapalacian problem ****
 

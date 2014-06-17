@@ -209,15 +209,19 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
     //cerr << "fExtEdge " << ee << " " << fExtEdge[ee] << endl;
   //}
 
-  ierr = VecSetValues(snes_f,
+ 
+  Vec f = snes_f;
+  if(uSeF) f = F; 
+
+  ierr = VecSetValues(f,
     9,dofs_x_indices,
     &*fExtNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  ierr = VecSetValues(snes_f,
+  ierr = VecSetValues(f,
     dOfs_x_face_indices.size(),dofs_x_face_indices,
     &*fExtFace.data().begin(),ADD_VALUES); CHKERRQ(ierr);
   for(int ee = 0;ee<3;ee++) {
     //cerr << dOfs_x_edge_indices[ee] << endl;
-    ierr = VecSetValues(snes_f,
+    ierr = VecSetValues(f,
       dOfs_x_edge_indices[ee].size(),dofs_x_edge_indices[ee],
       Fext_edge[ee],ADD_VALUES); CHKERRQ(ierr);
   }
@@ -417,8 +421,6 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
   }
 
   //cerr << tLocNodal << endl;
-
-  tLocNodal *= *sCale;
   t_loc = &*tLocNodal.data().begin();
   //cerr << "tLocNodal: " << tLocNodal << endl;
 
@@ -475,10 +477,12 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
   switch(snes_ctx) {
     case ctx_SNESNone:
     case ctx_SNESSetFunction: {
+      tLocNodal *= *sCaleRhs;
       ierr = rHs(); CHKERRQ(ierr);
     }
     break;
     case ctx_SNESSetJacobian: {
+      tLocNodal *= *sCaleLhs;
       ierr = lHs(); CHKERRQ(ierr);
     }
     break;
@@ -540,7 +544,10 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
     NULL,
     &*fExtNode.begin(),NULL,
     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
-  ierr = VecSetValues(snes_f,
+
+  Vec f = snes_f;
+  if(uSeF) f = F; 
+  ierr = VecSetValues(f,
     9,dofs_X_indices,
     &*fExtNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 

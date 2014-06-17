@@ -171,8 +171,55 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
   }
 
+  #ifdef NONLINEAR_TEMPERATUTE
+
+  ierr = mField.add_field("TEMPERATURE",H1,1); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","TEMPERATURE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(0,"TEMPERATURE"); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"TEMPERATURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"TEMPERATURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"TEMPERATURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"TEMPERATURE",1); CHKERRQ(ierr);
+
+  #endif //NONLINEAR_TEMPERATUTE
+
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
+
+  {
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
+      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get_ent();
+      int dof_rank = dof_ptr->get_dof_rank();
+      double &fval = dof_ptr->get_FieldData();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+      fval = coords[dof_rank];
+    }
+  }
+
+  #ifdef NONLINEAR_TEMPERATUTE
+
+  {
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"TEMPERATURE",dof_ptr)) {
+      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get_ent();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+      double &fval = dof_ptr->get_FieldData();
+      fval = coords[0];
+    }
+  }
+
+  #endif //NONLINEAR_TEMPERATUTE
 
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
@@ -196,60 +243,48 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  {
-    EntityHandle node = 0;
-    double coords[3];
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
-      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
-      double &fval = dof_ptr->get_FieldData();
-      if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
-      }
-      fval = coords[dof_rank];
-    }
-  }
 
   DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  const double YoungModulus = 1.;
-  const double PoissonRatio = 0.;
-  NL_ElasticFEMethod MyFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  const double young_modulus = 1.;
+  const double poisson_ratio = 0.;
+  NL_ElasticFEMethod my_fe(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  #ifdef NONLINEAR_TEMPERATUTE
+  my_fe.thermal_expansion = 0.1;
+  #endif //NONLINEAR_TEMPERATUTE
 
   NeummanForcesSurfaceComplexForLazy neumann_forces(mField,Aij,F);
-  NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &feSpatial = neumann_forces.getLoopSpatialFe();
+  NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_spatial = neumann_forces.getLoopSpatialFe();
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-    ierr = feSpatial.addForce(it->get_msId()); CHKERRQ(ierr);
+    ierr = fe_spatial.addForce(it->get_msId()); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-    ierr = feSpatial.addPreassure(it->get_msId()); CHKERRQ(ierr);
+    ierr = fe_spatial.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
 
   SpatialPositionsBCFEMethodPreAndPostProc MyDirihletBC(mField,"SPATIAL_POSITION",Aij,D,F);
 
-  SnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
+  SnesCtx snes_ctx(mField,"ELASTIC_MECHANICS");
   
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-  ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
-  SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  SnesCtx.get_preProcess_to_do_Rhs().push_back(&MyDirihletBC);
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&feSpatial));
-  SnesCtx.get_postProcess_to_do_Rhs().push_back(&MyDirihletBC);
+  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyDirihletBC);
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&MyDirihletBC);
 
-  SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  SnesCtx.get_preProcess_to_do_Mat().push_back(&MyDirihletBC);
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&feSpatial));
-  SnesCtx.get_postProcess_to_do_Mat().push_back(&MyDirihletBC);
+  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&MyDirihletBC);
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&MyDirihletBC);
 
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -257,8 +292,6 @@ int main(int argc, char *argv[]) {
 
   double step_size = -1.;
   ierr = neumann_forces.setForceScale(step_size); CHKERRQ(ierr);
-  //ierr = MyFE.set_t_val(step_size); CHKERRQ(ierr);
-
   ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
@@ -270,7 +303,11 @@ int main(int argc, char *argv[]) {
 
     //Open mesh_file_name.txt for writing
     ofstream myfile;
+    #ifdef NONLINEAR_TEMPERATUTE
+    myfile.open(("nonlinear_thermal_expansion_"+string(mesh_file_name)+".txt").c_str());
+    #else
     myfile.open(("nonlinear_"+string(mesh_file_name)+".txt").c_str());
+    #endif
     
     //Output displacements
     cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;

@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.printCubitHeatFluxSet(); CHKERRQ(ierr);
 
   //print block sets with materials
-  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
     
   //create matrices and vectors
   Vec F,D;

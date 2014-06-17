@@ -23,18 +23,13 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "DirihletBC.hpp"
-#include "cholesky.hpp"
-#include <petscksp.h>
 
 #include "SnesCtx.hpp"
 #include "FEMethod_ComplexForLazy.hpp"
+#include "ArcLengthTools.hpp"
 
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 #include "FEMethod_SurfaceConstrains.hpp"
-
-#include "complex_for_lazy.h"
 
 using namespace boost::numeric;
 
@@ -42,15 +37,43 @@ namespace MoFEM {
 
 struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
 
+  ArcLengthCtx* arcPtr;
+
   NonLinearSpatialElasticFEMthod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
-    FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose) {}
+    FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),arcPtr(NULL) {}
+
+  double *thermalLoadFactor;
+  //set load factor
+  PetscErrorCode set_thermal_load_factor(double t_thermal_load_factor_val_) {
+      PetscFunctionBegin;
+      *thermalLoadFactor = t_thermal_load_factor_val_;
+      PetscFunctionReturn(0);
+  }
+  Tag thThermalLoadFactor;
+
+
+  NonLinearSpatialElasticFEMthod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLengthCtx* arc_ptr,int _verbose = 0): 
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
+    FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),arcPtr(arc_ptr) {
+
+    double def_t_val = 0;
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+    rval = mField.get_moab().tag_get_handle("_ThermalExpansionFactor_t_alpha_val",1,MB_TYPE_DOUBLE,thThermalLoadFactor,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    if(rval == MB_ALREADY_ALLOCATED) {
+      rval = mField.get_moab().tag_get_by_ptr(thThermalLoadFactor,&root_meshset,1,(const void**)&thermalLoadFactor); CHKERR_THROW(rval);
+    } else {
+      CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_set_data(thThermalLoadFactor,&root_meshset,1,&def_t_val); CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(thThermalLoadFactor,&root_meshset,1,(const void**)&thermalLoadFactor); CHKERR_THROW(rval);
+    }
+
+  }
 
   virtual PetscErrorCode CalculateSpatialFint(Vec f) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
-      case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
         ierr = GetFint(); CHKERRQ(ierr);
 	VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
@@ -72,7 +95,42 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
       }
       break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      break;
+    }
+
+    if(arcPtr != NULL) {
+
+      switch(snes_ctx) {
+        case ctx_SNESNone:
+        case ctx_SNESSetFunction: { 
+  	  analysis _type_of_analysis = type_of_analysis;
+  	  type_of_analysis = scaled_themp_direvative_spatial;
+  	  ierr = GetFint(); CHKERRQ(ierr);
+  	  iFint_h /= -eps;
+  	  ierr = VecSetValues(arcPtr->F_lambda,RowGlobSpatial[i_nodes].size(),&(RowGlobSpatial[i_nodes][0]),&(iFint_h.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+  	  for(int ee = 0;ee<6;ee++) {
+  	    if(RowGlobSpatial[1+ee].size()>0) {
+  	      iFint_h_edge_data[ee] /= -eps;
+  	      ierr = VecSetValues(arcPtr->F_lambda,RowGlobSpatial[1+ee].size(),&(RowGlobSpatial[1+ee][0]),&(iFint_h_edge_data[ee].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+  	    }
+  	  }
+  	  for(int ff = 0;ff<4;ff++) {
+  	    if(RowGlobSpatial[1+6+ff].size()>0) {
+  	      iFint_h_face_data[ff] /= -eps;
+  	      ierr = VecSetValues(arcPtr->F_lambda,RowGlobSpatial[1+6+ff].size(),&(RowGlobSpatial[1+6+ff][0]),&(iFint_h_face_data[ff].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+  	    }
+  	  }
+  	  if(RowGlobSpatial[i_volume].size()>0) {
+  	    iFint_h_volume /= -eps;
+  	    ierr = VecSetValues(arcPtr->F_lambda,RowGlobSpatial[i_volume].size(),&(RowGlobSpatial[i_volume][0]),&(iFint_h_volume.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+  	  }
+  	  type_of_analysis = _type_of_analysis;
+  	}
+	break;
+        default:
+        break;
+      }
+
     }
 
     PetscFunctionReturn(0);
@@ -175,14 +233,9 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction: {}
-      break;
-      case ctx_SNESSetJacobian: {}
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    if(arcPtr!=NULL) {
+      ierr = set_thermal_load_factor(arcPtr->get_FieldData()); CHKERRQ(ierr);
+      thermal_load_factor = *thermalLoadFactor;
     }
     PetscFunctionReturn(0);
   }
@@ -192,6 +245,7 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
     switch(snes_ctx) {
+      case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
 	ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
       }
@@ -212,6 +266,12 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
+      case ctx_SNESNone: {
+	if(arcPtr!=NULL) {
+	  ierr = VecAssemblyBegin(arcPtr->F_lambda); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(arcPtr->F_lambda); CHKERRQ(ierr);
+	}
+      }
       break;
       case ctx_SNESSetJacobian: {
 	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -225,6 +285,259 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
   }
 
 };
+
+struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
+  Interface& moab;
+
+  ArcLengthCtx* arc_ptr;
+  Vec GhostDiag;
+  ArcLengthElemFEMethod(Interface& _moab,ArcLengthCtx *_arc_ptr): FEMethod(),moab(_moab),arc_ptr(_arc_ptr) {
+    PetscInt ghosts[1] = { 0 };
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    if(pcomm->rank() == 0) {
+      VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostDiag);
+    } else {
+      VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag);
+    }
+  }
+  ~ArcLengthElemFEMethod() {
+    VecDestroy(&GhostDiag);
+  }
+
+  PetscErrorCode ierr;
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
+	ierr = calulate_db(); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+      }
+      break;
+      default:
+      break;
+    }
+    PetscFunctionReturn(0);
+  }
+
+  double calulate_lambda_int() {
+    PetscFunctionBegin;
+    return arc_ptr->alpha*arc_ptr->dx2 + pow(arc_ptr->dlambda,2)*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode calulate_db() {
+    PetscFunctionBegin;
+    //db
+    ierr = VecCopy(arc_ptr->dx,arc_ptr->db); CHKERRQ(ierr);
+    ierr = VecScale(arc_ptr->db,2*arc_ptr->alpha); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: {
+	arc_ptr->res_lambda = calulate_lambda_int() - pow(arc_ptr->s,2);
+	ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
+      }
+      break; 
+      case ctx_SNESSetJacobian: {
+	double diag = 2*arc_ptr->dlambda*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2;
+	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValue(*snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
+      }
+      break;
+      default:
+      break;
+    }	
+    
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(GhostDiag); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(GhostDiag); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(GhostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(GhostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	double *diag;
+	ierr = VecGetArray(GhostDiag,&diag); CHKERRQ(ierr);
+	arc_ptr->diag = *diag;
+	ierr = VecRestoreArray(GhostDiag,&diag); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"\tdiag = %6.4e\n",arc_ptr->diag);
+      }
+      break;
+      default:
+      break;
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode calulate_dx_and_dlambda(Vec x) {
+    PetscFunctionBegin;
+    //dx
+    ierr = VecCopy(x,arc_ptr->dx); CHKERRQ(ierr);
+    ierr = VecAXPY(arc_ptr->dx,-1,arc_ptr->x0); CHKERRQ(ierr);
+    //dlambda
+    if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
+      double *array;
+      ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
+      arc_ptr->dlambda = array[arc_ptr->get_petsc_local_dof_idx()];
+      array[arc_ptr->get_petsc_local_dof_idx()] = 0;
+      ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
+    }
+    int part = arc_ptr->get_part();
+    MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
+    //dx2
+    ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arc_ptr->dlambda,arc_ptr->dx2);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode calculate_init_dlambda(double *dlambda) {
+    PetscFunctionBegin;
+    *dlambda = sqrt(pow(arc_ptr->s,2)/(pow(arc_ptr->beta,2)*arc_ptr->F_lambda2));
+    if(!(*dlambda == *dlambda)) {
+      ostringstream sss;
+      sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
+      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode set_dlambda_to_x(Vec x,double dlambda) {
+    PetscFunctionBegin;
+    //check if locl dof idx is non zero, i.e. that lambda is acessible from this processor
+    if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
+      double *array;
+      ierr = VecGetArray(x,&array); CHKERRQ(ierr);
+      double lambda_old = array[arc_ptr->get_petsc_local_dof_idx()];
+      if(!(dlambda == dlambda)) {
+	ostringstream sss;
+	sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
+	SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+      }
+      array[arc_ptr->get_petsc_local_dof_idx()] = lambda_old + dlambda;
+      PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
+	lambda_old, array[arc_ptr->get_petsc_local_dof_idx()], dlambda);
+      ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
+
+//****************************************************
+
+struct ArcElasticThermalFEMethod: public FEMethod_ComplexForLazy {
+
+
+  double *thermalLoadFactor;
+  //set load factor
+  PetscErrorCode set_thermal_load_factor(double t_thermal_load_factor_val_) {
+      PetscFunctionBegin;
+      *thermalLoadFactor = t_thermal_load_factor_val_;
+      PetscFunctionReturn(0);
+  }
+
+  ArcLengthCtx* arcPtr;
+  Tag thThermalLoadFactor;
+  ArcElasticThermalFEMethod(
+      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,double _lambda,double _mu,ArcLengthCtx* arc_ptr,int _verbose = 0): 
+      FEMethod_ComplexForLazy_Data(_mField,_dirihlet_ptr,_verbose),
+      FEMethod_ComplexForLazy(_mField,_dirihlet_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),
+      arcPtr(arc_ptr) {
+
+    set_ThermalDeformationEquationNumber(linear_expansion_true_volume);
+
+    double def_t_val = 0;
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+    rval = mField.get_moab().tag_get_handle("_ThermalExpansionFactor_t_alpha_val",1,MB_TYPE_DOUBLE,thThermalLoadFactor,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    if(rval == MB_ALREADY_ALLOCATED) {
+      rval = mField.get_moab().tag_get_by_ptr(thThermalLoadFactor,&root_meshset,1,(const void**)&thermalLoadFactor); CHKERR_THROW(rval);
+    } else {
+      CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_set_data(thThermalLoadFactor,&root_meshset,1,&def_t_val); CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(thThermalLoadFactor,&root_meshset,1,(const void**)&thermalLoadFactor); CHKERR_THROW(rval);
+    }
+
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    ierr = set_thermal_load_factor(arcPtr->get_FieldData()); CHKERRQ(ierr);
+    thermal_load_factor = *thermalLoadFactor;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+	  analysis _type_of_analysis = type_of_analysis;
+	  type_of_analysis = scaled_themp_direvative_spatial;
+	  ierr = GetFint(); CHKERRQ(ierr);
+	  iFint_h /= -eps;
+	  ierr = VecSetValues(arcPtr->F_lambda,RowGlobSpatial[i_nodes].size(),&(RowGlobSpatial[i_nodes][0]),&(iFint_h.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	  for(int ee = 0;ee<6;ee++) {
+	    if(RowGlobSpatial[1+ee].size()>0) {
+	      iFint_h_edge_data[ee] /= -eps;
+	      ierr = VecSetValues(arcPtr->F_lambda,RowGlobSpatial[1+ee].size(),&(RowGlobSpatial[1+ee][0]),&(iFint_h_edge_data[ee].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	    }
+	  }
+	  for(int ff = 0;ff<4;ff++) {
+	    if(RowGlobSpatial[1+6+ff].size()>0) {
+	      iFint_h_face_data[ff] /= -eps;
+	      ierr = VecSetValues(arcPtr->F_lambda,RowGlobSpatial[1+6+ff].size(),&(RowGlobSpatial[1+6+ff][0]),&(iFint_h_face_data[ff].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	    }
+	  }
+	  if(RowGlobSpatial[i_volume].size()>0) {
+	    iFint_h_volume /= -eps;
+	    ierr = VecSetValues(arcPtr->F_lambda,RowGlobSpatial[i_volume].size(),&(RowGlobSpatial[i_volume][0]),&(iFint_h_volume.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	  }
+	  type_of_analysis = _type_of_analysis;
+	}
+	break;
+	case ctx_SNESSetJacobian: {}
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
+
+
+
+////*******************************************
 
 struct DirihletBCMethod_DriverComplexForLazy: public CubitDisplacementDirihletBC {
   DirihletBCMethod_DriverComplexForLazy(FieldInterface& _mField,const string _problem_name,const string _field_name): 
@@ -352,8 +665,6 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
         ierr = GetFint(); CHKERRQ(ierr);
-	VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
-	//cerr << "Fint_h " << Fint_h << endl;
 	ierr = VecSetValues(f,RowGlobSpatial[i_nodes].size(),&(RowGlobSpatial[i_nodes][0]),&(Fint_h.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	for(int ee = 0;ee<6;ee++) {
 	  if(RowGlobSpatial[1+ee].size()>0) {

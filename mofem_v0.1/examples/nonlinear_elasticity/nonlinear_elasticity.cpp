@@ -146,10 +146,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
-  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
-  ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
-  ierr = mField.printCubitForceSet(); CHKERRQ(ierr);
-  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_displacement_set(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_pressure_set(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_force_set(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
 
   //create matrices
   Vec F;
@@ -178,19 +178,19 @@ int main(int argc, char *argv[]) {
   DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.25;
-  NonLinearSpatialElasticFEMthod MyFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  const double young_modulus = 1;
+  const double poisson_ratio = 0.25;
+  NonLinearSpatialElasticFEMthod my_fe(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
   NeummanForcesSurfaceComplexForLazy neumann_forces(mField,Aij,F);
-  NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &feSpatial = neumann_forces.getLoopSpatialFe();
+  NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_spatial = neumann_forces.getLoopSpatialFe();
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-    ierr = feSpatial.addForce(it->get_msId()); CHKERRQ(ierr);
+    ierr = fe_spatial.addForce(it->get_msId()); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-    ierr = feSpatial.addPreassure(it->get_msId()); CHKERRQ(ierr);
+    ierr = fe_spatial.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
-  SpatialPositionsBCFEMethodPreAndPostProc MyDirihletBC(mField,"SPATIAL_POSITION",Aij,D,F);
+  SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
 
   SnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
   
@@ -202,16 +202,16 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  SnesCtx.get_preProcess_to_do_Rhs().push_back(&MyDirihletBC);
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&feSpatial));
-  SnesCtx.get_postProcess_to_do_Rhs().push_back(&MyDirihletBC);
+  SnesCtx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
+  SnesCtx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  SnesCtx.get_preProcess_to_do_Mat().push_back(&MyDirihletBC);
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&feSpatial));
-  SnesCtx.get_postProcess_to_do_Mat().push_back(&MyDirihletBC);
+  SnesCtx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
+  SnesCtx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
 
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
 
   PostProcFieldsAndGradientOnRefMesh fe_post_proc_method(moab);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  PostProcStressNonLinearElasticity fe_post_proc_stresses_method(moab,MyFE);
+  PostProcStressNonLinearElasticity fe_post_proc_stresses_method(moab,my_fe);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_stresses_method);  CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {

@@ -55,14 +55,22 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   struct MyTriangleSpatialFE: public TriElementForcesAndSurcesCore {
 
-    double *&sCale;
+    double *sCaleLhs;
+    double *sCaleRhs;
     enum FORCES { CONSERVATIVE = 1, NONCONSERVATIVE = 2};
     FORCES typeOfForces;
     const double eps;
+    bool uSeF;
 
-    MyTriangleSpatialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F,double *&scale): 
-      TriElementForcesAndSurcesCore(_mField),sCale(scale),
-      typeOfForces(CONSERVATIVE),eps(1e-8) {
+    Mat *Aij;
+    Vec F;
+
+    MyTriangleSpatialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+      TriElementForcesAndSurcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
+      typeOfForces(CONSERVATIVE),eps(1e-8),uSeF(false) {
+
+      Aij = &_Aij;
+      F = _F;
 
       snes_B = &_Aij;
       snes_f = _F;
@@ -73,6 +81,7 @@ struct NeummanForcesSurfaceComplexForLazy {
       get_op_to_do_Rhs().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
 
     }
+
 
     int getRule(int order) { return max(0,order-1); };
 
@@ -167,8 +176,8 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   struct MyTriangleMaterialFE: public MyTriangleSpatialFE {
 
-    MyTriangleMaterialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F,double *&scale): 
-      MyTriangleSpatialFE(_mField,_Aij,_F,scale) {}
+    MyTriangleMaterialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+      MyTriangleSpatialFE(_mField,_Aij,_F,scale_lhs,scale_rhs) {}
 
     PetscErrorCode rHs();
     PetscErrorCode lHs();
@@ -189,9 +198,7 @@ struct NeummanForcesSurfaceComplexForLazy {
   }
 
   NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat &_Aij,Vec _F): 
-    mField(m_field),
-    feSpatial(m_field,_Aij,_F,sCale),
-    feMaterial(m_field,_Aij,_F,sCale) {
+    mField(m_field),feSpatial(m_field,_Aij,_F,NULL,NULL),feMaterial(m_field,_Aij,_F,NULL,NULL) {
 
     ErrorCode rval;
 
@@ -206,7 +213,16 @@ struct NeummanForcesSurfaceComplexForLazy {
       rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
     }
 
+    feSpatial.sCaleLhs = sCale;
+    feSpatial.sCaleRhs = sCale;
+    feMaterial.sCaleLhs = sCale;
+    feMaterial.sCaleRhs = sCale;
+
+
   }
+
+  NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat &_Aij,Vec _F,double *scale_lhs,double *scale_rhs): 
+    mField(m_field),feSpatial(m_field,_Aij,_F,scale_lhs,scale_rhs),feMaterial(m_field,_Aij,_F,scale_lhs,scale_rhs) {}
 
   MyTriangleSpatialFE& getLoopSpatialFe() { return feSpatial; }
   MyTriangleMaterialFE& getLoopMaterialFe() { return feMaterial; }
