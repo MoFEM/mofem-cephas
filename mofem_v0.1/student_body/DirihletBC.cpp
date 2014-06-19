@@ -196,6 +196,39 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
     PetscFunctionReturn(0);
   }
 
+PetscErrorCode FixMaterialPoints::iNitalize() {
+  PetscFunctionBegin;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  if(map_zero_rows.empty()) {
+    for(vector<string>::iterator fit = field_names.begin();fit!=field_names.end();fit++) {
+      for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
+	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,*fit,*eit,pcomm->rank(),dof)) {
+	 map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+	}
+      }
+    }
+    dofsIndices.resize(map_zero_rows.size());
+    dofsValues.resize(map_zero_rows.size());
+    int ii = 0;
+    map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
+    for(;mit!=map_zero_rows.end();mit++,ii++) { 
+      dofsIndices[ii] = mit->first;
+      dofsValues[ii] = mit->second;
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode FixMaterialPoints::preProcess() {
+    PetscFunctionBegin;
+    ierr = iNitalize(); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+///****************************************
+
 
 BaseDirihletBC::BaseDirihletBC() {}
 

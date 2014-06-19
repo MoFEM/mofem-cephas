@@ -58,6 +58,7 @@ struct DisplacementBCFEMethodPreAndPostProc: public FieldInterface::FEMethod {
 
 };
 
+
 struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
   SpatialPositionsBCFEMethodPreAndPostProc(
@@ -69,7 +70,22 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
 
 };
 
+struct FixMaterialPoints: public DisplacementBCFEMethodPreAndPostProc {
 
+  Range &eNts;
+  vector<string> field_names;
+  FixMaterialPoints(
+    FieldInterface& _mField,const string &_field_name,Mat &_Aij,Vec _X,Vec _F,Range &ents): 
+    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),eNts(ents) {
+    field_names.push_back(field_name);
+  }
+
+  PetscErrorCode iNitalize();
+  PetscErrorCode preProcess();
+
+};
+
+///******************************************
 
 /** 
  * \brief The student user interface for Dirihlet boundary conditions

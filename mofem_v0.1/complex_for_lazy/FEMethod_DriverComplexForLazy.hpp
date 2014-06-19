@@ -70,12 +70,11 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
 
   }
 
-  virtual PetscErrorCode CalculateSpatialFint(Vec f) {
+  virtual PetscErrorCode AssembleSpatialFint(Vec f) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
-        ierr = GetFint(); CHKERRQ(ierr);
 	VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
 	//cerr << "Fint_h " << Fint_h << endl;
 	ierr = VecSetValues(f,RowGlobSpatial[i_nodes].size(),&(RowGlobSpatial[i_nodes][0]),&(Fint_h.data()[0]),ADD_VALUES); CHKERRQ(ierr);
@@ -136,14 +135,13 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode CalculateSpatialTangent(Mat B) {
+  virtual PetscErrorCode AssembleSpatialTangent(Mat B) {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction:
       case ctx_SNESSetJacobian:
-	ierr = GetTangent(); CHKERRQ(ierr);
 	//cerr << "Khh " << Khh << endl;
 	ierr = MatSetValues(B,
 	  RowGlobSpatial[i_nodes].size(),&*(RowGlobSpatial[i_nodes].begin()),
@@ -247,11 +245,13 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     switch(snes_ctx) {
       case ctx_SNESNone:
       case ctx_SNESSetFunction: { 
-	ierr = CalculateSpatialFint(snes_f); CHKERRQ(ierr);
+        ierr = GetFint(); CHKERRQ(ierr);
+	ierr = AssembleSpatialFint(snes_f); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian:
-	ierr = CalculateSpatialTangent(*snes_B); CHKERRQ(ierr);
+	ierr = GetTangent(); CHKERRQ(ierr);
+	ierr = AssembleSpatialTangent(*snes_B); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -441,7 +441,244 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
 
 };
 
+struct EhselbyFEMethod: public NonLinearSpatialElasticFEMthod {
 
+  EhselbyFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    NonLinearSpatialElasticFEMthod(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
+    type_of_analysis = material_analysis;
+  }
+
+  Range crackFrontNodes; 
+  PetscErrorCode initCrackFrontData(FieldInterface& mField) {
+    PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    Range crack_corners_edges;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
+    rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontNodes,true); CHKERR_PETSC(rval);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode setCrackFrontIndices(string &material_field_name,vector<DofIdx>& GlobIndices,bool not_at_crack_front) {
+    PetscFunctionBegin;
+    if(!crackFrontNodes.empty()) {
+    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
+      Range::iterator nit = find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent());
+      if(not_at_crack_front) {
+	//if nit is not a part of crack front set
+	if(nit != crackFrontNodes.end()) continue;
+      } else {
+	//if nit is part of crack front set
+	if(nit == crackFrontNodes.end()) continue;
+      }
+      vector<DofIdx>::iterator it = find(GlobIndices.begin(),GlobIndices.end(),dof->get_petsc_gloabl_dof_idx());
+      if(it != GlobIndices.end()) {
+	*it = -1;
+      }
+    }}
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode AssembleMaterialTangent(Mat B) {
+    PetscFunctionBegin;
+
+    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
+    ierr = setCrackFrontIndices(material_field_name,frontRowGlobMaterial,true); CHKERRQ(ierr);
+
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction:
+      case ctx_SNESSetJacobian:
+	ierr = MatSetValues(B,
+	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	  ColGlobMaterial[0].size(),&*(ColGlobMaterial[0].begin()),
+	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode AssembleMaterialFint(Vec f) {
+    PetscFunctionBegin;
+    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
+    ierr = setCrackFrontIndices(material_field_name,frontRowGlobMaterial,true); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
+	ierr = VecSetValues(f,frontRowGlobMaterial.size(),&(frontRowGlobMaterial[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesMaterial(); CHKERRQ(ierr);
+    ierr = GetData(
+      order_x_edges,order_x_faces,order_x_volume,
+      dofs_x_edge_data,dofs_x_edge,
+      dofs_x_face_data,dofs_x_face,
+      dofs_x_volume,dofs_x,
+      spatial_field_name); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESNone:
+      case ctx_SNESSetFunction: { 
+        ierr = GetFint(); CHKERRQ(ierr);
+	ierr = AssembleMaterialFint(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = GetTangent(); CHKERRQ(ierr);
+	ierr = AssembleMaterialTangent(*snes_B); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct MeshSmoothingFEMethod: public EhselbyFEMethod {
+
+  Vec frontF;
+  Vec tangentFrontF;
+
+  MeshSmoothingFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
+    EhselbyFEMethod(_mField,_dirihlet_bc_method_ptr,0,0,_verbose),
+      frontF(PETSC_NULL),tangentFrontF(PETSC_NULL) {
+      type_of_analysis = mesh_quality_analysis;
+
+      g_NTET.resize(4*1);
+      ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
+      g_TET_W = G_TET_W1;
+
+    }
+
+  ~MeshSmoothingFEMethod() {
+    if(frontF!=PETSC_NULL) {
+      ierr = VecDestroy(&frontF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      frontF = PETSC_NULL;
+    }
+    if(tangentFrontF!=PETSC_NULL) {
+      ierr = VecDestroy(&tangentFrontF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      tangentFrontF = PETSC_NULL;
+    }
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode AssembleMeshSmoothingTangent(Mat B) {
+    PetscFunctionBegin;
+    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
+    vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESSetJacobian:
+	ierr = MatSetValues(B,
+	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+	if(!crackFrontNodes.empty()) {
+	  double *f_tangent_front_mesh_array;
+	  if(tangentFrontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
+	  ierr = VecGetArray(tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+	  for(int nn = 0;nn<4;nn++) {
+	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+	    dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
+	    hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
+	    if(distance(dit,hi_dit)>0) {
+	      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
+	      diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(material_field_name,conn[nn]));
+	      hi_diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(material_field_name,conn[nn]));
+	      for(;diit!=hi_diit;diit++) {
+		for(unsigned int ddd = 0;ddd<ColGlobMaterial[i_nodes].size();ddd++) {
+		  if(frontRowGlobMaterial_front_only[3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
+		    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
+		      3*nn+diit->get_dof_rank(),diit->get_petsc_gloabl_dof_idx());
+		  }
+		  if(diit->get_petsc_local_dof_idx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		  double g = f_tangent_front_mesh_array[diit->get_petsc_local_dof_idx()]*KHH(3*nn+diit->get_dof_rank(),ddd);
+		  DofIdx lambda_idx = dit->get_petsc_gloabl_dof_idx();
+		  ierr = MatSetValues(B,1,&lambda_idx,1,&ColGlobMaterial[i_nodes][ddd],&g,ADD_VALUES); CHKERRQ(ierr);
+		}
+	      }
+	    }
+	  }
+	  ierr = VecRestoreArray(tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+	}
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode AssembleMeshSmoothingFint(Vec f) {
+    PetscFunctionBegin;
+    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
+    vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction: { 
+	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
+	//cerr << "Fint_h " << Fint_h << endl;
+	ierr = VecSetValues(f,frontRowGlobMaterial.size(),&(frontRowGlobMaterial[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	if(!crackFrontNodes.empty()) {
+	  if(frontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
+	  ierr = VecSetValues(frontF,frontRowGlobMaterial_front_only.size(),&(frontRowGlobMaterial_front_only[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+	}
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesMaterial(); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case ctx_SNESSetFunction:  
+	ierr = GetFint(); CHKERRQ(ierr);
+	ierr = AssembleMeshSmoothingFint(snes_f); CHKERRQ(ierr);
+	break;
+      case ctx_SNESSetJacobian:
+	ierr = GetTangent(); CHKERRQ(ierr);
+	ierr = AssembleMeshSmoothingTangent(*snes_B); CHKERRQ(ierr);
+	break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
+//****************************************************
+//****************************************************
+//****************************************************
 //****************************************************
 
 struct ArcElasticThermalFEMethod: public FEMethod_ComplexForLazy {

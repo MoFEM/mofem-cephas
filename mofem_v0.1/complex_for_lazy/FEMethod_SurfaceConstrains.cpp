@@ -346,9 +346,9 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
 	    }
 	  }
 	}
-	DirihletBC.clear();
+	/*DirihletBC.clear();
 	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
-	  this,dof_global_row_indices,dof_global_col_indices,DirihletBC); CHKERRQ(ierr);
+	  this,dof_global_row_indices,dof_global_col_indices,DirihletBC); CHKERRQ(ierr);*/
       }
       rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
       if(use_projection_from_crack_front) {
