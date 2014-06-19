@@ -20,7 +20,6 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 
-#include "NeumannForces.hpp"
 #include "SurfacePressureComplexForLazy.hpp"
 
 #include "PostProcVertexMethod.hpp"
@@ -38,20 +37,17 @@ static char help[] = "...\n\n";
 
 //Rounding
 #define RND_EPS 1e-6
-double roundn(double n)
-{
-	//break n into fractional part (fract) and integral part (intp)
-    double fract, intp;
-    fract = modf(n,&intp);
-    // case where n approximates zero, set n to "positive" zero
-    if (abs(intp)==0)
-    {
-        if(abs(fract)<=RND_EPS)
-           {
-               n=0.000;
-           }
+double roundn(double n) {
+  //break n into fractional part (fract) and integral part (intp)
+  double fract, intp;
+  fract = modf(n,&intp);
+  // case where n approximates zero, set n to "positive" zero
+  if (abs(intp)==0) {
+    if(abs(fract)<=RND_EPS) {
+      n=0.000;
     }
-    return n;
+  }
+  return n;
 }
 
 

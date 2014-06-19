@@ -20,7 +20,6 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 
-#include "NeumannForces.hpp"
 #include "SurfacePressureComplexForLazy.hpp"
 
 #include "PostProcVertexMethod.hpp"
@@ -192,26 +191,26 @@ int main(int argc, char *argv[]) {
   }
   SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
 
-  SnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
+  SnesCtx snes_ctx(mField,"ELASTIC_MECHANICS");
   
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-  ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
-  SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  SnesCtx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  SnesCtx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
 
-  SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  SnesCtx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  SnesCtx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
 
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

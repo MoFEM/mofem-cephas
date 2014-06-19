@@ -19,7 +19,7 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "NeumannForces.hpp"
+
 #include "SurfacePressure.hpp"
 #include <boost/ptr_container/ptr_map.hpp>
 

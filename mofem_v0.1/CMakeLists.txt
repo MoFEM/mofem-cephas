@@ -136,7 +136,6 @@ add_library(mofem_complex_for_lazy
   complex_for_lazy/FEMethod_ComplexForLazy.cpp
   complex_for_lazy/FEMethod_SurfaceConstrains.cpp
   complex_for_lazy/SurfacePressureComplexForLazy.cpp
-  complex_for_lazy/ConfigurationalFractureMechanics.cpp
 )
 
 add_library(mofem_face_splitting

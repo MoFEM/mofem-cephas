@@ -27,7 +27,6 @@
 #ifndef __COMPLEX_FOR_LAZY_NEUMANM_FORCES_HPP
 #define __COMPLEX_FOR_LAZY_NEUMANN_FORCES_HPP
 
-#include "NeumannForces.hpp"
 #include "ForcesAndSurcesCore.hpp"
 
 namespace MoFEM {

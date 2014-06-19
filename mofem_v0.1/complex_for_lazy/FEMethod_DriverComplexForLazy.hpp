@@ -798,7 +798,7 @@ struct FEMethod_DriverComplexForLazy_Spatial: public FEMethod_ComplexForLazy {
   nodal_forces_not_added(true) { 
     double def_t_val = 0;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
-    rval = mField.get_moab().tag_get_handle("_LoadFactor_t_val",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
     if(rval == MB_ALREADY_ALLOCATED) {
       rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_THROW(rval);
     } else {

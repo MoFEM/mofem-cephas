@@ -21,11 +21,9 @@
 #define __CONFIGURATIONAL_MECHANICS_HPP__
 
 #include "FieldInterface.hpp"
+
 #include "FEMethod_DriverComplexForLazy.hpp"
 #include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
-
-#include "SnesCtx.hpp"
-#include "ArcLengthTools.hpp"
 
 using namespace MoFEM;
 

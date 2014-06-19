@@ -17,9 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "SurfacePressureComplexForLazy.hpp"
 #include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
+
 #include "FEMethod_ComplexConstArea.hpp"
+
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
@@ -539,10 +542,28 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","TEMPERATURE"); CHKERRQ(ierr);
   }
 
+  //add neumman finite elemnets to add static boundary conditions
+  ierr = mField.add_finite_element("NEUAMNN_FE",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("NEUAMNN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    Range tris;
+    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
+  }
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    Range tris;
+    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
+  }
+
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS",MF_ZERO); CHKERRQ(ierr);
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","NEUAMNN_FE"); CHKERRQ(ierr);
 
   Range level_tets;
   ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
@@ -1292,18 +1313,12 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   //create matrices
   Vec F;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
+  Vec D;
+  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  DirihletBCMethod_DriverComplexForLazy myDirihletBCSpatial(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-  ierr = myDirihletBCSpatial.Init(); CHKERRQ(ierr);
-
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.;
-  NL_ElasticFEMethod MySpatialFE(mField,&myDirihletBCSpatial,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  PetscBool flg = PETSC_TRUE;
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&MySpatialFE.thermal_expansion,&flg); CHKERRQ(ierr);
-
+  PetscBool flg;
   PetscReal my_tol;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_tol",&my_tol,&flg); CHKERRQ(ierr);
   if(flg == PETSC_TRUE) {
@@ -1321,13 +1336,36 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   ierr = SNESSetFunction(*snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetJacobian(*snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
 
-  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MySpatialFE));
-  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MySpatialFE));
+  DirihletBCMethod_DriverComplexForLazy myDirihletBCSpatial(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
+  ierr = myDirihletBCSpatial.Init(); CHKERRQ(ierr);
 
-  Vec D;
-  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  const double young_modulus = 1;
+  const double poisson_ratio = 0.25;
+  NonLinearSpatialElasticFEMthod my_fe(mField,&myDirihletBCSpatial,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&my_fe.thermal_expansion,&flg); CHKERRQ(ierr);
+
+  NeummanForcesSurfaceComplexForLazy neumann_forces(mField,Aij,F);
+  NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_forces = neumann_forces.getLoopSpatialFe();
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    ierr = fe_forces.addForce(it->get_msId()); CHKERRQ(ierr);
+  }
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    ierr = fe_forces.addPreassure(it->get_msId()); CHKERRQ(ierr);
+  }
+  SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
+
+  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+
+  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -1357,7 +1395,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     if(pcomm->rank()==0) {
       if(fe_post_proc_stresses_method!=NULL) delete fe_post_proc_stresses_method;
-      fe_post_proc_stresses_method = new PostProcStressNonLinearElasticity(mField.get_moab(),MySpatialFE);
+      fe_post_proc_stresses_method = new PostProcStressNonLinearElasticity(mField.get_moab(),my_fe);
       fe_post_proc_stresses_method->do_broadcast = false;
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",*fe_post_proc_stresses_method,0,pcomm->size());  CHKERRQ(ierr);
     }
@@ -3056,7 +3094,7 @@ PetscErrorCode main_rescale_load_factor(FieldInterface& mField,ConfigurationalFr
   const EntityHandle root_meshset = mField.get_moab().get_root_set();
 
   Tag th_t_val;
-  rval = mField.get_moab().tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
+  rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",th_t_val); CHKERR_PETSC(rval);
   double *load_factor_ptr;
   rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&load_factor_ptr); CHKERR_THROW(rval);
   double& load_factor = *load_factor_ptr;
@@ -3136,7 +3174,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
   }
 
   Tag th_t_val;
-  rval = mField.get_moab().tag_get_handle("_LoadFactor_t_val",th_t_val); CHKERR_PETSC(rval);
+  rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",th_t_val); CHKERR_PETSC(rval);
   double *load_factor_ptr;
   rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&load_factor_ptr); CHKERR_THROW(rval);
   double& load_factor = *load_factor_ptr;
