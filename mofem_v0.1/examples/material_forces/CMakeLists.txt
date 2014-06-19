@@ -16,17 +16,25 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
   
-add_executable(spatial_problem spatial_problem.cpp ConfigurationalFractureMechanics.cpp)
-target_link_libraries(spatial_problem mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_executable(spatial_problem spatial_problem.cpp 
+  FaceSplittingTool.cpp 
+  ConfigurationalFractureMechanics.cpp)
+target_link_libraries(spatial_problem mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(material_force material_force.cpp ConfigurationalFractureMechanics.cpp)
-target_link_libraries(material_force mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_executable(material_force material_force.cpp
+  FaceSplittingTool.cpp
+  ConfigurationalFractureMechanics.cpp)
+target_link_libraries(material_force mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(arc_length_material_coupled arc_length_material_coupled.cpp ConfigurationalFractureMechanics.cpp)
-target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_executable(arc_length_material_coupled arc_length_material_coupled.cpp
+  FaceSplittingTool.cpp
+  ConfigurationalFractureMechanics.cpp)
+target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(split_faces split_faces.cpp ConfigurationalFractureMechanics.cpp)
-target_link_libraries(split_faces mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_executable(split_faces split_faces.cpp
+  FaceSplittingTool.cpp
+  ConfigurationalFractureMechanics.cpp)
+target_link_libraries(split_faces mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

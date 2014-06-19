@@ -222,8 +222,6 @@ PetscErrorCode FixMaterialPoints::iNitalize() {
 PetscErrorCode FixMaterialPoints::preProcess() {
     PetscFunctionBegin;
     ierr = iNitalize(); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

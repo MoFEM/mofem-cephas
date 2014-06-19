@@ -2555,27 +2555,38 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
   ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
   corners_nodes.merge(nodes_to_block);
+
   CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,problem,corners_nodes);
   ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
-  const double YoungModulus = 1;
-  const double PoissonRatio = 0.;
-  NL_MaterialFEMethod MyMaterialFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  PetscBool flg = PETSC_TRUE;
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&MyMaterialFE.thermal_expansion,&flg); CHKERRQ(ierr);
-
   Vec F_Material;
   ierr = mField.VecCreateGhost(problem,Col,&F_Material); CHKERRQ(ierr);
+
+  const double young_modulus = 1;
+  const double poisson_ratio = 0;
+  EshelbyFEMethod material_fe(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  PetscBool flg = PETSC_TRUE;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&material_fe.thermal_expansion,&flg); CHKERRQ(ierr);
+  material_fe.snes_f = F_Material;
+  material_fe.set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);
+  FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
+  fix_material_pts.snes_x = PETSC_NULL;
+  fix_material_pts.snes_f = F_Material;
+  fix_material_pts.set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);
+
   ierr = VecZeroEntries(F_Material); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  MyMaterialFE.snes_f = F_Material;
-  MyMaterialFE.set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);
-  ierr = mField.loop_finite_elements(problem,fe,MyMaterialFE);  CHKERRQ(ierr);
+
+  ierr = mField.problem_basic_method_preProcess(problem,fix_material_pts); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements(problem,fe,material_fe);  CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_postProcess(problem,fix_material_pts); CHKERRQ(ierr);
+
   ierr = VecGhostUpdateBegin(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F_Material); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F_Material); CHKERRQ(ierr);
+
   PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS",F_Material,"MATERIAL_FORCE");
   ierr = mField.loop_dofs(problem,"MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
 
@@ -2587,10 +2598,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   ierr = mField.set_other_global_VecCreateGhost(
     problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",
     Row,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"MATERIAL_FORCE",dof)) {
-    //cerr << *dof << endl;
-  //}
-
+  
   //detroy matrices
   ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
 

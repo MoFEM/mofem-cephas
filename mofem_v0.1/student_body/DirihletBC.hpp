@@ -44,6 +44,9 @@ struct DisplacementBCFEMethodPreAndPostProc: public FieldInterface::FEMethod {
     ts_B = &_Aij;
   };
 
+  DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name): 
+    mField(_mField),field_name(_field_name) {}; 
+
   PetscErrorCode ierr;
   ErrorCode rval;
 
@@ -65,6 +68,11 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
     FieldInterface& _mField,const string &_field_name,Mat &_Aij,Vec _X,Vec _F): 
     DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F) {}
 
+  SpatialPositionsBCFEMethodPreAndPostProc(
+    FieldInterface& _mField,const string &_field_name): 
+    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name) {}
+
+
   ublas::vector<double> cOords;
   PetscErrorCode iNitalize();
 
@@ -79,6 +87,13 @@ struct FixMaterialPoints: public DisplacementBCFEMethodPreAndPostProc {
     DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),eNts(ents) {
     field_names.push_back(field_name);
   }
+
+  FixMaterialPoints(
+    FieldInterface& _mField,const string &_field_name,Range &ents): 
+    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name),eNts(ents) {
+    field_names.push_back(field_name);
+  }
+
 
   PetscErrorCode iNitalize();
   PetscErrorCode preProcess();

@@ -138,10 +138,6 @@ add_library(mofem_complex_for_lazy
   complex_for_lazy/SurfacePressureComplexForLazy.cpp
 )
 
-add_library(mofem_face_splitting
-  face_splitting/FaceSplittingTool.cpp
-)
-
 add_library(mofem_forces_and_sources
   forces_and_sources/ForcesAndSurcesCore.cpp
 )

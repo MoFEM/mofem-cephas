@@ -441,35 +441,35 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
 
 };
 
-struct EhselbyFEMethod: public NonLinearSpatialElasticFEMthod {
+struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
 
-  EhselbyFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
+  EshelbyFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
     NonLinearSpatialElasticFEMthod(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
     type_of_analysis = material_analysis;
   }
 
-  Range crackFrontNodes; 
+  Range crackFrontEdgeNodes; 
   PetscErrorCode initCrackFrontData(FieldInterface& mField) {
     PetscFunctionBegin;
     ErrorCode rval;
     PetscErrorCode ierr;
     Range crack_corners_edges;
     ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
-    rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontNodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontEdgeNodes,true); CHKERR_PETSC(rval);
     PetscFunctionReturn(0);
   }
   PetscErrorCode setCrackFrontIndices(string &material_field_name,vector<DofIdx>& GlobIndices,bool not_at_crack_front) {
     PetscFunctionBegin;
-    if(!crackFrontNodes.empty()) {
+    if(!crackFrontEdgeNodes.empty()) {
     for(_IT_GET_FEROW_DOFS_FOR_LOOP_(this,material_field_name,dof)) {
-      Range::iterator nit = find(crackFrontNodes.begin(),crackFrontNodes.end(),dof->get_ent());
+      Range::iterator nit = find(crackFrontEdgeNodes.begin(),crackFrontEdgeNodes.end(),dof->get_ent());
       if(not_at_crack_front) {
 	//if nit is not a part of crack front set
-	if(nit != crackFrontNodes.end()) continue;
+	if(nit != crackFrontEdgeNodes.end()) continue;
       } else {
 	//if nit is part of crack front set
-	if(nit == crackFrontNodes.end()) continue;
+	if(nit == crackFrontEdgeNodes.end()) continue;
       }
       vector<DofIdx>::iterator it = find(GlobIndices.begin(),GlobIndices.end(),dof->get_petsc_gloabl_dof_idx());
       if(it != GlobIndices.end()) {
@@ -547,14 +547,14 @@ struct EhselbyFEMethod: public NonLinearSpatialElasticFEMthod {
 
 };
 
-struct MeshSmoothingFEMethod: public EhselbyFEMethod {
+struct MeshSmoothingFEMethod: public EshelbyFEMethod {
 
   Vec frontF;
   Vec tangentFrontF;
 
   MeshSmoothingFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    EhselbyFEMethod(_mField,_dirihlet_bc_method_ptr,0,0,_verbose),
+    EshelbyFEMethod(_mField,_dirihlet_bc_method_ptr,0,0,_verbose),
       frontF(PETSC_NULL),tangentFrontF(PETSC_NULL) {
       type_of_analysis = mesh_quality_analysis;
 
@@ -597,7 +597,7 @@ struct MeshSmoothingFEMethod: public EhselbyFEMethod {
 	  frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
 	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
 	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	if(!crackFrontNodes.empty()) {
+	if(!crackFrontEdgeNodes.empty()) {
 	  double *f_tangent_front_mesh_array;
 	  if(tangentFrontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
 	  ierr = VecGetArray(tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
@@ -643,7 +643,7 @@ struct MeshSmoothingFEMethod: public EhselbyFEMethod {
 	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 	//cerr << "Fint_h " << Fint_h << endl;
 	ierr = VecSetValues(f,frontRowGlobMaterial.size(),&(frontRowGlobMaterial[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
-	if(!crackFrontNodes.empty()) {
+	if(!crackFrontEdgeNodes.empty()) {
 	  if(frontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
 	  ierr = VecSetValues(frontF,frontRowGlobMaterial_front_only.size(),&(frontRowGlobMaterial_front_only[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	}
