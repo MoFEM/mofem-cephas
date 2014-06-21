@@ -47,6 +47,18 @@ struct NeummanForcesSurface {
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
+  struct bCForce {
+    force_cubit_bc_data data;
+    Range tRis;
+  };
+  map<int,bCForce> mapForce;
+  struct bCPreassure {
+    pressure_cubit_bc_data data;
+    Range tRis;
+  };
+  map<int,bCPreassure> mapPreassure;
+
+
   struct MethodsForOp {
 
     virtual PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
@@ -70,10 +82,10 @@ struct NeummanForcesSurface {
   struct OpNeumannForce: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     Vec &F;
-    force_cubit_bc_data &dAta;
+    bCForce &dAta;
     boost::ptr_vector<MethodsForOp> &methodsOp;
 
-    OpNeumannForce(const string field_name,Vec &_F,force_cubit_bc_data &data,
+    OpNeumannForce(const string field_name,Vec &_F,bCForce &data,
       boost::ptr_vector<MethodsForOp> &methods_op):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),methodsOp(methods_op) {}
@@ -85,6 +97,8 @@ struct NeummanForcesSurface {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      EntityHandle ent = getMoFEMFEPtr()->get_ent();
+      if(dAta.tRis.find(ent)==dAta.tRis.end()) PetscFunctionReturn(0);
 
       PetscErrorCode ierr;
 
@@ -104,15 +118,15 @@ struct NeummanForcesSurface {
 
 	  double force;
 	  if(rr == 0) {
-	    force = dAta.data.value3;
+	    force = dAta.data.data.value3;
 	  } else if(rr == 1) {
-	    force = dAta.data.value4;
+	    force = dAta.data.data.value4;
 	  } else if(rr == 2) {
-	    force = dAta.data.value5;
+	    force = dAta.data.data.value5;
 	  } else {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  }
-	  force *= dAta.data.value1;
+	  force *= dAta.data.data.value1;
 	  cblas_daxpy(nb_row_dofs,val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 
 	}
@@ -131,12 +145,12 @@ struct NeummanForcesSurface {
   struct OpNeumannPreassure: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     Vec &F;
-    pressure_cubit_bc_data &dAta;
+    bCPreassure &dAta;
     boost::ptr_vector<MethodsForOp> &methodsOp;
     bool ho_geometry;
 
     OpNeumannPreassure(const string field_name,Vec &_F,
-      pressure_cubit_bc_data &data,boost::ptr_vector<MethodsForOp> &methods_op,
+      bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
       bool _ho_geometry = false):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),methodsOp(methods_op),ho_geometry(_ho_geometry) {}
@@ -148,6 +162,7 @@ struct NeummanForcesSurface {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
 
       PetscErrorCode ierr;
 
@@ -170,9 +185,9 @@ struct NeummanForcesSurface {
 
 	  double force;
 	  if(ho_geometry) {
-	    force = dAta.data.value1*getNormals_at_GaussPt()(gg,rr);
+	    force = dAta.data.data.value1*getNormals_at_GaussPt()(gg,rr);
 	  } else {
-	    force = dAta.data.value1*getNormal()[rr];
+	    force = dAta.data.data.value1*getNormal()[rr];
 	  }
 	  cblas_daxpy(nb_row_dofs,val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 
@@ -195,9 +210,11 @@ struct NeummanForcesSurface {
   PetscErrorCode addForce(const string field_name,Vec &F,int ms_id) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
+    ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_Cubit_msId(ms_id,NodeSet,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapForce[ms_id]); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERR_PETSC(rval);
     fe.get_op_to_do_Rhs().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp));
     PetscFunctionReturn(0);
   }
@@ -205,17 +222,14 @@ struct NeummanForcesSurface {
    PetscErrorCode addPreassure(const string field_name,Vec &F,int ms_id,bool ho_geometry = false) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
+    ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_Cubit_msId(ms_id,SideSet,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id]); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
     fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
     PetscFunctionReturn(0);
   }
-
-  protected:
-
-  map<int,force_cubit_bc_data> mapForce;
-  map<int,pressure_cubit_bc_data> mapPreassure;
 
 };
 
@@ -230,36 +244,33 @@ struct MetaNeummanForces {
     PetscErrorCode ierr;
     ErrorCode rval;
 
+    ierr = mField.add_finite_element("FORCE_FE"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-      ostringstream fe_name;
-      fe_name << "FORCE_FE_" << it->get_msId();
-      ierr = mField.add_finite_element(fe_name.str()); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_row(fe_name.str(),field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col(fe_name.str(),field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data(fe_name.str(),field_name); CHKERRQ(ierr);
       if(mField.check_field(mesh_nodals_positions)) {
-	ierr = mField.modify_finite_element_add_field_data(fe_name.str(),mesh_nodals_positions); CHKERRQ(ierr);
+	ierr = mField.modify_finite_element_add_field_data("FORCE_FE",mesh_nodals_positions); CHKERRQ(ierr);
       }
-      ierr = mField.modify_problem_add_finite_element(problem_name,fe_name.str()); CHKERRQ(ierr);
+      ierr = mField.modify_problem_add_finite_element(problem_name,"FORCE_FE"); CHKERRQ(ierr);
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
     }
 
+    ierr = mField.add_finite_element("PRESSURE_FE"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("PRESSURE_FE",field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("PRESSURE_FE",field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",field_name); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-      ostringstream fe_name;
-      fe_name << "PRESSURE_FE_" << it->get_msId();
-      ierr = mField.add_finite_element(fe_name.str()); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_row(fe_name.str(),field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col(fe_name.str(),field_name); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data(fe_name.str(),field_name); CHKERRQ(ierr);
       if(mField.check_field(mesh_nodals_positions)) {
-	ierr = mField.modify_finite_element_add_field_data(fe_name.str(),mesh_nodals_positions); CHKERRQ(ierr);
+	ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
       }
-      ierr = mField.modify_problem_add_finite_element(problem_name,fe_name.str()); CHKERRQ(ierr);
+      ierr = mField.modify_problem_add_finite_element(problem_name,"PRESSURE_FE"); CHKERRQ(ierr);
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"PRESSURE_FE"); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }
@@ -270,24 +281,21 @@ struct MetaNeummanForces {
     Vec &F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
+    string fe_name;
+    fe_name = "FORCE_FE";
+    neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-      ostringstream fe_name;
-      fe_name << "FORCE_FE_" << it->get_msId();
-      string fe_name_str = fe_name.str();
-      neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
-      ierr = neumann_forces.at(fe_name_str).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
+      ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
       /*force_cubit_bc_data data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/
     }
+    fe_name = "PRESSURE_FE";
+    neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-      ostringstream fe_name;
-      fe_name << "PRESSURE_FE_" << it->get_msId();
-      string fe_name_str = fe_name.str();
-      neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
       bool ho_geometry = mField.check_field(mesh_nodals_positions);
-      neumann_forces.at(fe_name_str).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
+      neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
       /*pressure_cubit_bc_data data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;

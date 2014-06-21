@@ -241,20 +241,12 @@ int main(int argc, char *argv[]) {
 
     //Elements with boundary conditions
     ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-      ostringstream fe_name;
-      fe_name << "FORCE_FE_" << it->get_msId();
-      ierr = mField.modify_finite_element_add_field_row(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
-    }
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-      ostringstream fe_name;
-      fe_name << "PRESSURE_FE_" << it->get_msId();
-      ierr = mField.modify_finite_element_add_field_row(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_col(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"LAMBDA"); CHKERRQ(ierr);
-    }
+    ierr = mField.modify_finite_element_add_field_row("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("PRESSURE_FE","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("PRESSURE_FE","LAMBDA"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE","LAMBDA"); CHKERRQ(ierr);
     ierr = mField.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
@@ -454,18 +446,14 @@ int main(int argc, char *argv[]) {
 
   //surface forces
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  string fe_name_str = "FORCE_FE";
+  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-    ostringstream fe_name;
-    fe_name << "FORCE_FE_" << it->get_msId();
-    string fe_name_str = fe_name.str();
-    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->get_msId());  CHKERRQ(ierr);
   }
+  fe_name_str = "PRESSURE_FE";
+  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-    ostringstream fe_name;
-    fe_name << "PRESSURE_FE_" << it->get_msId();
-    string fe_name_str = fe_name.str();
-    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->get_msId()); CHKERRQ(ierr);
   }
 

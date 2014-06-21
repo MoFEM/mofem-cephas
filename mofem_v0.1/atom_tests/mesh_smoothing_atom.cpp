@@ -200,9 +200,6 @@ int main(int argc, char *argv[]) {
   Vec D;
   ierr = mField.VecCreateGhost("MESH_SMOOTHING",Col,&D); CHKERRQ(ierr);
 
-  //materialDirihletBC myDirihletBC(moab,corner_nodes);
-  BaseDirihletBC myDirihletBC;
-
   FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",K,D,F,corner_nodes);
   //fix_material_pts.field_names.push_back("LAMBDA_SURFACE");
   MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers bulk_fe(mField);
