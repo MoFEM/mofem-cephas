@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
   BaseDirihletBC myDirihletBC;
 
   FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corner_nodes);
-  fix_material_pts.field_names.push_back("LAMBDA_SURFACE");
+  fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
   MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers bulk_fe(mField,&myDirihletBC);
   C_SURFACE_FEMethod_ForSnes surface_fe(mField,&myDirihletBC);
   surface_fe.nonlinear = true;

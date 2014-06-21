@@ -220,6 +220,11 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   }
 
+  static PetscErrorCode getLoadFactor() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
   NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat &_Aij,Vec _F,double *scale_lhs,double *scale_rhs): 
     mField(m_field),feSpatial(m_field,_Aij,_F,scale_lhs,scale_rhs),feMaterial(m_field,_Aij,_F,scale_lhs,scale_rhs) {}
 

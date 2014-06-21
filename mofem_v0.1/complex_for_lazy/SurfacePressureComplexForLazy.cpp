@@ -478,6 +478,8 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
     case ctx_SNESNone:
     case ctx_SNESSetFunction: {
       tLocNodal *= *sCaleRhs;
+      //cerr << "sCaleRhs " << *sCaleRhs << endl;
+      //cerr << tLocNodal << endl;
       ierr = rHs(); CHKERRQ(ierr);
     }
     break;

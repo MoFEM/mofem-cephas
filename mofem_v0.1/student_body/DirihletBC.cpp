@@ -23,7 +23,6 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-
 PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
     PetscFunctionBegin;
     if(map_zero_rows.empty()) {
@@ -45,9 +44,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
             ents.insert(_nodes.begin(),_nodes.end());
           }
 	  for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-	    for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_ENT_FOR_LOOP_(problem_ptr,*eit,dof)) {
-	      if(dof->get_name()!=field_name) continue;
-	      if(dof->get_part()!=pcomm->rank()) continue;
+	    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,fieldName,*eit,pcomm->rank(),dof)) {
 	      if(dof->get_ent_type() == MBVERTEX) {
 		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
 		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
@@ -153,9 +150,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
             ents.insert(_nodes.begin(),_nodes.end());
           }
 	  for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-	    for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_ENT_FOR_LOOP_(problem_ptr,*eit,dof)) {
-	      if(dof->get_name()!=field_name) continue;
-	      if(dof->get_part()!=pcomm->rank()) continue;
+	    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,fieldName,*eit,pcomm->rank(),dof)) {
 	      if(dof->get_ent_type() == MBVERTEX) {
 		EntityHandle node = dof->get_ent();
 		cOords.resize(3);
@@ -181,6 +176,11 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
 		}
 	      }
 	    }
+	    for(vector<string>::iterator fit = fixFields.begin();fit!=fixFields.end();fit++) {
+	      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,*fit,*eit,pcomm->rank(),dof)) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
+	      }
+	    }
 	  }
 	}
       }
@@ -200,7 +200,7 @@ PetscErrorCode FixMaterialPoints::iNitalize() {
   PetscFunctionBegin;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   if(map_zero_rows.empty()) {
-    for(vector<string>::iterator fit = field_names.begin();fit!=field_names.end();fit++) {
+    for(vector<string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
 	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,*fit,*eit,pcomm->rank(),dof)) {
 	 map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;

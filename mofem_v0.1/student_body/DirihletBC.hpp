@@ -33,11 +33,11 @@ namespace MoFEM {
 struct DisplacementBCFEMethodPreAndPostProc: public FieldInterface::FEMethod {
 
   FieldInterface& mField;
-  const string field_name;
+  const string fieldName;
 
   DisplacementBCFEMethodPreAndPostProc(
     FieldInterface& _mField,const string &_field_name,
-    Mat &_Aij,Vec _X,Vec _F): mField(_mField),field_name(_field_name) {
+    Mat &_Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name) {
     snes_B = &_Aij;
     snes_x = _X;
     snes_f = _F;
@@ -45,7 +45,7 @@ struct DisplacementBCFEMethodPreAndPostProc: public FieldInterface::FEMethod {
   };
 
   DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name): 
-    mField(_mField),field_name(_field_name) {}; 
+    mField(_mField),fieldName(_field_name) {}; 
 
   PetscErrorCode ierr;
   ErrorCode rval;
@@ -72,6 +72,7 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
     FieldInterface& _mField,const string &_field_name): 
     DisplacementBCFEMethodPreAndPostProc(_mField,_field_name) {}
 
+  vector<string> fixFields;
 
   ublas::vector<double> cOords;
   PetscErrorCode iNitalize();
@@ -81,17 +82,17 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
 struct FixMaterialPoints: public DisplacementBCFEMethodPreAndPostProc {
 
   Range &eNts;
-  vector<string> field_names;
+  vector<string> fieldNames;
   FixMaterialPoints(
     FieldInterface& _mField,const string &_field_name,Mat &_Aij,Vec _X,Vec _F,Range &ents): 
     DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),eNts(ents) {
-    field_names.push_back(field_name);
+    fieldNames.push_back(fieldName);
   }
 
   FixMaterialPoints(
     FieldInterface& _mField,const string &_field_name,Range &ents): 
     DisplacementBCFEMethodPreAndPostProc(_mField,_field_name),eNts(ents) {
-    field_names.push_back(field_name);
+    fieldNames.push_back(fieldName);
   }
 
 

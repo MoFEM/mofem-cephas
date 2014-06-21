@@ -485,7 +485,12 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
     double r = cblas_dnrm2(3,center,1);
     int g_dim = get_dim_gNTET();
     if(type_of_analysis&spatail_analysis) {
-	assert(12 == RowGlobSpatial[0].size());
+	if(RowGlobSpatial.empty()) {
+	  SETERRQ(PETSC_COMM_SELF,1,"RowGlobSpatial is not set");
+	}
+	if(12 != RowGlobSpatial[0].size()) {
+	  SETERRQ(PETSC_COMM_SELF,1,"12 != RowGlobSpatial[0].size()");
+	}
 	KHh.resize(12,12);
 	Khh.resize(12,12);
 	ee = 0;

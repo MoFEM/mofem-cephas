@@ -24,7 +24,7 @@ static char help[] = "\
 
 #include "SurfacePressureComplexForLazy.hpp"
 
-#include "FEMethod_ArcLengthDriverComplexForLazy.hpp"
+#include "FEMethod_DriverComplexForLazy.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
@@ -45,6 +45,9 @@ double roundn(double n) {
 }
 
 using namespace MoFEM;
+
+ErrorCode rval;
+PetscErrorCode ierr;
 
 int main(int argc, char *argv[]) {
 

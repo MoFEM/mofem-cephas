@@ -24,12 +24,15 @@ static char help[] = "\
 
 #include "SurfacePressureComplexForLazy.hpp"
 
-#include "FEMethod_ArcLengthDriverComplexForLazy.hpp"
+#include "FEMethod_DriverComplexForLazy.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
 
 using namespace MoFEM;
+
+ErrorCode rval;
+PetscErrorCode ierr;
 
 int main(int argc, char *argv[]) {
 
@@ -351,62 +354,97 @@ int main(int argc, char *argv[]) {
         PetscFunctionReturn(0);
       }
       
-      PetscErrorCode postProcess() {
-        PetscFunctionBegin;
-        switch(snes_ctx) {
-          case ctx_SNESSetFunction: {
-	    //snes_f
-            ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-            ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	    //F_lambda
-            ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-            ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-            ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	    for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
-	      ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
-	    }
-	    ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-	    ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	    ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
-	    PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
-	    //add F_lambda
-	    ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
-	    double fnorm;
-	    ierr = VecNormBegin(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
-	    ierr = VecNormEnd(snes_f,NORM_2,&fnorm);CHKERRQ(ierr);
-	    PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
-          }
-          break;
-          default:
-            SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      switch(snes_ctx) {
+        case ctx_SNESSetFunction: {
+	  //snes_f
+          ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
         }
-        
-        PetscFunctionReturn(0);
+        break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
+      PetscFunctionReturn(0);
+    }
 
-      PetscErrorCode potsProcessLoadPath() {
-	PetscFunctionBegin;
-	NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-	Range::iterator nit = nodeSet.begin();
-	for(;nit!=nodeSet.end();nit++) {
-	  NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
-	  dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
-	  hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
-	  for(;dit!=hi_dit;dit++) {
-	    PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->get_FieldData());
-	    PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
-	  }
+    PetscErrorCode potsProcessLoadPath() {
+      PetscFunctionBegin;
+      NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+      Range::iterator nit = nodeSet.begin();
+      for(;nit!=nodeSet.end();nit++) {
+	NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
+	dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
+	hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+	for(;dit!=hi_dit;dit++) {
+	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->get_FieldData());
+	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
 	}
-	PetscFunctionReturn(0);
       }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct AssembleLambdaFEMethod: public FieldInterface::FEMethod {
+    
+    FieldInterface& mField;
+    ArcLengthCtx *arc_ptr;
+
+    SpatialPositionsBCFEMethodPreAndPostProc *bC;
+
+    AssembleLambdaFEMethod(FieldInterface& _mField,
+      ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc): 
+      mField(_mField),arc_ptr(_arc_ptr),bC(bc) {}
+  
+    PetscErrorCode ierr;
+      
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      switch(snes_ctx) {
+        case ctx_SNESSetFunction: {
+	  //F_lambda
+          ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+	  for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
+	    ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+	  }
+	  ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+	  //add F_lambda
+	  ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
+	  double fnorm;
+	  ierr = VecNormBegin(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
+	  ierr = VecNormEnd(snes_f,NORM_2,&fnorm);CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
+	}
+        break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }  
+      PetscFunctionReturn(0);
+    }
 
   };
 
   MyPrePostProcessFEMethod pre_post_method(mField,arc_ctx,&my_dirihlet_bc,node_set);
+  AssembleLambdaFEMethod assemble_F_lambda(mField,arc_ctx,&my_dirihlet_bc);
 
   ArcLengthSnesCtx snes_ctx(mField,"ELASTIC_MECHANICS",arc_ctx);
   
@@ -459,6 +497,7 @@ int main(int argc, char *argv[]) {
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NONE",&assemble_F_lambda));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
   snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_method);
   snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
