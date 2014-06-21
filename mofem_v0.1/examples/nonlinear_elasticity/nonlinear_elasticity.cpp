@@ -174,12 +174,9 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-
   const double young_modulus = 1;
   const double poisson_ratio = 0.25;
-  NonLinearSpatialElasticFEMthod my_fe(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  NonLinearSpatialElasticFEMthod my_fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
   NeummanForcesSurfaceComplexForLazy neumann_forces(mField,Aij,F);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_spatial = neumann_forces.getLoopSpatialFe();

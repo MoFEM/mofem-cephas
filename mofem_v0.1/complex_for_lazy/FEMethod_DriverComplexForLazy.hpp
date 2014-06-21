@@ -40,9 +40,9 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
   ArcLengthCtx* arcPtr;
   bool isCoupledProblem;
 
-  NonLinearSpatialElasticFEMthod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
-    FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),arcPtr(NULL),
+  NonLinearSpatialElasticFEMthod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
+    FEMethod_ComplexForLazy_Data(_mField,_verbose),
+    FEMethod_ComplexForLazy(_mField,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),arcPtr(NULL),
     isCoupledProblem(false) {}
 
   double *thermalLoadFactor;
@@ -54,9 +54,9 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
   }
   Tag thThermalLoadFactor;
 
-  NonLinearSpatialElasticFEMthod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLengthCtx* arc_ptr,int _verbose = 0): 
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
-    FEMethod_ComplexForLazy(_mField,_dirihlet_bc_method_ptr,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),arcPtr(arc_ptr),
+  NonLinearSpatialElasticFEMthod(FieldInterface& _mField,double _lambda,double _mu,ArcLengthCtx* arc_ptr,int _verbose = 0): 
+    FEMethod_ComplexForLazy_Data(_mField,_verbose),
+    FEMethod_ComplexForLazy(_mField,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),arcPtr(arc_ptr),
     isCoupledProblem(false) {
 
     double def_t_val = 0;
@@ -328,15 +328,14 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
 
 struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
 
-  EshelbyFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    NonLinearSpatialElasticFEMthod(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
+  EshelbyFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_verbose), 
+    NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose) {
     type_of_analysis = material_analysis;
   }
 
-  EshelbyFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLengthCtx* _arc_ptr,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    NonLinearSpatialElasticFEMthod(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_arc_ptr,_verbose) {
+  EshelbyFEMethod(FieldInterface& _mField,double _lambda,double _mu,ArcLengthCtx* _arc_ptr,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_verbose), NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_arc_ptr,_verbose) {
     type_of_analysis = material_analysis;
   } 
 
@@ -445,9 +444,8 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
 
 struct MeshSmoothingFEMethod: public EshelbyFEMethod {
 
-  MeshSmoothingFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    EshelbyFEMethod(_mField,_dirihlet_bc_method_ptr,0,0,_verbose) {
+  MeshSmoothingFEMethod(FieldInterface& _mField,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_verbose),EshelbyFEMethod(_mField,0,0,_verbose) {
       type_of_analysis = mesh_quality_analysis;
 
       g_NTET.resize(4*1);
@@ -671,18 +669,6 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-};
-
-
-
-//****************************************************
-//****************************************************
-//****************************************************
-//****************************************************
-
-struct DirihletBCMethod_DriverComplexForLazy: public CubitDisplacementDirihletBC {
-  DirihletBCMethod_DriverComplexForLazy(FieldInterface& _mField,const string _problem_name,const string _field_name): 
-    CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
 };
 
 

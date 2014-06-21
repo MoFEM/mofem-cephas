@@ -72,16 +72,13 @@ struct CrackFrontData {
 
 struct MyNonLinearSpatialElasticFEMthod: public NonLinearSpatialElasticFEMthod,CrackFrontData {
 
-  ArcLengthCtx* arcPtr;
-  bool isCoupledProblem;
+  MyNonLinearSpatialElasticFEMthod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
+    FEMethod_ComplexForLazy_Data(_mField,_verbose),
+    NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,0,_verbose) {}
 
-  MyNonLinearSpatialElasticFEMthod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
-    NonLinearSpatialElasticFEMthod(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,0,_verbose),arcPtr(NULL) {}
-
-  MyNonLinearSpatialElasticFEMthod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLengthCtx* arc_ptr,int _verbose = 0): 
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose),
-    NonLinearSpatialElasticFEMthod(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,arc_ptr,_verbose = 0) {}
+  MyNonLinearSpatialElasticFEMthod(FieldInterface& _mField,double _lambda,double _mu,ArcLengthCtx* arc_ptr,int _verbose = 0): 
+    FEMethod_ComplexForLazy_Data(_mField,_verbose),
+    NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,arc_ptr,_verbose = 0) {}
 
   PetscErrorCode AssembleSpatialCoupledTangent(Mat B) {
     PetscFunctionBegin;
@@ -149,15 +146,15 @@ struct MyNonLinearSpatialElasticFEMthod: public NonLinearSpatialElasticFEMthod,C
 
 struct MyEshelbyFEMethod: public EshelbyFEMethod,CrackFrontData {
 
-  MyEshelbyFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    EshelbyFEMethod(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose) {
+  MyEshelbyFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_verbose), 
+    EshelbyFEMethod(_mField,_lambda,_mu,_verbose) {
     type_of_analysis = material_analysis;
   }
 
-  MyEshelbyFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,ArcLengthCtx* _arc_ptr,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    EshelbyFEMethod(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_arc_ptr,_verbose) {
+  MyEshelbyFEMethod(FieldInterface& _mField,double _lambda,double _mu,ArcLengthCtx* _arc_ptr,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_verbose), 
+    EshelbyFEMethod(_mField,_lambda,_mu,_arc_ptr,_verbose) {
     type_of_analysis = material_analysis;
   } 
 
@@ -206,9 +203,9 @@ struct MyMeshSmoothingFEMethod: public MeshSmoothingFEMethod,CrackFrontData {
   Vec frontF;
   Vec tangentFrontF;
 
-  MyMeshSmoothingFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    MeshSmoothingFEMethod(_mField,_dirihlet_bc_method_ptr,_verbose),
+  MyMeshSmoothingFEMethod(FieldInterface& _mField,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_verbose), 
+    MeshSmoothingFEMethod(_mField,_verbose),
       frontF(PETSC_NULL),tangentFrontF(PETSC_NULL) {
       type_of_analysis = mesh_quality_analysis;
 
@@ -726,7 +723,6 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
   ierr = mField.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_field("SPATIAL_DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
-  //ierr = mField.add_field("MESH_NODE_DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("ELASTIC",MF_ZERO); CHKERRQ(ierr);
@@ -1539,12 +1535,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   ierr = SNESSetFunction(*snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetJacobian(*snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
 
-  DirihletBCMethod_DriverComplexForLazy myDirihletBCSpatial(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-  ierr = myDirihletBCSpatial.Init(); CHKERRQ(ierr);
-
   const double young_modulus = 1;
   const double poisson_ratio = 0.25;
-  MyNonLinearSpatialElasticFEMthod my_fe(mField,&myDirihletBCSpatial,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  MyNonLinearSpatialElasticFEMthod my_fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&my_fe.thermal_expansion,&flg); CHKERRQ(ierr);
 
   NeummanForcesSurfaceComplexForLazy neumann_forces(mField,Aij,F);
@@ -1641,16 +1634,16 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_ALL_MATRIX",corners_nodes);
 
   //Loops over body surface (CFE_SURFACE) and crack surface (CFE_CRACK_SURFACE)
-  C_SURFACE_FEMethod CFE_SURFACE(mField,&myDirihletBC,projSurfaceCtx->C);
-  C_SURFACE_FEMethod CFE_CRACK_SURFACE(mField,&myDirihletBC,projSurfaceCtx->C,"LAMBDA_CRACK_SURFACE");
+  ConstrainSurfacGeometry CFE_SURFACE(mField,projSurfaceCtx->C);
+  ConstrainSurfacGeometry CFE_CRACK_SURFACE(mField,projSurfaceCtx->C,"LAMBDA_CRACK_SURFACE");
 
-  map<int,C_SURFACE_FEMethod*> CFE_SURFACE_msId_ptr;
+  map<int,ConstrainSurfacGeometry*> CFE_SURFACE_msId_ptr;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
     ss << "LAMBDA_SURFACE_msId_" << msId;
-    CFE_SURFACE_msId_ptr[msId] = new C_SURFACE_FEMethod(mField,&myDirihletBC,projSurfaceCtx->C,ss.str());
+    CFE_SURFACE_msId_ptr[msId] = new ConstrainSurfacGeometry(mField,projSurfaceCtx->C,ss.str());
   }
 
   ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -1659,7 +1652,7 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   ierr = MatZeroEntries(projSurfaceCtx->C); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",CFE_SURFACE);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",CFE_CRACK_SURFACE);  CHKERRQ(ierr);
-  for(map<int,C_SURFACE_FEMethod*>::iterator mit = CFE_SURFACE_msId_ptr.begin();
+  for(map<int,ConstrainSurfacGeometry*>::iterator mit = CFE_SURFACE_msId_ptr.begin();
     mit!=CFE_SURFACE_msId_ptr.end();mit++) {
     ostringstream ss0;
     ss0 << "C_SURFACE_ELEM_msId_" << mit->first;
@@ -1669,7 +1662,7 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   ierr = MatAssemblyBegin(projSurfaceCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(projSurfaceCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  for(map<int,C_SURFACE_FEMethod*>::iterator mit = CFE_SURFACE_msId_ptr.begin();
+  for(map<int,ConstrainSurfacGeometry*>::iterator mit = CFE_SURFACE_msId_ptr.begin();
     mit!=CFE_SURFACE_msId_ptr.end();mit++) {
     delete mit->second;
   }
@@ -2301,21 +2294,21 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
     fix_material_pts.fieldNames.push_back(ss.str());
   }
 
-  MyMeshSmoothingFEMethod smoother(mField,&myDirihletBC);
+  MyMeshSmoothingFEMethod smoother(mField);
   set_qual_ver(0);
-  C_SURFACE_FEMethod_ForSnes const_surface(mField,&myDirihletBC,"LAMBDA_SURFACE");
-  C_SURFACE_FEMethod_ForSnes const_crack_surface(mField,&myDirihletBC,"LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
+  SnesConstrainSurfacGeometry const_surface(mField,"LAMBDA_SURFACE");
+  SnesConstrainSurfacGeometry const_crack_surface(mField,"LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
   const_surface.nonlinear = true;
   const_crack_surface.nonlinear = true;
-  const_crack_surface.use_projection_from_crack_front = true;
+  const_crack_surface.useProjectionFromCrackFront = true;
   //add additional surfaces
-  map<int,C_SURFACE_FEMethod_ForSnes*> const_other_surface_ptr;
+  map<int,SnesConstrainSurfacGeometry*> const_other_surface_ptr;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
     ss << "LAMBDA_SURFACE_msId_" << msId;
-    const_other_surface_ptr[msId] = new C_SURFACE_FEMethod_ForSnes(mField,&myDirihletBC,ss.str());
+    const_other_surface_ptr[msId] = new SnesConstrainSurfacGeometry(mField,ss.str());
     const_other_surface_ptr[msId]->nonlinear = true;
   }
 
@@ -2349,7 +2342,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM_WITH_CRACK_FRONT",&const_crack_surface));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&fix_material_pts);
 
-  for(map<int,C_SURFACE_FEMethod_ForSnes*>::iterator mit = const_other_surface_ptr.begin();
+  for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = const_other_surface_ptr.begin();
     mit!=const_other_surface_ptr.end();mit++) {
     ostringstream ss2;
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
@@ -2384,7 +2377,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&K); CHKERRQ(ierr);
 
-  for(map<int,C_SURFACE_FEMethod_ForSnes*>::iterator mit = const_other_surface_ptr.begin();
+  for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = const_other_surface_ptr.begin();
     mit!=const_other_surface_ptr.end();mit++) {
     delete mit->second;
   }
@@ -2615,31 +2608,31 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   //spatial and material forces
   const double young_modulus = 1;
   const double poisson_ratio = 0.;
-  MyNonLinearSpatialElasticFEMthod fe_spatial(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),&arc_ctx);
+  MyNonLinearSpatialElasticFEMthod fe_spatial(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),&arc_ctx);
   ierr = fe_spatial.initCrackFrontData(mField); CHKERRQ(ierr);
   fe_spatial.isCoupledProblem = true;
-  MyEshelbyFEMethod fe_material(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),&arc_ctx);
+  MyEshelbyFEMethod fe_material(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),&arc_ctx);
   ierr = fe_material.initCrackFrontData(mField); CHKERRQ(ierr);
   fe_material.isCoupledProblem = true;
   //meshs moothing
-  MyMeshSmoothingFEMethod smoother(mField,&myDirihletBC);
+  MyMeshSmoothingFEMethod smoother(mField);
   ierr = smoother.initCrackFrontData(mField); CHKERRQ(ierr);
   set_qual_ver(0);
   //constrains
-  C_SURFACE_FEMethod_ForSnes constrain_body_surface(mField,&myDirihletBC,"LAMBDA_SURFACE");
+  SnesConstrainSurfacGeometry constrain_body_surface(mField,"LAMBDA_SURFACE");
   constrain_body_surface.nonlinear = true;
-  C_SURFACE_FEMethod_ForSnes constrain_crack_surface(mField,&myDirihletBC,"LAMBDA_CRACK_SURFACE");
+  SnesConstrainSurfacGeometry constrain_crack_surface(mField,"LAMBDA_CRACK_SURFACE");
   constrain_crack_surface.nonlinear = true;
   Snes_CTgc_CONSTANT_AREA_FEMethod ct_gc(mField,*projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA_FEMethod dct_gc(mField,K,"LAMBDA_CRACKFRONT_AREA");
   TangentWithMeshSmoothingFrontConstrain_FEMethod tangent_constrain(mField,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
-  map<int,C_SURFACE_FEMethod_ForSnes*> other_body_surface_constrains;
+  map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
     ss << "LAMBDA_SURFACE_msId_" << msId;
-    other_body_surface_constrains[msId] = new C_SURFACE_FEMethod_ForSnes(mField,&myDirihletBC,ss.str());
+    other_body_surface_constrains[msId] = new SnesConstrainSurfacGeometry(mField,ss.str());
     other_body_surface_constrains[msId]->nonlinear = true;
   }
   //dirihlet constrains
@@ -2690,7 +2683,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = arc_snes_ctx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&constrain_crack_surface));
-  for(map<int,C_SURFACE_FEMethod_ForSnes*>::iterator mit = other_body_surface_constrains.begin();
+  for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
     mit!=other_body_surface_constrains.end();mit++) {
     ostringstream ss2;
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
@@ -2715,7 +2708,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("dCT_CRACKFRONT_AREA_ELEM",&dct_gc));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&constrain_crack_surface));
-  for(map<int,C_SURFACE_FEMethod_ForSnes*>::iterator mit = other_body_surface_constrains.begin();
+  for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
     mit!=other_body_surface_constrains.end();mit++) {
     ostringstream ss2;
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
@@ -2868,7 +2861,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 
-  for(map<int,C_SURFACE_FEMethod_ForSnes*>::iterator mit = other_body_surface_constrains.begin();
+  for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
     mit!=other_body_surface_constrains.end();mit++) {
     delete mit->second;
   }
@@ -2903,7 +2896,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 
   const double young_modulus = 1;
   const double poisson_ratio = 0;
-  MyEshelbyFEMethod material_fe(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  MyEshelbyFEMethod material_fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   PetscBool flg = PETSC_TRUE;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&material_fe.thermal_expansion,&flg); CHKERRQ(ierr);
   material_fe.snes_f = F_Material;

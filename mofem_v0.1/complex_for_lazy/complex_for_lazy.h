@@ -220,11 +220,11 @@ PetscErrorCode KExt_HH_hierarchical(double eps,int order,int *order_edge,
 //quality
 void set_qual_ver(int ver);
 int get_qual_ver();
-PetscErrorCode get_edges_from_elem_coords(double *coords,double *coords_edges);
+PetscErrorCode get_edges_from_elem_coords(double *cOords,double *cOords_edges);
 PetscErrorCode quality_volume_length_F(double alpha,double *alpha2,double gamma,double *diffN,
-  double *coords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
+  double *cOords_edges,double *dofs_X,double *dofs_x,double *dofs_iX,double *dofs_ix,double *quality0,double *quality,double *b,
   double *F,double *iF);
-int quality_volume_length_K(double eps,double alpha,double *alpha2,double gamma,double *diffN,double *coords_edges,double *dofs_X,double *dofs_x,double *K,double *Koff);
+int quality_volume_length_K(double eps,double alpha,double *alpha2,double gamma,double *diffN,double *cOords_edges,double *dofs_X,double *dofs_x,double *K,double *Koff);
 
 void EdgeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 void FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);

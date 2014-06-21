@@ -37,9 +37,9 @@ static char help[] = "...\n\n";
 
 struct MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers: public MeshSmoothingFEMethod  {
 
-  MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-    MeshSmoothingFEMethod(_mField,_dirihlet_bc_method_ptr,_verbose) {
+  MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers(FieldInterface& _mField,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_verbose), 
+    MeshSmoothingFEMethod(_mField,_verbose) {
     set_qual_ver(1);
   }
 
@@ -207,8 +207,8 @@ int main(int argc, char *argv[]) {
 
   FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corner_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
-  MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers bulk_fe(mField,&myDirihletBC);
-  C_SURFACE_FEMethod_ForSnes surface_fe(mField,&myDirihletBC);
+  MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers bulk_fe(mField);
+  SnesConstrainSurfacGeometry surface_fe(mField);
   surface_fe.nonlinear = true;
 
   SnesCtx snes_ctx(mField,"MESH_SMOOTHING");

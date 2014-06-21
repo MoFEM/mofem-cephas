@@ -270,9 +270,6 @@ int main(int argc, char *argv[]) {
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)mat_ctx,&ShellAij); CHKERRQ(ierr);
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
 
-  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-
   double young_modulus = 1;
   double poisson_ratio = 0.25;
 	
@@ -301,7 +298,7 @@ int main(int argc, char *argv[]) {
   ArcLengthElemFEMethod* arc_method_ptr = new ArcLengthElemFEMethod(moab,arc_ctx);
   ArcLengthElemFEMethod& arc_method = *arc_method_ptr;
 
-  NonLinearSpatialElasticFEMthod fe(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  NonLinearSpatialElasticFEMthod fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
   double scaled_reference_load = 1;
   double *scale_lhs = &(arc_ctx->get_FieldData());

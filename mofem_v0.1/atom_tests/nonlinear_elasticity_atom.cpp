@@ -53,24 +53,13 @@ double roundn(double n) {
 
 struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
 
-  NL_ElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-      NonLinearSpatialElasticFEMthod(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
+  NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_ComplexForLazy_Data(_mField,_verbose), 
+      NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose)  {
     set_PhysicalEquationNumber(hooke);
   }
 
 };
-
-/*struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
-
-  NL_ElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-      FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
-    //set_PhysicalEquationNumber(neohookean);
-    set_PhysicalEquationNumber(hooke);
-  }
-
-};*/
 
 int main(int argc, char *argv[]) {
 
@@ -239,13 +228,9 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-
-  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-
   const double young_modulus = 1.;
   const double poisson_ratio = 0.;
-  NL_ElasticFEMethod my_fe(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  NL_ElasticFEMethod my_fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   #ifdef NONLINEAR_TEMPERATUTE
   my_fe.thermal_expansion = 0.1;
   #endif //NONLINEAR_TEMPERATUTE

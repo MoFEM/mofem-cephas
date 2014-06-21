@@ -298,8 +298,6 @@ int main(int argc, char *argv[]) {
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)mat_ctx,&ShellAij); CHKERRQ(ierr);
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
 
-  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-
   double young_modulus = 1;
   double poisson_ratio = 0.25;
 	
@@ -320,10 +318,10 @@ int main(int argc, char *argv[]) {
   ArcLengthElemFEMethod& arc_method = *arc_method_ptr;
 
   #ifndef NONLINEAR_TEMPERATUTE
-  NonLinearSpatialElasticFEMthod fe(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  NonLinearSpatialElasticFEMthod fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   set_PhysicalEquationNumber(neohookean);
   #else 
-  NonLinearSpatialElasticFEMthod fe(mField,&myDirihletBC,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),arc_ctx);
+  NonLinearSpatialElasticFEMthod fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),arc_ctx);
   set_PhysicalEquationNumber(neohookean);
   set_ThermalDeformationEquationNumber(linear_expansion_true_volume);
   fe.thermal_expansion = 1;
