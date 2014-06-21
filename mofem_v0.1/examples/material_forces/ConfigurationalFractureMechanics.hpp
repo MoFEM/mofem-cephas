@@ -112,29 +112,6 @@ struct ConfigurationalFractureMechanics {
   PetscScalar ave_j,min_j,max_j;
   PetscErrorCode griffith_g(FieldInterface& mField,string problem);
 
-  struct CubitDisplacementDirihletBC_Coupled: public CubitDisplacementDirihletBC {
-  
-    Range& cornersNodes;
-
-    bool fixAllSpatialDispacements;
-    CubitDisplacementDirihletBC_Coupled(FieldInterface& _mField,const string _problem_name,
-      Range &_cornersNodes): 
-      CubitDisplacementDirihletBC(_mField,_problem_name,"None"),
-      cornersNodes(_cornersNodes),fixAllSpatialDispacements(false) {}
-
-    PetscErrorCode SetDirihletBC_to_ElementIndicies(
-      FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
-    PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
-      FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC);  
-    PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
-      FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
-    PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
-    PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F);
-    PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(FieldInterface::FEMethod *fe_method_ptr,
-      vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs);
-  
-  };
-
  struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
 
     FieldInterface& mField;

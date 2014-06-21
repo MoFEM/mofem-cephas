@@ -535,149 +535,6 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
   
 };
  
-PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_ElementIndicies(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_ElementIndiciesRow(
-      FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
-}
-  
-PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_ElementIndiciesCol(
-  FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
-  PetscFunctionBegin;
-  set<DofIdx> set_zero_rows;
-  if(fixAllSpatialDispacements) {
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-      if( (dit->get_name() != "SPATIAL_POSITION") ) continue;
-      set_zero_rows.insert(dit->get_petsc_gloabl_dof_idx());
-    }
-  }
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-    if(dit->get_ent_type()!=MBVERTEX) continue;
-    if( (dit->get_name() == "SPATIAL_POSITION") ) continue;
-    if(find(cornersNodes.begin(),cornersNodes.end(),dit->get_ent()) == cornersNodes.end()) continue;
-    set_zero_rows.insert(dit->get_petsc_gloabl_dof_idx());
-  }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
-    for(int dim = 0;dim<3;dim++) {
-      Range _ents;
-      ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,_ents,true); CHKERRQ(ierr);
-      if(dim>1) {
-        Range _edges;
-        ierr = mField.get_moab().get_adjacencies(_ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
-        _ents.insert(_edges.begin(),_edges.end());
-      }
-      if(dim>0) {
-        Range _nodes;
-        rval = mField.get_moab().get_connectivity(_ents,_nodes,true); CHKERR_PETSC(rval);
-        _ents.insert(_nodes.begin(),_nodes.end());
-      }
-      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-	if(dit->get_ent_type()!=MBVERTEX) continue;
-	if(
-	  (dit->get_name() == "SPATIAL_POSITION")
-	) continue;
-	if(find(_ents.begin(),_ents.end(),dit->get_ent()) == _ents.end()) continue;
-	set_zero_rows.insert(dit->get_petsc_gloabl_dof_idx());
-      }
-    }
-  }
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-    if(
-      (dit->get_name() != "SPATIAL_POSITION")
-      ) continue;
-    for(int ss = 0;ss<3;ss++) {
-      if(dit->get_dof_rank()==ss) {
-	map<int,Range>::iterator bit = bc_map[ss].begin();
-	for(;bit!=bc_map[ss].end();bit++) {
-	  if(find(bit->second.begin(),bit->second.end(),dit->get_ent()) == bit->second.end()) continue;
-	  set_zero_rows.insert(dit->get_petsc_gloabl_dof_idx());
-	}
-      }
-    }
-  }
-  vector<DofIdx> zero_rows(set_zero_rows.size());
-  copy(set_zero_rows.begin(),set_zero_rows.end(),zero_rows.begin());
-  ierr = MatZeroRowsColumns(
-    Aij,zero_rows.size(),&*zero_rows.begin(),1.,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
-  PetscFunctionBegin;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-  if(fixAllSpatialDispacements) {
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(fe_method_ptr->problem_ptr,"SPATIAL_POSITION",dit)) {
-      ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
-    }
-  }
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-    if(dit->get_part()!=pcomm->rank()) continue;
-    if(dit->get_ent_type()!=MBVERTEX) continue;
-    if(
-      (dit->get_name() == "SPATIAL_POSITION")
-      ) continue;
-    if(find(cornersNodes.begin(),cornersNodes.end(),dit->get_ent()) == cornersNodes.end()) continue;
-    ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
-  }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
-    for(int dim = 0;dim<3;dim++) {
-      Range _ents;
-      ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,_ents,true); CHKERRQ(ierr);
-      if(dim>1) {
-        Range _edges;
-        ierr = mField.get_moab().get_adjacencies(_ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
-        _ents.insert(_edges.begin(),_edges.end());
-      }
-      if(dim>0) {
-        Range _nodes;
-        rval = mField.get_moab().get_connectivity(_ents,_nodes,true); CHKERR_PETSC(rval);
-        _ents.insert(_nodes.begin(),_nodes.end());
-      }
-      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-	if(dit->get_ent_type()!=MBVERTEX) continue;
-	if(
-	  (dit->get_name() == "SPATIAL_POSITION")
-	) continue;
-	if(find(_ents.begin(),_ents.end(),dit->get_ent()) == _ents.end()) continue;
-	ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
-      }
-    }
-  }
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-    if(dit->get_part()!=pcomm->rank()) continue;
-    if(
-      (dit->get_name() != "SPATIAL_POSITION")
-      ) continue;
-    for(int ss = 0;ss<3;ss++) {
-      if(dit->get_dof_rank()==ss) {
-	map<int,Range>::iterator bit = bc_map[ss].begin();
-	for(;bit!=bc_map[ss].end();bit++) {
-	  if(find(bit->second.begin(),bit->second.end(),dit->get_ent()) == bit->second.end()) continue;
-	  ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0.,INSERT_VALUES); CHKERRQ(ierr);
-	}
-      }
-    }
-  }
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode ConfigurationalFractureMechanics::CubitDisplacementDirihletBC_Coupled::SetDirihletBC_to_ElementIndiciesFace(FieldInterface::FEMethod *fe_method_ptr,
-  vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs) {
-  PetscFunctionBegin;
-  PetscFunctionReturn(0);
-}
-
 PetscErrorCode ConfigurationalFractureMechanics::set_material_fire_wall(FieldInterface& mField) {
   PetscFunctionBegin;
   ErrorCode rval;
@@ -1631,7 +1488,6 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
   ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
   corners_nodes.merge(nodes_to_block);
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_ALL_MATRIX",corners_nodes);
 
   //Loops over body surface (CFE_SURFACE) and crack surface (CFE_CRACK_SURFACE)
   ConstrainSurfacGeometry CFE_SURFACE(mField,projSurfaceCtx->C);
@@ -1900,7 +1756,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
   ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,blocked_nodes); CHKERRQ(ierr);
   corners_nodes.merge(blocked_nodes);
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_CRACKFRONT_MATRIX",corners_nodes);
 
   C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
@@ -2002,7 +1857,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,blocked_nodes); CHKERRQ(ierr);
   corners_nodes.merge(blocked_nodes);
 
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"C_CRACKFRONT_MATRIX",corners_nodes);
   C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -2280,9 +2134,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
   ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
   corners_nodes.merge(nodes_to_block);
 
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"MESH_SMOOTHING_PROBLEM",corners_nodes);
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-
   FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
@@ -2488,9 +2339,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
-
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,"COUPLED_PROBLEM",corners_nodes);
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {
     
@@ -2887,9 +2735,6 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
   ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
   corners_nodes.merge(nodes_to_block);
-
-  CubitDisplacementDirihletBC_Coupled myDirihletBC(mField,problem,corners_nodes);
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
 
   Vec F_Material;
   ierr = mField.VecCreateGhost(problem,Col,&F_Material); CHKERRQ(ierr);

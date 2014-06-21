@@ -16,17 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(potential_flow potential_flow.cpp)
-target_link_libraries(potential_flow mofem_student_body mofem_Field ${PROJECT_LIBS})
-
 add_executable(laplacian_problem laplacian_problem.cpp)
 target_link_libraries(laplacian_problem mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(calculate_forces calculate_forces.cpp)
-target_link_libraries(calculate_forces mofem_student_body mofem_Field ${PROJECT_LIBS})
-
 cm_export_file("../../meshes/pipe.cub" export_potential_flow)
-cm_export_file("../../meshes/airfoil.cub" export_potential_flow)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -42,7 +35,6 @@ file(COPY
 add_test(SimpleLaplacianProblem ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/laplacian_problem
   -my_file pipe.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 5 -log_summary)
 
-install(TARGETS potential_flow DESTINATION bin)
 install(TARGETS laplacian_problem DESTINATION bin)
 
 

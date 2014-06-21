@@ -57,9 +57,6 @@ add_executable(arc_length_nonlinear_elasticity_thermal_atom arc_length_nonlinear
 set_target_properties(arc_length_nonlinear_elasticity_thermal_atom PROPERTIES COMPILE_FLAGS -DNONLINEAR_TEMPERATUTE)
 target_link_libraries(arc_length_nonlinear_elasticity_thermal_atom mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(thermal_conductivity_atom thermal_conductivity_atom.cpp)
-target_link_libraries(thermal_conductivity_atom mofem_student_body mofem_Field ${PROJECT_LIBS})
-
 add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
 target_link_libraries(projection_from_10node_tet_atom mofem_student_body mofem_Field ${PROJECT_LIBS})
 
@@ -243,12 +240,6 @@ add_test(arc_length_nonlinear_elasticity_thermal_atom ${MPI_RUN} -np 1 ${CMAKE_C
 add_test(arc_length_nonlinear_elasticity_thermal_atom_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/arc_length_nonlinear_elasticity_thermal_atom.txt 
   ${CMAKE_BINARY_DIR}/atom_tests/arc_length_nonlinear_elasticity_thermal_atom.txt)
-
-#thermal problem
-add_test(thermal_conductivity_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_conductivity_atom -my_file cub_thermal_problem.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -my_max_pot_proc_ref_level 1 -log_summary)
-add_test(thermal_conductivity_atom_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_problem.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/thermal_problem.txt)
 
 #10 node TET projection
 add_test(projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.cub -log_summary)
