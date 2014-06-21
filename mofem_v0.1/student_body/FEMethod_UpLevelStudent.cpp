@@ -179,9 +179,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowGlobalIndices(const string &field_
     } break;
     case MBTET:
     case MBPRISM: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
-      eiit = row_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == row_multiIndex->get<Composite_mi_tag2>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator eiit;
+      eiit = row_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(field_name,type));
+      if(eiit == row_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) {
 	RowGlobDofs.resize(0);
 	PetscFunctionReturn(0);
       }
@@ -240,9 +240,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowLocalIndices(const string &field_n
     } break;
     case MBTET:
     case MBPRISM: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
-      eiit = row_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == row_multiIndex->get<Composite_mi_tag2>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator eiit;
+      eiit = row_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(field_name,type));
+      if(eiit == row_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) {
 	RowLocalDofs.resize(0);
 	PetscFunctionReturn(0);
       }
@@ -307,9 +307,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColGlobalIndices(const string &field_
     } break;
     case MBTET:
     case MBPRISM: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
-      eiit = col_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(field_name,type));
+      if(eiit == col_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) {
 	ColGlobDofs.resize(0);
 	PetscFunctionReturn(0);
       }
@@ -368,9 +368,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColLocalIndices(const string &field_n
     } break;
     case MBTET:
     case MBPRISM: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
-      eiit = col_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) {
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(field_name,type));
+      if(eiit == col_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) {
 	ColLocalDofs.resize(0);
 	PetscFunctionReturn(0);
       }
@@ -422,9 +422,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,E
     } break;
     case MBTET:
     case MBPRISM: {
-      FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
-      eiit = data_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == data_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator eiit;
+      eiit = data_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(field_name,type));
+      if(eiit == data_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       Data_EntType::iterator miit = data_elem.find(eiit->get_MoFEMEntity_ptr());
       if(miit == data_elem.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       Data = miit->second;
@@ -494,9 +494,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowNMatrix(const string &field_n
     } break;
     case MBTET:
     case MBPRISM: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
-      eiit = row_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == row_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator eiit;
+      eiit = row_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(field_name,type));
+      if(eiit == row_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       N_Matrix_EntType::iterator miit = row_N_Matrix_elem.find(eiit->get_MoFEMEntity_ptr());
       if(miit == row_N_Matrix_elem.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       NMatrix = miit->second;
@@ -546,9 +546,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussColNMatrix(const string &field_n
     } break;
     case MBTET:
     case MBPRISM: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
-      eiit = col_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(field_name,type));
+      if(eiit == col_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       N_Matrix_EntType::iterator miit = col_N_Matrix_elem.find(eiit->get_MoFEMEntity_ptr());
       if(miit == col_N_Matrix_elem.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       NMatrix = miit->second;
@@ -597,9 +597,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowDiffNMatrix(const string &fie
     } break;
     case MBTET:
     case MBPRISM: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
-      eiit = row_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == row_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator eiit;
+      eiit = row_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(field_name,type));
+      if(eiit == row_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       N_Matrix_EntType::iterator miit = row_diffN_Matrix_elem.find(eiit->get_MoFEMEntity_ptr());
       if(miit == row_diffN_Matrix_elem.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       diffNMatrix = miit->second;
@@ -648,9 +648,9 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussColDiffNMatrix(const string &fie
     } break;
     case MBTET:
     case MBPRISM: {
-      FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag2>::type::iterator eiit;
-      eiit = col_multiIndex->get<Composite_mi_tag2>().find(boost::make_tuple(field_name,type));
-      if(eiit == col_multiIndex->get<Composite_mi_tag2>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
+      FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator eiit;
+      eiit = col_multiIndex->get<Composite_Name_And_Type_mi_tag>().find(boost::make_tuple(field_name,type));
+      if(eiit == col_multiIndex->get<Composite_Name_And_Type_mi_tag>().end()) PetscFunctionReturn(0);//SETERRQ(PETSC_COMM_SELF,1,"no such ent");
       N_Matrix_EntType::iterator miit = col_diffN_Matrix_elem.find(eiit->get_MoFEMEntity_ptr());
       if(miit == col_N_Matrix_elem.end()) SETERRQ(PETSC_COMM_SELF,1,"no such ent in FE");
       diffNMatrix = miit->second;

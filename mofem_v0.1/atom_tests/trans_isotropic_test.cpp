@@ -387,9 +387,9 @@ int main(int argc, char *argv[]) {
         //Get block name
         string name = it->get_Cubit_name();
         
-        if (name.compare(0,12,"MAT_TRANSISO") == 0)
+        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
         {
-            Mat_TransIso mydata;
+            Mat_Elastic_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             cout << mydata;
             YoungModulusP=mydata.data.Youngp;
@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
             
         }
     }
-    
+  
   //Assemble F and Aij
     
     ///No of Axis/Angle of rotation
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
     double AxAngle[2] = {/*1st Angle*/ -0.25*M_PI ,/*2nd Angle*/ -0.25*M_PI};
     
     TranIsotropicAxisAngleRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,noAA,AxVector,AxAngle);
-    
+	
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -435,6 +435,7 @@ int main(int argc, char *argv[]) {
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
   //std::string wait;
   //std::cin >> wait;
+
 
   //Solver
   KSP solver;

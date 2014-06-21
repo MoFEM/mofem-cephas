@@ -83,6 +83,11 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
   int side_number,sense,offset;
   rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
   if(side_number==-1) {
+
+    if(moab.type_from_handle(ent)==MBVERTEX) {
+      THROW_AT_LINE("Huston we have problem, vertex (specified by ent) is not part of prism, that is impossible (top tip: check your prisms)");
+    } 
+
     //get prism connectivity
     int num_nodes;
     const EntityHandle* conn;
@@ -195,7 +200,8 @@ RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_
     case MBTET:
     break;
     default:
-      PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+      PetscTraceBackErrorHandler(PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
 	"this work only for TETs",PETSC_NULL);
       THROW_AT_LINE("this work only for TETs");
       //PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
@@ -244,6 +250,28 @@ RefMoFEMElement_TRI::RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_
     default:
       THROW_AT_LINE("this work only for TRIs");
   }
+  ErrorCode rval;
+  int side_number,sense,offset;
+  EntityHandle tri = get_ref_ent();
+  int num_nodes;
+  const EntityHandle* conn;
+  rval = moab.get_connectivity(tri,conn,num_nodes,true); CHKERR_THROW(rval);
+  for(int nn = 0;nn<3; nn++) {
+    const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(conn[nn],nn,0,-1));
+  }
+  for(int ee = 0;ee<3; ee++) {
+    EntityHandle edge;
+    rval = moab.side_element(tri,1,ee,edge); CHKERR_THROW(rval);
+    rval = moab.side_number(tri,edge,side_number,sense,offset); CHKERR_THROW(rval);
+    if(ee != side_number) {
+      PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	"data inconsistency",PETSC_NULL);
+      PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+	"data insonsistency",PETSC_NULL);
+    }
+    const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(edge,ee,sense,offset));
+  }
+  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(tri,0,0,0));
 }
 SideNumber* RefMoFEMElement_TRI::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
@@ -529,5 +557,28 @@ PetscErrorCode EntMoFEMFiniteElement::get_uid_side_number(
   ierr = moab.side_number(get_ent(),child,side_number,sense,offset); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode NumeredMoFEMFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const {
+  PetscFunctionBegin;
+  FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
+  dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"dof which index < %d > not found",idx);
+  }
+  *dof_ptr = &*dit;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode NumeredMoFEMFiniteElement::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const {
+  PetscFunctionBegin;
+  FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
+  dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"dof which index < %d > not found",idx);
+  }
+  *dof_ptr = &*dit;
+  PetscFunctionReturn(0);
+}
+
 
 }

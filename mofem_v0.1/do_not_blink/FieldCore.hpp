@@ -93,6 +93,7 @@ struct FieldCore: public FieldInterface {
   bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType);
   PetscErrorCode add_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId);
   PetscErrorCode delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId);
+  PetscErrorCode get_Cubit_msId(const int msId,const Cubit_BC_bitset CubitBCType,const CubitMeshSets **cubit_meshset_ptr);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, const int dimension,Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType, Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false);
@@ -207,19 +208,7 @@ struct FieldCore: public FieldInterface {
         ss << data;
         PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BlockSet|Mat_TransIsoSet,it)) {
-        Mat_TransIso data;
-        ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
-        ostringstream ss;
-        ss << *it << endl;
-        ss << data;
-	Range tets;
-	rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-	ss << "MAT_TRANSISO msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
-	ss << endl;
-        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    }
-
+    
     PetscFunctionReturn(0);
   }
 
@@ -299,7 +288,7 @@ struct FieldCore: public FieldInterface {
   string get_BitFieldId_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const string& name) const;
-  bool check_field(const string& name) const;
+    bool check_field(const string& name) const;
   const MoFEMField* get_field_structure(const string& name);
 
   //MoFEMFiniteElement

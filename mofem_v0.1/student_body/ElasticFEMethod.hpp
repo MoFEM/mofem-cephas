@@ -21,6 +21,9 @@
 #define __ELASTICFEMETHOD_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
+extern "C" {
+#include <gm_rule.h>
+}
 
 namespace MoFEM {
 
@@ -35,12 +38,12 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       Aij(PETSC_NULL),Data(PETSC_NULL),F(PETSC_NULL) {};
 
     bool propeties_from_BlockSet_Mat_ElasticSet;
+	
     ElasticFEMethod(
       FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
       double _lambda,double _mu): 
       FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
-      Aij(_Aij),Data(_D),F(_F),
-      lambda(_lambda),mu(_mu) { 
+      Aij(_Aij),Data(_D),F(_F),lambda(_lambda),mu(_mu) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
       RowGlob.resize(1+6+4+1);
@@ -62,11 +65,11 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      G_W_TET = G_TET_W45;
+      G_TET_W = G_TET_W45;
       g_NTRI.resize(3*28);
       ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
-      G_W_TRI = G_TRI_W28;
-
+      G_TRI_W = G_TRI_W28;
+				
       propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 	propeties_from_BlockSet_Mat_ElasticSet = true;
@@ -77,8 +80,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     ErrorCode rval;
     
     ParallelComm* pcomm;
-    PetscLogDouble t1,t2;
-    PetscLogDouble v1,v2;
 
     double lambda,mu;
     ublas::matrix<FieldData> D_lambda,D_mu,D;
@@ -101,8 +102,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     vector<DofIdx> DirihletBC;
 
     vector<double> g_NTET,g_NTRI;
-    const double* G_W_TET;
-    const double* G_W_TRI;
+    const double *G_TRI_W;
+    const double *G_TET_W;
 
     virtual PetscErrorCode calculateD(double _lambda,double _mu) {
       PetscFunctionBegin;
@@ -151,20 +152,16 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
-      ierr = PetscTime(&v1); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+
       g_NTET.resize(4*45);
       ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-      G_W_TET = G_TET_W45;
+      G_TET_W = G_TET_W45;
       g_NTRI.resize(3*28);
-      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
-      G_W_TRI = G_TRI_W28;
-
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28);
+      G_TRI_W = G_TRI_W28;
+			
       // See FEAP - - A Finite Element Analysis Program
       D_lambda.resize(6,6);
       D_lambda.clear();
@@ -201,10 +198,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_RHS(this,F); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      ierr = PetscTime(&v2); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
       PetscFunctionReturn(0);
     }
 
@@ -273,10 +266,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    }
 	    area_at_Gauss_pt = cblas_dnrm2(3,Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
-	    w = area_at_Gauss_pt*G_W_TRI[gg];
+	    w = area_at_Gauss_pt*G_TRI_W[gg];
 	    traction_at_Gauss_pt += (pressure/(2*area_at_Gauss_pt))*Normals_at_Gauss_pts[gg];
 	  } else {
-	    w = area*G_W_TRI[gg];
+	    w = area*G_TRI_W[gg];
 	    traction_at_Gauss_pt += (pressure/area)*normal;
 	  }
 
@@ -497,7 +490,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	if(RowGlob[rr].size()==0) continue;
 	for(int gg = 0;gg<g_dim;gg++) {
 	  ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-	  double w = V*G_W_TET[gg];
+	  double w = V*G_TET_W[gg];
 	  if(detH.size()>0) {
 	    w *= detH[gg];
 	  }
@@ -622,7 +615,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  VoightStrain[3] = 2*Strain(0,1);
 	  VoightStrain[4] = 2*Strain(1,2);
 	  VoightStrain[5] = 2*Strain(2,0);
-	  double w = V*G_W_TET[gg];
+	  double w = V*G_TET_W[gg];
 	  ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
 	  //BT * VoigtStress
 	  f_int.resize(row_mat);

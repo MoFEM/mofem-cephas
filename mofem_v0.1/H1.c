@@ -116,7 +116,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode H1_FaceShapeFunctions_MBTRI(int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM) {
+PetscErrorCode H1_FaceShapeFunctions_MBTRI(const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   int P = NBFACE_H1(p);

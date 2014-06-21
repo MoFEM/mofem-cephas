@@ -56,13 +56,13 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   cubit_bc_atom_test_bcoverlap01_compare
   cubit_bc_atom_test_interf01_compare
   cubit_bc_atom_test_mat_elastic_compare
-  cubit_bc_atom_test_mat_transiso_compare
+  cubit_bc_atom_test_mat_elastic_transiso_compare
   cubit_bc_atom_test_mat_interf_compare
   cubit_bc_atom_test_inlet_outlet_compare
   elasticity_atom_test_01X_compare
-  traniso_mat_test_compare
   elasticity_atom_test_01Y_compare
   elasticity_atom_test_01Z_compare
+  traniso_mat_test_compare
   l2_atom_approximation_compare
   mesh_smoothing_atom_test_compare
   mesh_insert_interface_atom_test_compare
@@ -79,7 +79,17 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   thermal_conductivity_atom_compare
   projection_from_10node_tet_atom_compare
   cubit_meshset_loop_test_compare
-  field_functions_test_compare
+  forces_and_sources_getting_orders_indices_test_compare
+  forces_and_sources_getting_mult_H1_H1_test_compare
+  forces_and_sources_calculate_jacobian_test_compare
+  forces_and_sources_testing_volume_element_test_compare
+  forces_and_sources_testing_field_approximation_test_compare
+  forces_and_sources_body_force_atom_test_compare
+  forces_and_sources_getting_higher_order_skin_normals_atom_test_compare
+  forces_and_sources_testing_triangle_element_test_compare
+  forces_and_sources_neumann_elasticity_atom_test_01X_pressure_compare
+  forces_and_sources_neumann_elasticity_atom_test_01X_compare
+  forces_and_sources_neumann_sphre_pressure_test_compare
   #this stuff is too big
   SimpleElasticityTest
   SimpleInterfaceTest

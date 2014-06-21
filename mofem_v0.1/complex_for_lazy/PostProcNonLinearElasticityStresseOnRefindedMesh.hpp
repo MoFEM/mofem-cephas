@@ -31,7 +31,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
   FEMethod_ComplexForLazy &fe_method;
 
-  Tag th_F,th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions,th_fibreDirection1,th_fibreDirection2;
+  Tag th_F,th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions,th_fibreDirection1,th_fibreDirection2,th_stretch1,th_stretch2;
   PostProcStressNonLinearElasticity(Interface& _moab,FEMethod_ComplexForLazy &_fe_method):
     PostProcDisplacementsOnRefMesh(_moab,_fe_method.spatial_field_name),fe_method(_fe_method) {
 
@@ -49,6 +49,8 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
     rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION_1",3,MB_TYPE_DOUBLE,th_fibreDirection1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("FIBRE_DIRECTION_2",3,MB_TYPE_DOUBLE,th_fibreDirection2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
+    rval = moab_post_proc.tag_get_handle("FIBRE_STRETCH_1",1,MB_TYPE_DOUBLE,th_stretch1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("FIBRE_STRETCH_2",1,MB_TYPE_DOUBLE,th_stretch2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
   }
 
   vector<double> remeber_g_NTET;
@@ -60,9 +62,9 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
       ierr = fe_method.set_problem(problem_ptr); CHKERRQ(ierr);
       ierr = fe_method.set_fields(moabfields); CHKERRQ(ierr);
-      ierr = fe_method.set_ents_multiIndex(ents_moabfield); CHKERRQ(ierr);
+      ierr = fe_method.set_ents_multiIndex(refinedMoFemEntities,ents_moabfield); CHKERRQ(ierr);
       ierr = fe_method.set_dofs_multiIndex(dofs_moabfield); CHKERRQ(ierr);
-      ierr = fe_method.set_fes_multiIndex(finite_elements); CHKERRQ(ierr);
+      ierr = fe_method.set_fes_multiIndex(refinedMoFemElements,finite_elements); CHKERRQ(ierr);
       ierr = fe_method.set_fes_data_multiIndex(finite_elements_moabents); CHKERRQ(ierr);
       ierr = fe_method.set_adjacencies(fem_adjacencies); CHKERRQ(ierr);
 
@@ -199,15 +201,19 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       a2=prod(F,a2);
       rval = moab_post_proc.tag_set_data(th_fibreDirection2,&mit->second,1,&*a2.data().begin()); CHKERR_PETSC(rval);
 
+      //Fibre Stretch 1
+      double stretch1 = norm_2(a1);
+      rval = moab_post_proc.tag_set_data(th_stretch1,&mit->second,1,&stretch1); CHKERR_PETSC(rval);
+      //Fibre Stretch 2
+      double stretch2 = norm_2(a2);
+      rval = moab_post_proc.tag_set_data(th_stretch2,&mit->second,1,&stretch2); CHKERR_PETSC(rval);
 	}
-
       }
 
       fe_method.g_NTET = remeber_g_NTET;
 
       PetscFunctionReturn(0);
   }
-
 };
 
 #endif //__POSTPROCNONLINEARELASTICITYSTRESSEONREFINDEDMESH_HPP__
