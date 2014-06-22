@@ -85,7 +85,8 @@ struct ArcLengthCtx {
   FieldData& get_FieldData() { return dit->get_FieldData(); }
   int get_part() { return dit->get_part(); };
 
-  ArcLengthCtx(FieldInterface &mField,const string &problem_name,bool _use_F_lambda = true) {
+  ArcLengthCtx(FieldInterface &mField,const string &problem_name):
+    dlambda(0),diag(0),dx2(0),F_lambda2(0),res_lambda(0) {
     PetscErrorCode ierr;
 
     ierr = mField.VecCreateGhost(problem_name,Row,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
