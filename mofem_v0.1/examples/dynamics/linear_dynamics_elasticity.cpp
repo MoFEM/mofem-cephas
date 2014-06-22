@@ -279,7 +279,7 @@ int main(int argc, char *argv[]) {
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
   //Neumann boundary conditions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
-  ierr = MetaNeummanForces::setFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
     ostringstream fe_name;
     fe_name << "FORCE_FE_" << it->get_msId();

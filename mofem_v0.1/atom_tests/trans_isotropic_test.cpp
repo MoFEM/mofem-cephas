@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
   //loop finite elements
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
-  ierr = MetaNeummanForces::setFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);

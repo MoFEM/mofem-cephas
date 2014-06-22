@@ -34,7 +34,6 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
     Vec F;
     LaplacianElem(FieldInterface& _mField,Mat _A,Vec _F): 
       FEMethod_UpLevelStudent(_mField.get_moab()),mField(_mField),A(_A),F(_F) {
-      body_velocity = ublas::zero_vector<FieldData>(3);
     }; 
 
     const double *G_TET_W,*G_TRI_W;
@@ -163,182 +162,12 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > body_velocity;
-
-    PetscErrorCode set_bodyVelocity(FieldData ux,FieldData uy,FieldData uz) {
-      PetscFunctionBegin;
-      body_velocity.resize(3);
-      body_velocity[0] = ux;
-      body_velocity[1] = uy;
-      body_velocity[2] = uz;
-      ostringstream ss;
-      ss << "Set body velocity: ";
-      ss << body_velocity;
-      ss << endl;
-      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode set_bodyVelocity(ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > _body_velocity) {
-      PetscFunctionBegin;
-      body_velocity = _body_velocity;
-      ostringstream ss;
-      ss << "Set body velocity: ";
-      ss << body_velocity;
-      ss << endl;
-      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode compute_SurfaceRHS() {
-      PetscFunctionBegin;
-
-      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
-
-	string name;
-	if( (it->get_CubitBCType()&Cubit_BC_bitset(PressureSet)).none() ) {
-	  name = it->get_Cubit_name();
-	  if( name!="NormalVelocity" ) {
-	    continue;
-	  } 
-	}
-
-	SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());
-	SideNumber_multiIndex::nth_index<1>::type::iterator sit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
-	SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
-	Range meshsets;
-	rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-	meshsets.insert(it->meshset); // check if children of pressure bc triangles are not in main cubit meshset
-	for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-	SideNumber_multiIndex::nth_index<1>::type::iterator siit = sit;
-	for(;siit!=hi_siit;siit++) {
-
-	  if(!moab.contains_entities(*mit,&siit->ent,1)) continue;
-
-	  ierr = ShapeFunctions_TRI(siit->ent,g_NTRI);  CHKERRQ(ierr);
-	  
-	  const EntityHandle *conn_face;
-	  int num_nodes_face;
-	  rval = moab.get_connectivity(siit->ent,conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
-	  double coords_face[9];
-	  rval = moab.get_coords(conn_face,num_nodes_face,coords_face); CHKERR_PETSC(rval);
-	  ierr = ShapeDiffMBTRI(diffNTRI); CHKERRQ(ierr);
-	  ublas::vector<FieldData,ublas::bounded_array<FieldData,3> > normal(3);
-	  ierr = ShapeFaceNormalMBTRI(diffNTRI,coords_face,&*normal.data().begin()); CHKERRQ(ierr);
-	  double area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
-
-	  //higher order face shape
-	  vector< ublas::vector<FieldData> > Normals_at_Gauss_pts;
-	  ierr = GetHierarchicalGeometryApproximation_FaceNormal(siit->ent,Normals_at_Gauss_pts);  CHKERRQ(ierr);
-
-	  double flux = 0;
-	  if( (it->get_CubitBCType()&Cubit_BC_bitset(PressureSet)).any() ) {
-	    pressure_cubit_bc_data mydata;
-	    ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-	    flux = mydata.data.value1;
-	  }
-
-	  if( name == "NormalVelocity" ) {
-	    flux = -inner_prod(body_velocity,normal)/(2*area);
-	    //cerr << body_velocity << endl;
-	    //cerr << flux << endl;
-	  }
-
-	  //nodes
-	  vector<DofIdx>& RowGlob_nodes = RowGlobDofs[0];
-	  vector< ublas::matrix<FieldData> > FaceNMatrix_nodes;
-	  ierr = GetGaussRowFaceNMatrix(siit->ent,"POTENTIAL_FIELD",FaceNMatrix_nodes,MBVERTEX); CHKERRQ(ierr);
-
-	  //edges
-	  vector<vector<ublas::matrix<FieldData> > > FaceNMatrix_edges(6);
-	  SideNumber_multiIndex::nth_index<1>::type::iterator siiit = side_table.get<1>().lower_bound(boost::make_tuple(MBEDGE,0));
-	  SideNumber_multiIndex::nth_index<1>::type::iterator hi_siiit = side_table.get<1>().upper_bound(boost::make_tuple(MBEDGE,6));
-	  for(;siiit!=hi_siiit;siiit++) {
-	    if(RowGlobDofs[1+siiit->side_number].size()>0) {
-	      ierr = GetGaussRowFaceNMatrix(siit->ent,"POTENTIAL_FIELD",FaceNMatrix_edges[siiit->side_number],MBEDGE,siiit->ent); CHKERRQ(ierr);
-	    }
-	  }
-
-	  //faces
-	  vector<DofIdx>& RowGlob_face = RowGlobDofs[1+6+siit->side_number];
-	  vector< ublas::matrix<FieldData> > FaceNMatrix_face;
-	  if(RowGlob_face.size()>0) {
-	    ierr = GetGaussRowFaceNMatrix(siit->ent,"POTENTIAL_FIELD",FaceNMatrix_face,MBTRI); CHKERRQ(ierr);
-	  }
-
-	  //calulate & assemble
-
-	  //nodes
-	  ublas::vector<FieldData> f_ext_nodes = ublas::zero_vector<FieldData>(FaceNMatrix_nodes[0].size2());
-	  int g_dim = get_dim_gNTRI();
-	  for(int gg = 0;gg<g_dim;gg++) {    
-	    double w;
-	    if(Normals_at_Gauss_pts.size()>0) {
-	      double area = cblas_dnrm2(3,&*Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
-	      if( name == "NormalVelocity" ) {
-		flux = -inner_prod(body_velocity,Normals_at_Gauss_pts[gg])/(2*area);
-	      }
-	    }
-	    w = flux*area*G_TRI_W[gg];
-	    f_ext_nodes += w*ublas::matrix_row<ublas::matrix<FieldData> >(FaceNMatrix_nodes[gg],0);
-	  }
-	  ierr = VecSetValues(F,RowGlob_nodes.size(),&(RowGlob_nodes)[0],&(f_ext_nodes.data())[0],ADD_VALUES); CHKERRQ(ierr);
-
-	  //edges
-	  siiit = side_table.get<1>().lower_bound(boost::make_tuple(MBEDGE,0));
-	  for(;siiit!=hi_siiit;siiit++) {
-	    vector<DofIdx>& RowGlob_edge = RowGlobDofs[1+siiit->side_number];
-	    if(RowGlob_edge.size()>0) {
-	      vector<ublas::matrix<FieldData> >& FaceNMatrix_edge = FaceNMatrix_edges[siiit->side_number];
-	      ublas::vector<FieldData> f_ext_edges = ublas::zero_vector<FieldData>(FaceNMatrix_edge[0].size2());
-	      for(int gg = 0;gg<g_dim;gg++) {
-		double w;
-		if(Normals_at_Gauss_pts.size()>0) {
-		  double area = cblas_dnrm2(3,&*Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
-		  if( name == "NormalVelocity" ) {
-		    flux = -inner_prod(body_velocity,Normals_at_Gauss_pts[gg])/(2*area);
-		  }
-		}
-		w = flux*area*G_TRI_W[gg];
-		f_ext_edges += w*ublas::matrix_row<ublas::matrix<FieldData> >(FaceNMatrix_edge[gg],0);
-	      }
-	      if(RowGlob_edge.size()!=f_ext_edges.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_edge.size()!=f_ext_edges.size()");
-	      ierr = VecSetValues(F,RowGlob_edge.size(),&(RowGlob_edge[0]),&(f_ext_edges.data())[0],ADD_VALUES); CHKERRQ(ierr);
-	    }
-	  }
-
-	  //face     
-	  if(RowGlob_face.size()>0) {
-	    ublas::vector<FieldData> f_ext_faces = ublas::zero_vector<FieldData>(FaceNMatrix_face[0].size2());
-	    for(int gg = 0;gg<g_dim;gg++) {
-	      double w;
-	      if(Normals_at_Gauss_pts.size()>0) {
-		double area = cblas_dnrm2(3,&*Normals_at_Gauss_pts[gg].data().begin(),1)*0.5;
-		if( name == "NormalVelocity" ) {
-		  flux = -inner_prod(body_velocity,Normals_at_Gauss_pts[gg])/(2*area);
-		}
-	      }
-	      w = flux*area*G_TRI_W[gg];
-	      f_ext_faces += w*ublas::matrix_row<ublas::matrix<FieldData> >(FaceNMatrix_face[gg],0);
-	    }
-	    if(RowGlob_face.size()!=f_ext_faces.size()) SETERRQ(PETSC_COMM_SELF,1,"wrong size: RowGlob_face.size()!=f_ext_faces.size()");
-	    ierr = VecSetValues(F,RowGlob_face.size(),&(RowGlob_face)[0],&(f_ext_faces.data())[0],ADD_VALUES); CHKERRQ(ierr);
-	  }
-	
-	}
-
-      }}
-
-      PetscFunctionReturn(0);
-    }
-
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
       ierr = get_ShapeFunctionsAndIndices(); CHKERRQ(ierr);
       ierr = compute_LHS(); CHKERRQ(ierr);
-      ierr = compute_SurfaceRHS(); CHKERRQ(ierr);
 
       ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -346,48 +175,6 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      set<DofIdx> set_zero_pressure_dofs;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
-	std::size_t zeroPressureFound=it->get_Cubit_name().find("ZeroPressure");
-	if (zeroPressureFound==std::string::npos) continue;
-	Range nodes;
-	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-	Range edges;
-	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
-	Range tris;
-	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-	Range adj;
-	rval = moab.get_connectivity(tris,adj,true); CHKERR_PETSC(rval);
-	nodes.insert(adj.begin(),adj.end());
-	rval = moab.get_connectivity(edges,adj,true); CHKERR_PETSC(rval);
-	nodes.insert(adj.begin(),adj.end());
-	rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
-	for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
-	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*nit,dof)) {
-	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
-	    set_zero_pressure_dofs.insert(dof->get_petsc_gloabl_dof_idx());
-	}}
-	for(Range::iterator eit = edges.begin();eit!=edges.end();eit++) {
-	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*eit,dof)) {
-	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
-	    set_zero_pressure_dofs.insert(dof->get_petsc_gloabl_dof_idx());
-	}}
-	for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
-	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problem_ptr,*tit,dof)) {
-	    ierr = VecSetValue(F,dof->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
-	    set_zero_pressure_dofs.insert(dof->get_petsc_gloabl_dof_idx());
-	}}
-      }
-      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      vector<DofIdx> zero_pressure_dofs;
-      zero_pressure_dofs.resize(set_zero_pressure_dofs.size());
-      copy(set_zero_pressure_dofs.begin(),set_zero_pressure_dofs.end(),zero_pressure_dofs.begin());
-      ierr = MatZeroRowsColumns(A,zero_pressure_dofs.size(),&zero_pressure_dofs[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -396,11 +183,10 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
 
 struct PostProcPotentialFlowOnRefMesh: public PostProcDisplacemenysAndStarinOnRefMesh {
 
-  Tag th_phi,th_p,th_u;
+  Tag th_phi,th_u;
   PostProcPotentialFlowOnRefMesh(Interface& _moab): PostProcDisplacemenysAndStarinOnRefMesh(_moab,"DISPLACEMENT") {
     double def_VAL2[3] = { 0.0, 0.0, 0.0 };
     rval = moab_post_proc.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
-    rval = moab_post_proc.tag_get_handle("P",1,MB_TYPE_DOUBLE,th_p,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("U",3,MB_TYPE_DOUBLE,th_u,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
   }
 
@@ -451,23 +237,16 @@ struct PostProcPotentialFlowOnRefMesh: public PostProcDisplacemenysAndStarinOnRe
     //Strains to Nodes in PostProc Mesh: create vector containing matrices
     vector< ublas::matrix< FieldData > > negativeVelocities;
     vector< ublas::vector< FieldData > > phi;
-    vector< ublas::vector< FieldData > > p;
 
     ierr = GetGaussDataVector("POTENTIAL_FIELD",phi); CHKERRQ(ierr);
-    ierr = GetGaussDataVector("PRESSURE_FIELD",p); CHKERRQ(ierr);
     ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",negativeVelocities); CHKERRQ(ierr);
 
     map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
     for(;mit!=node_map.end();mit++) {
-      
       int gg = distance(node_map.begin(),mit);
-
       negativeVelocities[gg] = -prod( trans( invH[gg] ), trans(negativeVelocities[gg]) );
-
       rval = moab_post_proc.tag_set_data(th_u,&mit->second,1,&(negativeVelocities[gg].data()[0])); CHKERR_PETSC(rval);
       rval = moab_post_proc.tag_set_data(th_phi,&mit->second,1,&(phi[gg].data()[0])); CHKERR_PETSC(rval);
-      rval = moab_post_proc.tag_set_data(th_p,&mit->second,1,&(p[gg].data()[0])); CHKERR_PETSC(rval);
-
     }
 
     PetscFunctionReturn(0);

@@ -1042,8 +1042,8 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
       cerr << data.getN() << endl;
       cerr << data.getDiffN() << endl;
       cerr << data.getFieldData() << endl;
-      cerr << tAngent1_at_GaussPt << endl;
-      cerr << tAngent2_at_GaussPt << endl;*/
+      cerr << "t1 " << tAngent1_at_GaussPt << endl;
+      cerr << "t2 " << tAngent2_at_GaussPt << endl;*/
       if(2*data.getN().size2() != data.getDiffN().size2()) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
@@ -1060,6 +1060,8 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
 	  tAngent2_at_GaussPt(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
 	}
       }
+      //cerr << "t1 " << tAngent1_at_GaussPt << endl;
+      //cerr << "t2 " << tAngent2_at_GaussPt << endl;
     }
     break;
     default:
@@ -1133,12 +1135,14 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     nOrmals_at_GaussPt.resize(nb_gauss_pts,3);
     tAngent1_at_GaussPt.resize(nb_gauss_pts,3);
     tAngent2_at_GaussPt.resize(nb_gauss_pts,3);
+    ierr = getEdgesOrder(data,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getFacesOrder(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getEdgeFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getFacesFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
     try {
       ierr = opHONormals.op(data); CHKERRQ(ierr);
-      //ierr = opHONormals.calculateNormals(); CHKERRQ(ierr);
+      ierr = opHONormals.calculateNormals(); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

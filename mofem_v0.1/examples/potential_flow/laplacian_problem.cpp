@@ -21,7 +21,8 @@
 #include "FieldCore.hpp"
 #include "FEMethod_UpLevelStudent.hpp"
 #include "PotentialFlowFEMethod.hpp"
-#include "cholesky.hpp"
+#include "SurfacePressure.hpp"
+
 #include <petscksp.h>
 #include "Projection10NodeCoordsOnField.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
@@ -115,6 +116,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
+  //flux boundary conditions
+  ierr = MetaNeummanForces::addNeumannFluxBCElements(mField,"POTENTIAL_PROBLEM","POTENTIAL_FIELD"); CHKERRQ(ierr);
 
   //set problem level
   ierr = mField.modify_problem_ref_level_add_bit("POTENTIAL_PROBLEM",bit_level0); CHKERRQ(ierr);
@@ -147,9 +150,42 @@ int main(int argc, char *argv[]) {
   Projection10NodeCoordsOnField ent_method_material(mField,"MESH_NODE_POSITIONS");
   ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
+  //get nodes and other entities to fix
+  Range fix_nodes;
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
+    std::size_t zeroPressureFound=it->get_Cubit_name().find("ZeroPressure");
+    if (zeroPressureFound==std::string::npos) continue;
+    rval = moab.get_entities_by_type(it->meshset,MBVERTEX,fix_nodes,true); CHKERR_PETSC(rval);
+    Range edges;
+    rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+    Range tris;
+    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+    Range adj;
+    rval = moab.get_connectivity(tris,adj,true); CHKERR_PETSC(rval);
+    fix_nodes.insert(adj.begin(),adj.end());
+    rval = moab.get_connectivity(edges,adj,true); CHKERR_PETSC(rval);
+    fix_nodes.insert(adj.begin(),adj.end());
+    rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
+  }
+  FixMaterialPoints fix_dofs(mField,"POTENTIAL_FIELD",A,D,F,fix_nodes);
+  //initialize data structure
+  ierr = mField.problem_basic_method_preProcess("POTENTIAL_PROBLEM",fix_dofs); CHKERRQ(ierr);
+
+  //neuman flux bc elements
+  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  ierr = MetaNeummanForces::setNeumannFluxFiniteElementOperators(mField,neumann_forces,F,"POTENTIAL_FIELD"); CHKERRQ(ierr);
+  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  for(;mit!=neumann_forces.end();mit++) {
+    ierr = mField.loop_finite_elements("POTENTIAL_PROBLEM",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+  }
+  //evaluate laplacian in body
   LaplacianElem elem(mField,A,F);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("POTENTIAL_PROBLEM","POTENTIAL_ELEM",elem);  CHKERRQ(ierr);
+  
+  //post proces fix boundary conditiond
+  ierr = mField.problem_basic_method_postProcess("POTENTIAL_PROBLEM",fix_dofs); CHKERRQ(ierr);
+
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
