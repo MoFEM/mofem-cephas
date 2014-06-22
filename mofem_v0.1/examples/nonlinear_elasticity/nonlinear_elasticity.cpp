@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(mField));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-    ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",F,it->get_msId());  CHKERRQ(ierr);
+    ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",F,it->get_msId(),true);  CHKERRQ(ierr);
     nodal_forces.at(fe_name_str).methodsOp.push_back(new MetaNodalForces::TagForceScale(mField));
   }
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();

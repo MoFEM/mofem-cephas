@@ -23,6 +23,8 @@ static char help[] = "\
 -my_ms maximal number of steps\n\n";
 
 #include "SurfacePressureComplexForLazy.hpp"
+#include "SurfacePressure.hpp"
+#include "NodalForce.hpp"
 
 #include "FEMethod_DriverComplexForLazy.hpp"
 #include "PostProcVertexMethod.hpp"
@@ -212,6 +214,8 @@ int main(int argc, char *argv[]) {
       rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
     }
+    //add nodal force element
+    ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION"); CHKERRQ(ierr);
 
   }
 
@@ -493,7 +497,20 @@ int main(int argc, char *argv[]) {
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
+  //surface focres and preassures
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
+  //nodal forces
+  boost::ptr_map<string,NodalForce> nodal_forces;
+  string fe_name_str ="FORCE_FE";
+  nodal_forces.insert(fe_name_str,new NodalForce(mField));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx->F_lambda,it->get_msId());  CHKERRQ(ierr);
+  }
+  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  for(;fit!=nodal_forces.end();fit++) {
+    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
+  }
+  //arc length
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NONE",&assemble_F_lambda));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
   snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_method);
@@ -509,25 +526,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  /*ierr = VecZeroEntries(arc_ctx->F_lambda); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",fe_neumann); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(arc_ctx->F_lambda); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(arc_ctx->F_lambda); CHKERRQ(ierr);
-  //bc to F_Lambda
-  for(vector<int>::iterator vit = my_dirihlet_bc.dofsIndices.begin();
-    vit!=my_dirihlet_bc.dofsIndices.end();vit++) {
-    ierr = VecSetValue(arc_ctx->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
-  }
-  ierr = VecAssemblyBegin(arc_ctx->F_lambda); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(arc_ctx->F_lambda); CHKERRQ(ierr);
-  //F_lambda2
-  ierr = VecDot(arc_ctx->F_lambda,arc_ctx->F_lambda,&arc_ctx->F_lambda2); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ctx->F_lambda2);*/
 
   if(step>1) {
     ierr = mField.set_other_global_VecCreateGhost(
