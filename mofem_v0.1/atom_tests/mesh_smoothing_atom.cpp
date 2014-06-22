@@ -250,10 +250,10 @@ int main(int argc, char *argv[]) {
   ierr = VecView(D,viewer); CHKERRQ(ierr);
   PetscViewerDestroy(&viewer);
 
-
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
   PetscFinalize();
 

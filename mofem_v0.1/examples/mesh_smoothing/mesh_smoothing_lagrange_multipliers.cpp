@@ -311,6 +311,8 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
 
   PetscFinalize();
 
