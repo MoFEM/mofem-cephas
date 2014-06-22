@@ -31,6 +31,10 @@
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 #include "FEMethod_SurfaceConstrains.hpp"
 
+extern "C" {
+#include "gm_rule.h"
+}
+
 using namespace boost::numeric;
 
 namespace MoFEM {
@@ -274,8 +278,30 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     PetscFunctionReturn(0);
   }
 
+  ublas::matrix<double> gaussPts;
   PetscErrorCode operator()() {
     PetscFunctionBegin;
+    //gauss points
+    int order = 1;
+    for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,spatial_field_name,MBEDGE,dit)) {
+      order = max(order,dit->get_max_order());
+    }
+    int order_themp = 0;
+    for(_IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(this,termal_field_name,MBVERTEX,dit)) {
+      order_themp = 1;
+      break;
+    }
+    for(_IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(this,termal_field_name,MBEDGE,dit)) {
+      order_themp = max(order_themp,dit->get_max_order());
+    }
+    int rule = order-1 + order_themp > 0 ? order-1 + order_themp : 0; //FIXME rule with temperature
+    int nb_gauss_pts = gm_rule_size(rule,3);
+    gaussPts.resize(4,nb_gauss_pts);
+    ierr = Grundmann_Moeller_integration_points_3D_TET(
+      rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)); CHKERRQ(ierr);
+    g_NTET.resize(4*nb_gauss_pts);
+    ierr = ShapeMBTET(&g_NTET[0],&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+    g_TET_W = &(gaussPts(3,0));
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
     switch(snes_ctx) {
@@ -410,6 +436,27 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
+    //gauss points
+    int order = 1;
+    for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,spatial_field_name,MBEDGE,dit)) {
+      order = max(order,dit->get_max_order());
+    }
+    int order_themp = 0;
+    for(_IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(this,termal_field_name,MBVERTEX,dit)) {
+      order_themp = 1;
+      break;
+    }
+    for(_IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(this,termal_field_name,MBEDGE,dit)) {
+      order_themp = max(order_themp,dit->get_max_order());
+    }
+    int rule = (order+1)/2 + order_themp > 0 ? (order+1)/2 + order_themp : 0; //FIXME rule with temperature
+    int nb_gauss_pts = gm_rule_size(rule,3);
+    gaussPts.resize(4,nb_gauss_pts);
+    ierr = Grundmann_Moeller_integration_points_3D_TET(
+      rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)); CHKERRQ(ierr);
+    g_NTET.resize(4*nb_gauss_pts);
+    ierr = ShapeMBTET(&g_NTET[0],&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+    g_TET_W = &(gaussPts(3,0));
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
     ierr = GetData(
