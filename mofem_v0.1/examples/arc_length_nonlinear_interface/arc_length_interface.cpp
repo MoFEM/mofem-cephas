@@ -19,6 +19,7 @@
 
 #include "NonLinearFEMethodInterface.hpp"
 #include "SurfacePressure.hpp"
+#include "NodalForce.hpp"
 #include "BodyForce.hpp"
 
 #include "PostProcVertexMethod.hpp"
@@ -241,6 +242,7 @@ int main(int argc, char *argv[]) {
 
     //Elements with boundary conditions
     ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","DISPLACEMENT");  CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
@@ -455,6 +457,13 @@ int main(int argc, char *argv[]) {
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
     ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->get_msId()); CHKERRQ(ierr);
+  }
+  //add npdal
+  boost::ptr_map<string,NodalForce> nodal_forces;
+  fe_name_str ="FORCE_FE";
+  nodal_forces.insert(fe_name_str,new NodalForce(mField));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->get_msId());  CHKERRQ(ierr);
   }
 
   SNES snes;
