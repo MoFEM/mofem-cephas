@@ -209,6 +209,7 @@ RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_
   }
   rval = moab.tag_get_handle("_RefType",th_RefType); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefType,&ref_ptr->ent,1,(const void **)&tag_type_data); CHKERR_THROW(rval);
+  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ref_ptr->ent,0,0,0));
 }
 SideNumber* RefMoFEMElement_TET::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);

@@ -270,12 +270,12 @@ struct FieldInterface {
     moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MFIELD.get_CubitMeshSets_byName_begin(NAME); \
     IT!=MFIELD.get_CubitMeshSets_byName_end(NAME); IT++
 
-  virtual PetscErrorCode printCubitDisplacementSet() = 0;
-  virtual PetscErrorCode printCubitPressureSet() = 0;
-  virtual PetscErrorCode printCubitForceSet() = 0;
+  virtual PetscErrorCode print_cubit_displacement_set() = 0;
+  virtual PetscErrorCode print_cubit_pressure_set() = 0;
+  virtual PetscErrorCode print_cubit_force_set() = 0;
   virtual PetscErrorCode printCubitTemperatureSet() = 0;
   virtual PetscErrorCode printCubitHeatFluxSet() = 0;
-  virtual PetscErrorCode printCubitMaterials() = 0;
+  virtual PetscErrorCode print_cubit_materials_set() = 0;
 
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 

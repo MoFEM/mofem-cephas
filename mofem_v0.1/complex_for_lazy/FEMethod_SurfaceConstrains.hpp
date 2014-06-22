@@ -31,26 +31,24 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
+struct ConstrainSurfacGeometry:public FieldInterface::FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
   FieldInterface& mField;
-  Interface& moab;
-  BaseDirihletBC *dirihlet_bc_method_ptr;
   Mat C;
-  string lambda_field_name;
+  string lambdaFieldName;
 
   vector<double> diffNTRI;
   vector<double> g_NTRI;
   const double *G_TRI_W;
 
-  Tag th_projection;
+  Tag thProjection;
   Range crackFrontEdgesNodes;
-  bool use_projection_from_crack_front;
+  bool useProjectionFromCrackFront;
 
-  C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose = 0);
-  C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose = 0);
-  void run_in_constructor();
+  ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,string _lambdaFieldName,int _verbose = 0);
+  ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,int _verbose = 0);
+  void runInConstructor();
 
   PetscErrorCode preProcess();
 
@@ -61,12 +59,11 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
   ublas::vector<double,ublas::bounded_array<double,9> > ig_VEC_ELEM;
   ublas::vector<double,ublas::bounded_array<double,9> > if_VEC_ELEM;
 
-  ublas::vector<DofIdx,ublas::bounded_array<DofIdx,3> > lambda_global_row_indices,lambda_global_col_indices;
-  vector<DofIdx> DirihletBC;
-  vector<vector<DofIdx> > dof_global_row_indices,dof_global_col_indices;
-  ublas::vector<double,ublas::bounded_array<double,3> > ent_lambda_data;
-  ublas::vector<double,ublas::bounded_array<double,9> > ent_dofs_data,ent_idofs_data;
-  ublas::vector<double,ublas::bounded_array<double,9> > coords;
+  ublas::vector<DofIdx,ublas::bounded_array<DofIdx,3> > lambdaGlobalRowIndices,lambdaGlobalColIndices;
+  vector<vector<DofIdx> > dofGlobalRowIndices,dofGlobalColIndices;
+  ublas::vector<double,ublas::bounded_array<double,3> > entLambdaData;
+  ublas::vector<double,ublas::bounded_array<double,9> > entDofsData,ent_idofs_data;
+  ublas::vector<double,ublas::bounded_array<double,9> > cOords;
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
@@ -74,7 +71,7 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   };
 
-  EntityHandle face;
+  EntityHandle fAce;
   PetscErrorCode cOnstrain(double *dofs_iX,double *C,double *iC,double *g,double *ig);
   virtual PetscErrorCode iNtegrate(bool transpose,bool nonlinear);
   virtual PetscErrorCode aSsemble(bool transpose,bool nonlinear);
@@ -83,10 +80,10 @@ struct C_SURFACE_FEMethod:public FieldInterface::FEMethod {
 
 };
 
-struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
+struct ConstraunSurfaceGeometryRhs: public ConstrainSurfacGeometry {
   Vec g;
-  g_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,string _lambda_field_name,int _verbose = 0); 
-  g_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,int _verbose = 0); 
+  ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,string _lambdaFieldName,int _verbose = 0); 
+  ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,int _verbose = 0); 
 
   ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
   ublas::vector<double,ublas::bounded_array<double,9> > f_VEC_ELEM;
@@ -94,7 +91,7 @@ struct g_SURFACE_FEMethod: public C_SURFACE_FEMethod {
   PetscErrorCode aSsemble(bool transpose,bool nonlinear);
 };
 
-struct C_FEMethod_ForSnes: public FieldInterface::FEMethod {
+struct SnesConstrainSurfacGeometryTools: public FieldInterface::FEMethod {
 
   PetscErrorCode setElemData(FieldInterface::FEMethod &e) {
     PetscFunctionBegin;
@@ -136,43 +133,43 @@ struct C_FEMethod_ForSnes: public FieldInterface::FEMethod {
 
 };
 
-struct C_SURFACE_FEMethod_ForSnes: public C_FEMethod_ForSnes {
+struct SnesConstrainSurfacGeometry: public SnesConstrainSurfacGeometryTools {
 
   FieldInterface& mField;
-  C_SURFACE_FEMethod MatMethod;
-  g_SURFACE_FEMethod FMethod;
+  ConstrainSurfacGeometry matMethod;
+  ConstraunSurfaceGeometryRhs vecMethod;
   bool nonlinear;
-  bool use_projection_from_crack_front;
+  bool useProjectionFromCrackFront;
 
 
-  C_SURFACE_FEMethod_ForSnes(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose = 0):
+  SnesConstrainSurfacGeometry(FieldInterface& _mField,int _verbose = 0):
    mField(_mField),
-    MatMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL),
-    FMethod(_mField,_dirihlet_bc_method_ptr,snes_f),
-    nonlinear(false),use_projection_from_crack_front(false) {}
+    matMethod(_mField,PETSC_NULL),
+    vecMethod(_mField,snes_f),
+    nonlinear(false),useProjectionFromCrackFront(false) {}
 
-  C_SURFACE_FEMethod_ForSnes(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,string _lambda_field_name,int _verbose = 0):
+  SnesConstrainSurfacGeometry(FieldInterface& _mField,string _lambdaFieldName,int _verbose = 0):
    mField(_mField),
-    MatMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,_lambda_field_name),
-    FMethod(_mField,_dirihlet_bc_method_ptr,snes_f,_lambda_field_name),
-    nonlinear(false),use_projection_from_crack_front(false) {}
+    matMethod(_mField,PETSC_NULL,_lambdaFieldName),
+    vecMethod(_mField,snes_f,_lambdaFieldName),
+    nonlinear(false),useProjectionFromCrackFront(false) {}
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    MatMethod.use_projection_from_crack_front = use_projection_from_crack_front;
-    FMethod.use_projection_from_crack_front = use_projection_from_crack_front; 
+    matMethod.useProjectionFromCrackFront = useProjectionFromCrackFront;
+    vecMethod.useProjectionFromCrackFront = useProjectionFromCrackFront; 
     switch(snes_ctx) {
       case ctx_SNESSetFunction: { 
-	FMethod.g = snes_f;
-	ierr = setElemData(FMethod); CHKERRQ(ierr);
-	ierr = FMethod.operator()(true,nonlinear); CHKERRQ(ierr);
+	vecMethod.g = snes_f;
+	ierr = setElemData(vecMethod); CHKERRQ(ierr);
+	ierr = vecMethod.operator()(true,nonlinear); CHKERRQ(ierr);
       }
       break;
       case ctx_SNESSetJacobian: {
-	MatMethod.C = *snes_B;
-	ierr = setElemData(MatMethod); CHKERRQ(ierr);
-	ierr = MatMethod.operator()(true,nonlinear); CHKERRQ(ierr);
+	matMethod.C = *snes_B;
+	ierr = setElemData(matMethod); CHKERRQ(ierr);
+	ierr = matMethod.operator()(true,nonlinear); CHKERRQ(ierr);
       }
       break;
       default:
@@ -191,7 +188,7 @@ struct C_SURFACE_FEMethod_ForSnes: public C_FEMethod_ForSnes {
       }
       break;
       case ctx_SNESSetJacobian: {
-	ierr = MatMethod.postProcess(); CHKERRQ(ierr);
+	ierr = matMethod.postProcess(); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }

@@ -83,6 +83,7 @@ int main(int argc, char *argv[]) {
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("TEST_FE","FIELD2"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("TEST_FE","FIELD2"); CHKERRQ(ierr);
 
   //Problem
@@ -175,7 +176,7 @@ int main(int argc, char *argv[]) {
       my_split << row_data << endl;
       my_split << "NH1NH1" << endl;
       my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << row_data << endl;
+      my_split << col_data << endl;
       PetscFunctionReturn(0);
     }
 

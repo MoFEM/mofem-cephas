@@ -91,9 +91,9 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
-  ierr = mField.printCubitPressureSet(); CHKERRQ(ierr);
-  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_displacement_set(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_pressure_set(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
 
   Tag th_my_ref_level;
   BitRefLevel def_bit_level = 0;
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   double *t_val;
   Tag th_t_val;
   double def_t_val = 0;
-  rval = mField.get_moab().tag_get_handle("_LoadFactor_t_val",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+  rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
   if(rval == MB_ALREADY_ALLOCATED) {
     rval = mField.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_PETSC(rval);
   } else {

@@ -23,373 +23,207 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-BaseDirihletBC::BaseDirihletBC() {}
-
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
+PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
     PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(RowGlobDofs);
-    NOT_USED(DirihletBC);
-    PetscFunctionReturn(0);
-  }
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(ColGlobDofs);
-    PetscFunctionReturn(0);
-  }
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndicies(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(RowGlobDofs);
-    NOT_USED(ColGlobDofs);
-    NOT_USED(DirihletBC);
-    PetscFunctionReturn(0);
-  }
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
-    FieldInterface::FEMethod *fe_method_ptr,
-    vector<DofIdx>& RowGlobDofs,vector<DofIdx>& DirihletBC) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(RowGlobDofs);
-    NOT_USED(DirihletBC);
-    PetscFunctionReturn(0);
-}
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
-    FieldInterface::FEMethod *fe_method_ptr,
-    vector<DofIdx>& ColGlobDofs,vector<DofIdx>& DirihletBC) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(ColGlobDofs);
-    NOT_USED(DirihletBC);
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_ElementIndiciesFace(
-    FieldInterface::FEMethod *fe_method_ptr,
-    vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(FaceNodeGlobalDofs);
-    NOT_USED(FaceEdgeGlobalDofs);
-    NOT_USED(FaceGlobalDofs);
-    NOT_USED(DirihletBC);
-    PetscFunctionReturn(0);
-  }
-
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    PetscFunctionReturn(0);
-  }
-
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(Aij);
-    PetscFunctionReturn(0);
-  }
-
-PetscErrorCode BaseDirihletBC::SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,1,"sorry.. you need to tell me what to do");
-    NOT_USED(fe_method_ptr);
-    NOT_USED(F);
-    PetscFunctionReturn(0);
-  }
-
-CubitDisplacementDirihletBC::CubitDisplacementDirihletBC(FieldInterface& _mField,const string _problem_name,const string _field_name): 
-    mField(_mField),problem_name(_problem_name),field_name(_field_name) {};
-
-PetscErrorCode CubitDisplacementDirihletBC::Init() {
-    PetscFunctionBegin;
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
-        ostringstream ss;
-        //ss << *it << endl;
-        displacement_cubit_bc_data mydata;
-        ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-        
-        //ss << mydata;
-        for(int dim = 0;dim<3;dim++) {
-            Range _ents;
-            ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,_ents,true); CHKERRQ(ierr);
-            //ss << "dim  = " << dim << " nb. ents " << _ents.size() << endl;
-            if(dim>1) {
-                Range _edges;
-                ierr = mField.get_moab().get_adjacencies(_ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
-                _ents.insert(_edges.begin(),_edges.end());
-                //ss << "dim  = " << dim << " nb. edges " << _edges.size() << endl;
-            }
-            if(dim>0) {
-                Range _nodes;
-                rval = mField.get_moab().get_connectivity(_ents,_nodes,true); CHKERR_PETSC(rval);
-                _ents.insert(_nodes.begin(),_nodes.end());
-                //ss << "dim  = " << dim << " nb. nodes " << _nodes.size() << endl;
-            }
-            if(dim>2) SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
-            if(mydata.data.flag1 == 1) {
-              (bc_map[0])[it->get_msId()].insert(_ents.begin(),_ents.end());
-              (bc_map_val[0])[it->get_msId()] = mydata.data.value1;
-            }
-            if(mydata.data.flag2 == 1) {
-              (bc_map[1])[it->get_msId()].insert(_ents.begin(),_ents.end());
-              (bc_map_val[1])[it->get_msId()] = mydata.data.value2;
-            }
-            if(mydata.data.flag3 == 1) {
-              (bc_map[2])[it->get_msId()].insert(_ents.begin(),_ents.end());
-              (bc_map_val[2])[it->get_msId()] = mydata.data.value3;
-            }
-        }
-        //ss << endl;
-        //PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    }
-    PetscFunctionReturn(0);
-}
-
-
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesRow(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC) {
-    PetscFunctionBegin;
-    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(fe_method_ptr,field_name,dit)) {
-      for(int ss = 0;ss<3;ss++) {
-	if(dit->get_dof_rank()!=ss) continue;
-	map<int,Range>::iterator bit = bc_map[ss].begin();
-	for(;bit!=bc_map[ss].end();bit++) {
-	  if(find(bit->second.begin(),bit->second.end(),dit->get_ent())==bit->second.end()) continue;
-	  DirihletBC.push_back(dit->get_petsc_gloabl_dof_idx());
-	  switch (dit->get_ent_type()) {
-	    case MBVERTEX: {
-	      vector<DofIdx>::iterator it = find(RowGlobDofs[0].begin(),RowGlobDofs[0].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlobDofs[0].end() ) *it = -1;
-	    }
-	    break;
-	    case MBEDGE: {
-	      vector<DofIdx>::iterator it = find(
-		RowGlobDofs[1+dit->side_number_ptr->side_number].begin(),
-		RowGlobDofs[1+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlobDofs[1+dit->side_number_ptr->side_number].end() ) *it = -1;
-	    }
-	    break;
-	    case MBTRI: {
-	      vector<DofIdx>::iterator it = find(
-		RowGlobDofs[1+6+dit->side_number_ptr->side_number].begin(),
-		RowGlobDofs[1+6+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlobDofs[1+6+dit->side_number_ptr->side_number].end() ) *it = -1;
-	    }
-	    break;
-	    default:
-	      SETERRQ(PETSC_COMM_SELF,1,"not implemnted (top tip: data inconsistency)");
+    if(map_zero_rows.empty()) {
+      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
+	displacement_cubit_bc_data mydata;
+	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+	for(int dim = 0;dim<3;dim++) {
+	  Range ents;
+	  ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+	  if(dim>1) {
+            Range _edges;
+            ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+            ents.insert(_edges.begin(),_edges.end());
 	  }
-	}
-      }
-    }
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesCol(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
-    PetscFunctionBegin;
-    for(_IT_GET_FECOL_DOFS_FOR_LOOP_(fe_method_ptr,field_name,dit)) {
-      for(int ss = 0;ss<3;ss++) {
-	if(dit->get_dof_rank()!=ss) continue;
-	map<int,Range>::iterator bit = bc_map[ss].begin();
-	for(;bit!=bc_map[ss].end();bit++) {
-	  if(find(bit->second.begin(),bit->second.end(),dit->get_ent())==bit->second.end()) continue;
-	  switch (dit->get_ent_type()) {
-	    case MBVERTEX: {
-	      vector<DofIdx>::iterator it = find(ColGlobDofs[0].begin(),ColGlobDofs[0].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlobDofs[0].end() ) *it = -1;
-	    }
-	    break;
-	    case MBEDGE: {
-	      vector<DofIdx>::iterator it = find(
-		ColGlobDofs[1+dit->side_number_ptr->side_number].begin(),
-		ColGlobDofs[1+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlobDofs[1+dit->side_number_ptr->side_number].end() ) *it = -1;
-	    }
-	    break;
-	    case MBTRI: {
-	      vector<DofIdx>::iterator it = find(
-		ColGlobDofs[1+6+dit->side_number_ptr->side_number].begin(),
-		ColGlobDofs[1+6+dit->side_number_ptr->side_number].end(),dit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlobDofs[1+6+dit->side_number_ptr->side_number].end() ) *it = -1;
-	    }
-	    break;
-	    default:
-	      SETERRQ(PETSC_COMM_SELF,1,"not implemnted (top tip: data inconsistency)");
-	  }
-	}
-      }
-    }
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndicies(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC) {
-    PetscFunctionBegin;
-    DirihletBC.resize(0);
-    ierr = SetDirihletBC_to_ElementIndiciesRow(fe_method_ptr,RowGlobDofs,DirihletBC); CHKERRQ(ierr);
-    ierr = SetDirihletBC_to_ElementIndiciesCol(fe_method_ptr,ColGlobDofs,DirihletBC); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_ElementIndiciesFace(
-    FieldInterface::FEMethod *fe_method_ptr,vector<DofIdx>& DirihletBC,
-    vector<DofIdx> &FaceNodeIndices,
-    vector<vector<DofIdx> > &FaceEdgeIndices,
-    vector<DofIdx> &FaceIndices) {
-    PetscFunctionBegin;
-    vector<DofIdx>::iterator dit = DirihletBC.begin();
-    for(;dit!=DirihletBC.end();dit++) {
-      vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
-      if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-      if(!FaceEdgeIndices.empty()) {
-      for(int ee = 0;ee<3;ee++) {
-	it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
-	if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
-      }}
-      it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
-      if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-    }
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
-    PetscFunctionBegin;
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-      if(dit->get_part()!=pcomm->rank()) continue;
-      if(dit->get_name()!=field_name) continue;
-      for(int ss = 0;ss<3;ss++) {
-	if(dit->get_dof_rank()==ss) {
-	  map<int,Range>::iterator bit = bc_map[ss].begin();
-	  for(;bit!=bc_map[ss].end();bit++) {
-	    if(find(bit->second.begin(),bit->second.end(),dit->get_ent()) == bit->second.end()) continue;
-	    ierr = MatSetValue(Aij,dit->get_petsc_gloabl_dof_idx(),dit->get_petsc_gloabl_dof_idx(),1.,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	}
-      }
-    }
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F) {
-    PetscFunctionBegin;
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-      if(dit->get_part()!=pcomm->rank()) continue;
-      if(dit->get_name()!=field_name) continue;
-      for(int ss = 0;ss<3;ss++) {
-	if(dit->get_dof_rank()==ss) {
-	  map<int,Range>::iterator bit = bc_map[ss].begin();
-	  for(;bit!=bc_map[ss].end();bit++) {
-	    if(find(bit->second.begin(),bit->second.end(),dit->get_ent()) == bit->second.end()) continue;
-	    if(dit->get_ent_type()==MBVERTEX) {
-	      ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),(bc_map_val[ss])[bit->first],INSERT_VALUES); CHKERRQ(ierr);
-	    } else {
-	      ierr = VecSetValue(F,dit->get_petsc_gloabl_dof_idx(),0,INSERT_VALUES); CHKERRQ(ierr);
+          if(dim>0) {
+            Range _nodes;
+            rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
+            ents.insert(_nodes.begin(),_nodes.end());
+          }
+	  for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+	    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,fieldName,*eit,pcomm->rank(),dof)) {
+	      if(dof->get_ent_type() == MBVERTEX) {
+		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
+		}
+		if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value2;
+		}
+		if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value3;
+		}
+	      } else {
+		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+		}
+		if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+		}
+		if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+		}
+	      }
 	    }
 	  }
 	}
       }
+      dofsIndices.resize(map_zero_rows.size());
+      dofsValues.resize(map_zero_rows.size());
+      int ii = 0;
+      map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
+      for(;mit!=map_zero_rows.end();mit++,ii++) { 
+	dofsIndices[ii] = mit->first;
+	dofsValues[ii] = mit->second;
+      }
     }
     PetscFunctionReturn(0);
-}
+  }
 
-PetscErrorCode CubitDisplacementDirihletBC::SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D) {
+PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
     PetscFunctionBegin;
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    ierr = mField.set_local_VecCreateGhost(problem_name,Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-      if(dit->get_part()!=pcomm->rank()) continue;
-      if(dit->get_ent_type()!=MBVERTEX) continue;
-      if(dit->get_name()!=field_name) continue;
-      for(int ss = 0;ss<3;ss++) {
-	if(dit->get_dof_rank()==ss) {
-	  map<int,Range>::iterator bit = bc_map[ss].begin();
-	  for(;bit!=bc_map[ss].end();bit++) {
-	    if(find(bit->second.begin(),bit->second.end(),dit->get_ent()) == bit->second.end()) continue;
-	    ierr = VecSetValue(D,dit->get_petsc_gloabl_dof_idx(),(bc_map_val[ss])[bit->first],INSERT_VALUES); CHKERRQ(ierr);
+    ierr = iNitalize(); CHKERRQ(ierr);
+    ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESNone: {
+	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatZeroRowsColumns(*snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
+	  ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+	}
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetFunction: {
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
+	  ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+	}
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatZeroRowsColumns(*snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
+    }
+    PetscFunctionReturn(0);
+  }
+
+PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
+    PetscFunctionBegin;
+    if(map_zero_rows.empty()) {
+      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
+	displacement_cubit_bc_data mydata;
+	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+	for(int dim = 0;dim<3;dim++) {
+	  Range ents;
+	  ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+	  if(dim>1) {
+            Range _edges;
+            ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+            ents.insert(_edges.begin(),_edges.end());
+	  }
+          if(dim>0) {
+            Range _nodes;
+            rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
+            ents.insert(_nodes.begin(),_nodes.end());
+          }
+	  for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+	    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,fieldName,*eit,pcomm->rank(),dof)) {
+	      if(dof->get_ent_type() == MBVERTEX) {
+		EntityHandle node = dof->get_ent();
+		cOords.resize(3);
+		rval = mField.get_moab().get_coords(&node,1,&*cOords.data().begin()); CHKERR_PETSC(rval);
+		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = cOords[0]+mydata.data.value1;
+		}
+		if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = cOords[1]+mydata.data.value2;
+		}
+		if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = cOords[2]+mydata.data.value3;
+		}
+	      } else {
+		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+		}
+		if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+		}
+		if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+		}
+	      }
+	    }
+	    for(vector<string>::iterator fit = fixFields.begin();fit!=fixFields.end();fit++) {
+	      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,*fit,*eit,pcomm->rank(),dof)) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
+	      }
+	    }
 	  }
 	}
       }
-    }
-    ierr = VecAssemblyBegin(D); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(D); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = mField.set_global_VecCreateGhost(problem_name,Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-}
-    
-
-CubitDisplacementDirihletBC_ZerosRowsColumns::CubitDisplacementDirihletBC_ZerosRowsColumns(FieldInterface& _mField,const string _problem_name,const string _field_name):CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
-
-PetscErrorCode CubitDisplacementDirihletBC_ZerosRowsColumns::SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij) {
-    PetscFunctionBegin;
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    set<DofIdx> set_zero_rows;
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(fe_method_ptr->problem_ptr,dit)) {
-        if(dit->get_part()!=pcomm->rank()) continue;
-        if(dit->get_name()!=field_name) continue;
-        for(int ss = 0;ss<3;ss++) {
-            if(dit->get_dof_rank()==ss) {
-                map<int,Range>::iterator bit = bc_map[ss].begin();
-                for(;bit!=bc_map[ss].end();bit++) {
-                    if(find(bit->second.begin(),bit->second.end(),dit->get_ent()) == bit->second.end()) continue;
-                    set_zero_rows.insert(dit->get_petsc_gloabl_dof_idx());
-                }
-            }
-        }
-    }
-    vector<DofIdx> zero_rows(set_zero_rows.size());
-    copy(set_zero_rows.begin(),set_zero_rows.end(),zero_rows.begin());
-    ierr = MatZeroRowsColumns(Aij,zero_rows.size(),&*zero_rows.begin(),1.,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-}
-
-    
-CubitTemperatureDirihletBC::CubitTemperatureDirihletBC(FieldInterface& _mField,const string _problem_name,const string _field_name): 
-  CubitDisplacementDirihletBC(_mField,_problem_name,_field_name) {};
-
-PetscErrorCode CubitTemperatureDirihletBC::Init() {
-    PetscFunctionBegin;
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|TemperatureSet,it)) {
-      temperature_cubit_bc_data mydata;
-      ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
-      for(int dim = 0;dim<3;dim++) {
-	Range _ents;
-	ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,_ents,true); CHKERRQ(ierr);
-	if(dim>1) {
-	  Range _edges;
-	  ierr = mField.get_moab().get_adjacencies(_ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
-	  _ents.insert(_edges.begin(),_edges.end());
-	}
-	if(dim>0) {
-	  Range _nodes;
-	  rval = mField.get_moab().get_connectivity(_ents,_nodes,true); CHKERR_PETSC(rval);
-	  _ents.insert(_nodes.begin(),_nodes.end());
-	}
-	if(dim>2) SETERRQ(PETSC_COMM_SELF,1,"not yet implemented");
-	(bc_map[0])[it->get_msId()].insert(_ents.begin(),_ents.end());
-	(bc_map_val[0])[it->get_msId()] = mydata.data.value1;
+      dofsIndices.resize(map_zero_rows.size());
+      dofsValues.resize(map_zero_rows.size());
+      int ii = 0;
+      map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
+      for(;mit!=map_zero_rows.end();mit++,ii++) { 
+	dofsIndices[ii] = mit->first;
+	dofsValues[ii] = mit->second;
       }
     }
-
     PetscFunctionReturn(0);
+  }
+
+PetscErrorCode FixMaterialPoints::iNitalize() {
+  PetscFunctionBegin;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  if(map_zero_rows.empty()) {
+    for(vector<string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
+      for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
+	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,*fit,*eit,pcomm->rank(),dof)) {
+	 map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+	}
+      }
+    }
+    dofsIndices.resize(map_zero_rows.size());
+    dofsValues.resize(map_zero_rows.size());
+    int ii = 0;
+    map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
+    for(;mit!=map_zero_rows.end();mit++,ii++) { 
+      dofsIndices[ii] = mit->first;
+      dofsValues[ii] = mit->second;
+    }
+  }
+  PetscFunctionReturn(0);
 }
 
-
+PetscErrorCode FixMaterialPoints::preProcess() {
+    PetscFunctionBegin;
+    ierr = iNitalize(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
 }
 

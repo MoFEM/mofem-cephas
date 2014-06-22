@@ -20,10 +20,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include<FaceSplittingTool.hpp>
-#include<FEM.h>
-#include<complex_for_lazy.h>
-
+#include "FaceSplittingTool.hpp"
+#include "FEM.h"
+#include "complex_for_lazy.h"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>

@@ -23,6 +23,7 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
 #ifndef __CORE_FORCES_AND_SURCES_HPP
 #define __CORE_FORCES_AND_SURCES_HPP
 
@@ -31,7 +32,9 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
+
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
 
 using namespace boost::numeric;
 
@@ -89,22 +92,24 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
   struct DerivedEntData: public DataForcesAndSurcesCore::EntData {
     DataForcesAndSurcesCore::EntData &entData;
-    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): entData(ent_data)  {}
+    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): 
+      entData(ent_data),oRder(0) {}
     const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
     ublas::vector<DofIdx>& getIndices() { return iNdices; }
     const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
     ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    ApproximationOrder getOrder() const { return oRder; }
+    ApproximationOrder& getOrder() { return oRder; }
 
     int getSense() const { return entData.getSense(); }
-    ApproximationOrder getOrder() const { return entData.getOrder(); }
     const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
     const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
     int& getSense() { return entData.getSense(); }
-    ApproximationOrder& getOrder() { return entData.getOrder(); }
     ublas::matrix<FieldData>& getN() { return entData.getN(); }
     ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
 
     private:
+    ApproximationOrder oRder;
     ublas::vector<DofIdx> iNdices;
     ublas::vector<FieldData> fieldData;
 
@@ -123,12 +128,17 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
   PetscErrorCode getOrder(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const string &field_name,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getFacesSense(DataForcesAndSurcesCore &data);
+
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data);
   PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data);
   PetscErrorCode getOrderVolume(DataForcesAndSurcesCore &data);
+  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getOrderVolume(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getNodesIndices(
     const string &field_name,
@@ -284,6 +294,7 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(TetElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -381,6 +392,8 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::matrix<FieldData>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
     inline ublas::matrix<FieldData>& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
     inline ublas::matrix<FieldData>& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
+    inline const TriElementForcesAndSurcesCore* getTriElementForcesAndSurcesCore() { return ptrFE; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(TriElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -442,6 +455,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(EdgeElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -493,6 +507,7 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(VertexElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;

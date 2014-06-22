@@ -24,10 +24,13 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
+#include "ElasticFEMethodInterface.hpp"
+
+#include "SurfacePressure.hpp"
+#include "NodalForce.hpp"
+#include "BodyForce.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-
-#include "ElasticFEMethodForInterface.hpp"
 
 using namespace MoFEM;
 
@@ -35,73 +38,6 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
-
-struct ExampleDiriheltBC: public BaseDirihletBC {
-  Range SideSet1_;
-
-  string field_name;
-  ExampleDiriheltBC(Interface &moab,Range& SideSet1): field_name("DISPLACEMENT") {
-	ErrorCode rval;
-	Range SideSet1Edges,SideSet1Nodes;
-	rval = moab.get_adjacencies(SideSet1,1,false,SideSet1Edges,Interface::UNION); CHKERR_THROW(rval);
-	rval = moab.get_connectivity(SideSet1,SideSet1Nodes,true); CHKERR_THROW(rval);
-	SideSet1_.insert(SideSet1.begin(),SideSet1.end());
-	SideSet1_.insert(SideSet1Edges.begin(),SideSet1Edges.end());
-	SideSet1_.insert(SideSet1Nodes.begin(),SideSet1Nodes.end());
-  }
-
-  PetscErrorCode SetDirihletBC_to_ElementIndicies(
-      FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlob,vector<vector<DofIdx> > &ColGlob,vector<DofIdx>& DirihletBC) {
-      PetscFunctionBegin;
-      //Dirihlet form SideSet1
-      DirihletBC.resize(0);
-      Range::iterator siit1 = SideSet1_.begin();
-      for(;siit1!=SideSet1_.end();siit1++) {
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_riit = fe_method_ptr->row_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;riit!=hi_riit;riit++) {
-	    if(riit->get_name()!=field_name) continue;
-	    // all fixed
-	    // if some ranks are selected then we could apply BC in particular direction
-	    DirihletBC.push_back(riit->get_petsc_gloabl_dof_idx());
-	    for(unsigned int rr = 0;rr<RowGlob.size();rr++) {
-	      vector<DofIdx>::iterator it = find(RowGlob[rr].begin(),RowGlob[rr].end(),riit->get_petsc_gloabl_dof_idx());
-	      if( it!=RowGlob[rr].end() ) *it = -1; // of idx is set -1 row is not assembled
-	    }
-	  }
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().lower_bound(*siit1);
-	  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator hi_ciit = fe_method_ptr->col_multiIndex->get<MoABEnt_mi_tag>().upper_bound(*siit1);
-	  for(;ciit!=hi_ciit;ciit++) {
-	    if(ciit->get_name()!=field_name) continue;
-	    for(unsigned int cc = 0;cc<ColGlob.size();cc++) {
-	      vector<DofIdx>::iterator it = find(ColGlob[cc].begin(),ColGlob[cc].end(),ciit->get_petsc_gloabl_dof_idx());
-	      if( it!=ColGlob[cc].end() ) *it = -1; // of idx is set -1 column is not assembled
-	    }
-	  }
-      }
-      PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(vector<DofIdx>& DirihletBC,
-      vector<DofIdx> &FaceNodeIndices,
-      vector<vector<DofIdx> > &FaceEdgeIndices,
-      vector<DofIdx> &FaceIndices) {
-      PetscFunctionBegin;
-      vector<DofIdx>::iterator dit = DirihletBC.begin();
-      for(;dit!=DirihletBC.end();dit++) {
-	vector<DofIdx>::iterator it = find(FaceNodeIndices.begin(),FaceNodeIndices.end(),*dit);
-	if(it!=FaceNodeIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-	for(int ee = 0;ee<3;ee++) {
-	  it = find(FaceEdgeIndices[ee].begin(),FaceEdgeIndices[ee].end(),*dit);
-	  if(it!=FaceEdgeIndices[ee].end()) *it = -1; // of idx is set -1 row is not assembled
-	}
-	it = find(FaceIndices.begin(),FaceIndices.end(),*dit);
-	if(it!=FaceIndices.end()) *it = -1; // of idx is set -1 row is not assembled
-      }
-      PetscFunctionReturn(0);
-  }
-
-};
 
 int main(int argc, char *argv[]) {
 
@@ -150,29 +86,29 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
     EntityHandle cubit_meshset = cit->get_meshset();
     {
-	//get tet enties form back bit_level
-	EntityHandle ref_level_meshset = 0;
-	rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
-	ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
-	ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
-	Range ref_level_tets;
-	rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
-	//get faces and test to split
-	ierr = mField.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
-	//set new bit level
-	bit_levels.push_back(BitRefLevel().set(ll++));
-	//split faces and 
-	ierr = mField.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
-	//clean meshsets
-	rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
+      //get tet enties form back bit_level
+      EntityHandle ref_level_meshset = 0;
+      rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
+      ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
+      ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+      Range ref_level_tets;
+      rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
+      //get faces and test to split
+      ierr = mField.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+      //set new bit level
+      bit_levels.push_back(BitRefLevel().set(ll++));
+      //split faces and 
+      ierr = mField.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+      //clean meshsets
+      rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
     }
     //update cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,ciit)) {
-	EntityHandle cubit_meshset = ciit->meshset; 
-	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-	ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+      EntityHandle cubit_meshset = ciit->meshset; 
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
     }
   }
     
@@ -228,23 +164,38 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
-	PetscBool oscillationBool;
-	ierr = PetscOptionsGetBool(PETSC_NULL,"-my_interface_order_reduction",&oscillationBool,&flg); CHKERRQ(ierr);
+  PetscBool oscillationBool;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_interface_order_reduction",&oscillationBool,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-		oscillationBool=PETSC_FALSE;}
-	
-	if (oscillationBool==PETSC_TRUE) {
-		//reduce level of approximation for entities on inetrface
-		Range prims;
-		ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
-		Range prims_faces;
-		rval = mField.get_moab().get_adjacencies(prims,2,false,prims_faces,Interface::UNION); CHKERR_PETSC(rval);
-		Range prims_faces_edges;
-		rval = mField.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,Interface::UNION); CHKERR_PETSC(rval);
-		ierr = mField.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
-		ierr = mField.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
-	}
+    oscillationBool=PETSC_FALSE;}
+  
+  if(oscillationBool==PETSC_TRUE) {
+    //reduce level of approximation for entities on inetrface
+    Range prims;
+    ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
+    Range prims_faces;
+    rval = mField.get_moab().get_adjacencies(prims,2,false,prims_faces,Interface::UNION); CHKERR_PETSC(rval);
+    Range prims_faces_edges;
+    rval = mField.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,Interface::UNION); CHKERR_PETSC(rval);
+    ierr = mField.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
+    ierr = mField.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
+  }
   /****/
+
+  ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+
+  ierr = mField.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
+    Range tets;
+    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
+  }
+
   //build database
 
   //build field
@@ -269,10 +220,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
-  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
-  ierr = mField.printCubitForceSet(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_displacement_set(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_force_set(); CHKERRQ(ierr);
   //print block sets with materials
-  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
 
   //create matrices
   Vec D,F;
@@ -282,9 +233,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
-      Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
-      ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
+    MyElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
+      ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu) {};
 
     PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
@@ -301,24 +251,45 @@ int main(int argc, char *argv[]) {
   };
 
   //Assemble F and Aij
-  const double YoungModulus = 1000;
-  const double PoissonRatio = 0.2;
+  const double young_modulus = 1000;
+  const double poisson_ratio = 0.2;
   const double alpha = 0.1;
-  CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-  MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
+  DisplacementBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"DISPLACEMENT",Aij,D,F);
+  MyElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  InterfaceFEMethod int_fe(mField,Aij,D,F,young_modulus*alpha);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  //preproc
+  ierr = mField.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  //loop elems
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",int_fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",my_fe);  CHKERRQ(ierr);
+  //Neuman BCs and BodyForces
+  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  for(;mit!=neumann_forces.end();mit++) {
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+  }
+  //noadl forces
+  boost::ptr_map<string,NodalForce> nodal_forces;
+  ierr = MetaNodalForces::setNodalForceElementOperators(mField,nodal_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  for(;fit!=nodal_forces.end();fit++) {
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",fit->first,fit->second->getLoopFe()); CHKERRQ(ierr);
+  }
+  //body forces
+  BodyFroceConstantField body_forces_methods(mField);
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+  }
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
+  //postproc
+  ierr = mField.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -326,7 +297,6 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
 
   //Matrix View
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
@@ -348,6 +318,12 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+  //detroy matrices
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+
   PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
 
@@ -359,30 +335,21 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
-	
+  
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
-    mField,"DISPLACEMENT",LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+    mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-	
+  
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
-	
 
-  PostProcCohesiveForces fe_post_proc_prisms(mField,YoungModulus*alpha);
+  PostProcCohesiveForces fe_post_proc_prisms(mField,young_modulus*alpha);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_prisms.moab_post_proc.write_file("out_post_proc_prisms.vtk","VTK",""); CHKERR_PETSC(rval);
   }
-
-
-  //detroy matrices
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&D); CHKERRQ(ierr);
-  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
