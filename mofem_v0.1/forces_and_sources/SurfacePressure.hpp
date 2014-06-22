@@ -31,6 +31,24 @@
 
 namespace MoFEM {
 
+struct MethodsForOp {
+
+  virtual PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
+
+  static PetscErrorCode applyScale(
+    const FieldInterface::FEMethod *fe,
+    boost::ptr_vector<MethodsForOp> &methodsOp,ublas::vector<FieldData> &Nf) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    boost::ptr_vector<MethodsForOp>::iterator vit = methodsOp.begin();
+    for(;vit!=methodsOp.end();vit++) {
+      ierr = vit->scaleNf(fe,Nf); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
 struct NeummanForcesSurface {
 
   FieldInterface &mField;
@@ -57,25 +75,6 @@ struct NeummanForcesSurface {
     Range tRis;
   };
   map<int,bCPreassure> mapPreassure;
-
-
-  struct MethodsForOp {
-
-    virtual PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
-
-    static PetscErrorCode applyScale(
-      const FieldInterface::FEMethod *fe,
-      boost::ptr_vector<MethodsForOp> &methodsOp,ublas::vector<FieldData> &Nf) {
-      PetscErrorCode ierr;
-      PetscFunctionBegin;
-      boost::ptr_vector<MethodsForOp>::iterator vit = methodsOp.begin();
-      for(;vit!=methodsOp.end();vit++) {
-	ierr = vit->scaleNf(fe,Nf); CHKERRQ(ierr);
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
 
   boost::ptr_vector<MethodsForOp> methodsOp;
 

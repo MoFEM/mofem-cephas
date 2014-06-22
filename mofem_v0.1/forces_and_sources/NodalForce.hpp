@@ -23,11 +23,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "ForcesAndSurcesCore.hpp"
 
 #ifndef __NODAL_FORCES_HPP
 #define __NODAL_FORCES_HPP
-
-#include "ForcesAndSurcesCore.hpp"
 
 namespace MoFEM {
 
@@ -48,24 +47,6 @@ struct NodalForce {
     Range nOdes;
   };
   map<int,bCForce> mapForce;
-
-  struct MethodsForOp {
-
-    virtual PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
-
-    static PetscErrorCode applyScale(
-      const FieldInterface::FEMethod *fe,
-      boost::ptr_vector<MethodsForOp> &methodsOp,ublas::vector<FieldData> &Nf) {
-      PetscErrorCode ierr;
-      PetscFunctionBegin;
-      boost::ptr_vector<MethodsForOp>::iterator vit = methodsOp.begin();
-      for(;vit!=methodsOp.end();vit++) {
-	ierr = vit->scaleNf(fe,Nf); CHKERRQ(ierr);
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
 
   boost::ptr_vector<MethodsForOp> methodsOp;
 

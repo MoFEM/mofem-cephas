@@ -25,12 +25,13 @@
 
 #include "ElasticFEMethodDynamics.hpp"
 #include "SurfacePressure.hpp"
+#include "NodalForce.hpp"
 
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-struct TimeForceScale: public NeummanForcesSurface::MethodsForOp {
+struct TimeForceScale: public MethodsForOp {
 
   PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) {
     PetscFunctionBegin;
@@ -179,6 +180,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBVERTEX,"VELOCITIES",1); CHKERRQ(ierr);
 
   ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -280,26 +282,34 @@ int main(int argc, char *argv[]) {
   //Neumann boundary conditions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  string fe_name_str ="FORCE_FE";
+  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-    ostringstream fe_name;
-    fe_name << "FORCE_FE_" << it->get_msId();
-    string fe_name_str = fe_name.str();
-    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
     neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
 
   }
+  fe_name_str = "PRESSURE_FE";
+  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-    ostringstream fe_name;
-    fe_name << "PRESSURE_FE_" << it->get_msId();
-    string fe_name_str = fe_name.str();
-    neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
     neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
   }
   boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(mit->first,&mit->second->getLoopFe()));
+  }
+  //nodal forces
+  boost::ptr_map<string,NodalForce> nodal_forces;
+  fe_name_str ="FORCE_FE";
+  nodal_forces.insert(fe_name_str,new NodalForce(mField));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
+    nodal_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
+  }
+  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  for(;fit!=nodal_forces.end();fit++) {
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
   //postprocess
   TsCtx.get_postProcess_to_do_IFunction().push_back(&MyDirihletBC);
