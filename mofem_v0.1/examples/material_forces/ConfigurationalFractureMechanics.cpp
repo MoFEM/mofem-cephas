@@ -18,6 +18,9 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "SurfacePressureComplexForLazy.hpp"
+#include "SurfacePressure.hpp"
+#include "NodalForce.hpp"
+
 #include "ConfigurationalFractureMechanics.hpp"
 #include "FieldCore.hpp"
 
@@ -620,6 +623,9 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","NEUAMNN_FE"); CHKERRQ(ierr);
 
+  //add nodal force element
+  ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION"); CHKERRQ(ierr);
+
   Range level_tets;
   ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(level_tets,"SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -768,6 +774,7 @@ PetscErrorCode ConfigurationalFractureMechanics::coupled_problem_definition(Fiel
   ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","ELASTIC_COUPLED"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","NEUAMNN_FE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","FORCE_FE"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","MESH_SMOOTHER"); CHKERRQ(ierr);
 
   ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","CandCT_SURFACE_ELEM"); CHKERRQ(ierr);
@@ -1411,6 +1418,19 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
+  //nodal forces
+  boost::ptr_map<string,NodalForce> nodal_forces;
+  string fe_name_str ="FORCE_FE";
+  nodal_forces.insert(fe_name_str,new NodalForce(mField));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",F,it->get_msId(),true);  CHKERRQ(ierr);
+    nodal_forces.at(fe_name_str).methodsOp.push_back(new MetaNodalForces::TagForceScale(mField));
+  }
+  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  for(;fit!=nodal_forces.end();fit++) {
+    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
+  }
+  //postproc
   snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
@@ -2542,6 +2562,18 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&fe_spatial));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
+  //nodal forces
+  boost::ptr_map<string,NodalForce> nodal_forces;
+  string fe_name_str ="FORCE_FE";
+  nodal_forces.insert(fe_name_str,new NodalForce(mField));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx.F_lambda,it->get_msId());  CHKERRQ(ierr);
+  }
+  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  for(;fit!=nodal_forces.end();fit++) {
+    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
+  }
+  //arc length
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NoNE",&assemble_F_lambda));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_elem));
 

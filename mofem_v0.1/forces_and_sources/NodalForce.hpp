@@ -161,8 +161,8 @@ struct MetaNodalForces {
     ierr = mField.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element(problem_name,"FORCE_FE"); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-      ierr = mField.modify_problem_add_finite_element(problem_name,"FORCE_FE"); CHKERRQ(ierr);
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
       Range edges;
