@@ -125,6 +125,31 @@ struct NodalForce {
 
 struct MetaNodalForces {
 
+  //nodal forces
+  struct TagForceScale: public MethodsForOp {
+    FieldInterface &mField;
+    double *sCale;
+    Tag thScale;
+    TagForceScale(FieldInterface &m_field): mField(m_field) {
+      ErrorCode rval;
+      double def_scale = 1.;
+      const EntityHandle root_meshset = mField.get_moab().get_root_set();
+      rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale); 
+      if(rval == MB_ALREADY_ALLOCATED) {
+	rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+      } else {
+	CHKERR_THROW(rval);
+	rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); CHKERR_THROW(rval);
+	rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+      }
+    }
+    PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) {
+      PetscFunctionBegin;
+      Nf *= *sCale;
+      PetscFunctionReturn(0);
+    }
+  };
+
   static PetscErrorCode addNodalForceElement (
     FieldInterface &mField,
     const string problem_name,
@@ -138,8 +163,18 @@ struct MetaNodalForces {
     ierr = mField.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
       ierr = mField.modify_problem_add_finite_element(problem_name,"FORCE_FE"); CHKERRQ(ierr);
+      Range tris;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+      Range edges;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+      Range tris_nodes;
+      rval = mField.get_moab().get_connectivity(tris,tris_nodes); CHKERR_PETSC(rval);
+      Range edges_nodes;
+      rval = mField.get_moab().get_connectivity(edges,edges_nodes); CHKERR_PETSC(rval);
       Range nodes;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+      nodes = subtract(nodes,tris_nodes);
+      nodes = subtract(nodes,edges_nodes);
       ierr = mField.add_ents_to_finite_element_by_VERTICEs(nodes,"FORCE_FE"); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
