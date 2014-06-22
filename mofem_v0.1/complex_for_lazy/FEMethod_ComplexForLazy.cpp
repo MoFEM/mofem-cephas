@@ -81,11 +81,6 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,analysi
   g_NTET.resize(4*45);
   ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
   g_TET_W = G_TET_W45;
-  //
-  g_NTRI.resize(3*13);
-  ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,13);
-  g_TRI_dim = 13;
-  g_TRI_W = G_TRI_W13;
 
   propeties_from_BlockSet_Mat_ElasticSet = false;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {

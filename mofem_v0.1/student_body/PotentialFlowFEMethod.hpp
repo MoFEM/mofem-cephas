@@ -24,6 +24,9 @@
 #include <boost/numeric/ublas/symmetric.hpp>
 #include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+extern "C" {
+#include <gm_rule.h>
+}
 
 namespace MoFEM {
 
@@ -162,8 +165,37 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
+    ublas::matrix<double> gaussPts;
+    PetscErrorCode Get_g_NTET() {
+      PetscFunctionBegin;
+
+      int order = 1;
+      for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,"POTENTIAL_FIELD",dof)) {
+	order = max(order,dof->get_max_order());
+      }
+
+      int rule = max(0,order-1);
+      if( 2*rule + 1 < 2*(order-1) ) {
+	SETERRQ2(PETSC_COMM_SELF,1,"wrong rule %d %d",order,rule);
+      }
+      int nb_gauss_pts = gm_rule_size(rule,3);
+      if(gaussPts.size2() == (unsigned int)nb_gauss_pts) {
+	PetscFunctionReturn(0);
+      }
+      gaussPts.resize(4,nb_gauss_pts);
+      ierr = Grundmann_Moeller_integration_points_3D_TET(
+	rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)); CHKERRQ(ierr);
+
+      g_NTET.resize(4*nb_gauss_pts);
+      ierr = ShapeMBTET(&g_NTET[0],&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+      G_TET_W = &gaussPts(3,0);
+
+      PetscFunctionReturn(0);
+    }
+
     PetscErrorCode operator()() {
       PetscFunctionBegin;
+      ierr = Get_g_NTET(); CHKERRQ(ierr);
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
       ierr = get_ShapeFunctionsAndIndices(); CHKERRQ(ierr);
@@ -190,26 +222,26 @@ struct PostProcPotentialFlowOnRefMesh: public PostProcDisplacemenysAndStarinOnRe
     rval = moab_post_proc.tag_get_handle("U",3,MB_TYPE_DOUBLE,th_u,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
   }
 
-    PetscErrorCode do_operator() {
-      PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+  PetscErrorCode do_operator() {
+    PetscFunctionBegin;
+    ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
-      Range ref_nodes;
-      rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBVERTEX,ref_nodes); CHKERR_PETSC(rval);
-      if(4*ref_nodes.size()!=g_NTET.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      if(ref_nodes.size()!=coords_at_Gauss_nodes.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      Range::iterator nit = ref_nodes.begin();
-      node_map.clear();
-      for(int nn = 0;nit!=ref_nodes.end();nit++,nn++) {
+    Range ref_nodes;
+    rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBVERTEX,ref_nodes); CHKERR_PETSC(rval);
+    if(4*ref_nodes.size()!=g_NTET.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    if(ref_nodes.size()!=coords_at_Gauss_nodes.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    Range::iterator nit = ref_nodes.begin();
+    node_map.clear();
+    for(int nn = 0;nit!=ref_nodes.end();nit++,nn++) {
 	EntityHandle &node = node_map[*nit];
 	rval = moab_post_proc.create_vertex(&(coords_at_Gauss_nodes[nn]).data()[0],node); CHKERR_PETSC(rval);
-      }
-      Range ref_tets;
-      rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBTET,ref_tets); CHKERR_PETSC(rval);
-      Range::iterator tit = ref_tets.begin();
-      for(;tit!=ref_tets.end();tit++) {
+    }
+    Range ref_tets;
+    rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBTET,ref_tets); CHKERR_PETSC(rval);
+    Range::iterator tit = ref_tets.begin();
+    for(;tit!=ref_tets.end();tit++) {
 	const EntityHandle *conn_ref;
-        int num_nodes;
+      int num_nodes;
 	rval = moab_ref.get_connectivity(*tit,conn_ref,num_nodes,true); CHKERR_PETSC(rval);
 	EntityHandle conn_post_proc[num_nodes];
 	for(int nn = 0;nn<num_nodes;nn++) {
@@ -217,10 +249,10 @@ struct PostProcPotentialFlowOnRefMesh: public PostProcDisplacemenysAndStarinOnRe
 	}
 	EntityHandle ref_tet;
 	rval = moab_post_proc.create_element(MBTET,conn_post_proc,4,ref_tet); CHKERR_PETSC(rval);
-      }
-
-      PetscFunctionReturn(0);
     }
+
+    PetscFunctionReturn(0);
+  }
 
   vector< ublas::matrix<FieldData> > invH;
   vector< FieldData > detH;

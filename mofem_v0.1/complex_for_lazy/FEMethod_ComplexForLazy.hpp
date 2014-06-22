@@ -80,9 +80,8 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   FEMethod_ComplexForLazy(FieldInterface& _mField,analysis _type,double _lambda,double _mu,double _thermal_expansion,int _verbose);
   ~FEMethod_ComplexForLazy();
 
-  int g_TRI_dim;
-  vector<double> g_NTET,g_NTRI;
-  const double *g_TET_W,*g_TRI_W;
+  vector<double> g_NTET;
+  const double *g_TET_W;
     
   ErrorCode rval;  
   PetscErrorCode ierr;
