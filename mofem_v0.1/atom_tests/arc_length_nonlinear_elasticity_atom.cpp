@@ -422,8 +422,7 @@ int main(int argc, char *argv[]) {
 	    PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
 	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
 	    double fnorm;
-	    ierr = VecNormBegin(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
-	    ierr = VecNormEnd(snes_f,NORM_2,&fnorm);CHKERRQ(ierr);
+	    ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
 	    PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
           }
           break;

@@ -431,8 +431,7 @@ int main(int argc, char *argv[]) {
 	  ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
 	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
 	  double fnorm;
-	  ierr = VecNormBegin(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
-	  ierr = VecNormEnd(snes_f,NORM_2,&fnorm);CHKERRQ(ierr);
+	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
 	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
 	}
         break;

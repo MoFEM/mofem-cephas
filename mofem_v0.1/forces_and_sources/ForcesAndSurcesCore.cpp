@@ -1155,7 +1155,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     oit != vecUserOpNH1.end(); oit++) {
 
     oit->setPtrFE(this);
-    BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
+    //BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
     BitFieldId col_id = mField.get_field_structure(oit->col_field_name)->get_id();
 
     if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&col_id).none()) {
