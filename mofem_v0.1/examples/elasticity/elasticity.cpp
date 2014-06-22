@@ -25,6 +25,7 @@
 
 #include "ElasticFEMethod.hpp"
 #include "SurfacePressure.hpp"
+#include "NodalForce.hpp"
 #include "BodyForce.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
 #include "PostProcVertexMethod.hpp"
@@ -136,6 +137,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+
   ierr = mField.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
@@ -223,12 +226,21 @@ int main(int argc, char *argv[]) {
   ierr = mField.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
   //loop elems
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",my_fe);  CHKERRQ(ierr);
+  //forces and preassures on surface
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
+  //noadl forces
+  boost::ptr_map<string,NodalForce> nodal_forces;
+  ierr = MetaNodalForces::setNodalForceElementOperators(mField,nodal_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  for(;fit!=nodal_forces.end();fit++) {
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",fit->first,fit->second->getLoopFe()); CHKERRQ(ierr);
+  }
+  //body forces
   BodyFroceConstantField body_forces_methods(mField);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);

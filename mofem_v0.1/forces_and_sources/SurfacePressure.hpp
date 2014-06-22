@@ -321,7 +321,7 @@ struct MetaNeummanForces {
     PetscErrorCode ierr;
     ErrorCode rval;
 
-    ierr = mField.add_finite_element("FORCE_FE"); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
@@ -336,7 +336,7 @@ struct MetaNeummanForces {
       ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
     }
 
-    ierr = mField.add_finite_element("PRESSURE_FE"); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("PRESSURE_FE",MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("PRESSURE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("PRESSURE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",field_name); CHKERRQ(ierr);
@@ -390,7 +390,7 @@ struct MetaNeummanForces {
     PetscErrorCode ierr;
     ErrorCode rval;
 
-    ierr = mField.add_finite_element("FLUX_FE"); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("FLUX_FE",MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("FLUX_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("FLUX_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("FLUX_FE",field_name); CHKERRQ(ierr);
@@ -418,7 +418,7 @@ struct MetaNeummanForces {
     neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
       bool ho_geometry = mField.check_field(mesh_nodals_positions);
-      neumann_forces.at(fe_name).addFlux(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
+      ierr = neumann_forces.at(fe_name).addFlux(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
       /*pressure_cubit_bc_data data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
