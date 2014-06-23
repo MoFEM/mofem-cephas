@@ -249,6 +249,9 @@ int main(int argc, char *argv[]) {
   //postproc
   ierr = mField.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
 
+  //set matrix possitives define and symetric for cholesky and icc preceonditionser
+  ierr = MatSetOption(Aij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
+
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
