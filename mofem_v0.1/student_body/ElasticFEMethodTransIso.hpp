@@ -61,7 +61,8 @@ namespace MoFEM {
       
       StiffnessMatrix(3,3)=E_p/(2*(1+nu_p));
       StiffnessMatrix(4,4)=StiffnessMatrix(5,5)=G_zp;
-    };
+    }
+
   };
   
   struct TransverseIsotropicComplianceMatrix {
@@ -86,7 +87,8 @@ namespace MoFEM {
       
       ComplianceMatrix(3,3)=1/Gp;
       ComplianceMatrix(4,4)=ComplianceMatrix(5,5)=1/G_zp;
-    };
+    }
+
   };
   
   /**
@@ -121,7 +123,8 @@ namespace MoFEM {
       StiffnessMatrix.clear();
       StiffnessMatrix = ublas::zero_matrix<FieldData>(6,6);
       StiffnessMatrix = lambda*D_lambda + mu*D_mu;
-    };
+    }
+
   };
   
   /**
@@ -131,7 +134,6 @@ namespace MoFEM {
    *\param AxVector A vector representing the axis of rotation
    *\param AxAngle Angle of rotation along the axis (in radians)
    */
-  
   struct AxisAngleRotationalMatrix {
     
     ublas::matrix<double> AARotMat;
@@ -155,7 +157,8 @@ namespace MoFEM {
       AARotMat(1,2) = ((1-cos(AxAngle))*AxVector[1]*AxVector[2]-norm_AxVector*AxVector[0]*sin(AxAngle))/pow(norm_AxVector,2);
       AARotMat(2,1) = ((1-cos(AxAngle))*AxVector[1]*AxVector[2]+norm_AxVector*AxVector[0]*sin(AxAngle))/pow(norm_AxVector,2);
       
-    };
+    }
+
   };
   
   /**
@@ -222,7 +225,8 @@ namespace MoFEM {
       StressRotMat(5, 4) = ( AARotMat(2,0) * AARotMat(1,2) + AARotMat(1,0) * AARotMat(2,2) );
       StressRotMat(5, 5) = ( AARotMat(0,0) * AARotMat(2,2) + AARotMat(2,0) * AARotMat(0,2) );
       
-    };
+    }
+
   };
   
   /**
@@ -233,7 +237,6 @@ namespace MoFEM {
    *\param AxVector A vector representing the axis of rotation
    *\param AxAngle Angle of rotation along the axis (in radians)
    */
-  
   struct StrainTransformation {
     
     ublas::matrix<double> StrainRotMat;
@@ -290,7 +293,8 @@ namespace MoFEM {
       StrainRotMat(5, 5) =     ( AARotMat(0,0) * AARotMat(2,2) + AARotMat(2,0) * AARotMat(0,2) );
       
       
-    };
+    }
+
   };
   
   /**
@@ -305,34 +309,23 @@ namespace MoFEM {
    * \param AxVector An array containing all the axes of rotation ( ex: AxVector[6] = {(1st Axis) 1,0,0 , (2nd Axis) 0,1,0} )
    * \param AxAngle An array containg all the angles of rotation ( ex: AxAngle[2] = {(1st Angle) 0.5*M_PI, (2nd Angle) 0.25*M_PI} )
    */
-  
   struct TranIsotropicAxisAngleRotElasticFEMethod: public ElasticFEMethod {
     
     int noAA;
     double *AxVector, *AxAngle;
     bool propeties_from_BlockSet_Mat_ElasticSet;
     
-    TranIsotropicAxisAngleRotElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F,
+    TranIsotropicAxisAngleRotElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F,
                                              int _noAA, double *_AxVector, double *_AxAngle):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle)  {
+    ElasticFEMethod(_mField,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle)  {
       propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
         propeties_from_BlockSet_Mat_ElasticSet = true;
       }
     }
     
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      
-      ierr = ElasticFEMethod::preProcess(); CHKERRQ(ierr);
-      
-      ierr = VecZeroEntries(Data); CHKERRQ(ierr);
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
-            
-      PetscFunctionReturn(0);
-    }
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
+    PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
       PetscFunctionBegin;
 
       if(propeties_from_BlockSet_Mat_ElasticSet) {
@@ -340,7 +333,7 @@ namespace MoFEM {
         for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
           
           if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
-            
+
             Mat_Elastic_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             
@@ -369,7 +362,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
+    PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
       PetscFunctionBegin;
       
       ///Get Stiffness Matrix
@@ -418,7 +411,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Fint() {
+    PetscErrorCode Fint() {
       PetscFunctionBegin;
       
       try {
@@ -497,26 +490,9 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Fint(Vec F_int) {
+    PetscErrorCode Stiffness() {
       PetscFunctionBegin;
-      try {
-        ierr = Fint(); CHKERRQ(ierr);
-        for(int rr = 0;rr<row_mat;rr++) {
-          if(RowGlob[rr].size()==0) continue;
-          if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-        }
-      } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-      PetscFunctionReturn(0);
-    }
-//--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Stiffness() {
-      PetscFunctionBegin;
-      
+
       double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
       ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
       ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
@@ -560,377 +536,6 @@ namespace MoFEM {
           }
         }
       }
-      PetscFunctionReturn(0);
-    }
-//--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode operator()() {
-      
-      PetscFunctionBegin;
-
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-
-      //Dirihlet Boundary Condition
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
-      
-      //Assembly Aij and F
-      ierr = RhsAndLhs(); CHKERRQ(ierr);
-
-      //Neumann Boundary Conditions
-      ierr = NeumannBC(F); CHKERRQ(ierr);
-      
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
-      
-      PetscFunctionReturn(0);
-    }
-    
-  };
-  
-  //==================================================================================================================================================//
-  /**
-   * \brief Function similar to TranIsotropicAxisAngleRotElasticFEMethod, but to be used in ArcLength controll
-   *
-   * \param arc_ptr ArcLength context
-   * \param insertOrder 0 - initially inserted material; 1 - intermediate inserted material; 2 - final inserted material
-   */
-  
-  struct ArcLengthTranIsotropicAxisAngleRotElasticFEMethod: public ElasticFEMethod {
-    
-    ArcLengthTranIsotropicAxisAngleRotElasticFEMethod(FieldInterface& _mField): ElasticFEMethod(_mField) {};
-    
-    int noAA;
-    double *AxVector, *AxAngle;
-
-    ArcLengthCtx *arc_ptr;
-    bool propeties_from_BlockSet_Mat_ElasticSet;
-    
-    ArcLengthTranIsotropicAxisAngleRotElasticFEMethod(
-                                                      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,
-                                                      int _noAA, double *_AxVector, double *_AxAngle,ArcLengthCtx *_arc_ptr):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle),arc_ptr(_arc_ptr) {
-      
-      propeties_from_BlockSet_Mat_ElasticSet = false;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-        propeties_from_BlockSet_Mat_ElasticSet = true;
-      }
-      
-    };
-    
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
-      PetscFunctionBegin;
-      
-      if(propeties_from_BlockSet_Mat_ElasticSet) {
-        EntityHandle ent = fe_ptr->get_ent();
-        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-          
-          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
-            
-            Mat_Elastic_TransIso mydata;
-            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-            
-            Range meshsets;
-            rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-            meshsets.insert(it->meshset);
-            for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-              if( moab.contains_entities(*mit,&ent,1) ) {
-                *_E_p = mydata.data.Youngp;
-                *_E_z = mydata.data.Youngz;
-                *_nu_p = mydata.data.Poissonp;
-                *_nu_pz = mydata.data.Poissonpz;
-                *_G_zp = mydata.data.Shearzp;
-                PetscFunctionReturn(0);
-              }
-            }
-          }
-        }
-        
-        SETERRQ(PETSC_COMM_SELF,1,
-                "Element is not in transervely isotropic block, however you run linear transversely isotropic analysis with that element\n"
-                "top tip: check if you update block sets after mesh refinments or interface insertion");
-        
-      }
-      
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
-      PetscFunctionBegin;
-      
-      ///Get Stiffness Matrix
-      ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
-      StiffnessMatrix.resize(6);
-      StiffnessMatrix.clear();
-      TransverseIsotropicStiffnessMatrix TranIsoMat(_nu_p, _nu_pz, _E_p, _E_z, _G_zp);
-      StiffnessMatrix=TranIsoMat.StiffnessMatrix;
-      
-      ///Rotating the Stiffness matrix according a set of axes of rotations and their respective angle
-      
-      int noOfRotations = noAA; //Number of Rotations
-      double negAxAngle[noOfRotations];
-      for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
-      
-      ublas::matrix<double> DummyMatrix,DummyMatrix2;
-      DummyMatrix = ublas::zero_matrix<FieldData>(6,6);
-      DummyMatrix = StiffnessMatrix;
-      
-      ///Rotating Stiffness over a number of axis/angle rotations
-      for (int aa=0; aa<noOfRotations; aa++) {
-        
-        StressTransformation StressRotMat(&AxVector[3*aa], AxAngle[aa]);
-        StrainTransformation invStrainRotMat(&AxVector[3*aa], negAxAngle[aa]);
-        
-        ublas::matrix<double> TrpMatrixStress;
-        TrpMatrixStress = ublas::zero_matrix<FieldData>(6,6);
-        TrpMatrixStress=StressRotMat.StressRotMat;
-        
-        ublas::matrix<double> TrpMatrixInvStrain;
-        TrpMatrixInvStrain = ublas::zero_matrix<FieldData>(6,6);
-        TrpMatrixInvStrain=invStrainRotMat.StrainRotMat;
-        
-        DummyMatrix2 = ublas::zero_matrix<FieldData>(6,6);
-        ublas::matrix< FieldData > dummyA = prod( DummyMatrix , TrpMatrixInvStrain );
-        DummyMatrix2 = prod(TrpMatrixStress,dummyA);
-        DummyMatrix = ublas::zero_matrix<FieldData>(6,6);
-        DummyMatrix = DummyMatrix2;
-        
-      }
-      
-      D.resize(6,6);
-      D.clear();
-      D = DummyMatrix;
-      
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Fint() {
-      PetscFunctionBegin;
-      
-      try {
-        
-        //Higher order approximation of geometry
-        ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
-        
-        double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
-        ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-        ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
-        
-        //Gradient at Gauss points;
-        vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-        ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
-        unsigned int g_dim = g_NTET.size()/4;
-        assert(GradU_at_GaussPt.size() == g_dim);
-        NOT_USED(g_dim);
-        vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
-        int gg = 0;
-        for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
-          try {
-            ublas::matrix< FieldData > GradU = *viit;
-            if(!invH.empty()) {
-              //GradU =
-              //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
-              //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
-              //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
-              //H =
-              //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
-              //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
-              //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]
-              //invH =
-              //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
-              //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
-              //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
-              //GradU =
-              //[ dU/dX1 dU/dX2 dU/dX3 ]
-              //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
-              //[ dW/dX1 dW/dX2 dW/dX3 ]
-              GradU = prod( GradU, invH[gg] );
-            }
-            ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
-            ublas::vector< FieldData > VoightStrain(6);
-            VoightStrain[0] = Strain(0,0);
-            VoightStrain[1] = Strain(1,1);
-            VoightStrain[2] = Strain(2,2);
-            VoightStrain[3] = 2*Strain(0,1);
-            VoightStrain[4] = 2*Strain(1,2);
-            VoightStrain[5] = 2*Strain(2,0);
-            double w = V*G_TET_W[gg];
-            ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
-            //BT * VoigtStress
-            f_int.resize(row_mat);
-            for(int rr = 0;rr<row_mat;rr++) {
-              if(RowGlob[rr].size()==0) continue;
-              ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
-              if(gg == 0) {
-                f_int[rr] = prod( trans(B), VoightStress );
-              } else {
-                f_int[rr] += prod( trans(B), VoightStress );
-              }
-            }
-          } catch (const std::exception& ex) {
-            ostringstream ss;
-            ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-            SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-          }
-        }
-        
-      } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-      
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Fint(Vec F_int) {
-      PetscFunctionBegin;
-      try {
-        ierr = Fint(); CHKERRQ(ierr);
-        for(int rr = 0;rr<row_mat;rr++) {
-          if(RowGlob[rr].size()==0) continue;
-          if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-        }
-      } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Stiffness() {
-      PetscFunctionBegin;
-      
-      double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
-      
-      ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-      ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
-            
-      K.resize(row_mat,col_mat);
-      int g_dim = g_NTET.size()/4;
-      for(int rr = 0;rr<row_mat;rr++) {
-        if(RowGlob[rr].size()==0) continue;
-        for(int gg = 0;gg<g_dim;gg++) {
-          ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-          double w = V*G_TET_W[gg];
-          if(detH.size()>0) {
-            w *= detH[gg];
-          }
-          BD.resize(6,row_Mat.size2());
-          //ublas::noalias(BD) = prod( w*D,row_Mat );
-          cblas_dsymm(CblasRowMajor,CblasLeft,CblasUpper,
-                      BD.size1(),BD.size2(),
-                      w,&*D.data().begin(),D.size2(),
-                      &*row_Mat.data().begin(),row_Mat.size2(),
-                      0.,&*BD.data().begin(),BD.size2());
-          for(int cc = rr;cc<col_mat;cc++) {
-            if(ColGlob[cc].size()==0) continue;
-            ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
-            if(gg == 0) {
-              K(rr,cc).resize(BD.size2(),col_Mat.size2());
-              //ublas::noalias(K(rr,cc)) = prod(trans(BD) , col_Mat ); // int BT*D*B
-              cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
-                          BD.size2(),col_Mat.size2(),BD.size1(),
-                          1.,&*BD.data().begin(),BD.size2(),
-                          &*col_Mat.data().begin(),col_Mat.size2(),
-                          0.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
-            } else {
-              //ublas::noalias(K(rr,cc)) += prod(trans(BTD) , col_Mat ); // int BT*D*B
-              cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
-                          BD.size2(),col_Mat.size2(),BD.size1(),
-                          1.,&*BD.data().begin(),BD.size2(),
-                          &*col_Mat.data().begin(),col_Mat.size2(),
-                          1.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
-            }
-          }
-        }
-      }
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      
-      switch(snes_ctx) {
-        case ctx_SNESNone:
-        case ctx_SNESSetFunction: {
-        }
-          break;
-        case ctx_SNESSetJacobian: {
-        }
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-      DirihletBC.resize(0);
-      
-      switch(snes_ctx) {
-        case ctx_SNESNone: {
-        }
-          break;
-        case ctx_SNESSetJacobian:
-        case ctx_SNESSetFunction: {
-          //Dirihlet Boundary Condition
-          ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
-        }
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      
-      switch(snes_ctx) {
-        case ctx_SNESNone:
-        case ctx_SNESSetFunction: {
-          //Assembly  F
-          ierr = Fint(F); CHKERRQ(ierr);
-          //Neumann Boundary Conditions
-          ierr = NeumannBC(arc_ptr->F_lambda); CHKERRQ(ierr);
-        }
-          break;
-        case ctx_SNESSetJacobian: {
-          //Assembly  F
-          ierr = Lhs(); CHKERRQ(ierr);
-        }
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      
-      switch(snes_ctx) {
-        case ctx_SNESNone: {
-        }
-        case ctx_SNESSetFunction: {
-        }
-          break;
-        case ctx_SNESSetJacobian: {
-          //Note MAT_FLUSH_ASSEMBLY
-          ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-          ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-          ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,Aij); CHKERRQ(ierr);
-          ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-          ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-        }
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      
       PetscFunctionReturn(0);
     }
     
@@ -950,14 +555,13 @@ namespace MoFEM {
    * \param nu_pz Poisson's Ration z-axis
    * \param G_zp Shear Modulus z-direction
    */
-  
   struct TranIsotropicFibreDirRotElasticFEMethod: public ElasticFEMethod {
     
     Tag th_fibre_dir;
     bool propeties_from_BlockSet_Mat_ElasticSet;
     
-    TranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0) {
+    TranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F):
+      ElasticFEMethod(_mField,_Aij,_D,_F,0,0) {
 
       propeties_from_BlockSet_Mat_ElasticSet = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
@@ -970,7 +574,7 @@ namespace MoFEM {
     };
     
     //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
+    PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
       PetscFunctionBegin;
       
       if(propeties_from_BlockSet_Mat_ElasticSet) {
@@ -1008,7 +612,7 @@ namespace MoFEM {
     }
     //--------------------------------------------------------------------------------------------------------------------------------------------------//
     vector< ublas::matrix<FieldData> > D_At_GaussPoint;
-    virtual PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
+    PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
       PetscFunctionBegin;
       
       ///Get Stiffness Matrix
@@ -1070,7 +674,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
     //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Fint() {
+    PetscErrorCode Fint() {
       PetscFunctionBegin;
       
       try {
@@ -1149,24 +753,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
     //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Fint(Vec F_int) {
-      PetscFunctionBegin;
-      try {
-        ierr = Fint(); CHKERRQ(ierr);
-        for(int rr = 0;rr<row_mat;rr++) {
-          if(RowGlob[rr].size()==0) continue;
-          if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-        }
-      } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Stiffness() {
+    PetscErrorCode Stiffness() {
       PetscFunctionBegin;
       
       double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
@@ -1216,26 +803,7 @@ namespace MoFEM {
       
     }
     //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Lhs() {
-      PetscFunctionBegin;
-      ierr = Stiffness(); CHKERRQ(ierr);
-      for(int rr = 0;rr<row_mat;rr++) {
-        if(RowGlob[rr].size()==0) continue;
-        for(int cc = rr;cc<col_mat;cc++) {
-          if(ColGlob[cc].size()==0) continue;
-          if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
-          if(rr!=cc) {
-            K(cc,rr) = trans(K(rr,cc));
-            ierr = MatSetValues(Aij,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
-          }
-        }
-      }
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode ComputeFibreDirection(vector<ublas::matrix<double> > &normalized_phi) {
+    PetscErrorCode ComputeFibreDirection(vector<ublas::matrix<double> > &normalized_phi) {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       
@@ -1261,446 +829,6 @@ namespace MoFEM {
       }
       
       ierr = OpStudentEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      ierr = ElasticFEMethod::preProcess(); CHKERRQ(ierr);
-
-      ierr = VecZeroEntries(Data); CHKERRQ(ierr);
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
-      
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode operator()() {
-
-      PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-      
-      //Dirihlet Boundary Condition
-      ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
-      
-      //Assembly Aij and F
-      ierr = RhsAndLhs(); CHKERRQ(ierr);
-      
-      //Neumann Boundary Conditions
-      ierr = NeumannBC(F); CHKERRQ(ierr);
-      
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
-      
-      PetscFunctionReturn(0); }
-    
-  };
-  
-  //==================================================================================================================================================//
-  
-  /**
-   * \brief Function similar to TranIsotropicAxisAngleRotElasticFEMethod, but to be used in ArcLength controll
-   *
-   * \param arc_ptr ArcLength context
-   * \param insertOrder 0 - initially inserted material; 1 - intermediate inserted material; 2 - final inserted material
-   */
-  
-  struct ArcLengthTranIsotropicFibreDirRotElasticFEMethod: public ElasticFEMethod {
-    
-    ArcLengthTranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField): ElasticFEMethod(_mField) {};
-    
-    ArcLengthCtx *arc_ptr;
-    bool propeties_from_BlockSet_Mat_ElasticSet;
-    Tag th_fibre_dir;
-    
-    ArcLengthTranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ArcLengthCtx *_arc_ptr):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0), arc_ptr(_arc_ptr){
-      
-      propeties_from_BlockSet_Mat_ElasticSet = false;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-        propeties_from_BlockSet_Mat_ElasticSet = true;
-      }
-      
-      double def_VAL2[3] = {0,0,0};
-      rval = moab.tag_get_handle( "POT_FLOW_FIBRE_DIR",3,MB_TYPE_DOUBLE,th_fibre_dir,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
-      
-    };
-    
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
-      PetscFunctionBegin;
-      
-      if(propeties_from_BlockSet_Mat_ElasticSet) {
-        EntityHandle ent = fe_ptr->get_ent();
-        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-          
-          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
-            
-            Mat_Elastic_TransIso mydata;
-            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-            
-            Range meshsets;
-            rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-            meshsets.insert(it->meshset);
-            for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-              if( moab.contains_entities(*mit,&ent,1) ) {
-                *_E_p = mydata.data.Youngp;
-                *_E_z = mydata.data.Youngz;
-                *_nu_p = mydata.data.Poissonp;
-                *_nu_pz = mydata.data.Poissonpz;
-                *_G_zp = mydata.data.Shearzp;
-                PetscFunctionReturn(0);
-              }
-            }
-          }
-        }
-        
-        SETERRQ(PETSC_COMM_SELF,1,
-                "Element is not in transervely isotropic block, however you run linear transversely isotropic analysis with that element\n"
-                "top tip: check if you update block sets after mesh refinments or interface insertion");
-        
-      }
-      
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    vector< ublas::matrix<FieldData> > D_At_GaussPoint;
-    virtual PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
-      PetscFunctionBegin;
-      
-      ///Get Stiffness Matrix
-      ublas::symmetric_matrix<FieldData,ublas::upper> StiffnessMatrix;
-      StiffnessMatrix.resize(6);
-      StiffnessMatrix.clear();
-      TransverseIsotropicStiffnessMatrix TranIsoMat(_nu_p,_nu_pz,_E_p,_E_z,_G_zp);
-      StiffnessMatrix=TranIsoMat.StiffnessMatrix;
-      
-      ///Rotating the Stiffness matrix according a set of axes of rotations and their respective angle
-      
-      D_At_GaussPoint.resize(coords_at_Gauss_nodes.size());
-      
-      vector< ublas::matrix< double > > normalized_phi;
-      normalized_phi.resize(coords_at_Gauss_nodes.size());
-      ierr = ComputeFibreDirection(normalized_phi); CHKERRQ(ierr);
-      
-      for(unsigned int gg=0;gg<coords_at_Gauss_nodes.size();gg++){
-        
-        int noOfRotations = 1; //Number of Rotations
-        
-        double zVec[3]={0.0,0.0,1.0};
-        double AxVector[3]={normalized_phi[gg](0,1)*zVec[2]-normalized_phi[gg](0,2)*zVec[1] , normalized_phi[gg](0,2)*zVec[0]-normalized_phi[gg](0,0)*zVec[2] , normalized_phi[gg](0,0)*zVec[1]-normalized_phi[gg](0,1)*zVec[0]};
-        double AxAngle[1]= {asin((sqrt(pow(AxVector[0],2)+pow(AxVector[1],2)+pow(AxVector[2],2)))/(sqrt(pow(normalized_phi[gg](0,0),2)+pow(normalized_phi[gg](0,1),2)+pow(normalized_phi[gg](0,2),2)))*(sqrt(pow(zVec[0],2)+pow(zVec[1],2)+pow(zVec[2],2))))};
-        
-        double negAxAngle[noOfRotations];
-        for (int aa=0; aa<noOfRotations; aa++) negAxAngle[aa]=-AxAngle[aa];
-        
-        ublas::matrix<double> DummyMatrix,DummyMatrix2;
-        DummyMatrix = ublas::zero_matrix<FieldData>(6,6);
-        DummyMatrix = StiffnessMatrix;
-        
-        ///Rotating Stiffness over a number of axis/angle rotations
-        for (int aa=0; aa<noOfRotations; aa++) {
-          
-          StressTransformation StressRotMat(&AxVector[3*aa], AxAngle[aa]);
-          StrainTransformation invStrainRotMat(&AxVector[3*aa], negAxAngle[aa]);
-          
-          ublas::matrix<double> TrpMatrixStress;
-          TrpMatrixStress = ublas::zero_matrix<FieldData>(6,6);
-          TrpMatrixStress=StressRotMat.StressRotMat;
-          
-          ublas::matrix<double> TrpMatrixInvStrain;
-          TrpMatrixInvStrain = ublas::zero_matrix<FieldData>(6,6);
-          TrpMatrixInvStrain=invStrainRotMat.StrainRotMat;
-          
-          DummyMatrix2 = ublas::zero_matrix<FieldData>(6,6);
-          ublas::matrix< FieldData > dummyA = prod( DummyMatrix , TrpMatrixInvStrain );
-          DummyMatrix2 = prod(TrpMatrixStress,dummyA);
-          DummyMatrix = ublas::zero_matrix<FieldData>(6,6);
-          DummyMatrix = DummyMatrix2;
-        }
-        
-        D_At_GaussPoint[gg].resize(6,6);
-        D_At_GaussPoint[gg].clear();
-        D_At_GaussPoint[gg] = DummyMatrix;
-      }
-      
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Fint() {
-      PetscFunctionBegin;
-      
-      try {
-        
-        //Higher order approximation of geometry
-        ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
-        
-        double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
-        ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-        ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
-        
-        //Gradient at Gauss points;
-        vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-        ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
-        unsigned int g_dim = g_NTET.size()/4;
-        assert(GradU_at_GaussPt.size() == g_dim);
-        NOT_USED(g_dim);
-        vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
-        int gg = 0;
-        for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
-          try {
-            ublas::matrix< FieldData > GradU = *viit;
-            if(!invH.empty()) {
-              //GradU =
-              //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
-              //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
-              //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
-              //H =
-              //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
-              //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
-              //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]
-              //invH =
-              //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
-              //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
-              //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
-              //GradU =
-              //[ dU/dX1 dU/dX2 dU/dX3 ]
-              //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
-              //[ dW/dX1 dW/dX2 dW/dX3 ]
-              GradU = prod( GradU, invH[gg] );
-            }
-            ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
-            ublas::vector< FieldData > VoightStrain(6);
-            VoightStrain[0] = Strain(0,0);
-            VoightStrain[1] = Strain(1,1);
-            VoightStrain[2] = Strain(2,2);
-            VoightStrain[3] = 2*Strain(0,1);
-            VoightStrain[4] = 2*Strain(1,2);
-            VoightStrain[5] = 2*Strain(2,0);
-            double w = V*G_TET_W[gg];
-            ublas::vector<FieldData> VoightStress = prod(w*D_At_GaussPoint[gg],VoightStrain);
-            //BT * VoigtStress
-            f_int.resize(row_mat);
-            for(int rr = 0;rr<row_mat;rr++) {
-              if(RowGlob[rr].size()==0) continue;
-              ublas::matrix<FieldData> &B = (rowBMatrices[rr])[gg];
-              if(gg == 0) {
-                f_int[rr] = prod( trans(B), VoightStress );
-              } else {
-                f_int[rr] += prod( trans(B), VoightStress );
-              }
-            }
-          } catch (const std::exception& ex) {
-            ostringstream ss;
-            ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-            SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-          }
-        }
-        
-      } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-      
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Fint(Vec F_int) {
-      PetscFunctionBegin;
-      try {
-        ierr = Fint(); CHKERRQ(ierr);
-        for(int rr = 0;rr<row_mat;rr++) {
-          if(RowGlob[rr].size()==0) continue;
-          if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-        }
-      } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Stiffness() {
-      PetscFunctionBegin;
-      
-      double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
-      ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
-      ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
-      
-      K.resize(row_mat,col_mat);
-      int g_dim = g_NTET.size()/4;
-      for(int rr = 0;rr<row_mat;rr++) {
-        if(RowGlob[rr].size()==0) continue;
-        for(int gg = 0;gg<g_dim;gg++) {
-          ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
-          double w = V*G_TET_W[gg];
-          if(detH.size()>0) {
-            w *= detH[gg];
-          }
-          BD.resize(6,row_Mat.size2());
-          //ublas::noalias(BD) = prod( w*D,row_Mat );
-          cblas_dsymm(CblasRowMajor,CblasLeft,CblasUpper,
-                      BD.size1(),BD.size2(),
-                      w,&*D_At_GaussPoint[gg].data().begin(),D_At_GaussPoint[gg].size2(),
-                      &*row_Mat.data().begin(),row_Mat.size2(),
-                      0.,&*BD.data().begin(),BD.size2());
-          for(int cc = rr;cc<col_mat;cc++) {
-            if(ColGlob[cc].size()==0) continue;
-            ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
-            if(gg == 0) {
-              K(rr,cc).resize(BD.size2(),col_Mat.size2());
-              //ublas::noalias(K(rr,cc)) = prod(trans(BD) , col_Mat ); // int BT*D*B
-              cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
-                          BD.size2(),col_Mat.size2(),BD.size1(),
-                          1.,&*BD.data().begin(),BD.size2(),
-                          &*col_Mat.data().begin(),col_Mat.size2(),
-                          0.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
-            } else {
-              //ublas::noalias(K(rr,cc)) += prod(trans(BTD) , col_Mat ); // int BT*D*B
-              cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
-                          BD.size2(),col_Mat.size2(),BD.size1(),
-                          1.,&*BD.data().begin(),BD.size2(),
-                          &*col_Mat.data().begin(),col_Mat.size2(),
-                          1.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
-            }
-          }
-        }
-      }
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode Lhs() {
-      PetscFunctionBegin;
-      ierr = Stiffness(); CHKERRQ(ierr);
-      for(int rr = 0;rr<row_mat;rr++) {
-        if(RowGlob[rr].size()==0) continue;
-        for(int cc = rr;cc<col_mat;cc++) {
-          if(ColGlob[cc].size()==0) continue;
-          if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
-          if(rr!=cc) {
-            K(cc,rr) = trans(K(rr,cc));
-            ierr = MatSetValues(Aij,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
-          }
-        }
-      }
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    virtual PetscErrorCode ComputeFibreDirection(vector<ublas::matrix<double> > &normalized_phi) {
-      PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      
-      EntityHandle fe_handle = fe_ptr->get_ent();
-      
-      Range tetNodes;
-      rval = moab.get_connectivity(&fe_handle,1,tetNodes); CHKERR_THROW(rval);
-      
-      vector< ublas::matrix< FieldData > > phi;
-      ierr = GetGaussDiffDataVector("POTENTIAL_FIELD",phi); CHKERRQ(ierr);
-      double fibreVector[3];
-      
-      for (unsigned int gg=0; gg<phi.size(); gg++) {
-        normalized_phi[gg].resize(1,3);
-        for (int ii=0; ii<3; ii++) {
-          normalized_phi[gg](0,ii) = -phi[gg](0,ii)/sqrt(pow(phi[gg](0,0),2)+pow(phi[gg](0,1),2)+pow(phi[gg](0,2),2));
-          fibreVector[ii] = normalized_phi[0](0,ii);
-        }
-      }
-      
-      for(Range::iterator niit1 = tetNodes.begin();niit1!=tetNodes.end();niit1++){
-        rval = moab.tag_set_data(th_fibre_dir,&*niit1,1,&fibreVector[0]); CHKERR_PETSC(rval);
-      }
-      
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      
-      switch(snes_ctx) {
-        case ctx_SNESNone:
-        case ctx_SNESSetFunction: {
-        }
-          break;
-        case ctx_SNESSetJacobian: {
-        }
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      ierr = GetMatrices(); CHKERRQ(ierr);
-      DirihletBC.resize(0);
-      
-      switch(snes_ctx) {
-        case ctx_SNESNone: {
-        }
-          break;
-        case ctx_SNESSetJacobian:
-        case ctx_SNESSetFunction: {
-          //Dirihlet Boundary Condition
-          ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
-        }
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      
-      switch(snes_ctx) {
-        case ctx_SNESNone:
-        case ctx_SNESSetFunction: {
-          //Assembly  F
-          ierr = Fint(F); CHKERRQ(ierr);
-          //Neumann Boundary Conditions
-          ierr = NeumannBC(arc_ptr->F_lambda); CHKERRQ(ierr);
-        }
-          break;
-        case ctx_SNESSetJacobian: {
-          //Assembly  F
-          ierr = Lhs(); CHKERRQ(ierr);
-        }
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      
-      ierr = OpStudentEnd(); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      
-      switch(snes_ctx) {
-        case ctx_SNESNone: {
-        }
-        case ctx_SNESSetFunction: {
-        }
-          break;
-        case ctx_SNESSetJacobian: {
-          //Note MAT_FLUSH_ASSEMBLY
-          ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-          ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-          ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_MatrixDiagonal(this,Aij); CHKERRQ(ierr);
-          ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-          ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-        }
-          break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      
       PetscFunctionReturn(0);
     }
     
@@ -1713,7 +841,6 @@ namespace MoFEM {
    *
    * Look at \ref<TranIsotropicAxisAngleRotElasticFEMethod>TranIsotropicAxisAngleRotElasticFEMethod Function for parameters
    */
-  
   struct TranIso_PostProc_AxisAngle_OnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
     
     double E_p, E_z, nu_p, nu_pz, G_zp;
@@ -1848,7 +975,6 @@ namespace MoFEM {
    *
    * Look at \ref<TranIsotropicAxisAngleRotElasticFEMethod>TranIsotropicAxisAngleRotElasticFEMethod Function for parameters
    */
-  
   struct TranIso_PostProc_FibreDirRot_OnRefMesh: public PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh {
     
     double E_p, E_z, nu_p, nu_pz, G_zp;

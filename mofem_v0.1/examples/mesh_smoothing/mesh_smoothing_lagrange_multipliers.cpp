@@ -17,7 +17,33 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "mesh_smoothing.hpp"
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
+
+#include "SurfacePressureComplexForLazy.hpp"
+
+#include "PostProcVertexMethod.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
+
+#include "FEMethod_DriverComplexForLazy.hpp"
+
+using namespace MoFEM;
+
+ErrorCode rval;
+PetscErrorCode ierr;
+
+static char help[] = "...\n\n";
+
+struct MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers: public MeshSmoothingFEMethod  {
+
+  MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers(FieldInterface& _mField,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_mField,_verbose), 
+    MeshSmoothingFEMethod(_mField,_verbose) {
+    set_qual_ver(1);
+  }
+
+};
 
 int main(int argc, char *argv[]) {
 
@@ -96,45 +122,45 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_level,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
 
   //add tets on corners
-  Range CornersNodes;
-  EntityHandle cornersNodesMeshset,surfacesFacesMeshset;
+  Range corner_nodes;
+  EntityHandle coner_nodes_meshset,surface_faces_meshset;
   {
-    Range CornersEdges,SurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,CornersNodes,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",CornersEdges.size()); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",CornersNodes.size()); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
-    ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
+    Range corner_edges,surface_faces;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corner_edges,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corner_nodes,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,surface_faces,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",corner_edges.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",corner_nodes.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",surface_faces.size()); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(surface_faces); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(surface_faces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
 
-    if(SurfacesFaces.empty()) SETERRQ(PETSC_COMM_SELF,1,"no surface elements");
-    Range CornersEdgesNodes;
-    rval = moab.get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
-    CornersNodes.insert(CornersEdgesNodes.begin(),CornersEdgesNodes.end());
+    if(surface_faces.empty()) SETERRQ(PETSC_COMM_SELF,1,"no surface elements");
+    Range corner_edges_nodes;
+    rval = moab.get_connectivity(corner_edges,corner_edges_nodes,true); CHKERR_PETSC(rval);
+    corner_nodes.insert(corner_edges_nodes.begin(),corner_edges_nodes.end());
     {
-      rval = moab.create_meshset(MESHSET_SET,cornersNodesMeshset); CHKERR_PETSC(rval);	
-      rval = moab.add_entities(cornersNodesMeshset,CornersNodes); CHKERR_PETSC(rval);
+      rval = moab.create_meshset(MESHSET_SET,coner_nodes_meshset); CHKERR_PETSC(rval);	
+      rval = moab.add_entities(coner_nodes_meshset,corner_nodes); CHKERR_PETSC(rval);
       //add surface elements
-      ierr = mField.seed_finite_elements(CornersNodes); CHKERRQ(ierr);
+      ierr = mField.seed_finite_elements(corner_nodes); CHKERRQ(ierr);
     }
     {
-      Range SurfacesNodes;
-      rval = moab.get_connectivity(SurfacesFaces,SurfacesNodes,true); CHKERR_PETSC(rval);
-      SurfacesNodes = subtract(SurfacesNodes,CornersNodes);
-      rval = moab.create_meshset(MESHSET_SET,surfacesFacesMeshset); CHKERR_PETSC(rval);
-      rval = moab.add_entities(surfacesFacesMeshset,SurfacesNodes); CHKERR_PETSC(rval);
+      Range surface_nodes;
+      rval = moab.get_connectivity(surface_faces,surface_nodes,true); CHKERR_PETSC(rval);
+      surface_nodes = subtract(surface_nodes,corner_nodes);
+      rval = moab.create_meshset(MESHSET_SET,surface_faces_meshset); CHKERR_PETSC(rval);
+      rval = moab.add_entities(surface_faces_meshset,surface_nodes); CHKERR_PETSC(rval);
     }
   }
 
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_VERTICEs(surfacesFacesMeshset,"LAMBDA_SURFACE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_VERTICEs(surface_faces_meshset,"LAMBDA_SURFACE"); CHKERRQ(ierr);
 
   //NOTE: always order should be 1
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(surfacesFacesMeshset,MBVERTEX,"LAMBDA_SURFACE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(surface_faces_meshset,MBVERTEX,"LAMBDA_SURFACE",1); CHKERRQ(ierr);
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -176,47 +202,41 @@ int main(int argc, char *argv[]) {
   Vec D;
   ierr = mField.VecCreateGhost("MESH_SMOOTHING",Col,&D); CHKERRQ(ierr);
 
-  materialDirihletBC myDirihletBC(moab,CornersNodes);
-  MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers MyFE(mField,&myDirihletBC);
-  C_SURFACE_FEMethod_ForSnes MySurfaceConstrains(mField,&myDirihletBC);
-  MySurfaceConstrains.nonlinear = true;
+  FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corner_nodes);
+  fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
+  MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers bulk_fe(mField);
+  SnesConstrainSurfacGeometry surface_fe(mField);
+  surface_fe.nonlinear = true;
 
-  /*MatZeroEntries(K);
-  MyFE.snes_A = &K;
-  MyFE.snes_B = &K;
-  MyFE.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetJacobian;
-  ierr = mField.loop_finite_elements("MESH_SMOOTHING","MESH_SMOOTHER",MyFE); CHKERRQ(ierr); CHKERRQ(ierr);
+  SnesCtx snes_ctx(mField,"MESH_SMOOTHING");
 
-  MySurfaceConstrains.snes_A = &K;
-  MySurfaceConstrains.snes_B = &K;
-  MySurfaceConstrains.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetJacobian;
-  ierr = mField.loop_finite_elements("MESH_SMOOTHING","C_SURFACE_ELEM",MySurfaceConstrains); CHKERRQ(ierr); CHKERRQ(ierr);
-  ierr = MatAssemblyBegin(K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);*/
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&fix_material_pts);
+  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_SURFACE_ELEM",&surface_fe));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&bulk_fe));
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&fix_material_pts);
+
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&fix_material_pts);
+  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_SURFACE_ELEM",&surface_fe));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&bulk_fe));
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&fix_material_pts);
+
+  SNES snes;
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
+  ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,K,K,SnesMat,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   /*{
+    MatStructure flg = SAME_NONZERO_PATTERN;
+    ierr = SnesMat(snes,D,&K,&K,&flg,&snes_ctx); CHKERRQ(ierr);
     MatView(K,PETSC_VIEWER_DRAW_WORLD);
     //MatView(K,PETSC_VIEWER_STDOUT_WORLD);
     std::string wait;
     std::cin >> wait;
   }*/
-
-  SnesCtx SnesCtx(mField,"MESH_SMOOTHING");
-
-  SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_SURFACE_ELEM",&MySurfaceConstrains));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyFE));
-
-  SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_SURFACE_ELEM",&MySurfaceConstrains));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&MyFE));
-
-  SNES snes;
-  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-  ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,K,K,SnesMat,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
@@ -291,6 +311,8 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
 
   PetscFinalize();
 

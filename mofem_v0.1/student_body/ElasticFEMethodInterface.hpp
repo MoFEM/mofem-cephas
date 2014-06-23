@@ -37,49 +37,18 @@ extern "C" {
 
 namespace MoFEM {
 
-struct InterfaceFEMethod: public ElasticFEMethod {
+struct ToolsInterfaceFEMethod {
 
   double YoungModulus;
   ublas::matrix<double> R;
   ublas::matrix<double> Dglob;
   double tangent1[3],tangent2[3];
 
-  vector<ublas::vector<FieldData> > DispData;
-
-  InterfaceFEMethod(
-      FieldInterface& _mField,double _YoungModulus): 
-      ElasticFEMethod(_mField),YoungModulus(_YoungModulus) {
-      DispData.resize(1+6+2);
-    };
-
-  InterfaceFEMethod(
-      FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _YoungModulus):
-	ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0),YoungModulus(_YoungModulus){
-		DispData.resize(1+6+2);
-	};
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    g_NTET.resize(4*45);
-    ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
-    G_TET_W = G_TET_W45;
-    g_NTRI.resize(3*28);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
-    G_TRI_W = G_TRI_W28;
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    // Note MAT_FLUSH_ASSEMBLY
-    ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  virtual PetscErrorCode CalcR() {
+  PetscErrorCode CalcR(
+    const double *diffNTRI,
+    const double *coords_face3,
+    const double *normal3,
+    const double area3) {
     PetscFunctionBegin;
     bzero(tangent1,3*sizeof(double));
     bzero(tangent2,3*sizeof(double));
@@ -114,7 +83,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode CalcDglob() {
+  PetscErrorCode CalcDglob() {
     PetscFunctionBegin;
     ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
     int ii = 0;
@@ -124,6 +93,43 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     Dglob = prod( trans(R), Dglob );
     PetscFunctionReturn(0);
   }
+
+
+
+};
+
+struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod {
+
+  FieldInterface &mField;
+  double YoungModulus;
+
+  vector<ublas::vector<FieldData> > DispData;
+
+  InterfaceFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _YoungModulus):
+    FEMethod_UpLevelStudent(_mField.get_moab(),1),ToolsInterfaceFEMethod(),
+    mField(_mField),YoungModulus(_YoungModulus) {
+
+    snes_B = &_Aij;
+    snes_x = _X;
+    snes_f = _F;
+
+    DispData.resize(1+6+2);
+  }
+
+  PetscErrorCode CalcR() {
+    PetscFunctionBegin;
+    ierr = ToolsInterfaceFEMethod::CalcR(diffNTRI,coords_face3,normal3,area3); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  int row_mat,col_mat;
+  ublas::matrix<ublas::matrix<FieldData> > K;
+  vector<vector<ublas::matrix<FieldData> > > rowNMatrices;
+  vector<vector<ublas::matrix<FieldData> > > colNMatrices;
+  vector<vector<DofIdx> > RowGlob;
+  vector<vector<DofIdx> > ColGlob;
+
+  vector<DofIdx> DirihletBC;
 
   virtual PetscErrorCode LhsInt() {
     PetscFunctionBegin;
@@ -139,7 +145,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 	    if(gg == 0) {
 	      K(rr,cc) = ublas::zero_matrix<FieldData>(row_Mat.size2(),col_Mat.size2());
 	    }
-	    double w = area3*G_TRI_W[gg];
+	    double w = area4*G_TRI_W[gg];
 	    ublas::matrix<FieldData> NTD = prod( trans(row_Mat), w*Dglob );
 	    K(rr,cc) += prod(NTD , col_Mat ); 
 	  }
@@ -149,7 +155,7 @@ struct InterfaceFEMethod: public ElasticFEMethod {
 	  if(ColGlob[cc].size()==0) continue;
 	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
     }
     PetscFunctionReturn(0);
@@ -236,12 +242,49 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     ierr = CalcDglob(); CHKERRQ(ierr);
     //Calculate Matrices
     ierr = Matrices();    CHKERRQ(ierr);
-    //Apply Dirihlet BC
-    ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(this,RowGlob,ColGlob,DirihletBC); CHKERRQ(ierr);
 
     //Assemble interface
     ierr = LhsInt(); CHKERRQ(ierr);
 
+    PetscFunctionReturn(0);
+  }
+
+  vector<double> g_NTRI;
+  const double *G_TRI_W;
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    g_NTRI.resize(3*28);
+    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,28); 
+    G_TRI_W = G_TRI_W28;
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case ctx_SNESNone: {
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetFunction:  {
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
     PetscFunctionReturn(0);
   }
 
@@ -255,13 +298,17 @@ struct InterfaceFEMethod: public ElasticFEMethod {
     PetscFunctionReturn(0);
   }
 
-
 };
 
-struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
+struct PostProcCohesiveForces:public FEMethod_UpLevelStudent,PostProcOnRefMesh_Base,ToolsInterfaceFEMethod {
   
+    FieldInterface &mField;
+    double YoungModulus;
+    ParallelComm* pcomm;
+
     PostProcCohesiveForces(FieldInterface& _mField,double _YoungModulus): 
-      InterfaceFEMethod(_mField,_YoungModulus), PostProcOnRefMesh_Base() {
+      FEMethod_UpLevelStudent(_mField.get_moab()), PostProcOnRefMesh_Base(),
+      mField(_mField), YoungModulus(_YoungModulus) {
       pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     };
 
@@ -418,7 +465,7 @@ struct PostProcCohesiveForces: public InterfaceFEMethod,PostProcOnRefMesh_Base {
       }
 
       //Rotation matrix
-      ierr = CalcR(); CHKERRQ(ierr);
+      ierr = CalcR(diffNTRI,coords_face3,normal3,area3); CHKERRQ(ierr);
 
       //Dglob
       ierr = CalcDglob(); CHKERRQ(ierr);

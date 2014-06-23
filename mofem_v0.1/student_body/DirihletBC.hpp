@@ -20,9 +20,7 @@
 #ifndef __MOABFEMETHOD_DIRIHLETBC_HPP__
 #define __MOABFEMETHOD_DIRIHLETBC_HPP__
 
-#include "CoreDataStructures.hpp"
 #include "FieldInterface.hpp"
-#include "FEMethod_LowLevelStudent.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -32,111 +30,76 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-/** 
- * \brief The student user interface for Dirihlet boundary conditions
- * 
-*/
-struct BaseDirihletBC {
+struct DisplacementBCFEMethodPreAndPostProc: public FieldInterface::FEMethod {
 
-  BaseDirihletBC();
-
-
-  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC);
-  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
-  virtual PetscErrorCode SetDirihletBC_to_ElementIndicies(
-    FieldInterface::FEMethod *fe_method_ptr,
-      vector<vector<DofIdx> > &RowGlobDofs,
-      vector<vector<DofIdx> > &ColGlobDofs,
-      vector<DofIdx>& DirihletBC);
-
-  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
-    FieldInterface::FEMethod *fe_method_ptr,
-    vector<DofIdx>& RowGlobDofs,vector<DofIdx>& DirihletBC);
-  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
-    FieldInterface::FEMethod *fe_method_ptr,
-    vector<DofIdx>& ColGlobDofs,vector<DofIdx>& DirihletBC);
-
-  virtual PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
-    FieldInterface::FEMethod *fe_method_ptr,
-    vector<DofIdx>& DirihletBC,vector<DofIdx>& FaceNodeGlobalDofs,vector<vector<DofIdx> > &FaceEdgeGlobalDofs,vector<DofIdx> &FaceGlobalDofs);
-
-  virtual PetscErrorCode SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D);
-  virtual PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
-  virtual PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F);
-
-};
-
-struct CubitDisplacementDirihletBC: public BaseDirihletBC {
   FieldInterface& mField;
-  string problem_name;  
-  string field_name;
+  const string fieldName;
 
-  CubitDisplacementDirihletBC(FieldInterface& _mField,const string _problem_name,const string _field_name); 
+  DisplacementBCFEMethodPreAndPostProc(
+    FieldInterface& _mField,const string &_field_name,
+    Mat &_Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name) {
+    snes_B = &_Aij;
+    snes_x = _X;
+    snes_f = _F;
+    ts_B = &_Aij;
+  };
+
+  DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name): 
+    mField(_mField),fieldName(_field_name) {}; 
 
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  map<int,Range> bc_map[3];
-  map<int,double> bc_map_val[3];
+  map<DofIdx,FieldData> map_zero_rows;
+  vector<int> dofsIndices;
+  vector<double> dofsValues;
 
-  virtual PetscErrorCode Init();
+  virtual PetscErrorCode iNitalize();
 
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC);
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
-  PetscErrorCode SetDirihletBC_to_ElementIndicies(
-    FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC);
-  PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
-    FieldInterface::FEMethod *fe_method_ptr,
-    vector<DofIdx>& DirihletBC,vector<DofIdx> &FaceNodeIndices, vector<vector<DofIdx> > &FaceEdgeIndices, vector<DofIdx> &FaceIndices);
-  PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
-  PetscErrorCode SetDirihletBC_to_RHS(FieldInterface::FEMethod *fe_method_ptr,Vec F);
-  PetscErrorCode SetDirihletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D);
+  PetscErrorCode preProcess();
+  PetscErrorCode postProcess();
 
 };
 
-struct CubitTemperatureDirihletBC: public CubitDisplacementDirihletBC {
 
-  CubitTemperatureDirihletBC(FieldInterface& _mField,const string _problem_name,const string _field_name); 
-  PetscErrorCode Init();
+struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
+
+  SpatialPositionsBCFEMethodPreAndPostProc(
+    FieldInterface& _mField,const string &_field_name,Mat &_Aij,Vec _X,Vec _F): 
+    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F) {}
+
+  SpatialPositionsBCFEMethodPreAndPostProc(
+    FieldInterface& _mField,const string &_field_name): 
+    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name) {}
+
+  vector<string> fixFields;
+
+  ublas::vector<double> cOords;
+  PetscErrorCode iNitalize();
 
 };
-    
-struct CubitDisplacementDirihletBC_ZerosRowsColumns: public CubitDisplacementDirihletBC {
-    CubitDisplacementDirihletBC_ZerosRowsColumns(FieldInterface& _mField,const string _problem_name,const string _field_name);
-    
-    PetscErrorCode SetDirihletBC_to_ElementIndiciesRow(
-        FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<DofIdx>& DirihletBC){
-        PetscFunctionBegin;
-        PetscFunctionReturn(0);
-    }
-    
-    PetscErrorCode SetDirihletBC_to_ElementIndiciesCol(
-        FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC){
-        PetscFunctionBegin;
-        PetscFunctionReturn(0);
-    }
-    
-    PetscErrorCode SetDirihletBC_to_ElementIndicies(
-        FieldInterface::FEMethod *fe_method_ptr,vector<vector<DofIdx> > &RowGlobDofs,vector<vector<DofIdx> > &ColGlobDofs,vector<DofIdx>& DirihletBC){
-        PetscFunctionBegin;
-        PetscFunctionReturn(0);
-    }
-    
-    PetscErrorCode SetDirihletBC_to_ElementIndiciesFace(
-        FieldInterface::FEMethod *fe_method_ptr,
-        vector<DofIdx>& DirihletBC,vector<DofIdx> &FaceNodeIndices, vector<vector<DofIdx> > &FaceEdgeIndices, vector<DofIdx> &FaceIndices){
-        PetscFunctionBegin;
-        PetscFunctionReturn(0);
-    }
-    
-    PetscErrorCode SetDirihletBC_to_MatrixDiagonal(FieldInterface::FEMethod *fe_method_ptr,Mat Aij);
-    
+
+struct FixMaterialPoints: public DisplacementBCFEMethodPreAndPostProc {
+
+  Range &eNts;
+  vector<string> fieldNames;
+  FixMaterialPoints(
+    FieldInterface& _mField,const string &_field_name,Mat &_Aij,Vec _X,Vec _F,Range &ents): 
+    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),eNts(ents) {
+    fieldNames.push_back(fieldName);
+  }
+
+  FixMaterialPoints(
+    FieldInterface& _mField,const string &_field_name,Range &ents): 
+    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name),eNts(ents) {
+    fieldNames.push_back(fieldName);
+  }
+
+
+  PetscErrorCode iNitalize();
+  PetscErrorCode preProcess();
+
 };
-    
 
     
 }

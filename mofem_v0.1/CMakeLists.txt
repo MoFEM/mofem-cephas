@@ -38,7 +38,7 @@ project(MoFEM C Fortran CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
-set(MoFEM_VERSION_BUILD 3)
+set(MoFEM_VERSION_BUILD 4)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
@@ -104,6 +104,7 @@ link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
 add_library(mofem_Field 
   FieldInterface.cpp
   SnesCtx.cpp
+  TsCtx.cpp
   third_party/tricircumcenter.c
   third_party/tetcircumcenter.c
   third_party/gm_rule.c
@@ -134,11 +135,7 @@ add_library(mofem_complex_for_lazy
   complex_for_lazy/complex_for_lazy.c
   complex_for_lazy/FEMethod_ComplexForLazy.cpp
   complex_for_lazy/FEMethod_SurfaceConstrains.cpp
-  complex_for_lazy/ConfigurationalFractureMechanics.cpp
-)
-
-add_library(mofem_face_splitting
-  face_splitting/FaceSplittingTool.cpp
+  complex_for_lazy/SurfacePressureComplexForLazy.cpp
 )
 
 add_library(mofem_forces_and_sources

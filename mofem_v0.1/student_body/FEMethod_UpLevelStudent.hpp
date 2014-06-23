@@ -47,9 +47,6 @@ struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public mofem_exceptio
 */
 struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
 
-  BaseDirihletBC base_dirihlet_bc_method;
-  BaseDirihletBC *dirihlet_bc_method_ptr;
-
   //TET
   double V;
   Tag th_volume;
@@ -64,7 +61,6 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
   EntityHandle conn_face3[3];
   EntityHandle conn_face4[3];
 
-  FEMethod_UpLevelStudent(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,int verbose = 0);
   FEMethod_UpLevelStudent(Interface& _moab,int verbose = 0);
   ~FEMethod_UpLevelStudent();
 

@@ -21,10 +21,7 @@
 include_directories("${PROJECT_SOURCE_DIR}/examples/simple_nonlinear_elasticity")
 
 add_executable(arc_length_nonlinear_elasticity arc_length_nonlinear_elasticity.cpp)
-target_link_libraries(arc_length_nonlinear_elasticity mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
-add_executable(post_proc_arc_length_nonlinear_elasticity post_proc_arc_length_nonlinear_elasticity.cpp)
-target_link_libraries(post_proc_arc_length_nonlinear_elasticity mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(arc_length_nonlinear_elasticity mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../../meshes/dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)
 
@@ -39,8 +36,6 @@ configure_file(
   @ONLY
   )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
-
-
 
 #testing
 add_test(ArcLengthNonLinearElasticityTest ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
