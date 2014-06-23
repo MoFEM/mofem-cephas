@@ -65,12 +65,12 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
   NonLinearInterfaceFEMethod(
       FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,
-      double _YoungModulus,double _h,double _beta,double _ft,double _Gf,
+      double _young_modulus,double _h,double _beta,double _ft,double _Gf,
       interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
-      InterfaceFEMethod(_mField,_Aij,_X,_F,_YoungModulus),
+      InterfaceFEMethod(_mField,_Aij,_X,_F,_young_modulus),
       int_mat_ctx(_int_mat_ctx),h(_h),beta(_beta),ft(_ft),Gf(_Gf),ctx_int(ctx_InterfaceNone) {
 
-    E0 = YoungModulus/h;
+    E0 = youngModulus/h;
     g0 = ft/E0;
     kappa1 = 2*Gf/ft;
 

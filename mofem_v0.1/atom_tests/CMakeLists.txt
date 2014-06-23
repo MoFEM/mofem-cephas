@@ -337,3 +337,15 @@ add_test(forces_and_sources_neumann_forces_complex_for_lazy_atom_test_compare ${
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_neumann_forces_complex_for_lazy_atom.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_neumann_forces_complex_for_lazy_atom.txt)
 
+# add example test for forces_and_sources_fluid_pressure_element_atom
+cm_export_file("../meshes/fluid_presssure_cub_test.cub" export_atom_tests)
+add_executable(forces_and_sources_fluid_pressure_element_atom forces_and_sources_fluid_pressure_element.cpp)
+target_link_libraries(forces_and_sources_fluid_pressure_element_atom mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_fluid_pressure_element_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_fluid_pressure_element_atom -my_file fluid_presssure_cub_test.cub)
+add_test(forces_and_sources_fluid_pressure_element_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_fluid_pressure_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_fluid_pressure_element.txt)
+
+
+
