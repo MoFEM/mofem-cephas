@@ -199,6 +199,9 @@ int main(int argc, char *argv[]) {
   }*/
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+  //set matrix possitives define and symetric for cholesky and icc preceonditionser
+  ierr = MatSetOption(A,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
+
   //Solver
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
