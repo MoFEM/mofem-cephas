@@ -324,12 +324,12 @@ struct MetaNeummanForces {
     ierr = mField.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+    if(mField.check_field(mesh_nodals_positions)) {
+      ierr = mField.modify_finite_element_add_field_data("FORCE_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    }
+    ierr = mField.modify_problem_add_finite_element(problem_name,"FORCE_FE"); CHKERRQ(ierr);
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-      if(mField.check_field(mesh_nodals_positions)) {
-	ierr = mField.modify_finite_element_add_field_data("FORCE_FE",mesh_nodals_positions); CHKERRQ(ierr);
-      }
-      ierr = mField.modify_problem_add_finite_element(problem_name,"FORCE_FE"); CHKERRQ(ierr);
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
@@ -339,10 +339,11 @@ struct MetaNeummanForces {
     ierr = mField.modify_finite_element_add_field_row("PRESSURE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("PRESSURE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",field_name); CHKERRQ(ierr);
+    if(mField.check_field(mesh_nodals_positions)) {
+      ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    }
+
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-      if(mField.check_field(mesh_nodals_positions)) {
-	ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
-      }
       ierr = mField.modify_problem_add_finite_element(problem_name,"PRESSURE_FE"); CHKERRQ(ierr);
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
@@ -371,7 +372,7 @@ struct MetaNeummanForces {
     neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
       bool ho_geometry = mField.check_field(mesh_nodals_positions);
-      neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
+      ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
       /*pressure_cubit_bc_data data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
@@ -393,10 +394,11 @@ struct MetaNeummanForces {
     ierr = mField.modify_finite_element_add_field_row("FLUX_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("FLUX_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("FLUX_FE",field_name); CHKERRQ(ierr);
+    if(mField.check_field(mesh_nodals_positions)) {
+      ierr = mField.modify_finite_element_add_field_data("FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    }
+
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-      if(mField.check_field(mesh_nodals_positions)) {
-	ierr = mField.modify_finite_element_add_field_data("FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
-      }
       ierr = mField.modify_problem_add_finite_element(problem_name,"FLUX_FE"); CHKERRQ(ierr);
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);

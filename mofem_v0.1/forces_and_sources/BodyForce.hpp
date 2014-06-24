@@ -83,17 +83,17 @@ struct BodyFroceConstantField {
 
 	  double acc;
 	  if(rr == 0) {
-	    acc = dAta.data.acceleration_x;
+	    acc = -dAta.data.acceleration_x;
 	  } else if(rr == 1) {
-	    acc = dAta.data.acceleration_y;
+	    acc = -dAta.data.acceleration_y;
 	  } else if(rr == 2) {
-	    acc = dAta.data.acceleration_z;
+	    acc = -dAta.data.acceleration_z;
 	  } else {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  }
 	  acc *= dAta.data.density;
 	  cblas_daxpy(nb_row_dofs,val*acc,&data.getN()(gg,0),1,&Nf[rr],rank);
-
+	  
 	}
 
       }

@@ -39,7 +39,9 @@ namespace MoFEM {
 
 struct ToolsInterfaceFEMethod {
 
-  double YoungModulus;
+  double youngModulus;
+  ToolsInterfaceFEMethod(double _young_modulus): youngModulus(_young_modulus) {}
+
   ublas::matrix<double> R;
   ublas::matrix<double> Dglob;
   double tangent1[3],tangent2[3];
@@ -87,8 +89,8 @@ struct ToolsInterfaceFEMethod {
     PetscFunctionBegin;
     ublas::matrix<double> Dloc = ublas::zero_matrix<double>(3,3);
     int ii = 0;
-    for(;ii<3;ii++) Dloc(ii,ii) = YoungModulus;
-    //Dloc(0,0) = YoungModulus;
+    for(;ii<3;ii++) Dloc(ii,ii) = youngModulus;
+    //Dloc(0,0) = youngModulus;
     Dglob = prod( Dloc, R );
     Dglob = prod( trans(R), Dglob );
     PetscFunctionReturn(0);
@@ -101,13 +103,11 @@ struct ToolsInterfaceFEMethod {
 struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod {
 
   FieldInterface &mField;
-  double YoungModulus;
-
   vector<ublas::vector<FieldData> > DispData;
 
-  InterfaceFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _YoungModulus):
-    FEMethod_UpLevelStudent(_mField.get_moab(),1),ToolsInterfaceFEMethod(),
-    mField(_mField),YoungModulus(_YoungModulus) {
+  InterfaceFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _young_modulus):
+    FEMethod_UpLevelStudent(_mField.get_moab(),1),ToolsInterfaceFEMethod(_young_modulus),
+    mField(_mField) {
 
     snes_B = &_Aij;
     snes_x = _X;
@@ -303,12 +303,11 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
 struct PostProcCohesiveForces:public FEMethod_UpLevelStudent,PostProcOnRefMesh_Base,ToolsInterfaceFEMethod {
   
     FieldInterface &mField;
-    double YoungModulus;
     ParallelComm* pcomm;
 
-    PostProcCohesiveForces(FieldInterface& _mField,double _YoungModulus): 
-      FEMethod_UpLevelStudent(_mField.get_moab()), PostProcOnRefMesh_Base(),
-      mField(_mField), YoungModulus(_YoungModulus) {
+    PostProcCohesiveForces(FieldInterface& _mField,double _young_modulus): 
+      FEMethod_UpLevelStudent(_mField.get_moab()), PostProcOnRefMesh_Base(),ToolsInterfaceFEMethod(_young_modulus),
+      mField(_mField) {
       pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     };
 

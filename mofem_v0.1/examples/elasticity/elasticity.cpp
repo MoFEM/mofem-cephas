@@ -26,6 +26,7 @@
 #include "ElasticFEMethod.hpp"
 #include "SurfacePressure.hpp"
 #include "NodalForce.hpp"
+#include "FluidPressure.hpp"
 #include "BodyForce.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
 #include "PostProcVertexMethod.hpp"
@@ -151,6 +152,10 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
   }
 
+  //define fluid pressure finite elements
+  FluidPressure fluid_pressure_fe(mField);
+  fluid_pressure_fe.addNeumannFluidPressureBCElements("ELASTIC_MECHANICS","DISPLACEMENT");
+
   /****/
   //build database
 
@@ -246,6 +251,9 @@ int main(int argc, char *argv[]) {
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
+  //fluid pressure
+  ierr = fluid_pressure_fe.setNeumannFluidPressureFiniteElementOperators("DISPLACEMENT",F,false,true); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
   //postproc
   ierr = mField.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
 

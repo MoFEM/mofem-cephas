@@ -326,15 +326,6 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
     */
   PetscErrorCode GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(int rank,vector< ublas::matrix<FieldData> > &invH,vector< ublas::matrix<FieldData> > &diffNMatrix);
 
-
-  /**
-    * \brief hierarhical gemetry approximation, face normal
-    */
-  PetscErrorCode GetHierarchicalGeometryApproximation_FaceNormal(EntityHandle ent,
-    vector< ublas::vector<FieldData> > &Normals);
-
-
-
 };
 
 }
