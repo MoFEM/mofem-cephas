@@ -19,8 +19,7 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "BodyForce.hpp"
-#include "Projection10NodeCoordsOnField.hpp"
+#include "ThermalElement.hpp"
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -75,48 +74,29 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
-
-
-  //FE
-  ierr = mField.add_finite_element("TEST_FE"); CHKERRQ(ierr);
-
-  //Define rows/cols and element data
-  ierr = mField.modify_finite_element_add_field_row("TEST_FE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("TEST_FE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("TEST_FE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("TEST_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.add_field("TEMP",H1,1); CHKERRQ(ierr);
 
   //Problem
   ierr = mField.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  //set finite elements for problem
-  ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
-
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  //add entities to finite element
-  ierr = mField.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 2;
-  ierr = mField.set_field_order(root_set,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
 
-  ierr = mField.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ThermalElement thermal_elements(mField);
+  ierr = thermal_elements.addThermalElements("TEST_PROBLEM","TEMP"); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -137,51 +117,37 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  //set from positions of 10 node tets
-  Projection10NodeCoordsOnField ent_method(mField,"MESH_NODE_POSITIONS");
-  ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
-
   Vec F;
   ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
+  Mat A;
+  ierr = mField.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
-  typedef stream<TeeDevice> TeeStream;
-  ofstream ofs("forces_and_sources_body_force_atom_test.txt");
-  TeeDevice my_tee(cout, ofs); 
-  TeeStream my_split(my_tee);
+  ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
+  ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  BodyFroceConstantField body_forces_methods(mField);
+  ierr = MatZeroEntries(A); CHKERRQ(ierr);
+  
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
-    Block_BodyForces mydata;
-    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-    my_split << mydata << endl;
-    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
-  }
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Col,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  const MoFEMProblem *problem_ptr;
-  ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
-  map<EntityHandle,double> m0,m1,m2;
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
+  //Matrix View
+  MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  std::string wait;
+  std::cin >> wait;
 
-    if(dit->get_dof_rank()!=1) continue;
 
-    my_split.precision(3);
-    my_split.setf(std::ios::fixed);
-    my_split << dit->get_petsc_gloabl_dof_idx() << " " << dit->get_FieldData() << endl;
 
-  }
-
-  double sum = 0;
-  ierr = VecSum(F,&sum); CHKERRQ(ierr);
-  my_split << endl << "Sum : " << setprecision(3) << sum << endl;
-
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

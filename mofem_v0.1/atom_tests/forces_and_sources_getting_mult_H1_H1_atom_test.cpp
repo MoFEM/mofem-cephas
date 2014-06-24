@@ -233,8 +233,8 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesOrder(data_col); CHKERRQ(ierr);
       ierr = getFacesOrder(data_row); CHKERRQ(ierr);
       ierr = getFacesOrder(data_col); CHKERRQ(ierr);
-      ierr = getOrderVolume(data_row); CHKERRQ(ierr);
-      ierr = getOrderVolume(data_col); CHKERRQ(ierr);
+      ierr = getVolumesOrder(data_row); CHKERRQ(ierr);
+      ierr = getVolumesOrder(data_col); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgeRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);

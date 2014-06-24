@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
       ierr = getFacesSense(data); CHKERRQ(ierr);
       ierr = getEdgesOrder(data); CHKERRQ(ierr);
       ierr = getFacesOrder(data); CHKERRQ(ierr);
-      ierr = getOrderVolume(data); CHKERRQ(ierr);
+      ierr = getVolumesOrder(data); CHKERRQ(ierr);
       ierr = getFaceNodes(data); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
 
       ierr = getEdgesOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getFacesOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getOrderVolume(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getVolumesOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getColNodesIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgeColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getFacesColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
