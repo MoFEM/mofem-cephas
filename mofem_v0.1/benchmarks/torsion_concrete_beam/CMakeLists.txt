@@ -27,7 +27,7 @@ install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/convergence_study.sh
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
 #script for making plots for torsion example only
-install(FILES ${CMAKE_SOURCE_DIR}/benchmarks/torsion_concrete_beam/make_plot.sh
+install(FILES ${CMAKE_SOURCE_DIR}/benchmarks/torsion_concrete_beam/plot_graphs.sh
   DESTINATION mofem/benchmarks/torsion_concrete_beam
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
