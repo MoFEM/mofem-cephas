@@ -310,6 +310,8 @@ struct MoFEMProblem {
   inline DofIdx get_nb_ghost_dofs_col() const { return *((DofIdx*)tag_ghost_nbdof_data_col); }
   inline BitRefLevel get_BitRefLevel() const { return *tag_BitRefLevel; }
   inline BitRefLevel get_DofMask_BitRefLevel() const { return *tag_BitRefLevel_DofMask; }
+  PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofMoFEMEntity **dof_ptr) const;
+  PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofMoFEMEntity **dof_ptr) const;
   BitFEId get_BitFEId() const;
   friend ostream& operator<<(ostream& os,const MoFEMProblem& e);
 };

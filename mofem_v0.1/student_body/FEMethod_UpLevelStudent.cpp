@@ -22,13 +22,7 @@
 
 namespace MoFEM {
 
-FEMethod_UpLevelStudent::FEMethod_UpLevelStudent(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,int _verbose): 
-  FEMethod_LowLevelStudent(_moab,_verbose),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr) {
-  double def_V = 0;
-  rval = moab.tag_get_handle("Volume",1,MB_TYPE_DOUBLE,th_volume,MB_TAG_CREAT|MB_TAG_SPARSE,&def_V); CHKERR_THROW(rval);
-}
 FEMethod_UpLevelStudent::FEMethod_UpLevelStudent(Interface& _moab,int _verbose): FEMethod_LowLevelStudent(_moab,_verbose) {
-  dirihlet_bc_method_ptr = &base_dirihlet_bc_method;
   double def_V = 0;
   rval = moab.tag_get_handle("Volume",1,MB_TYPE_DOUBLE,th_volume,MB_TAG_CREAT|MB_TAG_SPARSE,&def_V); CHKERR_THROW(rval);
 }
@@ -802,80 +796,6 @@ PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_App
   }
   PetscFunctionReturn(0);
 }
-
-PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_FaceNormal(
-    EntityHandle ent,vector< ublas::vector<FieldData> > &Normals) {
-  PetscFunctionBegin;
-  //Max Approx Order (Approximation functions)
-  vector<int> DataEdgesOrderMax;
-  int DataFaceOrderMax;
-  //Face/Edge Order (For field MESH_NODE_POSITIONS)
-  vector<int> DataEdgesOrder;
-  int DataFaceOrder;
-  //DoFs for field MESH_NODE_POSITIONS
-  ublas::vector<FieldData> DataNodes;
-  vector< ublas::vector<FieldData> > DataEdges;
-  ublas::vector<FieldData> DataFace;
-  //Get Data on Face for MESH_NODE_POSITIONS
-  ierr = FaceData(ent,string("MESH_NODE_POSITIONS"),
-    DataEdgesOrder,DataFaceOrder,
-    DataNodes,DataEdges,DataFace,false); CHKERRQ(ierr);
-  if(DataNodes.empty()) PetscFunctionReturn(0);
-  //Set Data structures for Normal_hierarchical
-  //Face
-  double *diffNTRI_face = NULL;
-  if(DataFaceOrder>2) {
-    diffNTRI_face = &*diffH1faceN_TRI[ent].begin();
-  }
-  double* diffNTRI_edges[3] = { NULL,NULL,NULL };
-  DataFaceOrderMax = maxOrderFaceH1[fe_ent_ptr->get_side_number_ptr(moab,ent)->side_number];
-  //Edges
-  if(ent != last_face) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-  }
-  DataEdgesOrderMax.resize(3);
-  map<EntityHandle,vector<double> >& diffH1edgeN_TRI_face = diffH1edgeN_TRI[ent];
-  for(int ee = 0;ee<3;ee++) {
-    EntityHandle edge;
-    rval = moab.side_element(ent,1,ee,edge); CHKERR_PETSC(rval);
-    int face_side,face_sense,face_offset;
-    rval = moab.side_number(ent,edge,face_side,face_sense,face_offset); CHKERR(rval);
-    if(ee != face_side) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-    }
-    if(DataEdgesOrder[face_side]<=1) continue;
-    map<EntityHandle,vector<double> >::iterator diff = diffH1edgeN_TRI_face.find(edge);
-    if(diff == diffH1edgeN_TRI_face.end()) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-    }
-    diffNTRI_edges[ee] = &*diff->second.begin();
-    DataEdgesOrderMax[ee] = maxOrderEdgeH1[fe_ent_ptr->get_side_number_ptr(moab,edge)->side_number];
-  }
-  double* data_edges[3] = { NULL,NULL,NULL };    
-  for(int ee = 0;ee<3;ee++) {
-    data_edges[ee] = &*DataEdges[ee].data().begin();
-  }
-  //Calculate Normals
-  int nb_Gauss_pts = get_dim_gNTRI();
-  Normals.resize(nb_Gauss_pts);
-  for(int gg = 0;gg<nb_Gauss_pts;gg++) {
-    __CLPK_doublecomplex xnormal[3];
-   ierr = Normal_hierarchical(
-      DataFaceOrderMax,&*DataEdgesOrderMax.begin(),
-      DataFaceOrder,&*DataEdgesOrder.begin(),
-      diffNTRI,diffNTRI_face,diffNTRI_edges,
-      &*DataNodes.data().begin(),data_edges,&*DataFace.data().begin(),
-      NULL,NULL,NULL,
-      xnormal,NULL,NULL,
-      gg); CHKERRQ(ierr);
-    Normals[gg].resize(3);
-    Normals[gg][0] = xnormal[0].r;
-    Normals[gg][1] = xnormal[1].r;
-    Normals[gg][2] = xnormal[2].r;
-  }
-  PetscFunctionReturn(0);
-}
-
 
 }
 

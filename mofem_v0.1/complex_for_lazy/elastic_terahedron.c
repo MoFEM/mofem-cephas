@@ -1031,9 +1031,12 @@ PetscErrorCode Traction_hierarchical(int order,int *order_edge,
   if(t_edge!=NULL) {
     ee = 0;
     for(;ee<3;ee++) {
+      if(t_edge[ee] == NULL) continue;
       int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
       if(nb_dofs_edge>0) {
-	for(dd = 0;dd<3;dd++) traction[dd] += cblas_ddot(nb_dofs_edge,&(N_edge[ee][gg*nb_dofs_edge]),1,&(t_edge[ee][dd]),3);
+	for(dd = 0;dd<3;dd++) {
+	  traction[dd] += cblas_ddot(nb_dofs_edge,&(N_edge[ee][gg*nb_dofs_edge]),1,&(t_edge[ee][dd]),3);
+	}
       }
     }
   }
@@ -1070,10 +1073,12 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
     __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
     ierr = Normal_hierarchical(
-      order,order_edge, //FIXME
+      //FIXME: order of triacions approximation could be diffrernt for field approx
+      order,order_edge, 
       order,order_edge,
       diffN,diffN_face,diffN_edge,
-      dofs_x,dofs_x_edge,dofs_x_face,idofs_x,idofs_x_edge,idofs_x_face,
+      dofs_x,dofs_x_edge,dofs_x_face,idofs_x,
+      idofs_x_edge,idofs_x_face,
       xnormal,xs1,xs2,gg); CHKERRQ(ierr);
     ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
     double normal_real[3],s1_real[3],s2_real[3];
@@ -1090,6 +1095,9 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     for(;nn<3;nn++) {
       if(Fext!=NULL) 
 	for(dd = 0;dd<3;dd++) {
+	  /*fprintf(stderr,"%d %f %f %f %f %f %f\n",
+	    gg,g_w[gg],N[3*gg+nn],normal_real[dd],
+	    traction[0],traction[1],traction[2]);*/
 	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd]*traction[2];
 	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_real[dd]*traction[0];
 	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_real[dd]*traction[1];
@@ -1267,12 +1275,11 @@ PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
 	  s1_imag[dd] = 0.5*xs1[dd].i/eps;
 	  s2_imag[dd] = 0.5*xs2[dd].i/eps;
 	}
-        nn = 0;
-        for(;nn<3;nn++) {
+        for(nn = 0;nn<3;nn++) {
 	  for(dd = 0;dd<3;dd++) {
-	    KExt_hedge[EE][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
-	    KExt_hedge[EE][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
-	    KExt_hedge[EE][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
+	    KExt_hedge[EE][ii + 3*nb_dofs_edge_EE*3*nn + 3*nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
+	    KExt_hedge[EE][ii + 3*nb_dofs_edge_EE*3*nn + 3*nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
+	    KExt_hedge[EE][ii + 3*nb_dofs_edge_EE*3*nn + 3*nb_dofs_edge_EE*dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
 	  }
         }
         if(KExt_edgeedge!=NULL) {
@@ -1280,9 +1287,9 @@ PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
 	  int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
   	  for(nn = 0;nn<nb_dofs_edge;nn++) {
   	    for(dd = 0;dd<3;dd++) {
-	      KExt_edgeedge[EE][ee][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
-	      KExt_edgeedge[EE][ee][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s1_imag[dd]*traction[0];
-	      KExt_edgeedge[EE][ee][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s2_imag[dd]*traction[1];
+	      KExt_edgeedge[EE][ee][ii + 3*nb_dofs_edge_EE*3*nn + 3*nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
+	      KExt_edgeedge[EE][ee][ii + 3*nb_dofs_edge_EE*3*nn + 3*nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s1_imag[dd]*traction[0];
+	      KExt_edgeedge[EE][ee][ii + 3*nb_dofs_edge_EE*3*nn + 3*nb_dofs_edge_EE*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s2_imag[dd]*traction[1];
 	    }
   	  }
 	 }
@@ -1290,9 +1297,9 @@ PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
         if(KExt_faceedge!=NULL) {
 	  for(nn = 0;nn<nb_dofs_face;nn++) {
 	    for(dd = 0;dd<3;dd++) {
-	      KExt_faceedge[EE][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
-	      KExt_faceedge[EE][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*s1_imag[dd]*traction[0];
-	      KExt_faceedge[EE][ii + 3*nb_dofs_edge_EE*nn + nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*s2_imag[dd]*traction[1];
+	      KExt_faceedge[EE][ii + 3*nb_dofs_edge_EE*3*nn + 3*nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
+	      KExt_faceedge[EE][ii + 3*nb_dofs_edge_EE*3*nn + 3*nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*s1_imag[dd]*traction[0];
+	      KExt_faceedge[EE][ii + 3*nb_dofs_edge_EE*3*nn + 3*nb_dofs_edge_EE*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*s2_imag[dd]*traction[1];
 	    }
 	  }
         }
@@ -1325,7 +1332,7 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
     double traction[3] = {0,0,0}; 
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
     double idofs_x_face[3*nb_dofs_face];
-    for(ii = 0;ii<nb_dofs_face;ii++) {
+    for(ii = 0;ii<3*nb_dofs_face;ii++) {
       bzero(idofs_x_face,3*nb_dofs_face*sizeof(double));
       idofs_x_face[ii] = eps;
       __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
@@ -1342,12 +1349,11 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
 	s1_imag[dd] = 0.5*xs1[dd].i/eps;
 	s2_imag[dd] = 0.5*xs2[dd].i/eps;
       }
-      nn = 0;
-      for(;nn<3;nn++) {
+      for(nn = 0;nn<3;nn++) {
 	for(dd = 0;dd<3;dd++) {
-	  KExt_hface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
-	  KExt_hface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
-	  KExt_hface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
+	  KExt_hface[ii + 3*nb_dofs_face*3*nn + 3*nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
+	  KExt_hface[ii + 3*nb_dofs_face*3*nn + 3*nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
+	  KExt_hface[ii + 3*nb_dofs_face*3*nn + 3*nb_dofs_face*dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
 	}
       }
       if(KExt_edgeface!=NULL) {
@@ -1355,9 +1361,9 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
 	  int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
 	  for(nn = 0;nn<nb_dofs_edge;nn++) {
 	    for(dd = 0;dd<3;dd++) {
-	      KExt_edgeface[ee][ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
-	      KExt_edgeface[ee][ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s1_imag[dd]*traction[0];
-	      KExt_edgeface[ee][ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s2_imag[dd]*traction[1];
+	      KExt_edgeface[ee][ii + 3*nb_dofs_face*3*nn + 3*nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
+	      KExt_edgeface[ee][ii + 3*nb_dofs_face*3*nn + 3*nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s1_imag[dd]*traction[0];
+	      KExt_edgeface[ee][ii + 3*nb_dofs_face*3*nn + 3*nb_dofs_face*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s2_imag[dd]*traction[1];
 	    }
 	  }
 	}
@@ -1365,9 +1371,9 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
       if(KExt_faceface!=NULL) {
 	for(nn = 0;nn<nb_dofs_face;nn++) {
 	  for(dd = 0;dd<3;dd++) {
-	    KExt_faceface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
-	    KExt_faceface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*s1_imag[dd]*traction[0];
-	    KExt_faceface[ii + 3*nb_dofs_face*nn + nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*s2_imag[dd]*traction[1];
+	    KExt_faceface[ii + 3*nb_dofs_face*3*nn + 3*nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*normal_imag[dd]*traction[2];
+	    KExt_faceface[ii + 3*nb_dofs_face*3*nn + 3*nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*s1_imag[dd]*traction[0];
+	    KExt_faceface[ii + 3*nb_dofs_face*3*nn + 3*nb_dofs_face*dd] += g_w[gg]*N_face[nb_dofs_face*gg+nn]*s2_imag[dd]*traction[1];
 	  }
 	}
       }

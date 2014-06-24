@@ -24,6 +24,7 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethodTransIso.hpp"
+#include "SurfacePressure.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -330,7 +331,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
 
   //add finite elements entities
-    ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"TRAN_ISOTROPIC_ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"TRAN_ISOTROPIC_ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -338,6 +339,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",1); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+
+  //Neumab BCs
+  ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -364,63 +368,70 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create matrices
-    Vec D,F;
-    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
-    Mat Aij;
-    ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-    
-    CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
-    ierr = myDirihletBC.Init(); CHKERRQ(ierr);
-    
-//    vector<double> attributes;
-    double YoungModulusP;
-    double PoissonRatioP;
-    double YoungModulusZ;
-    double PoissonRatioPZ;
-    double ShearModulusZP;
+  Vec D,F;
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
+  Mat Aij;
+  ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
+      
+  //vector<double> attributes;
+  double YoungModulusP;
+  double PoissonRatioP;
+  double YoungModulusZ;
+  double PoissonRatioPZ;
+  double ShearModulusZP;
 
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
-    {
-        cout << endl << *it << endl;
-        
-        //Get block name
-        string name = it->get_Cubit_name();
-        
-        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
-        {
-            Mat_Elastic_TransIso mydata;
-            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-            cout << mydata;
-            YoungModulusP=mydata.data.Youngp;
-            YoungModulusZ=mydata.data.Youngz;
-            PoissonRatioP=mydata.data.Poissonp;
-            PoissonRatioPZ=mydata.data.Poissonpz;
-            if (mydata.data.Shearzp!=0) {
-                ShearModulusZP=mydata.data.Shearzp;
-            }else{
-                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
-            
-        }
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
+    cout << endl << *it << endl;
+    
+    //Get block name
+    string name = it->get_Cubit_name();
+    
+    if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+      Mat_Elastic_TransIso mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      cout << mydata;
+      YoungModulusP=mydata.data.Youngp;
+      YoungModulusZ=mydata.data.Youngz;
+      PoissonRatioP=mydata.data.Poissonp;
+      PoissonRatioPZ=mydata.data.Poissonpz;
+      if (mydata.data.Shearzp!=0) {
+          ShearModulusZP=mydata.data.Shearzp;
+      }	else {
+        ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));
+      }  
     }
-  
+  }
+
   //Assemble F and Aij
     
-    ///No of Axis/Angle of rotation
-    int noAA = 1; //could be 0 for no rotation
-    ///Array of Rotational Axes
-    double AxVector[6] = {/*1st Axis*/ 1,0,0 , /*2nd Axis*/ 0,1,0};
-    ///Array of Rotational Angles
-    double AxAngle[2] = {/*1st Angle*/ -0.25*M_PI ,/*2nd Angle*/ -0.25*M_PI};
-    
-    TranIsotropicAxisAngleRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F,noAA,AxVector,AxAngle);
-	
+  ///No of Axis/Angle of rotation
+  int noAA = 1; //could be 0 for no rotation
+  ///Array of Rotational Axes
+  double AxVector[6] = {/*1st Axis*/ 1,0,0 , /*2nd Axis*/ 0,1,0};
+  ///Array of Rotational Angles
+  double AxAngle[2] = {/*1st Angle*/ -0.25*M_PI ,/*2nd Angle*/ -0.25*M_PI};
+
+  DisplacementBCFEMethodPreAndPostProc MyDirihletBC(mField,"DISPLACEMENT",Aij,D,F);
+  TranIsotropicAxisAngleRotElasticFEMethod MyTIsotFE(mField,Aij,D,F,noAA,AxVector,AxAngle);
+
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
+  //preproc
+  ierr = mField.problem_basic_method_preProcess("ELASTIC_MECHANICS",MyDirihletBC); CHKERRQ(ierr);
+  //loop finite elements
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
+  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  for(;mit!=neumann_forces.end();mit++) {
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+  }
+  //postproc
+  ierr = mField.problem_basic_method_postProcess("ELASTIC_MECHANICS",MyDirihletBC); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -429,13 +440,10 @@ int main(int argc, char *argv[]) {
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-
   //Matrix View
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
   //std::string wait;
   //std::cin >> wait;
-
 
   //Solver
   KSP solver;
@@ -463,8 +471,8 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh fe_fibre_post_proc_method( mField, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
-    
+  TranIso_PostProc_AxisAngle_BlessedFile_OnRefMesh fe_fibre_post_proc_method(
+    mField,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_fibre_post_proc_method);  CHKERRQ(ierr);
 
   PetscSynchronizedFlush(PETSC_COMM_WORLD);

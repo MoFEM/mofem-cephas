@@ -15,21 +15,26 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+  
+add_executable(spatial_problem spatial_problem.cpp 
+  FaceSplittingTool.cpp 
+  ConfigurationalFractureMechanics.cpp)
+target_link_libraries(spatial_problem mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(spatial_problem spatial_problem.cpp)
-target_link_libraries(spatial_problem mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(material_force material_force.cpp
+  FaceSplittingTool.cpp
+  ConfigurationalFractureMechanics.cpp)
+target_link_libraries(material_force mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(material_force material_force.cpp)
-target_link_libraries(material_force mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(arc_length_material_coupled arc_length_material_coupled.cpp
+  FaceSplittingTool.cpp
+  ConfigurationalFractureMechanics.cpp)
+target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(arc_length_material_coupled arc_length_material_coupled.cpp)
-target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
-
-add_executable(spatial_problem_with_thermal_field spatial_problem_with_thermal_field.cpp)
-target_link_libraries(spatial_problem_with_thermal_field mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
-
-add_executable(split_faces split_faces.cpp)
-target_link_libraries(split_faces mofem_complex_for_lazy mofem_face_splitting mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(split_faces split_faces.cpp
+  FaceSplittingTool.cpp
+  ConfigurationalFractureMechanics.cpp)
+target_link_libraries(split_faces mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -67,6 +72,5 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/face_split_arc_length.sh DESTINATION b
 
 #testing
 add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh -f crack1.cub -l 1e-4 -o 2 -r 1 -d TEST_SIF)
-add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_2_1.h5m 
-  -a 2e-3 -n 1 -g 1e-6 -d TEST_ARC --snes_linesearch_type=basic --my_nb_sub_steps=1)
+add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_2_1.h5m -a 2e-3 -n 1 -g 1e-6 -d TEST_ARC --snes_linesearch_type=basic --my_nb_sub_steps=1)
 

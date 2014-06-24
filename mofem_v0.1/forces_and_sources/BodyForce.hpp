@@ -51,9 +51,10 @@ struct BodyFroceConstantField {
 
     Vec F;
     Block_BodyForces &dAta;
-    OpBodyForce(const string field_name,Vec _F,Block_BodyForces &data):
+    Range blockTets;
+    OpBodyForce(const string field_name,Vec _F,Block_BodyForces &data,Range block_tets):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data) {}
+      F(_F),dAta(data),blockTets(block_tets) {}
 
     ublas::vector<FieldData> Nf;
 
@@ -62,6 +63,7 @@ struct BodyFroceConstantField {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(blockTets.find(getMoFEMFEPtr()->get_ent())==blockTets.end()) PetscFunctionReturn(0);
 
       PetscErrorCode ierr;
 
@@ -81,17 +83,17 @@ struct BodyFroceConstantField {
 
 	  double acc;
 	  if(rr == 0) {
-	    acc = dAta.data.acceleration_x;
+	    acc = -dAta.data.acceleration_x;
 	  } else if(rr == 1) {
-	    acc = dAta.data.acceleration_y;
+	    acc = -dAta.data.acceleration_y;
 	  } else if(rr == 2) {
-	    acc = dAta.data.acceleration_z;
+	    acc = -dAta.data.acceleration_z;
 	  } else {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  }
 	  acc *= dAta.data.density;
 	  cblas_daxpy(nb_row_dofs,val*acc,&data.getN()(gg,0),1,&Nf[rr],rank);
-
+	  
 	}
 
       }
@@ -110,10 +112,14 @@ struct BodyFroceConstantField {
   PetscErrorCode addBlock(const string field_name,Vec &F,int ms_id) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
+    ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_Cubit_msId(ms_id,BlockSet,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);     
-    fe.get_op_to_do_Rhs().push_back(new OpBodyForce(field_name,F,mapData[ms_id]));
+    EntityHandle meshset = cubit_meshset_ptr->get_meshset();
+    Range tets;
+    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    fe.get_op_to_do_Rhs().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
     PetscFunctionReturn(0);
   } 
 

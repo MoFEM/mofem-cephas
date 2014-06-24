@@ -289,15 +289,17 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
   ublas::matrix<double> D,D_lambda,D_mu;
 
-  Tag th_stress,th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3;
-	bool propeties_from_BlockSet_Mat_ElasticSet;
+  Tag th_stress,th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3,th_prin_stress_vals;
+  bool propeties_from_BlockSet_Mat_ElasticSet;
 	
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(
-    FieldInterface& _mField, string _field_name,double _lambda,double _mu): PostProcDisplacemenysAndStarinOnRefMesh(_mField.get_moab(),_field_name),mField(_mField),lambda(_lambda),mu(_mu) {
+    FieldInterface& _mField, string _field_name,double _lambda,double _mu): 
+      PostProcDisplacemenysAndStarinOnRefMesh(_mField.get_moab(),_field_name),mField(_mField),lambda(_lambda),mu(_mu) {
     double def_VAL2[3] = { 0.0, 0.0, 0.0 };
     rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT3",3,MB_TYPE_DOUBLE,th_prin_stress_vect3,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VALUES",3,MB_TYPE_DOUBLE,th_prin_stress_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
     double def_VAL[9] = {0,0,0, 0,0,0, 0,0,0 };
     rval = moab_post_proc.tag_get_handle("STRESS_VAL",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 
@@ -313,164 +315,179 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
     for(int rr = 0;rr<6;rr++) {
       D_mu(rr,rr) = rr<3 ? 2 : 1;
     }
-//    D = lambda*D_lambda + mu*D_mu;
-		
-
-		propeties_from_BlockSet_Mat_ElasticSet = false;
-		for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-			propeties_from_BlockSet_Mat_ElasticSet = true;
-		}
+    //    D = lambda*D_lambda + mu*D_mu;
+    
+    propeties_from_BlockSet_Mat_ElasticSet = false;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+      propeties_from_BlockSet_Mat_ElasticSet = true;
+    }
 
 
   }
 
-	virtual PetscErrorCode calculateD(double _lambda,double _mu) {
-		PetscFunctionBegin;
-		
-		D = _lambda*D_lambda + _mu*D_mu;
-		//cerr << D_lambda << endl;
-		//cerr << D_mu << endl;
-		//cerr << D << endl;
-		
-		PetscFunctionReturn(0);
-	}
-	
-	PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
-		PetscFunctionBegin;
-		
-		*_lambda = lambda;
-		*_mu = mu;
-		
-		
-		if(propeties_from_BlockSet_Mat_ElasticSet) {
-			EntityHandle ent = fe_ptr->get_ent();
-			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-				
-				Mat_Elastic mydata;
-				ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-				
-				Range meshsets;
-				rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-				meshsets.insert(it->meshset);
-				for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-					if( moab.contains_entities(*mit,&ent,1) ) {
-						*_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
-						*_mu = MU(mydata.data.Young,mydata.data.Poisson);
-						PetscFunctionReturn(0);
-					}
-				}
-				
-		}
-			
-		SETERRQ(PETSC_COMM_SELF,1,"Element is not in elestic block, however you run linear elastic analysis with that element\n"
-							"top tip: check if you update block sets after mesh refinments or interface insertion");
-			
-		}
-		
-		PetscFunctionReturn(0);
-	}
-	
+  virtual PetscErrorCode calculateD(double _lambda,double _mu) {
+    PetscFunctionBegin;
+    
+    D = _lambda*D_lambda + _mu*D_mu;
+    //cerr << D_lambda << endl;
+    //cerr << D_mu << endl;
+    //cerr << D << endl;
+    
+    PetscFunctionReturn(0);
+  }
+  
+  PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
+    PetscFunctionBegin;
+    
+    *_lambda = lambda;
+    *_mu = mu;
+    
+    
+    if(propeties_from_BlockSet_Mat_ElasticSet) {
+      EntityHandle ent = fe_ptr->get_ent();
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+        
+        Mat_Elastic mydata;
+        ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+        
+        Range meshsets;
+        rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+        meshsets.insert(it->meshset);
+        for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+          if( moab.contains_entities(*mit,&ent,1) ) {
+            *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
+            *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+            PetscFunctionReturn(0);
+          }
+        }
+        
+    }
+      
+    SETERRQ(PETSC_COMM_SELF,1,"Element is not in elestic block, however you run linear elastic analysis with that element\n"
+              "top tip: check if you update block sets after mesh refinments or interface insertion");
+      
+    }
+    
+    PetscFunctionReturn(0);
+  }
+
   vector< ublas::matrix<FieldData> > invH;
   vector< FieldData > detH;
 
   PetscErrorCode operator()() {
-      PetscFunctionBegin;
+    PetscFunctionBegin;
 
-      //Loop over elements
-      ierr = do_operator(); CHKERRQ(ierr);
-		
-			//Calculated D Matrix
-			double _lambda,_mu;
-			ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
-			ierr = calculateD(_lambda,_mu); CHKERRQ(ierr);
+    try {
 
-      //Higher order approximation of geometry
-      ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
+    //Loop over elements
+    ierr = do_operator(); CHKERRQ(ierr);
+    
+    //Calculated D Matrix
+    double _lambda,_mu;
+    ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
+    ierr = calculateD(_lambda,_mu); CHKERRQ(ierr);
 
-      //Strains to Nodes in PostProc Mesh: create vector containing matrices
-      vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-      //du/dx
-      ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
-      vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
-      map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
+    //Higher order approximation of geometry
+    ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
 
-      int gg = 0;
-      for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
-        ublas::matrix< FieldData > GradU = *viit;
-	if(!invH.empty()) {
-	  //GradU = 
-	  //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
-	  //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
-	  //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
-	  //H = 
-	  //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
- 	  //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
- 	  //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]    
-	  //invH = 
-	  //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
-	  //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
-	  //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
-	  //GradU = 
-	  //[ dU/dX1 dU/dX2 dU/dX3 ]
-	  //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
-	  //[ dW/dX1 dW/dX2 dW/dX3 ] 
-	  GradU = prod( GradU, invH[gg] ); 
-	}
-        ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
-        rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
-        //caluate stress and save it into tag
-        ublas::vector<FieldData> Strain_VectorNotation(6);
-        Strain_VectorNotation[0] = Strain(0,0);
-        Strain_VectorNotation[1] = Strain(1,1);
-        Strain_VectorNotation[2] = Strain(2,2);
-        Strain_VectorNotation[3] = 2*Strain(0,1);
-        Strain_VectorNotation[4] = 2*Strain(1,2);
-        Strain_VectorNotation[5] = 2*Strain(2,0);
-        ublas::vector< FieldData > Stress_VectorNotation = prod( D, Strain_VectorNotation );
-        ublas::matrix< FieldData > Stress = ublas::zero_matrix<FieldData>(3,3);
-        Stress(0,0) = Stress_VectorNotation[0];
-        Stress(1,1) = Stress_VectorNotation[1];
-        Stress(2,2) = Stress_VectorNotation[2];
-        Stress(0,1) = Stress(1,0) = Stress_VectorNotation[3];
-        Stress(1,2) = Stress(2,1) = Stress_VectorNotation[4];
-        Stress(2,0) = Stress(0,2) = Stress_VectorNotation[5];
-        
-        rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);
+    //Strains to Nodes in PostProc Mesh: create vector containing matrices
+    vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+    //du/dx
+    ierr = GetGaussDiffDataVector(field_name,GradU_at_GaussPt); CHKERRQ(ierr);
+    vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+    map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
 
-        //Principal stress vectors
-        //Calculated from finding the eigenvalues and eigenvectors
-        ublas::matrix< FieldData > eigen_vectors = Stress;
-        ublas::vector<double> eigen_values(3);
-        
-        //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
-        int n = 3, lda = 3, info, lwork = -1;
-        double wkopt;
-        info = lapack_dsyev('V','U',n,&(eigen_vectors.data()[0]),lda,&(eigen_values.data()[0]),&wkopt,lwork);
-        if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-        lwork = (int)wkopt;
-        double work[lwork];
-        info = lapack_dsyev('V','U',n,&(eigen_vectors.data()[0]),lda,&(eigen_values.data()[0]),work,lwork);
-        if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-        
-        //Combine eigenvalues and vectors to create principal stress vector
-        ublas::vector<double> prin_stress_vect1(3);
-        ublas::vector<double> prin_stress_vect2(3);
-        ublas::vector<double> prin_stress_vect3(3);
-        
-        for (int ii=0; ii < 3; ii++){
-          prin_stress_vect1[ii] = eigen_vectors.data()[ii]*eigen_values(0); 
-          prin_stress_vect2[ii] = eigen_vectors.data()[ii+3]*eigen_values(1);
-          prin_stress_vect3[ii] = eigen_vectors.data()[ii+6]*eigen_values(2);
-        }
+    int gg = 0;
+    for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
 
-        //Tag principle stress vectors 1, 2, 3
-        rval = moab_post_proc.tag_set_data(th_prin_stress_vect1,&mit->second,1,&prin_stress_vect1[0]); CHKERR_PETSC(rval);
-        rval = moab_post_proc.tag_set_data(th_prin_stress_vect2,&mit->second,1,&prin_stress_vect2[0]); CHKERR_PETSC(rval);
-        rval = moab_post_proc.tag_set_data(th_prin_stress_vect3,&mit->second,1,&prin_stress_vect3[0]); CHKERR_PETSC(rval);
-        
-        }
 
-      PetscFunctionReturn(0);
+      ublas::matrix< FieldData > GradU = *viit;
+      if(!invH.empty()) {
+        //GradU = 
+        //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
+        //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
+        //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
+        //H = 
+        //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
+         //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
+         //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]    
+        //invH = 
+        //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
+        //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
+        //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
+        //GradU = 
+        //[ dU/dX1 dU/dX2 dU/dX3 ]
+        //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
+        //[ dW/dX1 dW/dX2 dW/dX3 ] 
+        GradU = prod( GradU, invH[gg] ); 
+      }
+      ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+      rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
+      //caluate stress and save it into tag
+      ublas::vector<FieldData> Strain_VectorNotation(6);
+      Strain_VectorNotation[0] = Strain(0,0);
+      Strain_VectorNotation[1] = Strain(1,1);
+      Strain_VectorNotation[2] = Strain(2,2);
+      Strain_VectorNotation[3] = 2*Strain(0,1);
+      Strain_VectorNotation[4] = 2*Strain(1,2);
+      Strain_VectorNotation[5] = 2*Strain(2,0);
+      ublas::vector< FieldData > Stress_VectorNotation = prod( D, Strain_VectorNotation );
+      ublas::matrix< FieldData > Stress = ublas::zero_matrix<FieldData>(3,3);
+      Stress(0,0) = Stress_VectorNotation[0];
+      Stress(1,1) = Stress_VectorNotation[1];
+      Stress(2,2) = Stress_VectorNotation[2];
+      Stress(0,1) = Stress(1,0) = Stress_VectorNotation[3];
+      Stress(1,2) = Stress(2,1) = Stress_VectorNotation[4];
+      Stress(2,0) = Stress(0,2) = Stress_VectorNotation[5];
+      
+      rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);
+  
+      //Principal stress vectors
+      //Calculated from finding the eigenvalues and eigenvectors
+      ublas::matrix< FieldData > eigen_vectors = Stress;
+      ublas::vector<double> eigen_values(3);
+      
+      //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
+      int n = 3, lda = 3, info, lwork = -1;
+      double wkopt;
+      info = lapack_dsyev('V','U',n,&(eigen_vectors.data()[0]),lda,&(eigen_values.data()[0]),&wkopt,lwork);
+      if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
+      lwork = (int)wkopt;
+      double work[lwork];
+      info = lapack_dsyev('V','U',n,&(eigen_vectors.data()[0]),lda,&(eigen_values.data()[0]),work,lwork);
+      if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
+      
+      //Combine eigenvalues and vectors to create principal stress vector
+      ublas::vector<double> prin_stress_vect1(3);
+      ublas::vector<double> prin_stress_vect2(3);
+      ublas::vector<double> prin_stress_vect3(3);
+      ublas::vector<double> prin_vals_vect(3);
+            
+      eigen_vectors = trans(eigen_vectors);
+      for (int ii=0; ii < 3; ii++) {
+        prin_vals_vect[0] = eigen_values[0]; 
+        prin_vals_vect[1] = eigen_values[1]; 
+        prin_vals_vect[2] = eigen_values[2]; 
+        prin_stress_vect1[ii] = eigen_vectors.data()[ii+3*0]; 
+        prin_stress_vect2[ii] = eigen_vectors.data()[ii+3*1];
+        prin_stress_vect3[ii] = eigen_vectors.data()[ii+3*2];
+      }
+  
+      //Tag principle stress vectors 1, 2, 3
+      rval = moab_post_proc.tag_set_data(th_prin_stress_vect1,&mit->second,1,&prin_stress_vect1[0]); CHKERR_PETSC(rval);
+      rval = moab_post_proc.tag_set_data(th_prin_stress_vect2,&mit->second,1,&prin_stress_vect2[0]); CHKERR_PETSC(rval);
+      rval = moab_post_proc.tag_set_data(th_prin_stress_vect3,&mit->second,1,&prin_stress_vect3[0]); CHKERR_PETSC(rval);
+      rval = moab_post_proc.tag_set_data(th_prin_stress_vals,&mit->second,1,&prin_vals_vect[0]); CHKERR_PETSC(rval);
+    
+    }
+
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+
+    PetscFunctionReturn(0);
   }
 
 };

@@ -1,3 +1,10 @@
+/** \file ForcesAndSurcesCore.hpp 
+ * \brief Forces and sources data structures
+ *
+ * It is set of objects to implement finite elements, in particular it is used
+ * to implement source and force therms on right hand side. 
+*/
+
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
 * --------------------------------------------------------------
 *
@@ -23,6 +30,7 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
 #ifndef __CORE_FORCES_AND_SURCES_HPP
 #define __CORE_FORCES_AND_SURCES_HPP
 
@@ -31,7 +39,9 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
+
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
 
 using namespace boost::numeric;
 
@@ -89,22 +99,24 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
   struct DerivedEntData: public DataForcesAndSurcesCore::EntData {
     DataForcesAndSurcesCore::EntData &entData;
-    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): entData(ent_data)  {}
+    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): 
+      entData(ent_data),oRder(0) {}
     const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
     ublas::vector<DofIdx>& getIndices() { return iNdices; }
     const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
     ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    ApproximationOrder getOrder() const { return oRder; }
+    ApproximationOrder& getOrder() { return oRder; }
 
     int getSense() const { return entData.getSense(); }
-    ApproximationOrder getOrder() const { return entData.getOrder(); }
     const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
     const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
     int& getSense() { return entData.getSense(); }
-    ApproximationOrder& getOrder() { return entData.getOrder(); }
     ublas::matrix<FieldData>& getN() { return entData.getN(); }
     ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
 
     private:
+    ApproximationOrder oRder;
     ublas::vector<DofIdx> iNdices;
     ublas::vector<FieldData> fieldData;
 
@@ -123,12 +135,17 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
   PetscErrorCode getOrder(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const string &field_name,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getFacesSense(DataForcesAndSurcesCore &data);
+
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data);
   PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data);
   PetscErrorCode getOrderVolume(DataForcesAndSurcesCore &data);
+  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getOrderVolume(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getNodesIndices(
     const string &field_name,
@@ -249,6 +266,14 @@ struct OpGetData: public DataOperator {
 
 };
 
+/** \brief Tet finite element  
+ *
+ * User is implementing own operator at Guass piint level, by own object
+ * derived from TetElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ * number of operator added pushing objects to vecUserOpNH1 and
+ * vecUserOpNH1NH1. 
+ *
+ */
 struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data,other_data;
@@ -284,6 +309,7 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(TetElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -297,7 +323,15 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+
+  /** \brief Use to push back operator for right hand side
+   * It can be ussed to calulate nodal forces or other quantities on the mesh.
+   */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+
+  /** \brief Use to push back operator for left hand side
+   * It can be ussed to calulate matrices or other quantities on mesh.
+   */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
 
   PetscErrorCode preProcess() {
@@ -337,6 +371,14 @@ struct OpGetNormals: public DataOperator {
 
 };
 
+/** \brief Tri finite element  
+ *
+ * User is implementing own operator at Guass piint level, by own object
+ * derived from TriElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ * number of operator added pushing objects to vecUserOpNH1 and
+ * vecUserOpNH1NH1. 
+ *
+ */
 struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
@@ -374,14 +416,48 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
     inline double getArea() { return ptrFE->aRea; }
+
+    /** \bried get triangle normal
+     */
     inline ublas::vector<double>& getNormal() { return ptrFE->normal; }
+
+    /** \bried get triangle coords
+     */
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+
+    /** \bried get triangle Gauss pts.
+     */
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
+
+    /** \bried get coordinates at Gauss pts.
+     */
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+
+    /** \bried if higher order geometry return normals at Gauss pts.
+     */
     inline ublas::matrix<FieldData>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
+
+
+    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+     */
     inline ublas::matrix<FieldData>& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
+
+    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+     */
     inline ublas::matrix<FieldData>& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
+
+    /** \bried return pointer to triangle finite element object 
+     */
+    inline const TriElementForcesAndSurcesCore* getTriElementForcesAndSurcesCore() { return ptrFE; }
+
+    /** \bried return pointer to FEMthod object
+     */
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
+
+    /** \bried return pointer to NumeredMoFEMFiniteElement 
+     */
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
+
     PetscErrorCode setPtrFE(TriElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
       ptrFE = ptr;
@@ -393,7 +469,15 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+
+  /** \brief Use to push back operator for right hand side
+   * It can be ussed to calulate nodal forces or other quantities on the mesh.
+   */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+
+  /** \brief Use to push back operator for left hand side
+   * It can be ussed to calulate matrices or other quantities on mesh.
+   */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
 
   PetscErrorCode preProcess() {
@@ -408,6 +492,14 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
 };
 
+/** \brief Edge finite element  
+ *
+ * User is implementing own operator at Guass piint level, by own object
+ * derived from EdgeElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ * number of operator added pushing objects to vecUserOpNH1 and
+ * vecUserOpNH1NH1. 
+ *
+ */
 struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
@@ -442,6 +534,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(EdgeElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -454,7 +547,15 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+
+  /** \brief Use to push back operator for right hand side
+   * It can be ussed to calulate nodal forces or other quantities on the mesh.
+   */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+
+  /** \brief Use to push back operator for left hand side
+   * It can be ussed to calulate matrices or other quantities on mesh.
+   */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
 
   PetscErrorCode preProcess() {
@@ -469,6 +570,14 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
 };
 
+/** \brief Vertex finite element  
+ *
+ * User is implementing own operator at Guass piint level, by own object
+ * derived from VertexElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ * number of operator added pushing objects to vecUserOpNH1 and
+ * vecUserOpNH1NH1. 
+ *
+ */
 struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
@@ -493,6 +602,7 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+    inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(VertexElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -505,7 +615,15 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
   boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+
+  /** \brief Use to push back operator for right hand side
+   * It can be ussed to calulate nodal forces or other quantities on the mesh.
+   */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+
+  /** \brief Use to push back operator for left hand side
+   * It can be ussed to calulate matrices or other quantities on mesh.
+   */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
 
   PetscErrorCode preProcess() {

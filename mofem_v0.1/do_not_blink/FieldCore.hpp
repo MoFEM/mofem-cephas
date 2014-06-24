@@ -150,21 +150,21 @@ struct FieldCore: public FieldInterface {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode printCubitDisplacementSet() {
+  PetscErrorCode print_cubit_displacement_set() {
     PetscFunctionBegin;
     displacement_cubit_bc_data mydata;
     ierr = printCubitSet(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   
-  PetscErrorCode printCubitPressureSet() {
+  PetscErrorCode print_cubit_pressure_set() {
     PetscFunctionBegin;
     pressure_cubit_bc_data mydata;
     ierr = printCubitSet(mydata,SideSet|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
    
-  PetscErrorCode printCubitForceSet() {
+  PetscErrorCode print_cubit_force_set() {
     PetscFunctionBegin;
     force_cubit_bc_data mydata;
     ierr = printCubitSet(mydata,NodeSet|mydata.type.to_ulong()); CHKERRQ(ierr);
@@ -184,7 +184,7 @@ struct FieldCore: public FieldInterface {
         PetscFunctionReturn(0);
     }
 
-  PetscErrorCode printCubitMaterials() {
+  PetscErrorCode print_cubit_materials_set() {
     PetscFunctionBegin;
     FieldInterface& this_mField = *this;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BlockSet|Mat_ElasticSet,it)) {

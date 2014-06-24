@@ -19,11 +19,12 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include <petscksp.h>
 
-#include "SnesCtx.hpp"
+#include "SurfacePressureComplexForLazy.hpp"
+
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
 
 #include "FEMethod_DriverComplexForLazy.hpp"
 
@@ -34,35 +35,31 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
+//Rounding
+#define RND_EPS 1e-6
+double roundn(double n) {
+  //break n into fractional part (fract) and integral part (intp)
+  double fract, intp;
+  fract = modf(n,&intp);
+  // case where n approximates zero, set n to "positive" zero
+  if (abs(intp)==0) {
+    if(abs(fract)<=RND_EPS) {
+      n=0.000;
+    }
+  }
+  return n;
+}
 
-  NL_ElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-      FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
-    //set_PhysicalEquationNumber(neohookean);
+
+struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
+
+  NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_ComplexForLazy_Data(_mField,_verbose), 
+      NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose)  {
     set_PhysicalEquationNumber(hooke);
   }
 
 };
-
-//Rounding
-#define RND_EPS 1e-6
-double roundn(double n)
-{
-	//break n into fractional part (fract) and integral part (intp)
-    double fract, intp;
-    fract = modf(n,&intp);
-    // case where n approximates zero, set n to "positive" zero
-    if (abs(intp)==0)
-    {
-        if(abs(fract)<=RND_EPS)
-           {
-               n=0.000;
-           }
-    }
-    return n;
-}
-
 
 int main(int argc, char *argv[]) {
 
@@ -143,8 +140,71 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
+  ierr = mField.add_finite_element("NEUAMNN_FE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","NEUAMNN_FE"); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    Range tris;
+    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
+  }
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    Range tris;
+    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
+  }
+
+  #ifdef NONLINEAR_TEMPERATUTE
+
+  ierr = mField.add_field("TEMPERATURE",H1,1); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("ELASTIC","TEMPERATURE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(0,"TEMPERATURE"); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"TEMPERATURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"TEMPERATURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"TEMPERATURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"TEMPERATURE",1); CHKERRQ(ierr);
+
+  #endif //NONLINEAR_TEMPERATUTE
+
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
+
+  {
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
+      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get_ent();
+      int dof_rank = dof_ptr->get_dof_rank();
+      double &fval = dof_ptr->get_FieldData();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+      fval = coords[dof_rank];
+    }
+  }
+
+  #ifdef NONLINEAR_TEMPERATUTE
+
+  {
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"TEMPERATURE",dof_ptr)) {
+      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get_ent();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+      double &fval = dof_ptr->get_FieldData();
+      fval = coords[0];
+    }
+  }
+
+  #endif //NONLINEAR_TEMPERATUTE
 
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
@@ -163,54 +223,56 @@ int main(int argc, char *argv[]) {
   //create matrices
   Vec F;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
+  Vec D;
+  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  {
-    EntityHandle node = 0;
-    double coords[3];
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr)) {
-      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
-      double &fval = dof_ptr->get_FieldData();
-      if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
-      }
-      fval = coords[dof_rank];
-    }
+  const double young_modulus = 1.;
+  const double poisson_ratio = 0.;
+  NL_ElasticFEMethod my_fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  #ifdef NONLINEAR_TEMPERATUTE
+  my_fe.thermal_expansion = 0.1;
+  #endif //NONLINEAR_TEMPERATUTE
+
+  NeummanForcesSurfaceComplexForLazy neumann_forces(mField,Aij,F);
+  NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_spatial = neumann_forces.getLoopSpatialFe();
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    ierr = fe_spatial.addForce(it->get_msId()); CHKERRQ(ierr);
+  }
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    ierr = fe_spatial.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
 
-  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+  SpatialPositionsBCFEMethodPreAndPostProc MyDirihletBC(mField,"SPATIAL_POSITION",Aij,D,F);
 
-  const double YoungModulus = 1.;
-  const double PoissonRatio = 0.;
-  NL_ElasticFEMethod MyFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-
-  SnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
+  SnesCtx snes_ctx(mField,"ELASTIC_MECHANICS");
   
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-  ierr = SNESSetApplicationContext(snes,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes,F,SnesRhs,&SnesCtx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&SnesCtx); CHKERRQ(ierr);
+  ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
-  SnesCtx::loops_to_do_type& loops_to_do_Rhs = SnesCtx.get_loops_to_do_Rhs();
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
-  SnesCtx::loops_to_do_type& loops_to_do_Mat = SnesCtx.get_loops_to_do_Mat();
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&MyFE));
+  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyDirihletBC);
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&MyDirihletBC);
 
-  Vec D;
-  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&MyDirihletBC);
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&MyDirihletBC);
+
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   double step_size = -1.;
-  ierr = MyFE.set_t_val(step_size); CHKERRQ(ierr);
+  ierr = neumann_forces.setForceScale(step_size); CHKERRQ(ierr);
   ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
@@ -222,7 +284,11 @@ int main(int argc, char *argv[]) {
 
     //Open mesh_file_name.txt for writing
     ofstream myfile;
+    #ifdef NONLINEAR_TEMPERATUTE
+    myfile.open(("nonlinear_thermal_expansion_"+string(mesh_file_name)+".txt").c_str());
+    #else
     myfile.open(("nonlinear_"+string(mesh_file_name)+".txt").c_str());
+    #endif
     
     //Output displacements
     cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
