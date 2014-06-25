@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 2;
+  int order = 5;
   ierr = mField.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
 
   ThermalElement thermal_elements(mField);
   ierr = thermal_elements.addThermalElements("TEST_PROBLEM","TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalFluxElement("TEST_PROBLEM","TEMP"); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -133,6 +134,7 @@ int main(int argc, char *argv[]) {
   TemperatureBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"TEMP",A,T,F);
   ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
   ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
+  ierr = thermal_elements.setThermalFluxFiniteElementLhsOperators("TEMP",F); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
@@ -143,6 +145,7 @@ int main(int argc, char *argv[]) {
 
   ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
 
   //postproc
   ierr = mField.problem_basic_method_postProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);

@@ -23,7 +23,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 #ifndef __BODY_FORCE_HPP
 #define __BODY_FORCE_HPP
 
@@ -43,10 +42,18 @@ struct ThermalElement {
   MyVolumeFE feLhs;
   MyVolumeFE& getLoopFeLhs() { return feLhs; }
 
+  struct MyTriFE: public TriElementForcesAndSurcesCore {
+    MyTriFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
+    int getRule(int order) { return ceil(order/2); };
+  };
+ 
+  MyTriFE feFlux;
+  MyTriFE& getLoopFeFlux() { return feFlux; }
+
   FieldInterface &mField;
   ThermalElement(
     FieldInterface &m_field):
-    feRhs(m_field),feLhs(m_field),mField(m_field) {}
+    feRhs(m_field),feLhs(m_field),feFlux(m_field),mField(m_field) {}
 
 
   struct BlockData {
@@ -54,6 +61,12 @@ struct ThermalElement {
     Range tEts;
   };
   map<int,BlockData> setOfBlocks;
+
+  struct FluxData {
+    heatflux_cubit_bc_data dAta;
+    Range tRis;
+  };
+  map<int,FluxData> setOfFluxes;
 
   struct CommonData {
     ublas::vector<double> temperatureAtGaussPts;
@@ -222,6 +235,65 @@ struct ThermalElement {
 
   };
 
+  struct OpHeatFlux:public TriElementForcesAndSurcesCore::UserDataOperator {
+
+    Vec &F;
+    FluxData &dAta;
+    bool ho_geometry;
+
+    OpHeatFlux(const string field_name,Vec &_F,
+      FluxData &data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      F(_F),dAta(data),ho_geometry(_ho_geometry) {}
+
+    ublas::vector<FieldData> Nf;
+
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+
+      PetscErrorCode ierr;
+
+      const FENumeredDofMoFEMEntity *dof_ptr;
+      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      int rank = dof_ptr->get_max_rank();
+
+      int nb_row_dofs = data.getIndices().size()/rank;
+      
+      Nf.resize(data.getIndices().size());
+      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
+
+      //cerr << getNormal() << endl;
+      //cerr << getNormals_at_GaussPt() << endl;
+
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+
+	double val = getGaussPts()(2,gg);
+	double flux;
+	if(ho_geometry) {
+	  double area = cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+	  flux = dAta.dAta.data.value1*area;
+	} else {
+	  flux = dAta.dAta.data.value1*getArea();
+	}
+	cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
+
+      }
+    
+      //cerr << "VecSetValues\n";
+      //cerr << Nf << endl;
+      //cerr << data.getIndices() << endl;
+      ierr = VecSetValues(F,data.getIndices().size(),
+	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
   PetscErrorCode addThermalElements(
     const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
@@ -254,6 +326,31 @@ struct ThermalElement {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode addThermalFluxElement(
+    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    PetscFunctionBegin;
+
+    PetscErrorCode ierr;
+    ErrorCode rval;
+
+    ierr = mField.add_finite_element("THERMAL_FLUX_FE",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("THERMAL_FLUX_FE",field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("THERMAL_FLUX_FE",field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",field_name); CHKERRQ(ierr);
+    if(mField.check_field(mesh_nodals_positions)) {
+      ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
+    }
+    ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|HeatfluxSet,it)) {
+      ierr = it->get_cubit_bc_data_structure(setOfFluxes[it->get_msId()].dAta); CHKERRQ(ierr);
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+    }
+
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F) {
     PetscFunctionBegin;
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -265,13 +362,26 @@ struct ThermalElement {
     PetscFunctionReturn(0);
   }
 
-
   PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat &A) {
     PetscFunctionBegin;
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       //add finite element
       feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,A,sit->second,commonData));
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode setThermalFluxFiniteElementLhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    PetscFunctionBegin;
+    bool ho_geometry = false;
+    if(mField.check_field(mesh_nodals_positions)) {
+      ho_geometry = true;
+    }
+    map<int,FluxData>::iterator sit = setOfFluxes.begin();
+    for(;sit!=setOfFluxes.end();sit++) {
+      //add finite element
+      feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,F,sit->second,ho_geometry));
     }
     PetscFunctionReturn(0);
   }
