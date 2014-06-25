@@ -73,26 +73,25 @@ struct ThermalElement {
       PetscFunctionBegin;
       try {
 
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
-
-      commonData.gradAtGaussPts.resize(data.getN().size1(),3);
-
-      switch(type) {
-	case MBVERTEX:
-	for(int dd = 0;dd<3;dd++) {
-	  commonData.gradAtGaussPts(0,dd) = cblas_ddot(4,&data.getDiffN()(0,dd),3,&data.getFieldData()[0],1);
-	  for(unsigned int gg = 1;gg<data.getN().size1();gg++) {
-	    commonData.gradAtGaussPts(gg,dd) = commonData.gradAtGaussPts(gg,dd); 
-	  }
-	}
-	break;
-	default:
-	for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+        if(data.getIndices().size()==0) PetscFunctionReturn(0);
+        commonData.gradAtGaussPts.resize(data.getN().size1(),3);
+  
+        switch(type) {
+	  case MBVERTEX:
 	  for(int dd = 0;dd<3;dd++) {
-	   commonData.gradAtGaussPts(gg,dd) += cblas_ddot(data.getN().size2(),&data.getDiffN()(gg,dd),3,&data.getFieldData()[0],1);
+	    commonData.gradAtGaussPts(0,dd) = cblas_ddot(4,&data.getDiffN()(0,dd),3,&data.getFieldData()[0],1);
+	    for(unsigned int gg = 1;gg<data.getN().size1();gg++) {
+	      commonData.gradAtGaussPts(gg,dd) = commonData.gradAtGaussPts(0,dd); 
+	    }
 	  }
-	}
-      }
+	  break;
+	  default:
+	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	    for(int dd = 0;dd<3;dd++) {
+	      commonData.gradAtGaussPts(gg,dd) += cblas_ddot(data.getN().size2(),&data.getDiffN()(gg,dd),3,&data.getFieldData()[0],1);
+	    }
+	  }
+        }
 
       } catch (const std::exception& ex) {
 	ostringstream ss;
@@ -105,43 +104,12 @@ struct ThermalElement {
 
   };
 
-  struct OpGetTemperatureAtGaussPts:  public TetElementForcesAndSurcesCore::UserDataOperator {
-
-    CommonData &commonData;
-    OpGetTemperatureAtGaussPts(const string field_name,CommonData &common_data):
-      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data) {}
-
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
-
-      try {
-
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
-
-      commonData.temperatureAtGaussPts.resize(data.getN().size1());
-      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	commonData.temperatureAtGaussPts(gg) += cblas_ddot(data.getN().size2(),&data.getN()(gg,0),1,&data.getFieldData()[0],1);
-      }
-
-      } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  struct OpThernalRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
+  struct OpThermalRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     Vec &F;
     BlockData &dAta;
     CommonData &commonData;
-    OpThernalRhs(const string field_name,Vec &_F,BlockData &data,CommonData &common_data):
+    OpThermalRhs(const string field_name,Vec &_F,BlockData &data,CommonData &common_data):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),commonData(common_data) {}
 
@@ -164,19 +132,14 @@ struct ThermalElement {
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
 	double val = -dAta.cOnductivity*getVolume()*getGaussPts()(3,gg)*getVolume();
-	switch(type) {
-	  case MBVERTEX:
-	    cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
-	      &data.getDiffN()(0,0),3,&commonData.gradAtGaussPts(gg,0),1,
-	      1.,&Nf[0],1);
-	  break;
-	  default:
-	    cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
-	      &data.getDiffN()(gg,0),3,&commonData.gradAtGaussPts(gg,0),1,
-	      1.,&Nf[0],1);
-	}
-      }
+	cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
+	  &data.getDiffN()(gg,0),3,&commonData.gradAtGaussPts(gg,0),1,
+	  1.,&Nf[0],1);
 
+      }
+      
+      //cerr << Nf << endl;
+      
       ierr = VecSetValues(F,data.getIndices().size(),
 	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
@@ -191,12 +154,12 @@ struct ThermalElement {
 
   };
 
-  struct OpThernalLhs: public TetElementForcesAndSurcesCore::UserDataOperator {
+  struct OpThermalLhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     Mat &A;
     BlockData &dAta;
     CommonData &commonData;
-    OpThernalLhs(const string field_name,Mat &_A,BlockData &data,CommonData &common_data):
+    OpThermalLhs(const string field_name,Mat &_A,BlockData &data,CommonData &common_data):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       A(_A),dAta(data),commonData(common_data) {}
 
@@ -210,53 +173,42 @@ struct ThermalElement {
 
       try {
   
-      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+	if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+	if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
   
-      int nb_row = row_data.getN().size2();
-      int nb_col = col_data.getN().size2();
-      K.resize(nb_row,nb_col);
-      bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
+	int nb_row = row_data.getN().size2();
+	int nb_col = col_data.getN().size2();
+	K.resize(nb_row,nb_col);
+	bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
   
-      for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-	double *diff_N_row,*diff_N_col;
-
-	if(row_type==MBVERTEX) {
-	  diff_N_row = &row_data.getDiffN()(0,0);
-	} else {
+	  double *diff_N_row,*diff_N_col;
 	  diff_N_row = &row_data.getDiffN()(gg,0);
-	}
-
-	if(col_type==MBVERTEX) {
-	  diff_N_col = &col_data.getDiffN()(0,0);
-	} else {
 	  diff_N_col = &col_data.getDiffN()(gg,0);
+
+	  double val = -dAta.cOnductivity*getVolume()*getGaussPts()(3,gg)*getVolume();
+	  cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasTrans,
+	    nb_row,nb_col,3,
+	    val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
+  
 	}
   
-
-        double val = -dAta.cOnductivity*getVolume()*getGaussPts()(3,gg)*getVolume();
-        cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasTrans,
-	  nb_row,nb_col,3,
-	  val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
-  
-      }
-  
-      PetscErrorCode ierr;
-      ierr = MatSetValues(
-        A,
-        nb_row,&row_data.getIndices()[0],
-        nb_col,&col_data.getIndices()[0],
-        &K(0,0),ADD_VALUES); CHKERRQ(ierr);
-      if(row_side != col_side || row_type != col_type) {
-	transK.resize(nb_col,nb_row);
-	noalias(transK) = trans( K );
+	PetscErrorCode ierr;
 	ierr = MatSetValues(
 	  A,
-	  nb_col,&col_data.getIndices()[0],
 	  nb_row,&row_data.getIndices()[0],
-	  &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
-      }
+	  nb_col,&col_data.getIndices()[0],
+	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
+	if(row_side != col_side || row_type != col_type) {
+	  transK.resize(nb_col,nb_row);
+	  noalias(transK) = trans( K );
+	  ierr = MatSetValues(
+	    A,
+	    nb_col,&col_data.getIndices()[0],
+	    nb_row,&row_data.getIndices()[0],
+	    &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
+	}
       
 
       } catch (const std::exception& ex) {
@@ -308,7 +260,7 @@ struct ThermalElement {
     for(;sit!=setOfBlocks.end();sit++) {
       //add finite element
       feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
-      feRhs.get_op_to_do_Rhs().push_back(new OpThernalRhs(field_name,F,sit->second,commonData));
+      feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,F,sit->second,commonData));
     }
     PetscFunctionReturn(0);
   }
@@ -319,7 +271,7 @@ struct ThermalElement {
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       //add finite element
-      feLhs.get_op_to_do_Lhs().push_back(new OpThernalLhs(field_name,A,sit->second,commonData));
+      feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,A,sit->second,commonData));
     }
     PetscFunctionReturn(0);
   }

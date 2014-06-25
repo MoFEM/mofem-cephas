@@ -20,11 +20,17 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "ThermalElement.hpp"
+#include "DirihletBC.hpp"
+
+#include "PostProcVertexMethod.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
+
+#include <petscksp.h>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -119,36 +125,75 @@ int main(int argc, char *argv[]) {
 
   Vec F;
   ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
+  Vec T;
+  ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
 
+  TemperatureBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"TEMP",A,T,F);
   ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
   ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
   
+  //preproc
+  ierr = mField.problem_basic_method_preProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Row,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
   ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
+
+  //postproc
+  ierr = mField.problem_basic_method_postProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  //Matrix View
-  MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+  ierr = VecScale(F,-1); CHKERRQ(ierr);
+
+  //Solver
+  KSP solver;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,A,A,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+  ierr = KSPSetUp(solver); CHKERRQ(ierr);
+
+  ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  ierr = mField.problem_basic_method_preProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
+
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Row,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  std::string wait;
-  std::cin >> wait;
+
+  PostProcVertexMethod ent_method(moab,"TEMP");
+  ierr = mField.loop_dofs("TEST_PROBLEM","TEMP",Row,ent_method); CHKERRQ(ierr);
+
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("TEST_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
 
 
+  //Matrix View
+  //MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+  //ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //std::string wait;
+  //std::cin >> wait;
 
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&T); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

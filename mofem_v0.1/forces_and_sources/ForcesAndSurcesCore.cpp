@@ -796,41 +796,41 @@ PetscErrorCode OpSetInvJac::doWork(
 
   try {
 
-  diffNinvJac.resize(data.getDiffN().size1(),data.getDiffN().size2());
-  unsigned int nb_gauss_pts = data.getN().size1();
-  unsigned int nb_dofs = data.getN().size2();
-  if(type!=MBVERTEX) {
-    if(nb_dofs != data.getDiffN().size2()/3) {
-      SETERRQ2(PETSC_COMM_SELF,1,
-	"data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/3 )",
-	nb_dofs,data.getDiffN().size2());
-    }
-  }
-
-  switch (type) {
-
-    case MBVERTEX: {
-      ierr = ShapeDiffMBTETinvJ(
-	&*data.getDiffN().data().begin(),&*invJac.data().begin(),&*diffNinvJac.data().begin()); CHKERRQ(ierr);
-      data.getDiffN().data().swap(diffNinvJac.data());
-    }
-    break;
-    case MBEDGE:
-    case MBTRI:
-    case MBTET: {
-      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
-	for(unsigned int dd = 0;dd<nb_dofs;dd++) {
-	  cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
-	    &*invJac.data().begin(),3,&data.getDiffN()(gg,3*dd),1,0.,&diffNinvJac(gg,3*dd),1); 
-	}
+    diffNinvJac.resize(data.getDiffN().size1(),data.getDiffN().size2());
+    unsigned int nb_gauss_pts = data.getN().size1();
+    unsigned int nb_dofs = data.getN().size2();
+    if(type!=MBVERTEX) {
+      if(nb_dofs != data.getDiffN().size2()/3) {
+        SETERRQ2(PETSC_COMM_SELF,1,
+  	"data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/3 )",
+  	nb_dofs,data.getDiffN().size2());
       }
-      data.getDiffN().data().swap(diffNinvJac.data());
     }
-    break;
-    default:
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-
-  }
+  
+    switch (type) {
+  
+      case MBVERTEX: {
+        ierr = ShapeDiffMBTETinvJ(
+  	&*data.getDiffN().data().begin(),&*invJac.data().begin(),&*diffNinvJac.data().begin()); CHKERRQ(ierr);
+      }
+      break;
+      case MBEDGE:
+      case MBTRI:
+      case MBTET: {
+        for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+	  for(unsigned int dd = 0;dd<nb_dofs;dd++) {
+	    cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
+	      &*invJac.data().begin(),3,&data.getDiffN()(gg,3*dd),1,0.,&diffNinvJac(gg,3*dd),1); 
+	  }
+        }
+      }
+      break;
+      default:
+        SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  
+    }
+  
+    data.getDiffN().data().swap(diffNinvJac.data());
 
   } catch (exception& ex) {
     ostringstream ss;

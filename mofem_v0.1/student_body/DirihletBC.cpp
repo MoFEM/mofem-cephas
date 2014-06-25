@@ -24,25 +24,25 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
-    PetscFunctionBegin;
-    if(map_zero_rows.empty()) {
-      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
+  PetscFunctionBegin;
+  if(map_zero_rows.empty()) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
 	displacement_cubit_bc_data mydata;
 	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
 	for(int dim = 0;dim<3;dim++) {
 	  Range ents;
 	  ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
 	  if(dim>1) {
-            Range _edges;
-            ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
-            ents.insert(_edges.begin(),_edges.end());
+          Range _edges;
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+          ents.insert(_edges.begin(),_edges.end());
 	  }
-          if(dim>0) {
-            Range _nodes;
-            rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
-            ents.insert(_nodes.begin(),_nodes.end());
-          }
+        if(dim>0) {
+          Range _nodes;
+          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
+          ents.insert(_nodes.begin(),_nodes.end());
+        }
 	  for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
 	    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,fieldName,*eit,pcomm->rank(),dof)) {
 	      if(dof->get_ent_type() == MBVERTEX) {
@@ -69,86 +69,86 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
 	    }
 	  }
 	}
-      }
-      dofsIndices.resize(map_zero_rows.size());
-      dofsValues.resize(map_zero_rows.size());
-      int ii = 0;
-      map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-      for(;mit!=map_zero_rows.end();mit++,ii++) { 
+    }
+    dofsIndices.resize(map_zero_rows.size());
+    dofsValues.resize(map_zero_rows.size());
+    int ii = 0;
+    map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
+    for(;mit!=map_zero_rows.end();mit++,ii++) { 
 	dofsIndices[ii] = mit->first;
 	dofsValues[ii] = mit->second;
-      }
     }
-    PetscFunctionReturn(0);
   }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
-    PetscFunctionBegin;
-    ierr = iNitalize(); CHKERRQ(ierr);
-    ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  PetscFunctionBegin;
+  ierr = iNitalize(); CHKERRQ(ierr);
+  ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
-    PetscFunctionBegin;
-    switch(snes_ctx) {
-      case ctx_SNESNone: {
+  PetscFunctionBegin;
+  switch(snes_ctx) {
+    case ctx_SNESNone: {
 	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatZeroRowsColumns(*snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
 	  ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
 	}
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetFunction: {
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
-	  ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
-	}
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-  	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-      }
-      break;
-      case ctx_SNESSetJacobian: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatZeroRowsColumns(*snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
     }
-    PetscFunctionReturn(0);
+    break;
+    case ctx_SNESSetFunction: {
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
+	  ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+	}
+	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+    }
+    break;
+    case ctx_SNESSetJacobian: {
+	ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatZeroRowsColumns(*snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    }
+    break;
+    default:
+	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
   }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
-    PetscFunctionBegin;
-    if(map_zero_rows.empty()) {
-      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
+  PetscFunctionBegin;
+  if(map_zero_rows.empty()) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
 	displacement_cubit_bc_data mydata;
 	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
 	for(int dim = 0;dim<3;dim++) {
 	  Range ents;
 	  ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
 	  if(dim>1) {
-            Range _edges;
-            ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
-            ents.insert(_edges.begin(),_edges.end());
+          Range _edges;
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+          ents.insert(_edges.begin(),_edges.end());
 	  }
-          if(dim>0) {
-            Range _nodes;
-            rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
-            ents.insert(_nodes.begin(),_nodes.end());
-          }
+        if(dim>0) {
+          Range _nodes;
+          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
+          ents.insert(_nodes.begin(),_nodes.end());
+        }
 	  for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
 	    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,fieldName,*eit,pcomm->rank(),dof)) {
 	      if(dof->get_ent_type() == MBVERTEX) {
@@ -183,18 +183,63 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
 	    }
 	  }
 	}
-      }
-      dofsIndices.resize(map_zero_rows.size());
-      dofsValues.resize(map_zero_rows.size());
-      int ii = 0;
-      map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-      for(;mit!=map_zero_rows.end();mit++,ii++) { 
+    }
+    dofsIndices.resize(map_zero_rows.size());
+    dofsValues.resize(map_zero_rows.size());
+    int ii = 0;
+    map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
+    for(;mit!=map_zero_rows.end();mit++,ii++) { 
 	dofsIndices[ii] = mit->first;
 	dofsValues[ii] = mit->second;
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
+  PetscFunctionBegin;
+  if(map_zero_rows.empty()) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|TemperatureSet,it)) {
+      temperature_cubit_bc_data mydata;
+      ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+      for(int dim = 0;dim<3;dim++) {
+        Range ents;
+        ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        if(dim>1) {
+  	Range _edges;
+  	ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+  	ents.insert(_edges.begin(),_edges.end());
+        }
+        if(dim>0) {
+	  Range _nodes;
+	  rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
+	  ents.insert(_nodes.begin(),_nodes.end());
+        }
+        for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+  	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problem_ptr,fieldName,*eit,pcomm->rank(),dof)) {
+  	  if(dof->get_ent_type() == MBVERTEX) {
+  	    map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
+  	  } else {
+  	    map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+  	  }
+  	}
+        }
       }
     }
-    PetscFunctionReturn(0);
+    dofsIndices.resize(map_zero_rows.size());
+    dofsValues.resize(map_zero_rows.size());
+    int ii = 0;
+    map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
+    for(;mit!=map_zero_rows.end();mit++,ii++) { 
+      dofsIndices[ii] = mit->first;
+      dofsValues[ii] = mit->second;
+    }
+
   }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode FixMaterialPoints::iNitalize() {
   PetscFunctionBegin;
