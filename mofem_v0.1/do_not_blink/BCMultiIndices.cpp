@@ -542,7 +542,7 @@ ostream& operator<<(ostream& os,const Mat_Thermal& e)
         os << endl << "Material Properties" << endl;
         os << "-------------------" << endl;
         os << "Conductivity  = " << e.data.Conductivity << endl;
-        os << "User attribute 1 = " << e.data.User1 << endl;
+        os << "User attribute 1 = " << e.data.HeatCapacity << endl;
         os << "User attribute 2 = " << e.data.User2 << endl;
         os << "User attribute 3 = " << e.data.User3 << endl;
         os << "User attribute 4 = " << e.data.User4 << endl;

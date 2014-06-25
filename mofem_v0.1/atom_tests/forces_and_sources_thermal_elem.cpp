@@ -202,6 +202,7 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
