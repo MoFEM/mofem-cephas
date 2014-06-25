@@ -144,7 +144,7 @@ struct ThermalElement {
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = -dAta.cOnductivity*getVolume()*getGaussPts()(3,gg)*getVolume();
+	double val = -dAta.cOnductivity*getVolume()*getGaussPts()(3,gg);
 	cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
 	  &data.getDiffN()(gg,0),3,&commonData.gradAtGaussPts(gg,0),1,
 	  1.,&Nf[0],1);
@@ -200,7 +200,7 @@ struct ThermalElement {
 	  diff_N_row = &row_data.getDiffN()(gg,0);
 	  diff_N_col = &col_data.getDiffN()(gg,0);
 
-	  double val = -dAta.cOnductivity*getVolume()*getGaussPts()(3,gg)*getVolume();
+	  double val = -dAta.cOnductivity*getVolume()*getGaussPts()(3,gg);
 	  cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasTrans,
 	    nb_row,nb_col,3,
 	    val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
@@ -282,6 +282,8 @@ struct ThermalElement {
 	cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
 
       }
+    
+
     
       //cerr << "VecSetValues\n";
       //cerr << Nf << endl;

@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 5;
+  int order = 1;
   ierr = mField.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
@@ -136,6 +136,7 @@ int main(int argc, char *argv[]) {
   ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
   ierr = thermal_elements.setThermalFluxFiniteElementLhsOperators("TEMP",F); CHKERRQ(ierr);
 
+  ierr = VecZeroEntries(T); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
   
@@ -176,17 +177,21 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Row,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  PostProcVertexMethod ent_method(moab,"TEMP");
-  ierr = mField.loop_dofs("TEST_PROBLEM","TEMP",Row,ent_method); CHKERRQ(ierr);
+  PetscViewer viewer;
+  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_elem.txt",&viewer);
+  ierr = VecChop(T,1e-4); CHKERRQ(ierr);
+  ierr = VecView(T,viewer); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
+  /*PostProcVertexMethod ent_method(moab,"TEMP");
+  ierr = mField.loop_dofs("TEST_PROBLEM","TEMP",Row,ent_method); CHKERRQ(ierr);
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = mField.problem_get_FE("TEST_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
-
+  }*/
 
   //Matrix View
   //MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
