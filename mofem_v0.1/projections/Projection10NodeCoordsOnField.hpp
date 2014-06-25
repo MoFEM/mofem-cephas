@@ -36,10 +36,11 @@ namespace MoFEM {
 struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod { 
 
   FieldInterface& mField;
-  string field_name;
+  string field_name;	
+  int vErbose;
 
-  Projection10NodeCoordsOnField(FieldInterface& _mField,string _field_name): 
-    mField(_mField),field_name(_field_name) {
+  Projection10NodeCoordsOnField(FieldInterface& _mField,string _field_name,int verb = 0): 
+    mField(_mField),field_name(_field_name),vErbose(verb) {
   }
 
   PetscErrorCode ierr;
@@ -64,6 +65,9 @@ struct Projection10NodeCoordsOnField: public FieldInterface::EntMethod {
       coords.resize(3);
       rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR(rval);
       dof_ptr->get_FieldData() = coords[dof_ptr->get_dof_rank()];
+      if(vErbose>0) {
+	PetscPrintf(PETSC_COMM_WORLD,"val = %6.7e\n",dof_ptr->get_FieldData());
+      }
       PetscFunctionReturn(0);
     }
     if(dof_ptr->get_ent_type() != MBEDGE) {

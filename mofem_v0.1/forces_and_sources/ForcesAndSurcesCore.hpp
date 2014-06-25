@@ -64,6 +64,23 @@ struct DataForcesAndSurcesCore {
     virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
     virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
     virtual ublas::matrix<FieldData>& getN() { return N; }
+
+    /** \brief get direvatives of shape functions
+     *
+     * Matrix at rows has nb. of Gauss pts, at columns it has direvative of
+     * shape functions. Colummns are orgasised as follows, [ dN1/dx, dN1/dy,
+     * dN1/dz, dN2/dx, dN2/dy, dN2/dz, ... ]
+     *
+     * Note that shape functions are calculated in file H1.c
+     * Above description not apply for direvatives of nodal functions, since
+     * direvative of nodal functions in case of simplexes, EDGES, TRIANGLES and
+     * TETS are constant. So that matrix rows represents nb. of shape
+     * functions, columns are direvatives. Nb. of columns depend on element
+     * dimension, for EDGES is one, for TRIS is 2 and TETS is 3. 
+     *
+     * Note that for node element this function make no sense.
+     *
+     */
     virtual ublas::matrix<FieldData>& getDiffN() { return diffN; }
 
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
@@ -142,10 +159,10 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data);
   PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data);
-  PetscErrorCode getOrderVolume(DataForcesAndSurcesCore &data);
+  PetscErrorCode getVolumesOrder(DataForcesAndSurcesCore &data);
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getOrderVolume(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getVolumesOrder(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getNodesIndices(
     const string &field_name,
@@ -188,7 +205,7 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgeFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getFacesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getVolumesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getFaceNodes(DataForcesAndSurcesCore &data);
 
@@ -243,6 +260,17 @@ struct OpSetInvJac: public DataOperator {
 
 };
 
+struct OpSetHoInvJac: public DataOperator {
+
+  ublas::matrix<double> &invHoJac;
+  OpSetHoInvJac(ublas::matrix<double> &_invHoJac): invHoJac(_invHoJac) {}
+
+  ublas::matrix<FieldData> diffNinvJac;
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+ 
+};
+
 struct OpGetData: public DataOperator {
 
   ublas::matrix<FieldData> &data_at_GaussPt;
@@ -276,13 +304,24 @@ struct OpGetData: public DataOperator {
  */
 struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
-  DataForcesAndSurcesCore data,other_data;
-  DerivedDataForcesAndSurcesCore derived_data;
+  DataForcesAndSurcesCore data;
+  DerivedDataForcesAndSurcesCore derivedData;
   OpSetInvJac opSetInvJac;
 
+  string meshPositionsFieldName;
+  ublas::matrix<FieldData> hoCoordsAtGaussPtsPts;
+  ublas::matrix<FieldData> hoGaussPtsInvJac;
+  ublas::vector<FieldData> hoGaussPtsDetJac;
+  OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
+  OpSetHoInvJac opSetHoInvJac;
+
   TetElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTET),other_data(MBTET),
-    derived_data(data),opSetInvJac(invJac) { };
+    ForcesAndSurcesCore(_mField),data(MBTET),
+    derivedData(data),opSetInvJac(invJac),
+    meshPositionsFieldName("MESH_NODE_POSITIONS"),
+    opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsInvJac,3,3),
+    opSetHoInvJac(hoGaussPtsInvJac) {};
+    
   virtual ~TetElementForcesAndSurcesCore() {}
 
   ErrorCode rval;
@@ -309,6 +348,9 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline ublas::matrix<double>& getHoCoordsAtGaussPtsPts() { return ptrFE->hoCoordsAtGaussPtsPts; }
+    inline ublas::matrix<double>& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
+    inline ublas::vector<double>& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
     inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
     PetscErrorCode setPtrFE(TetElementForcesAndSurcesCore *ptr) { 
@@ -382,7 +424,7 @@ struct OpGetNormals: public DataOperator {
 struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derived_data;
+  DerivedDataForcesAndSurcesCore derivedData;
   string meshPositionsFieldName;
 
   ublas::matrix<FieldData> nOrmals_at_GaussPt;
@@ -391,7 +433,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   OpGetNormals opHONormals;
 
   TriElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTRI),derived_data(data),
+    ForcesAndSurcesCore(_mField),data(MBTRI),derivedData(data),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt) {};
 
@@ -503,11 +545,10 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derived_data;
-  string meshPositionsFieldName;
+  DerivedDataForcesAndSurcesCore derivedData;
 
   EdgeElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBEDGE),derived_data(data) {};
+    ForcesAndSurcesCore(_mField),data(MBEDGE),derivedData(data) {};
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -581,11 +622,11 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derived_data;
+  DerivedDataForcesAndSurcesCore derivedData;
   string meshPositionsFieldName;
 
   VertexElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBVERTEX),derived_data(data) {};
+    ForcesAndSurcesCore(_mField),data(MBVERTEX),derivedData(data) {};
 
   ErrorCode rval;
   PetscErrorCode ierr;

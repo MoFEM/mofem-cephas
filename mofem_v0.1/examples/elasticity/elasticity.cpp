@@ -20,7 +20,6 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "FEMethod_UpLevelStudent.hpp"
-#include "cholesky.hpp"
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"

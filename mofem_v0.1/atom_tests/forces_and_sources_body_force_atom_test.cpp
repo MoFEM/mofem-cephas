@@ -20,6 +20,7 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "BodyForce.hpp"
+#include "Projection10NodeCoordsOnField.hpp"
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -75,6 +76,8 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+
 
   //FE
   ierr = mField.add_finite_element("TEST_FE"); CHKERRQ(ierr);
@@ -83,6 +86,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_row("TEST_FE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("TEST_FE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("TEST_FE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("TEST_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //Problem
   ierr = mField.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -97,6 +101,7 @@ int main(int argc, char *argv[]) {
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
   ierr = mField.add_ents_to_field_by_TETs(root_set,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   //add entities to finite element
   ierr = mField.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
 
@@ -107,6 +112,11 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(root_set,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+
+  ierr = mField.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -126,6 +136,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+
+  //set from positions of 10 node tets
+  Projection10NodeCoordsOnField ent_method(mField,"MESH_NODE_POSITIONS");
+  ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
   Vec F;
   ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
