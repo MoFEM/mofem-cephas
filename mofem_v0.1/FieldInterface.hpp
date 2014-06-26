@@ -1226,6 +1226,9 @@ struct FieldInterface {
     const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
 
+  /**
+   * \brief data structure for snes (nonlinear solver) context
+   */
   struct SnesMethod {
     enum snes_context { ctx_SNESSetFunction, ctx_SNESSetJacobian, ctx_SNESNone };
     //
@@ -1241,6 +1244,10 @@ struct FieldInterface {
     MatStructure *snes_flag;
     virtual ~SnesMethod() {};
   };
+
+  /**
+   * \brief data structure for ts (time stepping) context
+   */
   struct TSMethod {
     enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetRHSJacobian, ctx_TSSetIFunction, ctx_TSSetIJacobian, ctx_TSTSMonitorSet, ctx_TSNone };
     //

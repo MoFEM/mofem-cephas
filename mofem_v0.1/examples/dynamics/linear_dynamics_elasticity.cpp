@@ -220,8 +220,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   //TS
-  TsCtx TsCtx(mField,"ELASTIC_MECHANICS");
-  TsCtx.zero_matrix = false;
+  TsCtx ts_ctx(mField,"ELASTIC_MECHANICS");
+  ts_ctx.zero_matrix = false;
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;
@@ -272,9 +272,9 @@ int main(int argc, char *argv[]) {
 
   //Right hand side
   //preprocess
-  TsCtx.get_preProcess_to_do_IFunction().push_back(&MyDirihletBC);
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&MyDirihletBC);
   //fe looops
-  TsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
+  TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
@@ -312,22 +312,22 @@ int main(int argc, char *argv[]) {
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
   //postprocess
-  TsCtx.get_postProcess_to_do_IFunction().push_back(&MyDirihletBC);
+  ts_ctx.get_postProcess_to_do_IFunction().push_back(&MyDirihletBC);
 
   //Left hand side
   //preprocess
-  TsCtx.get_preProcess_to_do_IJacobian().push_back(&MyDirihletBC);
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&MyDirihletBC);
   //loops finire elements
-  TsCtx::loops_to_do_type& loops_to_do_Mat = TsCtx.get_loops_to_do_IJacobian();
+  TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
   //postrocess
-  TsCtx.get_postProcess_to_do_IJacobian().push_back(&MyDirihletBC);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&MyDirihletBC);
 
   //Monitor
-  TsCtx::loops_to_do_type& loops_to_do_Monitor = TsCtx.get_loops_to_do_Monitor();
+  TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
   loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
   loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
 
@@ -335,9 +335,9 @@ int main(int argc, char *argv[]) {
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&TsCtx); CHKERRQ(ierr);
-  ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&TsCtx); CHKERRQ(ierr);
-  ierr = TSMonitorSet(ts,f_TSMonitorSet,&TsCtx,PETSC_NULL); CHKERRQ(ierr);
+  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
 
   double ftime = 1;
   ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);

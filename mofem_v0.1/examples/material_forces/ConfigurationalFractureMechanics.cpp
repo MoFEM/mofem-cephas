@@ -2256,26 +2256,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInterface& mField,SNES *snes,const double da,const double fraction_treshold) {
+PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface& mField,Range &fix_nodes,const double fraction_treshold) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-  ierr = front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-
-  //create matrices
-  Mat K;
-  ierr = mField.MatCreateMPIAIJWithArrays("COUPLED_PROBLEM",&K); CHKERRQ(ierr);
-  //create vectors
-  Vec F;
-  ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Row,&F); CHKERRQ(ierr);
-  Vec D;
-  ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Col,&D); CHKERRQ(ierr);
-
-  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
-  } else {
-    SETERRQ(PETSC_COMM_SELF,1,"arc length not initialised)");
-  }
-
   double gc;
   PetscBool flg;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
@@ -2287,17 +2271,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   Tag th_freez;
   const int def_order = 0;
   rval = mField.get_moab().tag_get_handle("FROZEN_NODE",1,MB_TYPE_INTEGER,th_freez,MB_TAG_CREAT|MB_TAG_SPARSE,&def_order); CHKERR_PETSC(rval);
-
-  Range corners_edges,corners_nodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
-  Range corners_edgesNodes;
-  rval = mField.get_moab().get_connectivity(corners_edges,corners_edgesNodes,true); CHKERR_PETSC(rval);
-  corners_nodes.insert(corners_edgesNodes.begin(),corners_edgesNodes.end());
-  Range nodes_to_block;
-  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
-  ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
-  corners_nodes.merge(nodes_to_block);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"freeze front nodes:\n");
   double max_g_j;
@@ -2330,7 +2303,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     } 
     if(freez_or_not_to_freez) {
       ierr = PetscPrintf(PETSC_COMM_WORLD," freeze\n");
-      corners_nodes.insert(mit->first);
+      fix_nodes.insert(mit->first);
       int freez = 1;
       EntityHandle node = mit->first;
       rval = mField.get_moab().tag_set_data(th_freez,&node,1,&freez); CHKERR_PETSC(rval);
@@ -2354,11 +2327,50 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\nunfreez %ld g/j = %4.3f\n",max_g_j_ent,max_g_j);
     int freez = 0;
     rval = mField.get_moab().tag_set_data(th_freez,&max_g_j_ent,1,&freez); CHKERR_PETSC(rval);
-    corners_nodes.erase(max_g_j_ent);
+    fix_nodes.erase(max_g_j_ent);
   }
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInterface& mField,SNES *snes,const double da,const double fraction_treshold) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+  ErrorCode rval;
+  PetscBool flg;
+
+  ierr = front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+
+  //create matrices
+  Mat K;
+  ierr = mField.MatCreateMPIAIJWithArrays("COUPLED_PROBLEM",&K); CHKERRQ(ierr);
+  //create vectors
+  Vec F;
+  ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Row,&F); CHKERRQ(ierr);
+  Vec D;
+  ierr = mField.VecCreateGhost("COUPLED_PROBLEM",Col,&D); CHKERRQ(ierr);
+
+  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
+  } else {
+    SETERRQ(PETSC_COMM_SELF,1,"arc length not initialised)");
+  }
+
+  Range corners_edges,corners_nodes;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
+  Range corners_edgesNodes;
+  rval = mField.get_moab().get_connectivity(corners_edges,corners_edgesNodes,true); CHKERR_PETSC(rval);
+  corners_nodes.insert(corners_edgesNodes.begin(),corners_edgesNodes.end());
+  Range nodes_to_block;
+  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-1);
+  ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
+  corners_nodes.merge(nodes_to_block);
+
+  ierr = fix_all_but_one(mField,corners_nodes,fraction_treshold); CHKERRQ(ierr);
 
   struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {
     

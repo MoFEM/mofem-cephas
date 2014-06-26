@@ -151,7 +151,6 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       if(distance(dit,hi_dit)!=3) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-
       double force[3] = { 0,0,0 };
       for(;dit!=hi_dit;dit++) {
 	force[dit->get_dof_rank()] = dit->get_FieldData();
@@ -160,6 +159,19 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       //cblas_dscal(3,1./force_nrm2,force,1);
       //cerr << "force_nrm2 " << force_nrm2 << endl;
 
+      dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("GRIFFITH_FORCE",*nit));
+      hi_dit = 
+	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("GRIFFITH_FORCE",*nit));	
+      if(distance(dit,hi_dit)!=3) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      double griffith_force[3] = { 0,0,0 };
+      for(;dit!=hi_dit;dit++) {
+	griffith_force[dit->get_dof_rank()] = dit->get_FieldData();
+      }
+
+
       double Spin_tangent[9] = { 0,0,0, 0,0,0, 0,0,0 };
       ierr = Spin(Spin_tangent,deltaX); CHKERRQ(ierr);
       double normal[4] = { 0,0,0,1 };
@@ -167,7 +179,18 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       double nrm2 = cblas_dnrm2(3,normal,1);
       cblas_dscal(3,1./nrm2,normal,1);
       //cerr << "norm: " << normal[0] << " " << normal[1] << " " << normal[2] << endl;
-    
+ 
+      double griffith_normal[4] = { 0,0,0,1 };
+      cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,-1,Spin_tangent,3,griffith_force,1,0,griffith_normal,1); 
+      nrm2 = cblas_dnrm2(3,griffith_normal,1);
+      cblas_dscal(3,1./nrm2,griffith_normal,1);
+
+      dot = cblas_ddot(3,normal,1,griffith_normal,1);
+      const double dot_treshold = cos((75.*M_PI)/180.);
+      if(dot < dot_treshold) {
+	cblas_dcopy(3,griffith_normal,1,normal,1);
+      }
+   
       rval = moab_distance_from_crack_surface.tag_set_data(th_normal,&map_nodes[*nit],1,normal); CHKERR_PETSC(rval);
       rval = mField.get_moab().tag_set_data(th_normal_mfield,&*nit,1,normal); CHKERR_PETSC(rval);
 

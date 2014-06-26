@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
 
   TemperatureBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"TEMP",A,T,F);
   ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
-  ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
+  ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",&A); CHKERRQ(ierr);
   ierr = thermal_elements.setThermalFluxFiniteElementLhsOperators("TEMP",F); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(T); CHKERRQ(ierr);
@@ -202,6 +202,7 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

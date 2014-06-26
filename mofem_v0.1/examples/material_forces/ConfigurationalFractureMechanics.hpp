@@ -92,6 +92,8 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
   PetscErrorCode solve_mesh_smooting_problem(FieldInterface& mField,SNES *snes);
 
+  PetscErrorCode fix_all_but_one(FieldInterface& mField,Range &fix_nodes,const double fraction_treshold);
+
   double aRea,lambda,energy;
   int nb_un_freez_nodes;
   bool freeze_all_but_one;
