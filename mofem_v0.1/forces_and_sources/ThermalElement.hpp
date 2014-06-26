@@ -27,6 +27,7 @@
 #define __BODY_FORCE_HPP
 
 #include "ForcesAndSurcesCore.hpp"
+#include "TsCtx.hpp"
 
 namespace MoFEM {
 
@@ -224,10 +225,10 @@ struct ThermalElement {
 
   struct OpThermalLhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
-    Mat A;
+    Mat *A;
     BlockData &dAta;
     CommonData &commonData;
-    OpThermalLhs(const string field_name,Mat _A,BlockData &data,CommonData &common_data):
+    OpThermalLhs(const string field_name,Mat *_A,BlockData &data,CommonData &common_data):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       A(_A),dAta(data),commonData(common_data) {}
 
@@ -267,7 +268,7 @@ struct ThermalElement {
   
 	PetscErrorCode ierr;
 	ierr = MatSetValues(
-	  A,
+	  *A,
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -275,7 +276,7 @@ struct ThermalElement {
 	  transK.resize(nb_col,nb_row);
 	  noalias(transK) = trans( K );
 	  ierr = MatSetValues(
-	    A,
+	    *A,
 	    nb_col,&col_data.getIndices()[0],
 	    nb_row,&row_data.getIndices()[0],
 	    &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -544,7 +545,7 @@ struct ThermalElement {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat A) {
+  PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat *A) {
     PetscFunctionBegin;
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
@@ -565,6 +566,24 @@ struct ThermalElement {
       //add finite element
       feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,F,sit->second,ho_geometry));
     }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    PetscFunctionBegin;
+
+    //rhs
+    TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
+
+
+    //lhs
+    TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
+
+    //monitor
+    TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
+
+
+
     PetscFunctionReturn(0);
   }
 
