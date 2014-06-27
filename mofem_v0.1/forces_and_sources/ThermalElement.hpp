@@ -198,7 +198,7 @@ struct ThermalElement {
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = -dAta.cOnductivity*getVolume()*getGaussPts()(3,gg);
+	double val = dAta.cOnductivity*getVolume()*getGaussPts()(3,gg);
 
 	if(getHoGaussPtsDetJac().size()>0) {
 	  val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -272,7 +272,7 @@ struct ThermalElement {
 	  diff_N_row = &row_data.getDiffN()(gg,0);
 	  diff_N_col = &col_data.getDiffN()(gg,0);
 
-	  double val = -dAta.cOnductivity*getVolume()*getGaussPts()(3,gg);
+	  double val = dAta.cOnductivity*getVolume()*getGaussPts()(3,gg);
 	  if(getHoGaussPtsDetJac().size()>0) {
 	    val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 	  }

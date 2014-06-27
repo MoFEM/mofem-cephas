@@ -183,6 +183,23 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
+
+  PetscViewer viewer;
+  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_elem_unsteady.txt",&viewer);
+  ierr = VecChop(T,1e-4); CHKERRQ(ierr);
+  ierr = VecView(T,viewer); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  /*PostProcVertexMethod ent_method(moab,"TEMP");
+  ierr = mField.loop_dofs("TEST_PROBLEM","TEMP",Row,ent_method); CHKERRQ(ierr);
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("TEST_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }*/
+
   ierr = TSDestroy(&ts);CHKERRQ(ierr);
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
