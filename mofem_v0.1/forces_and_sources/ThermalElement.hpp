@@ -315,8 +315,6 @@ struct ThermalElement {
 	Nf.resize(nb_row);
 	bzero(&Nf[0],nb_row*sizeof(double));
 	for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	  double *N_row;
-	  N_row = &data.getN()(gg,0);
 	  double val = dAta.cApacity*getVolume()*getGaussPts()(3,gg);
 	  if(getHoGaussPtsDetJac().size()>0) {
 	    val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -359,7 +357,6 @@ struct ThermalElement {
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
-
       try {
   
 	if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -380,6 +377,7 @@ struct ThermalElement {
 	  if(getHoGaussPtsDetJac().size()>0) {
 	    val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 	  }
+	  val *= getFEMethod()->ts_a;
 	  cblas_dger(CblasRowMajor,
 	    nb_row,nb_col,1,N_row,1,N_col,1,&M(0,0),nb_col);
 	  cblas_dscal(nb_row*nb_row,val,&M(0,0),1);
@@ -470,6 +468,19 @@ struct ThermalElement {
       //cerr << data.getIndices() << endl;
       ierr = VecSetValues(F,data.getIndices().size(),
 	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct updateVelocityField: public FieldInterface::FEMethod {
+
+    FieldInterface& mField;
+    updateVelocityField(FieldInterface& _mField): mField(_mField) {}
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
 
       PetscFunctionReturn(0);
     }
@@ -572,15 +583,39 @@ struct ThermalElement {
   PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
+    {
+      map<int,BlockData>::iterator sit = setOfBlocks.begin();
+      for(;sit!=setOfBlocks.end();sit++) {
+	//add finite element
+	feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,feLhs.ts_B,sit->second,commonData));
+	feLhs.get_op_to_do_Lhs().push_back(new OpHeatCapacityLsh(field_name,sit->second,commonData));
+	feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,feRhs.ts_F,sit->second,commonData));
+	feRhs.get_op_to_do_Rhs().push_back(new OpHeatCapacityRhs(field_name,sit->second,commonData));
+      }
+    }
+    {
+      bool ho_geometry = false;
+      if(mField.check_field(mesh_nodals_positions)) {
+	ho_geometry = true;
+      }
+      map<int,FluxData>::iterator sit = setOfFluxes.begin();
+      for(;sit!=setOfFluxes.end();sit++) {
+	//add finite element
+	feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,feFlux.ts_F,sit->second,ho_geometry));
+      }
+    }
+
     //rhs
     TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
-
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feRhs));
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FLUX_FE",&feLhs));
 
     //lhs
     TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
+    loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feLhs));
 
     //monitor
-    TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
+    //TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
 
 
 
