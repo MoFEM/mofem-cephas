@@ -357,3 +357,7 @@ add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E c
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem.txt)
 
+# add test test for temerature unsteady element
+add_executable(forces_and_sources_thermal_elem_unsteady_atom forces_and_sources_thermal_elem_unsteady.cpp)
+target_link_libraries(forces_and_sources_thermal_elem_unsteady_atom mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+

@@ -267,18 +267,18 @@ int main(int argc, char *argv[]) {
 
   };
 
-  DynamicBCFEMethodPreAndPostProc MyDirihletBC(mField,"DISPLACEMENT",Aij,D,F);
-  DynamicElasticFEMethod MyFE(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho);
+  DynamicBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"DISPLACEMENT",Aij,D,F);
+  DynamicElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho);
 
   //Right hand side
   //preprocess
-  ts_ctx.get_preProcess_to_do_IFunction().push_back(&MyDirihletBC);
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("STIFFNESS",&my_fe));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS",&my_fe));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&my_fe));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&my_fe));
   //Neumann boundary conditions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
@@ -312,24 +312,24 @@ int main(int argc, char *argv[]) {
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
   //postprocess
-  ts_ctx.get_postProcess_to_do_IFunction().push_back(&MyDirihletBC);
+  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
 
   //Left hand side
   //preprocess
-  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&MyDirihletBC);
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   //loops finire elements
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("STIFFNESS",&my_fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS",&my_fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&my_fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&my_fe));
   //postrocess
-  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&MyDirihletBC);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
 
   //Monitor
   TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
-  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("STIFFNESS",&my_fe));
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&my_fe));
 
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
