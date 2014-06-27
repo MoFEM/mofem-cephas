@@ -1497,7 +1497,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 
     EntityHandle meshset_interface;
     ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset_interface); CHKERRQ(ierr);
-    ierr = mField.get_msId_3dENTS_sides(meshset_interface,current_ref,true); CHKERRQ(ierr);
+    ierr = mField.get_msId_3dENTS_sides(meshset_interface,current_ref,true,verb); CHKERRQ(ierr);
 
     int last_ref_bit = meshRefineBitLevels.back();
     if(!meshIntefaceBitLevels.empty()) {
@@ -2190,7 +2190,7 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   BitRefLevel maskPreserv;
   ierr = face_splitting.getMask(maskPreserv,1); CHKERRQ(ierr);
   ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv,false); CHKERRQ(ierr);
-  ierr = face_splitting.squashIndices(0); CHKERRQ(ierr);
+  ierr = face_splitting.squashIndices(verb); CHKERRQ(ierr);
  
   BitRefLevel not_split_face_ref_level;
   not_split_face_ref_level.set(face_splitting.meshIntefaceBitLevels.back());
@@ -2200,7 +2200,7 @@ PetscErrorCode main_split_faces_and_update_field_and_elements(FieldInterface& mF
   ierr = mField.remove_ents_from_field_by_bit_ref(not_split_face_ref_level,not_split_face_ref_level,1); CHKERRQ(ierr);
 
   ierr = face_splitting.addNewSurfaceFaces_to_Cubit_msId200(); CHKERRQ(ierr);
-  ierr = face_splitting.splitFaces(0); CHKERRQ(ierr);
+  ierr = face_splitting.splitFaces(verb); CHKERRQ(ierr);
   ierr = face_splitting.addcrackFront_to_Cubit201(); CHKERRQ(ierr);
 
   if(verb>0) {
