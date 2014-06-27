@@ -357,3 +357,17 @@ add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E c
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem.txt)
 
+# add test test for temerature unsteady element
+add_executable(forces_and_sources_thermal_elem_unsteady_atom forces_and_sources_thermal_elem_unsteady.cpp)
+target_link_libraries(forces_and_sources_thermal_elem_unsteady_atom mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_thermal_elem_unsteady_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_elem_unsteady_atom 
+  -my_file simple_thermal_problem.cub 
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist 
+  -snes_type newtonls -snes_linesearch_type basic 
+  -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 
+  -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor)
+add_test(forces_and_sources_thermal_elem_unsteady_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem_unsteady.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem_unsteady.txt)
+
+

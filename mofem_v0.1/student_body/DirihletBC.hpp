@@ -42,6 +42,8 @@ struct DisplacementBCFEMethodPreAndPostProc: public FieldInterface::FEMethod {
     snes_x = _X;
     snes_f = _F;
     ts_B = &_Aij;
+    ts_u = _X;
+    ts_F = _F;
   };
 
   DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name): 
