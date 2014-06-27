@@ -4,8 +4,8 @@ set duplicate block elements on
 brick x 1 y 1 z 1
 
 block 1 volume all 
-block 1 name 'FLUIDPRESSURE'
-block 1 attribute count 6
+block 1 name 'FLUID_PRESSURE'
+block 1 attribute count 7
 #density
 block 1 attribute index 1 1
 #accelerations

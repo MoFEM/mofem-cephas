@@ -440,6 +440,10 @@ struct FieldCore: public FieldInterface {
   EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name);
 
   //Copy Vector of Field to Another
+  PetscErrorCode set_other_local_VecCreateGhost(
+    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
+  PetscErrorCode set_other_local_VecCreateGhost(
+    const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
   PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
   PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);

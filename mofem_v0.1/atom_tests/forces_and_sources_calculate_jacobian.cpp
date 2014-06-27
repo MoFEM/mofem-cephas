@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
       ierr = getFacesSense(data); CHKERRQ(ierr);
       ierr = getEdgesOrder(data); CHKERRQ(ierr);
       ierr = getFacesOrder(data); CHKERRQ(ierr);
-      ierr = getOrderVolume(data); CHKERRQ(ierr);
+      ierr = getVolumesOrder(data); CHKERRQ(ierr);
       ierr = getFaceNodes(data); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
       ierr = getNodesFieldData(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgeFieldData(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getFacesFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getTetFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getVolumesFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
       EntityHandle ent = fe_ptr->get_ent();
       int num_nodes;

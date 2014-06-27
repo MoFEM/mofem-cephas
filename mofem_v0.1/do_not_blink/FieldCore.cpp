@@ -4014,6 +4014,104 @@ PetscErrorCode FieldCore::set_global_VecCreateGhost(const string &name,RowColDat
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::set_other_local_VecCreateGhost(
+  const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb) {
+  PetscFunctionBegin;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_loc_petsc_index;
+  dofs_by_loc_petsc_index *dofs;
+  int nb_local_dofs,nb_ghost_dofs;
+  switch (rc) {
+    case Row:
+      nb_local_dofs = problem_ptr->get_nb_local_dofs_row();
+      nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_row();
+      dofs = const_cast<dofs_by_loc_petsc_index*>(&problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
+      break;
+    case Col:
+      nb_local_dofs = problem_ptr->get_nb_local_dofs_col();
+      nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_col();
+      dofs = const_cast<dofs_by_loc_petsc_index*>(&problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>());
+      break;
+    default:
+     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  }
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = moabFields.get<FieldName_mi_tag>().find(cpy_field_name);
+  if(cpy_fit==moabFields.get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"cpy field < %s > not found, (top tip: check spelling)",cpy_field_name.c_str());
+  }
+  dofs_by_loc_petsc_index::iterator miit = dofs->lower_bound(0);
+  if(miit==dofs->end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"cpy field < %s > not found, (top tip: check spelling)",field_name.c_str());
+  }
+  dofs_by_loc_petsc_index::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
+  if(miit->get_space() != cpy_fit->get_space()) {
+    SETERRQ(PETSC_COMM_SELF,1,"fiedls has to have same space");
+  }
+  if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
+    SETERRQ(PETSC_COMM_SELF,1,"fiedls has to have same rank");
+  }
+  switch (scatter_mode) {
+    case SCATTER_REVERSE: {
+      PetscScalar *array;
+      VecGetArray(V,&array);
+      switch (mode) {
+	case INSERT_VALUES:
+	  for(;miit!=hi_miit;miit++) {
+	    if(miit->get_name()!=field_name) continue;
+	    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
+	    diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+	    if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+	      SETERRQ(PETSC_COMM_SELF,1,"equivalalent dof does not exist, dof has to be creates, use set_other_global_VecCreateGhost to create dofs entries");
+	    }
+	    diiiit->get_FieldData() = array[miit->get_petsc_local_dof_idx()];
+	    if(verb > 1) {
+	      ostringstream ss;
+	      ss << *diiiit << "set " << array[miit->get_petsc_local_dof_idx()] << endl;
+	      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	    }
+	  }
+	    //if(verb > 0) {
+	      //cerr << "AAAAAAAAAAAA\n";
+	      //ierr = check_number_of_ents_in_ents_field(cpy_field_name); CHKERRQ(ierr);
+	    //}
+	  break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+      ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
+    }
+    break;
+    case SCATTER_FORWARD: {
+	for(;miit!=hi_miit;miit++) {
+	  if(miit->get_name()!=field_name) continue;
+	  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
+	  diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+	  if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+	    SETERRQ(PETSC_COMM_SELF,1,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
+	  }
+	  ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),mode); CHKERRQ(ierr);
+	}
+	ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
+      } 
+      break;  
+    default:
+     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+  }
+
+
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::set_other_local_VecCreateGhost(
+  const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
+  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found",name.c_str());
+  ierr = set_other_local_VecCreateGhost(&*p_miit,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
   const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,
   int verb) {

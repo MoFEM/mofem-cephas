@@ -79,6 +79,21 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
 
 };
 
+struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
+
+  TemperatureBCFEMethodPreAndPostProc(
+    FieldInterface& _mField,const string &_field_name,Mat &_Aij,Vec _X,Vec _F): 
+    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F) {}
+
+  TemperatureBCFEMethodPreAndPostProc(
+    FieldInterface& _mField,const string &_field_name): 
+    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name) {}
+
+  PetscErrorCode iNitalize();
+
+};
+
+
 struct FixMaterialPoints: public DisplacementBCFEMethodPreAndPostProc {
 
   Range &eNts;

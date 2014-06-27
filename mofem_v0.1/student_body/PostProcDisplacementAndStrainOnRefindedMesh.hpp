@@ -463,7 +463,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       ublas::vector<double> prin_stress_vect3(3);
       ublas::vector<double> prin_vals_vect(3);
             
-      eigen_vectors = trans(eigen_vectors);
+      //eigen_vectors = trans(eigen_vectors);
       for (int ii=0; ii < 3; ii++) {
         prin_vals_vect[0] = eigen_values[0]; 
         prin_vals_vect[1] = eigen_values[1]; 

@@ -347,5 +347,13 @@ add_test(forces_and_sources_fluid_pressure_element_atom_test_compare ${CMAKE_COM
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_fluid_pressure_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_fluid_pressure_element.txt)
 
-
+# add example test for temperature element
+cm_export_file("../meshes/simple_thermal_problem.cub" export_atom_tests)
+add_executable(forces_and_sources_thermal_elem_atom forces_and_sources_thermal_elem.cpp)
+target_link_libraries(forces_and_sources_thermal_elem_atom mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_thermal_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_elem_atom 
+  -my_file simple_thermal_problem.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor)
+add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem.txt)
 

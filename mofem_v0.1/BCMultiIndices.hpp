@@ -65,7 +65,7 @@ struct generic_attribute_data {
         SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
         PetscFunctionReturn(0);
     }
-    
+
 };
 
 /*! \struct Unknown attributes
@@ -158,7 +158,7 @@ struct Mat_Elastic: public generic_attribute_data {
 struct Mat_Thermal: public generic_attribute_data {
   struct __attribute__ ((packed)) _data_{
     double Conductivity; // Thermal conductivity
-    double User1; // User attribute 1
+    double HeatCapacity; // Heat Capacity
     double User2; // User attribute 2
     double User3; // User attribute 3
     double User4; // User attribute 4
@@ -173,7 +173,7 @@ struct Mat_Thermal: public generic_attribute_data {
         
   const Cubit_BC_bitset type;
   const unsigned int min_number_of_atributes;
-  Mat_Thermal(): type(Mat_ThermalSet),min_number_of_atributes(1) {};
+  Mat_Thermal(): type(Mat_ThermalSet),min_number_of_atributes(2) {};
         
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {
     PetscFunctionBegin;
@@ -543,11 +543,11 @@ struct temperature_cubit_bc_data: public generic_cubit_bc_data {
     temperature_cubit_bc_data(): type(TemperatureSet) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
-        PetscFunctionBegin;
-        //Fill data
-	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-        memcpy(&data, &bc_data[0], sizeof(data));
-        PetscFunctionReturn(0);
+      PetscFunctionBegin;
+      //Fill data
+      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      memcpy(&data, &bc_data[0], sizeof(data));
+      PetscFunctionReturn(0);
     }
     
     /*! \brief Print temperature bc data
@@ -802,7 +802,7 @@ struct CubitMeshSets {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
     }
     vector<double> attributes;
-    get_Cubit_attributes(attributes);
+    ierr = get_Cubit_attributes(attributes); CHKERRQ(ierr);
     ierr = data.fill_data(attributes); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -838,7 +838,6 @@ struct CubitMeshSets {
 	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
  *
  */
-    
 typedef multi_index_container<
   CubitMeshSets,
   indexed_by<
