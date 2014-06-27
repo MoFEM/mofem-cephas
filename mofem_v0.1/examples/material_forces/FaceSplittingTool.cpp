@@ -180,12 +180,15 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       cblas_dscal(3,1./nrm2,normal,1);
       //cerr << "norm: " << normal[0] << " " << normal[1] << " " << normal[2] << endl;
  
-      double griffith_normal[4] = { 0,0,0,1 };
-      cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,-1,Spin_tangent,3,griffith_force,1,0,griffith_normal,1); 
+      double griffith_normal[3] = { 0,0,0 };
+      cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1,Spin_tangent,3,griffith_force,1,0,griffith_normal,1); 
       nrm2 = cblas_dnrm2(3,griffith_normal,1);
       cblas_dscal(3,1./nrm2,griffith_normal,1);
 
       dot = cblas_ddot(3,normal,1,griffith_normal,1);
+      //cerr << normal[0] << " " << normal[1] << " " << normal[2] << " ::: ";
+      //cerr << griffith_normal[0] << " " << griffith_normal[1] << " " << griffith_normal[2] << " ::: ";
+      //cerr << dot << endl << endl;
       const double dot_treshold = cos((75.*M_PI)/180.);
       if(dot < dot_treshold) {
 	cblas_dcopy(3,griffith_normal,1,normal,1);

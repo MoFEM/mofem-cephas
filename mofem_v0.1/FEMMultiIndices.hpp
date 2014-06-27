@@ -442,36 +442,6 @@ typedef multi_index_container<
       tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,boost::string_ref,&MoFEMFiniteElement::get_name_ref> >
   > > MoFEMFiniteElement_multiIndex;
 
-
-/*// modify procedures
-
-/// set uids for finite elements dofs in rows
-struct EntMoFEMFiniteElement_row_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_row_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-/// set uids for finite elements dofs in cols
-struct EntMoFEMFiniteElement_col_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_col_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-/// set uids for finite elements dofs need to calulate element matrices and vectors
-struct EntMoFEMFiniteElement_data_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_data_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view):
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};*/
-
 }
 
 #endif // __FEMMULTIINDICES_HPP__

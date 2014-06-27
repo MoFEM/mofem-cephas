@@ -65,7 +65,7 @@ struct generic_attribute_data {
         SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
         PetscFunctionReturn(0);
     }
-    
+
 };
 
 /*! \struct Unknown attributes
@@ -802,7 +802,7 @@ struct CubitMeshSets {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
     }
     vector<double> attributes;
-    get_Cubit_attributes(attributes);
+    ierr = get_Cubit_attributes(attributes); CHKERRQ(ierr);
     ierr = data.fill_data(attributes); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -838,7 +838,6 @@ struct CubitMeshSets {
 	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
  *
  */
-    
 typedef multi_index_container<
   CubitMeshSets,
   indexed_by<

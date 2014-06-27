@@ -1092,6 +1092,38 @@ struct FieldInterface {
 
   /** \brief Copy vector to field which is not part of the problem
     *
+    * \param pointer to poroblem multi_index 
+    * \param field_name field name used for indexing petsc vectors used in the problem
+    * \param cpy_field field name where data from vector are stored
+    * \param RowColData for row or column
+    * \param V vector
+    * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+    * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    *
+    * SCATTER_REVERSE set data to field entities form V vector.
+    *
+    */
+  virtual PetscErrorCode set_other_local_VecCreateGhost(
+    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+
+  /** \brief Copy vector to field which is not part of the problem
+    *
+    * \param name problem name
+    * \param field_name field name used for indexing petsc vectors used in the problem
+    * \param cpy_field field name where data from vector are stored
+    * \param RowColData for row or column
+    * \param V vector
+    * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+    * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    *
+    * SCATTER_REVERSE set data to field entities form V vector.
+    *
+    */
+  virtual PetscErrorCode set_other_local_VecCreateGhost(
+    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+
+  /** \brief Copy vector to field which is not part of the problem
+    *
     * \param name problem name
     * \param field_name field name used for indexing petsc vectors used in the problem
     * \param cpy_field field name where data from vector are stored

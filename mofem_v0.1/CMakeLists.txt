@@ -91,7 +91,6 @@ if(TAO_LIBRARY)
 endif(TAO_LIBRARY)
 
 include_directories("${PROJECT_SOURCE_DIR}")
-include_directories("${PROJECT_SOURCE_DIR}/face_splitting")
 include_directories("${PROJECT_SOURCE_DIR}/do_not_blink")
 include_directories("${PROJECT_SOURCE_DIR}/student_body")
 include_directories("${PROJECT_SOURCE_DIR}/projections")
