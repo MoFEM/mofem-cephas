@@ -503,20 +503,31 @@ struct ThermalElement {
 
   };
 
-  struct UpdateVelocityField: public FieldInterface::FEMethod {
+  struct UpdateAndControl: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
+    TS tS;
     const string tempName;
     const string rateName;
-    UpdateVelocityField(FieldInterface& _mField,
-      const string temp_name,const string rate_name): mField(_mField),
-      tempName(temp_name),rateName(rate_name) {}
+    int jacobianLag;
+    UpdateAndControl(FieldInterface& _mField,TS _ts,
+      const string temp_name,const string rate_name): mField(_mField),tS(_ts),
+      tempName(temp_name),rateName(rate_name),jacobianLag(-1) {}
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       ierr = mField.set_other_local_VecCreateGhost(
 	problem_ptr,tempName,rateName,Row,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      SNES snes;
+      ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
+      ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -653,8 +664,6 @@ struct ThermalElement {
 
     //monitor
     //TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
-
-
 
     PetscFunctionReturn(0);
   }
