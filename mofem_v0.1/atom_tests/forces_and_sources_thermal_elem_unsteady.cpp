@@ -142,9 +142,12 @@ int main(int argc, char *argv[]) {
 
   //TS
   TsCtx ts_ctx(mField,"TEST_PROBLEM");
+  TS ts;
+  ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
+  ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
   TemperatureBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"TEMP",A,T,F);
-  ThermalElement::UpdateVelocityField update_velocities(mField,"TEMP","TEMP_RATE");
+  ThermalElement::UpdateAndControl update_velocities(mField,ts,"TEMP","TEMP_RATE");
 
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
@@ -157,10 +160,8 @@ int main(int argc, char *argv[]) {
   //postprocess
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_velocities);
 
-  TS ts;
-  ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
-  ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
   ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
   ierr = TSSetIJacobian(ts,A,A,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
