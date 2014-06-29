@@ -145,6 +145,18 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problem_name,Col,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  //preproces
+  TsCtx::basic_method_to_do::iterator bit = ts_ctx->preProcess_Monitor.begin();
+  for(;bit!=ts_ctx->preProcess_Monitor.end();bit++) {
+    (*bit)->ts_u = u;
+    (*bit)->ts_t = t;
+    (*bit)->ts_step = step;
+    (*bit)->ts_F = PETSC_NULL;
+    ierr = (*bit)->set_ts_ctx(FieldInterface::TSMethod::ctx_TSSetIJacobian);
+    ierr = (*bit)->set_ts(ts); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problem_name,*(*(bit))); CHKERRQ(ierr);
+    ierr = (*bit)->set_ts_ctx(FieldInterface::TSMethod::ctx_TSNone); CHKERRQ(ierr); CHKERRQ(ierr);
+  }
   TsCtx::loops_to_do_type::iterator lit = ts_ctx->loops_to_do_Monitor.begin();
   for(;lit!=ts_ctx->loops_to_do_Monitor.end();lit++) {
     lit->second->ts_u = u;
@@ -155,6 +167,18 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
     ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::ctx_TSNone);
+  }
+  //post process
+  bit = ts_ctx->postProcess_Monitor.begin();
+  for(;bit!=ts_ctx->postProcess_Monitor.end();bit++) {
+    (*bit)->ts_u = u;
+    (*bit)->ts_t = t;
+    (*bit)->ts_step = step;
+    (*bit)->ts_F = PETSC_NULL;
+    ierr = (*bit)->set_ts_ctx(FieldInterface::TSMethod::ctx_TSSetIJacobian);
+    ierr = (*bit)->set_ts(ts); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problem_name,*(*(bit))); CHKERRQ(ierr);
+    ierr = (*bit)->set_ts_ctx(FieldInterface::TSMethod::ctx_TSNone); CHKERRQ(ierr);
   }
   PetscLogEventEnd(ts_ctx->USER_EVENT_TsCtxRHSFunction,0,0,0,0);
   PetscFunctionReturn(0);

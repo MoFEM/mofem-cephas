@@ -148,6 +148,7 @@ int main(int argc, char *argv[]) {
 
   TemperatureBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"TEMP",A,T,F);
   ThermalElement::UpdateAndControl update_velocities(mField,ts,"TEMP","TEMP_RATE");
+  ThermalElement::TimeSeriesMonitor monitor(mField,"THEMP_SERIES","TEMP");
 
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
@@ -161,18 +162,24 @@ int main(int argc, char *argv[]) {
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_velocities);
-
+  ts_ctx.get_postProcess_to_do_Monitor().push_back(&monitor);
 
   ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
   ierr = TSSetIJacobian(ts,A,A,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
 
   double ftime = 1;
   ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
   ierr = TSSetSolution(ts,T); CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
+  ierr = mField.add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
+  ierr = mField.initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
+
   ierr = TSSolve(ts,T); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+
+  ierr = mField.finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
 
   PetscInt steps,snesfails,rejects,nonlinits,linits;
   ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
@@ -187,9 +194,19 @@ int main(int argc, char *argv[]) {
 
   PetscViewer viewer;
   PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_elem_unsteady.txt",&viewer);
-  ierr = VecChop(T,1e-4); CHKERRQ(ierr);
-  ierr = VecView(T,viewer); CHKERRQ(ierr);
+
+  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(mField,"THEMP_SERIES",sit)) {
+
+    ierr = mField.load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost("TEST_PROBLEM",Row,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    ierr = VecChop(T,1e-4); CHKERRQ(ierr);
+    ierr = VecView(T,viewer); CHKERRQ(ierr);
+
+  }
+
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
 
   /*PostProcVertexMethod ent_method(moab,"TEMP");
   ierr = mField.loop_dofs("TEST_PROBLEM","TEMP",Row,ent_method); CHKERRQ(ierr);

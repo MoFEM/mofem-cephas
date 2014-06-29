@@ -533,6 +533,37 @@ struct ThermalElement {
 
   };
 
+  struct TimeSeriesMonitor: public FieldInterface::FEMethod {
+
+    FieldInterface &mField;
+    const string seriesName;
+    const string tempName;
+    BitRefLevel mask;
+
+    TimeSeriesMonitor(FieldInterface &m_field,const string series_name,const string temp_name):
+      mField(m_field),seriesName(series_name),tempName(temp_name) {
+      mask.set();
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+
+      ierr = mField.set_global_VecCreateGhost(
+	problem_ptr,Row,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+      BitRefLevel proble_bit_level = problem_ptr->get_BitRefLevel();
+      ierr = mField.record_begin(seriesName); CHKERRQ(ierr);
+      ierr = mField.record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
+      ierr = mField.record_end(seriesName); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+
+
   PetscErrorCode addThermalElements(
     const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;

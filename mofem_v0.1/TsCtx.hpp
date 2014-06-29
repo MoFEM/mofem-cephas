@@ -50,6 +50,8 @@ struct TsCtx {
   basic_method_to_do postProcess_IJacobian;
   basic_method_to_do preProcess_IFunction;
   basic_method_to_do postProcess_IFunction;
+  basic_method_to_do preProcess_Monitor;
+  basic_method_to_do postProcess_Monitor;
 
   PetscLogEvent USER_EVENT_TsCtxRHSFunction;
   PetscLogEvent USER_EVENT_TsCtxRHSJacobian;
@@ -77,6 +79,8 @@ struct TsCtx {
   basic_method_to_do& get_postProcess_to_do_IFunction() { return postProcess_IFunction; }
   basic_method_to_do& get_preProcess_to_do_IJacobian() { return preProcess_IJacobian; }
   basic_method_to_do& get_postProcess_to_do_IJacobian() { return postProcess_IJacobian; }
+  basic_method_to_do& get_preProcess_to_do_Monitor() { return preProcess_Monitor; }
+  basic_method_to_do& get_postProcess_to_do_Monitor() { return postProcess_Monitor; }
 
   friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
   friend PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec U_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx);

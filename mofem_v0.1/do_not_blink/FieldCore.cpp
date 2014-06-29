@@ -3987,23 +3987,19 @@ PetscErrorCode FieldCore::set_local_VecCreateGhost(const string &name,RowColData
   VecDestroy(&Vlocal);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
+PetscErrorCode FieldCore::set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type dofs_by_global_idx;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
-  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   dofs_by_global_idx *dofs;
   DofIdx nb_dofs;
   switch (rc) {
     case Row:
-      nb_dofs = p_miit->get_nb_dofs_row();
-      dofs = const_cast<dofs_by_global_idx*>(&p_miit->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>());
+      nb_dofs = problem_ptr->get_nb_dofs_row();
+      dofs = const_cast<dofs_by_global_idx*>(&problem_ptr->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>());
       break;
     case Col:
-      nb_dofs = p_miit->get_nb_dofs_col();
-      dofs = const_cast<dofs_by_global_idx*>(&p_miit->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>());
+      nb_dofs = problem_ptr->get_nb_dofs_col();
+      dofs = const_cast<dofs_by_global_idx*>(&problem_ptr->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -4043,6 +4039,15 @@ PetscErrorCode FieldCore::set_global_VecCreateGhost(const string &name,RowColDat
     default:
      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
   }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode FieldCore::set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
+  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
+  ierr = set_global_VecCreateGhost(&*p_miit,rc,V,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::set_other_local_VecCreateGhost(
@@ -5288,7 +5293,7 @@ PetscErrorCode FieldCore::finalize_series_recorder(const string& serie_name) {
   ierr = sit->get_nb_steps(moab,nb_steps); CHKERRQ(ierr);
   int ss = 0;
   for(;ss<nb_steps;ss++) {
-    pair<SeriesStep_multiIndex::iterator,bool> p = series_steps.insert(MoFEMSeriesStep(&*sit,ss));
+    /*pair<SeriesStep_multiIndex::iterator,bool> p =*/ series_steps.insert(MoFEMSeriesStep(&*sit,ss));
   }
   PetscFunctionReturn(0);
 }
