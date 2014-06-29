@@ -275,5 +275,6 @@ struct mofem_exception {
 #include "ProblemsMultiIndices.hpp"
 #include "AdjacencyMultiIndices.hpp"
 #include "BCMultiIndices.hpp"
+#include "SeriesMultiIndices.hpp"
 
 #endif //__COMMON_HPP__
