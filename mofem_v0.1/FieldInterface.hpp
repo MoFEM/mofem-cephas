@@ -1157,6 +1157,21 @@ struct FieldInterface {
     */
   virtual PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
+ 
+  /** 
+    * \brief set values of vector from/to meshdatabase
+    *
+    * \param pointer to porblem struture
+    * \param RowColData for row or column (i.e. Row,Col)
+    * \param V vector
+    * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+    * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    *
+    * SCATTER_REVERSE set data to field entities form V vector.
+    *
+    */
+  virtual PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+
   /** 
     * \brief set values of vector from/to meshdatabase
     *

@@ -367,8 +367,8 @@ add_test(forces_and_sources_thermal_elem_unsteady_atom_test ${MPI_RUN} -np 1 ${C
   -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 
   -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor)
 add_test(forces_and_sources_thermal_elem_unsteady_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem_unsteady.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem_unsteady.txt)
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem_unsteady.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem_unsteady.txt)
 
 # add test for recording series
 add_executable(record_series_atom record_series_atom.cpp)
