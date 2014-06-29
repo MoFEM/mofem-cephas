@@ -382,6 +382,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(DataForcesAndSurcesCore &d
 PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
   const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<FieldData> &ent_field_data) {
     PetscFunctionBegin;
+    ent_field_data.resize(0);
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
     hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
@@ -894,7 +895,9 @@ PetscErrorCode OpGetData::doWork(
 
   unsigned int nb_dofs = data.getFieldData().size();
   if(nb_dofs % rank != 0) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    SETERRQ4(PETSC_COMM_SELF,1,
+      "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
+      type,side,nb_dofs,rank);
   }
   if(nb_dofs/rank > data.getN().size2()) {
     SETERRQ2(PETSC_COMM_SELF,1,
@@ -988,10 +991,17 @@ PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
   }
 
   if(mField.check_field(meshPositionsFieldName)) {
+    BitFieldId id = mField.get_field_structure(meshPositionsFieldName)->get_id();
+    if((fe_ptr->get_BitFieldId_data()&id).none()) {
+      SETERRQ(PETSC_COMM_SELF,1,"no MESH_NODE_POSITIONS in element data");
+    }
     ierr = getEdgesOrder(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getFacesOrder(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getVolumesOrder(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
+    if(data.nOdes[0].getFieldData().size()!=12) {
+      SETERRQ(PETSC_COMM_SELF,1,"no MESH_NODE_POSITIONS in element data");
+    }
     ierr = getEdgeFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getFacesFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getVolumesFieldData(data,meshPositionsFieldName); CHKERRQ(ierr);
@@ -1007,7 +1017,7 @@ PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
       ierr = opSetHoInvJac.op(data); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
   } else {
