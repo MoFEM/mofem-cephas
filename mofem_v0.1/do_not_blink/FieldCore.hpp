@@ -46,6 +46,7 @@ struct FieldCore: public FieldInterface {
   Tag th_ProblemShift,th_FieldShift,th_FEShift;
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
   Tag th_ElemType;
+  Tag th_SeriesName;
 
   Interface& moab;
   int *f_shift,*MoFEMFiniteElement_shift,*p_shift;
@@ -69,6 +70,9 @@ struct FieldCore: public FieldInterface {
   MoFEMProblem_multiIndex moFEMProblems;
   //cubit
   moabCubitMeshSet_multiIndex cubit_meshsets;
+  //series
+  Series_multiIndex series;
+  SeriesStep_multiIndex series_steps;
 
   //safty nets
   Tag th_MoFEMBuild;
@@ -88,6 +92,26 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode check_number_of_ents_in_ents_finite_element(const string& name);
   PetscErrorCode check_number_of_ents_in_ents_finite_element();
   PetscErrorCode rebuild_database(int verb = -1);
+
+  //add series
+  PetscErrorCode add_series_recorder(const string& serie_name);
+  //initialize/finalize recording
+  PetscErrorCode initialize_series_recorder(const string& serie_name);
+  PetscErrorCode finalize_series_recorder(const string& serie_name);
+  //start recording
+  PetscErrorCode record_begin(const string& serie_name);
+  //recording functions
+  PetscErrorCode record_problem(const string& serie_name,const MoFEMProblem *problem_ptr,RowColData rc);
+  PetscErrorCode record_problem(const string& serie_name,const string& problem_name,RowColData rc);
+  PetscErrorCode record_field(const string& serie_name,const string& field_name,const BitRefLevel &bit,const BitRefLevel &mask);
+  //end recording
+  PetscErrorCode record_end(const string& serie_name);
+  PetscErrorCode print_series_steps();
+  //get data back
+  PetscErrorCode load_series_data(const string& serie_name,const int step_number);
+
+  SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const string& name);
+  SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const string& name);
 
   //cubit meshsets
   bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType);

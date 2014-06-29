@@ -280,6 +280,87 @@ struct FieldInterface {
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 
   /**
+  * Add series recorder 
+  *
+  * \param name of series
+  */
+  virtual PetscErrorCode add_series_recorder(const string& serie_name) = 0;
+
+  /**
+  * initialize sries for recording
+  *
+  * \param series name
+  */
+  virtual PetscErrorCode initialize_series_recorder(const string& serie_name) = 0;
+
+  /**
+  * finalize series for recording, recorded data are not accessible until finializd
+  *
+  * \param series name
+  */
+  virtual PetscErrorCode finalize_series_recorder(const string& serie_name) = 0;
+
+  /**
+  * begin series recording
+  * 
+  * \param series name
+  */
+  virtual PetscErrorCode record_begin(const string& serie_name) = 0;
+
+  /**
+  * record problem 
+  *
+  * \param series name
+  * \param problem pointer
+  * \param rc could be Row or Col
+  */
+  virtual PetscErrorCode record_problem(const string& serie_name,const MoFEMProblem *problem_ptr,RowColData rc) = 0;
+
+  /**
+  * record problem
+  *
+  * \param series name
+  * \param problem name
+  * \param rc could be Row or Col
+  */
+  virtual PetscErrorCode record_problem(const string& serie_name,const string& problem_name,RowColData rc) = 0;
+
+  /**
+  * record field
+  * 
+  * \param field name
+  * \param bit ref level
+  * \param mask for bir ref level
+  */
+  virtual PetscErrorCode record_field(const string& serie_name,const string& field_name,const BitRefLevel &bit,const BitRefLevel &mask) = 0;
+
+  /**
+  * end series recording 
+  *
+  * \param series name
+  */
+  virtual PetscErrorCode record_end(const string& serie_name) = 0;
+  
+  /**
+   * load data from series into dofs database
+   * 
+   * \param series name 
+   * \param step number 
+   */
+  virtual PetscErrorCode load_series_data(const string& serie_name,const int step_number) = 0;
+
+  /** 
+  * print series
+  */
+  virtual PetscErrorCode print_series_steps() = 0;
+
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const string& name) = 0;
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const string& name) = 0;
+  #define _IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator IT = MFIELD.get_series_steps_byName_begin(NAME); \
+    IT!=MFIELD.get_series_steps_byName_end(NAME); IT++
+
+  /**
   * Create finite elements based from eneties in meshses. Throw error if entity is not in database
   * 
   * \param EntityHandle meshset
