@@ -1,0 +1,29 @@
+reset
+
+brick x 1 y 1 z 0.1
+
+brick x 0.05 y 0.05 z 0.2
+move Volume 2 location -0.4 -0.4 0.125 include_merged 
+Volume 2 copy move x 0.1 y 0 z 0 repeat 8 
+Volume 10 9 8 7 6 5 4 3 2 copy move x 0 y 0.1 z 0 repeat 8
+unite volume all 
+
+create temperature  on surface 2  value 0
+#create temperature  on surface 6  value 1
+
+create heatflux on surface 187 value -1  
+modify heatflux 1 add surface 817 
+
+block 1 volume 1 
+block 1 name 'MAT_THERMAL'
+block 1 attribute count 2
+block 1 attribute index 1 1
+block 1 attribute index 2 1
+
+volume all scheme Tetmesh
+volume all size auto factor 5
+mesh volume all
+
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/heat_exchange.cub" overwrite
+
+
