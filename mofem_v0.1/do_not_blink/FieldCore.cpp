@@ -163,12 +163,12 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
     ssTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME, 1, MB_TYPE_INTEGER,
     bhTag,MB_TAG_SPARSE|MB_TAG_CREAT,&default_val); CHKERR_THROW(rval);
-  std::vector<unsigned int> def_uint_zero(12,0);
-  rval= moab.tag_get_handle("BLOCK_HEADER",12*sizeof(unsigned int),MB_TYPE_INTEGER,
+  std::vector<unsigned int> def_uint_zero(3,0);
+  rval= moab.tag_get_handle(BLOCK_HEADER,3*sizeof(unsigned int),MB_TYPE_INTEGER,
     bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]); CHKERR_THROW(rval); 
   Tag block_attribs;
   int def_Block_Attributes_length = 0;
-  rval = moab.tag_get_handle("Block_Attributes",def_Block_Attributes_length,MB_TYPE_DOUBLE,
+  rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,def_Block_Attributes_length,MB_TYPE_DOUBLE,
     block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval); 
   Tag entity_name_tag;
   rval = moab.tag_get_handle(
