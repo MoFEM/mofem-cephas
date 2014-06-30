@@ -18,6 +18,8 @@
 
 
 cm_export_file("../../meshes/simple_thermal_problem.cub" export_thremal_example)
+cm_export_file("../../meshes/heat_exchange.cub" export_thremal_example)
+
 
 add_executable(thermal_steady thermal_steady.cpp)
 target_link_libraries(thermal_steady mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
