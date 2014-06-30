@@ -420,7 +420,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirihlet_bc.problem_ptr); CHKERRQ(ierr);
   ierr = my_dirihlet_bc.iNitalize(); CHKERRQ(ierr);
   ElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  NonLinearInterfaceFEMethod int_my_fe(mField,Aij,D,F,young_modulus,h,beta,ft,Gf,NonLinearInterfaceFEMethod::ctx_IntLinearSoftening);
+  NonLinearInterfaceFEMethod int_my_fe(mField,Aij,D,F,young_modulus,h,beta,ft,Gf,"DISPLACEMENT",NonLinearInterfaceFEMethod::ctx_IntLinearSoftening);
 
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
