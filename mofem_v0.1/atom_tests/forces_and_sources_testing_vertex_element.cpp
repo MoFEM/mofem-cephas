@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERR_PETSC(rval);
   Skinner skin(&mField.get_moab());
   Range tets_skin;
-  rval = skin.find_skin(tets,false,tets_skin); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,tets_skin); CHKERR(rval);
   Range tets_skin_nodes;
   ierr = moab.get_connectivity(tets_skin,tets_skin_nodes,true); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_VERTICEs(tets_skin_nodes,"TEST_FE"); CHKERRQ(ierr);

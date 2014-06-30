@@ -761,10 +761,10 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const
   ents3d = ents3d_with_prisms.subset_by_type(MBTET); // take only tets, add prism later
   //take skin faces
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(ents3d,false,skin_faces); CHKERR(rval);
+  rval = skin.find_skin(0,ents3d,false,skin_faces); CHKERR(rval);
   //take skin edges (boundary of surface if there is any)
   Range skin_edges_boundary; //skin edges from triangles
-  rval = skin.find_skin(triangles,false,skin_edges_boundary); CHKERR(rval);
+  rval = skin.find_skin(0,triangles,false,skin_edges_boundary); CHKERR(rval);
   if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"skin_edges_boundary %u\n",skin_edges_boundary.size());
   //take all edges on skin faces (i.e. skin surface)
   Range skin_faces_edges; //edges from skin faces of 3d ents

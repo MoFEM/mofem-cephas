@@ -996,7 +996,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,surfaces_faces,true); CHKERRQ(ierr);
   Skinner skin(&mField.get_moab());
   Range skin_faces; 
-  rval = skin.find_skin(level_tets,false,skin_faces); CHKERR(rval);
+  rval = skin.find_skin(0,level_tets,false,skin_faces); CHKERR(rval);
   surfaces_faces = intersect(surfaces_faces,skin_faces);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",corners_edges.size()); CHKERRQ(ierr);

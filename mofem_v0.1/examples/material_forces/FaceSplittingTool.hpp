@@ -45,9 +45,9 @@ struct FaceSplittingTools {
 
   FaceSplittingTools(FieldInterface& _mField): 
     mField(_mField),
-    kdTree(&_mField.get_moab(),true),
+    kdTree(&_mField.get_moab()),
     moab_distance_from_crack_surface(mb_instance_distance_from_crack_surface),
-    kdTree_DistanceFromCrackSurface(&moab_distance_from_crack_surface,true),
+    kdTree_DistanceFromCrackSurface(&moab_distance_from_crack_surface),
     th_b(NULL),th_distance(NULL),th_projection(NULL) {
 
     kdTree_rootMeshset_DistanceFromCrackSurface = 0;
