@@ -10,7 +10,7 @@ find_library(LASSO_LIBRARY NAMES iRel PATHS "${LASSO_DIR}/lib")
 message(STATUS ${LASSO_LIBRARY})
 
 if(LASSO_LIBRARY) 
-  include_directories("${LASSO_DIR}/inlude")
+  include_directories("${LASSO_DIR}/include")
 endif(LASSO_LIBRARY)
 
 

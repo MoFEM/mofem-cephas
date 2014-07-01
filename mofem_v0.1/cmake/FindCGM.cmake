@@ -13,7 +13,7 @@ message(STATUS ${CGM_LIBRARY})
 message(STATUS ${CGM_iGEOM_LIBRARY})
 
 if(CGM_LIBRARY) 
-  include_directories("${CGM_DIR}/inlude")
+  include_directories("${CGM_DIR}/include")
 endif(CGM_LIBRARY) 
 
 
