@@ -17,4 +17,5 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 
+#${iMESH_LIBRARY} ${CGM_LIBRARY} ${CGM_iGEOM_LIBRARY} ${LASSO_LIBRARY} ${MESHKIT_LIBRARY} ${MESHKIT_ALGS_LIBRARY} ${MESHKIT_UTILS_LIBRARY} ${MESHKIT_EMON_LIBRARY}
 

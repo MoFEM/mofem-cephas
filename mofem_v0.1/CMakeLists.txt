@@ -36,6 +36,8 @@ include(cmake/ResolveCompilerPaths.cmake)
 project(MoFEM C Fortran CXX)
 
 #SIGMA tools
+include(cmake/FindTETGEN.cmake)
+include(cmake/FindTriangle.cmake)
 include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
 include(cmake/FindLASSO.cmake)
@@ -159,21 +161,15 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")
 
 resolve_libraries(PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
-  ${iMESH_LIBRARY}
-  ${CGM_LIBRARY}
-  ${CGM_iGEOM_LIBRARY}
-  ${LASSO_LIBRARY}
-  ${MESHKIT_LIBRARY}
-  ${MESHKIT_ALGS_LIBRARY}
-  ${MESHKIT_UTILS_LIBRARY}
-  ${MESHKIT_EMON_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib 
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}")
-#message(STATUS ${PETSCVAR_BLASLAPACK_LIB})
+
+#add mofem cbals thrid part lib
 set(PROJECT_LIBS "mofem_cblas ${PROJECT_LIBS}")
+
 message(STATUS ${PROJECT_LIBS})
 
 file(COPY
