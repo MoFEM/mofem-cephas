@@ -31,7 +31,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
   FEMethod_ComplexForLazy &fe_method;
 
-  Tag th_F,th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions,th_fibreDirection1,th_fibreDirection2,th_stretch1,th_stretch2;
+  Tag th_F,th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions,th_fibreDirection1,th_fibreDirection2,th_stretch1,th_stretch2,th_fibreEnergy1,th_fibreEnergy2;
   PostProcStressNonLinearElasticity(Interface& _moab,FEMethod_ComplexForLazy &_fe_method):
     PostProcDisplacementsOnRefMesh(_moab,_fe_method.spatial_field_name),fe_method(_fe_method) {
 
@@ -51,6 +51,9 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
     rval = moab_post_proc.tag_get_handle("FIBRE_STRETCH_1",1,MB_TYPE_DOUBLE,th_stretch1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("FIBRE_STRETCH_2",1,MB_TYPE_DOUBLE,th_stretch2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+
+    rval = moab_post_proc.tag_get_handle("FIBRE_ENERGY_1",1,MB_TYPE_DOUBLE,th_fibreEnergy1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("FIBRE_ENERGY_2",1,MB_TYPE_DOUBLE,th_fibreEnergy2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
   }
 
   vector<double> remeber_g_NTET;
@@ -211,7 +214,22 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       //Fibre Stretch 2
       double stretch2 = norm_2(a2);
       rval = moab_post_proc.tag_set_data(th_stretch2,&mit->second,1,&stretch2); CHKERR_PETSC(rval);
-	}
+
+      //Fibre Energy
+      double k1;
+      double k2;
+      k1 = material_data->k1;
+      k2 = material_data->k2;
+      //Fibre 1
+      double psi_f1;
+      psi_f1 = (k1/(2*k2))*(exp(k2*pow(pow(stretch1,2)-1,2))-1);
+      rval = moab_post_proc.tag_set_data(th_fibreEnergy1,&mit->second,1,&psi_f1); CHKERR_PETSC(rval);
+      //Fibre 2
+      double psi_f2;
+      psi_f2 = (k1/(2*k2))*(exp(k2*pow(pow(stretch2,2)-1,2))-1);
+      rval = moab_post_proc.tag_set_data(th_fibreEnergy2,&mit->second,1,&psi_f2); CHKERR_PETSC(rval);
+  }
+
       }
 
       fe_method.g_NTET = remeber_g_NTET;
