@@ -21,6 +21,8 @@ include_directories("${PROJECT_SOURCE_DIR}/examples")
 
 #add executable library form subdirectory
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/elasticity")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/thermal")
+
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/interface")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/dynamics")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/nonlinear_elasticity")

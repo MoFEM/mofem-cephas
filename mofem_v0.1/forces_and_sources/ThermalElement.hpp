@@ -619,6 +619,26 @@ struct ThermalElement {
       ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
     }
 
+    //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
+    //not elegant, but good enough
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
+      if(it->get_Cubit_name().compare(0,9,"HEAT_FLUX") == 0) {
+	vector<double> data;
+	ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
+	if(data.size()!=1) {
+	  SETERRQ(PETSC_COMM_SELF,1,"Data incositency");
+	}
+	strcpy(setOfFluxes[it->get_msId()].dAta.data.name,"HeatFlu");
+	setOfFluxes[it->get_msId()].dAta.data.flag1 = 1;
+	setOfFluxes[it->get_msId()].dAta.data.value1 = data[0];
+	cerr << setOfFluxes[it->get_msId()].dAta << endl;
+	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+
+      }
+    }
+
+
     PetscFunctionReturn(0);
   }
 
