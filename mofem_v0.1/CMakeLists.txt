@@ -18,10 +18,9 @@
 
 cmake_minimum_required (VERSION 2.8)
 
+#petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
-include(cmake/ExportFile.cmake)
-include(cmake/FindTAO.cmake)
 
 message(${PETSCVAR_CXX})
 
@@ -35,6 +34,17 @@ find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C Fortran CXX)
+
+#SIGMA tools
+include(cmake/FindCGM.cmake)
+include(cmake/FindLASSO.cmake)
+include(cmake/FindMESHKIT.cmake)
+
+#PETSC tools
+include(cmake/FindTAO.cmake)
+
+#other
+include(cmake/ExportFile.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
@@ -148,6 +158,11 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")
 
 resolve_libraries(PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
+  ${CGM_LIBRARY}
+  ${CGM_iGEOM_LIBRARY}
+  ${LASSO_LIBRARY}
+  ${MESHKIT_ALGS_LIBRARY}
+  ${MESHKIT_UTILS_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib 
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}
