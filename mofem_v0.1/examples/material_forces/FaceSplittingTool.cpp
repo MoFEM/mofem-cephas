@@ -229,8 +229,10 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
     rval = moab_distance_from_crack_surface.tag_set_data(th_normal,&new_elem,1,normal); CHKERR_PETSC(rval);
   }
 
-  rval = moab_distance_from_crack_surface.create_meshset(MESHSET_SET,kdTree_rootMeshset_DistanceFromCrackSurface); CHKERR_PETSC(rval);
-  rval = kdTree_DistanceFromCrackSurface.build_tree(new_entities); CHKERR_PETSC(rval);
+  if(kdTree_rootMeshset_DistanceFromCrackSurface == 0) {
+    rval = moab_distance_from_crack_surface.create_meshset(MESHSET_SET,kdTree_rootMeshset_DistanceFromCrackSurface); CHKERR_PETSC(rval);
+  }
+  rval = kdTree_DistanceFromCrackSurface.build_tree(new_entities,&kdTree_rootMeshset_DistanceFromCrackSurface); CHKERR_PETSC(rval);
 
   PetscFunctionReturn(0);
 }
@@ -1517,10 +1519,12 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
       EntityHandle cubit_meshset = cubit_it->meshset; 
+
       ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
       ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
       ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
       ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
+
     }
 
     //remove tets which have 4 nodes on crack surface, those are surce of problems. In case of planar crack, volume of such 
