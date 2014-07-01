@@ -11,8 +11,13 @@ unite volume all
 create temperature  on surface 2  value 0
 #create temperature  on surface 6  value 1
 
-create heatflux on surface 187 value -1  
-modify heatflux 1 add surface 817 
+#create heatflux on surface all value -1  
+#modify heatflux 1 add surface 817 
+block 2 surface all
+block 2 name 'HEAT_FLUX'
+block 2 attribute count 1
+block 2 attribute index 1 1
+
 
 block 1 volume 1 
 block 1 name 'MAT_THERMAL'

@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
   const double alpha = 0.1;
   DisplacementBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"DISPLACEMENT",Aij,D,F);
   MyElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  InterfaceFEMethod int_fe(mField,Aij,D,F,young_modulus*alpha);
+  InterfaceFEMethod int_fe(mField,Aij,D,F,young_modulus*alpha,"DISPLACEMENT");
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

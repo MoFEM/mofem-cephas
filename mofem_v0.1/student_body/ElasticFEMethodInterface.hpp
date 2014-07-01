@@ -104,10 +104,11 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
 
   FieldInterface &mField;
   vector<ublas::vector<FieldData> > DispData;
+  string field_name;
 
-  InterfaceFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _young_modulus):
+  InterfaceFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _young_modulus,string _field_name = "DISPLACEMENT"):
     FEMethod_UpLevelStudent(_mField.get_moab(),1),ToolsInterfaceFEMethod(_young_modulus),
-    mField(_mField) {
+    mField(_mField),field_name(_field_name) {
 
     snes_B = &_Aij;
     snes_x = _X;
@@ -167,67 +168,67 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
     RowGlob.resize(1+6+2);
     rowNMatrices.resize(1+6+2);
     row_mat = 0;
-    ierr = GetRowGlobalIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
-    ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
+    ierr = GetRowGlobalIndices(field_name,RowGlob[row_mat]); CHKERRQ(ierr);
+    ierr = GetGaussRowNMatrix(field_name,rowNMatrices[row_mat]); CHKERRQ(ierr);
     row_mat++;
     for(int ee = 0;ee<3;ee++) { //edges matrices
-	ierr = GetRowGlobalIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices(field_name,MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
-	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
+	  ierr = GetGaussRowNMatrix(field_name,MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
 	  row_mat++;
 	}
     }
     for(int ee = 0;ee<3;ee++) { //edges matrices
-	ierr = GetRowGlobalIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee+6); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices(field_name,MBEDGE,RowGlob[row_mat],ee+6); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
-	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee+6); CHKERRQ(ierr);
+	  ierr = GetGaussRowNMatrix(field_name,MBEDGE,rowNMatrices[row_mat],ee+6); CHKERRQ(ierr);
 	  row_mat++;
 	}
     }
-    ierr = GetRowGlobalIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],3); CHKERRQ(ierr);
+    ierr = GetRowGlobalIndices(field_name,MBTRI,RowGlob[row_mat],3); CHKERRQ(ierr);
     if(RowGlob[row_mat].size()!=0) {
-	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],3); CHKERRQ(ierr);
+	ierr = GetGaussRowNMatrix(field_name,MBTRI,rowNMatrices[row_mat],3); CHKERRQ(ierr);
 	row_mat++;
     }
-    ierr = GetRowGlobalIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],4); CHKERRQ(ierr);
+    ierr = GetRowGlobalIndices(field_name,MBTRI,RowGlob[row_mat],4); CHKERRQ(ierr);
     if(RowGlob[row_mat].size()!=0) {
-	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],4); CHKERRQ(ierr);
+	ierr = GetGaussRowNMatrix(field_name,MBTRI,rowNMatrices[row_mat],4); CHKERRQ(ierr);
 	row_mat++;
     }
     //cols
     ColGlob.resize(1+6+2);
     colNMatrices.resize(1+6+2);
     col_mat = 0;
-    ierr = GetColGlobalIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
-    ierr = GetGaussColNMatrix("DISPLACEMENT",colNMatrices[col_mat]); CHKERRQ(ierr);
-    ierr = GetDataVector("DISPLACEMENT",DispData[col_mat]); CHKERRQ(ierr);
+    ierr = GetColGlobalIndices(field_name,ColGlob[col_mat]); CHKERRQ(ierr);
+    ierr = GetGaussColNMatrix(field_name,colNMatrices[col_mat]); CHKERRQ(ierr);
+    ierr = GetDataVector(field_name,DispData[col_mat]); CHKERRQ(ierr);
     col_mat++;
     for(int ee = 0;ee<3;ee++) { //edges matrices
-	ierr = GetColGlobalIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices(field_name,MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
-	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
-	  ierr = GetDataVector("DISPLACEMENT",MBEDGE,DispData[col_mat],ee); CHKERRQ(ierr);
+	  ierr = GetGaussColNMatrix(field_name,MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
+	  ierr = GetDataVector(field_name,MBEDGE,DispData[col_mat],ee); CHKERRQ(ierr);
 	  col_mat++;
 	}
     }
     for(int ee = 0;ee<3;ee++) { //edges matrices
-	ierr = GetColGlobalIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee+6); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices(field_name,MBEDGE,ColGlob[col_mat],ee+6); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
-	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee+6); CHKERRQ(ierr);
-	  ierr = GetDataVector("DISPLACEMENT",MBEDGE,DispData[col_mat],ee+6); CHKERRQ(ierr);
+	  ierr = GetGaussColNMatrix(field_name,MBEDGE,colNMatrices[col_mat],ee+6); CHKERRQ(ierr);
+	  ierr = GetDataVector(field_name,MBEDGE,DispData[col_mat],ee+6); CHKERRQ(ierr);
 	  col_mat++;
 	}
     }
-    ierr = GetColGlobalIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],3); CHKERRQ(ierr);
+    ierr = GetColGlobalIndices(field_name,MBTRI,ColGlob[col_mat],3); CHKERRQ(ierr);
     if(ColGlob[col_mat].size()!=0) {
-	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],3); CHKERRQ(ierr);
-	ierr = GetDataVector("DISPLACEMENT",MBTRI,DispData[col_mat],3); CHKERRQ(ierr);
+	ierr = GetGaussColNMatrix(field_name,MBTRI,colNMatrices[col_mat],3); CHKERRQ(ierr);
+	ierr = GetDataVector(field_name,MBTRI,DispData[col_mat],3); CHKERRQ(ierr);
 	col_mat++;
     }
-    ierr = GetColGlobalIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],4); CHKERRQ(ierr);
+    ierr = GetColGlobalIndices(field_name,MBTRI,ColGlob[col_mat],4); CHKERRQ(ierr);
     if(ColGlob[col_mat].size()!=0) {
-	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],4); CHKERRQ(ierr);
-	ierr = GetDataVector("DISPLACEMENT",MBTRI,DispData[col_mat],4); CHKERRQ(ierr);
+	ierr = GetGaussColNMatrix(field_name,MBTRI,colNMatrices[col_mat],4); CHKERRQ(ierr);
+	ierr = GetDataVector(field_name,MBTRI,DispData[col_mat],4); CHKERRQ(ierr);
 	col_mat++;
     }
     PetscFunctionReturn(0);
