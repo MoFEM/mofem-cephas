@@ -209,10 +209,10 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       rval = moab_post_proc.tag_set_data(th_fibreDirection2,&mit->second,1,&*a2.data().begin()); CHKERR_PETSC(rval);
 
       //Fibre Stretch 1
-      double stretch1 = norm_2(a1);
+      double stretch1 = norm_2(a1)/norm_2(A1);
       rval = moab_post_proc.tag_set_data(th_stretch1,&mit->second,1,&stretch1); CHKERR_PETSC(rval);
       //Fibre Stretch 2
-      double stretch2 = norm_2(a2);
+      double stretch2 = norm_2(a2)/norm_2(A2);
       rval = moab_post_proc.tag_set_data(th_stretch2,&mit->second,1,&stretch2); CHKERR_PETSC(rval);
 
       //Fibre Energy
