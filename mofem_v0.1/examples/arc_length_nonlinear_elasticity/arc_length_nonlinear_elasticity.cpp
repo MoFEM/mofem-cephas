@@ -25,6 +25,7 @@ static char help[] = "\
 #include "SurfacePressureComplexForLazy.hpp"
 #include "SurfacePressure.hpp"
 #include "NodalForce.hpp"
+#include "ElasticFEMethodInterface.hpp"
 
 #include "FEMethod_DriverComplexForLazy.hpp"
 #include "PostProcVertexMethod.hpp"
@@ -115,19 +116,50 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  BitRefLevel bit_level0;
-  bit_level0.set(0);
+  //ref meshset ref level 0
+  ierr = mField.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+  vector<BitRefLevel> bit_levels;
+  bit_levels.push_back(BitRefLevel().set(0));
+  BitRefLevel problem_bit_level;
 
   if(step == 1) {
+    
+    int ll = 1;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
+      //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,cit)) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
+      EntityHandle cubit_meshset = cit->get_meshset();
+      {
+        //get tet enties form back bit_level
+        EntityHandle ref_level_meshset = 0;
+        rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
+        ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
+        ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+        Range ref_level_tets;
+        rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
+        //get faces and test to split
+        ierr = mField.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+        //set new bit level
+        bit_levels.push_back(BitRefLevel().set(ll++));
+        //split faces and
+        ierr = mField.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+        //clean meshsets
+        rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
+      }
+      //update cubit meshsets
+      for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,ciit)) {
+        EntityHandle cubit_meshset = ciit->meshset;
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+      }
+    }
+    
+    problem_bit_level = bit_levels.back();
+    
     Range CubitSideSets_meshsets;
     ierr = mField.get_Cubit_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
-
-    //ref meshset ref level 0
-    ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
-    EntityHandle meshset_level0;
-    rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-    ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-    ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
@@ -151,6 +183,12 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ELASTIC","LAMBDA"); CHKERRQ(ierr);
 
+    //Define FE Interface
+    ierr = mField.add_finite_element("INTERFACE"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("INTERFACE","SPATIAL_POSITION"); CHKERRQ(ierr);
+    
     //Define rows/cols and element data
     ierr = mField.modify_finite_element_add_field_row("ARC_LENGTH","LAMBDA"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ARC_LENGTH","LAMBDA"); CHKERRQ(ierr);
@@ -163,17 +201,20 @@ int main(int argc, char *argv[]) {
     //set finite elements for problems
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ARC_LENGTH"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
 
     //set refinment level for problem
-    ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
+    ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
 
     //add entitities (by tets) to the field
     ierr = mField.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
     //add finite elements entities
-    ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
-  
+    ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
+    //add prisms to interface finite element
+    ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
+    
     //this entity will carray data for this finite element
     EntityHandle meshset_FE_ARC_LENGTH;
     rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGTH); CHKERR_PETSC(rval);
@@ -226,7 +267,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = mField.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
 
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
@@ -274,6 +315,8 @@ int main(int argc, char *argv[]) {
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)mat_ctx,&ShellAij); CHKERRQ(ierr);
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
 
+  ArcLengthSnesCtx snes_ctx(mField,"ELASTIC_MECHANICS",arc_ctx);
+
   double young_modulus = 1;
   double poisson_ratio = 0.25;
 	
@@ -303,6 +346,9 @@ int main(int argc, char *argv[]) {
   ArcLengthElemFEMethod& arc_method = *arc_method_ptr;
 
   NonLinearSpatialElasticFEMthod fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+
+  const double alpha = 0.1;
+  InterfaceFEMethod int_fe(mField,Aij,D,F,young_modulus*alpha,"SPATIAL_POSITION");
 
   double scaled_reference_load = 1;
   double *scale_lhs = &(arc_ctx->get_FieldData());
@@ -445,8 +491,6 @@ int main(int argc, char *argv[]) {
 
   MyPrePostProcessFEMethod pre_post_method(mField,arc_ctx,&my_dirihlet_bc,node_set);
   AssembleLambdaFEMethod assemble_F_lambda(mField,arc_ctx,&my_dirihlet_bc);
-
-  ArcLengthSnesCtx snes_ctx(mField,"ELASTIC_MECHANICS",arc_ctx);
   
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -496,6 +540,7 @@ int main(int argc, char *argv[]) {
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&int_fe));
   //surface focres and preassures
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   //nodal forces
@@ -518,6 +563,7 @@ int main(int argc, char *argv[]) {
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
   snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&int_fe));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
