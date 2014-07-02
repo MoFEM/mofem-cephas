@@ -35,10 +35,6 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
   rval = moab.tag_get_by_ptr(th_SeriesName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); CHKERR_THROW(rval);
  
   const int def_val_len = 0;
-  //ia
-  string Tag_DataIa_SeriesName = "_SeriesDataIa_"+get_name();
-  rval = moab.tag_get_handle(Tag_DataIa_SeriesName.c_str(),def_val_len,MB_TYPE_INTEGER,
-    th_SeriesDataIa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
 
   //uids
   string Tag_DataUIDs_SeriesName = "_SeriesDataUIDs_"+get_name();
@@ -55,14 +51,7 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
 PetscErrorCode MoFEMSeries::get_nb_steps(Interface &moab,int &nb_steps) const {
   PetscFunctionBegin;
   ErrorCode rval;
-  const void* tag_data;
-  int tag_size;
-  rval = moab.tag_get_by_ptr(th_SeriesDataIa,&meshset,1,(const void **)&tag_data,&tag_size); 
-  if(rval == MB_SUCCESS) {
-    nb_steps = tag_size-1;
-  } else {
-    nb_steps = 0;
-  }
+  rval = moab.num_contained_meshsets(meshset,&nb_steps); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
 
@@ -107,44 +96,32 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
     SETERRQ(PETSC_COMM_SELF,1,"all series data will be lost");
   }
 
-  //ia
-  {
-    const int* tag_data;
-    int tag_size;
-    rval = moab.tag_get_by_ptr(th_SeriesDataIa,&meshset,1,(const void **)&tag_data,&tag_size); 
-    if(rval != MB_SUCCESS) {
-      ia.push_back(0);
-      PetscFunctionReturn(0);
+  vector<EntityHandle> contained;
+  rval = moab.get_contained_meshsets(meshset,contained); CHKERR_PETSC(rval);
+  ia.resize(0);
+  uids.resize(0);
+  data.resize(0);
+  ia.push_back(0);
+  for(int mm = 0;mm<contained.size();mm++) {
+    //uids
+    {
+      const UId* tag_data;
+      int tag_size;
+      rval = moab.tag_get_by_ptr(th_SeriesDataUIDs,&meshset,1,(const void **)&tag_data,&tag_size); CHKERR_PETSC(rval);
+      int nb = tag_size/sizeof(UId);
+      uids.insert(uids.end(),tag_data,&tag_data[nb]);
     }
-    ia.resize(tag_size);
-    copy(tag_data,&tag_data[tag_size],ia.begin());
-  }
-
-  //uids
-  {
-    const UId* tag_data;
-    int tag_size;
-    rval = moab.tag_get_by_ptr(th_SeriesDataUIDs,&meshset,1,(const void **)&tag_data,&tag_size); CHKERR_PETSC(rval);
-    int nb = tag_size/sizeof(UId);
-    uids.resize(nb);
-    copy(tag_data,&tag_data[nb],uids.begin());
-  }
-
-  //data
-  {
-    const FieldData* tag_data;
-    int tag_size;
-    rval = moab.tag_get_by_ptr(th_SeriesData,&meshset,1,(const void **)&tag_data,&tag_size); CHKERR_PETSC(rval);
-    int nb = tag_size/sizeof(FieldData);
-    data.resize(nb);
-    copy(tag_data,&tag_data[nb],data.begin());
-  }
-
-  if(data.size() != uids.size()) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-  }
-  if(data.size() > 0 && ia.empty()) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    {
+      const FieldData* tag_data;
+      int tag_size;
+      rval = moab.tag_get_by_ptr(th_SeriesData,&meshset,1,(const void **)&tag_data,&tag_size); CHKERR_PETSC(rval);
+      int nb = tag_size/sizeof(FieldData);
+      data.insert(data.end(),tag_data,&tag_data[nb]);
+    }
+    if(data.size() != uids.size()) {
+      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    }
+    ia.push_back(data.size());
   }
 
   PetscFunctionReturn(0);
@@ -152,6 +129,7 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
 
 PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   PetscFunctionBegin;
+  PetscErrorCode ierr;
 
   if(record_begin) {
     SETERRQ(PETSC_COMM_SELF,1,"switch off recording");
@@ -161,22 +139,39 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   }
 
   ErrorCode rval;
-  {
-    void const* tag_data[] = { &ia[0] };
-    int tag_sizes[] = { ia.size() };
+  vector<EntityHandle> contained;
+  rval = moab.get_contained_meshsets(meshset,contained); CHKERR_PETSC(rval);
+  int nb_contained = contained.size();
+  if(nb_contained < ia.size()-1) {
+    contained.resize(ia.size());
+  }
+  for(int mm = ia.size()-1;mm<nb_contained;mm++) {
+    rval = moab.remove_entities(meshset,&contained[mm],1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&contained[mm],1); CHKERR_PETSC(rval);
+  }
+  for(int mm = nb_contained;mm<ia.size()-1;mm++) {
+    EntityHandle new_meshset;
+    rval = moab.create_meshset(MESHSET_SET,new_meshset); CHKERR_PETSC(rval);
+    rval = moab.add_entities(meshset,&new_meshset,1); CHKERR_PETSC(rval);
+  }
+  contained.resize(0);
+  rval = moab.get_contained_meshsets(meshset,contained); CHKERR_PETSC(rval);
+  if(contained.size() != ia.size()-1) {
+    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency nb_contained != ia.size()-1 %d!=%d",contained.size(),ia.size()-1);
+  }
 
-    rval = moab.tag_set_by_ptr(th_SeriesDataIa,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
+  for(int ii = 1;ii<ia.size();ii++) {
+    void const* tag_data[] = { &uids[ia[ii-1]] };
+    int tag_sizes[] = { (ia[ii]-ia[ii-1])*sizeof(UId) };
+    rval = moab.tag_set_by_ptr(th_SeriesDataUIDs,&contained[ii-1],1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   }
-  {
-    void const* tag_data[] = { &uids[0] };
-    int tag_sizes[] = { uids.size()*sizeof(UId) };
-    rval = moab.tag_set_by_ptr(th_SeriesDataUIDs,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
+  
+  for(int ii = 1;ii<ia.size();ii++) {
+    void const* tag_data[] = { &data[ia[ii-1]] };
+    int tag_sizes[] = { (ia[ii]-ia[ii-1])*sizeof(FieldData) };
+    rval = moab.tag_set_by_ptr(th_SeriesData,&contained[ii-1],1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   }
-  {
-    void const* tag_data[] = { &data[0] };
-    int tag_sizes[] = { data.size()*sizeof(FieldData) };
-    rval = moab.tag_set_by_ptr(th_SeriesData,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
-  }
+
   PetscFunctionReturn(0);
 }
 
@@ -186,34 +181,28 @@ MoFEMSeriesStep::MoFEMSeriesStep(const MoFEMSeries *_MoFEMSeries_ptr,const int _
 PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &dofsMoabField) const {
   PetscFunctionBegin;
   ErrorCode rval;
-  int *ia_ptr;
-  int ia_size;
-  
-  rval = moab.tag_get_by_ptr(ptr->th_SeriesDataIa,&ptr->meshset,1,(const void **)&ia_ptr,&ia_size); CHKERR_PETSC(rval);
-  if(ia_size < 1) {
-    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-  }
-  if(step_number+1>=ia_size) {
+
+  vector<EntityHandle> contained;
+  rval = moab.get_contained_meshsets(ptr->meshset,contained); CHKERR_PETSC(rval);
+  if(contained.size()<=step_number) {
     SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   }
 
   UId *uids_ptr;
   int uids_size;
-  rval = moab.tag_get_by_ptr(ptr->th_SeriesDataUIDs,&ptr->meshset,1,(const void **)&uids_ptr,&uids_size); CHKERR_PETSC(rval);
+  rval = moab.tag_get_by_ptr(ptr->th_SeriesDataUIDs,&contained[step_number],1,(const void **)&uids_ptr,&uids_size); CHKERR_PETSC(rval);
   uids_size /= sizeof(UId);
 
   FieldData *data_ptr; 
   int data_size;
-  rval = moab.tag_get_by_ptr(ptr->th_SeriesData,&ptr->meshset,1,(const void **)&data_ptr,&data_size); CHKERR_PETSC(rval);
+  rval = moab.tag_get_by_ptr(ptr->th_SeriesData,&contained[step_number],1,(const void **)&data_ptr,&data_size); CHKERR_PETSC(rval);
   data_size /= sizeof(FieldData);
 
   if(data_size != uids_size) {
     SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   }
 
-  int start = ia_ptr[step_number];
-  int end = ia_ptr[step_number+1];
-  for(int ii = start;ii<end;ii++) {
+  for(int ii = 0;ii<uids_size;ii++) {
     if(ii>=uids_size) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }

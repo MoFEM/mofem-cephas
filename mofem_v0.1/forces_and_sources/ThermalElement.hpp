@@ -631,7 +631,7 @@ struct ThermalElement {
 	strcpy(setOfFluxes[it->get_msId()].dAta.data.name,"HeatFlu");
 	setOfFluxes[it->get_msId()].dAta.data.flag1 = 1;
 	setOfFluxes[it->get_msId()].dAta.data.value1 = data[0];
-	cerr << setOfFluxes[it->get_msId()].dAta << endl;
+	//cerr << setOfFluxes[it->get_msId()].dAta << endl;
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
 	ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
 

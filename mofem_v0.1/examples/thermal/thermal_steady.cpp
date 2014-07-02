@@ -153,7 +153,11 @@ int main(int argc, char *argv[]) {
   ierr = thermal_elements.setThermalFluxFiniteElementLhsOperators("TEMP",F); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(T); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
   
   //preproc
