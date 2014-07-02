@@ -102,7 +102,7 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
   uids.resize(0);
   data.resize(0);
   ia.push_back(0);
-  for(int mm = 0;mm<contained.size();mm++) {
+  for(unsigned int mm = 0;mm<contained.size();mm++) {
     //uids
     {
       const UId* tag_data;
@@ -129,7 +129,6 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
 
 PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
 
   if(record_begin) {
     SETERRQ(PETSC_COMM_SELF,1,"switch off recording");
@@ -141,7 +140,7 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   ErrorCode rval;
   vector<EntityHandle> contained;
   rval = moab.get_contained_meshsets(meshset,contained); CHKERR_PETSC(rval);
-  int nb_contained = contained.size();
+  unsigned int nb_contained = contained.size();
   if(nb_contained < ia.size()-1) {
     contained.resize(ia.size());
   }
@@ -149,7 +148,7 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
     rval = moab.remove_entities(meshset,&contained[mm],1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&contained[mm],1); CHKERR_PETSC(rval);
   }
-  for(int mm = nb_contained;mm<ia.size()-1;mm++) {
+  for(unsigned int mm = nb_contained;mm<ia.size()-1;mm++) {
     EntityHandle new_meshset;
     rval = moab.create_meshset(MESHSET_SET,new_meshset); CHKERR_PETSC(rval);
     rval = moab.add_entities(meshset,&new_meshset,1); CHKERR_PETSC(rval);
@@ -160,13 +159,13 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
     SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency nb_contained != ia.size()-1 %d!=%d",contained.size(),ia.size()-1);
   }
 
-  for(int ii = 1;ii<ia.size();ii++) {
+  for(unsigned int ii = 1;ii<ia.size();ii++) {
     void const* tag_data[] = { &uids[ia[ii-1]] };
     int tag_sizes[] = { (ia[ii]-ia[ii-1])*sizeof(UId) };
     rval = moab.tag_set_by_ptr(th_SeriesDataUIDs,&contained[ii-1],1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   }
   
-  for(int ii = 1;ii<ia.size();ii++) {
+  for(unsigned int ii = 1;ii<ia.size();ii++) {
     void const* tag_data[] = { &data[ia[ii-1]] };
     int tag_sizes[] = { (ia[ii]-ia[ii-1])*sizeof(FieldData) };
     rval = moab.tag_set_by_ptr(th_SeriesData,&contained[ii-1],1,tag_data,tag_sizes); CHKERR_PETSC(rval);
@@ -184,7 +183,7 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &d
 
   vector<EntityHandle> contained;
   rval = moab.get_contained_meshsets(ptr->meshset,contained); CHKERR_PETSC(rval);
-  if(contained.size()<=step_number) {
+  if(contained.size()<=(unsigned int)step_number) {
     SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   }
 
