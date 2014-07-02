@@ -119,7 +119,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.field_axpy(1.,"FIELD_A","FIELD_B"); CHKERRQ(ierr);
   ierr = mField.record_begin("TEST_SERIES1"); CHKERRQ(ierr);
   ierr = mField.record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.record_end("TEST_SERIES1"); CHKERRQ(ierr);
 
   ierr = mField.initialize_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
   ierr = mField.record_begin("TEST_SERIES2"); CHKERRQ(ierr);
@@ -177,8 +176,6 @@ int main(int argc, char *argv[]) {
 
 
   }
-
-
 
   PetscFinalize();
   return 0;
