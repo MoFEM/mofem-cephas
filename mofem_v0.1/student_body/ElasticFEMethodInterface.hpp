@@ -138,6 +138,16 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
   */
   virtual PetscErrorCode Calc_gap() {
     PetscFunctionBegin;
+    SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
+    SideNumber_multiIndex::iterator sit = side_table.begin();
+    map<EntityType,bitset<9> > ents_bits;
+    for(;sit!=side_table.end();sit++) {
+      if(sit->get_ent_type() == MBVERTEX) {
+	ents_bits[MBVERTEX].set(sit->side_number);
+      }	else if(sit->get_ent_type() == MBEDGE) {
+	ents_bits[MBEDGE].set(sit->side_number);
+      }
+    }
     int g_dim = g_NTRI.size()/3;
     gap.resize(g_dim);
     gap_loc.resize(g_dim);
@@ -150,36 +160,46 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
 	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator 
 	  hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX,2));
 	for(;dit!=hi_dit;dit++) {
-	  (gap[gg])[dit->get_dof_rank()] += nodeNTRI[dit->side_number_ptr->side_number]*dit->get_FieldData();
+	  int side = dit->side_number_ptr->side_number;
+	  if(ents_bits[MBVERTEX].test(side) && ents_bits[MBVERTEX].test(side+3)) {
+	    FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator diit;
+	    (gap[gg])[dit->get_dof_rank()] += nodeNTRI[dit->side_number_ptr->side_number]*dit->get_FieldData();
+	  }
 	}
 	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX,3));
 	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX,5));
 	for(;dit!=hi_dit;dit++) {
-	  assert(dit->side_number_ptr->side_number>=3);
-	  assert(dit->side_number_ptr->side_number<=5);
-	  (gap[gg])[dit->get_dof_rank()] -= nodeNTRI[dit->side_number_ptr->side_number-3]*dit->get_FieldData();
+	  int side = dit->side_number_ptr->side_number;
+	  if(ents_bits[MBVERTEX].test(side-3) && ents_bits[MBVERTEX].test(side)) {
+	    (gap[gg])[dit->get_dof_rank()] -= nodeNTRI[dit->side_number_ptr->side_number-3]*dit->get_FieldData();
+	  }
 	}
 	//edges
 	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBEDGE,0));
 	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBEDGE,2));
 	for(;dit!=hi_dit;dit++) {
-	  int side_number = dit->side_number_ptr->side_number;	
-	  assert(side_number >= 0);
-	  assert(side_number <= 2);
-	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[side_number]);
-	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
-	  double *_H1edgeN_ = &*H1edgeN[side_number].begin();
-	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
-	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  int side = dit->side_number_ptr->side_number;	
+    	  if(ents_bits[MBEDGE].test(side) && ents_bits[MBEDGE].test(side+6)) {
+	    assert(side >= 0);
+	    assert(side <= 2);
+	    int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[side]);
+	    int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	    double *_H1edgeN_ = &*H1edgeN[side].begin();
+	    double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
+	    (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  }
 	} 
 	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBEDGE,6));
 	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBEDGE,8));
 	for(;dit!=hi_dit;dit++) {
-	  double *_H1edgeN_ = &H1edgeN[dit->side_number_ptr->side_number][0];
-	  int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[dit->side_number_ptr->side_number]);
-	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
-	  double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
-	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  int side = dit->side_number_ptr->side_number;	
+    	  if(ents_bits[MBEDGE].test(side-6) && ents_bits[MBEDGE].test(side)) {
+	    double *_H1edgeN_ = &H1edgeN[side][0];
+	    int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[side]);
+	    int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	    double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
+	    (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  }
 	} 
 	//faces
 	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBTRI,3));
@@ -383,11 +403,12 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
 
     //Rotation matrix
     ierr = CalcR(); CHKERRQ(ierr);
+    ierr = CalcDglob(); CHKERRQ(ierr);
+
     //Calculate Matrices
     ierr = Matrices();    CHKERRQ(ierr);
     //Calcualte gap
     ierr = Calc_gap(); CHKERRQ(ierr);
-    ierr = CalcDglob(); CHKERRQ(ierr);
 
     switch(snes_ctx) {
       case ctx_SNESNone: {
