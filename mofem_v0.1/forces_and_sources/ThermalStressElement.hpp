@@ -1,0 +1,183 @@
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ *
+ * Implementation of thermal stress, i.e. right hand side as result of thermal stresses
+ *
+ * This is not exactly procedure for linear elatic dynamics, since jacobian is
+ * evaluated at every time step and snes procedure is involved. However it is
+ * implemented like that, to test methodology for general nonlinear problem.
+ *
+ */
+
+/* This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#ifndef __BODY_FORCE_HPP
+#define __BODY_FORCE_HPP
+
+#include "ForcesAndSurcesCore.hpp"
+#include "SnesCtx.hpp"
+#include "TsCtx.hpp"
+
+namespace MoFEM {
+
+struct ThermalStressElement {
+
+  struct MyVolumeFE: public TetElementForcesAndSurcesCore {
+    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSurcesCore(_mField) {}
+    int getRule(int order) { return order-1; };
+  };
+
+  MyVolumeFE feThermalStressRhs;
+  MyVolumeFE& getLoopThermalStressRhs() { return ThermalStressRhs; }
+
+  FieldInterface &mField;
+  ThermalStressElement(
+    FieldInterface &m_field):
+    feThermalStressRhs(m_field) {}
+
+
+  struct BlockData {
+    double youngModulus;
+    double poissonRatio;
+    double heatExpansion;
+    double refTemperature;
+    BlockData(): refTemperature(0) {}
+    Range tEts;
+  };
+  map<int,BlockData> setOfBlocks;
+
+
+  struct CommonData {
+    ublas::vector<double> temperatureAtGaussPts;
+  };
+  CommonData commonData;
+
+  struct OpGetRateAtGaussPts: public TetElementForcesAndSurcesCore::UserDataOperator {
+
+    CommonData &commonData;
+    OpGetRateAtGaussPts(const string field_name,CommonData &common_data):
+      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data) {}
+
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      try {
+
+        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        commonData.temperatureAtGaussPts.resize(data.getN().size1());
+	int nb_dof = data.getFieldData().size();
+
+        switch(type) {
+	  case MBVERTEX:
+	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	    commonData.temperatureAtGaussPts[gg] 
+	      = cblas_ddot(nb_dof,&data.getN()(gg,0),1,&data.getFieldData()[0],1);
+	  }
+	  break;
+	  default:
+	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	    commonData.temperatureAtGaussPts[gg] 
+	      += cblas_ddot(nb_dof,&data.getN()(gg,0),1,&data.getFieldData()[0],1);
+	  }
+        }
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+
+  struct OpThermalRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
+
+    Vec F;
+    BlockData &dAta;
+    CommonData &commonData;
+    OpThermalRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data):
+      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
+      F(_F),dAta(data),commonData(common_data) { }
+
+    ublas::vector<double> Nf;
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      try {
+
+      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
+
+      PetscErrorCode ierr;
+
+      const FENumeredDofMoFEMEntity *dof_ptr;
+      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      int rank = dof_ptr->get_max_rank();
+      if(rank != 3) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+
+      int nb_dofs = data.getIndices().size();
+      if(nb_dofs % rank != 0) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      if(data.getN().size() <= nb_dofs/rank) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+
+      Nf.resize(nb_dofs);
+      bzero(&*Nf.data().begin(),data.nb_dofs*sizeof(FieldData));
+
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	
+	double phi = (commonData.temperatureAtGaussPts[gg]-BlockData.refTemperature);
+	double val = temperatureAtGaussPts.heatExpansion*phi;
+	val *= getVolume()*getGaussPts()(3,gg);
+
+	//eps_thermal = [val, val, val ], vector notation
+	//sig_thernal = - (E/1-2mu) * eps_thermal 
+	//var_eps = [ diff_N[0], diffN[1], diffN[2] ]
+
+	double *diff_N;
+	diff_N = &data.getDiffN()(gg,0);
+	cblas_daxpy(nb_dofs,val,diff_N[rr],3,&Nf[rr],3);
+	
+      }
+      
+      ierr = VecSetValues(F,data.getIndices().size(),
+	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+};
+
+}
+
+#endif //__BODY_FORCE_HPP
+

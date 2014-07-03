@@ -125,8 +125,8 @@ int main(int argc, char *argv[]) {
   if(step == 1) {
     
     int ll = 1;
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
-      //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,cit)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|INTERFACESET,cit)) {
+      //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,cit)) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
       EntityHandle cubit_meshset = cit->get_meshset();
       {
@@ -159,13 +159,13 @@ int main(int argc, char *argv[]) {
     problem_bit_level = bit_levels.back();
     
     Range CubitSideSets_meshsets;
-    ierr = mField.get_Cubit_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_meshsets(SIDESET,CubitSideSets_meshsets); CHKERRQ(ierr);
 
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
     ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
-    ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
+    ierr = mField.add_field("LAMBDA",NOFIELD,1); CHKERRQ(ierr);
 
     //Field for ArcLength
     ierr = mField.add_field("X0_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
@@ -245,12 +245,12 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_finite_element_add_field_data("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("NEUAMNN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","NEUAMNN_FE"); CHKERRQ(ierr);
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
       Range tris;
       rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
     }
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
       Range tris;
       rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec F;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   Mat Aij;
@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
   double young_modulus = 1;
   double poisson_ratio = 0.25;
 	
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     cout << endl << *it << endl;
     //Get block name
     string name = it->get_Cubit_name();
@@ -356,10 +356,10 @@ int main(int argc, char *argv[]) {
   NeummanForcesSurfaceComplexForLazy neumann_forces(mField,Aij,arc_ctx->F_lambda,scale_lhs,scale_rhs);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_neumann = neumann_forces.getLoopSpatialFe();
   fe_neumann.uSeF = true;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ierr = fe_neumann.addForce(it->get_msId()); CHKERRQ(ierr);
   }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     ierr = fe_neumann.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
   SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
@@ -547,7 +547,7 @@ int main(int argc, char *argv[]) {
   boost::ptr_map<string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(mField));
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx->F_lambda,it->get_msId());  CHKERRQ(ierr);
   }
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
@@ -568,13 +568,13 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
 
-  ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   if(step>1) {
     ierr = mField.set_other_global_VecCreateGhost(
-      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",Col,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     double x0_nrm;
     ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
@@ -677,15 +677,15 @@ int main(int argc, char *argv[]) {
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
       }
       //Save data on mesh
-      ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = mField.set_other_global_VecCreateGhost(
-	"ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",Col,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	"ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       converged_state = true;
       
     }
     
     PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-    ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
+    ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",COL,ent_method); CHKERRQ(ierr);
 
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
@@ -694,7 +694,7 @@ int main(int argc, char *argv[]) {
 	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
       }
       /*PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-      ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
+      ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",COL,ent_method); CHKERRQ(ierr);
       if(pcomm->rank()==0) {
 	EntityHandle out_meshset;
 	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);

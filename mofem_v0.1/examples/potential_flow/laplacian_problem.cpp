@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
     if(it->get_Cubit_name() == "PotentialFlow") {
  
       //add ents to field and set app. order
@@ -142,8 +142,8 @@ int main(int argc, char *argv[]) {
 
   //create matrices and vectors
   Vec F,D;
-  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",Row,&F); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",COL,&D); CHKERRQ(ierr);
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("POTENTIAL_PROBLEM",&A); CHKERRQ(ierr);
 
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 
   //get nodes and other entities to fix
   Range fix_nodes;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|UNKNOWNCUBITNAME,it)) {
     std::size_t zeroPressureFound=it->get_Cubit_name().find("ZeroPressure");
     if (zeroPressureFound==std::string::npos) continue;
     rval = moab.get_entities_by_type(it->meshset,MBVERTEX,fix_nodes,true); CHKERR_PETSC(rval);
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("POTENTIAL_PROBLEM",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("POTENTIAL_PROBLEM",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);

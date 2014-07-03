@@ -64,9 +64,9 @@ void ConstrainSurfacGeometry::runInConstructor() {
     dC_MAT_ELEM.resize(3,9);
     dCT_MAT_ELEM.resize(9,9);
     //crack front nodes
-    if(mField.check_msId_meshset(201,SideSet)) {
+    if(mField.check_msId_meshset(201,SIDESET)) {
       Range crack_front_edges;
-      mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true);
+      mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true);
       mField.get_moab().get_connectivity(crack_front_edges,crackFrontEdgesNodes,true);
       //projected nodes
       mField.get_moab().tag_get_handle(

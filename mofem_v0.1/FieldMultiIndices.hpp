@@ -90,7 +90,7 @@ struct interface_MoFEMField {
  * \brief MoFEMField_multiIndex for MoFEMField
  *
  * \param hashed_unique<
- *     tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
+ *     tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
  * \param   ordered_unique<
  *     tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshset> >,
  * \param hashed_unique<
@@ -102,7 +102,7 @@ typedef multi_index_container<
   MoFEMField,
   indexed_by<
     hashed_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, hashbit<BitFieldId>, eqbit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
     ordered_unique<
       tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshset> >,
     ordered_unique<
@@ -115,7 +115,7 @@ typedef multi_index_container<
   const MoFEMField*,
   indexed_by<
     ordered_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, ltbit<BitFieldId> >
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, LtBit<BitFieldId> >
    > > MoFEMField_multiIndex_view;
 
 

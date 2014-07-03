@@ -91,16 +91,16 @@ int main(int argc, char *argv[]) {
     ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
 
     Range SurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
     SurfacesFaces = intersect(SurfacesFaces,level_tris);
     Range CrackSurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
     CrackSurfacesFaces = intersect(CrackSurfacesFaces,level_tris);
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
       int msId = it->get_msId();
       if((msId < 10200)||(msId >= 10300)) continue;
       Range SurfacesFaces_msId;
-      ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SideSet,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
+      ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SIDESET,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
       SurfacesFaces_msId = intersect(SurfacesFaces_msId,level_tris);
       SurfacesFaces.insert(SurfacesFaces_msId.begin(),SurfacesFaces_msId.end());
     }

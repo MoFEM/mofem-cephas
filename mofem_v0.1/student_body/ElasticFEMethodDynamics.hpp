@@ -87,7 +87,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostK);
       }
 
-      mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&u_by_row);
+      mField.VecCreateGhost("ELASTIC_MECHANICS",ROW,&u_by_row);
 
     };
   
@@ -274,11 +274,11 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
 	    PetscPrintf(PETSC_COMM_WORLD,
 	      "\tsteps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
-	    ierr = mField.set_global_VecCreateGhost(problem_ptr->get_name(),Col,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	    ierr = mField.set_local_VecCreateGhost(problem_ptr->get_name(),Row,u_by_row,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    ierr = mField.set_global_VecCreateGhost(problem_ptr->get_name(),COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = mField.set_local_VecCreateGhost(problem_ptr->get_name(),ROW,u_by_row,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    //NumeredDofMoFEMEntity_multiIndex &numered_dofs_cols = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_cols);
-	    /*Range::iterator nit = SideSet2Nodes.begin();
-	    for(;nit!=SideSet2Nodes.end();nit++) {
+	    /*Range::iterator nit = SIDESET2Nodes.begin();
+	    for(;nit!=SIDESET2Nodes.end();nit++) {
 	      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
 	      dit = numered_dofs_cols.get<MoABEnt_mi_tag>().lower_bound(*nit);
 	      hi_dit = numered_dofs_cols.get<MoABEnt_mi_tag>().upper_bound(*nit);

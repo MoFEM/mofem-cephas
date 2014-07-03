@@ -185,17 +185,18 @@ typedef bitset<BITFIELDID_SIZE> BitFieldId;
 typedef bitset<BITFEID_SIZE> BitFEId;
 typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
 
-//ENUMS
-/// approximation space 
+/// \brief approximation spaces
 enum FieldSpace { 
-  NoField = 1, 	///< signel scalar or vector of scalars describe state
+  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
   H1, 		///< continuous field
-  Hdiv,		///< field with continuous normal traction
-  Hcurl,	///< field with continuous tangents
+  HDIV,		///< field with continuous normal traction
+  HCURL,	///< field with continuous tangents
   L2,		///< field with C-1 continuity
-  LastSpace 	///< FieldSpace in [ 0, LastSpace )
+  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
 }; 
 
+
+/// \brief Those types control how functions respond on arguments, f.e. error handling
 enum MoFEMTypes {
   MF_ZERO = 0,
   MF_EXCL = 1<<0
@@ -203,13 +204,13 @@ enum MoFEMTypes {
 
 /// \brief RowColData
 enum RowColData {
-  Row,Col,Data,LastRowColData
+  ROW,COL,DATA,LASTROWCOLDATA
 };
 
-enum by_what { 
-  by_row = 1<<0, by_col = 1<<1, by_data = 1<<2,
-  by_row_data = 1<<0|1<<2, by_col_data = 1<<1|1<<2, by_row_col = 1<<0|1<<1,
-  by_all = 1<<0|1<<1|1<<2 
+enum ByWhat { 
+  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
+  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
+  BYALL = 1<<0|1<<1|1<<2 
 };
 
 //AUX STRUCTURES
@@ -219,12 +220,12 @@ enum by_what {
  * http://www.boost.org/doc/libs/1_53_0/libs/multi_index/example/complex_structs.cpp
  */
 template<class KeyExtractor1,class KeyExtractor2>
-struct key_from_key
+struct KeyFromKey
 {
 public:
   typedef typename KeyExtractor1::result_type result_type;
 
-  key_from_key(
+  KeyFromKey(
     const KeyExtractor1& key1_=KeyExtractor1(),
     const KeyExtractor2& key2_=KeyExtractor2()):
     key1(key1_),key2(key2_)
@@ -242,23 +243,23 @@ private:
 };
 
 template <typename id_type> 
-struct ltbit 
+struct LtBit 
 { inline bool operator()(const id_type& valueA,const id_type& valueB) const {
   return valueA.to_ulong()<valueB.to_ulong(); } };
 
 template <typename id_type>
-struct eqbit { 
+struct EqBit { 
   inline bool operator()(const id_type& valueA,const id_type& valueB) const {
     return valueA.to_ulong() == valueB.to_ulong();
   }
 };
 
 template <typename id_type> 
-struct hashbit 
+struct HashBit 
 { inline unsigned int operator()(const id_type& value) const {
   return value.to_ulong(); } };
 
-struct mofem_exception {
+struct MofemException {
   virtual const char* what() const throw() {
     return "somthing goes wrong";
   }

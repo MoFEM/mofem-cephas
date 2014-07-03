@@ -61,23 +61,23 @@ int main(int argc, char *argv[]) {
   ofstream myfile;
   myfile.open ((string(mesh_file_name)+".txt").c_str());
 
-  cout << "<<<< All BlockSets, SideSets and NodeSets >>>>>" << endl;
+  cout << "<<<< All BLOCKSETs, SIDESETs and NODESETs >>>>>" << endl;
   for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it)) {
     cout<< it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
   }
-  cout << "<<<< BlockSets >>>>>" << endl;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
+  cout << "<<<< BLOCKSETs >>>>>" << endl;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     cout<< it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
   }
-  cout << "<<<< NodeSets >>>>>" << endl;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet,it)) {
+  cout << "<<<< NODESETs >>>>>" << endl;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET,it)) {
     cout<< it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
   }
-  cout << "<<<< SideSets >>>>>" << endl;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  cout << "<<<< SIDESETs >>>>>" << endl;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     cout<< it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
   }
@@ -85,17 +85,17 @@ int main(int argc, char *argv[]) {
   for (_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"Moon",it)){
     cout << it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
-    if(it->get_CubitBCType_ulong() & BlockSet) {
-      cout << "BlockSet" << endl;
-      myfile << "BlockSet" << endl;
+    if(it->get_CubitBCType_ulong() & BLOCKSET) {
+      cout << "BLOCKSET" << endl;
+      myfile << "BLOCKSET" << endl;
     }
-    if(it->get_CubitBCType_ulong() & SideSet) {
-      cout << "SideSet" << endl;
-      myfile << "SideSet" << endl;
+    if(it->get_CubitBCType_ulong() & SIDESET) {
+      cout << "SIDESET" << endl;
+      myfile << "SIDESET" << endl;
     }
-    if(it->get_CubitBCType_ulong() & NodeSet) {
-      cout << "NodeSet" << endl;
-      myfile << "NodeSet" << endl;
+    if(it->get_CubitBCType_ulong() & NODESET) {
+      cout << "NODESET" << endl;
+      myfile << "NODESET" << endl;
     }
   }
   

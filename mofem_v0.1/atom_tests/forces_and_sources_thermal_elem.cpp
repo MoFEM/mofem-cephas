@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec T;
   ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
   Mat A;
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
   
   //preproc
   ierr = mField.problem_basic_method_preProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Row,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.problem_basic_method_preProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Row,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   PetscViewer viewer;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   /*PostProcVertexMethod ent_method(moab,"TEMP");
-  ierr = mField.loop_dofs("TEST_PROBLEM","TEMP",Row,ent_method); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("TEST_PROBLEM","TEMP",ROW,ent_method); CHKERRQ(ierr);
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
