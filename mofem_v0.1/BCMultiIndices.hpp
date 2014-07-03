@@ -88,7 +88,7 @@ struct BlockSetAttributes: public GenericAttributeData {
     
     _data_ data;
     
-    const CubitBC_BitSet type;
+    const CubitBC_BitSet tYpe;
     const unsigned int min_number_of_atributes;
     BlockSetAttributes(): type(BLOCKSET),min_number_of_atributes(0) {};
     
@@ -114,16 +114,16 @@ struct BlockSetAttributes: public GenericAttributeData {
  */
 struct Mat_Elastic: public GenericAttributeData {
     struct __attribute__ ((packed)) _data_{
-        double Young; // Young's modulus
-        double Poisson; // Poisson's ratio
-        double User1; // User attribute 1
-        double User2; // User attribute 2
-        double User3; // User attribute 3
-        double User4; // User attribute 4
-        double User5; // User attribute 5
-        double User6; // User attribute 6
-        double User7; // User attribute 7
-        double User8; // User attribute 8
+        double Young; 			// Young's modulus
+        double Poisson; 		// Poisson's ratio
+        double ThermalExpansion;	// Thermal expansion
+        double User1; // User attribute 2
+        double User2; // User attribute 3
+        double User3; // User attribute 4
+        double User4; // User attribute 5
+        double User5; // User attribute 6
+        double User6; // User attribute 7
+        double User7; // User attribute 8
     };
     
     _data_ data;

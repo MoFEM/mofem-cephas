@@ -126,8 +126,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
             EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.a1y;
             EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.a1z;
             *ptr_matctx = &EberleinHolzapfel1_mat_parameters;
-          }
-          else {
+          } else {
             if(material_type>=10) {
               switch(material_type) {
                 case 10: {
