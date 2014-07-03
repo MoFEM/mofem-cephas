@@ -50,22 +50,22 @@ inline int fNBFACE_H1(int P) { return NBFACE_H1(P); }
 /// number of approx. functions for H1 space on volume
 inline int fNBVOLUME_H1(int P) { return NBVOLUME_H1(P); }
 //
-/// number of approx. functions for Hcurl space on vertex
-inline int fNBVERTEX_Hcurl(int P) { (void)P; return 0; }
-inline int fNBEDGE_Hcurl(int P) { return NBEDGE_Hcurl(P); }
-inline int fNBFACE_Hcurl(int P) { return NBFACE_Hcurl(P); }
-inline int fNBVOLUME_Hcurl(int P) { return NBVOLUME_Hcurl(P); }
+/// number of approx. functions for HCURL space on vertex
+inline int fNBVERTEX_HCURL(int P) { (void)P; return 0; }
+inline int fNBEDGE_HCURL(int P) { return NBEDGE_HCURL(P); }
+inline int fNBFACE_HCURL(int P) { return NBFACE_HCURL(P); }
+inline int fNBVOLUME_HCURL(int P) { return NBVOLUME_HCURL(P); }
 //
-/// \brief number of approx. functions for Hdiv space on vertex
+/// \brief number of approx. functions for HDIV space on vertex
 ///
 /// zero number of digrees of freedom on vertex for that space
-inline int fNBVERTEX_Hdiv(int P) { (void)P; return 0; }
-/// number of approx. functions for Hdiv space on edge
-inline int fNBEDGE_Hdiv(int P) { assert(P==P); (void)P; return NBEDGE_Hdiv(P); }
-/// number of approx. functions for Hdiv space on face
-inline int fNBFACE_Hdiv(int P) { return NBFACE_Hdiv(P); }
-/// number of approx. functions for Hdiv space on voulem
-inline int fNBVOLUME_Hdiv(int P) { return NBVOLUME_Hdiv(P); }
+inline int fNBVERTEX_HDIV(int P) { (void)P; return 0; }
+/// number of approx. functions for HDIV space on edge
+inline int fNBEDGE_HDIV(int P) { assert(P==P); (void)P; return NBEDGE_HDIV(P); }
+/// number of approx. functions for HDIV space on face
+inline int fNBFACE_HDIV(int P) { return NBFACE_HDIV(P); }
+/// number of approx. functions for HDIV space on voulem
+inline int fNBVOLUME_HDIV(int P) { return NBVOLUME_HDIV(P); }
 
 struct ltstr
 { inline bool operator()(const string &s1, const string& s2) const

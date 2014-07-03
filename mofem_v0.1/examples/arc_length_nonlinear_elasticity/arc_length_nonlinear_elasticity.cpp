@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
     ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
-    ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
+    ierr = mField.add_field("LAMBDA",NOFIELD,1); CHKERRQ(ierr);
 
     //Field for ArcLength
     ierr = mField.add_field("X0_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);

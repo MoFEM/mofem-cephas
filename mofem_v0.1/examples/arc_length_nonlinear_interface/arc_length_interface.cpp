@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
     //Fields
     ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-    ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
+    ierr = mField.add_field("LAMBDA",NOFIELD,1); CHKERRQ(ierr);
     //Field for ArcLength
     ierr = mField.add_field("X0_DISPLACEMENT",H1,3); CHKERRQ(ierr);
 

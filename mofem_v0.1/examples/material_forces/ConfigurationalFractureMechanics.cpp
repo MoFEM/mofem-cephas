@@ -802,7 +802,7 @@ PetscErrorCode ConfigurationalFractureMechanics::arclength_problem_definition(Fi
 
   PetscErrorCode ierr;
   
-  ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
+  ierr = mField.add_field("LAMBDA",NOFIELD,1); CHKERRQ(ierr);
 
   ierr = mField.add_finite_element("ARC_LENGTH"); CHKERRQ(ierr);
   //Define rows/cols and element data

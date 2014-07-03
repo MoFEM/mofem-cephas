@@ -80,7 +80,7 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
   const unsigned long int def_id = 0;
   rval = moab.tag_get_handle("_FieldId",sizeof(BitFieldId),MB_TYPE_OPAQUE,
     th_FieldId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
-  FieldSpace def_space = LastSpace;
+  FieldSpace def_space = LASTSPACE;
   rval = moab.tag_get_handle("_FieldSpace",sizeof(FieldSpace),MB_TYPE_OPAQUE,
     th_FieldSpace,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_space); CHKERR_THROW(rval);
   const int def_val_len = 0;
@@ -278,7 +278,7 @@ PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const
     //space
     rval = moab.tag_set_data(th_FieldSpace,&meshset,1,&space); CHKERR_PETSC(rval);
     //add meshset to ref_ents // meshset dof on all level sets
-    if(space == NoField) {
+    if(space == NOFIELD) {
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,meshset));
       bool success = refinedMoFemEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
@@ -396,7 +396,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
       } 
-      if(p.first->get_space()==NoField) {
+      if(p.first->get_space()==NOFIELD) {
 	assert(p.first->meshset == *mit);
 	//add field to ref ents
 	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,*mit));
@@ -598,11 +598,11 @@ PetscErrorCode FieldCore::add_ents_to_field_by_EDGEs(const EntityHandle meshset,
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       break;
-    case Hcurl:
+    case HCURL:
       SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented");
       break;
-    case Hdiv:
-      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, Hdiv not implemented for EDGEs");
+    case HDIV:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, HDIV not implemented for EDGEs");
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"add_ents_to_field_by_EDGEs this field not work for EDGEs");
@@ -672,11 +672,11 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TRIs(const EntityHandle meshset,c
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       break;
-    case Hcurl:
-      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, Hcurl not implented for TRI");
+    case HCURL:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, HCURL not implented for TRI");
       break;
-    case Hdiv:
-      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, Hdiv not implemented for TRI");
+    case HDIV:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, HDIV not implemented for TRI");
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"add_ents_to_field_by_TRIs this field not work for TRIs");
@@ -806,7 +806,7 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TETs(const Range &tets,const BitF
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       break;
-    case Hcurl:
+    case HCURL:
       rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
       rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
@@ -822,7 +822,7 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TETs(const Range &tets,const BitF
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       break;
-    case Hdiv:
+    case HDIV:
       rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
       rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
@@ -927,12 +927,12 @@ PetscErrorCode FieldCore::set_field_order(const Range &ents,const BitFieldId id,
 	  }
 	}
 	break;
-      case Hdiv:
+      case HDIV:
 	if(moab.type_from_handle(*eit)==MBVERTEX) {
-	  SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on vertices makes no sense"); 
+	  SETERRQ(PETSC_COMM_SELF,1,"HDIV space on vertices makes no sense"); 
 	} 
 	if(moab.type_from_handle(*eit)==MBEDGE) {
-	  SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on edges makes no sense"); 
+	  SETERRQ(PETSC_COMM_SELF,1,"HDIV space on edges makes no sense"); 
 	} 
 	break;
       default:
@@ -1228,13 +1228,13 @@ PetscErrorCode FieldCore::build_fields(int verb) {
       PetscPrintf(PETSC_COMM_WORLD,"Build Field %s\n",miit->get_name().c_str());
     }
     switch (miit->get_space()) {
-      case NoField:
+      case NOFIELD:
 	ierr = dofs_NoField(miit->get_id(),dof_counter); CHKERRQ(ierr);
 	break;
       case L2:
       case H1:
-      case Hcurl:
-      case Hdiv:
+      case HCURL:
+      case HDIV:
 	ierr = dofs_L2H1HcurlHdiv(miit->get_id(),dof_counter,verb); CHKERRQ(ierr);
 	break;
       default:
@@ -1817,10 +1817,10 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
     try {
       switch((*viit_data)->get_space()) {
 	case H1:
-	case Hdiv:
-	case Hcurl:
+	case HDIV:
+	case HCURL:
 	case L2: 
-	case NoField:
+	case NOFIELD:
 	{
 	  SideNumber *side_number_ptr = EntFe.get_side_number_ptr(moab,(*viit_data)->get_ent());
 	  //add dofs to finite element multi_index database
@@ -1896,7 +1896,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	  case H1: 
 	    adj_ents.insert(fe_ent);
 	    break;
-	  case NoField: {
+	  case NOFIELD: {
 	    EntityHandle field_meshset = miit->get_meshset();
 	    adj_ents.insert(field_meshset);
 	  }
@@ -1923,7 +1923,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	    adj_ents.insert(nodes.begin(),nodes.end());
 	    adj_ents.insert(fe_ent);
 	    break;
-	  case NoField: {
+	  case NOFIELD: {
 	    EntityHandle field_meshset = miit->get_meshset();
 	    adj_ents.insert(field_meshset);
 	  }
@@ -1961,7 +1961,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	    //add faces
 	    adj_ents.insert(fe_ent);
 	    break;
-	    case NoField: {
+	    case NOFIELD: {
 	      EntityHandle field_meshset = miit->get_meshset();
 	      adj_ents.insert(field_meshset);
 	    }
@@ -1989,12 +1989,12 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	    }
 	  }
   	   adj_ents.insert(nodes.begin(),nodes.end());
-  	  case Hcurl: if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
+  	  case HCURL: if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
   	   adj_ents.insert(edges.begin(),edges.end());
 	   for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) {
 	      EntFe.get_side_number_ptr(moab,*eeit);
 	    }
-  	  case Hdiv: if(faces.empty()) moab.get_adjacencies(&fe_ent,1,2,false,faces);
+  	  case HDIV: if(faces.empty()) moab.get_adjacencies(&fe_ent,1,2,false,faces);
   	   adj_ents.insert(faces.begin(),faces.end());
 	   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
 	      EntFe.get_side_number_ptr(moab,*fit);
@@ -2002,7 +2002,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
   	  case L2:
   	   adj_ents.insert(fe_ent);
   	   break;
-	  case NoField: {
+	  case NOFIELD: {
 	      EntityHandle field_meshset = miit->get_meshset();
 	      adj_ents.insert(field_meshset);
 	   }
@@ -2070,12 +2070,12 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 		}
 	      }
 	      adj_ents.insert(nodes.begin(),nodes.end());
-	    case Hcurl: {
+	    case HCURL: {
 	      SideNumber_multiIndex::nth_index<2>::type::iterator
 		siit = side_table.get<2>().lower_bound(MBEDGE), hi_siit = side_table.get<2>().upper_bound(MBEDGE);
 	      for(;siit!=hi_siit;siit++) adj_ents.insert(siit->ent);
 	    }
-	    case Hdiv: {
+	    case HDIV: {
 	      SideNumber_multiIndex::nth_index<2>::type::iterator
 		siit = side_table.get<2>().lower_bound(MBTRI), hi_siit = side_table.get<2>().upper_bound(MBTRI);
 	      for(;siit!=hi_siit;siit++) adj_ents.insert(siit->ent);
@@ -2083,7 +2083,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	    case L2:
 	      adj_ents.insert(fe_ent); 
 	      break;
-	    case NoField: {
+	    case NOFIELD: {
 	      EntityHandle field_meshset = miit->get_meshset();
 	      adj_ents.insert(field_meshset);
 	    }
@@ -2101,9 +2101,9 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	 eit_eit = ent_ents.begin();
 	 for(;eit_eit!=ent_ents.end();eit_eit++) {
 	  switch (space) {
-	    case NoField:
+	    case NOFIELD:
 	      if(moab.type_from_handle(*eit_eit)==MBENTITYSET) {
-		//if field (ii) has space NoField only add dofs which associated with the meshsets
+		//if field (ii) has space NOFIELD only add dofs which associated with the meshsets
 		if(moabFields_by_meshset.find(*eit_eit)!=moabFields_by_meshset.end()) {
 		  adj_ents.insert(*eit_eit);
 		}
@@ -4589,7 +4589,7 @@ PetscErrorCode FieldCore::check_number_of_ents_in_ents_field() {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator it = moabFields.get<FieldName_mi_tag>().begin();
   for(;it!=moabFields.get<FieldName_mi_tag>().end();it++) {
-    if(it->get_space() == NoField) continue; //FIXME: should be treated proprly, not test is just skiped for this NoField space
+    if(it->get_space() == NOFIELD) continue; //FIXME: should be treated proprly, not test is just skiped for this NOFIELD space
     EntityHandle meshset = it->get_meshset();
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);

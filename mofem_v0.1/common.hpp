@@ -188,12 +188,12 @@ typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
 //ENUMS
 /// approximation space 
 enum FieldSpace { 
-  NoField = 1, 	///< signel scalar or vector of scalars describe state
+  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
   H1, 		///< continuous field
-  Hdiv,		///< field with continuous normal traction
-  Hcurl,	///< field with continuous tangents
+  HDIV,		///< field with continuous normal traction
+  HCURL,	///< field with continuous tangents
   L2,		///< field with C-1 continuity
-  LastSpace 	///< FieldSpace in [ 0, LastSpace )
+  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
 }; 
 
 enum MoFEMTypes {
