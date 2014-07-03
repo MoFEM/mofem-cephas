@@ -155,6 +155,14 @@ int main(int argc, char *argv[]) {
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("THERMAL_PROBLEM",&A); CHKERRQ(ierr);
 
+  ierr = VecZeroEntries(T); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecZeroEntries(F); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatZeroEntries(A); CHKERRQ(ierr);
+
   //TS
   TsCtx ts_ctx(mField,"THERMAL_PROBLEM");
   TS ts;
@@ -194,8 +202,6 @@ int main(int argc, char *argv[]) {
   ierr = TSSolve(ts,T); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
-  ierr = mField.finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-
   PetscInt steps,snesfails,rejects,nonlinits,linits;
   ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
   ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
@@ -206,10 +212,14 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
+  ierr = mField.finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
+
+  BARRIER_RANK_START(pcomm) 
   if(pcomm->rank()==0) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
   }
-  
+  BARRIER_RANK_END(pcomm) 
+
   /*EntityHandle fe_meshset = mField.get_finite_element_meshset("THERMAL_FE");
   Range tets;
   rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERR_PETSC(rval);

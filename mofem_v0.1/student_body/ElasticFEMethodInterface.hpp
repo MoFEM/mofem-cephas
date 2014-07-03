@@ -123,6 +123,108 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
     PetscFunctionReturn(0);
   }
 
+  vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap;
+  vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap_loc;
+
+
+  /* \brief calulate gap in global and local coorinates
+    *
+    * Function, make a loop for all gauss points, and calculate gap ( separation
+    * of interface ). We have three types of shape functions, for nodes, edges and
+    * face of interface itself.  Values of shepe functions, for each gauss pt, are
+    * stored in matrixes, nodeNTRI, _H1edgeN_, _H1edgeN_, _H1faceN_, for nodes,
+    * edges and faces, respectively. 
+    *
+  */
+  virtual PetscErrorCode Calc_gap() {
+    PetscFunctionBegin;
+    SideNumber_multiIndex &side_table = fe_ptr->get_side_number_table();
+    SideNumber_multiIndex::iterator sit = side_table.begin();
+    map<EntityType,bitset<9> > ents_bits;
+    for(;sit!=side_table.end();sit++) {
+      if(sit->get_ent_type() == MBVERTEX) {
+	ents_bits[MBVERTEX].set(sit->side_number);
+      }	else if(sit->get_ent_type() == MBEDGE) {
+	ents_bits[MBEDGE].set(sit->side_number);
+      }
+    }
+    int g_dim = g_NTRI.size()/3;
+    gap.resize(g_dim);
+    gap_loc.resize(g_dim);
+    for(int gg = 0;gg<g_dim;gg++) {
+	gap[gg] = ublas::zero_vector<FieldData>(3);
+	//nodes
+	double *nodeNTRI = &g_NTRI[gg*3];
+	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator 
+	  dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX,0));
+	FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator 
+	  hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX,2));
+	for(;dit!=hi_dit;dit++) {
+	  int side = dit->side_number_ptr->side_number;
+	  if(ents_bits[MBVERTEX].test(side) && ents_bits[MBVERTEX].test(side+3)) {
+	    FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator diit;
+	    (gap[gg])[dit->get_dof_rank()] += nodeNTRI[dit->side_number_ptr->side_number]*dit->get_FieldData();
+	  }
+	}
+	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX,3));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX,5));
+	for(;dit!=hi_dit;dit++) {
+	  int side = dit->side_number_ptr->side_number;
+	  if(ents_bits[MBVERTEX].test(side-3) && ents_bits[MBVERTEX].test(side)) {
+	    (gap[gg])[dit->get_dof_rank()] -= nodeNTRI[dit->side_number_ptr->side_number-3]*dit->get_FieldData();
+	  }
+	}
+	//edges
+	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBEDGE,0));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBEDGE,2));
+	for(;dit!=hi_dit;dit++) {
+	  int side = dit->side_number_ptr->side_number;	
+    	  if(ents_bits[MBEDGE].test(side) && ents_bits[MBEDGE].test(side+6)) {
+	    assert(side >= 0);
+	    assert(side <= 2);
+	    int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[side]);
+	    int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	    double *_H1edgeN_ = &*H1edgeN[side].begin();
+	    double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
+	    (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  }
+	} 
+	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBEDGE,6));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBEDGE,8));
+	for(;dit!=hi_dit;dit++) {
+	  int side = dit->side_number_ptr->side_number;	
+    	  if(ents_bits[MBEDGE].test(side-6) && ents_bits[MBEDGE].test(side)) {
+	    double *_H1edgeN_ = &H1edgeN[side][0];
+	    int nb_dofs_H1edge = dit->get_order_nb_dofs(maxOrderEdgeH1[side]);
+	    int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	    double val = _H1edgeN_[gg*nb_dofs_H1edge + approx_dof];
+	    (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	  }
+	} 
+	//faces
+	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBTRI,3));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBTRI,3));
+	for(;dit!=hi_dit;dit++) {
+	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
+	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderFaceH1[dit->side_number_ptr->side_number]);
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
+	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	}
+ 	dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,MBTRI,4));
+	hi_dit = data_multiIndex->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,MBTRI,4));
+	for(;dit!=hi_dit;dit++) {
+	  double *_H1faceN_ = &H1faceN[dit->side_number_ptr->side_number][0];
+	  int nb_dofs_H1face = dit->get_order_nb_dofs(maxOrderFaceH1[dit->side_number_ptr->side_number]);
+	  int approx_dof = floor((double)dit->get_EntDofIdx()/(double)dit->get_max_rank());
+	  double val = _H1faceN_[gg*nb_dofs_H1face + approx_dof];
+	  (gap[gg])[dit->get_dof_rank()] += val*dit->get_FieldData(); 
+	}
+	gap_loc[gg] = prod(R,gap[gg]);
+    }
+    PetscFunctionReturn(0);
+  }
+
   int row_mat,col_mat;
   ublas::matrix<ublas::matrix<FieldData> > K;
   vector<vector<ublas::matrix<FieldData> > > rowNMatrices;
@@ -158,6 +260,27 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
 	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
+    }
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode RhsInt() {
+    PetscFunctionBegin;
+
+    int g_dim = g_NTRI.size()/3;
+    for(int gg = 0;gg<g_dim;gg++) {
+      //Traction
+      ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > traction;
+      traction = prod(Dglob,gap[gg]);
+      if(traction.size()!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      double w = area3*G_TRI_W[gg];
+      for(int rr = 0;rr<row_mat;rr++) {
+	ublas::matrix<FieldData> &N = (rowNMatrices[rr])[gg];
+	ublas::vector<FieldData> f_int = prod(trans(N),w*traction);
+	if(RowGlob[rr].size()==0) continue;
+	if(RowGlob[rr].size()!=f_int.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	ierr = VecSetValues(snes_f,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      }
     }
     PetscFunctionReturn(0);
   }
@@ -234,22 +357,6 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode RhsAndLhs() {
-    PetscFunctionBegin;
-
-    //Rotation matrix
-    ierr = CalcR(); CHKERRQ(ierr);
-    //Dglob
-    ierr = CalcDglob(); CHKERRQ(ierr);
-    //Calculate Matrices
-    ierr = Matrices();    CHKERRQ(ierr);
-
-    //Assemble interface
-    ierr = LhsInt(); CHKERRQ(ierr);
-
-    PetscFunctionReturn(0);
-  }
-
   vector<double> g_NTRI;
   const double *G_TRI_W;
 
@@ -289,11 +396,37 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
     PetscFunctionReturn(0);
   }
 
+  int iter;
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     ierr = OpStudentStart_PRISM(g_NTRI); CHKERRQ(ierr);
 
-    ierr = RhsAndLhs(); CHKERRQ(ierr);
+    //Rotation matrix
+    ierr = CalcR(); CHKERRQ(ierr);
+    ierr = CalcDglob(); CHKERRQ(ierr);
+
+    //Calculate Matrices
+    ierr = Matrices();    CHKERRQ(ierr);
+    //Calcualte gap
+    ierr = Calc_gap(); CHKERRQ(ierr);
+
+    switch(snes_ctx) {
+      case ctx_SNESNone: {
+	ierr = RhsInt(); CHKERRQ(ierr);
+	ierr = LhsInt(); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetFunction: { 
+	ierr = RhsInt(); CHKERRQ(ierr);
+      }
+      break;
+      case ctx_SNESSetJacobian: { 
+	ierr = LhsInt(); CHKERRQ(ierr);
+      }
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
 
     ierr = OpStudentEnd(); CHKERRQ(ierr);
     PetscFunctionReturn(0);

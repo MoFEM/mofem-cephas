@@ -1,7 +1,7 @@
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  *
- * Test for linar elastic dynamics.
+ * Implementation of thermal element for unsteady and steady case
  *
  * This is not exactly procedure for linear elatic dynamics, since jacobian is
  * evaluated at every time step and snes procedure is involved. However it is
@@ -631,7 +631,7 @@ struct ThermalElement {
 	strcpy(setOfFluxes[it->get_msId()].dAta.data.name,"HeatFlu");
 	setOfFluxes[it->get_msId()].dAta.data.flag1 = 1;
 	setOfFluxes[it->get_msId()].dAta.data.value1 = data[0];
-	cerr << setOfFluxes[it->get_msId()].dAta << endl;
+	//cerr << setOfFluxes[it->get_msId()].dAta << endl;
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
 	ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
 

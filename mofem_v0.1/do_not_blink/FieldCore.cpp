@@ -5246,7 +5246,9 @@ PetscErrorCode FieldCore::record_field(const string& serie_name,const string& fi
     const BitRefLevel &dof_bit = dit->get_BitRefLevel();
     if((dof_bit&mask) != dof_bit) continue;
     if((dof_bit&bit).any()) {
-      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(dit->get_unique_id(),dit->get_FieldData()); CHKERRQ(ierr);
+      UId uid = dit->get_unique_id();
+      FieldData val = dit->get_FieldData();
+      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(uid,val); CHKERRQ(ierr);
     }
   }
   PetscFunctionReturn(0);
@@ -5257,7 +5259,7 @@ PetscErrorCode FieldCore::record_begin(const string& serie_name) {
   if(sit==series.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
   }
-  const_cast<MoFEMSeries*>(&*sit)->begin();
+  ierr = const_cast<MoFEMSeries*>(&*sit)->begin(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::record_end(const string& serie_name) {
@@ -5266,7 +5268,7 @@ PetscErrorCode FieldCore::record_end(const string& serie_name) {
   if(sit==series.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
   }
-  const_cast<MoFEMSeries*>(&*sit)->end();
+  ierr = const_cast<MoFEMSeries*>(&*sit)->end(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::initialize_series_recorder(const string& serie_name) {
