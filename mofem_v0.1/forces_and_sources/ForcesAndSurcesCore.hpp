@@ -3,6 +3,7 @@
  *
  * It is set of objects to implement finite elements, in particular it is used
  * to implement source and force therms on right hand side. 
+ *
 */
 
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)

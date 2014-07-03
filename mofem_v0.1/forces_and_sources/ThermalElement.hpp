@@ -1,15 +1,14 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+/** \file ThermalElement.hpp 
+ * \brief Operators and data structures for thermal analys
  *
- * Implementation of thermal element for unsteady and steady case
- *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
+ * Implementation of thermal element for unsteady and steady case.
  *
  */
 
-/* This file is part of MoFEM.
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ *
+ * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -31,13 +30,24 @@
 
 namespace MoFEM {
 
+/** \brief struture grouping operators and data used for thermal problems
+  *
+  *
+  * In order to assemble matrices and right hand vectors, the loops over
+  * elements, enetities over that elememnts and finally loop over intergration
+  * points are executed.
+  *
+  * Following implementation separte those three cegories of loops and to eeach
+  * loop attach operator.
+  *
+  */
 struct ThermalElement {
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSurcesCore {
     MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSurcesCore(_mField) {}
     
-    /** \brief it is used to calulate nb. of Gauss integartion points
+    /** \brief it is used to calculate nb. of Gauss integartion points
      *
      * for more details pleas look 
      *   Reference:
@@ -54,7 +64,6 @@ struct ThermalElement {
     **/
     int getRule(int order) { return order-1; };
   };
-
   
   MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element 
@@ -116,6 +125,10 @@ struct ThermalElement {
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       commonData(common_data) {}
 
+    /** \brief operator calulating temeratire gradients
+      *
+      * temerature gradient is calculated multiplying direvatives of shape functions by degrees of freedom
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -161,6 +174,10 @@ struct ThermalElement {
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       fiedlAtGaussPts(fiedl_at_gauss_pts) {}
 
+    /** \brief operator calulating temererature and rate of temperature
+      *
+      * temerature temerature or rate of temperature is calculated multiplyingshape functions by degrees of freedom
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -195,19 +212,19 @@ struct ThermalElement {
 
   };
 
-  /// \brief operatir to calulate tempereature at Gauss pts
+  /// \brief operator to calculate tempereature at Gauss pts
   struct OpGetTemperatureAtGaussPts: public OpGetFieldAtGaussPts {
     OpGetTemperatureAtGaussPts(const string field_name,CommonData &common_data):
       OpGetFieldAtGaussPts(field_name,common_data.temperatureAtGaussPts) {}
   };
 
-  /// \brief operatir to calulate tempereature rate at Gauss pts
+  /// \brief operator to calculate tempereature rate at Gauss pts
   struct OpGetRateAtGaussPts: public OpGetFieldAtGaussPts {
     OpGetRateAtGaussPts(const string field_name,CommonData &common_data):
       OpGetFieldAtGaussPts(field_name,common_data.temperatureRateAtGaussPts) {}
   };
 
-  /// \biref operator to calulate right hand side of het conductivity terms
+  /// \biref operator to calculate right hand side of het conductivity terms
   struct OpThermalRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     BlockData &dAta;
@@ -223,6 +240,12 @@ struct ThermalElement {
       dAta(data),commonData(common_data),useTsF(false),F(_F) { }
 
     ublas::vector<double> Nf;
+
+    /** \brief calculate thermal conductivity matrix
+      *
+      * F = int diffN^T k gard_T dOmega^2
+      *
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -281,7 +304,7 @@ struct ThermalElement {
 
   };
 
-  /// \biref operator to calulate left hand side of het conductivity terms
+  /// \biref operator to calculate left hand side of het conductivity terms
   struct OpThermalLhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     BlockData &dAta;
@@ -297,6 +320,12 @@ struct ThermalElement {
       dAta(data),commonData(common_data),useTsB(false),A(_A) {}
 
     ublas::matrix<double> K,transK;
+
+    /** \brief calculate thermal conductivity matrix
+      *
+      * K = int diffN^T k diffN^T dOmega^2
+      *
+      */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
@@ -361,7 +390,7 @@ struct ThermalElement {
 
   };
 
-  /// \biref operator to calulate right hand side of het capacity terms
+  /// \biref operator to calculate right hand side of het capacity terms
   struct OpHeatCapacityRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     BlockData &dAta;
@@ -371,6 +400,12 @@ struct ThermalElement {
       dAta(data),commonData(common_data) {}
 
     ublas::vector<double> Nf;
+
+    /** \brief calculate thermal conductivity matrix
+      *
+      * F = int N^T c (dT/dt) dOmega^2
+      *
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -406,7 +441,7 @@ struct ThermalElement {
 
   };
 
-  /// \biref operator to calulate left hand side of het capacity terms
+  /// \biref operator to calculate left hand side of het capacity terms
   struct OpHeatCapacityLsh: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     BlockData &dAta;
@@ -416,6 +451,12 @@ struct ThermalElement {
       dAta(data),commonData(common_data) {}
 
     ublas::matrix<double> M,transM;
+
+    /** \brief calculate heat capacity matrix
+      *
+      * M = int N^T c N dOmega^2
+      *
+      */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
@@ -478,7 +519,7 @@ struct ThermalElement {
 
   };
 
-  /// \brief operator for calulate heat flux and assemble to right hand side
+  /// \brief operator for calculate heat flux and assemble to right hand side
   struct OpHeatFlux:public TriElementForcesAndSurcesCore::UserDataOperator {
 
     FluxData &dAta;
@@ -496,6 +537,11 @@ struct ThermalElement {
 
     ublas::vector<FieldData> Nf;
 
+    /** \brief calulate heat flux 
+      *
+      * F = int_S N^T * flux dS
+      *
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -531,8 +577,6 @@ struct ThermalElement {
 
       }
     
-
-    
       //cerr << "VecSetValues\n";
       //cerr << Nf << endl;
       //cerr << data.getIndices() << endl;
@@ -550,7 +594,7 @@ struct ThermalElement {
 
   };
 
-  /// \biref operator to calulate radiaton therms on body surface and assemble to rhs of equations
+  /// \biref operator to calculate radiaton therms on body surface and assemble to rhs of equations
   struct OpRadiationRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
 
     RadiationData &dAta;
@@ -611,8 +655,7 @@ struct ThermalElement {
 
   };
 
-
-  /// \biref operator to calulate radiaton therms on body surface and assemble to lhs of equations
+  /// \biref operator to calculate radiaton therms on body surface and assemble to lhs of equations
   struct OpRadiationLhs:public TriElementForcesAndSurcesCore::UserDataOperator {
 
     RadiationData &dAta;
