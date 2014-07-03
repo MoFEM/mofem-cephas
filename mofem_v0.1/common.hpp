@@ -220,12 +220,12 @@ enum ByWhat {
  * http://www.boost.org/doc/libs/1_53_0/libs/multi_index/example/complex_structs.cpp
  */
 template<class KeyExtractor1,class KeyExtractor2>
-struct key_from_key
+struct KeyFromKey
 {
 public:
   typedef typename KeyExtractor1::result_type result_type;
 
-  key_from_key(
+  KeyFromKey(
     const KeyExtractor1& key1_=KeyExtractor1(),
     const KeyExtractor2& key2_=KeyExtractor2()):
     key1(key1_),key2(key2_)
@@ -243,23 +243,23 @@ private:
 };
 
 template <typename id_type> 
-struct ltbit 
+struct LtBit 
 { inline bool operator()(const id_type& valueA,const id_type& valueB) const {
   return valueA.to_ulong()<valueB.to_ulong(); } };
 
 template <typename id_type>
-struct eqbit { 
+struct EqBit { 
   inline bool operator()(const id_type& valueA,const id_type& valueB) const {
     return valueA.to_ulong() == valueB.to_ulong();
   }
 };
 
 template <typename id_type> 
-struct hashbit 
+struct HashBit 
 { inline unsigned int operator()(const id_type& value) const {
   return value.to_ulong(); } };
 
-struct mofem_exception {
+struct MofemException {
   virtual const char* what() const throw() {
     return "somthing goes wrong";
   }

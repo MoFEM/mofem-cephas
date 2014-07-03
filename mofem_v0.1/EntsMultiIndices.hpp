@@ -317,7 +317,7 @@ struct MoFEMEntity_change_order {
  * \param ordered_unique<
  *    tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
  * \param ordered_non_unique<
- *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
+ *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
  * \param ordered_non_unique<
  *    tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
  * \param hashed_non_unique<
@@ -336,7 +336,7 @@ typedef multi_index_container<
     ordered_unique<
       tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, ltbit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
     hashed_non_unique<

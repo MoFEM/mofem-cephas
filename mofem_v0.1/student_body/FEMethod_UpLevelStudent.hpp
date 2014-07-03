@@ -33,7 +33,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public mofem_exception {
+struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public MofemException {
   virtual const char* what() const throw() {
     return "negative volume";
   }
