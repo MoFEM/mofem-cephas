@@ -46,7 +46,7 @@ struct CrackFrontData {
     ErrorCode rval;
     PetscErrorCode ierr;
     Range crack_corners_edges;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_corners_edges,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_corners_edges,true); CHKERRQ(ierr);
     rval = mField.get_moab().get_connectivity(crack_corners_edges,crackFrontEdgeNodes,true); CHKERR_PETSC(rval);
     PetscFunctionReturn(0);
   }
@@ -604,13 +604,13 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
   ierr = mField.modify_finite_element_add_field_data("NEUAMNN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   Range level_tris;
   ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     Range tris;
     rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
     tris = intersect(level_tris,tris);
     ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
   }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     Range tris;
     rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
     tris = intersect(level_tris,tris);
@@ -711,7 +711,7 @@ PetscErrorCode ConfigurationalFractureMechanics::mesh_smoothing_problem_definiti
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING_PROBLEM","MATERIAL"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("MESH_SMOOTHING_PROBLEM","CandCT_SURFACE_ELEM"); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss2;
@@ -782,7 +782,7 @@ PetscErrorCode ConfigurationalFractureMechanics::coupled_problem_definition(Fiel
   if(cs) {
     ierr = mField.modify_problem_add_finite_element("COUPLED_PROBLEM","CandCT_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
   }
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss2;
@@ -850,7 +850,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
 
   //Fields
   ierr = mField.add_field("LAMBDA_SURFACE",H1,1,MF_ZERO); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
@@ -867,7 +867,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   ierr = mField.add_finite_element("C_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_finite_element("CTC_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_finite_element("CandCT_SURFACE_ELEM",MF_ZERO); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss0;
@@ -906,7 +906,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   ierr = mField.modify_finite_element_add_field_data("CandCT_SURFACE_ELEM","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("CandCT_SURFACE_ELEM","LAMBDA_SURFACE"); CHKERRQ(ierr);
 
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
@@ -965,7 +965,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   //set finite elements for problems
   ierr = mField.modify_problem_add_finite_element("C_ALL_MATRIX","C_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("CCT_ALL_MATRIX","CTC_SURFACE_ELEM"); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss0;
@@ -989,24 +989,24 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
 
   Range corners_edges,corners_nodes,surfaces_faces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
   corners_edges = intersect(corners_edges,level_edges);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
   corners_nodes = intersect(corners_nodes,level_nodes);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,surfaces_faces,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,surfaces_faces,true); CHKERRQ(ierr);
   Skinner skin(&mField.get_moab());
   Range skin_faces; 
   rval = skin.find_skin(level_tets,false,skin_faces); CHKERR(rval);
   surfaces_faces = intersect(surfaces_faces,skin_faces);
 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",corners_edges.size()); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",corners_nodes.size()); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",surfaces_faces.size()); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 100 = %d\n",corners_edges.size()); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NODESET 101 = %d\n",corners_nodes.size()); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 102 = %d\n",surfaces_faces.size()); CHKERRQ(ierr);
 
 
   Range crack_surfaces_faces,crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surfaces_faces,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surfaces_faces,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   crack_surfaces_faces = intersect(crack_surfaces_faces,level_tris);
   crack_front_edges = intersect(crack_front_edges,level_edges);
 
@@ -1019,7 +1019,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   ierr = mField.add_ents_to_finite_element_by_TRIs(surfaces_faces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TRIs(surfaces_faces,"CTC_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TRIs(surfaces_faces,"CandCT_SURFACE_ELEM"); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss0;
@@ -1029,10 +1029,10 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
     ostringstream ss2;
     ss2 << "CandCT_SURFACE_ELEM_msId_" << msId;
     Range surfaces_faces_msId;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SideSet,2,surfaces_faces_msId,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SIDESET,2,surfaces_faces_msId,true); CHKERRQ(ierr);
     surfaces_faces_msId = intersect(surfaces_faces_msId,skin_faces);
     ierr = mField.seed_finite_elements(surfaces_faces_msId); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet ( mdId =  %d ) = %d\n",msId,surfaces_faces_msId.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET ( mdId =  %d ) = %d\n",msId,surfaces_faces_msId.size()); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(surfaces_faces_msId,ss0.str()); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(surfaces_faces_msId,ss1.str()); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(surfaces_faces_msId,ss2.str()); CHKERRQ(ierr);
@@ -1074,11 +1074,11 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   }
 
   
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     Range surfaces_faces_msId;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SideSet,2,surfaces_faces_msId,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SIDESET,2,surfaces_faces_msId,true); CHKERRQ(ierr);
     surfaces_faces_msId = intersect(surfaces_faces_msId,level_tris);
     Range surfaces_nodes_msId;
     rval = mField.get_moab().get_connectivity(surfaces_faces_msId,surfaces_nodes_msId,true); CHKERR_PETSC(rval);
@@ -1148,8 +1148,8 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
 
   {
     Range crack_surfaces_faces,crack_front_edges;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surfaces_faces,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surfaces_faces,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
     crack_surfaces_faces = intersect(crack_surfaces_faces,level_tris);
     crack_front_edges = intersect(crack_front_edges,level_edges);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Crack Faces = %d\n",crack_surfaces_faces.size()); CHKERRQ(ierr);
@@ -1160,7 +1160,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Nodes = %d\n",crack_front_nodes.size()); CHKERRQ(ierr);
 
     Range surfaces_faces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,surfaces_faces,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,surfaces_faces,true); CHKERRQ(ierr);
     Range surfaces_nodes;
     rval = mField.get_moab().get_connectivity(surfaces_faces,surfaces_nodes,true); CHKERR_PETSC(rval);
     Range tangent_crack_front_nodes = subtract(crack_front_nodes,surfaces_nodes);
@@ -1357,7 +1357,7 @@ PetscErrorCode ConfigurationalFractureMechanics::set_coordinates_from_material_s
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"LAMBDA_CRACK_TANGENT_CONSTRAIN",dof_ptr)) {
     dof_ptr->get_FieldData() = 0;
   }
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
@@ -1406,10 +1406,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
 
   NeummanForcesSurfaceComplexForLazy neumann_forces(mField,Aij,F);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_forces = neumann_forces.getLoopSpatialFe();
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ierr = fe_forces.addForce(it->get_msId()); CHKERRQ(ierr);
   }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     ierr = fe_forces.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
   SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
@@ -1422,7 +1422,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   boost::ptr_map<string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(mField));
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",F,it->get_msId(),true);  CHKERRQ(ierr);
     nodal_forces.at(fe_name_str).methodsOp.push_back(new MetaNodalForces::TagForceScale(mField));
   }
@@ -1498,8 +1498,8 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   }
 
   Range corners_edges,corners_nodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
   ErrorCode rval;
   Range corners_edges_nodes;
   rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
@@ -1514,7 +1514,7 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   ConstrainSurfacGeometry CFE_CRACK_SURFACE(mField,projSurfaceCtx->C,"LAMBDA_CRACK_SURFACE");
 
   map<int,ConstrainSurfacGeometry*> CFE_SURFACE_msId_ptr;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
@@ -1632,7 +1632,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
 
   Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   Range crack_front_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
   Range::iterator nit = crack_front_edges_nodes.begin();
@@ -1766,8 +1766,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   }
 
   Range corners_edges,corners_nodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
   ErrorCode rval;
   Range corners_edges_nodes;
   rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
@@ -1867,8 +1867,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
 
   ErrorCode rval;
   Range corners_edges,corners_nodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
   Range corners_edges_nodes;
   rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
   corners_nodes.insert(corners_edges_nodes.begin(),corners_edges_nodes.end());
@@ -2041,7 +2041,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   ierr = VecDestroy(&JVec); CHKERRQ(ierr);
 
   Range crackSurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crackSurfacesFaces,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crackSurfacesFaces,true); CHKERRQ(ierr);
   Range level_tris;
   ierr = mField.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
   crackSurfacesFaces = intersect(crackSurfacesFaces,level_tris);
@@ -2143,8 +2143,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
   PetscErrorCode ierr;
 
   Range corners_edges,corners_nodes,crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
   Range corners_edges_nodes;
   rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
   corners_nodes.merge(corners_edges_nodes);
@@ -2157,7 +2157,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
   FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
@@ -2174,7 +2174,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
   const_crack_surface.useProjectionFromCrackFront = true;
   //add additional surfaces
   map<int,SnesConstrainSurfacGeometry*> const_other_surface_ptr;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
@@ -2360,8 +2360,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   }
 
   Range corners_edges,corners_nodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corners_edges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
   Range corners_edgesNodes;
   rval = mField.get_moab().get_connectivity(corners_edges,corners_edgesNodes,true); CHKERR_PETSC(rval);
   corners_nodes.insert(corners_edgesNodes.begin(),corners_edgesNodes.end());
@@ -2506,7 +2506,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   Snes_dCTgc_CONSTANT_AREA_FEMethod dct_gc(mField,K,"LAMBDA_CRACKFRONT_AREA");
   TangentWithMeshSmoothingFrontConstrain_FEMethod tangent_constrain(mField,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
@@ -2520,7 +2520,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_TANGENT_CONSTRAIN");
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     int msId = it->get_msId();
     if((msId < 10200)||(msId >= 10300)) continue;
     ostringstream ss;
@@ -2544,10 +2544,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   NeummanForcesSurfaceComplexForLazy neumann_forces(mField,K,arc_ctx.F_lambda,scale_lhs,scale_rhs);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_forces = neumann_forces.getLoopSpatialFe();
   fe_forces.uSeF = true; 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ierr = fe_forces.addForce(it->get_msId()); CHKERRQ(ierr);
   }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     ierr = fe_forces.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
   //portsproc
@@ -2577,7 +2577,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   boost::ptr_map<string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(mField));
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx.F_lambda,it->get_msId());  CHKERRQ(ierr);
   }
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
@@ -2768,8 +2768,8 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   PetscErrorCode ierr;
 
   Range CornersEdges,corners_nodes;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,CornersEdges,true); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corners_nodes,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,CornersEdges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
   ErrorCode rval;
   Range CornersEdgesNodes;
   rval = mField.get_moab().get_connectivity(CornersEdges,CornersEdgesNodes,true); CHKERR_PETSC(rval);
@@ -2841,13 +2841,13 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
     }
 
     //get crack surcace
-    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crackSurfacesFaces,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crackSurfacesFaces,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     Range level_tris;
     ierr = mField.get_entities_by_type_and_ref_level(*conf_prob->ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     crackSurfacesFaces = intersect(crackSurfacesFaces,level_tris);
     //get crack surface faces adjacenet to crack front
     Range crack_front_edges;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     mField.get_moab().get_connectivity(crack_front_edges,crackFrontNodes,true);
 
     //get pointer to coupled problem
@@ -3060,7 +3060,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::postProc
 	}
 	//
 	Range CrackFrontEdges;
-	ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,CrackFrontEdges,true); CHKERRQ(ierr);
+	ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,CrackFrontEdges,true); CHKERRQ(ierr);
 	Range CrackFrontNodes;
 	ErrorCode rval;
 	rval = mField.get_moab().get_connectivity(CrackFrontEdges,CrackFrontNodes,true); CHKERR_PETSC(rval);
@@ -3557,14 +3557,14 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
 
       {
 	Range SurfacesFaces;
-	ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,SurfacesFaces,true); CHKERRQ(ierr);
+	ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
 	Range CrackSurfacesFaces;
-	ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
-	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+	ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
+	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
 	  int msId = it->get_msId();
 	  if((msId < 10200)||(msId >= 10300)) continue;
 	  Range SurfacesFaces_msId;
-	  ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SideSet,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
+	  ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SIDESET,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
 	  SurfacesFaces.insert(SurfacesFaces_msId.begin(),SurfacesFaces_msId.end());
 	}
 
@@ -3593,7 +3593,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
       const MoFEMProblem *problem_ptr;
       ierr = mField.get_problem("COUPLED_PROBLEM",&problem_ptr); CHKERRQ(ierr);
 
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
 	if(it->get_Cubit_name() != "LoadPath") continue;
 
 	Range nodes;

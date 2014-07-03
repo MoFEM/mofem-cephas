@@ -62,9 +62,9 @@ int main(int argc, char *argv[]) {
     ofstream myfile;
     myfile.open ((string(mesh_file_name)+".txt").c_str());
 
-  cout << "<<<< NodeSets >>>>>" << endl;
-  //NodeSets
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet,it)) {
+  cout << "<<<< NODESETs >>>>>" << endl;
+  //NODESETs
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
@@ -125,9 +125,9 @@ int main(int argc, char *argv[]) {
       
   }
 
-  cout << "<<<< SideSets >>>>>" << endl;
-  //SideSets
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  cout << "<<<< SIDESETs >>>>>" << endl;
+  //SIDESETs
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
@@ -189,9 +189,9 @@ int main(int argc, char *argv[]) {
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 
-  cout << "<<<< BlockSets >>>>>" << endl;
-  //BlockSets
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+  cout << "<<<< BLOCKSETs >>>>>" << endl;
+  //BLOCKSETs
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
   {
       cout << endl << *it << endl;
 
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
         //Solution procedures are defined with block names starting with SOL_ e.g. SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
         //----------------------------------------------------------------------------------------
         
-        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
             {
                 cout << endl << *it << endl;
                 

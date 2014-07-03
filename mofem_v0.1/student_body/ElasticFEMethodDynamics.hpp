@@ -277,8 +277,8 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    ierr = mField.set_global_VecCreateGhost(problem_ptr->get_name(),COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	    ierr = mField.set_local_VecCreateGhost(problem_ptr->get_name(),ROW,u_by_row,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    //NumeredDofMoFEMEntity_multiIndex &numered_dofs_cols = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_cols);
-	    /*Range::iterator nit = SideSet2Nodes.begin();
-	    for(;nit!=SideSet2Nodes.end();nit++) {
+	    /*Range::iterator nit = SIDESET2Nodes.begin();
+	    for(;nit!=SIDESET2Nodes.end();nit++) {
 	      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
 	      dit = numered_dofs_cols.get<MoABEnt_mi_tag>().lower_bound(*nit);
 	      hi_dit = numered_dofs_cols.get<MoABEnt_mi_tag>().upper_bound(*nit);

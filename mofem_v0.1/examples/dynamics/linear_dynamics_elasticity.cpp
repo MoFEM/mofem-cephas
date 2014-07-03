@@ -305,14 +305,14 @@ int main(int argc, char *argv[]) {
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   string fe_name_str ="FORCE_FE";
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
     neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
 
   }
   fe_name_str = "PRESSURE_FE";
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
     neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
   }
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
   boost::ptr_map<string,NodalForce> nodal_forces;
   fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(mField));
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
     nodal_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
   }

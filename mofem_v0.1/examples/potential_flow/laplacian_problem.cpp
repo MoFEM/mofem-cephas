@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
     if(it->get_Cubit_name() == "PotentialFlow") {
  
       //add ents to field and set app. order
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 
   //get nodes and other entities to fix
   Range fix_nodes;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|UnknownCubitName,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|UNKNOWNCUBITNAME,it)) {
     std::size_t zeroPressureFound=it->get_Cubit_name().find("ZeroPressure");
     if (zeroPressureFound==std::string::npos) continue;
     rval = moab.get_entities_by_type(it->meshset,MBVERTEX,fix_nodes,true); CHKERR_PETSC(rval);

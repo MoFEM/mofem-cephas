@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(root_set,"DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
 
     ostringstream fe_name;
     fe_name << "FORCE_FE_" << it->get_msId();
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
 
     ostringstream fe_name;
     fe_name << "PRESSURE_FE_" << it->get_msId();
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ostringstream fe_name;
     fe_name << "FORCE_FE_" << it->get_msId();
     string fe_name_str = fe_name.str();
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     my_split << *it << endl;
     my_split << data << endl;
   }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     ostringstream fe_name;
     fe_name << "PRESSURE_FE_" << it->get_msId();
     string fe_name_str = fe_name.str();

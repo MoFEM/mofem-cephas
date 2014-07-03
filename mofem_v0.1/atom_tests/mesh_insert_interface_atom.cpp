@@ -59,8 +59,8 @@ int main(int argc, char *argv[]) {
   bit_levels.push_back(BitRefLevel().set(0));
 
   int ll = 1;
-  //for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,cit)) {
+  //for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|INTERFACESET,cit)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,cit)) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
     EntityHandle cubit_meshset = cit->get_meshset();
     {
@@ -151,11 +151,11 @@ int main(int argc, char *argv[]) {
   Range tets_back_bit_level;
   ierr = mField.get_entities_by_ref_level(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRQ(ierr);
 
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,cit)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,cit)) {
 
     EntityHandle cubit_meshset = cit->get_meshset();
 
-    BlockSet_generic_attributes mydata;
+    BLOCKSET_generic_attributes mydata;
     ierr = cit->get_attribute_data_structure(mydata); CHKERRQ(ierr);   
     cout << mydata << endl;  
 

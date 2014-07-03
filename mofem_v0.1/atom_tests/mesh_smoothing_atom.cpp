@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  Range CubitSideSets_meshsets;
-  ierr = mField.get_Cubit_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
+  Range CubitSIDESETs_meshsets;
+  ierr = mField.get_Cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -124,12 +124,12 @@ int main(int argc, char *argv[]) {
   EntityHandle coner_nodes_meshset,surface_faces_meshset;
   {
     Range corner_edges,surface_faces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(100,SideSet,1,corner_edges,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,NodeSet,0,corner_nodes,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,surface_faces,true); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 100 = %d\n",corner_edges.size()); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NodeSet 101 = %d\n",corner_nodes.size()); CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",surface_faces.size()); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corner_edges,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corner_nodes,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,surface_faces,true); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 100 = %d\n",corner_edges.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NODESET 101 = %d\n",corner_nodes.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 102 = %d\n",surface_faces.size()); CHKERRQ(ierr);
     ierr = mField.seed_finite_elements(surface_faces); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(surface_faces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
 

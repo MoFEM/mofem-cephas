@@ -27,37 +27,37 @@
 namespace MoFEM {
 
 /** 
- * \typedef Cubit_BC_bitset
+ * \typedef CubitBC_BitSet
  * bc & material meshsets
  *
  */
-typedef bitset<32> Cubit_BC_bitset;
-enum Cubit_BC {
-  UnknownSet = 0,
-  NodeSet = 1<<0,
-  SideSet = 1<<1,
-  BlockSet = 1<<2,
-  MaterialSet = 1<<3,
-  DisplacementSet = 1<<4,
-  ForceSet = 1<<5,
-  PressureSet = 1<<6,
-  VelocitySet = 1<<7,
-  AccelerationSet = 1<<8,
-  TemperatureSet = 1<<9,
-  HeatfluxSet = 1<<10,
-  InterfaceSet = 1<<11,
-  UnknownCubitName = 1<< 12,
-  Mat_ElasticSet = 1<<13,
-  Mat_InterfSet = 1 <<14,
-  Mat_ThermalSet = 1<<15,
-  Block_BodyForcesSet = 1<<16,
-  LastSet
+typedef bitset<32> CubitBC_BitSet;
+enum CubitBC {
+  UNKNOWNSET = 0,
+  NODESET = 1<<0,
+  SIDESET = 1<<1,
+  BLOCKSET = 1<<2,
+  MATERIALSET = 1<<3,
+  DISPLACEMENTSET = 1<<4,
+  FORCESET = 1<<5,
+  PRESSURESET = 1<<6,
+  VELOCITYSET = 1<<7,
+  ACCELERATIONSET = 1<<8,
+  TEMPERATURESET = 1<<9,
+  HEATFLUXSET = 1<<10,
+  INTERFACESET = 1<<11,
+  UNKNOWNCUBITNAME = 1<< 12,
+  MAT_ELASTICSET = 1<<13,
+  MAT_INTERFSET = 1 <<14,
+  MAT_THERMALSET = 1<<15,
+  BLOCK_BODYFORCESSET = 1<<16,
+  LASTCUBITSET
 };
 
-/*! \struct generic_attribute_data
+/*! \struct GenericAttributeData
  *  \brief Generic attribute data structure
  */
-struct generic_attribute_data {
+struct GenericAttributeData {
     PetscErrorCode ierr;
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
@@ -71,7 +71,7 @@ struct generic_attribute_data {
 /*! \struct Unknown attributes
  *  \brief Arbitrary block atributes  data structure
  */
-struct BlockSet_generic_attributes: public generic_attribute_data {
+struct BLOCKSET_generic_attributes: public GenericAttributeData {
 
     struct __attribute__ ((packed)) _data_{
         double User1; // User attribute 1
@@ -88,9 +88,9 @@ struct BlockSet_generic_attributes: public generic_attribute_data {
     
     _data_ data;
     
-    const Cubit_BC_bitset type;
+    const CubitBC_BitSet type;
     const unsigned int min_number_of_atributes;
-    BlockSet_generic_attributes(): type(BlockSet),min_number_of_atributes(0) {};
+    BLOCKSET_generic_attributes(): type(BLOCKSET),min_number_of_atributes(0) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
       PetscFunctionBegin;
@@ -105,14 +105,14 @@ struct BlockSet_generic_attributes: public generic_attribute_data {
     
     /*! \brief Print data
      */
-    friend ostream& operator<<(ostream& os,const BlockSet_generic_attributes& e);
+    friend ostream& operator<<(ostream& os,const BLOCKSET_generic_attributes& e);
     
 };
 
 /*! \struct Mat_Elastic
  *  \brief Elastic material data structure
  */
-struct Mat_Elastic: public generic_attribute_data {
+struct Mat_Elastic: public GenericAttributeData {
     struct __attribute__ ((packed)) _data_{
         double Young; // Young's modulus
         double Poisson; // Poisson's ratio
@@ -128,9 +128,9 @@ struct Mat_Elastic: public generic_attribute_data {
     
     _data_ data;
     
-    const Cubit_BC_bitset type;
+    const CubitBC_BitSet type;
     const unsigned int min_number_of_atributes;
-    Mat_Elastic(): type(Mat_ElasticSet),min_number_of_atributes(2) {};
+    Mat_Elastic(): type(MAT_ELASTICSET),min_number_of_atributes(2) {};
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
         PetscFunctionBegin;
@@ -155,7 +155,7 @@ struct Mat_Elastic: public generic_attribute_data {
 /*! \struct Mat_Thermal
 *  \brief Thermal material data structure
 */
-struct Mat_Thermal: public generic_attribute_data {
+struct Mat_Thermal: public GenericAttributeData {
   struct __attribute__ ((packed)) _data_{
     double Conductivity; // Thermal conductivity
     double HeatCapacity; // Heat Capacity
@@ -171,9 +171,9 @@ struct Mat_Thermal: public generic_attribute_data {
 
   _data_ data;
         
-  const Cubit_BC_bitset type;
+  const CubitBC_BitSet type;
   const unsigned int min_number_of_atributes;
-  Mat_Thermal(): type(Mat_ThermalSet),min_number_of_atributes(2) {};
+  Mat_Thermal(): type(MAT_THERMALSET),min_number_of_atributes(2) {};
         
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {
     PetscFunctionBegin;
@@ -196,7 +196,7 @@ struct Mat_Thermal: public generic_attribute_data {
 /*! \struct Body forces block
 *  \brief Body farce data structure
 */
-struct Block_BodyForces: public generic_attribute_data {
+struct Block_BodyForces: public GenericAttributeData {
   struct __attribute__ ((packed)) _data_{
     double density; // Thermal conductivity
     double acceleration_x; // User attribute 1
@@ -211,9 +211,9 @@ struct Block_BodyForces: public generic_attribute_data {
 
   _data_ data;
         
-  const Cubit_BC_bitset type;
+  const CubitBC_BitSet type;
   const unsigned int min_number_of_atributes;
-  Block_BodyForces(): type(Block_BodyForcesSet),min_number_of_atributes(4) {};
+  Block_BodyForces(): type(BLOCK_BODYFORCESSET),min_number_of_atributes(4) {};
         
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {
     PetscFunctionBegin;
@@ -275,7 +275,7 @@ struct Block_BodyForces: public generic_attribute_data {
     /*! \struct Mat_Interf
      *  \brief Linear interface data structure
      */
-    struct Mat_Interf: public generic_attribute_data {
+    struct Mat_Interf: public GenericAttributeData {
         struct __attribute__ ((packed)) _data_{
             double alpha; // Elastic modulus multiplier
 						double beta;  // Damage Coupling multiplier between normal and shear (g=sqrt(gn^2 + beta(gt1^2 + gt2^2)))
@@ -285,8 +285,8 @@ struct Block_BodyForces: public generic_attribute_data {
         
         _data_ data;
         
-        const Cubit_BC_bitset type;
-        Mat_Interf(): type(Mat_InterfSet) {};
+        const CubitBC_BitSet type;
+        Mat_Interf(): type(MAT_INTERFSET) {};
         
         virtual PetscErrorCode fill_data(const vector<double>& attributes) {
             PetscFunctionBegin;
@@ -383,8 +383,8 @@ struct displacement_cubit_bc_data: public generic_cubit_bc_data {
     
     _data_ data;
 
-    const Cubit_BC_bitset type;
-    displacement_cubit_bc_data(): type(DisplacementSet) {};
+    const CubitBC_BitSet type;
+    displacement_cubit_bc_data(): type(DISPLACEMENTSET) {};
     
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -419,8 +419,8 @@ struct force_cubit_bc_data: public generic_cubit_bc_data {
     };
     
     _data_ data;
-    const Cubit_BC_bitset type;
-    force_cubit_bc_data(): type(ForceSet) {};
+    const CubitBC_BitSet type;
+    force_cubit_bc_data(): type(FORCESET) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -459,8 +459,8 @@ struct velocity_cubit_bc_data: public generic_cubit_bc_data {
     };
     
     _data_ data;
-    const Cubit_BC_bitset type;
-    velocity_cubit_bc_data(): type(VelocitySet) {};
+    const CubitBC_BitSet type;
+    velocity_cubit_bc_data(): type(VELOCITYSET) {};
    
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -499,8 +499,8 @@ struct acceleration_cubit_bc_data: public generic_cubit_bc_data {
     };
     
     _data_ data;
-    const Cubit_BC_bitset type;
-    acceleration_cubit_bc_data(): type(AccelerationSet) {};
+    const CubitBC_BitSet type;
+    acceleration_cubit_bc_data(): type(ACCELERATIONSET) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -539,8 +539,8 @@ struct temperature_cubit_bc_data: public generic_cubit_bc_data {
     };
     
     _data_ data;
-    const Cubit_BC_bitset type;
-    temperature_cubit_bc_data(): type(TemperatureSet) {};
+    const CubitBC_BitSet type;
+    temperature_cubit_bc_data(): type(TEMPERATURESET) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
       PetscFunctionBegin;
@@ -568,8 +568,8 @@ struct pressure_cubit_bc_data: public generic_cubit_bc_data {
     };
     
     _data_ data;
-    const Cubit_BC_bitset type;
-    pressure_cubit_bc_data(): type(PressureSet) {};
+    const CubitBC_BitSet type;
+    pressure_cubit_bc_data(): type(PRESSURESET) {};
    
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -602,8 +602,8 @@ struct heatflux_cubit_bc_data: public generic_cubit_bc_data {
     };
     
     _data_ data;
-    const Cubit_BC_bitset type;
-    heatflux_cubit_bc_data(): type(HeatfluxSet) {};
+    const CubitBC_BitSet type;
+    heatflux_cubit_bc_data(): type(HEATFLUXSET) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -630,8 +630,8 @@ struct cfd_cubit_bc_data: public generic_cubit_bc_data {
     };
     
     _data_ data;
-    const Cubit_BC_bitset type;
-    cfd_cubit_bc_data(): type(InterfaceSet) {};
+    const CubitBC_BitSet type;
+    cfd_cubit_bc_data(): type(INTERFACESET) {};
     
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -652,7 +652,7 @@ struct cfd_cubit_bc_data: public generic_cubit_bc_data {
  */
 struct CubitMeshSets {
   EntityHandle meshset;
-  Cubit_BC_bitset CubitBCType;
+  CubitBC_BitSet CubitBCType;
   vector<Tag> tag_handles;
   int *msId;
   char* tag_bc_data;
@@ -661,11 +661,11 @@ struct CubitMeshSets {
   double* tag_block_attributes;
   int tag_block_attributes_size;
   char* tag_name_data;
-  const Cubit_BC_bitset meshsets_mask;
+  const CubitBC_BitSet meshsets_mask;
   CubitMeshSets(Interface &moab,const EntityHandle _meshset);
-  CubitMeshSets(Interface &moab,const Cubit_BC_bitset _CubitBCType,const int _msId);
+  CubitMeshSets(Interface &moab,const CubitBC_BitSet _CubitBCType,const int _msId);
   inline int get_msId() const { return *msId; }
-  inline Cubit_BC_bitset get_CubitBCType() const { return CubitBCType; }
+  inline CubitBC_BitSet get_CubitBCType() const { return CubitBCType; }
 
   inline EntityHandle get_meshset() const { return meshset; }
   inline unsigned long int get_CubitBCType_ulong() const { return CubitBCType.to_ulong(); }
@@ -676,14 +676,14 @@ struct CubitMeshSets {
   PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
 
   /** 
-   *  \brief Function that returns the Cubit_BC_bitset type of the contents of bc_data
+   *  \brief Function that returns the CubitBC_BitSet type of the contents of bc_data
    */
-  PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,Cubit_BC_bitset &type) const;
+  PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,CubitBC_BitSet &type) const;
 
   /** 
-   *  \brief Function that returns the Cubit_BC_bitset type of the contents of bc_data
+   *  \brief Function that returns the CubitBC_BitSet type of the contents of bc_data
   */
-  PetscErrorCode get_type_from_bc_data(Cubit_BC_bitset &type) const;
+  PetscErrorCode get_type_from_bc_data(CubitBC_BitSet &type) const;
     
   /**
    * \brief get bc_data vector from MoFEM database
@@ -729,14 +729,14 @@ struct CubitMeshSets {
   }
 
   /**
-   *  \brief Function that returns the Cubit_BC_bitset type of the block name, sideset name etc.
+   *  \brief Function that returns the CubitBC_BitSet type of the block name, sideset name etc.
    */
-  PetscErrorCode get_type_from_Cubit_name(const string &name,Cubit_BC_bitset &type) const;
+  PetscErrorCode get_type_from_Cubit_name(const string &name,CubitBC_BitSet &type) const;
 
   /**
-   *  \brief Function that returns the Cubit_BC_bitset type of the block name, sideset name etc.
+   *  \brief Function that returns the CubitBC_BitSet type of the block name, sideset name etc.
    */
-  PetscErrorCode get_type_from_Cubit_name(Cubit_BC_bitset &type) const;
+  PetscErrorCode get_type_from_Cubit_name(CubitBC_BitSet &type) const;
     
   /**
    * \brief get Cubit block attributes

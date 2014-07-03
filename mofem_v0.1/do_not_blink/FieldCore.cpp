@@ -365,7 +365,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
     try {
       //check if meshset is cubit meshset
       CubitMeshSets base_meshset(moab,*mit);
-      if((base_meshset.CubitBCType&Cubit_BC_bitset(NodeSet|SideSet|BlockSet)).any()) {
+      if((base_meshset.CubitBCType&CubitBC_BitSet(NODESET|SIDESET|BLOCKSET)).any()) {
 	pair<moabCubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(base_meshset);
 	if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"meshset not inserted");
 	if(verb > 0) {
@@ -3709,7 +3709,7 @@ PetscErrorCode FieldCore::problem_get_FE(const string &problem_name,const string
   }
   PetscFunctionReturn(0);
 }
-bool FieldCore::check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType) {
+bool FieldCore::check_msId_meshset(const int msId,const CubitBC_BitSet CubitBCType) {
   moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
@@ -3717,14 +3717,14 @@ bool FieldCore::check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCT
   } 
   return false;
 }
-PetscErrorCode FieldCore::add_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId) {
+PetscErrorCode FieldCore::add_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId) {
   PetscFunctionBegin;
   if(check_msId_meshset(msId,CubitBCType)) {
     SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",msId);
   } 
   try {
     CubitMeshSets cmeshset(moab,CubitBCType,msId);
-    if((cmeshset.CubitBCType&Cubit_BC_bitset(NodeSet|SideSet|BlockSet)).any()) {
+    if((cmeshset.CubitBCType&CubitBC_BitSet(NODESET|SIDESET|BLOCKSET)).any()) {
       pair<moabCubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(cmeshset);
       if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"meshset not inserted");
     }
@@ -3733,7 +3733,7 @@ PetscErrorCode FieldCore::add_Cubit_msId(const Cubit_BC_bitset CubitBCType,const
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId) {
+PetscErrorCode FieldCore::delete_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId) {
   PetscFunctionBegin;
   moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
@@ -3745,7 +3745,7 @@ PetscErrorCode FieldCore::delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,co
   rval = moab.delete_entities(&meshset,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_Cubit_msId(const int msId,const Cubit_BC_bitset CubitBCType,const CubitMeshSets **cubit_meshset_ptr) {
+PetscErrorCode FieldCore::get_Cubit_msId(const int msId,const CubitBC_BitSet CubitBCType,const CubitMeshSets **cubit_meshset_ptr) {
   PetscFunctionBegin;
   moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
@@ -3756,7 +3756,7 @@ PetscErrorCode FieldCore::get_Cubit_msId(const int msId,const Cubit_BC_bitset Cu
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType,
+PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const CubitBC_BitSet CubitBCType,
   const int dimension,Range &entities,const bool recursive) {
   PetscFunctionBegin;
   moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
@@ -3768,7 +3768,7 @@ PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,co
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType,Range &entities,const bool recursive) {
+PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const CubitBC_BitSet CubitBCType,Range &entities,const bool recursive) {
   PetscFunctionBegin;
   moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
@@ -3782,13 +3782,13 @@ PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,co
 PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType,
   const int dimension,Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  ierr = get_Cubit_msId_entities_by_dimension(msId,Cubit_BC_bitset(CubitBCType),dimension,entities,recursive); CHKERRQ(ierr);
+  ierr = get_Cubit_msId_entities_by_dimension(msId,CubitBC_BitSet(CubitBCType),dimension,entities,recursive); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType,
   Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  ierr = get_Cubit_msId_entities_by_dimension(msId,Cubit_BC_bitset(CubitBCType),entities,recursive); CHKERRQ(ierr);
+  ierr = get_Cubit_msId_entities_by_dimension(msId,CubitBC_BitSet(CubitBCType),entities,recursive); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::get_Cubit_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) {

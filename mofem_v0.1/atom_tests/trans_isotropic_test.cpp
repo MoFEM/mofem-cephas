@@ -381,7 +381,7 @@ int main(int argc, char *argv[]) {
   double PoissonRatioPZ;
   double ShearModulusZP;
 
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     cout << endl << *it << endl;
     
     //Get block name

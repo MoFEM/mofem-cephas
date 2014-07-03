@@ -51,4 +51,4 @@ NoNameSet
 Asia
 NoNameSet
 Moon
-BlockSet
+BLOCKSET

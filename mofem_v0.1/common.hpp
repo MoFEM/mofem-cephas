@@ -209,7 +209,7 @@ enum RowColData {
 
 enum ByWhat { 
   BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
-  BYROW_data = 1<<0|1<<2, BYCOL_data = 1<<1|1<<2, BYROW_col = 1<<0|1<<1,
+  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
   BYALL = 1<<0|1<<1|1<<2 
 };
 
