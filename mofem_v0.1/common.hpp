@@ -149,6 +149,7 @@
 
 //set that with care, it turns off check for ublas
 //#define BOOST_UBLAS_NDEBUG
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
 using namespace moab;
 using namespace std;

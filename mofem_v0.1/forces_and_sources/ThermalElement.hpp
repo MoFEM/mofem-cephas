@@ -345,18 +345,22 @@ struct ThermalElement {
   
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-	  double *diff_N_row,*diff_N_col;
-	  diff_N_row = &row_data.getDiffN()(gg,0);
-	  diff_N_col = &col_data.getDiffN()(gg,0);
-
 	  double val = dAta.cOnductivity*getVolume()*getGaussPts()(3,gg);
 	  if(getHoGaussPtsDetJac().size()>0) {
 	    val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 	  }
+
+	  /*cblas
+	  double *diff_N_row,*diff_N_col;
+	  diff_N_row = &row_data.getDiffN()(gg,0);
+	  diff_N_col = &col_data.getDiffN()(gg,0);
 	  cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasTrans,
 	    nb_row,nb_col,3,
-	    val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
-  
+	    val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);*/
+
+	  //ublas
+	  noalias(K) += val*prod(row_data.getDiffN(gg),trans(col_data.getDiffN(gg)));
+
 	}
 
 	PetscErrorCode ierr;
@@ -476,17 +480,22 @@ struct ThermalElement {
   
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-	  double *N_row,*N_col;
-	  N_row = &row_data.getN()(gg,0);
-	  N_col = &col_data.getN()(gg,0);
 
 	  double val = dAta.cApacity*getVolume()*getGaussPts()(3,gg);
 	  if(getHoGaussPtsDetJac().size()>0) {
 	    val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 	  }
 	  val *= getFEMethod()->ts_a;
-	  cblas_dger(CblasRowMajor,
-	    nb_row,nb_col,val,N_row,1,N_col,1,&M(0,0),nb_col);
+
+	  //cblas
+	  //double *N_row,*N_col;
+	  //N_row = &row_data.getN()(gg,0);
+	  //N_col = &col_data.getN()(gg,0);
+	  //cblas_dger(CblasRowMajor,
+	  //nb_row,nb_col,val,N_row,1,N_col,1,&M(0,0),nb_col);*/
+
+	  //ublas
+	  noalias(M) += val*outer_prod( row_data.getN(gg),col_data.getN(gg) ); 
 
 	}
   

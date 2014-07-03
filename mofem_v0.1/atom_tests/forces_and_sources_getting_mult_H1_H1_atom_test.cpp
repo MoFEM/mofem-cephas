@@ -189,7 +189,11 @@ int main(int argc, char *argv[]) {
   
 	  my_split << "gg " << gg << " : ";
 	  my_split.precision(2);
-	  my_split << NN << endl;
+	  //my_split << NN << endl;
+	  my_split << NN - outer_prod(row_data.getN(gg),col_data.getN(gg)) << endl;
+	  if(row_type != MBVERTEX) {
+	    my_split << row_data.getDiffN(gg) << endl;
+	  }
 
 	  if(row_type == MBVERTEX) {
 	    my_split << row_data.getDiffN() << endl;
