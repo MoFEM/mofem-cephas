@@ -143,7 +143,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
                          break;
                 default: {
                            SETERRQ(PETSC_COMM_SELF,1,
-                               "Materail not defined (Attribute 3):\n"
+                               "Materail not defined (Attribute 4):\n"
                                "\t10 = hooke\n"
                                "\t11 = stvenant_kirchhoff\n"
                                "\t12 = neohookean\n"
