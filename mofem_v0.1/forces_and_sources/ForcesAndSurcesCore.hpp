@@ -106,6 +106,27 @@ struct DataForcesAndSurcesCore {
      */
     virtual ublas::matrix<FieldData>& getDiffN() { return diffN; }
 
+    // shallow adaptor classes
+    typedef ublas::vector<FieldData,ublas::shallow_array_adaptor<FieldData> > vector_adaptor;
+    typedef ublas::matrix<FieldData,ublas::row_major,ublas::shallow_array_adaptor<FieldData> > matrix_adaptor;
+
+    inline const vector_adaptor getN(int gg) {
+      int size = getN().size2();
+      FieldData *data = &getN()(gg,0);
+      return vector_adaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
+    }
+
+    inline const matrix_adaptor getDiffN(int gg) {
+      if(getN().size1() == getDiffN().size1()) {
+	int size = getN().size2();	
+	int dim = getDiffN().size2()/size;
+	FieldData *data = &getDiffN()(gg,0);
+	return matrix_adaptor(getN().size2(),dim,ublas::shallow_array_adaptor<FieldData>(getDiffN().size2(),data));
+      } else {
+	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+      }
+    }
+
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
 
     private:
@@ -115,7 +136,7 @@ struct DataForcesAndSurcesCore {
     ublas::vector<FieldData> fieldData;
     ublas::matrix<FieldData> N;
     ublas::matrix<FieldData> diffN;
-    
+
   };
 
   ublas::matrix<DofIdx> facesNodes; ///< nodes on finite element faces
