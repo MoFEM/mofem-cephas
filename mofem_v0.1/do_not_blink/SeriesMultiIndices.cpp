@@ -144,7 +144,7 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   if(nb_contained < ia.size()-1) {
     contained.resize(ia.size());
   }
-  for(int mm = ia.size()-1;mm<nb_contained;mm++) {
+  for(unsigned int mm = ia.size()-1;mm<nb_contained;mm++) {
     rval = moab.remove_entities(meshset,&contained[mm],1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&contained[mm],1); CHKERR_PETSC(rval);
   }
