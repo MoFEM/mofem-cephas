@@ -27,8 +27,8 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
   if(map_zero_rows.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
-	displacement_cubit_bc_data mydata;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
+	DisplacementCubitBcData mydata;
 	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
 	for(int dim = 0;dim<3;dim++) {
 	  Range ents;
@@ -196,8 +196,8 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
   if(map_zero_rows.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it)) {
-	displacement_cubit_bc_data mydata;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
+	DisplacementCubitBcData mydata;
 	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
 	for(int dim = 0;dim<3;dim++) {
 	  Range ents;
@@ -264,8 +264,8 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
   if(map_zero_rows.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|TemperatureSet,it)) {
-      temperature_cubit_bc_data mydata;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
+      TemperatureCubitBcData mydata;
       ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;

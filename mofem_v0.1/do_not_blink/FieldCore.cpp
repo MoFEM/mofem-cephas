@@ -80,7 +80,7 @@ FieldCore::FieldCore(Interface& _moab,int _verbose):
   const unsigned long int def_id = 0;
   rval = moab.tag_get_handle("_FieldId",sizeof(BitFieldId),MB_TYPE_OPAQUE,
     th_FieldId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
-  FieldSpace def_space = LastSpace;
+  FieldSpace def_space = LASTSPACE;
   rval = moab.tag_get_handle("_FieldSpace",sizeof(FieldSpace),MB_TYPE_OPAQUE,
     th_FieldSpace,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_space); CHKERR_THROW(rval);
   const int def_val_len = 0;
@@ -278,7 +278,7 @@ PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const
     //space
     rval = moab.tag_set_data(th_FieldSpace,&meshset,1,&space); CHKERR_PETSC(rval);
     //add meshset to ref_ents // meshset dof on all level sets
-    if(space == NoField) {
+    if(space == NOFIELD) {
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,meshset));
       bool success = refinedMoFemEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
@@ -365,8 +365,8 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
     try {
       //check if meshset is cubit meshset
       CubitMeshSets base_meshset(moab,*mit);
-      if((base_meshset.CubitBCType&Cubit_BC_bitset(NodeSet|SideSet|BlockSet)).any()) {
-	pair<moabCubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(base_meshset);
+      if((base_meshset.CubitBCType&CubitBC_BitSet(NODESET|SIDESET|BLOCKSET)).any()) {
+	pair<CubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(base_meshset);
 	if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"meshset not inserted");
 	if(verb > 0) {
 	  ostringstream ss;
@@ -396,7 +396,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,1,msg);
       } 
-      if(p.first->get_space()==NoField) {
+      if(p.first->get_space()==NOFIELD) {
 	assert(p.first->meshset == *mit);
 	//add field to ref ents
 	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedMoFemEntities.insert(RefMoFEMEntity(moab,*mit));
@@ -598,11 +598,11 @@ PetscErrorCode FieldCore::add_ents_to_field_by_EDGEs(const EntityHandle meshset,
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       break;
-    case Hcurl:
+    case HCURL:
       SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented");
       break;
-    case Hdiv:
-      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, Hdiv not implemented for EDGEs");
+    case HDIV:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, HDIV not implemented for EDGEs");
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"add_ents_to_field_by_EDGEs this field not work for EDGEs");
@@ -672,11 +672,11 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TRIs(const EntityHandle meshset,c
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       break;
-    case Hcurl:
-      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, Hcurl not implented for TRI");
+    case HCURL:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, HCURL not implented for TRI");
       break;
-    case Hdiv:
-      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, Hdiv not implemented for TRI");
+    case HDIV:
+      SETERRQ(PETSC_COMM_SELF,1,"sorry, not implemented, HDIV not implemented for TRI");
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"add_ents_to_field_by_TRIs this field not work for TRIs");
@@ -806,7 +806,7 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TETs(const Range &tets,const BitF
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       break;
-    case Hcurl:
+    case HCURL:
       rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
       rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
@@ -822,7 +822,7 @@ PetscErrorCode FieldCore::add_ents_to_field_by_TETs(const Range &tets,const BitF
 	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
       }
       break;
-    case Hdiv:
+    case HDIV:
       rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
       rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
@@ -927,12 +927,12 @@ PetscErrorCode FieldCore::set_field_order(const Range &ents,const BitFieldId id,
 	  }
 	}
 	break;
-      case Hdiv:
+      case HDIV:
 	if(moab.type_from_handle(*eit)==MBVERTEX) {
-	  SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on vertices makes no sense"); 
+	  SETERRQ(PETSC_COMM_SELF,1,"HDIV space on vertices makes no sense"); 
 	} 
 	if(moab.type_from_handle(*eit)==MBEDGE) {
-	  SETERRQ(PETSC_COMM_SELF,1,"Hdiv space on edges makes no sense"); 
+	  SETERRQ(PETSC_COMM_SELF,1,"HDIV space on edges makes no sense"); 
 	} 
 	break;
       default:
@@ -1228,13 +1228,13 @@ PetscErrorCode FieldCore::build_fields(int verb) {
       PetscPrintf(PETSC_COMM_WORLD,"Build Field %s\n",miit->get_name().c_str());
     }
     switch (miit->get_space()) {
-      case NoField:
+      case NOFIELD:
 	ierr = dofs_NoField(miit->get_id(),dof_counter); CHKERRQ(ierr);
 	break;
       case L2:
       case H1:
-      case Hcurl:
-      case Hdiv:
+      case HCURL:
+      case HDIV:
 	ierr = dofs_L2H1HcurlHdiv(miit->get_id(),dof_counter,verb); CHKERRQ(ierr);
 	break;
       default:
@@ -1817,10 +1817,10 @@ PetscErrorCode FieldCore::build_finite_element_data_dofs(EntMoFEMFiniteElement &
     try {
       switch((*viit_data)->get_space()) {
 	case H1:
-	case Hdiv:
-	case Hcurl:
+	case HDIV:
+	case HCURL:
 	case L2: 
-	case NoField:
+	case NOFIELD:
 	{
 	  SideNumber *side_number_ptr = EntFe.get_side_number_ptr(moab,(*viit_data)->get_ent());
 	  //add dofs to finite element multi_index database
@@ -1896,7 +1896,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	  case H1: 
 	    adj_ents.insert(fe_ent);
 	    break;
-	  case NoField: {
+	  case NOFIELD: {
 	    EntityHandle field_meshset = miit->get_meshset();
 	    adj_ents.insert(field_meshset);
 	  }
@@ -1923,7 +1923,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	    adj_ents.insert(nodes.begin(),nodes.end());
 	    adj_ents.insert(fe_ent);
 	    break;
-	  case NoField: {
+	  case NOFIELD: {
 	    EntityHandle field_meshset = miit->get_meshset();
 	    adj_ents.insert(field_meshset);
 	  }
@@ -1961,7 +1961,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	    //add faces
 	    adj_ents.insert(fe_ent);
 	    break;
-	    case NoField: {
+	    case NOFIELD: {
 	      EntityHandle field_meshset = miit->get_meshset();
 	      adj_ents.insert(field_meshset);
 	    }
@@ -1989,12 +1989,12 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	    }
 	  }
   	   adj_ents.insert(nodes.begin(),nodes.end());
-  	  case Hcurl: if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
+  	  case HCURL: if(edges.empty()) moab.get_adjacencies(&fe_ent,1,1,false,edges);
   	   adj_ents.insert(edges.begin(),edges.end());
 	   for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) {
 	      EntFe.get_side_number_ptr(moab,*eeit);
 	    }
-  	  case Hdiv: if(faces.empty()) moab.get_adjacencies(&fe_ent,1,2,false,faces);
+  	  case HDIV: if(faces.empty()) moab.get_adjacencies(&fe_ent,1,2,false,faces);
   	   adj_ents.insert(faces.begin(),faces.end());
 	   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
 	      EntFe.get_side_number_ptr(moab,*fit);
@@ -2002,7 +2002,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
   	  case L2:
   	   adj_ents.insert(fe_ent);
   	   break;
-	  case NoField: {
+	  case NOFIELD: {
 	      EntityHandle field_meshset = miit->get_meshset();
 	      adj_ents.insert(field_meshset);
 	   }
@@ -2070,12 +2070,12 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 		}
 	      }
 	      adj_ents.insert(nodes.begin(),nodes.end());
-	    case Hcurl: {
+	    case HCURL: {
 	      SideNumber_multiIndex::nth_index<2>::type::iterator
 		siit = side_table.get<2>().lower_bound(MBEDGE), hi_siit = side_table.get<2>().upper_bound(MBEDGE);
 	      for(;siit!=hi_siit;siit++) adj_ents.insert(siit->ent);
 	    }
-	    case Hdiv: {
+	    case HDIV: {
 	      SideNumber_multiIndex::nth_index<2>::type::iterator
 		siit = side_table.get<2>().lower_bound(MBTRI), hi_siit = side_table.get<2>().upper_bound(MBTRI);
 	      for(;siit!=hi_siit;siit++) adj_ents.insert(siit->ent);
@@ -2083,7 +2083,7 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	    case L2:
 	      adj_ents.insert(fe_ent); 
 	      break;
-	    case NoField: {
+	    case NOFIELD: {
 	      EntityHandle field_meshset = miit->get_meshset();
 	      adj_ents.insert(field_meshset);
 	    }
@@ -2101,9 +2101,9 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
 	 eit_eit = ent_ents.begin();
 	 for(;eit_eit!=ent_ents.end();eit_eit++) {
 	  switch (space) {
-	    case NoField:
+	    case NOFIELD:
 	      if(moab.type_from_handle(*eit_eit)==MBENTITYSET) {
-		//if field (ii) has space NoField only add dofs which associated with the meshsets
+		//if field (ii) has space NOFIELD only add dofs which associated with the meshsets
 		if(moabFields_by_meshset.find(*eit_eit)!=moabFields_by_meshset.end()) {
 		  adj_ents.insert(*eit_eit);
 		}
@@ -2244,7 +2244,7 @@ PetscErrorCode FieldCore::build_adjacencies(const Range &ents,int verb) {
       pair<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
       p = entFEAdjacencies.insert(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap((*rvit)->get_MoFEMEntity_ptr(),&*fit));
       bool success = entFEAdjacencies.modify(
-	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(by_row));
+	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(BYROW));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     }
     ent_uid = 0;
@@ -2256,7 +2256,7 @@ PetscErrorCode FieldCore::build_adjacencies(const Range &ents,int verb) {
       pair<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
       p = entFEAdjacencies.insert(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap((*cvit)->get_MoFEMEntity_ptr(),&*fit));
       bool success = entFEAdjacencies.modify(
-	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(by_col));
+	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(BYCOL));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     }
     ent_uid = 0;
@@ -2268,7 +2268,7 @@ PetscErrorCode FieldCore::build_adjacencies(const Range &ents,int verb) {
       pair<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
       p = entFEAdjacencies.insert(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap((*dvit)->get_MoFEMEntity_ptr(),&*fit));
       bool success = entFEAdjacencies.modify(
-	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(by_data));
+	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(BYDATA));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     }
   }
@@ -2769,7 +2769,7 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
 	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_row)) {
+	  if(!(adj_miit->by_other&BYROW)) {
 	    // if it is not row if element
 	    continue; 
 	  }
@@ -2812,7 +2812,7 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
 	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_col)) {
+	  if(!(adj_miit->by_other&BYCOL)) {
 	    // if it is not row if element
 	    continue; 
 	  }
@@ -3709,23 +3709,23 @@ PetscErrorCode FieldCore::problem_get_FE(const string &problem_name,const string
   }
   PetscFunctionReturn(0);
 }
-bool FieldCore::check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType) {
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+bool FieldCore::check_msId_meshset(const int msId,const CubitBC_BitSet CubitBCType) {
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     return true;
   } 
   return false;
 }
-PetscErrorCode FieldCore::add_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId) {
+PetscErrorCode FieldCore::add_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId) {
   PetscFunctionBegin;
   if(check_msId_meshset(msId,CubitBCType)) {
     SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",msId);
   } 
   try {
     CubitMeshSets cmeshset(moab,CubitBCType,msId);
-    if((cmeshset.CubitBCType&Cubit_BC_bitset(NodeSet|SideSet|BlockSet)).any()) {
-      pair<moabCubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(cmeshset);
+    if((cmeshset.CubitBCType&CubitBC_BitSet(NODESET|SIDESET|BLOCKSET)).any()) {
+      pair<CubitMeshSet_multiIndex::iterator,bool> p = cubit_meshsets.insert(cmeshset);
       if(!p.second) SETERRQ(PETSC_COMM_SELF,1,"meshset not inserted");
     }
   } catch (const char* msg) {
@@ -3733,9 +3733,9 @@ PetscErrorCode FieldCore::add_Cubit_msId(const Cubit_BC_bitset CubitBCType,const
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId) {
+PetscErrorCode FieldCore::delete_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId) {
   PetscFunctionBegin;
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit==cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",msId);
@@ -3745,9 +3745,9 @@ PetscErrorCode FieldCore::delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,co
   rval = moab.delete_entities(&meshset,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_Cubit_msId(const int msId,const Cubit_BC_bitset CubitBCType,const CubitMeshSets **cubit_meshset_ptr) {
+PetscErrorCode FieldCore::get_Cubit_msId(const int msId,const CubitBC_BitSet CubitBCType,const CubitMeshSets **cubit_meshset_ptr) {
   PetscFunctionBegin;
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     *cubit_meshset_ptr = &*miit;
@@ -3756,10 +3756,10 @@ PetscErrorCode FieldCore::get_Cubit_msId(const int msId,const Cubit_BC_bitset Cu
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType,
+PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const CubitBC_BitSet CubitBCType,
   const int dimension,Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = miit->get_Cubit_msId_entities_by_dimension(moab,dimension,entities,recursive); CHKERRQ(ierr);
@@ -3768,9 +3768,9 @@ PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,co
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const Cubit_BC_bitset CubitBCType,Range &entities,const bool recursive) {
+PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const CubitBC_BitSet CubitBCType,Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = miit->get_Cubit_msId_entities_by_dimension(moab,entities,recursive); CHKERRQ(ierr);
@@ -3782,18 +3782,18 @@ PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,co
 PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType,
   const int dimension,Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  ierr = get_Cubit_msId_entities_by_dimension(msId,Cubit_BC_bitset(CubitBCType),dimension,entities,recursive); CHKERRQ(ierr);
+  ierr = get_Cubit_msId_entities_by_dimension(msId,CubitBC_BitSet(CubitBCType),dimension,entities,recursive); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType,
   Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  ierr = get_Cubit_msId_entities_by_dimension(msId,Cubit_BC_bitset(CubitBCType),entities,recursive); CHKERRQ(ierr);
+  ierr = get_Cubit_msId_entities_by_dimension(msId,CubitBC_BitSet(CubitBCType),entities,recursive); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::get_Cubit_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) {
   PetscFunctionBegin;
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     meshset = miit->meshset;
@@ -3804,9 +3804,9 @@ PetscErrorCode FieldCore::get_Cubit_msId_meshset(const int msId,const unsigned i
 }
 PetscErrorCode FieldCore::get_Cubit_meshsets(const unsigned int CubitBCType,Range &meshsets) {
   PetscFunctionBegin;
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<CubitMeshSets_mi_tag>().lower_bound(CubitBCType);
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator 
     hi_miit = cubit_meshsets.get<CubitMeshSets_mi_tag>().upper_bound(CubitBCType);
   for(;miit!=hi_miit;miit++) {
     meshsets.insert(miit->meshset);
@@ -3823,13 +3823,13 @@ PetscErrorCode FieldCore::VecCreateGhost(const string &name,RowColData rc,Vec *V
   DofIdx nb_dofs,nb_local_dofs,nb_ghost_dofs;
   dofs_by_local_idx *dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_dofs = p_miit->get_nb_dofs_row();
       nb_local_dofs = p_miit->get_nb_local_dofs_row();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_dofs = p_miit->get_nb_dofs_col();
       nb_local_dofs = p_miit->get_nb_local_dofs_col();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
@@ -3860,11 +3860,11 @@ PetscErrorCode FieldCore::VecScatterCreate(Vec xin,string &x_problem,RowColData 
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_glob_idx;
   dofs_by_glob_idx::iterator y_dit,hi_y_dit;
   switch (y_rc) {
-    case Row:
+    case ROW:
       y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
       hi_y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_row()); // should be lower
       break;
-    case Col:
+    case COL:
       y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(0);
       hi_y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_col()); // should be lower
       break;
@@ -3874,10 +3874,10 @@ PetscErrorCode FieldCore::VecScatterCreate(Vec xin,string &x_problem,RowColData 
   typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type dofs_by_uid;
   const dofs_by_uid* x_numered_dofs_by_uid;
   switch (x_rc) {
-    case Row:
+    case ROW:
       x_numered_dofs_by_uid = &(p_x->numered_dofs_rows.get<Unique_mi_tag>());
       break;
-    case Col:
+    case COL:
       x_numered_dofs_by_uid = &(p_x->numered_dofs_cols.get<Unique_mi_tag>());
       break;
     default:
@@ -3930,12 +3930,12 @@ PetscErrorCode FieldCore::set_local_VecCreateGhost(const string &name,RowColData
   dofs_by_local_idx *dofs;
   DofIdx nb_local_dofs,nb_ghost_dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_local_dofs = p_miit->get_nb_local_dofs_row();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_local_dofs = p_miit->get_nb_local_dofs_col();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_cols.get<PetscLocalIdx_mi_tag>());
@@ -3993,11 +3993,11 @@ PetscErrorCode FieldCore::set_global_VecCreateGhost(const MoFEMProblem *problem_
   dofs_by_global_idx *dofs;
   DofIdx nb_dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_dofs = problem_ptr->get_nb_dofs_row();
       dofs = const_cast<dofs_by_global_idx*>(&problem_ptr->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_dofs = problem_ptr->get_nb_dofs_col();
       dofs = const_cast<dofs_by_global_idx*>(&problem_ptr->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>());
       break;
@@ -4057,12 +4057,12 @@ PetscErrorCode FieldCore::set_other_local_VecCreateGhost(
   dofs_by_loc_petsc_index *dofs;
   int nb_local_dofs,nb_ghost_dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_local_dofs = problem_ptr->get_nb_local_dofs_row();
       nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_row();
       dofs = const_cast<dofs_by_loc_petsc_index*>(&problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_local_dofs = problem_ptr->get_nb_local_dofs_col();
       nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_col();
       dofs = const_cast<dofs_by_loc_petsc_index*>(&problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>());
@@ -4162,11 +4162,11 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
   dofs_by_name *dofs;
   DofIdx nb_dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_dofs = p_miit->get_nb_dofs_row();
       dofs = const_cast<dofs_by_name*>(&p_miit->numered_dofs_rows.get<FieldName_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_dofs = p_miit->get_nb_dofs_col();
       dofs = const_cast<dofs_by_name*>(&p_miit->numered_dofs_cols.get<FieldName_mi_tag>());
       break;
@@ -4463,10 +4463,10 @@ PetscErrorCode FieldCore::loop_dofs(const string &problem_name,const string &fie
   ierr = method.set_adjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   dofs_by_name *dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       dofs = const_cast<dofs_by_name*>(&p_miit->numered_dofs_rows.get<FieldName_mi_tag>());
       break;
-    case Col:
+    case COL:
       dofs = const_cast<dofs_by_name*>(&p_miit->numered_dofs_cols.get<FieldName_mi_tag>());
       break;
     default:
@@ -4589,7 +4589,7 @@ PetscErrorCode FieldCore::check_number_of_ents_in_ents_field() {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator it = moabFields.get<FieldName_mi_tag>().begin();
   for(;it!=moabFields.get<FieldName_mi_tag>().end();it++) {
-    if(it->get_space() == NoField) continue; //FIXME: should be treated proprly, not test is just skiped for this NoField space
+    if(it->get_space() == NOFIELD) continue; //FIXME: should be treated proprly, not test is just skiped for this NOFIELD space
     EntityHandle meshset = it->get_meshset();
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
@@ -5143,7 +5143,7 @@ PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const Bi
     }
   }
   { //remove deleted entities form cubit meshsets
-    moabCubitMeshSet_multiIndex::iterator cubit_it;
+    CubitMeshSet_multiIndex::iterator cubit_it;
     cubit_it = cubit_meshsets.begin();
     for(;cubit_it!=cubit_meshsets.end();cubit_it++) {
       EntityHandle cubit_meshset = cubit_it->meshset; 
@@ -5210,10 +5210,10 @@ PetscErrorCode FieldCore::record_problem(const string& serie_name,const MoFEMPro
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
   }
   switch (rc) {
-    case Row:
+    case ROW:
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problem_ptr->numered_dofs_rows.begin(),problem_ptr->numered_dofs_rows.end()); CHKERRQ(ierr);
       break;
-    case Col:
+    case COL:
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problem_ptr->numered_dofs_cols.begin(),problem_ptr->numered_dofs_cols.end()); CHKERRQ(ierr);
       break;
     default:

@@ -82,9 +82,9 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,analysi
   ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45);
   g_TET_W = G_TET_W45;
 
-  propeties_from_BlockSet_Mat_ElasticSet = false;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-    propeties_from_BlockSet_Mat_ElasticSet = true;
+  propeties_from_BLOCKSET_MAT_ELASTICSET = false;
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+    propeties_from_BLOCKSET_MAT_ELASTICSET = true;
   }
 
 }
@@ -97,9 +97,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
   *_mu = mu;
   *_thermal_expansion = thermal_expansion;
 
-  if(propeties_from_BlockSet_Mat_ElasticSet) {
+  if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
     EntityHandle ent = fe_ptr->get_ent();
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
 
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);

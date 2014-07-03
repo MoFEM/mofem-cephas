@@ -65,7 +65,7 @@ struct ThermalElement {
   map<int,BlockData> setOfBlocks;
 
   struct FluxData {
-    heatflux_cubit_bc_data dAta;
+    HeatfluxCubitBcData dAta;
     Range tRis;
   };
   map<int,FluxData> setOfFluxes;
@@ -518,7 +518,7 @@ struct ThermalElement {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       ierr = mField.set_other_local_VecCreateGhost(
-	problem_ptr,tempName,rateName,Row,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	problem_ptr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -550,7 +550,7 @@ struct ThermalElement {
       PetscErrorCode ierr;
 
       ierr = mField.set_global_VecCreateGhost(
-	problem_ptr,Row,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	problem_ptr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
       BitRefLevel proble_bit_level = problem_ptr->get_BitRefLevel();
       ierr = mField.record_begin(seriesName); CHKERRQ(ierr);
@@ -583,7 +583,7 @@ struct ThermalElement {
     //takes skin of block of entities
     Skinner skin(&mField.get_moab());
     // loop over all blocksets and get data which name is FluidPressure
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ThermalSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
 
       Mat_Thermal temp_data;
       ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);  
@@ -613,7 +613,7 @@ struct ThermalElement {
     }
     ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|HeatfluxSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
       ierr = it->get_cubit_bc_data_structure(setOfFluxes[it->get_msId()].dAta); CHKERRQ(ierr);
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
@@ -621,7 +621,7 @@ struct ThermalElement {
 
     //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
     //not elegant, but good enough
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->get_Cubit_name().compare(0,9,"HEAT_FLUX") == 0) {
 	vector<double> data;
 	ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);

@@ -62,7 +62,7 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
   typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dof_iterator;
 
   Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   //crack_front_edges = intersect(crack_front_edges,mesh_level_edges);
   Range crack_front_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
@@ -240,7 +240,7 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
 PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(const BitRefLevel bit_mesh) {
   PetscFunctionBegin;
   Range crack_surface;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surface,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surface,true); CHKERRQ(ierr);
   if(bit_mesh.any()) {
     Range mesh_level_tris;
     ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr); 
@@ -287,7 +287,7 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
 
 
   Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   Range crack_front_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
   Skinner skin(&mField.get_moab());
@@ -430,7 +430,7 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
 PetscErrorCode FaceSplittingTools::calculateDistanceCrackFrontNodesFromCrackSurface(double alpha,int verb) {
   PetscFunctionBegin;
   Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   crack_front_edges = intersect(crack_front_edges,mesh_level_edges);
   Range crack_front_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
@@ -466,7 +466,7 @@ PetscErrorCode FaceSplittingTools::getOpositeForntEdges(bool createMeshset,int v
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
 
   Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   crack_front_edges = intersect(crack_front_edges,mesh_level_edges);
   if(crack_front_edges.empty()) {
     EntityHandle out_meshset;
@@ -475,7 +475,7 @@ PetscErrorCode FaceSplittingTools::getOpositeForntEdges(bool createMeshset,int v
     rval = mField.get_moab().write_file("debug_error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     Range crack_surface;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surface,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surface,true); CHKERRQ(ierr);
     rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     rval = mField.get_moab().add_entities(out_meshset,crack_surface); CHKERR_PETSC(rval);
     rval = mField.get_moab().write_file("debug_error_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
@@ -497,7 +497,7 @@ PetscErrorCode FaceSplittingTools::getOpositeForntEdges(bool createMeshset,int v
 
   //crack surface faces->nodes->edges;
   Range crack_surface;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surface,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surface,true); CHKERRQ(ierr);
   Range crack_surface_nodes;
   rval = mField.get_moab().get_connectivity(crack_surface,crack_surface_nodes,true); CHKERR_PETSC(rval);
   Range crack_surface_edges;
@@ -543,7 +543,7 @@ PetscErrorCode FaceSplittingTools::getCrackFrontEntities(bool createMeshset,bool
 
   //get crack front faces, that is edges->nodes->tets
   Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   crack_front_edges = intersect(crack_front_edges,mesh_level_edges); //only edges on problem level
   Range crack_front_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
@@ -560,7 +560,7 @@ PetscErrorCode FaceSplittingTools::getCrackFrontEntities(bool createMeshset,bool
   Range common_tets = intersect(crack_front_edges_nodes_tets,opposite_crack_front_edges_tets);
 
   Range crack_surface;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surface,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surface,true); CHKERRQ(ierr);
   crack_surface = intersect(crack_surface,mesh_level_tris);
   Range crack_surface_nodes;
   rval = mField.get_moab().get_connectivity(crack_surface,crack_surface_nodes,true); CHKERR_PETSC(rval);
@@ -802,7 +802,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 
   //crack fornt edges
   Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   //front nodes
   Range crack_front_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
@@ -823,7 +823,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
 
   //crack surface faces edges tets
   Range crack_surface;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surface,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surface,true); CHKERRQ(ierr);
   Range crack_surface_edges;
   rval = mField.get_moab().get_adjacencies(crack_surface,1,false,crack_surface_edges,Interface::UNION); CHKERR_PETSC(rval);
   crack_surface_edges = subtract(crack_surface_edges,crack_front_edges);
@@ -1313,7 +1313,7 @@ PetscErrorCode FaceSplittingTools::selectCrackFaces(bool createMeshset,int verb)
     rval = mField.get_moab().create_meshset(MESHSET_SET,selectedCrackFaces); CHKERR_PETSC(rval);
   }
   Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   Range crack_front_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
   //
@@ -1397,7 +1397,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
       ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
 
       Range crack_edges;
-      ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_edges,true); CHKERRQ(ierr);
+      ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_edges,true); CHKERRQ(ierr);
       Range crack_edges_nodes;
       rval = mField.get_moab().get_connectivity(crack_edges,crack_edges_nodes,true); CHKERR_PETSC(rval);
 
@@ -1498,7 +1498,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
     ierr = mField.seed_finite_elements(bit_meshset); CHKERRQ(ierr);
 
     EntityHandle meshset_interface;
-    ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset_interface); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_meshset(200,SIDESET,meshset_interface); CHKERRQ(ierr);
     ierr = mField.get_msId_3dENTS_sides(meshset_interface,current_ref,true,verb); CHKERRQ(ierr);
 
     int last_ref_bit = meshRefineBitLevels.back();
@@ -1676,7 +1676,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 PetscErrorCode FaceSplittingTools::addNewSurfaceFaces_to_Cubit_msId200() {
   PetscFunctionBegin;
   EntityHandle meshset200;
-  ierr = mField.get_Cubit_msId_meshset(200,SideSet,meshset200); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_meshset(200,SIDESET,meshset200); CHKERRQ(ierr);
   Range new_crack_surface_faces;
   rval = mField.get_moab().get_entities_by_type(selectedCrackFaces,MBTRI,new_crack_surface_faces,false); CHKERR_PETSC(rval);
   rval = mField.get_moab().add_entities(meshset200,new_crack_surface_faces); CHKERR_PETSC(rval);
@@ -1690,17 +1690,17 @@ PetscErrorCode FaceSplittingTools::addcrackFront_to_Cubit201() {
   Range outer_surface_skin_edges;
   rval = mField.get_moab().get_adjacencies(outer_surface_skin,1,false,outer_surface_skin_edges,Interface::UNION); CHKERR_PETSC(rval);
   Range crack_surface_tris;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SideSet,2,crack_surface_tris,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surface_tris,true); CHKERRQ(ierr);
   crack_surface_tris = intersect(crack_surface_tris,mesh_level_tris);
   Range crack_surface_tris_skin_edges;
   rval = skin.find_skin(0,crack_surface_tris,false,crack_surface_tris_skin_edges); CHKERR(rval);
   crack_surface_tris_skin_edges = subtract(crack_surface_tris_skin_edges,outer_surface_skin_edges);
-  if(mField.check_msId_meshset(201,SideSet)) {
-    ierr = mField.delete_Cubit_msId(SideSet,201); CHKERRQ(ierr);
+  if(mField.check_msId_meshset(201,SIDESET)) {
+    ierr = mField.delete_Cubit_msId(SIDESET,201); CHKERRQ(ierr);
   }
-  ierr = mField.add_Cubit_msId(SideSet,201); CHKERRQ(ierr);
+  ierr = mField.add_Cubit_msId(SIDESET,201); CHKERRQ(ierr);
   EntityHandle meshset201;
-  ierr = mField.get_Cubit_msId_meshset(201,SideSet,meshset201); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_meshset(201,SIDESET,meshset201); CHKERRQ(ierr);
   ierr = mField.get_moab().add_entities(meshset201,crack_surface_tris_skin_edges); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1713,7 +1713,7 @@ PetscErrorCode FaceSplittingTools::projectCrackFrontNodes() {
   typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dof_iterator;
   //
   Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   Range crack_front_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
   Range::iterator nit = crack_front_edges_nodes.begin();

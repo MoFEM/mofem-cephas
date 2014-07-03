@@ -66,12 +66,12 @@ struct NeummanForcesSurface {
     mField(m_field),fe(m_field) {}
 
   struct bCForce {
-    force_cubit_bc_data data;
+    ForceCubitBcData data;
     Range tRis;
   };
   map<int,bCForce> mapForce;
   struct bCPreassure {
-    pressure_cubit_bc_data data;
+    PressureCubitBcData data;
     Range tRis;
   };
   map<int,bCPreassure> mapPreassure;
@@ -274,7 +274,7 @@ struct NeummanForcesSurface {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_Cubit_msId(ms_id,NodeSet,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERR_PETSC(rval);
     fe.get_op_to_do_Rhs().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp));
@@ -286,7 +286,7 @@ struct NeummanForcesSurface {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_Cubit_msId(ms_id,SideSet,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
     fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
@@ -298,7 +298,7 @@ struct NeummanForcesSurface {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_Cubit_msId(ms_id,SideSet,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
     fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassureFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
@@ -329,7 +329,7 @@ struct MetaNeummanForces {
     }
     ierr = mField.modify_problem_add_finite_element(problem_name,"FORCE_FE"); CHKERRQ(ierr);
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
@@ -343,7 +343,7 @@ struct MetaNeummanForces {
       ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
     }
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
       ierr = mField.modify_problem_add_finite_element(problem_name,"PRESSURE_FE"); CHKERRQ(ierr);
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
@@ -361,19 +361,19 @@ struct MetaNeummanForces {
     string fe_name;
     fe_name = "FORCE_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
       ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
-      /*force_cubit_bc_data data;
+      /*ForceCubitBcData data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/
     }
     fe_name = "PRESSURE_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
       bool ho_geometry = mField.check_field(mesh_nodals_positions);
       ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
-      /*pressure_cubit_bc_data data;
+      /*PressureCubitBcData data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/
@@ -398,7 +398,7 @@ struct MetaNeummanForces {
       ierr = mField.modify_finite_element_add_field_data("FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
     }
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
       ierr = mField.modify_problem_add_finite_element(problem_name,"FLUX_FE"); CHKERRQ(ierr);
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
@@ -417,10 +417,10 @@ struct MetaNeummanForces {
     string fe_name;
     fe_name = "FLUX_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
       bool ho_geometry = mField.check_field(mesh_nodals_positions);
       ierr = neumann_forces.at(fe_name).addFlux(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
-      /*pressure_cubit_bc_data data;
+      /*PressureCubitBcData data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/

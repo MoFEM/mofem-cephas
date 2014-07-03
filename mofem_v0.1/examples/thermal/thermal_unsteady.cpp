@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec T;
   ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
   Mat A;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
 
     ierr = mField.load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-    ierr = mField.set_local_VecCreateGhost("THERMAL_PROBLEM",Row,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField,"TEMP",true,false,"TEMP");
     ent_method_on_10nodeTet.set_nodes = true;

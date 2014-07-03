@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
 
   if(step == 1) {
-    Range CubitSideSets_meshsets;
-    ierr = mField.get_Cubit_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
+    Range CubitSIDESETs_meshsets;
+    ierr = mField.get_Cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
 
     //ref meshset ref level 0
     ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     //Fields
     ierr = mField.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
     ierr = mField.add_field("TEMPERATURE",H1,1); CHKERRQ(ierr);
-    ierr = mField.add_field("LAMBDA",NoField,1); CHKERRQ(ierr);
+    ierr = mField.add_field("LAMBDA",NOFIELD,1); CHKERRQ(ierr);
 
     //Field for ArcLength
     ierr = mField.add_field("X0_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
@@ -270,13 +270,13 @@ int main(int argc, char *argv[]) {
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.25;
-  Range NodeSet1;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,NodeSet1,true); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NodeSet 1 : %u\n",NodeSet1.size());
+  Range NODESET1;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(1,NODESET,0,NODESET1,true); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in NODESET 1 : %u\n",NODESET1.size());
 
   ArcElasticThermalFEMethod MyFE(mField,&myDirihletBC,
     LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),
-    ArcCtx,NodeSet1);
+    ArcCtx,NODESET1);
 
   ArcLengthElemFEMethod* MyArcMethod_ptr = new ArcLengthElemFEMethod(moab,ArcCtx);
   ArcLengthElemFEMethod& MyArcMethod = *MyArcMethod_ptr;

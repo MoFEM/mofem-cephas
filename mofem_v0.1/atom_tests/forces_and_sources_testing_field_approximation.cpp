@@ -149,8 +149,8 @@ int main(int argc, char *argv[]) {
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
   Vec D,F;
-  ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("TEST_PROBLEM",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
 
   {
   MyFunApprox function_evaluator;
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);

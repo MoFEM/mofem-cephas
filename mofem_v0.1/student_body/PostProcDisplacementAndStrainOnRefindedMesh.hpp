@@ -290,7 +290,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
   ublas::matrix<double> D,D_lambda,D_mu;
 
   Tag th_stress,th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3,th_prin_stress_vals;
-  bool propeties_from_BlockSet_Mat_ElasticSet;
+  bool propeties_from_BLOCKSET_MAT_ELASTICSET;
 	
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(
     FieldInterface& _mField, string _field_name,double _lambda,double _mu): 
@@ -317,9 +317,9 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
     }
     //    D = lambda*D_lambda + mu*D_mu;
     
-    propeties_from_BlockSet_Mat_ElasticSet = false;
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-      propeties_from_BlockSet_Mat_ElasticSet = true;
+    propeties_from_BLOCKSET_MAT_ELASTICSET = false;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+      propeties_from_BLOCKSET_MAT_ELASTICSET = true;
     }
 
 
@@ -343,9 +343,9 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
     *_mu = mu;
     
     
-    if(propeties_from_BlockSet_Mat_ElasticSet) {
+    if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
       EntityHandle ent = fe_ptr->get_ent();
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
         
         Mat_Elastic mydata;
         ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);

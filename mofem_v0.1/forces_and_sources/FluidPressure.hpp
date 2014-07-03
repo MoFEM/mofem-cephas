@@ -130,7 +130,7 @@ struct FluidPressure {
     //takes skin of block of entities
     Skinner skin(&mField.get_moab());
     // loop over all blocksets and get data which name is FluidPressure
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,bit)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
 
       if(bit->get_Cubit_name().compare(0,14,"FLUID_PRESSURE") == 0) {
 

@@ -30,7 +30,7 @@ namespace MoFEM {
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     FieldInterface& mField;
-    bool propeties_from_BlockSet_Mat_ElasticSet;
+    bool propeties_from_BLOCKSET_MAT_ELASTICSET;
 	
     ElasticFEMethod( FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _lambda,double _mu): 
       FEMethod_UpLevelStudent(_mField.get_moab(),1),mField(_mField),lambda(_lambda),mu(_mu) {
@@ -58,9 +58,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	VecSetOption(snes_f, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
       }
 
-      propeties_from_BlockSet_Mat_ElasticSet = false;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-	propeties_from_BlockSet_Mat_ElasticSet = true;
+      propeties_from_BLOCKSET_MAT_ELASTICSET = false;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+	propeties_from_BLOCKSET_MAT_ELASTICSET = true;
       }
 
     }; 
@@ -110,9 +110,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       *_mu = mu;
 
 
-      if(propeties_from_BlockSet_Mat_ElasticSet) {
+      if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
 	EntityHandle ent = fe_ptr->get_ent();
-	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
 
 	  Mat_Elastic mydata;
 	  ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);

@@ -89,12 +89,12 @@ struct ArcLengthCtx {
     dlambda(0),diag(0),dx2(0),F_lambda2(0),res_lambda(0) {
     PetscErrorCode ierr;
 
-    ierr = mField.VecCreateGhost(problem_name,Row,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.VecCreateGhost(problem_name,ROW,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     ierr = VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    ierr = mField.VecCreateGhost(problem_name,Row,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    ierr = mField.VecCreateGhost(problem_name,Row,&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    ierr = mField.VecCreateGhost(problem_name,Row,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    ierr = mField.VecCreateGhost(problem_name,Row,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.VecCreateGhost(problem_name,ROW,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.VecCreateGhost(problem_name,ROW,&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.VecCreateGhost(problem_name,ROW,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = mField.VecCreateGhost(problem_name,ROW,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
