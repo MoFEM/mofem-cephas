@@ -40,7 +40,7 @@ PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
       ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
       ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
       ierr = VecDuplicate(_x_,&CT_CCTm1_Cx); CHKERRQ(ierr);
-      ierr = mField.VecScatterCreate(x,x_problem,Row,_x_,y_problem,Col,&scatter); CHKERRQ(ierr);
+      ierr = mField.VecScatterCreate(x,x_problem,ROW,_x_,y_problem,COL,&scatter); CHKERRQ(ierr);
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
     }
     PetscFunctionReturn(0);

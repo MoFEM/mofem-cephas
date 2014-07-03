@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
     Range tets;
     rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
     ierr = mField.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
@@ -187,8 +187,8 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec F,D;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",COL,&D); CHKERRQ(ierr);
 
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
   }
   //body forces
   BodyFroceConstantField body_forces_methods(mField);
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Block_BodyForcesSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
@@ -283,11 +283,11 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
 
   //End Disp
   /*Range ents;*/
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
+  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NODESET,0,ents,true); CHKERRQ(ierr);
   //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) { 
     //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
       //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
 
   //Support stresses
   //Range ents;
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
+  //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NODESET,0,ents,true); CHKERRQ(ierr);
       
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

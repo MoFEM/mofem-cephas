@@ -117,7 +117,7 @@ struct BodyFroceConstantField {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_Cubit_msId(ms_id,BlockSet,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);     
     EntityHandle meshset = cubit_meshset_ptr->get_meshset();
     Range tets;

@@ -3,6 +3,7 @@
  *
  * It is set of objects to implement finite elements, in particular it is used
  * to implement source and force therms on right hand side. 
+ *
 */
 
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
@@ -47,18 +48,40 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+/** \brief data structure for finite element entity
+  *
+  * It keeps that about indices of degrees of freedom, dofs data, shape
+  * functions, entity side number, type of entities, approximation order, etc.
+  *
+  */
 struct DataForcesAndSurcesCore {
 
+
+  /** \brief data on single entity
+    */
   struct EntData {
 
     EntData(): sEnse(0),oRder(0) {};
     virtual ~EntData() {}
+
+    /// \brief get enetity sense, need to calulate shape functions with conforming approximation fields
     virtual int getSense() const { return sEnse; }
+
+    /// \brief get approximation order
     virtual ApproximationOrder getOrder() const { return oRder; }
+
+    /// \brief get gloabl inidces of dofs on entity
     virtual const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
+
+    /// \brief get dofs values 
     virtual const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
+
+    /// \brief get shape functions
     virtual const ublas::matrix<FieldData>& getN() const { return N; }
+
+    /// \brief get direvatives of shape fucntiosn
     virtual const ublas::matrix<FieldData>& getDiffN() const { return diffN; }
+
     virtual int& getSense() { return sEnse; }
     virtual ApproximationOrder& getOrder() { return oRder; }
     virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
@@ -95,12 +118,12 @@ struct DataForcesAndSurcesCore {
     
   };
 
-  ublas::matrix<DofIdx> facesNodes;
+  ublas::matrix<DofIdx> facesNodes; ///< nodes on finite element faces
 
-  boost::ptr_vector<EntData> nOdes;
-  boost::ptr_vector<EntData> eDges;
-  boost::ptr_vector<EntData> fAces;
-  boost::ptr_vector<EntData> vOlumes;
+  boost::ptr_vector<EntData> nOdes; ///< data on nodes, shape function, dofs values, etc.
+  boost::ptr_vector<EntData> eDges; ///< data on edges, shape function, dofs values, etc.
+  boost::ptr_vector<EntData> fAces; ///< data on faces, shape function, dofs values, etc.
+  boost::ptr_vector<EntData> vOlumes; ///< data on volume, shape function, dofs values, etc.
 
   DataForcesAndSurcesCore(EntityType type);
   virtual ~DataForcesAndSurcesCore() {}
@@ -112,6 +135,16 @@ struct DataForcesAndSurcesCore {
 
 };
 
+/** \brief this class derive data form other dats strucrure
+  *
+  *
+  * It behavies like normal data struture it is used to share infromation with
+  * other data strutures abot shape functons. Dofs values, approx. order and
+  * incices are not shared.
+  *
+  * shape functions, senses are shared with other data structure.
+  *
+  */
 struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
   struct DerivedEntData: public DataForcesAndSurcesCore::EntData {
@@ -143,6 +176,7 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
 };
 
+/// \brief base clas to get information form mofem and but them into DataForcesAndSurcesCore
 struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
   FieldInterface& mField;
@@ -223,8 +257,11 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
 };
 
+/// \brief base operator to do operations at Gauss Pt. leve
 struct DataOperator {
 
+  /** \brief operator for linear form, usaully to calulate values on right hand side
+    */
   virtual PetscErrorCode doWork(
     int row_side,int col_side,
     EntityType row_type,EntityType col_type,
@@ -236,6 +273,8 @@ struct DataOperator {
   }
   PetscErrorCode opSymmetric(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data);
 
+  /** \brief operator for linear form, usaully to calulate values on left hand side
+    */
   virtual PetscErrorCode doWork(
     int side,
     EntityType type,
@@ -249,6 +288,7 @@ struct DataOperator {
 
 };
 
+/// \brief operator on Gauss pts level, calulates inverse of Jacobian
 struct OpSetInvJac: public DataOperator {
 
   ublas::matrix<double> &invJac;
@@ -260,6 +300,8 @@ struct OpSetInvJac: public DataOperator {
 
 };
 
+/** \brief operator on Gauss pts level, calulates inverse of Jacobian for higher order geometry approximation
+  */
 struct OpSetHoInvJac: public DataOperator {
 
   ublas::matrix<double> &invHoJac;
@@ -271,6 +313,8 @@ struct OpSetHoInvJac: public DataOperator {
  
 };
 
+/** \brief operator to calculate function values and its gradients at Gauss points
+  */
 struct OpGetData: public DataOperator {
 
   ublas::matrix<FieldData> &data_at_GaussPt;
@@ -332,6 +376,21 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
 
+  /** \brief it is used to calulate nb. of Gauss integartion points
+   *
+   * for more details pleas look 
+   *   Reference:
+   *
+   * Albert Nijenhuis, Herbert Wilf,
+   * Combinatorial Algorithms for Computers and Calculators,
+   * Second Edition,
+   * Academic Press, 1978,
+   * ISBN: 0-12-519260-6,
+   * LC: QA164.N54.
+   *
+   * More details about algorithm 
+   * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
+  **/
   virtual int getRule(int order) { return order; };
 
   struct UserDataOperator: public DataOperator {
@@ -389,6 +448,8 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   
 };
 
+/** \brief calulate normals at Gauss points of triangle element
+  */
 struct OpGetNormals: public DataOperator {
 
   ublas::matrix<FieldData> &nOrmals_at_GaussPt;

@@ -11,7 +11,7 @@ cubit.cmd('volume all size auto factor 10')
 cubit.cmd('volume all scheme tetmesh')
 cubit.cmd('mesh volume all')
 
-#apply BlockSets, SideSets, NodeSets 
+#apply BLOCKSETs, SIDESETs, NODESETs 
 cubit.cmd('set duplicate block elements on') 
 cubit.cmd('block 1 volume 1') 
 cubit.cmd('block 2 volume 2') 

@@ -74,9 +74,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     Vec GhostU,GhostK;
     Vec u_by_row;
 
-    bool linear_problem;
-    bool true_if_stiffnes_matrix_is_calulated;
-
     DynamicElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec& _F,double _lambda,double _mu,double _rho): 
       ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu),
       fe_post_proc_method(_mField,"DISPLACEMENT",_lambda,_mu),rho(_rho),debug(1){
@@ -90,10 +87,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostK);
       }
 
-      mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&u_by_row);
-
-      linear_problem = true;
-      true_if_stiffnes_matrix_is_calulated = false;
+      mField.VecCreateGhost("ELASTIC_MECHANICS",ROW,&u_by_row);
 
     };
   
@@ -280,11 +274,11 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
 	    PetscPrintf(PETSC_COMM_WORLD,
 	      "\tsteps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
-	    ierr = mField.set_global_VecCreateGhost(problem_ptr->get_name(),Col,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	    ierr = mField.set_local_VecCreateGhost(problem_ptr->get_name(),Row,u_by_row,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    ierr = mField.set_global_VecCreateGhost(problem_ptr->get_name(),COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = mField.set_local_VecCreateGhost(problem_ptr->get_name(),ROW,u_by_row,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    //NumeredDofMoFEMEntity_multiIndex &numered_dofs_cols = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_cols);
-	    /*Range::iterator nit = SideSet2Nodes.begin();
-	    for(;nit!=SideSet2Nodes.end();nit++) {
+	    /*Range::iterator nit = SIDESET2Nodes.begin();
+	    for(;nit!=SIDESET2Nodes.end();nit++) {
 	      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
 	      dit = numered_dofs_cols.get<MoABEnt_mi_tag>().lower_bound(*nit);
 	      hi_dit = numered_dofs_cols.get<MoABEnt_mi_tag>().upper_bound(*nit);
@@ -317,9 +311,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    break;
 	  case ctx_TSSetRHSJacobian:
 	  case ctx_TSSetIJacobian:
-	    if( (!true_if_stiffnes_matrix_is_calulated)||(!linear_problem) ) {
-	      ierr = MatZeroEntries(*ts_B); CHKERRQ(ierr);
-	    }
+	    ierr = MatZeroEntries(*ts_B); CHKERRQ(ierr);
 	    break;
 	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
@@ -403,11 +395,8 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    break;
 	  case ctx_TSSetRHSJacobian:
 	  case ctx_TSSetIJacobian: {
-	    if( (!true_if_stiffnes_matrix_is_calulated)||(!linear_problem) ) {
-	      ierr = MatAssemblyBegin(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	      ierr = MatAssemblyEnd(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	      true_if_stiffnes_matrix_is_calulated = true;
-	    }
+	    ierr = MatAssemblyBegin(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	    ierr = MatAssemblyEnd(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	    *ts_flag = SAME_NONZERO_PATTERN; 
 	    //Matrix View
 	    //MatView(*ts_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
@@ -466,23 +455,19 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    ierr = Fint(ts_F); CHKERRQ(ierr);
 	  } break;
 	  case ctx_TSSetIJacobian: {
-	    if( (!true_if_stiffnes_matrix_is_calulated)||(!linear_problem) ) {
-
-	      ierr = Stiffness(); CHKERRQ(ierr);
-	      for(int rr = 0;rr<row_mat;rr++) {
-		if(RowGlob[rr].size()==0) continue;
-		for(int cc = rr;cc<col_mat;cc++) {
-		  if(ColGlob[cc].size()==0) continue;
-		  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		  ierr = MatSetValues(*ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
-		  if(cc!=rr) {
-		    K(cc,rr) = trans(K(rr,cc));
-		    ierr = MatSetValues(*ts_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
-		  }
+	    ierr = Stiffness(); CHKERRQ(ierr);
+	    for(int rr = 0;rr<row_mat;rr++) {
+	      if(RowGlob[rr].size()==0) continue;
+	      for(int cc = rr;cc<col_mat;cc++) {
+		if(ColGlob[cc].size()==0) continue;
+		if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		ierr = MatSetValues(*ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+		if(cc!=rr) {
+		  K(cc,rr) = trans(K(rr,cc));
+		  ierr = MatSetValues(*ts_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
 		}
 	      }
-
 	    }
 	    } break;
   	  default:
@@ -514,16 +499,12 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    }
 	  } break;
 	  case ctx_TSSetIJacobian: {
-	    if( (!true_if_stiffnes_matrix_is_calulated)||(!linear_problem) ) {
-
-	      for(int rr = 0;rr<row_mat;rr++) {
-		if(RowGlob[rr].size()==0) continue;
-		if(RowGlob[rr].size()!=Mass[rr].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		if(VelColGlob.size()!=Mass[rr].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		Mass[rr] *= ts_a;
-		ierr = MatSetValues(*ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],VelColGlob.size(),&VelColGlob[0],&(Mass[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
-	      }
-
+	    for(int rr = 0;rr<row_mat;rr++) {
+	      if(RowGlob[rr].size()==0) continue;
+	      if(RowGlob[rr].size()!=Mass[rr].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      if(VelColGlob.size()!=Mass[rr].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      Mass[rr] *= ts_a;
+	      ierr = MatSetValues(*ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],VelColGlob.size(),&VelColGlob[0],&(Mass[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
 	    }
 	  } break;
   	  default:
@@ -573,13 +554,9 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    ierr = VecSetValues(ts_F,VelRowGlob.size(),&VelRowGlob[0],&(VVu.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	  } break;
 	  case ctx_TSSetIJacobian: {
-	    if( (!true_if_stiffnes_matrix_is_calulated)||(!linear_problem) ) {
-
-	      if(VelRowGlob.size()!=VV.size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	      if(VelColGlob.size()!=VV.size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	      ierr = MatSetValues(*ts_B,VelRowGlob.size(),&(VelRowGlob)[0],VelColGlob.size(),&VelColGlob[0],&(VV.data())[0],ADD_VALUES); CHKERRQ(ierr);
-
-	    }
+	    if(VelRowGlob.size()!=VV.size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    if(VelColGlob.size()!=VV.size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    ierr = MatSetValues(*ts_B,VelRowGlob.size(),&(VelRowGlob)[0],VelColGlob.size(),&VelColGlob[0],&(VV.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  } break;
   	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
@@ -607,15 +584,12 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    }
 	  } break;
 	  case ctx_TSSetIJacobian: {
-	    if( (!true_if_stiffnes_matrix_is_calulated)||(!linear_problem) ) {
-	      for(int cc = 0;cc<col_mat;cc++) {
-		if(ColGlob[cc].size()==0) continue;
-		if(VelRowGlob.size()!=VU[cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		if(ColGlob[cc].size()!=VU[cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		VU[cc] *= ts_a;
-		ierr = MatSetValues(*ts_B,VelRowGlob.size(),&(VelRowGlob)[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(VU[cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
-	      }
-
+	    for(int cc = 0;cc<col_mat;cc++) {
+	      if(ColGlob[cc].size()==0) continue;
+	      if(VelRowGlob.size()!=VU[cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      if(ColGlob[cc].size()!=VU[cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	      VU[cc] *= ts_a;
+	      ierr = MatSetValues(*ts_B,VelRowGlob.size(),&(VelRowGlob)[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(VU[cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
 	    }
 	  } break;
   	  default:

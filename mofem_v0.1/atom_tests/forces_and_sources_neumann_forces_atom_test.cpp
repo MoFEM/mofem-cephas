@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(root_set,"DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
 
     ostringstream fe_name;
     fe_name << "FORCE_FE_" << it->get_msId();
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
 
     ostringstream fe_name;
     fe_name << "PRESSURE_FE_" << it->get_msId();
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -173,24 +173,24 @@ int main(int argc, char *argv[]) {
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
     ostringstream fe_name;
     fe_name << "FORCE_FE_" << it->get_msId();
     string fe_name_str = fe_name.str();
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
-    force_cubit_bc_data data;
+    ForceCubitBcData data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
   }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     ostringstream fe_name;
     fe_name << "PRESSURE_FE_" << it->get_msId();
     string fe_name_str = fe_name.str();
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
-    pressure_cubit_bc_data data;
+    PressureCubitBcData data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Row,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   const double eps = 1e-4;
 

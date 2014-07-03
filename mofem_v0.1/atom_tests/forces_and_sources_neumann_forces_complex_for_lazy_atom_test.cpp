@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data(fe_name.str(),"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM",fe_name.str()); CHKERRQ(ierr);
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
 
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&Aij); CHKERRQ(ierr);
 
@@ -174,16 +174,16 @@ int main(int argc, char *argv[]) {
   NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE &feMaterial = neumann_forces.getLoopMaterialFe();
 
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|ForceSet,it)) {
-    force_cubit_bc_data data;
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
+    ForceCubitBcData data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
     ierr = feSpatial.addForce(it->get_msId()); CHKERRQ(ierr);
     ierr = feMaterial.addForce(it->get_msId()); CHKERRQ(ierr);
   }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|PressureSet,it)) {
-    pressure_cubit_bc_data data;
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
+    PressureCubitBcData data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Row,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = MatZeroEntries(Aij);  CHKERRQ(ierr);
   feSpatial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetJacobian;

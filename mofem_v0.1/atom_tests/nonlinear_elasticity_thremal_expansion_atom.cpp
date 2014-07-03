@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
   FieldCore core(moab);
   FieldInterface& mField = core;
 
-  Range CubitSideSets_meshsets;
-  ierr = mField.get_Cubit_meshsets(SideSet,CubitSideSets_meshsets); CHKERRQ(ierr);
+  Range CubitSIDESETs_meshsets;
+  ierr = mField.get_Cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);

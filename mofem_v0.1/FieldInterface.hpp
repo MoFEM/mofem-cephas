@@ -7,7 +7,7 @@
  * \section Introduction
  *
  * This is database for Finite Element System build on the MOAB
- * <https://trac.mcs.anl.gov/projects/ITAPS/wiki/MOAB>.  It is tailored to keep
+ * <http://sigma.mcs.anl.gov/?page_id=797>.  It is tailored to keep
  * data for multiphisc problem with arbitray level of approximation and
  * diffrent levels of mesh refinments.  
  *
@@ -86,33 +86,33 @@ struct FieldInterface {
   /** 
     * \brief check for CUBIT Id and CUBIT type
     *
-    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+    * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
+    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     */
-  virtual bool check_msId_meshset(const int msId,const Cubit_BC_bitset CubitBCType) = 0;
+  virtual bool check_msId_meshset(const int msId,const CubitBC_BitSet CubitBCType) = 0;
 
   /**
     * \brief add cubit meshset
     *
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
-    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
+    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+    * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     *
     */
-  virtual PetscErrorCode add_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId) = 0;
+  virtual PetscErrorCode add_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId) = 0;
 
   /**
     * \brief delete cubit meshset
     *
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
-    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
+    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+    * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     *
     */
-  virtual PetscErrorCode delete_Cubit_msId(const Cubit_BC_bitset CubitBCType,const int msId) = 0;
+  virtual PetscErrorCode delete_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId) = 0;
 
   /** 
     * \brief get cubit meshset
     */
-  virtual PetscErrorCode get_Cubit_msId(const int msId,const Cubit_BC_bitset CubitBCType,const CubitMeshSets **cubit_meshset_ptr) = 0;
+  virtual PetscErrorCode get_Cubit_msId(const int msId,const CubitBC_BitSet CubitBCType,const CubitMeshSets **cubit_meshset_ptr) = 0;
 
   /** 
     * \brief get entities from CUBIT/meshset of a particular entity dimension \n
@@ -122,8 +122,8 @@ struct FieldInterface {
 	  * one should get all triangles or tetrahedrals for which the nodeset was create in Cubit,\n
 	  * and get all the connectivities of tris/tets.
 		*
-    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+    * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
+    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 - Volume(tetrahedral))
     * \param Range containing the retreived entities
     * \param recursive If true, meshsets containing meshsets are queried recursively. Returns the contents of meshsets, but not the meshsets themselves if true.
@@ -132,11 +132,11 @@ struct FieldInterface {
 
   /** 
     * \brief get entities related to CUBIT/meshset, \n
-	  * NodeSet will get Vertices only, even if the NodeSet contains egdes, tris and tets\n
-    * SideSet will get Tris, BlockSet will get Tets, DisplacementSet and ForceSet are stored in NodeSet, PressureSet is stored in Sideset.
+	  * NODESET will get Vertices only, even if the NODESET contains egdes, tris and tets\n
+    * SIDESET will get Tris, BLOCKSET will get Tets, DISPLACEMENTSET and FORCESET are stored in NODESET, PRESSURESET is stored in Sideset.
 	  *
-    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+    * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
+    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param Range containing the retreived entities related to the CubitBCType
     * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
     */
@@ -145,8 +145,8 @@ struct FieldInterface {
   /** 
     * \brief get meshset from CUBIT Id and CUBIT type
     *
-    * \param msId id of the BlockSet/SideSet/BlockSet: from CUBIT
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+    * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
+    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param meshset where to store the retreived entities
     */
   virtual PetscErrorCode get_Cubit_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) = 0;
@@ -154,7 +154,7 @@ struct FieldInterface {
   /** 
     * \brief get all CUBIT meshsets by CUBIT type
     *
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more). 
+    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more). 
     * \param meshsets is range of meshsets
     */
   virtual PetscErrorCode get_Cubit_meshsets(const unsigned int CubitBCType,Range &meshsets) = 0;
@@ -167,7 +167,7 @@ struct FieldInterface {
     * }
     *
     */
-  virtual moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() = 0;
+  virtual CubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() = 0;
 
    /** 
     * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
@@ -177,7 +177,7 @@ struct FieldInterface {
     * }
     *
     */
-  virtual moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() = 0;
+  virtual CubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() = 0;
     
     /**
      * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
@@ -187,97 +187,178 @@ struct FieldInterface {
      */
 
   #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,IT) \
-    moabCubitMeshSet_multiIndex::iterator IT = MFIELD.get_CubitMeshSets_begin(); IT!=MFIELD.get_CubitMeshSets_end(); IT++
+    CubitMeshSet_multiIndex::iterator IT = MFIELD.get_CubitMeshSets_begin(); IT!=MFIELD.get_CubitMeshSets_end(); IT++
 
   /** 
     * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
     * 	...
     * }
     *
-    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) = 0;
 
   /** 
     * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NodeSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET,it) {
     * 	...
     * }
     *
-    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) = 0;
     
     /**
     * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
     *
     * \param mField moFEM Field
-    * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param iterator 
     */
 
   #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-    moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_begin(CUBITBCTYPE); \
+    CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_begin(CUBITBCTYPE); \
     IT!=MFIELD.get_CubitMeshSets_end(CUBITBCTYPE); IT++
 
   /** 
     * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
     * 	...
     * }
     *
-    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) = 0;
 
   /** 
     * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     *
-    * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it) {
+    * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
     * 	...
     * }
     *
-    * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) = 0;
     
     /**
      * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
      *
      * \param mField moFEM Field
-     * \param CubitBCType see Cubit_BC (NodeSet, SideSet or BlockSet and more) 
+     * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
      * \param iterator 
      *
      * Example: \code
-       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet|DisplacementSet,it) {
+       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
       	...
      * } \endcode
      */
 
   #define _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-    moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
+    CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
     IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
 
 
-  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) = 0;
-  virtual moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) = 0;
 
   #define _IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MFIELD.get_CubitMeshSets_byName_begin(NAME); \
+    CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MFIELD.get_CubitMeshSets_byName_begin(NAME); \
     IT!=MFIELD.get_CubitMeshSets_byName_end(NAME); IT++
 
   virtual PetscErrorCode print_cubit_displacement_set() = 0;
   virtual PetscErrorCode print_cubit_pressure_set() = 0;
   virtual PetscErrorCode print_cubit_force_set() = 0;
-  virtual PetscErrorCode printCubitTemperatureSet() = 0;
+  virtual PetscErrorCode printCubitTEMPERATURESET() = 0;
   virtual PetscErrorCode printCubitHeatFluxSet() = 0;
   virtual PetscErrorCode print_cubit_materials_set() = 0;
 
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
+
+  /**
+  * Add series recorder 
+  *
+  * \param name of series
+  */
+  virtual PetscErrorCode add_series_recorder(const string& serie_name) = 0;
+
+  /**
+  * initialize sries for recording
+  *
+  * \param series name
+  */
+  virtual PetscErrorCode initialize_series_recorder(const string& serie_name) = 0;
+
+  /**
+  * finalize series for recording, recorded data are not accessible until finializd
+  *
+  * \param series name
+  */
+  virtual PetscErrorCode finalize_series_recorder(const string& serie_name) = 0;
+
+  /**
+  * begin series recording
+  * 
+  * \param series name
+  */
+  virtual PetscErrorCode record_begin(const string& serie_name) = 0;
+
+  /**
+  * record problem 
+  *
+  * \param series name
+  * \param problem pointer
+  * \param rc could be Row or Col
+  */
+  virtual PetscErrorCode record_problem(const string& serie_name,const MoFEMProblem *problem_ptr,RowColData rc) = 0;
+
+  /**
+  * record problem
+  *
+  * \param series name
+  * \param problem name
+  * \param rc could be Row or Col
+  */
+  virtual PetscErrorCode record_problem(const string& serie_name,const string& problem_name,RowColData rc) = 0;
+
+  /**
+  * record field
+  * 
+  * \param field name
+  * \param bit ref level
+  * \param mask for bir ref level
+  */
+  virtual PetscErrorCode record_field(const string& serie_name,const string& field_name,const BitRefLevel &bit,const BitRefLevel &mask) = 0;
+
+  /**
+  * end series recording 
+  *
+  * \param series name
+  */
+  virtual PetscErrorCode record_end(const string& serie_name) = 0;
+  
+  /**
+   * load data from series into dofs database
+   * 
+   * \param series name 
+   * \param step number 
+   */
+  virtual PetscErrorCode load_series_data(const string& serie_name,const int step_number) = 0;
+
+  /** 
+  * print series
+  */
+  virtual PetscErrorCode print_series_steps() = 0;
+
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const string& name) = 0;
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const string& name) = 0;
+  #define _IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator IT = MFIELD.get_series_steps_byName_begin(NAME); \
+    IT!=MFIELD.get_series_steps_byName_end(NAME); IT++
 
   /**
   * Create finite elements based from eneties in meshses. Throw error if entity is not in database
@@ -1076,6 +1157,21 @@ struct FieldInterface {
     */
   virtual PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
+ 
+  /** 
+    * \brief set values of vector from/to meshdatabase
+    *
+    * \param pointer to porblem struture
+    * \param RowColData for row or column (i.e. Row,Col)
+    * \param V vector
+    * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+    * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    *
+    * SCATTER_REVERSE set data to field entities form V vector.
+    *
+    */
+  virtual PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+
   /** 
     * \brief set values of vector from/to meshdatabase
     *
@@ -1174,13 +1270,13 @@ struct FieldInterface {
   /** \brief create two children meshsets in the meshset containing terahedrals on two sides of faces
    *
    * \param msId Id of meshset 
-   * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+   * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
    * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interfece on all bit levels
    * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode get_msId_3dENTS_sides(
     const int msId,
-    const Cubit_BC_bitset CubitBCType,
+    const CubitBC_BitSet CubitBCType,
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1) = 0;
 
@@ -1191,10 +1287,10 @@ struct FieldInterface {
    * voulume of the body, but is not on the boundary.
    * Each child set has a child contaning nodes which can be split and skin edges.
    * After that simply iterate under all tets on one side which are adjacent to the face are found.
-   * Side tets are stored in to children meshsets of the SideSet meshset.
+   * Side tets are stored in to children meshsets of the SIDESET meshset.
    */
   virtual PetscErrorCode get_msId_3dENTS_sides(
-    const EntityHandle SideSet,
+    const EntityHandle SIDESET,
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1) = 0;
 
@@ -1205,7 +1301,7 @@ struct FieldInterface {
    * \param meshset meshset to get entities from
    * \param BitRefLevel new level where refinement would be stored
    * \param msId meshset ID imported from cubit 
-   * \param CubitBCType type of meshset (NodeSet, SideSet or BlockSet and more)
+   * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
    * \param add_intefece_entities meshset which contain the interface
    * \param recursive if true parent meshset is searched recursively
    *
@@ -1224,7 +1320,7 @@ struct FieldInterface {
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
-    const int msId,const Cubit_BC_bitset CubitBCType,
+    const int msId,const CubitBC_BitSet CubitBCType,
     const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
   /**
@@ -1234,7 +1330,7 @@ struct FieldInterface {
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
-    const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
+    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
   /**
    * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
@@ -1255,7 +1351,7 @@ struct FieldInterface {
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
-    const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
+    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
 
   /**

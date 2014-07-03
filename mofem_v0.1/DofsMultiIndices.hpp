@@ -159,7 +159,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&DofMoFEMEntity::get_id>, ltbit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&DofMoFEMEntity::get_id>, LtBit<BitFieldId> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>, 
       composite_key<
@@ -239,7 +239,7 @@ typedef multi_index_container<
  *	FEDofMoFEMEntity,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,  <br>
- *	  key_from_key< <br>
+ *	  KeyFromKey< <br>
  *	    member<SideNumber,int,&SideNumber::side_number>,  <br>
  *	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
  *	  >
@@ -276,7 +276,7 @@ typedef multi_index_container<
 	FEDofMoFEMEntity,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,
-	  key_from_key<
+	  KeyFromKey<
 	    member<SideNumber,int,&SideNumber::side_number>,
 	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
 	  >
@@ -313,7 +313,7 @@ typedef multi_index_container<
  *	FEDofMoFEMEntity,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
  *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,  <br>
- *	  key_from_key< <br>
+ *	  KeyFromKey< <br>
  *	    member<SideNumber,int,&SideNumber::side_number>,  <br>
  *	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
  *	  >
@@ -350,7 +350,7 @@ typedef multi_index_container<
 	FENumeredDofMoFEMEntity,
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref>,
 	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FENumeredDofMoFEMEntity::get_ent_type>,
-	  key_from_key<
+	  KeyFromKey<
 	    member<SideNumber,int,&SideNumber::side_number>,
 	    member<FENumeredDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber*,&FENumeredDofMoFEMEntity::side_number_ptr>
 	  >

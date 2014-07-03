@@ -313,14 +313,14 @@ namespace MoFEM {
     
     int noAA;
     double *AxVector, *AxAngle;
-    bool propeties_from_BlockSet_Mat_ElasticSet;
+    bool propeties_from_BLOCKSET_MAT_ELASTICSET;
     
     TranIsotropicAxisAngleRotElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F,
                                              int _noAA, double *_AxVector, double *_AxAngle):
     ElasticFEMethod(_mField,_Aij,_D,_F,0,0), noAA(_noAA), AxVector(_AxVector), AxAngle(_AxAngle)  {
-      propeties_from_BlockSet_Mat_ElasticSet = false;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-        propeties_from_BlockSet_Mat_ElasticSet = true;
+      propeties_from_BLOCKSET_MAT_ELASTICSET = false;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+        propeties_from_BLOCKSET_MAT_ELASTICSET = true;
       }
     }
     
@@ -328,9 +328,9 @@ namespace MoFEM {
     PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
       PetscFunctionBegin;
 
-      if(propeties_from_BlockSet_Mat_ElasticSet) {
+      if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
         EntityHandle ent = fe_ptr->get_ent();
-        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
           
           if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
 
@@ -558,14 +558,14 @@ namespace MoFEM {
   struct TranIsotropicFibreDirRotElasticFEMethod: public ElasticFEMethod {
     
     Tag th_fibre_dir;
-    bool propeties_from_BlockSet_Mat_ElasticSet;
+    bool propeties_from_BLOCKSET_MAT_ELASTICSET;
     
     TranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F):
       ElasticFEMethod(_mField,_Aij,_D,_F,0,0) {
 
-      propeties_from_BlockSet_Mat_ElasticSet = false;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
-        propeties_from_BlockSet_Mat_ElasticSet = true;
+      propeties_from_BLOCKSET_MAT_ELASTICSET = false;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+        propeties_from_BLOCKSET_MAT_ELASTICSET = true;
       }
       
       double def_VAL2[3] = {0,0,0};
@@ -577,9 +577,9 @@ namespace MoFEM {
     PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
       PetscFunctionBegin;
       
-      if(propeties_from_BlockSet_Mat_ElasticSet) {
+      if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
         EntityHandle ent = fe_ptr->get_ent();
-        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
+        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
           
           if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
             
