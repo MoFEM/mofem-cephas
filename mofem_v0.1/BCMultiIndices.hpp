@@ -1,6 +1,9 @@
 /** \file BCMultiIndices.hpp
  * \brief Multi-index containers, data boundary data structures and other low-level functions
- * 
+ *
+ */ 
+
+/*
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *
  * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
@@ -68,9 +71,8 @@ struct GenericAttributeData {
 
 };
 
-/*! \struct Unknown attributes
- *  \brief Arbitrary block atributes  data structure
- */
+/** \brief Arbitrary block atributes  data structure
+  */
 struct BlockSetAttributes: public GenericAttributeData {
 
     struct __attribute__ ((packed)) _data_{
@@ -88,7 +90,7 @@ struct BlockSetAttributes: public GenericAttributeData {
     
     _data_ data;
     
-    const CubitBC_BitSet tYpe;
+    const CubitBC_BitSet type;
     const unsigned int min_number_of_atributes;
     BlockSetAttributes(): type(BLOCKSET),min_number_of_atributes(0) {};
     
@@ -193,9 +195,8 @@ struct Mat_Thermal: public GenericAttributeData {
   friend ostream& operator<<(ostream& os,const Mat_Thermal& e);
 };
 
-/*! \struct Body forces block
-*  \brief Body farce data structure
-*/
+/** \brief Body force data structure
+  */
 struct Block_BodyForces: public GenericAttributeData {
   struct __attribute__ ((packed)) _data_{
     double density; // Thermal conductivity

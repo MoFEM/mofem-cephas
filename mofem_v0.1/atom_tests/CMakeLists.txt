@@ -370,6 +370,11 @@ add_test(forces_and_sources_thermal_elem_unsteady_atom_test_compare ${CMAKE_COMM
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem_unsteady.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem_unsteady.txt)
 
+# add theraml stress eleme
+add_executable(forces_and_sources_thermal_stress_elem forces_and_sources_thermal_stress_elem.cpp)
+target_link_libraries(forces_and_sources_thermal_stress_elem mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+
 # add test for recording series
 add_executable(record_series_atom record_series_atom.cpp)
 target_link_libraries(record_series_atom mofem_Field ${PROJECT_LIBS})
@@ -378,4 +383,5 @@ add_test(record_series_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/re
 add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/record_series_atom.txt
   ${CMAKE_BINARY_DIR}/atom_tests/record_series_atom.txt)
+
 

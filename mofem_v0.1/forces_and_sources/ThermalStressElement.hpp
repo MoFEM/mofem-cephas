@@ -1,7 +1,7 @@
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  *
- * Implementation of thermal stress, i.e. right hand side as result of thermal stresses
+ * Description: Implementation of thermal stress, i.e. right hand side as result of thermal stresses
  *
  * This is not exactly procedure for linear elatic dynamics, since jacobian is
  * evaluated at every time step and snes procedure is involved. However it is
@@ -40,34 +40,32 @@ struct ThermalStressElement {
   };
 
   MyVolumeFE feThermalStressRhs;
-  MyVolumeFE& getLoopThermalStressRhs() { return ThermalStressRhs; }
+  MyVolumeFE& getLoopThermalStressRhs() { return feThermalStressRhs; }
 
   FieldInterface &mField;
   ThermalStressElement(
     FieldInterface &m_field):
-    feThermalStressRhs(m_field) {}
-
+    feThermalStressRhs(m_field), mField(m_field) {}
 
   struct BlockData {
     double youngModulus;
     double poissonRatio;
-    double heatExpansion;
+    double thermalExpansion;
     double refTemperature;
     BlockData(): refTemperature(0) {}
     Range tEts;
   };
   map<int,BlockData> setOfBlocks;
 
-
   struct CommonData {
     ublas::vector<double> temperatureAtGaussPts;
   };
   CommonData commonData;
 
-  struct OpGetRateAtGaussPts: public TetElementForcesAndSurcesCore::UserDataOperator {
+  struct OpGetTemperatureAtGaussPts: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
-    OpGetRateAtGaussPts(const string field_name,CommonData &common_data):
+    OpGetTemperatureAtGaussPts(const string field_name,CommonData &common_data):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       commonData(common_data) {}
 
@@ -106,12 +104,12 @@ struct ThermalStressElement {
   };
 
 
-  struct OpThermalRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
+  struct OpThermalStressRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     Vec F;
     BlockData &dAta;
     CommonData &commonData;
-    OpThermalRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data):
+    OpThermalStressRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),commonData(common_data) { }
 
@@ -134,21 +132,21 @@ struct ThermalStressElement {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
 
-      int nb_dofs = data.getIndices().size();
+      unsigned int nb_dofs = data.getIndices().size();
       if(nb_dofs % rank != 0) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      if(data.getN().size() <= nb_dofs/rank) {
+      if(data.getN().size2() <= nb_dofs/rank) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
 
       Nf.resize(nb_dofs);
-      bzero(&*Nf.data().begin(),data.nb_dofs*sizeof(FieldData));
+      bzero(&*Nf.data().begin(),nb_dofs*sizeof(FieldData));
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 	
-	double phi = (commonData.temperatureAtGaussPts[gg]-BlockData.refTemperature);
-	double val = temperatureAtGaussPts.heatExpansion*phi;
+	double phi = (commonData.temperatureAtGaussPts[gg]-dAta.refTemperature);
+	double val = dAta.thermalExpansion*phi;
 	val *= getVolume()*getGaussPts()(3,gg);
 
 	//eps_thermal = [val, val, val ], vector notation
@@ -157,7 +155,7 @@ struct ThermalStressElement {
 
 	double *diff_N;
 	diff_N = &data.getDiffN()(gg,0);
-	cblas_daxpy(nb_dofs,val,diff_N[rr],3,&Nf[rr],3);
+	cblas_daxpy(nb_dofs,val,diff_N,1,&Nf[0],1);
 	
       }
       
@@ -174,6 +172,60 @@ struct ThermalStressElement {
     }
 
   };
+
+  PetscErrorCode addThermalSterssElement(
+    const string problem_name,const string fe_name,const string field_name,const string thermal_field_name,
+    const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    PetscFunctionBegin;
+
+    if(mField.check_field(thermal_field_name)) {
+
+      PetscErrorCode ierr;
+      ErrorCode rval;
+
+      ierr = mField.add_finite_element(fe_name,MF_ZERO); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_row(fe_name,field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_col(fe_name,field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data(fe_name,field_name); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data(fe_name,thermal_field_name); CHKERRQ(ierr);
+      if(mField.check_field(mesh_nodals_positions)) {
+	ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
+      }
+      ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+
+	Mat_Elastic mydata;
+	ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+	setOfBlocks[it->get_msId()].youngModulus = mydata.data.Young;
+	setOfBlocks[it->get_msId()].poissonRatio = mydata.data.Poisson;
+	setOfBlocks[it->get_msId()].thermalExpansion = mydata.data.ThermalExpansion;
+	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+
+      }
+
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F) {
+    PetscFunctionBegin;
+
+    if(mField.check_field(thermal_field_name)) {
+
+      map<int,BlockData>::iterator sit = setOfBlocks.begin();
+      for(;sit!=setOfBlocks.end();sit++) {
+	//add finite elemen
+	feThermalStressRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(thermal_field_name,commonData));
+	feThermalStressRhs.get_op_to_do_Rhs().push_back(new OpThermalStressRhs(field_name,F,sit->second,commonData));
+      }
+
+    }
+
+    PetscFunctionReturn(0);
+  }
+
 
 };
 

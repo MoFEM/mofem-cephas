@@ -1,15 +1,14 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+/** \file ThermalElement.hpp 
+ * \brief Operators and data structures for thermal analys
  *
- * Implementation of thermal element for unsteady and steady case
- *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
+ * Implementation of thermal element for unsteady and steady case.
  *
  */
 
-/* This file is part of MoFEM.
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ *
+ * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -31,45 +30,86 @@
 
 namespace MoFEM {
 
+/** \brief struture grouping operators and data used for thermal problems
+  *
+  *
+  * In order to assemble matrices and right hand vectors, the loops over
+  * elements, enetities over that elememnts and finally loop over intergration
+  * points are executed.
+  *
+  * Following implementation separte those three cegories of loops and to eeach
+  * loop attach operator.
+  *
+  */
 struct ThermalElement {
 
+  /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSurcesCore {
     MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSurcesCore(_mField) {}
+    
+    /** \brief it is used to calculate nb. of Gauss integartion points
+     *
+     * for more details pleas look 
+     *   Reference:
+     *
+     * Albert Nijenhuis, Herbert Wilf,
+     * Combinatorial Algorithms for Computers and Calculators,
+     * Second Edition,
+     * Academic Press, 1978,
+     * ISBN: 0-12-519260-6,
+     * LC: QA164.N54.
+     *
+     * More details about algorithm 
+     * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
+    **/
     int getRule(int order) { return order-1; };
   };
+  
+  MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
+  MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element 
+  MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
 
-  MyVolumeFE feRhs;
-  MyVolumeFE& getLoopFeRhs() { return feRhs; }
-  MyVolumeFE feLhs;
-  MyVolumeFE& getLoopFeLhs() { return feLhs; }
-
+  /** \brief define surface element
+    *
+    * This element is used to integrate het fluxes and radiation
+    */
   struct MyTriFE: public TriElementForcesAndSurcesCore {
     MyTriFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
     int getRule(int order) { return ceil(order/2); };
   };
  
-  MyTriFE feFlux;
-  MyTriFE& getLoopFeFlux() { return feFlux; }
+  MyTriFE feFlux; //< heat flux element
+  MyTriFE& getLoopFeFlux() { return feFlux; } //< get heat flux element
 
   FieldInterface &mField;
   ThermalElement(
     FieldInterface &m_field):
     feRhs(m_field),feLhs(m_field),feFlux(m_field),mField(m_field) {}
 
-
+  /// \brief data for calulation het conductivity and heat capacity elements
   struct BlockData {
     double cOnductivity;
     double cApacity;
-    Range tEts;
-  };
-  map<int,BlockData> setOfBlocks;
+    Range tEts; ///< constatins elements in block set
+  }; 
+  map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
 
+  /// \brief data for calulation heat flux
   struct FluxData {
-    HeatfluxCubitBcData dAta;
-    Range tRis;
+    HeatfluxCubitBcData dAta; ///< for more details look to BCMultiIndices.hpp to see details of HeatfluxCubitBcData
+    Range tRis; ///< suraface triangles where hate flux is applied
   };
-  map<int,FluxData> setOfFluxes;
+  map<int,FluxData> setOfFluxes; ///< maps side set id with appropiate FluxData
 
+  /// \brief data for radiation
+  struct RadiationData {
+      // WHAT DATA ARE NEEDED FOR RADIATION // FIXME
+      Range tRis; ///< those will be on body skin, except thos with contact whith other body where temperature is applied
+  };
+  map<int,RadiationData> setOfRadiation; //< maps block set id with appropiate data
+
+  /// \brief common data used by volume elements
   struct CommonData {
     ublas::vector<double> temperatureAtGaussPts;
     ublas::vector<double> temperatureRateAtGaussPts;
@@ -77,6 +117,7 @@ struct ThermalElement {
   };
   CommonData commonData;
 
+  /// \brief operator to calulete temeperature gradient at Gauss points
   struct OpGetGradAtGaussPts: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
@@ -84,6 +125,10 @@ struct ThermalElement {
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
       commonData(common_data) {}
 
+    /** \brief operator calulating temeratire gradients
+      *
+      * temerature gradient is calculated multiplying direvatives of shape functions by degrees of freedom
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -121,32 +166,37 @@ struct ThermalElement {
 
   };
 
-  struct OpGetRateAtGaussPts: public TetElementForcesAndSurcesCore::UserDataOperator {
+  /// \brief opearator to caulate tempereature  and rate of temeperature at Gauss points
+  struct OpGetFieldAtGaussPts: public TetElementForcesAndSurcesCore::UserDataOperator {
 
-    CommonData &commonData;
-    OpGetRateAtGaussPts(const string field_name,CommonData &common_data):
+    ublas::vector<double> &fiedlAtGaussPts;
+    OpGetFieldAtGaussPts(const string field_name,ublas::vector<double> &fiedl_at_gauss_pts):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data) {}
+      fiedlAtGaussPts(fiedl_at_gauss_pts) {}
 
+    /** \brief operator calulating temererature and rate of temperature
+      *
+      * temerature temerature or rate of temperature is calculated multiplyingshape functions by degrees of freedom
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
 
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-        commonData.temperatureRateAtGaussPts.resize(data.getN().size1());
+        fiedlAtGaussPts.resize(data.getN().size1());
 	int nb_dof = data.getFieldData().size();
 
         switch(type) {
 	  case MBVERTEX:
 	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	    commonData.temperatureRateAtGaussPts[gg] 
+	    fiedlAtGaussPts[gg] 
 	      = cblas_ddot(nb_dof,&data.getN()(gg,0),1,&data.getFieldData()[0],1);
 	  }
 	  break;
 	  default:
 	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	    commonData.temperatureRateAtGaussPts[gg] 
+	    fiedlAtGaussPts[gg] 
 	      += cblas_ddot(nb_dof,&data.getN()(gg,0),1,&data.getFieldData()[0],1);
 	  }
         }
@@ -162,21 +212,40 @@ struct ThermalElement {
 
   };
 
+  /// \brief operator to calculate tempereature at Gauss pts
+  struct OpGetTemperatureAtGaussPts: public OpGetFieldAtGaussPts {
+    OpGetTemperatureAtGaussPts(const string field_name,CommonData &common_data):
+      OpGetFieldAtGaussPts(field_name,common_data.temperatureAtGaussPts) {}
+  };
 
+  /// \brief operator to calculate tempereature rate at Gauss pts
+  struct OpGetRateAtGaussPts: public OpGetFieldAtGaussPts {
+    OpGetRateAtGaussPts(const string field_name,CommonData &common_data):
+      OpGetFieldAtGaussPts(field_name,common_data.temperatureRateAtGaussPts) {}
+  };
+
+  /// \biref operator to calculate right hand side of het conductivity terms
   struct OpThermalRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
-    Vec F;
     BlockData &dAta;
     CommonData &commonData;
     bool useTsF;
-    OpThermalRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data):
-      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data),commonData(common_data),useTsF(false) { }
     OpThermalRhs(const string field_name,BlockData &data,CommonData &common_data):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(PETSC_NULL),dAta(data),commonData(common_data),useTsF(true) { }
+      dAta(data),commonData(common_data),useTsF(true) {}
+
+    Vec F;
+    OpThermalRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data):
+      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
+      dAta(data),commonData(common_data),useTsF(false),F(_F) { }
 
     ublas::vector<double> Nf;
+
+    /** \brief calculate thermal conductivity matrix
+      *
+      * F = int diffN^T k gard_T dOmega^2
+      *
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -235,20 +304,28 @@ struct ThermalElement {
 
   };
 
+  /// \biref operator to calculate left hand side of het conductivity terms
   struct OpThermalLhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
-    Mat *A;
     BlockData &dAta;
     CommonData &commonData;
-    bool useTSB;
-    OpThermalLhs(const string field_name,Mat *_A,BlockData &data,CommonData &common_data):
-      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
-      A(_A),dAta(data),commonData(common_data),useTSB(false) { }
+    bool useTsB;
     OpThermalLhs(const string field_name,BlockData &data,CommonData &common_data):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
-      A(PETSC_NULL),dAta(data),commonData(common_data),useTSB(true) { }
+      dAta(data),commonData(common_data),useTsB(true) { }
+
+    Mat *A;
+    OpThermalLhs(const string field_name,Mat *_A,BlockData &data,CommonData &common_data):
+      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
+      dAta(data),commonData(common_data),useTsB(false),A(_A) {}
 
     ublas::matrix<double> K,transK;
+
+    /** \brief calculate thermal conductivity matrix
+      *
+      * K = int diffN^T k diffN^T dOmega^2
+      *
+      */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
@@ -281,17 +358,13 @@ struct ThermalElement {
 	    val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
   
 	}
-  
-	Mat M;
-	if(useTSB) {
-	  M = *(getFEMethod()->ts_B);
-	} else {
-	  M = *A;
-	}
 
 	PetscErrorCode ierr;
+	if(!useTsB) {
+	  const_cast<FieldInterface::FEMethod*>(getFEMethod())->ts_B = A;
+	}
 	ierr = MatSetValues(
-	  M,
+	  *(getFEMethod()->ts_B),
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -299,7 +372,7 @@ struct ThermalElement {
 	  transK.resize(nb_col,nb_row);
 	  noalias(transK) = trans( K );
 	  ierr = MatSetValues(
-	    M,
+	    *(getFEMethod()->ts_B),
 	    nb_col,&col_data.getIndices()[0],
 	    nb_row,&row_data.getIndices()[0],
 	    &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -317,7 +390,7 @@ struct ThermalElement {
 
   };
 
-
+  /// \biref operator to calculate right hand side of het capacity terms
   struct OpHeatCapacityRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     BlockData &dAta;
@@ -327,6 +400,12 @@ struct ThermalElement {
       dAta(data),commonData(common_data) {}
 
     ublas::vector<double> Nf;
+
+    /** \brief calculate thermal conductivity matrix
+      *
+      * F = int N^T c (dT/dt) dOmega^2
+      *
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -362,6 +441,7 @@ struct ThermalElement {
 
   };
 
+  /// \biref operator to calculate left hand side of het capacity terms
   struct OpHeatCapacityLsh: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     BlockData &dAta;
@@ -371,6 +451,12 @@ struct ThermalElement {
       dAta(data),commonData(common_data) {}
 
     ublas::matrix<double> M,transM;
+
+    /** \brief calculate heat capacity matrix
+      *
+      * M = int N^T c N dOmega^2
+      *
+      */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
@@ -433,22 +519,29 @@ struct ThermalElement {
 
   };
 
+  /// \brief operator for calculate heat flux and assemble to right hand side
   struct OpHeatFlux:public TriElementForcesAndSurcesCore::UserDataOperator {
 
-    Vec F;
     FluxData &dAta;
     bool ho_geometry;
     bool useTsF;
+    OpHeatFlux(const string field_name,FluxData &data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      dAta(data),ho_geometry(_ho_geometry),useTsF(true) { }
+
+    Vec F;
     OpHeatFlux(const string field_name,Vec _F,
       FluxData &data,bool _ho_geometry = false):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data),ho_geometry(_ho_geometry),useTsF(false) { }
-    OpHeatFlux(const string field_name,FluxData &data,bool _ho_geometry = false):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(PETSC_NULL),dAta(data),ho_geometry(_ho_geometry),useTsF(true) { }
+      dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) { }
 
     ublas::vector<FieldData> Nf;
 
+    /** \brief calulate heat flux 
+      *
+      * F = int_S N^T * flux dS
+      *
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -484,8 +577,6 @@ struct ThermalElement {
 
       }
     
-
-    
       //cerr << "VecSetValues\n";
       //cerr << Nf << endl;
       //cerr << data.getIndices() << endl;
@@ -503,6 +594,144 @@ struct ThermalElement {
 
   };
 
+  /// \biref operator to calculate radiaton therms on body surface and assemble to rhs of equations
+  struct OpRadiationRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+
+    RadiationData &dAta;
+    bool ho_geometry;
+    bool useTsF;
+    OpRadiationRhs(const string field_name,RadiationData &data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      dAta(data),ho_geometry(_ho_geometry),useTsF(true) {}
+
+    Vec F;
+    OpRadiationRhs(const string field_name,Vec _F,RadiationData &data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) {}
+
+    ublas::vector<FieldData> Nf;
+
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+
+      PetscErrorCode ierr;
+
+      const FENumeredDofMoFEMEntity *dof_ptr;
+      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      int rank = dof_ptr->get_max_rank();
+
+      int nb_row_dofs = data.getIndices().size()/rank;
+      
+      Nf.resize(data.getIndices().size());
+      bzero(&*Nf.data().begin(),nb_row_dofs*sizeof(FieldData));
+
+      //cerr << getNormal() << endl;
+      //cerr << getNormals_at_GaussPt() << endl;
+
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	
+	//DO WORK HERE //FIXME
+
+      }
+    
+      //cerr << "VecSetValues\n";
+      //cerr << Nf << endl;
+      //cerr << data.getIndices() << endl;
+      
+      if(useTsF) {
+	ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
+	  &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      } else {
+	ierr = VecSetValues(F,data.getIndices().size(),
+	  &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  /// \biref operator to calculate radiaton therms on body surface and assemble to lhs of equations
+  struct OpRadiationLhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+
+    RadiationData &dAta;
+    bool ho_geometry;
+    bool useTsB;
+
+    OpRadiationLhs(const string field_name,
+      RadiationData &data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      dAta(data),ho_geometry(_ho_geometry),useTsB(true) {}
+
+    Mat *A;
+    OpRadiationLhs(const string field_name,Mat *_A,
+      RadiationData &data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      dAta(data),ho_geometry(_ho_geometry),useTsB(false) {}
+
+    ublas::matrix<double> K,transK;
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data) {
+      PetscFunctionBegin;
+
+      try {
+  
+	if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+	if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+  
+	int nb_row = row_data.getN().size2();
+	int nb_col = col_data.getN().size2();
+	K.resize(nb_row,nb_col);
+	bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
+  
+	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+
+	  //ADD YOUR STAFF HERE // DO WORK HERE //FIXME
+  
+	}
+  
+	PetscErrorCode ierr;
+	if(!useTsB) {
+	  const_cast<FieldInterface::FEMethod*>(getFEMethod())->ts_B = A;
+	}
+	ierr = MatSetValues(
+	  *(getFEMethod()->ts_B),
+	  nb_row,&row_data.getIndices()[0],
+	  nb_col,&col_data.getIndices()[0],
+	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
+	if(row_side != col_side || row_type != col_type) {
+	  transK.resize(nb_col,nb_row);
+	  noalias(transK) = trans( K );
+	  ierr = MatSetValues(
+	    *(getFEMethod()->ts_B),
+	    nb_col,&col_data.getIndices()[0],
+	    nb_row,&row_data.getIndices()[0],
+	    &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
+	}
+      
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+  
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  /** \brief this calas is to control time stepping
+    * 
+    * It is used to save data for temerature rate vectot to MoFEM field.
+    */
   struct UpdateAndControl: public FieldInterface::FEMethod {
 
     FieldInterface& mField;
@@ -533,6 +762,7 @@ struct ThermalElement {
 
   };
 
+  /// \brief TS monitore it records temperature at time steps
   struct TimeSeriesMonitor: public FieldInterface::FEMethod {
 
     FieldInterface &mField;
@@ -563,7 +793,14 @@ struct ThermalElement {
   };
 
 
-
+  /** \brief add thermal element on tets
+    *
+    * It get data from block set and define elemenet in moab
+    *
+    * \param problem name
+    * \param field name
+    * \param name of mesh nodal positions (if not defined nodal coordinates are used)
+    */
   PetscErrorCode addThermalElements(
     const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
@@ -597,6 +834,15 @@ struct ThermalElement {
     PetscFunctionReturn(0);
   }
 
+  /** \brief add heat flux element
+    *
+    * It get data from het flux set and define elemenet in moab. Aletrantively
+    * uses block set with name HET_FLUX.
+    *
+    * \param problem name
+    * \param field name
+    * \param name of mesh nodal positions (if not defined nodal coordinates are used)
+    */
   PetscErrorCode addThermalFluxElement(
     const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
@@ -642,6 +888,7 @@ struct ThermalElement {
     PetscFunctionReturn(0);
   }
 
+  /// \brief this function is used in case of stationary problem to set elements for rhs
   PetscErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F) {
     PetscFunctionBegin;
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -653,6 +900,7 @@ struct ThermalElement {
     PetscFunctionReturn(0);
   }
 
+  /// \brief this fucntion is used in case of stationary heat conductivity problem for lhs
   PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat *A) {
     PetscFunctionBegin;
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -663,6 +911,7 @@ struct ThermalElement {
     PetscFunctionReturn(0);
   }
 
+  /// \brief this function is used in case of statonary problem for heat flux terms
   PetscErrorCode setThermalFluxFiniteElementLhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     bool ho_geometry = false;
@@ -677,6 +926,7 @@ struct ThermalElement {
     PetscFunctionReturn(0);
   }
 
+  /// \brief set up operators for unsedy heat flux problem
   PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
