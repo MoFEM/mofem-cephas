@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   FieldInterface& mField = core;
 
   //add filds
-  ierr = mField.add_field("FIELD_HDIV",Hdiv,1); CHKERRQ(ierr);
+  ierr = mField.add_field("FIELD_HDIV",HDIV,1); CHKERRQ(ierr);
   ierr = mField.add_field("FIELD_L2",L2,3); CHKERRQ(ierr);
 
   //add finite elements
@@ -173,11 +173,11 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct HdivApprox: public FEMethod_UpLevelStudent,ApproxAnaliticalFunction {
+  struct HDIVApprox: public FEMethod_UpLevelStudent,ApproxAnaliticalFunction {
 
     Mat A;
     Vec F;
-    HdivApprox(Interface& _moab,Mat _A,Vec _F): FEMethod_UpLevelStudent(_moab),A(_A),F(_F) {}; 
+    HDIVApprox(Interface& _moab,Mat _A,Vec _F): FEMethod_UpLevelStudent(_moab),A(_A),F(_F) {}; 
 
     const double *G_TET_W;
     vector<double> g_NTET;
@@ -284,9 +284,9 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct HdivApprox_Check: public FEMethod_UpLevelStudent,ApproxAnaliticalFunction {
+  struct HDIVApprox_Check: public FEMethod_UpLevelStudent,ApproxAnaliticalFunction {
 
-    HdivApprox_Check(Interface& _moab): FEMethod_UpLevelStudent(_moab) {}; 
+    HDIVApprox_Check(Interface& _moab): FEMethod_UpLevelStudent(_moab) {}; 
 
     ofstream myfile;
     vector<double> g_NTET;
@@ -403,27 +403,27 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct HdivApproxPostProc: public PostProcDisplacementsOnRefMesh,ApproxAnaliticalFunction {
+  struct HDIVApproxPostProc: public PostProcDisplacementsOnRefMesh,ApproxAnaliticalFunction {
 
     //vector<vector<Tag> > th_tags_faces;
     //vector<Tag> th_tags_volume;
     Tag th_field,th_field_err;
-    HdivApproxPostProc(Interface& _moab): PostProcDisplacementsOnRefMesh(_moab) {
+    HDIVApproxPostProc(Interface& _moab): PostProcDisplacementsOnRefMesh(_moab) {
 
       double def_VAL[3] = {0,0,0};
 
       /*th_tags_faces.resize(4);
       for(int ff = 0; ff<4;ff++) {
-	th_tags_faces[ff].resize(NBFACE_Hdiv(5));
-	for(int ii = 0;ii<NBFACE_Hdiv(5);ii++) {
+	th_tags_faces[ff].resize(NBFACE_HDIV(5));
+	for(int ii = 0;ii<NBFACE_HDIV(5);ii++) {
 	  ostringstream ss;
 	  ss << "HDiv_App_Face_" << ff << "_" << ii;
 	  rval = moab_post_proc.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,(th_tags_faces[ff])[ii],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
 	}
       }
 
-      th_tags_volume.resize(NBVOLUME_Hdiv(5));
-      for(int ii = 0;ii<NBVOLUME_Hdiv(5);ii++) {
+      th_tags_volume.resize(NBVOLUME_HDIV(5));
+      for(int ii = 0;ii<NBVOLUME_HDIV(5);ii++) {
 	ostringstream ss;
 	ss << "HDiv_App_Volume_" << ii;
 	rval = moab_post_proc.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th_tags_volume[ii],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
@@ -554,11 +554,11 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("PROBLEM_L2HDIV",&Aij); CHKERRQ(ierr);
   Vec F;
-  ierr = mField.VecCreateGhost("PROBLEM_L2HDIV",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("PROBLEM_L2HDIV",ROW,&F); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
 
-  HdivApprox fe(moab,Aij,F);
+  HDIVApprox fe(moab,Aij,F);
   ierr = mField.loop_finite_elements("PROBLEM_L2HDIV","ELEM_L2HDIV",fe);  CHKERRQ(ierr);
 
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -575,8 +575,8 @@ int main(int argc, char *argv[]) {
   Mat B;
   ierr = MatTransposeMatMult(Aij,Aij,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&B); CHKERRQ(ierr); 
   Vec AijTF,D;
-  ierr = mField.VecCreateGhost("PROBLEM_HDIV",Row,&AijTF); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("PROBLEM_HDIV",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("PROBLEM_HDIV",ROW,&AijTF); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("PROBLEM_HDIV",COL,&D); CHKERRQ(ierr);
   ierr = MatMultTranspose(Aij,F,AijTF); CHKERRQ(ierr);
   //MatView(B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
   //std::cin >> wait;
@@ -594,7 +594,7 @@ int main(int argc, char *argv[]) {
 
   //ierr = VecSet(D,1); CHKERRQ(ierr);
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("PROBLEM_HDIV",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("PROBLEM_HDIV",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
@@ -603,10 +603,10 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&AijTF); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
 
-  HdivApprox_Check fe_check(moab);
+  HDIVApprox_Check fe_check(moab);
   ierr = mField.loop_finite_elements("PROBLEM_HDIV","ELEM_HDIV",fe_check);  CHKERRQ(ierr);
 
-  HdivApproxPostProc fe_post_proc(moab);
+  HDIVApproxPostProc fe_post_proc(moab);
   ierr = mField.loop_finite_elements("PROBLEM_HDIV","ELEM_HDIV",fe_post_proc);  CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {

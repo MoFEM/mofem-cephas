@@ -77,19 +77,19 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
       forder_face = fNBFACE_H1;
       forder_elem = fNBVOLUME_H1;
       break;
-    case Hdiv:
+    case HDIV:
       forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_Hdiv;
-      forder_edge = fNBEDGE_Hdiv;
-      forder_face = fNBFACE_Hdiv;
-      forder_elem = fNBVOLUME_Hdiv;
+      forder_vertex = fNBVERTEX_HDIV;
+      forder_edge = fNBEDGE_HDIV;
+      forder_face = fNBFACE_HDIV;
+      forder_elem = fNBVOLUME_HDIV;
       break;
-    case Hcurl:
+    case HCURL:
       forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_Hcurl;
-      forder_edge = fNBEDGE_Hcurl;
-      forder_face = fNBFACE_Hcurl;
-      forder_elem = fNBVOLUME_Hcurl;
+      forder_vertex = fNBVERTEX_HCURL;
+      forder_edge = fNBEDGE_HCURL;
+      forder_face = fNBFACE_HCURL;
+      forder_elem = fNBVOLUME_HCURL;
       break;
     case L2:
       forder_entityset = NULL;
@@ -98,7 +98,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
       forder_face = fNBFACE_L2;
       forder_elem = fNBVOLUME_L2;
       break;
-    case NoField:
+    case NOFIELD:
       forder_entityset = fNBENTITYSET_nofield;
       forder_vertex = NULL;
       forder_edge = NULL;

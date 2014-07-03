@@ -4,9 +4,9 @@ mpirun -np 3 ./interface -my_file PeelTest.cub -ksp_type fgmres -ksp_gmres_resta
 
 #input
 
-PeelTest.cub - input mesh consisting SideSet 1 (consiting faces where dirihlet
-bc. are applied), SideSet2 (faces where tractions t = [0,1,0], are applied),
-SideSet 3 (faces where tractions t = [0,-1,0], are applied).  SideSet 4 consist
+PeelTest.cub - input mesh consisting SIDESET 1 (consiting faces where dirihlet
+bc. are applied), SIDESET2 (faces where tractions t = [0,1,0], are applied),
+SIDESET 3 (faces where tractions t = [0,-1,0], are applied).  SIDESET 4 consist
 faces where interfaces element should be inserted.
 
 

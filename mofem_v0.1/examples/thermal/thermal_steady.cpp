@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
   
   Vec F;
-  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec T;
   ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
   Mat A;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
   
   //preproc
   ierr = mField.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",Row,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",Row,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   ierr = mField.add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);

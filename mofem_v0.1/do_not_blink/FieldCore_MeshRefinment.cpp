@@ -710,10 +710,10 @@ PetscErrorCode FieldCore::refine_MESHSET(const EntityHandle meshset,const BitRef
   refinedMoFemEntities.modify(miit,RefMoFEMEntity_change_add_bit(bit));
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_msId_3dENTS_sides(const int msId,const Cubit_BC_bitset CubitBCType,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
+PetscErrorCode FieldCore::get_msId_3dENTS_sides(const int msId,const CubitBC_BitSet CubitBCType,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = FieldCore::get_msId_3dENTS_sides(miit->meshset,mesh_bit_level,recursive,verb); CHKERRQ(ierr);
@@ -722,7 +722,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const int msId,const Cubit_BC_bi
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
+PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   Range mesh_level_ents3d;
@@ -743,7 +743,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const
   Skinner skin(&moab);
   //get interface triangles from side set
   Range triangles;
-  rval = moab.get_entities_by_type(SideSet,MBTRI,triangles,recursive);  CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(SIDESET,MBTRI,triangles,recursive);  CHKERR_PETSC(rval);
   if(mesh_bit_level.any()) {
     triangles = intersect(triangles,mesh_level_tris);
   }
@@ -848,15 +848,15 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const
   skin_edges_boundary = intersect(skin_edges_boundary,side_edges);
   //make child meshsets
   vector<EntityHandle> children;
-  rval = moab.get_child_meshsets(SideSet,children);  CHKERR_PETSC(rval);
+  rval = moab.get_child_meshsets(SIDESET,children);  CHKERR_PETSC(rval);
   if(children.empty()) {
     children.resize(3);
     rval = moab.create_meshset(MESHSET_SET,children[0]); CHKERR_PETSC(rval);
     rval = moab.create_meshset(MESHSET_SET,children[1]); CHKERR_PETSC(rval);
     rval = moab.create_meshset(MESHSET_SET,children[2]); CHKERR_PETSC(rval);
-    rval = moab.add_child_meshset(SideSet,children[0]); CHKERR_PETSC(rval);
-    rval = moab.add_child_meshset(SideSet,children[1]); CHKERR_PETSC(rval);
-    rval = moab.add_child_meshset(SideSet,children[2]); CHKERR_PETSC(rval);
+    rval = moab.add_child_meshset(SIDESET,children[0]); CHKERR_PETSC(rval);
+    rval = moab.add_child_meshset(SIDESET,children[1]); CHKERR_PETSC(rval);
+    rval = moab.add_child_meshset(SIDESET,children[2]); CHKERR_PETSC(rval);
   } else { 
     if(children.size()!=3) {
       SETERRQ(PETSC_COMM_SELF,1,"this meshset shuld have 3 children meshsets");
@@ -884,10 +884,10 @@ PetscErrorCode FieldCore::get_msId_3dENTS_sides(const EntityHandle SideSet,const
 }
 PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   const EntityHandle meshset,const BitRefLevel &bit,
-  const int msId,const Cubit_BC_bitset CubitBCType,const bool add_iterfece_entities,const bool recursive,int verb) {
+  const int msId,const CubitBC_BitSet CubitBCType,const bool add_iterfece_entities,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = FieldCore::get_msId_3dENTS_split_sides(
@@ -899,29 +899,29 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
 }
 PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   const EntityHandle meshset,const BitRefLevel &bit,
-  const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive,
+  const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive,
   int verb) {
   PetscFunctionBegin;
   ierr = get_msId_3dENTS_split_sides(meshset,bit,
-    BitRefLevel(),BitRefLevel(),SideSet,add_iterfece_entities,recursive,verb); CHKERRQ(ierr);
+    BitRefLevel(),BitRefLevel(),SIDESET,add_iterfece_entities,recursive,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
-  const EntityHandle SideSet,const bool add_iterfece_entities,const bool recursive,
+  const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive,
   int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   vector<EntityHandle> children;
   //get children meshsets
-  rval = moab.get_child_meshsets(SideSet,children);  CHKERR_PETSC(rval);
+  rval = moab.get_child_meshsets(SIDESET,children);  CHKERR_PETSC(rval);
   if(children.size()!=3) {
     SETERRQ(PETSC_COMM_SELF,1,"should be 3 child meshsets, each of them contains tets on two sides of interface");
   }
   //faces of interface
   Range triangles;
-  rval = moab.get_entities_by_type(SideSet,MBTRI,triangles,recursive);  CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(SIDESET,MBTRI,triangles,recursive);  CHKERR_PETSC(rval);
   //3d ents on "father" side
   Range side_ents3d;
   rval = moab.get_entities_by_handle(children[0],side_ents3d,false);  CHKERR_PETSC(rval);

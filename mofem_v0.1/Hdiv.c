@@ -48,7 +48,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(
     ff = 0;
     for(;ff<4;ff++) {
       if(p[ff]<1) continue;
-      int shift = ii*NBFACE_EDGE_Hdiv(p[ff]); 
+      int shift = ii*NBFACE_EDGE_HDIV(p[ff]); 
       int ee = 0;
       for(;ee<3;ee++) {
 	int n0_idx = faces_nodes[3*ff+face_edges_nodes[2*ee+0]];
@@ -66,7 +66,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(
 	  //int dd = 0;
 	  //for(;dd<3;dd++) (PHI_f_e[ff][ee])[idx+dd] = ((ii+1)*10000)+(ff*1000)+(ee*100)+(dd*10)+l;
 	}
-	if(l!=NBFACE_EDGE_Hdiv(p[ff])) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",l,NBFACE_EDGE_Hdiv(p[ff]));
+	if(l!=NBFACE_EDGE_HDIV(p[ff])) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",l,NBFACE_EDGE_HDIV(p[ff]));
       }
     }
   }
@@ -98,7 +98,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(
       ierr = Lagrange_basis(p[ff],ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
       double Beta_0ij = 
 	N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
-      int shift = ii*NBFACE_FACE_Hdiv(p[ff]); 
+      int shift = ii*NBFACE_FACE_HDIV(p[ff]); 
       int jj = 0;
       int oo = 0;
       for(;oo<=p[ff]-3;oo++) {
@@ -114,7 +114,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(
 	  } 
 	}
       }
-      if(jj!=NBFACE_FACE_Hdiv(p[ff])) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,NBFACE_FACE_Hdiv(p[ff]));
+      if(jj!=NBFACE_FACE_HDIV(p[ff])) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,NBFACE_FACE_HDIV(p[ff]));
     }
   }
   PetscFunctionReturn(0);
@@ -136,7 +136,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*4;
-    int shift = ii*NBVOLUME_EDGE_Hdiv(p);
+    int shift = ii*NBVOLUME_EDGE_HDIV(p);
     ee = 0;
     for(;ee<6;ee++) {
       double Beta_e = N[ node_shift+edges_nodes[2*ee+1] ]*N[ node_shift+edges_nodes[2*ee+0] ];
@@ -148,7 +148,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
 	cblas_dcopy(3,tau_e[ee],1,&(PHI_v_e[ee])[3*shift+3*l],1);
 	cblas_dscal(3,Beta_e*Psi_l[l],&(PHI_v_e[ee])[3*shift+3*l],1);
       }
-      if(l!=NBVOLUME_EDGE_Hdiv(p)) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",l,NBVOLUME_FACE_Hdiv(p));
+      if(l!=NBVOLUME_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",l,NBVOLUME_FACE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -186,7 +186,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
       ierr = Lagrange_basis(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
       double Beta_0ij = 
 	N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
-      int shift = ii*NBVOLUME_FACE_Hdiv(p);
+      int shift = ii*NBVOLUME_FACE_HDIV(p);
       int jj = 0;
       int oo = 0;
       for(;oo<=p-3;oo++) {
@@ -203,7 +203,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
 	  }
 	}
       }
-      if(jj!=NBVOLUME_FACE_Hdiv(p)) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,NBVOLUME_FACE_Hdiv(p));
+      if(jj!=NBVOLUME_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,NBVOLUME_FACE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -233,7 +233,7 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
     ierr = Lagrange_basis(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
     ierr = Lagrange_basis(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
     ierr = Lagrange_basis(p,ksi_0k,NULL,Psi_n,NULL,3); CHKERRQ(ierr);
-    int shift = ii*NBVOLUME_VOLUME_Hdiv(p);
+    int shift = ii*NBVOLUME_VOLUME_HDIV(p);
     int jj = 0;
     int oo = 0;
     for(;oo<=p-4;oo++) {
@@ -260,7 +260,7 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
 	}
       }
     }
-    if(3*jj!=NBVOLUME_VOLUME_Hdiv(p)) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,NBVOLUME_VOLUME_Hdiv(p));
+    if(3*jj!=NBVOLUME_VOLUME_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,NBVOLUME_VOLUME_HDIV(p));
   }
   PetscFunctionReturn(0);
 }
