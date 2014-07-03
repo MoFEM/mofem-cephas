@@ -69,7 +69,7 @@ struct FieldCore: public FieldInterface {
   //moFEMProblems
   MoFEMProblem_multiIndex moFEMProblems;
   //cubit
-  moabCubitMeshSet_multiIndex cubit_meshsets;
+  CubitMeshSet_multiIndex cubit_meshsets;
   //series
   Series_multiIndex series;
   SeriesStep_multiIndex series_steps;
@@ -124,24 +124,24 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, Range &entities,const bool recursive = false);
   PetscErrorCode get_Cubit_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset);
   PetscErrorCode get_Cubit_meshsets(const unsigned int CubitBCType,Range &meshsets);
-  moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() { return cubit_meshsets.begin(); }
-  moabCubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() { return cubit_meshsets.end(); }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) { 
+  CubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() { return cubit_meshsets.begin(); }
+  CubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() { return cubit_meshsets.end(); }
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mi_tag>().lower_bound(CubitBCType); 
   }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) { 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mi_tag>().upper_bound(CubitBCType); 
   }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) { 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(CubitBCType); 
   }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) { 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) { 
     return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(CubitBCType); 
   }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) { 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) { 
     return cubit_meshsets.get<CubitMeshSets_name>().lower_bound(name); 
   }
-  moabCubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) { 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) { 
     return cubit_meshsets.get<CubitMeshSets_name>().upper_bound(name); 
   }
 
@@ -176,34 +176,34 @@ struct FieldCore: public FieldInterface {
 
   PetscErrorCode print_cubit_displacement_set() {
     PetscFunctionBegin;
-    displacement_cubit_bc_data mydata;
+    DisplacementCubitBcData mydata;
     ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   
   PetscErrorCode print_cubit_pressure_set() {
     PetscFunctionBegin;
-    pressure_cubit_bc_data mydata;
+    PressureCubitBcData mydata;
     ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
    
   PetscErrorCode print_cubit_force_set() {
     PetscFunctionBegin;
-    force_cubit_bc_data mydata;
+    ForceCubitBcData mydata;
     ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   PetscErrorCode printCubitTEMPERATURESET() {
         PetscFunctionBegin;
-        temperature_cubit_bc_data mydata;
+        TemperatureCubitBcData mydata;
         ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
         PetscFunctionReturn(0);
     }
     
   PetscErrorCode printCubitHeatFluxSet() {
         PetscFunctionBegin;
-        heatflux_cubit_bc_data mydata;
+        HeatfluxCubitBcData mydata;
         ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
         PetscFunctionReturn(0);
     }

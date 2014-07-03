@@ -713,7 +713,7 @@ PetscErrorCode FieldCore::refine_MESHSET(const EntityHandle meshset,const BitRef
 PetscErrorCode FieldCore::get_msId_3dENTS_sides(const int msId,const CubitBC_BitSet CubitBCType,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = FieldCore::get_msId_3dENTS_sides(miit->meshset,mesh_bit_level,recursive,verb); CHKERRQ(ierr);
@@ -887,7 +887,7 @@ PetscErrorCode FieldCore::get_msId_3dENTS_split_sides(
   const int msId,const CubitBC_BitSet CubitBCType,const bool add_iterfece_entities,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  moabCubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
     miit = cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,CubitBCType.to_ulong()));
   if(miit!=cubit_meshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
     ierr = FieldCore::get_msId_3dENTS_split_sides(

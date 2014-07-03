@@ -66,12 +66,12 @@ struct NeummanForcesSurface {
     mField(m_field),fe(m_field) {}
 
   struct bCForce {
-    force_cubit_bc_data data;
+    ForceCubitBcData data;
     Range tRis;
   };
   map<int,bCForce> mapForce;
   struct bCPreassure {
-    pressure_cubit_bc_data data;
+    PressureCubitBcData data;
     Range tRis;
   };
   map<int,bCPreassure> mapPreassure;
@@ -363,7 +363,7 @@ struct MetaNeummanForces {
     neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
       ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
-      /*force_cubit_bc_data data;
+      /*ForceCubitBcData data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/
@@ -373,7 +373,7 @@ struct MetaNeummanForces {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
       bool ho_geometry = mField.check_field(mesh_nodals_positions);
       ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
-      /*pressure_cubit_bc_data data;
+      /*PressureCubitBcData data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/
@@ -420,7 +420,7 @@ struct MetaNeummanForces {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
       bool ho_geometry = mField.check_field(mesh_nodals_positions);
       ierr = neumann_forces.at(fe_name).addFlux(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
-      /*pressure_cubit_bc_data data;
+      /*PressureCubitBcData data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/

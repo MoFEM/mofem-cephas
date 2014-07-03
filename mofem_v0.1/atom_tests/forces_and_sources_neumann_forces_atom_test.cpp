@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     string fe_name_str = fe_name.str();
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
-    force_cubit_bc_data data;
+    ForceCubitBcData data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
     string fe_name_str = fe_name.str();
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
     neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
-    pressure_cubit_bc_data data;
+    PressureCubitBcData data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;

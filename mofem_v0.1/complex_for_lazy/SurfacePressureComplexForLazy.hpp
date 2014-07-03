@@ -159,12 +159,12 @@ struct NeummanForcesSurfaceComplexForLazy {
 
     protected:
     struct bCForce {
-      force_cubit_bc_data data;
+      ForceCubitBcData data;
       Range tRis;
     };
     map<int,bCForce> mapForce;
     struct bCPreassure {
-      pressure_cubit_bc_data data;
+      PressureCubitBcData data;
       Range tRis;
     };
     map<int,bCPreassure> mapPreassure;

@@ -343,7 +343,7 @@ ostream& operator<<(ostream& os,const CubitMeshSets& e) {
   return os;
 }
 
-ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const DisplacementCubitBcData& e) {
     os << "\n";
     os << "D i s p l a c e m e n t \n \n";
     os << "Flag for X-Translation (0/1): " << (int)e.data.flag1 << "\n";
@@ -374,7 +374,7 @@ ostream& operator<<(ostream& os,const displacement_cubit_bc_data& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const force_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const ForceCubitBcData& e) {
     os << "\n";
     os << "F o r c e \n \n";
     os << "Force magnitude: " << e.data.value1 << "\n";
@@ -388,7 +388,7 @@ ostream& operator<<(ostream& os,const force_cubit_bc_data& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const VelocityCubitBcData& e) {
     os << "\n";
     os << "V e l o c i t y \n \n";
     if (e.data.flag1 == 1)
@@ -412,7 +412,7 @@ ostream& operator<<(ostream& os,const velocity_cubit_bc_data& e) {
     return os;
 }
  
-ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const AccelerationCubitBcData& e) {
     os << "\n";
     os << "A c c e l e r a t i o n \n \n";
     if (e.data.flag1 == 1)
@@ -436,7 +436,7 @@ ostream& operator<<(ostream& os,const acceleration_cubit_bc_data& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const TemperatureCubitBcData& e) {
     os << "\n";
     os << "T e m p e r a t u r e \n \n";
     if (e.data.flag1 == 1)
@@ -457,14 +457,14 @@ ostream& operator<<(ostream& os,const temperature_cubit_bc_data& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const pressure_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const PressureCubitBcData& e) {
     os << "\n";
     os << "P r e s s u r e \n \n";
     os << "Pressure value: " << e.data.value1 << "\n \n";
     return os;
 }
 
-ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const HeatfluxCubitBcData& e) {
     os << "\n";
     os << "H e a t  F l u x \n \n";
     if (e.data.flag1 == 1)
@@ -479,13 +479,13 @@ ostream& operator<<(ostream& os,const heatflux_cubit_bc_data& e) {
     return os;   
 }
 
-ostream& operator<<(ostream& os,const cfd_cubit_bc_data& e) {
+ostream& operator<<(ostream& os,const CfgCubitBcData& e) {
     os << "\n";
     os << "CFD BC \n \n";
     return os;   
 }
  
-ostream& operator<<(ostream& os,const BLOCKSET_generic_attributes& e)
+ostream& operator<<(ostream& os,const BlockSetAttributes& e)
   {
     os << endl << "Blcok attributes" << endl;
     os << "-------------------" << endl;

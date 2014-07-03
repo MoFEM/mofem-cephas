@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
 
     EntityHandle cubit_meshset = cit->get_meshset();
 
-    BLOCKSET_generic_attributes mydata;
+    BlockSetAttributes mydata;
     ierr = cit->get_attribute_data_structure(mydata); CHKERRQ(ierr);   
     cout << mydata << endl;  
 

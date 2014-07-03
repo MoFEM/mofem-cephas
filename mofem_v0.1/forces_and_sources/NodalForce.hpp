@@ -43,7 +43,7 @@ struct NodalForce {
   MyFE& getLoopFe() { return fe; }
 
   struct bCForce {
-    force_cubit_bc_data data;
+    ForceCubitBcData data;
     Range nOdes;
   };
   map<int,bCForce> mapForce;
@@ -191,7 +191,7 @@ struct MetaNodalForces {
     nodal_forces.insert(fe_name,new NodalForce(mField));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
       ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
-      /*force_cubit_bc_data data;
+      /*ForceCubitBcData data;
       ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/

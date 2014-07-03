@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
 
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
-    force_cubit_bc_data data;
+    ForceCubitBcData data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
     ierr = feMaterial.addForce(it->get_msId()); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
-    pressure_cubit_bc_data data;
+    PressureCubitBcData data;
     ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
     my_split << *it << endl;
     my_split << data << endl;

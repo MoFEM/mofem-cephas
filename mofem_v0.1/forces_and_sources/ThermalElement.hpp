@@ -65,7 +65,7 @@ struct ThermalElement {
   map<int,BlockData> setOfBlocks;
 
   struct FluxData {
-    heatflux_cubit_bc_data dAta;
+    HeatfluxCubitBcData dAta;
     Range tRis;
   };
   map<int,FluxData> setOfFluxes;

@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
       //Displacement
       if (strcmp (&bc_data[0],"Displacement") == 0)
       {
-          displacement_cubit_bc_data mydata;
+          DisplacementCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
       //Force
       else if (strcmp (&bc_data[0],"Force") == 0)
       {
-          force_cubit_bc_data mydata;
+          ForceCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
       //Velocity
       else if (strcmp (&bc_data[0],"Velocity") == 0)
       {
-          velocity_cubit_bc_data mydata;
+          VelocityCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
       //Acceleration
       else if (strcmp (&bc_data[0],"Acceleration") == 0)
       {
-          acceleration_cubit_bc_data mydata;
+          AccelerationCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
       //Temperature
       else if (strcmp (&bc_data[0],"Temperature") == 0)
       {
-          temperature_cubit_bc_data mydata;
+          TemperatureCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
       //Pressure
       if (strcmp (&bc_data[0],"Pressure") == 0)
       {
-          pressure_cubit_bc_data mydata;
+          PressureCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
       //Heat Flux
       else if (strcmp (&bc_data[0],"HeatFlux") == 0)
       {
-          heatflux_cubit_bc_data mydata;
+          HeatfluxCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
       //cfd_bc
       else if (strcmp (&bc_data[0],"cfd_bc") == 0)
       {
-          cfd_cubit_bc_data mydata;
+          CfgCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           
           //Interface bc (Hex:6 Dec:6)
