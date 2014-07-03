@@ -88,7 +88,7 @@ struct BlockSetAttributes: public GenericAttributeData {
     
     _data_ data;
     
-    const CubitBC_BitSet tYpe;
+    const CubitBC_BitSet type;
     const unsigned int min_number_of_atributes;
     BlockSetAttributes(): type(BLOCKSET),min_number_of_atributes(0) {};
     
