@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
   Vec F;
-  ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Col,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",COL,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   const MoFEMProblem *problem_ptr;
   ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);

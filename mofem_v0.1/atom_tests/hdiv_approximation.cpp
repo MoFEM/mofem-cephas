@@ -554,7 +554,7 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("PROBLEM_L2HDIV",&Aij); CHKERRQ(ierr);
   Vec F;
-  ierr = mField.VecCreateGhost("PROBLEM_L2HDIV",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("PROBLEM_L2HDIV",ROW,&F); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
 
@@ -575,8 +575,8 @@ int main(int argc, char *argv[]) {
   Mat B;
   ierr = MatTransposeMatMult(Aij,Aij,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&B); CHKERRQ(ierr); 
   Vec AijTF,D;
-  ierr = mField.VecCreateGhost("PROBLEM_HDIV",Row,&AijTF); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("PROBLEM_HDIV",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("PROBLEM_HDIV",ROW,&AijTF); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("PROBLEM_HDIV",COL,&D); CHKERRQ(ierr);
   ierr = MatMultTranspose(Aij,F,AijTF); CHKERRQ(ierr);
   //MatView(B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
   //std::cin >> wait;
@@ -594,7 +594,7 @@ int main(int argc, char *argv[]) {
 
   //ierr = VecSet(D,1); CHKERRQ(ierr);
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("PROBLEM_HDIV",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("PROBLEM_HDIV",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);

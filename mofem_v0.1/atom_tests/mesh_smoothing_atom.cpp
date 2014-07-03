@@ -196,9 +196,9 @@ int main(int argc, char *argv[]) {
   Mat K;
   ierr = mField.MatCreateMPIAIJWithArrays("MESH_SMOOTHING",&K); CHKERRQ(ierr);
   Vec F;
-  ierr = mField.VecCreateGhost("MESH_SMOOTHING",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("MESH_SMOOTHING",ROW,&F); CHKERRQ(ierr);
   Vec D;
-  ierr = mField.VecCreateGhost("MESH_SMOOTHING",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("MESH_SMOOTHING",COL,&D); CHKERRQ(ierr);
 
   FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",K,D,F,corner_nodes);
   //fix_material_pts.field_names.push_back("LAMBDA_SURFACE");
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
     std::cin >> wait;
   }*/
 
-  ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);

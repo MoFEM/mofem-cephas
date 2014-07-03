@@ -185,8 +185,7 @@ typedef bitset<BITFIELDID_SIZE> BitFieldId;
 typedef bitset<BITFEID_SIZE> BitFEId;
 typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
 
-//ENUMS
-/// approximation space 
+/// \brief approximation spaces
 enum FieldSpace { 
   NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
   H1, 		///< continuous field
@@ -196,6 +195,8 @@ enum FieldSpace {
   LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
 }; 
 
+
+/// \brief Those types control how functions respond on arguments, f.e. error handling
 enum MoFEMTypes {
   MF_ZERO = 0,
   MF_EXCL = 1<<0
@@ -203,7 +204,7 @@ enum MoFEMTypes {
 
 /// \brief RowColData
 enum RowColData {
-  Row,Col,Data,LastRowColData
+  ROW,COL,DATA,LASTROWCOLDATA
 };
 
 enum by_what { 

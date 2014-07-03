@@ -198,9 +198,9 @@ int main(int argc, char *argv[]) {
   Mat K;
   ierr = mField.MatCreateMPIAIJWithArrays("MESH_SMOOTHING",&K); CHKERRQ(ierr);
   Vec F;
-  ierr = mField.VecCreateGhost("MESH_SMOOTHING",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("MESH_SMOOTHING",ROW,&F); CHKERRQ(ierr);
   Vec D;
-  ierr = mField.VecCreateGhost("MESH_SMOOTHING",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("MESH_SMOOTHING",COL,&D); CHKERRQ(ierr);
 
   FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corner_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
     std::cin >> wait;
   }*/
 
-  ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
@@ -286,9 +286,9 @@ int main(int argc, char *argv[]) {
   ierr = VecRestoreArray(F,&array); CHKERRQ(ierr);*/
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("MESH_SMOOTHING",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("MESH_SMOOTHING",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PostProcVertexMethod ent_method(moab,"MESH_NODE_POSITIONS");
-  ierr = mField.loop_dofs("MESH_SMOOTHING","MESH_NODE_POSITIONS",Col,ent_method); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("MESH_SMOOTHING","MESH_NODE_POSITIONS",COL,ent_method); CHKERRQ(ierr);
 
   rval = moab.write_file("smoothed.h5m"); CHKERR_PETSC(rval);
 

@@ -142,8 +142,8 @@ int main(int argc, char *argv[]) {
 
   //create matrices and vectors
   Vec F,D;
-  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",Row,&F); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",Col,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("POTENTIAL_PROBLEM",COL,&D); CHKERRQ(ierr);
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("POTENTIAL_PROBLEM",&A); CHKERRQ(ierr);
 
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("POTENTIAL_PROBLEM",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("POTENTIAL_PROBLEM",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);

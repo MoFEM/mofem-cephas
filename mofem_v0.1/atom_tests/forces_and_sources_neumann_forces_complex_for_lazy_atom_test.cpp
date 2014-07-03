@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = mField.VecCreateGhost("TEST_PROBLEM",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&Aij); CHKERRQ(ierr);
 
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",Row,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = MatZeroEntries(Aij);  CHKERRQ(ierr);
   feSpatial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetJacobian;

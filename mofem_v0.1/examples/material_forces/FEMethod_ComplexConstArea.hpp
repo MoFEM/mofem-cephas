@@ -367,7 +367,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     if(Q != PETSC_NULL) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,lambda_field_name,dofs)) {
 	ierr = MatGetVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
-	//ierr = mField.VecCreateGhost(problem_ptr->get_name(),Col,&mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
+	//ierr = mField.VecCreateGhost(problem_ptr->get_name(),COL,&mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
 	ierr = VecZeroEntries(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
       }
     }
@@ -419,7 +419,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     if(Q != PETSC_NULL) {
       ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
       Vec Qv;
-      ierr = mField.VecCreateGhost(problem_ptr->get_name(),Col,&Qv); CHKERRQ(ierr);
+      ierr = mField.VecCreateGhost(problem_ptr->get_name(),COL,&Qv); CHKERRQ(ierr);
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,lambda_field_name,dofs)) {
 	if(mapV.find(dofs->get_petsc_gloabl_dof_idx())==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	ierr = VecAssemblyBegin(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
@@ -616,21 +616,21 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     }
     
     Vec D;
-    ierr = mField.VecCreateGhost(problem,Col,&D); CHKERRQ(ierr);
-    ierr = mField.set_local_VecCreateGhost(problem,Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost(problem,COL,&D); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost(problem,COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     Vec _D_;
-    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Col,&_D_); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&_D_); CHKERRQ(ierr);
     VecScatter scatter;
     string y_problem = "C_CRACKFRONT_MATRIX";
-    ierr = mField.VecScatterCreate(D,problem,Col,_D_,y_problem,Col,&scatter); CHKERRQ(ierr);
+    ierr = mField.VecScatterCreate(D,problem,COL,_D_,y_problem,COL,&scatter); CHKERRQ(ierr);
     ierr = VecScatterBegin(scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = mField.set_local_VecCreateGhost("C_CRACKFRONT_MATRIX",Col,_D_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost("C_CRACKFRONT_MATRIX",COL,_D_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecDestroy(&_D_); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
@@ -652,7 +652,7 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     }*/
 
     Vec LambdaVec;
-    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Row,&LambdaVec); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,&LambdaVec); CHKERRQ(ierr);
     const MoFEMProblem *front_problem_ptr;
     ierr = mField.get_problem("C_CRACKFRONT_MATRIX",&front_problem_ptr); CHKERRQ(ierr);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -665,13 +665,13 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     //ierr = VecView(LambdaVec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
     Vec _f_;
-    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",Col,&_f_); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&_f_); CHKERRQ(ierr);
     ierr = MatMultTranspose(proj_ctx.C,LambdaVec,_f_); CHKERRQ(ierr);
     //PetscReal _f_nrm2;
     //ierr = VecNorm(_f_, NORM_2,&_f_nrm2); CHKERRQ(ierr);
     //PetscPrintf(PETSC_COMM_WORLD,"\tfront f_nrm2 = %6.4e\n",_f_nrm2);
 
-    ierr = mField.VecScatterCreate(snes_f,problem,Row,_f_,y_problem,Col,&scatter); CHKERRQ(ierr);
+    ierr = mField.VecScatterCreate(snes_f,problem,ROW,_f_,y_problem,COL,&scatter); CHKERRQ(ierr);
     ierr = VecScatterBegin(scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(scatter,_f_,snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);

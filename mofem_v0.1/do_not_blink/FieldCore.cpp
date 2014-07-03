@@ -3823,13 +3823,13 @@ PetscErrorCode FieldCore::VecCreateGhost(const string &name,RowColData rc,Vec *V
   DofIdx nb_dofs,nb_local_dofs,nb_ghost_dofs;
   dofs_by_local_idx *dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_dofs = p_miit->get_nb_dofs_row();
       nb_local_dofs = p_miit->get_nb_local_dofs_row();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_dofs = p_miit->get_nb_dofs_col();
       nb_local_dofs = p_miit->get_nb_local_dofs_col();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
@@ -3860,11 +3860,11 @@ PetscErrorCode FieldCore::VecScatterCreate(Vec xin,string &x_problem,RowColData 
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_glob_idx;
   dofs_by_glob_idx::iterator y_dit,hi_y_dit;
   switch (y_rc) {
-    case Row:
+    case ROW:
       y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
       hi_y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_row()); // should be lower
       break;
-    case Col:
+    case COL:
       y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(0);
       hi_y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_col()); // should be lower
       break;
@@ -3874,10 +3874,10 @@ PetscErrorCode FieldCore::VecScatterCreate(Vec xin,string &x_problem,RowColData 
   typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type dofs_by_uid;
   const dofs_by_uid* x_numered_dofs_by_uid;
   switch (x_rc) {
-    case Row:
+    case ROW:
       x_numered_dofs_by_uid = &(p_x->numered_dofs_rows.get<Unique_mi_tag>());
       break;
-    case Col:
+    case COL:
       x_numered_dofs_by_uid = &(p_x->numered_dofs_cols.get<Unique_mi_tag>());
       break;
     default:
@@ -3930,12 +3930,12 @@ PetscErrorCode FieldCore::set_local_VecCreateGhost(const string &name,RowColData
   dofs_by_local_idx *dofs;
   DofIdx nb_local_dofs,nb_ghost_dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_local_dofs = p_miit->get_nb_local_dofs_row();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_local_dofs = p_miit->get_nb_local_dofs_col();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
       dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_cols.get<PetscLocalIdx_mi_tag>());
@@ -3993,11 +3993,11 @@ PetscErrorCode FieldCore::set_global_VecCreateGhost(const MoFEMProblem *problem_
   dofs_by_global_idx *dofs;
   DofIdx nb_dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_dofs = problem_ptr->get_nb_dofs_row();
       dofs = const_cast<dofs_by_global_idx*>(&problem_ptr->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_dofs = problem_ptr->get_nb_dofs_col();
       dofs = const_cast<dofs_by_global_idx*>(&problem_ptr->numered_dofs_cols.get<PetscGlobalIdx_mi_tag>());
       break;
@@ -4057,12 +4057,12 @@ PetscErrorCode FieldCore::set_other_local_VecCreateGhost(
   dofs_by_loc_petsc_index *dofs;
   int nb_local_dofs,nb_ghost_dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_local_dofs = problem_ptr->get_nb_local_dofs_row();
       nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_row();
       dofs = const_cast<dofs_by_loc_petsc_index*>(&problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_local_dofs = problem_ptr->get_nb_local_dofs_col();
       nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_col();
       dofs = const_cast<dofs_by_loc_petsc_index*>(&problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>());
@@ -4162,11 +4162,11 @@ PetscErrorCode FieldCore::set_other_global_VecCreateGhost(
   dofs_by_name *dofs;
   DofIdx nb_dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       nb_dofs = p_miit->get_nb_dofs_row();
       dofs = const_cast<dofs_by_name*>(&p_miit->numered_dofs_rows.get<FieldName_mi_tag>());
       break;
-    case Col:
+    case COL:
       nb_dofs = p_miit->get_nb_dofs_col();
       dofs = const_cast<dofs_by_name*>(&p_miit->numered_dofs_cols.get<FieldName_mi_tag>());
       break;
@@ -4463,10 +4463,10 @@ PetscErrorCode FieldCore::loop_dofs(const string &problem_name,const string &fie
   ierr = method.set_adjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   dofs_by_name *dofs;
   switch (rc) {
-    case Row:
+    case ROW:
       dofs = const_cast<dofs_by_name*>(&p_miit->numered_dofs_rows.get<FieldName_mi_tag>());
       break;
-    case Col:
+    case COL:
       dofs = const_cast<dofs_by_name*>(&p_miit->numered_dofs_cols.get<FieldName_mi_tag>());
       break;
     default:
@@ -5210,10 +5210,10 @@ PetscErrorCode FieldCore::record_problem(const string& serie_name,const MoFEMPro
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
   }
   switch (rc) {
-    case Row:
+    case ROW:
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problem_ptr->numered_dofs_rows.begin(),problem_ptr->numered_dofs_rows.end()); CHKERRQ(ierr);
       break;
-    case Col:
+    case COL:
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problem_ptr->numered_dofs_cols.begin(),problem_ptr->numered_dofs_cols.end()); CHKERRQ(ierr);
       break;
     default:

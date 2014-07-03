@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec F,F_body_force,D;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   ierr = VecDuplicate(F,&F_body_force); CHKERRQ(ierr);
   Mat Aij;
@@ -534,9 +534,9 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ctx->F_lambda2);
 
   if(step>1) {
-    ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = mField.set_other_global_VecCreateGhost(
-      "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",Col,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     double x0_nrm;
     ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
@@ -595,7 +595,7 @@ int main(int argc, char *argv[]) {
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
 
     //Distribute displacements on all processors
-    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     //Update History and Calulate Residual
     //Tell Interface method that kappa is upadated
@@ -623,13 +623,13 @@ int main(int argc, char *argv[]) {
     }
 
     //Save data on mesh
-    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = mField.set_other_global_VecCreateGhost(
-      "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",Col,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     
     //
     PostProcVertexMethod ent_method(moab);
-    ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Col,ent_method); CHKERRQ(ierr);
+    ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method); CHKERRQ(ierr);
     //
     ierr = my_arc_method.potsProcessLoadPath(); CHKERRQ(ierr);
     //
@@ -651,7 +651,7 @@ int main(int argc, char *argv[]) {
   }
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -662,10 +662,10 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Col,ent_method); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method_res(moab,"DISPLACEMENT",F,"RESIDUAL");
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Col,ent_method_res); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method_res); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
