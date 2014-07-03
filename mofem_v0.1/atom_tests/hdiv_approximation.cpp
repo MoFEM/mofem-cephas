@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
 
 	for(int gg = 0;gg<g_dim;gg++) {
 	  vector< ublas::matrix<FieldData> > field_hdiv_data;
-	  ierr = GetGaussDataVector_HCURLHDIV("FIELD_HDIV",field_hdiv_data); CHKERRQ(ierr);
+	  ierr = GetGaussDataVector_HcurlHdiv("FIELD_HDIV",field_hdiv_data); CHKERRQ(ierr);
 	  ublas::vector<FieldData> t0 = dx_scalar(coords_at_Gauss_nodes[gg]);
 	  ublas::matrix_row<ublas::matrix<FieldData> > t(field_hdiv_data[gg],0);
 
@@ -505,7 +505,7 @@ int main(int argc, char *argv[]) {
       }
 
       vector< ublas::matrix<FieldData> > field_hdiv_data;
-      ierr = GetGaussDataVector_HCURLHDIV("FIELD_HDIV",field_hdiv_data); CHKERRQ(ierr);
+      ierr = GetGaussDataVector_HcurlHdiv("FIELD_HDIV",field_hdiv_data); CHKERRQ(ierr);
 
       int gg =0;
       map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
