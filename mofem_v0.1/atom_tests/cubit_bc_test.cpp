@@ -207,50 +207,44 @@ int main(int argc, char *argv[]) {
       ierr = it->print_Cubit_attributes(myfile); CHKERRQ(ierr);
   }
   
-        //Get block attributes and assign them as material properties/solution parameters based on the name of each block
+  //Get block attributes and assign them as material properties/solution parameters based on the name of each block
         
-        //Conventions:
-        //----------------------------------------------------------------------------------------
-        //Materials are defined with block names starting with MAT_ e.g. MAT_ELASTIC_abcd,
-        //MAT_FRACTcdef etc.
-        //Solution procedures are defined with block names starting with SOL_ e.g. SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
-        //----------------------------------------------------------------------------------------
+  //Conventions:
+  //----------------------------------------------------------------------------------------
+  //Materials are defined with block names starting with MAT_ e.g. MAT_ELASTIC_abcd,
+  //MAT_FRACTcdef etc.
+  //Solution procedures are defined with block names starting with SOL_ e.g. SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
+  //----------------------------------------------------------------------------------------
         
-        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
-            {
-                cout << endl << *it << endl;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+
+    cout << endl << *it << endl;
                 
-                //Get block name
-                string name = it->get_Cubit_name();
+    //Get block name
+    string name = it->get_Cubit_name();
 
-                //Elastic material
-                if (name.compare(0,11,"MAT_ELASTIC") == 0)
-                {
-                    Mat_Elastic mydata;
-                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-                    //Print data
-                    cout << mydata;
-                    myfile << mydata;
-                }
-                else if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
-                {
-                    Mat_Elastic_TransIso mydata;
-                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-                    //Print data
-                    cout << mydata;
-                    myfile << mydata;
-                }
-                else if (name.compare(0,10,"MAT_INTERF") == 0)
-                {
-                    Mat_Interf mydata;
-                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-                    //Print data
-                    cout << mydata;
-                    myfile << mydata;
-                }
+    //Elastic material
+    if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+      Mat_Elastic_TransIso mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      //Print data
+      cout << mydata;
+      myfile << mydata;
+    } else if (name.compare(0,11,"MAT_ELASTIC") == 0) {
+      Mat_Elastic mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      //Print data
+      cout << mydata;
+      myfile << mydata;
+    } else if (name.compare(0,10,"MAT_INTERF") == 0) {
+      Mat_Interf mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      //Print data
+      cout << mydata;
+      myfile << mydata;
+    } else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
 
-                else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
-            }
+  }
         
   //Close mesh_file_name.txt
   myfile.close();

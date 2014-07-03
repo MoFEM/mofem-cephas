@@ -19,6 +19,7 @@ Material Properties
 -------------------
 Young's modulus  = 1000
 Poisson's ratio  = 0.2
+Thermal expansion = 1
 User attribute 1 = 1
 User attribute 2 = 1
 User attribute 3 = 1
@@ -26,5 +27,4 @@ User attribute 4 = 1
 User attribute 5 = 1
 User attribute 6 = 1
 User attribute 7 = 1
-User attribute 8 = 1
 

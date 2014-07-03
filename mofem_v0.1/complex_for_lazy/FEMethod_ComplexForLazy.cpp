@@ -126,8 +126,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
             EberleinHolzapfel1_mat_parameters.fibre_vector_a2[1] = mydata.data.a1y;
             EberleinHolzapfel1_mat_parameters.fibre_vector_a2[2] = mydata.data.a1z;
             *ptr_matctx = &EberleinHolzapfel1_mat_parameters;
-          }
-          else {
+          } else {
             if(material_type>=10) {
               switch(material_type) {
                 case 10: {
@@ -144,7 +143,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
                          break;
                 default: {
                            SETERRQ(PETSC_COMM_SELF,1,
-                               "Materail not defined (Attribute 3):\n"
+                               "Materail not defined (Attribute 4):\n"
                                "\t10 = hooke\n"
                                "\t11 = stvenant_kirchhoff\n"
                                "\t12 = neohookean\n"
