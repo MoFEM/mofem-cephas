@@ -133,9 +133,9 @@ struct NumeredMoFEMFiniteElement_change_part {
   }
 };
 
-struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what {
-  by_what by;
-  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(const by_what _by): by(_by) {}
+struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat {
+  ByWhat by;
+  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(const ByWhat _by): by(_by) {}
   void operator()(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap &e) { e.by_other |= by; }
 };
 

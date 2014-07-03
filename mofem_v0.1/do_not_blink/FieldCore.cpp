@@ -2244,7 +2244,7 @@ PetscErrorCode FieldCore::build_adjacencies(const Range &ents,int verb) {
       pair<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
       p = entFEAdjacencies.insert(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap((*rvit)->get_MoFEMEntity_ptr(),&*fit));
       bool success = entFEAdjacencies.modify(
-	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(by_row));
+	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(BYROW));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     }
     ent_uid = 0;
@@ -2256,7 +2256,7 @@ PetscErrorCode FieldCore::build_adjacencies(const Range &ents,int verb) {
       pair<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
       p = entFEAdjacencies.insert(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap((*cvit)->get_MoFEMEntity_ptr(),&*fit));
       bool success = entFEAdjacencies.modify(
-	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(by_col));
+	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(BYCOL));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     }
     ent_uid = 0;
@@ -2268,7 +2268,7 @@ PetscErrorCode FieldCore::build_adjacencies(const Range &ents,int verb) {
       pair<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
       p = entFEAdjacencies.insert(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap((*dvit)->get_MoFEMEntity_ptr(),&*fit));
       bool success = entFEAdjacencies.modify(
-	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_by_what(by_data));
+	p.first,MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(BYDATA));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
     }
   }
@@ -2769,7 +2769,7 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
 	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_row)) {
+	  if(!(adj_miit->by_other&BYROW)) {
 	    // if it is not row if element
 	    continue; 
 	  }
@@ -2812,7 +2812,7 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
 	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(!(adj_miit->by_other&by_col)) {
+	  if(!(adj_miit->by_other&BYCOL)) {
 	    // if it is not row if element
 	    continue; 
 	  }

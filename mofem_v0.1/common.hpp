@@ -207,10 +207,10 @@ enum RowColData {
   ROW,COL,DATA,LASTROWCOLDATA
 };
 
-enum by_what { 
-  by_row = 1<<0, by_col = 1<<1, by_data = 1<<2,
-  by_row_data = 1<<0|1<<2, by_col_data = 1<<1|1<<2, by_row_col = 1<<0|1<<1,
-  by_all = 1<<0|1<<1|1<<2 
+enum ByWhat { 
+  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
+  BYROW_data = 1<<0|1<<2, BYCOL_data = 1<<1|1<<2, BYROW_col = 1<<0|1<<1,
+  BYALL = 1<<0|1<<1|1<<2 
 };
 
 //AUX STRUCTURES

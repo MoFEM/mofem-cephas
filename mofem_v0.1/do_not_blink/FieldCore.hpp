@@ -598,7 +598,7 @@ PetscErrorCode FieldCore::create_Mat(
 	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
 	dofs_col_view.clear();
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
-	  if(adj_miit->by_other&by_row) {
+	  if(adj_miit->by_other&BYROW) {
 	    if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
 	      // if element is not part of problem
 	      continue; 
