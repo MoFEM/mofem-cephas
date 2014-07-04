@@ -110,12 +110,20 @@ struct DataForcesAndSurcesCore {
     typedef ublas::vector<FieldData,ublas::shallow_array_adaptor<FieldData> > vector_adaptor;
     typedef ublas::matrix<FieldData,ublas::row_major,ublas::shallow_array_adaptor<FieldData> > matrix_adaptor;
 
+    /// \brief get shape functions at Gauss pts
     inline const vector_adaptor getN(int gg) {
       int size = getN().size2();
       FieldData *data = &getN()(gg,0);
       return vector_adaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
     }
 
+    /** \brief get direvative of shape functions at Gauss pts
+      *
+      * retruned matrx on rows has shape functions, in columen its direvatives.
+      *
+      * \param gg nb. of Gauss pts.
+      *
+      */
     inline const matrix_adaptor getDiffN(int gg) {
       if(getN().size1() == getDiffN().size1()) {
 	int size = getN().size2();	
@@ -124,6 +132,54 @@ struct DataForcesAndSurcesCore {
 	return matrix_adaptor(getN().size2(),dim,ublas::shallow_array_adaptor<FieldData>(getDiffN().size2(),data));
       } else {
 	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+      }
+    }
+
+    /** \brief get shape functions at Gauss pts
+      *
+      * Note that multi field element, two diffren field can have different
+      * approximation orders. Since we use hierarhical approximation basis,
+      * shape functions are calulared once for element, using maximal
+      * apprimation order on given entity.
+      *
+      * Specifing addional parameters, only firsty nb_dofs are indicated as a
+      * row of shape function matrix.
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const vector_adaptor getN(int gg,const int nb_dofs) {
+      (void)getN(gg,nb_dofs-1); // throw error if nb_dofs is to big
+      int size = getN().size2();
+      FieldData *data = &getN()(gg,0);
+      return vector_adaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
+    }
+
+    /** \brief get derivatives of shape functions at Gauss pts
+      *
+      * Note that multi field element, two diffren field can have different
+      * approximation orders. Since we use hierarhical approximation basis,
+      * shape functions are calulared once for element, using maximal
+      * apprimation order on given entity.
+      *
+      * Specifing addional parameters, only firsty nb_dofs are indicated as a
+      * row of shape function derivative matrix.
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const matrix_adaptor getDiffN(int gg,const int nb_dofs) {
+      if(getN().size1() == getDiffN().size1()) {
+	(void)getN(gg,nb_dofs-1); // throw error if nb_dofs is to big
+	int size = getN().size2();	
+	int dim = getDiffN().size2()/size;
+	FieldData *data = &getDiffN()(gg,0);
+	return matrix_adaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
+      } else {
+	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+
       }
     }
 
