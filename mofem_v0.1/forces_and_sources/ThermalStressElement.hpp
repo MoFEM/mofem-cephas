@@ -73,25 +73,22 @@ struct ThermalStressElement {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
-
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-        commonData.temperatureAtGaussPts.resize(data.getN().size1());
-	int nb_dof = data.getFieldData().size();
-
-	for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	  if(type == MBVERTEX) {
-	    commonData.temperatureAtGaussPts[gg] = 0;
-	  }
-	  commonData.temperatureAtGaussPts[gg] 
-	    += inner_prod(data.getN(gg,nb_dof),data.getFieldData());
+	int nb_dofs = data.getFieldData().size();
+	int nb_gauss_pts = data.getN().size1();
+	//initialize
+        commonData.temperatureAtGaussPts.resize(nb_gauss_pts);
+	if(type == MBVERTEX) {
+	  fill(commonData.temperatureAtGaussPts.begin(),commonData.temperatureAtGaussPts.end(),0);
 	}
-
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	  commonData.temperatureAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
+	}
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "throw in method: " << ex.what() << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-
       PetscFunctionReturn(0);
     }
 

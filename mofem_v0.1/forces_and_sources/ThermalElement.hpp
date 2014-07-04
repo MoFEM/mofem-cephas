@@ -496,7 +496,7 @@ struct ThermalElement {
 	  //  nb_row,nb_col,val,N_row,1,N_col,1,&M(0,0),nb_col);
 
 	  //ublas
-	  noalias(M) += val*outer_prod( row_data.getN(gg,nb_col),col_data.getN(gg,nb_row) ); 
+	  noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) ); 
 
 	}
   
@@ -565,7 +565,7 @@ struct ThermalElement {
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
 
-      int nb_row_dofs = data.getIndices().size()/rank;
+      int nb_dofs = data.getIndices().size()/rank;
       
       Nf.resize(data.getIndices().size());
       //bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
@@ -585,7 +585,7 @@ struct ThermalElement {
 	  flux = dAta.dAta.data.value1*getArea();
 	}
 	//cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
-	ublas::noalias(Nf) += val*flux*data.getN(gg);
+	ublas::noalias(Nf) += val*flux*data.getN(gg,nb_dofs);
 
       }
     
