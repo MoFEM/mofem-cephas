@@ -35,6 +35,11 @@ namespace MoFEM {
  *
  */
 typedef bitset<32> CubitBC_BitSet;
+
+/**
+  * Tyeps of sets and boundary conditions
+  *
+  */
 enum CubitBC {
   UNKNOWNSET = 0,
   NODESET = 1<<0,
@@ -50,10 +55,10 @@ enum CubitBC {
   HEATFLUXSET = 1<<10,
   INTERFACESET = 1<<11,
   UNKNOWNCUBITNAME = 1<< 12,
-  MAT_ELASTICSET = 1<<13,
+  MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
   MAT_INTERFSET = 1 <<14,
-  MAT_THERMALSET = 1<<15,
-  BLOCK_BODYFORCESSET = 1<<16,
+  MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
+  BLOCK_BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
   LASTCUBITSET
 };
 

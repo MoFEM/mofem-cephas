@@ -40,6 +40,7 @@ DofMoFEMEntity::DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const Approxi
   ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = _dof_order;
   ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof] = _dof_rank;
   uid = get_unique_id_calculate();
+  short_uid = get_non_nonunique_short_id_calculate();
 }
 ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
   os << "dof_uid " << e.get_unique_id() 

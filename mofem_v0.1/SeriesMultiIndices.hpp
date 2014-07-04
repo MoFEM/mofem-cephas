@@ -47,24 +47,25 @@ struct MoFEMSeries {
   /// get series name
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }
   
-  Tag th_SeriesDataIa;
   Tag th_SeriesData;
   Tag th_SeriesDataUIDs;
+  Tag th_SeriesDataHandles;
 
   PetscErrorCode get_nb_steps(Interface &moab,int &nb_setps) const;
 
   vector<int> ia;
-  vector<UId> uids;
+  vector<EntityHandle> handles;
+  vector<ShortUId> uids;
   vector<FieldData> data;
 
-  PetscErrorCode push_dofs(UId uid,FieldData val);
+  PetscErrorCode push_dofs(const EntityHandle ent,const ShortUId uid,const FieldData val);
  
   template<typename IT>
   PetscErrorCode push_dofs(IT it,IT hi_it) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     for(;it!=hi_it;it++) {
-      ierr = push_dofs(it->get_unique_id(),it->get_FieldData()); CHKERRQ(ierr);
+      ierr = push_dofs(it->get_ent(),it->get_non_nonunique_short_id(),it->get_FieldData()); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }
@@ -143,5 +144,11 @@ typedef multi_index_container<
   > > SeriesStep_multiIndex;
 
 }
+
+/***************************************************************************//**
+ * \defgroup series_multi_indices Series structures and multi-indices
+ * \ingroup mofem
+ ******************************************************************************/
+
 
 #endif // __SERIESMULTIINDICES_HPP__
