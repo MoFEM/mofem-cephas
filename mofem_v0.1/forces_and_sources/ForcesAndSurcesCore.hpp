@@ -131,6 +131,8 @@ struct DataForcesAndSurcesCore {
 	FieldData *data = &getDiffN()(gg,0);
 	return matrix_adaptor(getN().size2(),dim,ublas::shallow_array_adaptor<FieldData>(getDiffN().size2(),data));
       } else {
+	// in some cases, f.e. for direvatives of nodal shape functions ony one
+	// gauss point is needed
 	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
     }
@@ -150,10 +152,9 @@ struct DataForcesAndSurcesCore {
       *
       */
     inline const vector_adaptor getN(int gg,const int nb_dofs) {
-      (void)getN(gg,nb_dofs-1); // throw error if nb_dofs is to big
-      int size = getN().size2();
+      (void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
       FieldData *data = &getN()(gg,0);
-      return vector_adaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
+      return vector_adaptor(nb_dofs,ublas::shallow_array_adaptor<FieldData>(nb_dofs,data));
     }
 
     /** \brief get derivatives of shape functions at Gauss pts
@@ -172,12 +173,13 @@ struct DataForcesAndSurcesCore {
       */
     inline const matrix_adaptor getDiffN(int gg,const int nb_dofs) {
       if(getN().size1() == getDiffN().size1()) {
-	(void)getN(gg,nb_dofs-1); // throw error if nb_dofs is to big
-	int size = getN().size2();	
-	int dim = getDiffN().size2()/size;
+	(void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
+	int dim = getDiffN().size2()/getN().size2();
 	FieldData *data = &getDiffN()(gg,0);
 	return matrix_adaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
       } else {
+	// in some cases, f.e. for direvatives of nodal shape functions ony one
+	// gauss point is needed
 	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
 
       }
@@ -617,6 +619,13 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      */
     inline ublas::matrix<FieldData>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
 
+    /** \bried if higher order geometry return normals at Gauss pts.
+      *
+      * \param gg gauss point number
+      */
+    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPt(const int gg) { 
+      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPt,gg); 
+    }
 
     /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
      */
