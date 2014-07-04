@@ -19,18 +19,19 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "cholesky.hpp"
-#include <petscksp.h>
 
+#include "FEMethod_UpLevelStudent.hpp"
 #include "ElasticFEMethod.hpp"
 #include "ElasticFEMethodInterface.hpp"
+
+#include "PostProcVertexMethod.hpp"
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 #include "SurfacePressure.hpp"
 #include "NodalForce.hpp"
 #include "BodyForce.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+
+#include <petscksp.h>
 
 using namespace MoFEM;
 

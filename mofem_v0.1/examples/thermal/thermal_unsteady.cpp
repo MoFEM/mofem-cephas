@@ -208,17 +208,17 @@ int main(int argc, char *argv[]) {
   ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
   ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
   ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+
   PetscPrintf(PETSC_COMM_WORLD,
     "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
   ierr = mField.finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-
-  BARRIER_RANK_START(pcomm) 
+  
+  //mField.list_dofs_by_field_name("TEMP");
   if(pcomm->rank()==0) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
   }
-  BARRIER_RANK_END(pcomm) 
 
   /*EntityHandle fe_meshset = mField.get_finite_element_meshset("THERMAL_FE");
   Range tets;
