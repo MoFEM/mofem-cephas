@@ -78,19 +78,13 @@ struct ThermalStressElement {
         commonData.temperatureAtGaussPts.resize(data.getN().size1());
 	int nb_dof = data.getFieldData().size();
 
-        switch(type) {
-	  case MBVERTEX:
-	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	    commonData.temperatureAtGaussPts[gg] 
-	      = cblas_ddot(nb_dof,&data.getN()(gg,0),1,&data.getFieldData()[0],1);
+	for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	  if(type == MBVERTEX) {
+	    commonData.temperatureAtGaussPts[gg] = 0;
 	  }
-	  break;
-	  default:
-	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	    commonData.temperatureAtGaussPts[gg] 
-	      += cblas_ddot(nb_dof,&data.getN()(gg,0),1,&data.getFieldData()[0],1);
-	  }
-        }
+	  commonData.temperatureAtGaussPts[gg] 
+	    += inner_prod(data.getN(gg,nb_dof),data.getFieldData());
+	}
 
       } catch (const std::exception& ex) {
 	ostringstream ss;
