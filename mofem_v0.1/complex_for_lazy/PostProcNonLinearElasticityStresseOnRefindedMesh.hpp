@@ -31,7 +31,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
   FEMethod_ComplexForLazy &fe_method;
 
-  Tag th_F,th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions,th_fibreDirection1,th_fibreDirection2,th_stretch1,th_stretch2;
+  Tag th_F,th_cauchy_stress,th_piola_stress,th_eshelby_stress,th_psi,th_j,th_themp,th_positions,th_fibreDirection1,th_fibreDirection2,th_stretch1,th_stretch2,th_fibreEnergy1,th_fibreEnergy2;
   PostProcStressNonLinearElasticity(Interface& _moab,FEMethod_ComplexForLazy &_fe_method):
     PostProcDisplacementsOnRefMesh(_moab,_fe_method.spatial_field_name),fe_method(_fe_method) {
 
@@ -51,6 +51,9 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
     rval = moab_post_proc.tag_get_handle("FIBRE_STRETCH_1",1,MB_TYPE_DOUBLE,th_stretch1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
     rval = moab_post_proc.tag_get_handle("FIBRE_STRETCH_2",1,MB_TYPE_DOUBLE,th_stretch2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+
+    rval = moab_post_proc.tag_get_handle("FIBRE_ENERGY_1",1,MB_TYPE_DOUBLE,th_fibreEnergy1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
+    rval = moab_post_proc.tag_get_handle("FIBRE_ENERGY_2",1,MB_TYPE_DOUBLE,th_fibreEnergy2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_THROW(rval);
   }
 
   vector<double> remeber_g_NTET;
@@ -184,30 +187,54 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
 	if(get_PhysicalEquationNumber()==eberleinholzapfel1) {
       ctx_EberleinHolzapfel1 *material_data = (ctx_EberleinHolzapfel1*)fe_method.ptr_matctx;
-      //fibre vector direction 1
+
+      double k1;
+      double k2;
+      k1 = material_data->k1;
+      k2 = material_data->k2;
+
+      //Fibre 1
+      ublas::vector<double> A1;
       ublas::vector<double> a1;
+      A1.resize(3);
       a1.resize(3);
-      //copy fibre 1 direction into vector a1
-      cblas_dcopy(3,&material_data->fibre_vector_a1[0],1,&*a1.data().begin(),1);
+      cblas_dcopy(3,&material_data->fibre_vector_a1[0],1,&*A1.data().begin(),1);
+      if (sum(A1)>0){
       //a1 current configuration
-      a1=prod(F,a1);
+      a1=prod(F,A1);
       rval = moab_post_proc.tag_set_data(th_fibreDirection1,&mit->second,1,&*a1.data().begin()); CHKERR_PETSC(rval);
-      //fibre vector direction 2
+
+      //Fibre Stretch
+      double stretch1 = norm_2(a1)/norm_2(A1);
+      rval = moab_post_proc.tag_set_data(th_stretch1,&mit->second,1,&stretch1); CHKERR_PETSC(rval);
+
+      //Fibre Energy
+      double psi_f1;
+      psi_f1 = (k1/(2*k2))*(exp(k2*pow(pow(stretch1,2)-1,2))-1);
+      rval = moab_post_proc.tag_set_data(th_fibreEnergy1,&mit->second,1,&psi_f1); CHKERR_PETSC(rval);
+      }
+
+      //Fibre 2
+      ublas::vector<double> A2;
       ublas::vector<double> a2;
+      A2.resize(3);
       a2.resize(3);
-      //copy fibre 2 direction into vector a2
-      cblas_dcopy(3,&material_data->fibre_vector_a2[0],1,&*a2.data().begin(),1);
+      cblas_dcopy(3,&material_data->fibre_vector_a2[0],1,&*A2.data().begin(),1);
+      if (sum(A2)>0){
       //a2 current configuration
-      a2=prod(F,a2);
+      a2=prod(F,A2);
       rval = moab_post_proc.tag_set_data(th_fibreDirection2,&mit->second,1,&*a2.data().begin()); CHKERR_PETSC(rval);
 
-      //Fibre Stretch 1
-      double stretch1 = norm_2(a1);
-      rval = moab_post_proc.tag_set_data(th_stretch1,&mit->second,1,&stretch1); CHKERR_PETSC(rval);
-      //Fibre Stretch 2
-      double stretch2 = norm_2(a2);
+      //Fibre Stretch
+      double stretch2 = norm_2(a2)/norm_2(A2);
       rval = moab_post_proc.tag_set_data(th_stretch2,&mit->second,1,&stretch2); CHKERR_PETSC(rval);
-	}
+
+      //Fibre Energy
+      double psi_f2;
+      psi_f2 = (k1/(2*k2))*(exp(k2*pow(pow(stretch2,2)-1,2))-1);
+      rval = moab_post_proc.tag_set_data(th_fibreEnergy2,&mit->second,1,&psi_f2); CHKERR_PETSC(rval);
+      }
+  }
       }
 
       fe_method.g_NTET = remeber_g_NTET;
