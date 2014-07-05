@@ -1426,12 +1426,16 @@ struct FieldInterface {
 
   /**
    * \brief data structure for snes (nonlinear solver) context
+   * \ingroup mofem_loop_methods
+   *
+   * Struture stores context data which are set in finctions run by PETSc SNES functions.
+   *
    */
   struct SnesMethod {
-    enum snes_context { ctx_SNESSetFunction, ctx_SNESSetJacobian, ctx_SNESNone };
+    enum snes_context { CTX_SNESSETFUNCTION, CTX_SNESSETJACOBIAN, CTX_SNESNONE };
     //
     snes_context snes_ctx;
-    SnesMethod(): snes_ctx(ctx_SNESNone) {};
+    SnesMethod(): snes_ctx(CTX_SNESNONE) {};
     //
     PetscErrorCode set_snes_ctx(const snes_context ctx_);
     //
@@ -1445,12 +1449,15 @@ struct FieldInterface {
 
   /**
    * \brief data structure for ts (time stepping) context
+   * \ingroup mofem_loop_methods
+   *
+   * Struture stores context data which are set in finctions run by PETSc Time Stepping functions.
    */
   struct TSMethod {
-    enum ts_context { ctx_TSSetRHSFunction, ctx_TSSetRHSJacobian, ctx_TSSetIFunction, ctx_TSSetIJacobian, ctx_TSTSMonitorSet, ctx_TSNone };
+    enum ts_context { CTX_TSSETRHSFUNCTION, CTX_TSSETRHSJACOBIAN, CTX_TSSETIFUNCTION, CTX_TSSETIJACOBIAN, CTX_TSTSMONITORSET, CTX_TSNONE };
     //
     ts_context ts_ctx;
-    TSMethod(): ts_ctx(ctx_TSNone),ts_a(0),ts_t(0) {};
+    TSMethod(): ts_ctx(CTX_TSNONE),ts_a(0),ts_t(0) {};
     //
     PetscErrorCode set_ts_ctx(const ts_context ctx_);
     //
@@ -1465,6 +1472,12 @@ struct FieldInterface {
     virtual ~TSMethod() {};
   };
 
+  /**
+   * \brief Data strutucture to exchange data between mofem and User Loop Methods.
+   * \ingroup mofem_loop_methods
+   *
+   * It allows to exchange data between MoFEM and user functoions. It stores informaton about multi-indices.
+   */
   struct BasicMethod: public SnesMethod,TSMethod {
     BasicMethod();    
     //
@@ -1497,7 +1510,8 @@ struct FieldInterface {
   };
 
   /**
-    * \brief structure for finite element method
+    * \brief structure for User Loop Methods on finite elements
+    * \ingroup mofem_loop_methods
     *
     * It can be used to calulate stiffnes matrices, residuals, load vectors etc.
     */  
@@ -1558,6 +1572,7 @@ struct FieldInterface {
     } 
 
       /** \brief loop over all dofs which are on a particular FE row, field, entity type and canonical side number
+       * \ingroup mofem_loop_methods
        *
        * \param FE finite elements
        * \param Name field name
@@ -1570,15 +1585,17 @@ struct FieldInterface {
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->row_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->row_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
 
-    ///loop over all dofs which are on a particular FE column, field, entity type and canonical side number
-
+    /** \brief loop over all dofs which are on a particular FE column, field, entity type and canonical side number
+      * \ingroup mofem_loop_methods
+      */ 
     #define _IT_GET_FECOL_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->col_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->col_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
 
-      ///loop over all dofs which are on a particular FE data, field, entity type and canonical side number
-
+    /** \brief loop over all dofs which are on a particular FE data, field, entity type and canonical side number
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FEDATA_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->data_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
@@ -1593,17 +1610,25 @@ struct FieldInterface {
       return index.upper_bound(boost::make_tuple(field_name,type));
     } 
 
-      ///loop over all dofs which are on a particular FE row, field and entity type
+    /** \brief loop over all dofs which are on a particular FE row, field and entity type
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
-      ///loop over all dofs which are on a particular FE column, field and entity type
+
+    /** \brief loop over all dofs which are on a particular FE column, field and entity type
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
-      ///loop over all dofs which are on a particular FE data, field and entity type
+
+    /** \brief loop over all dofs which are on a particular FE data, field and entity type
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
@@ -1617,17 +1642,26 @@ struct FieldInterface {
     typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name) const {
       return index.upper_bound(field_name);
     } 
-      ///loop over all dofs which are on a particular FE row and field
+
+    /** \brief loop over all dofs which are on a particular FE row and field
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->row_multiIndex->get<FieldName_mi_tag>(),NAME); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->row_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
-      ///loop over all dofs which are on a particular FE column and field
+
+    /** \brief loop over all dofs which are on a particular FE column and field
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->col_multiIndex->get<FieldName_mi_tag>(),NAME); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->col_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
-      ///loop over all dofs which are on a particular FE data and field
+
+    /** \brief loop over all dofs which are on a particular FE data and field
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->data_multiIndex->get<FieldName_mi_tag>(),NAME); \
@@ -1641,17 +1675,26 @@ struct FieldInterface {
     typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const EntityHandle ent) const {
       return index.upper_bound(ent);
     } 
-      ///loop over all dofs which are on a particular FE row and given element entity (handle from moab)
+
+    /** \brief loop over all dofs which are on a particular FE row and given element entity (handle from moab)
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
       FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
-      ///loop over all dofs which are on a particular FE column and given element entity (handle from moab)
+
+    /** \brief loop over all dofs which are on a particular FE column and given element entity (handle from moab)
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FECOL_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->col_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->col_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
-      ///loop over all dofs which are on a particular FE data and given element entity (handle from moab)
+
+    /** \brief loop over all dofs which are on a particular FE data and given element entity (handle from moab)
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FEDATA_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
     FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->data_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
@@ -1665,17 +1708,26 @@ struct FieldInterface {
     typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name,const EntityHandle ent) const {
       return index.upper_bound(boost::make_tuple(field_name,ent));
     } 
-    ///loop over all dofs which are on a particular FE row, field and given element entity (handle from moab)
+
+    /** \brief loop over all dofs which are on a particular FE row, field and given element entity (handle from moab)
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
-      ///loop over all dofs which are on a particular FE column, field and given element entity (handle from moab)
+
+    /** \brief loop over all dofs which are on a particular FE column, field and given element entity (handle from moab)
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
-      ///loop over all dofs which are on a particular FE data, field and given element entity (handle from moab)
+
+    /** \brief loop over all dofs which are on a particular FE data, field and given element entity (handle from moab)
+      * \ingroup mofem_loop_methods
+      */
     #define _IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
@@ -1683,6 +1735,12 @@ struct FieldInterface {
 
   };
 
+  /**
+   * \brief Data strutucture to exchange data between mofem and User Loop Methods on Entirties.
+   * \ingroup mofem_loop_methods
+   *
+   * It allows to exchange data between MoFEM and user functoions. It stores informaton about multi-indices.
+   */
   struct EntMethod: public BasicMethod {
     EntMethod();
     
@@ -2024,6 +2082,12 @@ struct FieldInterface {
  * \defgroup mofem_ref_ents Getting entities and adjacencies
  * \ingroup mofem
  ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_loop_methods Loops and methods
+ * \ingroup mofem
+ ******************************************************************************/
+
 
 
 

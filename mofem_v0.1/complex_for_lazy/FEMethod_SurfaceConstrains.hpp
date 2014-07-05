@@ -115,12 +115,12 @@ struct SnesConstrainSurfacGeometryTools: public FieldInterface::FEMethod {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
@@ -160,13 +160,13 @@ struct SnesConstrainSurfacGeometry: public SnesConstrainSurfacGeometryTools {
     matMethod.useProjectionFromCrackFront = useProjectionFromCrackFront;
     vecMethod.useProjectionFromCrackFront = useProjectionFromCrackFront; 
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	vecMethod.g = snes_f;
 	ierr = setElemData(vecMethod); CHKERRQ(ierr);
 	ierr = vecMethod.operator()(true,nonlinear); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	matMethod.C = *snes_B;
 	ierr = setElemData(matMethod); CHKERRQ(ierr);
 	ierr = matMethod.operator()(true,nonlinear); CHKERRQ(ierr);
@@ -182,12 +182,12 @@ struct SnesConstrainSurfacGeometry: public SnesConstrainSurfacGeometryTools {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	ierr = matMethod.postProcess(); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);

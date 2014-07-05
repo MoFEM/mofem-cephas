@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
         
 	//PetscAttachDebugger();
         switch(snes_ctx) {
-          case ctx_SNESSetFunction: {
+          case CTX_SNESSETFUNCTION: {
             ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
             ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
             ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -393,7 +393,7 @@ int main(int argc, char *argv[]) {
       PetscErrorCode postProcess() {
         PetscFunctionBegin;
         switch(snes_ctx) {
-          case ctx_SNESSetFunction: {
+          case CTX_SNESSETFUNCTION: {
 	    //snes_f
             ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
             ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

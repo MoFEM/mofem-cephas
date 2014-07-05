@@ -310,12 +310,12 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
     switch(snes_ctx) {
       break;
-      case ctx_SNESNone: 
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESNONE: 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = RhsInt(); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian: { 
+      case CTX_SNESSETJACOBIAN: { 
 	ierr = SNESGetIterationNumber(snes,&iter); CHKERRQ(ierr);
 	ierr = LhsInt(); CHKERRQ(ierr);
       }
@@ -413,7 +413,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
 	ierr = calulate_db(); CHKERRQ(ierr);
 	ierr = calulate_lambda_int(lambda_int); CHKERRQ(ierr);
@@ -497,7 +497,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: {
+      case CTX_SNESSETFUNCTION: {
 	//calulate residual for arc length row
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
@@ -505,7 +505,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 	  arc_ptr->res_lambda,lambda_int,arc_ptr->s);
       }
       break; 
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	//calulate diagonal therm
 	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
@@ -522,7 +522,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	ierr = VecAssemblyBegin(GhostDiag); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(GhostDiag); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(GhostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

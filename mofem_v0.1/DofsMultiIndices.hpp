@@ -28,7 +28,7 @@ namespace MoFEM {
 
 /**
  * \brief keeps information about indexed dofs
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  */
 struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMField<MoFEMEntity> interface_type_MoFEMField;
@@ -89,7 +89,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
 /**
  * \brief interface to DofMoFEMEntitys
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  */
 template <typename T>
 struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
@@ -107,7 +107,7 @@ struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
 
 /**
  * \brief keeps information about indexed dofs for the problem
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  */
 struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
   typedef interface_MoFEMField<DofMoFEMEntity> interface_type_MoFEMField;
@@ -129,7 +129,7 @@ struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
 
 /**
  * \brief interface to NumeredDofMoFEMEntity
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  */
 template <typename T>
 struct interface_NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<T> {
@@ -151,7 +151,7 @@ struct BaseFEDofMoFEMEntity {
 
 /**
  * \brief keeps information about indexed dofs for the finite element
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  */
 struct FEDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_DofMoFEMEntity<DofMoFEMEntity> {
   typedef interface_MoFEMField<DofMoFEMEntity> interface_type_MoFEMField;
@@ -166,7 +166,7 @@ struct FEDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_DofMoFEMEntity<Do
 
 /**
  * \brief keeps information about indexed dofs for the finite element
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  */
 struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity> {
   typedef interface_MoFEMField<NumeredDofMoFEMEntity> interface_type_MoFEMField;
@@ -184,7 +184,7 @@ struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDof
 /** 
  * @relates multi_index_container
  * \brief MultiIndex container keeps DofMoFEMEntity
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  */
 typedef multi_index_container<
   DofMoFEMEntity,
@@ -272,7 +272,7 @@ typedef multi_index_container<
 /** 
  * @relates multi_index_container
  * \brief MultiIndex container keeps FEDofMoFEMEntity
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  *
  * \param ordered_unique< 
  *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&FEDofMoFEMEntity::get_unique_id> >,
@@ -347,7 +347,7 @@ typedef multi_index_container<
 /** 
  * @relates multi_index_container
  * \brief MultiIndex container keeps FENumeredDofMoFEMEntity
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  *
  * \param ordered_unique< 
  *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&FEDofMoFEMEntity::get_unique_id> >,
@@ -422,7 +422,7 @@ typedef multi_index_container<
 /** 
  * @relates multi_index_container
  * \brief MultiIndex container keeps NumeredDofMoFEMEntity
- * \ingroup dof_multinices
+ * \ingroup dof_multi_indices
  *
  * \param    ordered_unique< 
       tag<Unique_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,UId,&NumeredDofMoFEMEntity::get_unique_id> >,
@@ -529,7 +529,7 @@ struct NumeredDofMoFEMEntity_mofem_index_change {
 #endif // __DOFSMULTIINDICES_HPP__
 
 /***************************************************************************//**
- * \defgroup dof_multinices Dofs structures and multi-indices
+ * \defgroup dof_multi_indices Dofs structures and multi-indices
  * \ingroup mofem
  ******************************************************************************/
 

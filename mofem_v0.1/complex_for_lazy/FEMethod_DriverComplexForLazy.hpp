@@ -80,7 +80,7 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
 	//cerr << "Fint_h " << Fint_h << endl;
 	ierr = VecSetValues(f,RowGlobSpatial[i_nodes].size(),&(RowGlobSpatial[i_nodes][0]),&(Fint_h.data()[0]),ADD_VALUES); CHKERRQ(ierr);
@@ -106,8 +106,8 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     if(arcPtr != NULL) {
 
       switch(snes_ctx) {
-        case ctx_SNESNone:
-        case ctx_SNESSetFunction: { 
+        case CTX_SNESNONE:
+        case CTX_SNESSETFUNCTION: { 
   	  analysis _type_of_analysis = type_of_analysis;
   	  type_of_analysis = scaled_themp_direvative_spatial;
   	  ierr = GetFint(); CHKERRQ(ierr);
@@ -145,9 +145,9 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction:
-      case ctx_SNESSetJacobian:
+      case CTX_SNESNONE:
+      case CTX_SNESSETFUNCTION:
+      case CTX_SNESSETJACOBIAN:
 	//cerr << "Khh " << Khh << endl;
 	ierr = MatSetValues(B,
 	  RowGlobSpatial[i_nodes].size(),&*(RowGlobSpatial[i_nodes].begin()),
@@ -238,7 +238,7 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
   virtual PetscErrorCode AssembleSpatialCoupledTangent(Mat B) {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetJacobian:
+      case CTX_SNESSETJACOBIAN:
 	if(KHh.size1()!=RowGlobMaterial[0].size()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"KHh.size()!=RowGlobMaterial[0].size()");
 	}
@@ -305,13 +305,13 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
     switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESNONE:
+      case CTX_SNESSETFUNCTION: { 
         ierr = GetFint(); CHKERRQ(ierr);
 	ierr = AssembleSpatialFint(snes_f); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian:
+      case CTX_SNESSETJACOBIAN:
 	ierr = GetTangent(); CHKERRQ(ierr);
 	ierr = AssembleSpatialTangent(*snes_B); CHKERRQ(ierr);
 	if(isCoupledProblem) {
@@ -328,18 +328,18 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
-      case ctx_SNESNone: {
+      case CTX_SNESNONE: {
 	if(arcPtr!=NULL) {
 	  ierr = VecAssemblyBegin(arcPtr->F_lambda); CHKERRQ(ierr);
 	  ierr = VecAssemblyEnd(arcPtr->F_lambda); CHKERRQ(ierr);
 	}
       }
       break;
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
@@ -368,9 +368,9 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
   virtual PetscErrorCode AssembleMaterialTangent(Mat B) {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction:
-      case ctx_SNESSetJacobian:
+      case CTX_SNESNONE:
+      case CTX_SNESSETFUNCTION:
+      case CTX_SNESSETJACOBIAN:
 	ierr = MatSetValues(B,
 	  RowGlobMaterial[0].size(),&*(RowGlobMaterial[0].begin()),
 	  ColGlobMaterial[0].size(),&*(ColGlobMaterial[0].begin()),
@@ -385,7 +385,7 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
   virtual PetscErrorCode AssembleMaterialCoupledTangent(Mat B) {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetJacobian:
+      case CTX_SNESSETJACOBIAN:
 	if(RowGlobSpatial.empty()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"RowGlobSpatial.empty()");
 	}
@@ -422,8 +422,8 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
   virtual PetscErrorCode AssembleMaterialFint(Vec f) {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESNONE:
+      case CTX_SNESSETFUNCTION: { 
 	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 	ierr = VecSetValues(f,RowGlobMaterial[0].size(),&(RowGlobMaterial[0][0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
       }
@@ -466,13 +466,13 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
       dofs_x_volume,dofs_x,
       spatial_field_name); CHKERRQ(ierr);
     switch(snes_ctx) {
-      case ctx_SNESNone:
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESNONE:
+      case CTX_SNESSETFUNCTION: { 
         ierr = GetFint(); CHKERRQ(ierr);
 	ierr = AssembleMaterialFint(snes_f); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	ierr = GetTangent(); CHKERRQ(ierr);
 	ierr = AssembleMaterialTangent(*snes_B); CHKERRQ(ierr);
 	if(isCoupledProblem) {
@@ -514,7 +514,7 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
   virtual PetscErrorCode AssembleMeshSmoothingTangent(Mat B) {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetJacobian:
+      case CTX_SNESSETJACOBIAN:
 	ierr = MatSetValues(B,
 	  RowGlobMaterial[i_nodes].size(),&*(RowGlobMaterial[i_nodes].begin()),
 	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
@@ -529,7 +529,7 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
   virtual PetscErrorCode AssembleMeshSmoothingFint(Vec f) {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 	//cerr << "Fint_h " << Fint_h << endl;
 	ierr = VecSetValues(f,RowGlobMaterial[i_nodes].size(),&(RowGlobMaterial[i_nodes][0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
@@ -546,11 +546,11 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
     switch(snes_ctx) {
-      case ctx_SNESSetFunction:  
+      case CTX_SNESSETFUNCTION:  
 	ierr = GetFint(); CHKERRQ(ierr);
 	ierr = AssembleMeshSmoothingFint(snes_f); CHKERRQ(ierr);
 	break;
-      case ctx_SNESSetJacobian:
+      case CTX_SNESSETJACOBIAN:
 	ierr = GetTangent(); CHKERRQ(ierr);
 	ierr = AssembleMeshSmoothingTangent(*snes_B); CHKERRQ(ierr);
 	break;
@@ -586,12 +586,12 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
 	ierr = calulate_db(); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
       }
       break;
       default:
@@ -618,13 +618,13 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: {
+      case CTX_SNESSETFUNCTION: {
 	arc_ptr->res_lambda = calulate_lambda_int() - pow(arc_ptr->s,2);
 	ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
       }
       break; 
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	double diag = 2*arc_ptr->dlambda*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2;
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
 	ierr = MatSetValue(*snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
@@ -640,11 +640,11 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
       }
       break;
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(GhostDiag); CHKERRQ(ierr);

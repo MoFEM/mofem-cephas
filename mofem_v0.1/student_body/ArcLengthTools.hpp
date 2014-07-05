@@ -238,15 +238,15 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
       PetscFunctionBegin;
       
       switch(snes_ctx) {
-        case ctx_SNESNone:
-        case ctx_SNESSetFunction: {
+        case CTX_SNESNONE:
+        case CTX_SNESSETFUNCTION: {
           //F_lambda
           ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
           ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         }
         break;
-        case ctx_SNESSetJacobian: {
+        case CTX_SNESSETJACOBIAN: {
         }
         break;
         default:
@@ -260,9 +260,9 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
       PetscFunctionBegin;
       
       switch(snes_ctx) {
-        case ctx_SNESNone: {
+        case CTX_SNESNONE: {
         }
-        case ctx_SNESSetFunction: {
+        case CTX_SNESSETFUNCTION: {
           //F_lambda
           ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -273,7 +273,7 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
           PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
         }
         break;
-        case ctx_SNESSetJacobian: {
+        case CTX_SNESSETJACOBIAN: {
         }
         break;
         default:

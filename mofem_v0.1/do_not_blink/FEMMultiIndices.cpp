@@ -467,7 +467,7 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
       }
     }
   } else {
-    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   PetscFunctionReturn(0);
 }
@@ -564,7 +564,7 @@ PetscErrorCode NumeredMoFEMFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(D
   FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"dof which index < %d > not found",idx);
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);
@@ -575,7 +575,7 @@ PetscErrorCode NumeredMoFEMFiniteElement::get_col_dofs_by_petsc_gloabl_dof_idx(D
   FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"dof which index < %d > not found",idx);
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);
