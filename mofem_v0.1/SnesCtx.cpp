@@ -37,29 +37,29 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
     ierr = (*bit)->set_snes(snes); CHKERRQ(ierr);
     (*bit)->snes_x = x;
     (*bit)->snes_f = f;
-    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETFUNCTION);  CHKERRQ(ierr);
     ierr = snes_ctx->mField.problem_basic_method_preProcess(snes_ctx->problem_name,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
   SnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Rhs.begin();
   for(;lit!=snes_ctx->loops_to_do_Rhs.end();lit++) {
-    ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);  CHKERRQ(ierr);
+    ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETFUNCTION);  CHKERRQ(ierr);
     ierr = lit->second->set_snes(snes); CHKERRQ(ierr);
     lit->second->snes_x = x;
     lit->second->snes_f = f;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Rhs: %s\n",lit->first.c_str());
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
-    ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
+    ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
   bit = snes_ctx->postProcess_Rhs.begin();
   for(;bit!=snes_ctx->postProcess_Rhs.end();bit++) {
     ierr = (*bit)->set_snes(snes); CHKERRQ(ierr);
     (*bit)->snes_x = x;
     (*bit)->snes_f = f;
-    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetFunction);  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETFUNCTION);  CHKERRQ(ierr);
     ierr = snes_ctx->mField.problem_basic_method_postProcess(snes_ctx->problem_name,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
   ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -81,13 +81,13 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ct
     (*bit)->snes_A = A;
     (*bit)->snes_B = B;
     (*bit)->snes_flag = flag;
-    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetJacobian); CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETJACOBIAN); CHKERRQ(ierr);
     ierr = snes_ctx->mField.problem_basic_method_preProcess(snes_ctx->problem_name,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
   SnesCtx::loops_to_do_type::iterator lit = snes_ctx->loops_to_do_Mat.begin();
   for(;lit!=snes_ctx->loops_to_do_Mat.end();lit++) {
-    ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetJacobian); CHKERRQ(ierr);
+    ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETJACOBIAN); CHKERRQ(ierr);
     ierr = lit->second->set_snes(snes); CHKERRQ(ierr);
     lit->second->snes_x = x;
     lit->second->snes_A = A;
@@ -96,7 +96,7 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ct
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Mat: %s\n",lit->first.c_str());
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
-    ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESNone);
+    ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESNONE);
   }
   bit = snes_ctx->postProcess_Mat.begin();
   for(;bit!=snes_ctx->postProcess_Mat.end();bit++) {
@@ -105,9 +105,9 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ct
     (*bit)->snes_A = A;
     (*bit)->snes_B = B;
     (*bit)->snes_flag = flag;
-    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESSetJacobian); CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETJACOBIAN); CHKERRQ(ierr);
     ierr = snes_ctx->mField.problem_basic_method_postProcess(snes_ctx->problem_name,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::ctx_SNESNone);  CHKERRQ(ierr);
+    ierr = (*bit)->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
   ierr = MatAssemblyBegin(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

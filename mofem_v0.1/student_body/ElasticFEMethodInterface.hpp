@@ -373,19 +373,19 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESNone: {
+      case CTX_SNESNONE: {
 	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetFunction:  {
+      case CTX_SNESSETFUNCTION:  {
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
@@ -411,16 +411,16 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
     ierr = Calc_gap(); CHKERRQ(ierr);
 
     switch(snes_ctx) {
-      case ctx_SNESNone: {
+      case CTX_SNESNONE: {
 	ierr = RhsInt(); CHKERRQ(ierr);
 	ierr = LhsInt(); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = RhsInt(); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian: { 
+      case CTX_SNESSETJACOBIAN: { 
 	ierr = LhsInt(); CHKERRQ(ierr);
       }
       break;

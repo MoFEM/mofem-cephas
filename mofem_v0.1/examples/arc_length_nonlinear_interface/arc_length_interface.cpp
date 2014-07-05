@@ -366,9 +366,9 @@ int main(int argc, char *argv[]) {
         
 	//PetscAttachDebugger();
         switch(snes_ctx) {
-          case ctx_SNESNone: {}
+          case CTX_SNESNONE: {}
 	  break;
-          case ctx_SNESSetFunction: {
+          case CTX_SNESSETFUNCTION: {
             ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
             ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
             ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -384,9 +384,9 @@ int main(int argc, char *argv[]) {
       PetscErrorCode postProcess() {
         PetscFunctionBegin;
         switch(snes_ctx) {
-          case ctx_SNESNone: {}
+          case CTX_SNESNONE: {}
 	  break;
-          case ctx_SNESSetFunction: {
+          case CTX_SNESSETFUNCTION: {
             ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
             ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
             ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
@@ -599,7 +599,7 @@ int main(int argc, char *argv[]) {
 
     //Update History and Calulate Residual
     //Tell Interface method that kappa is upadated
-    int_my_fe.snes_ctx = FieldInterface::FEMethod::ctx_SNESNone;
+    int_my_fe.snes_ctx = FieldInterface::FEMethod::CTX_SNESNONE;
     ierr = int_my_fe.set_ctx_int(NonLinearInterfaceFEMethod::ctx_KappaUpdate); CHKERRQ(ierr);
     //run this on all processors, so we could save history tags on all parts and restart
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",int_my_fe,0,pcomm->size());  CHKERRQ(ierr);

@@ -505,7 +505,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionBegin;
 
       switch(snes_ctx) {
-        case ctx_SNESNone: {
+        case CTX_SNESNONE: {
 	  // Note MAT_FLUSH_ASSEMBLY
 	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -513,12 +513,12 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
         }
 	break;
-        case ctx_SNESSetFunction: {
+        case CTX_SNESSETFUNCTION: {
 	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	}
 	break;
-        case ctx_SNESSetJacobian: {
+        case CTX_SNESSETJACOBIAN: {
 	  // Note MAT_FLUSH_ASSEMBLY
 	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -539,14 +539,14 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = GetMatrices(); CHKERRQ(ierr);
 
       switch(snes_ctx) {
-        case ctx_SNESNone: {
+        case CTX_SNESNONE: {
 	  ierr = RhsAndLhs(); CHKERRQ(ierr);
         }
-        case ctx_SNESSetFunction: {
+        case CTX_SNESSETFUNCTION: {
 	  ierr = Rhs(); CHKERRQ(ierr);
 	}
 	break;
-        case ctx_SNESSetJacobian: {
+        case CTX_SNESSETJACOBIAN: {
 	  ierr = Lhs(); CHKERRQ(ierr);
 	}
         break;
