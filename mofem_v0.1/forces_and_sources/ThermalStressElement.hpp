@@ -23,8 +23,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __BODY_FORCE_HPP
-#define __BODY_FORCE_HPP
+#ifndef __THERMALSTRESSELEMENT_HPP
+#define __THERMALSTRESSELEMENT_HPP
 
 #include "ForcesAndSurcesCore.hpp"
 #include "SnesCtx.hpp"
@@ -65,9 +65,10 @@ struct ThermalStressElement {
   struct OpGetTemperatureAtGaussPts: public TetElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
-    OpGetTemperatureAtGaussPts(const string field_name,CommonData &common_data):
+    int verb;
+    OpGetTemperatureAtGaussPts(const string field_name,CommonData &common_data,int _verb = 0):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data) {}
+      commonData(common_data),verb(_verb) {}
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -100,9 +101,10 @@ struct ThermalStressElement {
     Vec F;
     BlockData &dAta;
     CommonData &commonData;
-    OpThermalStressRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data):
+    int verb;
+    OpThermalStressRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data,int _verb = 0):
       TetElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data),commonData(common_data) { }
+      F(_F),dAta(data),commonData(common_data),verb(_verb) { }
 
     ublas::vector<double> Nf;
     PetscErrorCode doWork(
@@ -127,22 +129,32 @@ struct ThermalStressElement {
       if(nb_dofs % rank != 0) {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      if(data.getN().size2() <= nb_dofs/rank) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      if(data.getN().size2() < nb_dofs/rank) {
+	SETERRQ3(PETSC_COMM_SELF,1,
+	  "data inconsistency N.size2 %d nb_dof %d rank %d",data.getN().size2(),nb_dofs,rank);
       }
 
       Nf.resize(nb_dofs);
       bzero(&*Nf.data().begin(),nb_dofs*sizeof(FieldData));
+      
+      if(verb > 0) {
+	if(type == MBVERTEX) {
+	  cout << commonData.temperatureAtGaussPts << endl;
+	  cout << "thermal expansion " << dAta.thermalExpansion << endl;
+	}
+      }
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 	
-	double phi = (commonData.temperatureAtGaussPts[gg]-dAta.refTemperature);
-	double val = dAta.thermalExpansion*phi;
-	val *= getVolume()*getGaussPts()(3,gg);
-
-	//eps_thermal = [val, val, val ], vector notation
+	//eps_thermal = (phi-phi_ref)*alpha 
 	//sig_thernal = - (E/1-2mu) * eps_thermal 
 	//var_eps = [ diff_N[0], diffN[1], diffN[2] ]
+
+	double phi = (commonData.temperatureAtGaussPts[gg]-dAta.refTemperature);
+      	double eps_thermal = dAta.thermalExpansion*phi;
+	double sig_thermal = -eps_thermal*(dAta.youngModulus/(1.-2*dAta.poissonRatio));
+
+	double val = sig_thermal*getVolume()*getGaussPts()(3,gg);
 
 	double *diff_N;
 	diff_N = &data.getDiffN()(gg,0);
@@ -180,9 +192,9 @@ struct ThermalStressElement {
       ierr = mField.modify_finite_element_add_field_data(fe_name,field_name); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data(fe_name,thermal_field_name); CHKERRQ(ierr);
       if(mField.check_field(mesh_nodals_positions)) {
-	ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
+	ierr = mField.modify_finite_element_add_field_data(fe_name,mesh_nodals_positions); CHKERRQ(ierr);
       }
-      ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+      ierr = mField.modify_problem_add_finite_element(problem_name,fe_name); CHKERRQ(ierr);
 
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
 
@@ -192,6 +204,15 @@ struct ThermalStressElement {
 	setOfBlocks[it->get_msId()].poissonRatio = mydata.data.Poisson;
 	setOfBlocks[it->get_msId()].thermalExpansion = mydata.data.ThermalExpansion;
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+	ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,fe_name); CHKERRQ(ierr);
+
+        double ref_temp;
+	PetscBool flg;
+	ierr = PetscOptionsGetReal(PETSC_NULL,"-my_ref_temp",&ref_temp,&flg); CHKERRQ(ierr);
+	if(flg == PETSC_TRUE) {
+	  PetscPrintf(PETSC_COMM_WORLD,"set refernce temperature %3.2f\n",ref_temp);
+	  setOfBlocks[it->get_msId()].refTemperature = ref_temp;
+	}
 
       }
 
@@ -200,7 +221,7 @@ struct ThermalStressElement {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F) {
+  PetscErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F,int verb = 0) {
     PetscFunctionBegin;
 
     if(mField.check_field(thermal_field_name)) {
@@ -208,8 +229,8 @@ struct ThermalStressElement {
       map<int,BlockData>::iterator sit = setOfBlocks.begin();
       for(;sit!=setOfBlocks.end();sit++) {
 	//add finite elemen
-	feThermalStressRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(thermal_field_name,commonData));
-	feThermalStressRhs.get_op_to_do_Rhs().push_back(new OpThermalStressRhs(field_name,F,sit->second,commonData));
+	feThermalStressRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(thermal_field_name,commonData,verb));
+	feThermalStressRhs.get_op_to_do_Rhs().push_back(new OpThermalStressRhs(field_name,F,sit->second,commonData,verb));
       }
 
     }
@@ -222,5 +243,7 @@ struct ThermalStressElement {
 
 }
 
-#endif //__BODY_FORCE_HPP
+#endif //__THERMALSTRESSELEMENT_HPP
+
+
 

@@ -39,3 +39,6 @@ target_link_libraries(thermal_unseady mofem_student_body mofem_forces_and_source
 #  -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 
 #  -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor)
 
+install(TARGETS thermal_steady DESTINATION bin)
+install(TARGETS thermal_unseady DESTINATION bin)
+
