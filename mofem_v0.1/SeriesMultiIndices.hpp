@@ -55,10 +55,10 @@ struct MoFEMSeries {
 
   vector<int> ia;
   vector<EntityHandle> handles;
-  vector<ShortUId> uids;
+  vector<ShortId> uids;
   vector<FieldData> data;
 
-  PetscErrorCode push_dofs(const EntityHandle ent,const ShortUId uid,const FieldData val);
+  PetscErrorCode push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val);
  
   template<typename IT>
   PetscErrorCode push_dofs(IT it,IT hi_it) {

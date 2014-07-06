@@ -1037,7 +1037,7 @@ struct FieldInterface {
   /** list dofs
     * \ingroup mofem_dofs
    */
-  virtual PetscErrorCode list_dofs_by_field_name(const string &name) const = 0;
+  virtual PetscErrorCode list_dofs_by_field_name(const string &name,bool synchronised = false) const = 0;
 
   /** clear fields
     * \ingroup mofem_dofs

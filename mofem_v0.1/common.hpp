@@ -193,8 +193,48 @@ typedef PetscScalar FieldData;
 typedef int ApproximationOrder;
 typedef int ApproximationRank;
 typedef uint128_t UId;
-//typedef checked_uint128_t UId;
-typedef int ShortUId;
+typedef int ShortId;
+//typedef checked_uint128_tUId;
+
+/** \brief loacl unique id
+  *
+  * It is based on local entitu handle
+  */
+struct LocalUId: public UId {
+  LocalUId(): UId() {}
+  LocalUId(const UId &u): UId(u) {}
+  friend bool operator< (const LocalUId& lhs, const LocalUId& rhs);
+  friend bool operator> (const LocalUId& lhs, const LocalUId& rhs);
+  friend bool operator==(const LocalUId& lhs, const LocalUId& rhs);
+  friend bool operator!=(const LocalUId& lhs, const LocalUId& rhs);
+};
+
+inline bool operator< (const LocalUId& lhs, const LocalUId& rhs){ return (UId)rhs > (UId)lhs; }
+inline bool operator> (const LocalUId& lhs, const LocalUId& rhs){ return rhs < lhs; }
+inline bool operator==(const LocalUId& lhs, const LocalUId& rhs) { return (UId)lhs == (UId)rhs; }
+inline bool operator!=(const LocalUId& lhs, const LocalUId& rhs) { return !(lhs == rhs); }
+
+
+/** \brief loacl unique id
+  *
+  * It is based on owner entity handle. Eeach entity is own by some
+  * proc/partition, which own set entity handles, which are not unique across
+  * mesh on diffrent processors.
+  *
+  */
+struct GlobalUId: public UId {
+  GlobalUId(): UId() {}
+  GlobalUId(const UId &u): UId(u) {}
+  friend bool operator< (const GlobalUId& lhs, const GlobalUId& rhs);
+  friend bool operator> (const GlobalUId& lhs, const GlobalUId& rhs);
+  friend bool operator==(const GlobalUId& lhs, const GlobalUId& rhs);
+  friend bool operator!=(const GlobalUId& lhs, const GlobalUId& rhs);
+};
+
+inline bool operator< (const GlobalUId& lhs, const GlobalUId& rhs){ return (UId)rhs > (UId)lhs; }
+inline bool operator> (const GlobalUId& lhs, const GlobalUId& rhs){ return rhs < lhs; }
+inline bool operator==(const GlobalUId& lhs, const GlobalUId& rhs) { return (UId)lhs == (UId)rhs; }
+inline bool operator!=(const GlobalUId& lhs, const GlobalUId& rhs) { return !(lhs == rhs); }
 
 #define BITREFEDGES_SIZE 6 /*number of edges on tets*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinments*/

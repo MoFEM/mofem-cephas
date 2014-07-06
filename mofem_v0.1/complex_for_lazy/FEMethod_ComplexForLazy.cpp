@@ -299,7 +299,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	  order_edges[ee] = eiit->get_max_order();
 	  dofs_edge[ee] = &dofs_edge_data[ee].data()[0];
 	  assert(dofs_edge_data[ee].size() == 3*(unsigned int)NBEDGE_H1(order_edges[ee]));
-	  map<UId,FieldData> map_edge_dofs;
+	  map<LocalUId,FieldData> map_edge_dofs;
 	  for(;eiit!=hi_eiit;eiit++) dofs_edge_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData();
 	  if(diffH1edgeNinvJac[ee].size() < (unsigned int)NBEDGE_H1(order_edges[ee])) {
 	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
