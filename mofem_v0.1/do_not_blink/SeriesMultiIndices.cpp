@@ -60,7 +60,7 @@ PetscErrorCode MoFEMSeries::get_nb_steps(Interface &moab,int &nb_steps) const {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeries::push_dofs(const EntityHandle ent,const ShortUId uid,const FieldData val) {
+PetscErrorCode MoFEMSeries::push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val) {
   PetscFunctionBegin;
   if(!record_begin) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"you neet to set recording");
@@ -119,10 +119,10 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
     }
     //uids
     {
-      const ShortUId* tag_data;
+      const ShortId* tag_data;
       int tag_size;
       rval = moab.tag_get_by_ptr(th_SeriesDataUIDs,&meshset,1,(const void **)&tag_data,&tag_size); CHKERR_PETSC(rval);
-      int nb = tag_size/sizeof(ShortUId);
+      int nb = tag_size/sizeof(ShortId);
       uids.insert(uids.end(),tag_data,&tag_data[nb]);
     }
     if(handles.size() != uids.size()) {
@@ -186,7 +186,7 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   //uids
   for(unsigned int ii = 1;ii<ia.size();ii++) {
     void const* tag_data[] = { &uids[ia[ii-1]] };
-    int tag_sizes[] = { (ia[ii]-ia[ii-1])*sizeof(ShortUId) };
+    int tag_sizes[] = { (ia[ii]-ia[ii-1])*sizeof(ShortId) };
     rval = moab.tag_set_by_ptr(th_SeriesDataUIDs,&contained[ii-1],1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   }
   
@@ -217,10 +217,10 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &d
   int handles_size;
   rval = moab.tag_get_by_ptr(ptr->th_SeriesDataHandles,&contained[step_number],1,(const void **)&handles_ptr,&handles_size); CHKERR_PETSC(rval);
 
-  ShortUId *uids_ptr;
+  ShortId *uids_ptr;
   int uids_size;
   rval = moab.tag_get_by_ptr(ptr->th_SeriesDataUIDs,&contained[step_number],1,(const void **)&uids_ptr,&uids_size); CHKERR_PETSC(rval);
-  uids_size /= sizeof(ShortUId);
+  uids_size /= sizeof(ShortId);
 
   if(handles_size != uids_size) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
@@ -237,16 +237,16 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &d
 
   for(int ii = 0;ii<uids_size;ii++) {
     EntityHandle ent = handles_ptr[ii];
-    ShortUId uid = uids_ptr[ii];
+    ShortId uid = uids_ptr[ii];
     FieldData val = data_ptr[ii];
-    DofMoFEMEntity_multiIndex::index<Composite_Entity_and_ShortUId_mi_tag>::type::iterator dit;
-    dit = dofsMoabField.get<Composite_Entity_and_ShortUId_mi_tag>().find(boost::make_tuple(ent,uid));
-    if(dit!=dofsMoabField.get<Composite_Entity_and_ShortUId_mi_tag>().end()) {
+    DofMoFEMEntity_multiIndex::index<Composite_Entity_and_ShortId_mi_tag>::type::iterator dit;
+    dit = dofsMoabField.get<Composite_Entity_and_ShortId_mi_tag>().find(boost::make_tuple(ent,uid));
+    if(dit!=dofsMoabField.get<Composite_Entity_and_ShortId_mi_tag>().end()) {
       //cerr << *dit << endl;
       dit->get_FieldData() = val;
     } else {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,
-	"data inconsistency, getting data series, dof on ENTITY and ShortUId can't be found");
+	"data inconsistency, getting data series, dof on ENTITY and ShortId can't be found");
     }
   }
 

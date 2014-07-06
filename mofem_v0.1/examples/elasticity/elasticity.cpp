@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     
   //Read mesh to MOAB
   const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  option = "PARALLEL=BCAST;";//;DEBUG_IO";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
 
   //partition
-  ierr = mField.partition_problem("ELASTIC_PROB"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("ELASTIC_PROB",5); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("ELASTIC_PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_PROB"); CHKERRQ(ierr);

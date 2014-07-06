@@ -192,9 +192,9 @@ typedef int EntPart;
 typedef PetscScalar FieldData;
 typedef int ApproximationOrder;
 typedef int ApproximationRank;
-typedef uint128_t UId;
-//typedef checked_uint128_t UId;
-typedef int ShortUId;
+typedef uint128_t LocalUId;
+//typedef checked_uint128_t LocalUId;
+typedef int ShortId;
 
 #define BITREFEDGES_SIZE 6 /*number of edges on tets*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinments*/

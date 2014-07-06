@@ -2177,7 +2177,7 @@ PetscErrorCode FieldCore::build_adjacencies(const Range &ents,int verb) {
 	continue;
       }
     }
-    UId ent_uid;
+    LocalUId ent_uid;
     ent_uid = 0;
     DofMoFEMEntity_multiIndex_uid_view::iterator rvit;
     rvit = fit->row_dof_view.begin();
@@ -3053,7 +3053,7 @@ PetscErrorCode FieldCore::partition_check_matrix_fill_in(const string &problem_n
 	    PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"adjacencies data inconsistency");
 	} else {
-	  UId uid = ait->get_ent_unique_id();
+	  LocalUId uid = ait->get_ent_unique_id();
 	  if(ents_moabfield->find(uid) == ents_moabfield->end()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
 	  } 
@@ -3076,7 +3076,7 @@ PetscErrorCode FieldCore::partition_check_matrix_fill_in(const string &problem_n
 	  if(ait==fem_adjacencies->end()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"adjacencies data inconsistency");
 	  } else {
-	    UId uid = ait->get_ent_unique_id();
+	    LocalUId uid = ait->get_ent_unique_id();
 	    if(ents_moabfield->find(uid) == ents_moabfield->end()) {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
 	    } 
@@ -5191,7 +5191,7 @@ PetscErrorCode FieldCore::record_field(const string& serie_name,const string& fi
     if((dof_bit&mask) != dof_bit) continue;
     if((dof_bit&bit).any()) {
       EntityHandle ent = dit->get_ent();
-      ShortUId uid = dit->get_non_nonunique_short_id();
+      ShortId uid = dit->get_non_nonunique_short_id();
       FieldData val = dit->get_FieldData();
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(ent,uid,val); CHKERRQ(ierr);
     }

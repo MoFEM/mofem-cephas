@@ -444,7 +444,7 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
     MOFEM_DOFS_VIEW &mofem_dofs_view,
     const int operation_type) {
   PetscFunctionBegin;
-  UId uid;
+  LocalUId uid;
   typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
   DofMoFEMEntity_multiIndex_uid_view::iterator it,it_end;
   if(operation_type==Interface::UNION) {
@@ -549,7 +549,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
 }
 
 PetscErrorCode EntMoFEMFiniteElement::get_uid_side_number(
-  Interface &moab,const UId _ent_uid_,
+  Interface &moab,const LocalUId _ent_uid_,
   const DofMoFEMEntity_multiIndex &dofsMoabField,
   int &side_number, int &sense, int &offset) const { 
   PetscFunctionBegin;
