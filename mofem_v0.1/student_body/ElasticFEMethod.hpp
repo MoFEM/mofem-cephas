@@ -111,7 +111,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
 
       if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
-	EntityHandle ent = fe_ptr->get_ent();
+	EntityHandle ent = fePtr->get_ent();
 	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
 
 	  Mat_Elastic mydata;

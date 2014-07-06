@@ -39,13 +39,13 @@ struct FieldInterface {
   virtual Interface& get_moab() = 0; 
 
   /** 
-    * \brief check data consistency in ents_moabfield
+    * \brief check data consistency in entitiesPtr
     *
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_field(const string& name) = 0;
 
   /** 
-    * \brief check data consistency in ents_moabfield
+    * \brief check data consistency in entitiesPtr
     *
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_field() = 0;
@@ -327,7 +327,7 @@ struct FieldInterface {
     * \param problem pointer
     * \param rc could be Row or Col
     */
-  virtual PetscErrorCode record_problem(const string& serie_name,const MoFEMProblem *problem_ptr,RowColData rc) = 0;
+  virtual PetscErrorCode record_problem(const string& serie_name,const MoFEMProblem *problemPtr,RowColData rc) = 0;
 
   /**
     * \ingroup mofem_series
@@ -407,7 +407,7 @@ struct FieldInterface {
   * \param EntityHandle meshset
   *
   */
-  virtual PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1) = 0;
+  virtual PetscErrorCode seed_finiteElementsPtr(const EntityHandle meshset,int verb = -1) = 0;
 
   /**
   * Create finite elements based from eneties in meshses. Throw error if entity is not in database
@@ -415,7 +415,7 @@ struct FieldInterface {
   * \param Range entities
   *
   */
-  virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
+  virtual PetscErrorCode seed_finiteElementsPtr(const Range &entities,int verb = -1) = 0;
 
   /**
   * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjencies) in a particular BitRefLevel
@@ -603,7 +603,7 @@ struct FieldInterface {
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
   virtual PetscErrorCode get_adjacencies(
-    const MoFEMProblem *problem_ptr,
+    const MoFEMProblem *problemPtr,
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
@@ -658,7 +658,7 @@ struct FieldInterface {
 
   /** \brief remove finite element from mofem database
     */
-  virtual PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode delete_finiteElementsPtr_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief left shift bit ref level
     * this results of deletion of enetities on far left side
@@ -970,7 +970,7 @@ struct FieldInterface {
   virtual PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name,const bool recursive = false) = 0;
 
   /// list finite elements in database
-  virtual PetscErrorCode list_finite_elements() const = 0;
+  virtual PetscErrorCode list_finiteElementsPtr() const = 0;
 
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
@@ -1061,15 +1061,15 @@ struct FieldInterface {
 
   /** build finite elements
     */
-  virtual PetscErrorCode build_finite_elements(int verb = -1) = 0;
+  virtual PetscErrorCode build_finiteElementsPtr(int verb = -1) = 0;
 
   /** clear finite elements
     */
-  virtual PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode clear_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** clear finite elements
     */
-  virtual PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1) = 0;
+  virtual PetscErrorCode clear_finiteElementsPtr(const string &name,const Range &ents,int verb = -1) = 0;
 
   /** \brief build ajacencies 
     *
@@ -1091,7 +1091,7 @@ struct FieldInterface {
     * \param bit
     * \param mask
     */
-  virtual PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode clear_adjacencies_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief clear adjacency map for entities on given bit level
     *
@@ -1158,7 +1158,7 @@ struct FieldInterface {
    * \param name problem name 
    * \param do_skip if true, MultiIndices are set for finite element only on entities own by given partition
    */
-  virtual PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1) = 0;
+  virtual PetscErrorCode partition_finiteElementsPtr(const string &name,bool do_skip = true,int verb = -1) = 0;
 
   /** \brief check if matrix fill in correspond to finite element indices
     *
@@ -1237,7 +1237,7 @@ struct FieldInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problemPtr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
   /** 
     * \brief set values of vector from/to meshdatabase
@@ -1267,7 +1267,7 @@ struct FieldInterface {
     *
     */
   virtual PetscErrorCode set_other_local_VecCreateGhost(
-    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+    const MoFEMProblem *problemPtr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
     *
@@ -1481,31 +1481,31 @@ struct FieldInterface {
   struct BasicMethod: public SnesMethod,TSMethod {
     BasicMethod();    
     //
-    PetscErrorCode setProblem(const MoFEMProblem *_problem_ptr);
-    PetscErrorCode setFields(const MoFEMField_multiIndex *_moabfields);
+    PetscErrorCode setProblem(const MoFEMProblem *_problemPtr);
+    PetscErrorCode setFields(const MoFEMField_multiIndex *_fieldsPtr);
     PetscErrorCode setEnts(
-      const  RefMoFEMEntity_multiIndex *_refined_entities,
-      const MoFEMEntity_multiIndex *_ents_moabfield);
-    PetscErrorCode setDofs(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
+      const  RefMoFEMEntity_multiIndex *_refinedEntitiesPtr,
+      const MoFEMEntity_multiIndex *_entitiesPtr);
+    PetscErrorCode setDofs(const DofMoFEMEntity_multiIndex *_dofsPtr);
     PetscErrorCode setFiniteElements(
-      const RefMoFEMElement_multiIndex *_refined_finite_elements,
-      const MoFEMFiniteElement_multiIndex *_finite_elements);
-    PetscErrorCode setFiniteElementsEntities(const EntMoFEMFiniteElement_multiIndex *_finite_elements_moabents);
-    PetscErrorCode setAdjacencies(const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *_fem_adjacencies);
+      const RefMoFEMElement_multiIndex *_refinedFiniteElementsPtr,
+      const MoFEMFiniteElement_multiIndex *_finiteElementsPtr);
+    PetscErrorCode setFiniteElementsEntities(const EntMoFEMFiniteElement_multiIndex *_finiteElementsEntitiesPtr);
+    PetscErrorCode setAdjacencies(const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *_adjacenciesPtr);
     //
     virtual PetscErrorCode preProcess() = 0;
     virtual PetscErrorCode operator()() = 0;
     virtual PetscErrorCode postProcess() = 0;
     //
-    const RefMoFEMEntity_multiIndex *refined_entities;
-    const RefMoFEMElement_multiIndex *refined_finite_elements;
-    const MoFEMProblem *problem_ptr;
-    const MoFEMField_multiIndex *moabfields;
-    const MoFEMEntity_multiIndex *ents_moabfield;
-    const DofMoFEMEntity_multiIndex *dofs_moabfield;
-    const MoFEMFiniteElement_multiIndex *finite_elements;
-    const EntMoFEMFiniteElement_multiIndex *finite_elements_moabents;
-    const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *fem_adjacencies;
+    const RefMoFEMEntity_multiIndex *refinedEntitiesPtr;
+    const RefMoFEMElement_multiIndex *refinedFiniteElementsPtr;
+    const MoFEMProblem *problemPtr;
+    const MoFEMField_multiIndex *fieldsPtr;
+    const MoFEMEntity_multiIndex *entitiesPtr;
+    const DofMoFEMEntity_multiIndex *dofsPtr;
+    const MoFEMFiniteElement_multiIndex *finiteElementsPtr;
+    const EntMoFEMFiniteElement_multiIndex *finiteElementsEntitiesPtr;
+    const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
     virtual ~BasicMethod() {};
   };
 
@@ -1551,14 +1551,14 @@ struct FieldInterface {
     PetscErrorCode postProcess();
     //
     PetscErrorCode setFE(const NumeredMoFEMFiniteElement *_fe_ptr); 
-    PetscErrorCode setData(const FEDofMoFEMEntity_multiIndex *_data_multiIndex);
-    PetscErrorCode setRowData(const FENumeredDofMoFEMEntity_multiIndex *_row_multiIndex);
-    PetscErrorCode setColData(const FENumeredDofMoFEMEntity_multiIndex *_col_multiIndex);
-    string fe_name;
-    const NumeredMoFEMFiniteElement *fe_ptr;
-    const FEDofMoFEMEntity_multiIndex *data_multiIndex;
-    const FENumeredDofMoFEMEntity_multiIndex *row_multiIndex;
-    const FENumeredDofMoFEMEntity_multiIndex *col_multiIndex;
+    PetscErrorCode setData(const FEDofMoFEMEntity_multiIndex *_data_ptr);
+    PetscErrorCode setRowData(const FENumeredDofMoFEMEntity_multiIndex *_row_ptr);
+    PetscErrorCode setColData(const FENumeredDofMoFEMEntity_multiIndex *_col_ptr);
+    string feName;
+    const NumeredMoFEMFiniteElement *fePtr;
+    const FEDofMoFEMEntity_multiIndex *dataPtr;
+    const FENumeredDofMoFEMEntity_multiIndex *rowPtr;
+    const FENumeredDofMoFEMEntity_multiIndex *colPtr;
 
     template<class MULTIINDEX>
     typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,  
@@ -1582,24 +1582,24 @@ struct FieldInterface {
        */
     #define _IT_GET_FEROW_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->row_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->row_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->rowPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->rowPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
 
     /** \brief loop over all dofs which are on a particular FE column, field, entity type and canonical side number
       * \ingroup mofem_loop_methods
       */ 
     #define _IT_GET_FECOL_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->col_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->col_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->colPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->colPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
 
     /** \brief loop over all dofs which are on a particular FE data, field, entity type and canonical side number
       * \ingroup mofem_loop_methods
       */
     #define _IT_GET_FEDATA_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
-      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->data_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
-      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->data_multiIndex->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->dataPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
+      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->dataPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
 
     template<class MULTIINDEX>
     typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name,const EntityType type) const {
@@ -1615,24 +1615,24 @@ struct FieldInterface {
       */
     #define _IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->rowPtr->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->rowPtr->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
 
     /** \brief loop over all dofs which are on a particular FE column, field and entity type
       * \ingroup mofem_loop_methods
       */
     #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->colPtr->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->colPtr->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
 
     /** \brief loop over all dofs which are on a particular FE data, field and entity type
       * \ingroup mofem_loop_methods
       */
     #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
-      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
-      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->dataPtr->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); \
+      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->dataPtr->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
 
     template<class MULTIINDEX>
     typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name) const {
@@ -1648,24 +1648,24 @@ struct FieldInterface {
       */
     #define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->row_multiIndex->get<FieldName_mi_tag>(),NAME); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->row_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->rowPtr->get<FieldName_mi_tag>(),NAME); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->rowPtr->get<FieldName_mi_tag>(),NAME); IT++
 
     /** \brief loop over all dofs which are on a particular FE column and field
       * \ingroup mofem_loop_methods
       */
     #define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->col_multiIndex->get<FieldName_mi_tag>(),NAME); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->col_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->colPtr->get<FieldName_mi_tag>(),NAME); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->colPtr->get<FieldName_mi_tag>(),NAME); IT++
 
     /** \brief loop over all dofs which are on a particular FE data and field
       * \ingroup mofem_loop_methods
       */
     #define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
-      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->data_multiIndex->get<FieldName_mi_tag>(),NAME); \
-      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->data_multiIndex->get<FieldName_mi_tag>(),NAME); IT++
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->dataPtr->get<FieldName_mi_tag>(),NAME); \
+      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->dataPtr->get<FieldName_mi_tag>(),NAME); IT++
 
     template<class MULTIINDEX>
     typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const EntityHandle ent) const {
@@ -1681,24 +1681,24 @@ struct FieldInterface {
       */
     #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
       FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->row_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->rowPtr->get<MoABEnt_mi_tag>(),ENT); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->rowPtr->get<MoABEnt_mi_tag>(),ENT); IT++
 
     /** \brief loop over all dofs which are on a particular FE column and given element entity (handle from moab)
       * \ingroup mofem_loop_methods
       */
     #define _IT_GET_FECOL_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->col_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->col_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->colPtr->get<MoABEnt_mi_tag>(),ENT); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->colPtr->get<MoABEnt_mi_tag>(),ENT); IT++
 
     /** \brief loop over all dofs which are on a particular FE data and given element entity (handle from moab)
       * \ingroup mofem_loop_methods
       */
     #define _IT_GET_FEDATA_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
     FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
-      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->data_multiIndex->get<MoABEnt_mi_tag>(),ENT); \
-      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->data_multiIndex->get<MoABEnt_mi_tag>(),ENT); IT++
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->dataPtr->get<MoABEnt_mi_tag>(),ENT); \
+      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->dataPtr->get<MoABEnt_mi_tag>(),ENT); IT++
 
     template<class MULTIINDEX>
     typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name,const EntityHandle ent) const {
@@ -1714,24 +1714,24 @@ struct FieldInterface {
       */
     #define _IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->row_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
 
     /** \brief loop over all dofs which are on a particular FE column, field and given element entity (handle from moab)
       * \ingroup mofem_loop_methods
       */
     #define _IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
-      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
-      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->col_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
+      IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
+      IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
 
     /** \brief loop over all dofs which are on a particular FE data, field and given element entity (handle from moab)
       * \ingroup mofem_loop_methods
       */
     #define _IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
-      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
-      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->data_multiIndex->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
+      IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->dataPtr->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); \
+      IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->dataPtr->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
 
   };
 
@@ -1751,7 +1751,7 @@ struct FieldInterface {
     PetscErrorCode setDof(const DofMoFEMEntity *_dof_ptr);
     const DofMoFEMEntity *dof_ptr;
     PetscErrorCode set_numered_dof(const NumeredDofMoFEMEntity *_dof_ptr);
-    const NumeredDofMoFEMEntity *dof_numered_ptr;
+    const NumeredDofMoFEMEntity *dofPtr;
   };
 
   /** \brief Set data for BasicMethod 
@@ -1803,7 +1803,7 @@ struct FieldInterface {
    * \param problem_name fe_name \param method is class derived form
    * FieldInterface::FEMethod
   **/ 
-  virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
+  virtual PetscErrorCode loop_finiteElementsPtr(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
    *
@@ -1820,7 +1820,7 @@ struct FieldInterface {
    * \param problem_name fe_name \param method is class derived form
    * FieldInterface::FEMethod
   **/ 
-  virtual PetscErrorCode loop_finite_elements(
+  virtual PetscErrorCode loop_finiteElementsPtr(
     const string &problem_name,const string &fe_name,FEMethod &method,
     int lower_rank,int upper_rank,int verb = -1) = 0;
 
@@ -1839,18 +1839,18 @@ struct FieldInterface {
   /** \brief Get ref entities from database (datastructure) 
     *
     */
-  virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr) = 0;
+  virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr) = 0;
 
   /** \brief Get problem database (datastructure) 
     *
     */
-  virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
+  virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problemPtr) = 0;
 
   /** \brief Get dofs multi index
     * \ingroup mofem_dofs
     *
     */
-  virtual PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofs_moabfield_ptr) = 0;
+  virtual PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsPtr_ptr) = 0;
 
   /** 
     * \brief get begin iterator of filed ents of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -2017,7 +2017,7 @@ struct FieldInterface {
   /** \brief Get finite elements multi index
     *
     */
-  virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finite_elements_ptr) = 0;
+  virtual PetscErrorCode get_finiteElementsPtr(const MoFEMFiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
 
   /** 
     * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)

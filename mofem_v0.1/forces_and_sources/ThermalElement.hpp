@@ -786,7 +786,7 @@ struct ThermalElement {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       ierr = mField.set_other_local_VecCreateGhost(
-	problem_ptr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -821,9 +821,9 @@ struct ThermalElement {
       PetscErrorCode ierr;
 
       ierr = mField.set_global_VecCreateGhost(
-	problem_ptr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-      BitRefLevel proble_bit_level = problem_ptr->get_BitRefLevel();
+      BitRefLevel proble_bit_level = problemPtr->get_BitRefLevel();
       ierr = mField.record_begin(seriesName); CHKERRQ(ierr);
       ierr = mField.record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
       ierr = mField.record_end(seriesName); CHKERRQ(ierr);

@@ -123,7 +123,7 @@ ostream& operator<<(ostream& os,const DataForcesAndSurcesCore &e) {
 
 PetscErrorCode ForcesAndSurcesCore::getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
     PetscFunctionBegin;
-    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
     if(data.size() != side_table.get<2>().count(type)) {
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency %u != %u",data.size(),side_table.get<2>().count(type));
     }
@@ -151,7 +151,7 @@ PetscErrorCode ForcesAndSurcesCore::getFacesSense(DataForcesAndSurcesCore &data)
 
 PetscErrorCode ForcesAndSurcesCore::getOrder(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
     PetscFunctionBegin;
-    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
     if(data.size() != side_table.get<2>().count(type)) {
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
 	"data inconsistency %d != %d",
@@ -161,7 +161,7 @@ PetscErrorCode ForcesAndSurcesCore::getOrder(EntityType type,boost::ptr_vector<D
       data[side].getOrder() = 0;
     }
     FEDofMoFEMEntity_multiIndex::index<EntType_mi_tag>::type &data_dofs =
-      const_cast<FEDofMoFEMEntity_multiIndex::index<EntType_mi_tag>::type&>(fe_ptr->get_data_dofs().get<EntType_mi_tag>());
+      const_cast<FEDofMoFEMEntity_multiIndex::index<EntType_mi_tag>::type&>(fePtr->get_data_dofs().get<EntType_mi_tag>());
     FEDofMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator dit,hi_dit;
     dit = data_dofs.lower_bound(type);
     hi_dit = data_dofs.upper_bound(type);
@@ -200,7 +200,7 @@ PetscErrorCode ForcesAndSurcesCore::getVolumesOrder(DataForcesAndSurcesCore &dat
 
 PetscErrorCode ForcesAndSurcesCore::getOrder(const string &field_name,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
     PetscFunctionBegin;
-    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
     if(data.size() != side_table.get<2>().count(type)) {
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
 	"data inconsistency %d != %d",
@@ -210,7 +210,7 @@ PetscErrorCode ForcesAndSurcesCore::getOrder(const string &field_name,EntityType
       data[side].getOrder() = 0;
     }
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type &data_dofs =
-      const_cast<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type&>(fe_ptr->get_data_dofs().get<Composite_Name_And_Type_mi_tag>());
+      const_cast<FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type&>(fePtr->get_data_dofs().get<Composite_Name_And_Type_mi_tag>());
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator dit,hi_dit;
     dit = data_dofs.lower_bound(boost::make_tuple(field_name,type));
     hi_dit = data_dofs.upper_bound(boost::make_tuple(field_name,type));
@@ -265,14 +265,14 @@ PetscErrorCode ForcesAndSurcesCore::getRowNodesIndices(DataForcesAndSurcesCore &
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = getNodesIndices(
-      field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),data.nOdes[0].getIndices()); CHKERRQ(ierr);
+      field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_rows_dofs()),data.nOdes[0].getIndices()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode ForcesAndSurcesCore::getColNodesIndices(DataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getNodesIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),data.nOdes[0].getIndices()); CHKERRQ(ierr);
+    ierr = getNodesIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_cols_dofs()),data.nOdes[0].getIndices()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -296,7 +296,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
   boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(type);
     SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(type);
     for(;siit!=hi_siit;siit++) {
@@ -309,7 +309,7 @@ PetscErrorCode ForcesAndSurcesCore::getEdgeRowIndices(DataForcesAndSurcesCore &d
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = getTypeIndices(
-      field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBEDGE,data.eDges); CHKERRQ(ierr);
+      field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_rows_dofs()),MBEDGE,data.eDges); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -317,7 +317,7 @@ PetscErrorCode ForcesAndSurcesCore::getEdgeColIndices(DataForcesAndSurcesCore &d
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = getTypeIndices(
-      field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBEDGE,data.eDges); CHKERRQ(ierr);
+      field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_cols_dofs()),MBEDGE,data.eDges); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -325,14 +325,14 @@ PetscErrorCode ForcesAndSurcesCore::getFacesRowIndices(
     DataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTRI,data.fAces); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_rows_dofs()),MBTRI,data.fAces); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
 PetscErrorCode ForcesAndSurcesCore::getFacesColIndices(DataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTRI,data.fAces); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_cols_dofs()),MBTRI,data.fAces); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -342,7 +342,7 @@ PetscErrorCode ForcesAndSurcesCore::getTetRowIndices(DataForcesAndSurcesCore &da
     if(data.vOlumes.size() == 0) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
     }
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_rows_dofs()),MBTET,0,data.vOlumes[0].getIndices()); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_rows_dofs()),MBTET,0,data.vOlumes[0].getIndices()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -352,7 +352,7 @@ PetscErrorCode ForcesAndSurcesCore::getTetColIndices(DataForcesAndSurcesCore &da
     if(data.vOlumes.size() == 0) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
     }
-    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fe_ptr->get_cols_dofs()),MBTET,0,data.vOlumes[0].getIndices()); CHKERRQ(ierr);
+    ierr = getTypeIndices(field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_cols_dofs()),MBTET,0,data.vOlumes[0].getIndices()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -375,7 +375,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(DataForcesAndSurcesCore &d
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = getNodesFieldData(
-      field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fe_ptr->get_data_dofs()),data.nOdes[0].getFieldData()); CHKERRQ(ierr);
+      field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fePtr->get_data_dofs()),data.nOdes[0].getFieldData()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -399,7 +399,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
   boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
     if(data.size() != side_table.get<2>().count(type)) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
     }
@@ -415,7 +415,7 @@ PetscErrorCode ForcesAndSurcesCore::getEdgeFieldData(DataForcesAndSurcesCore &da
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = getTypeFieldData(
-      field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fe_ptr->get_data_dofs()),MBEDGE,data.eDges); CHKERRQ(ierr);
+      field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fePtr->get_data_dofs()),MBEDGE,data.eDges); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -423,7 +423,7 @@ PetscErrorCode ForcesAndSurcesCore::getFacesFieldData(
     DataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getTypeFieldData(field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fe_ptr->get_data_dofs()),MBTRI,data.fAces); CHKERRQ(ierr);
+    ierr = getTypeFieldData(field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fePtr->get_data_dofs()),MBTRI,data.fAces); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -433,7 +433,7 @@ PetscErrorCode ForcesAndSurcesCore::getVolumesFieldData(DataForcesAndSurcesCore 
     if(data.vOlumes.size() == 0) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
     }
-    ierr = getTypeFieldData(field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fe_ptr->get_data_dofs()),MBTET,0,data.vOlumes[0].getFieldData()); CHKERRQ(ierr);
+    ierr = getTypeFieldData(field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fePtr->get_data_dofs()),MBTET,0,data.vOlumes[0].getFieldData()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -442,7 +442,7 @@ PetscErrorCode ForcesAndSurcesCore::getFaceNodes(DataForcesAndSurcesCore &data) 
     //PetscAttachDebugger();
     ErrorCode rval;
     data.facesNodes.resize(4,3);
-    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table());
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
     const int cannonical_face_sense_p1[4][3] = { {0,1,3}, {1,2,3}, {0,3,2}/**/, {0,2,1}/**/ }; //secon index is offset (positive sense)
     const int cannonical_face_sense_m1[4][3] = { {0,3,1}, {1,3,2}, {0,2,3}, {0,1,2} }; //second index is offset (negative sense)
     SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
@@ -469,7 +469,7 @@ PetscErrorCode ForcesAndSurcesCore::getFaceNodes(DataForcesAndSurcesCore &data) 
       {
 	const EntityHandle *conn_tet;
 	int num_nodes_tet;
-	EntityHandle ent = fe_ptr->get_ent();
+	EntityHandle ent = fePtr->get_ent();
 	rval = mField.get_moab().get_connectivity(ent,conn_tet,num_nodes_tet,true); CHKERR_PETSC(rval);
 	if(num_nodes_tet != 4) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
 	int num_nodes_face;
@@ -940,7 +940,7 @@ PetscErrorCode OpGetData::doWork(
 PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(fe_ptr->get_ent_type() != MBTET) PetscFunctionReturn(0);
+  if(fePtr->get_ent_type() != MBTET) PetscFunctionReturn(0);
 
   ierr = getEdgesSense(data); CHKERRQ(ierr);
   ierr = getFacesSense(data); CHKERRQ(ierr);
@@ -962,7 +962,7 @@ PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
   ierr = shapeTETFunctions_H1(data,
     &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
 
-  EntityHandle ent = fe_ptr->get_ent();
+  EntityHandle ent = fePtr->get_ent();
   int num_nodes;
   const EntityHandle* conn;
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
@@ -992,7 +992,7 @@ PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
 
   if(mField.check_field(meshPositionsFieldName)) {
     BitFieldId id = mField.get_field_structure(meshPositionsFieldName)->get_id();
-    if((fe_ptr->get_BitFieldId_data()&id).none()) {
+    if((fePtr->get_BitFieldId_data()&id).none()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
     }
     ierr = getEdgesOrder(data,meshPositionsFieldName); CHKERRQ(ierr);
@@ -1192,7 +1192,7 @@ PetscErrorCode OpGetNormals::calculateNormals() {
 PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(fe_ptr->get_ent_type() != MBTRI) PetscFunctionReturn(0);
+  if(fePtr->get_ent_type() != MBTRI) PetscFunctionReturn(0);
 
   ierr = getEdgesSense(data); CHKERRQ(ierr);
   ierr = getFacesSense(data); CHKERRQ(ierr);
@@ -1211,7 +1211,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0)); CHKERRQ(ierr);
   ierr = shapeTRIFunctions_H1(data,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
 
-  EntityHandle ent = fe_ptr->get_ent();
+  EntityHandle ent = fePtr->get_ent();
   int num_nodes;
   const EntityHandle* conn;
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
@@ -1350,7 +1350,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
 PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(fe_ptr->get_ent_type() != MBEDGE) PetscFunctionReturn(0);
+  if(fePtr->get_ent_type() != MBEDGE) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
@@ -1366,7 +1366,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   ierr = Grundmann_Moeller_integration_points_1D_EDGE(rule,&gaussPts(0,0),&gaussPts(1,0)); CHKERRQ(ierr);
   ierr = shapeEDGEFunctions_H1(data,&gaussPts(0,0),nb_gauss_pts); CHKERRQ(ierr);
 
-  EntityHandle ent = fe_ptr->get_ent();
+  EntityHandle ent = fePtr->get_ent();
   int num_nodes;
   const EntityHandle* conn;
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
@@ -1468,9 +1468,9 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 PetscErrorCode VertexElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(fe_ptr->get_ent_type() != MBVERTEX) PetscFunctionReturn(0);
+  if(fePtr->get_ent_type() != MBVERTEX) PetscFunctionReturn(0);
 
-  EntityHandle ent = fe_ptr->get_ent();
+  EntityHandle ent = fePtr->get_ent();
   coords.resize(3);
   rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERR_PETSC(rval);
 

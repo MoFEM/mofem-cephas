@@ -44,7 +44,7 @@ struct ComputeFieldGradients: public FEMethod_UpLevelStudent {
       PetscFunctionBegin;
       
       MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
-      field_it = moabfields->get<FieldName_mi_tag>().find(field_name);
+      field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
       const int field_rank = field_it->get_max_rank();
       
       vector< ublas::matrix< FieldData > > phi;
@@ -80,7 +80,7 @@ struct ComputeFieldGradients: public FEMethod_UpLevelStudent {
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
       MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
-      field_it = moabfields->get<FieldName_mi_tag>().find(field_name);
+      field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
       const int rank_size = field_it->get_max_rank();
       
       vector< ublas::matrix< double > > normalized_phi;

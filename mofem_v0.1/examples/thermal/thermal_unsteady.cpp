@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.partition_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("THERMAL_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
 
@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
       fe_post_proc_method.do_broadcast = false;
       ostringstream ss;
       ss << "out_post_proc_" << sit->step_number << ".vtk";
-      ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
+      ierr = mField.loop_finiteElementsPtr("THERMAL_PROBLEM","THERMAL_FE",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
       rval = fe_post_proc_method.moab_post_proc.write_file(ss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
     }
 

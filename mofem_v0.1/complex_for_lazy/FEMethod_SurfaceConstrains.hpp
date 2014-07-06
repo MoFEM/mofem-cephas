@@ -96,18 +96,18 @@ struct SnesConstrainSurfacGeometryTools: public FieldInterface::FEMethod {
   PetscErrorCode setElemData(FieldInterface::FEMethod &e) {
     PetscFunctionBegin;
     //copy all elem that to other FEMethod class
-    e.problem_ptr = problem_ptr;
-    e.moabfields = moabfields;
-    e.ents_moabfield = ents_moabfield;
-    e.dofs_moabfield = dofs_moabfield;
-    e.finite_elements = finite_elements;
-    e.finite_elements_moabents = finite_elements_moabents;
-    e.fem_adjacencies = fem_adjacencies;
-    e.fe_name = fe_name;
-    e.fe_ptr = fe_ptr;
-    e.data_multiIndex = data_multiIndex;
-    e.row_multiIndex = row_multiIndex;
-    e.col_multiIndex = col_multiIndex;
+    e.problemPtr = problemPtr;
+    e.fieldsPtr = fieldsPtr;
+    e.entitiesPtr = entitiesPtr;
+    e.dofsPtr = dofsPtr;
+    e.finiteElementsPtr = finiteElementsPtr;
+    e.finiteElementsEntitiesPtr = finiteElementsEntitiesPtr;
+    e.adjacenciesPtr = adjacenciesPtr;
+    e.feName = feName;
+    e.fePtr = fePtr;
+    e.dataPtr = dataPtr;
+    e.rowPtr = rowPtr;
+    e.colPtr = colPtr;
     PetscFunctionReturn(0);
   }
 

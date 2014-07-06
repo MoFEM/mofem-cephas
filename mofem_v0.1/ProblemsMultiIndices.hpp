@@ -441,7 +441,7 @@ struct problem_zero_nb_cols_change {
 /** \brief clear problem finite elements 
   * \ingroup problems_multi_indices
   */
-struct problem_clear_numered_finite_elements_change {
+struct problem_clear_numered_finiteElementsPtr_change {
   void operator()(MoFEMProblem &e);
 };
 
