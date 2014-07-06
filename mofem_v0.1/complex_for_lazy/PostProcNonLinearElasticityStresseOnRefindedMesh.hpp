@@ -63,18 +63,18 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
       ierr = do_operator(); CHKERRQ(ierr);
 
-      ierr = fe_method.set_problem(problem_ptr); CHKERRQ(ierr);
-      ierr = fe_method.set_fields(moabfields); CHKERRQ(ierr);
-      ierr = fe_method.set_ents_multiIndex(refinedMoFemEntities,ents_moabfield); CHKERRQ(ierr);
-      ierr = fe_method.set_dofs_multiIndex(dofs_moabfield); CHKERRQ(ierr);
-      ierr = fe_method.set_fes_multiIndex(refinedMoFemElements,finite_elements); CHKERRQ(ierr);
-      ierr = fe_method.set_fes_data_multiIndex(finite_elements_moabents); CHKERRQ(ierr);
-      ierr = fe_method.set_adjacencies(fem_adjacencies); CHKERRQ(ierr);
+      ierr = fe_method.setProblem(problem_ptr); CHKERRQ(ierr);
+      ierr = fe_method.setFields(moabfields); CHKERRQ(ierr);
+      ierr = fe_method.setEnts(refined_entities,ents_moabfield); CHKERRQ(ierr);
+      ierr = fe_method.setDofs(dofs_moabfield); CHKERRQ(ierr);
+      ierr = fe_method.setFiniteElements(refined_finite_elements,finite_elements); CHKERRQ(ierr);
+      ierr = fe_method.setFiniteElementsEntities(finite_elements_moabents); CHKERRQ(ierr);
+      ierr = fe_method.setAdjacencies(fem_adjacencies); CHKERRQ(ierr);
 
-      ierr = fe_method.set_fe(fe_ptr); CHKERRQ(ierr);
-      ierr = fe_method.set_data_multIndex(data_multiIndex); CHKERRQ(ierr);
-      ierr = fe_method.set_row_multIndex(row_multiIndex); CHKERRQ(ierr);
-      ierr = fe_method.set_col_multIndex(col_multiIndex); CHKERRQ(ierr);
+      ierr = fe_method.setFE(fe_ptr); CHKERRQ(ierr);
+      ierr = fe_method.setData(data_multiIndex); CHKERRQ(ierr);
+      ierr = fe_method.setRowData(row_multiIndex); CHKERRQ(ierr);
+      ierr = fe_method.setColData(col_multiIndex); CHKERRQ(ierr);
 
       remeber_g_NTET = fe_method.g_NTET;
       fe_method.g_NTET = g_NTET;

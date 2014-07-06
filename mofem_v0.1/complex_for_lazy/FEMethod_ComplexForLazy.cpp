@@ -381,8 +381,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	      PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
 	    }
 	    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator reit;
-	    reit = refinedMoFemEntities->get<MoABEnt_mi_tag>().find(sit->ent);
-	    if(reit != refinedMoFemEntities->get<MoABEnt_mi_tag>().end()) {
+	    reit = refined_entities->get<MoABEnt_mi_tag>().find(sit->ent);
+	    if(reit != refined_entities->get<MoABEnt_mi_tag>().end()) {
 	      ostringstream ss;
 	      ss << *reit << endl;
 	      PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());

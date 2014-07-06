@@ -55,8 +55,8 @@ struct FieldCore: public FieldInterface {
   //database
 
   //ref
-  RefMoFEMEntity_multiIndex refinedMoFemEntities;
-  RefMoFEMElement_multiIndex refinedMoFemElements;
+  RefMoFEMEntity_multiIndex refined_entities;
+  RefMoFEMElement_multiIndex refined_finite_elements;
   //field
   MoFEMField_multiIndex moabFields;
   MoFEMEntity_multiIndex entsMoabField;
@@ -444,7 +444,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
-  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedMoFemEntities_ptr);
+  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr);
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr);
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);

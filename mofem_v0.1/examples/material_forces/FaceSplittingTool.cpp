@@ -1355,22 +1355,22 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
   }
 
   BitRefLevel preserve_ref = BitRefLevel().set(BITREFLEVEL_SIZE-2);
-  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
-  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+  const RefMoFEMEntity_multiIndex *refined_entities_ptr;
+  ierr = mField.get_ref_ents(&refined_entities_ptr); CHKERRQ(ierr);
   RefMoFEMEntity_multiIndex::index<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>::type::iterator refit,hi_refit;
-  refit = refinedMoFemEntities_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
-  hi_refit = refinedMoFemEntities_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
+  refit = refined_entities_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
+  hi_refit = refined_entities_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   Range already_refined_edges;
   for(;refit!=hi_refit;refit++) {
     EntityHandle parent_ent = refit->get_parent_ent(); 
     already_refined_edges.insert(parent_ent);
     RefMoFEMEntity_multiIndex::iterator parent_rit;
-    parent_rit = refinedMoFemEntities_ptr->find(parent_ent);
-    if(parent_rit == refinedMoFemEntities_ptr->end()) {
+    parent_rit = refined_entities_ptr->find(parent_ent);
+    if(parent_rit == refined_entities_ptr->end()) {
       SETERRQ1(PETSC_COMM_SELF,1,
 	  "data inconsistency, entity in database not found %lu",refit->get_parent_ent());
     }
-    bool success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+    bool success = const_cast<RefMoFEMEntity_multiIndex*>(refined_entities_ptr)
 	->modify(parent_rit,RefMoFEMEntity_change_add_bit(preserve_ref));
     if(!success) {
       SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessfull");
@@ -1405,8 +1405,8 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 	EntityHandle ent = *nit;
 	do {
 	  RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator refit;
-	  refit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(ent);
-	  if(refit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+	  refit = refined_entities_ptr->get<MoABEnt_mi_tag>().find(ent);
+	  if(refit == refined_entities_ptr->get<MoABEnt_mi_tag>().end()) {
 	    break;
 	  }
 	  if(refit->get_parent_ent() != 0) {
@@ -1470,8 +1470,8 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   PetscFunctionBegin;
 
-  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
-  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+  const RefMoFEMEntity_multiIndex *refined_entities_ptr;
+  ierr = mField.get_ref_ents(&refined_entities_ptr); CHKERRQ(ierr);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   BitRefLevel back_up_level;
 
@@ -1569,15 +1569,15 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       for(Range::iterator tit = tets_on_surface.begin();tit!=tets_on_surface.end();tit++) {
 
 	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
-	mit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(*tit);
-	if(mit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+	mit = refined_entities_ptr->get<MoABEnt_mi_tag>().find(*tit);
+	if(mit == refined_entities_ptr->get<MoABEnt_mi_tag>().end()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
 	}
 	bool success;
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	success = const_cast<RefMoFEMEntity_multiIndex*>(refined_entities_ptr)
 	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	success = const_cast<RefMoFEMEntity_multiIndex*>(refined_entities_ptr)
 	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-1,true));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 
@@ -1602,14 +1602,14 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 
       for(Range::iterator eit = ents_to_set_level.begin();eit!=ents_to_set_level.end();eit++) {
 	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
-	mit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(*eit);
-	if(mit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+	mit = refined_entities_ptr->get<MoABEnt_mi_tag>().find(*eit);
+	if(mit == refined_entities_ptr->get<MoABEnt_mi_tag>().end()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
 	}
 	bool success;
-	//success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	//success = const_cast<RefMoFEMEntity_multiIndex*>(refined_entities_ptr)
 	//  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	success = const_cast<RefMoFEMEntity_multiIndex*>(refined_entities_ptr)
 	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-1,true));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       }
@@ -1654,14 +1654,14 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   for(Range::iterator eit = ents_to_preserve.begin();
     eit!=ents_to_preserve.end();eit++) {
     RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
-    mit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(*eit);
-    if(mit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+    mit = refined_entities_ptr->get<MoABEnt_mi_tag>().find(*eit);
+    if(mit == refined_entities_ptr->get<MoABEnt_mi_tag>().end()) {
       SETERRQ1(
 	PETSC_COMM_SELF,1,"no such ent in database, type %lu",
 	mField.get_moab().type_from_handle(*eit));
     }
     bool success;
-    success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+    success = const_cast<RefMoFEMEntity_multiIndex*>(refined_entities_ptr)
       ->modify(mit,RefMoFEMEntity_change_add_bit(preserve_ref));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   }
@@ -1750,8 +1750,8 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
     PetscPrintf(PETSC_COMM_WORLD,"\n");
   }
 
-  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
-  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+  const RefMoFEMEntity_multiIndex *refined_entities_ptr;
+  ierr = mField.get_ref_ents(&refined_entities_ptr); CHKERRQ(ierr);
 
   BitRefLevel maskPreserv;
   ierr = getMask(maskPreserv); CHKERRQ(ierr);
@@ -1829,9 +1829,9 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
   }
 
   //squash bits
-  RefMoFEMEntity_multiIndex::iterator mit = refinedMoFemEntities_ptr->begin();
+  RefMoFEMEntity_multiIndex::iterator mit = refined_entities_ptr->begin();
 
-  for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
+  for(;mit!=refined_entities_ptr->end();mit++) {
     
     if(mit->get_ent_type() == MBENTITYSET) continue;
     if(mit->get_BitRefLevel().none()) continue;
@@ -1877,7 +1877,7 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
 
     //cerr << mit->get_BitRefLevel() << " : " << new_bit << endl;
 
-    const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)->modify(mit,RefMoFEMEntity_change_set_bit(new_bit));
+    const_cast<RefMoFEMEntity_multiIndex*>(refined_entities_ptr)->modify(mit,RefMoFEMEntity_change_set_bit(new_bit));
   }
 
   //ref meshset ref level 0
