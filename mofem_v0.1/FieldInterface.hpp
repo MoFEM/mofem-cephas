@@ -1432,12 +1432,12 @@ struct FieldInterface {
    *
    */
   struct SnesMethod {
-    enum snes_context { CTX_SNESSETFUNCTION, CTX_SNESSETJACOBIAN, CTX_SNESNONE };
+    enum SNESContext { CTX_SNESSETFUNCTION, CTX_SNESSETJACOBIAN, CTX_SNESNONE };
     //
-    snes_context snes_ctx;
+    SNESContext snes_ctx;
     SnesMethod(): snes_ctx(CTX_SNESNONE) {};
     //
-    PetscErrorCode set_snes_ctx(const snes_context ctx_);
+    PetscErrorCode set_snes_ctx(const SNESContext ctx_);
     //
     SNES snes;
     PetscErrorCode set_snes(SNES _snes);
@@ -1454,12 +1454,12 @@ struct FieldInterface {
    * Struture stores context data which are set in finctions run by PETSc Time Stepping functions.
    */
   struct TSMethod {
-    enum ts_context { CTX_TSSETRHSFUNCTION, CTX_TSSETRHSJACOBIAN, CTX_TSSETIFUNCTION, CTX_TSSETIJACOBIAN, CTX_TSTSMONITORSET, CTX_TSNONE };
+    enum TSContext { CTX_TSSETRHSFUNCTION, CTX_TSSETRHSJACOBIAN, CTX_TSSETIFUNCTION, CTX_TSSETIJACOBIAN, CTX_TSTSMONITORSET, CTX_TSNONE };
     //
-    ts_context ts_ctx;
+    TSContext ts_ctx;
     TSMethod(): ts_ctx(CTX_TSNONE),ts_a(0),ts_t(0) {};
     //
-    PetscErrorCode set_ts_ctx(const ts_context ctx_);
+    PetscErrorCode set_ts_ctx(const TSContext ctx_);
     //
     TS ts;
     PetscErrorCode set_ts(TS _ts);
@@ -1481,24 +1481,24 @@ struct FieldInterface {
   struct BasicMethod: public SnesMethod,TSMethod {
     BasicMethod();    
     //
-    PetscErrorCode set_problem(const MoFEMProblem *_problem_ptr);
-    PetscErrorCode set_fields(const MoFEMField_multiIndex *_moabfields);
-    PetscErrorCode set_ents_multiIndex(
-      const  RefMoFEMEntity_multiIndex *_refinedMoFemEntities,
+    PetscErrorCode setProblem(const MoFEMProblem *_problem_ptr);
+    PetscErrorCode setFields(const MoFEMField_multiIndex *_moabfields);
+    PetscErrorCode setEnts(
+      const  RefMoFEMEntity_multiIndex *_refined_entities,
       const MoFEMEntity_multiIndex *_ents_moabfield);
-    PetscErrorCode set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
-    PetscErrorCode set_fes_multiIndex(
-      const RefMoFEMElement_multiIndex *_refinedMoFemElements,
+    PetscErrorCode setDofs(const DofMoFEMEntity_multiIndex *_dofs_moabfield);
+    PetscErrorCode setFiniteElements(
+      const RefMoFEMElement_multiIndex *_refined_finite_elements,
       const MoFEMFiniteElement_multiIndex *_finite_elements);
-    PetscErrorCode set_fes_data_multiIndex(const EntMoFEMFiniteElement_multiIndex *_finite_elements_moabents);
-    PetscErrorCode set_adjacencies(const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *_fem_adjacencies);
+    PetscErrorCode setFiniteElementsEntities(const EntMoFEMFiniteElement_multiIndex *_finite_elements_moabents);
+    PetscErrorCode setAdjacencies(const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *_fem_adjacencies);
     //
     virtual PetscErrorCode preProcess() = 0;
     virtual PetscErrorCode operator()() = 0;
     virtual PetscErrorCode postProcess() = 0;
     //
-    const RefMoFEMEntity_multiIndex *refinedMoFemEntities;
-    const RefMoFEMElement_multiIndex *refinedMoFemElements;
+    const RefMoFEMEntity_multiIndex *refined_entities;
+    const RefMoFEMElement_multiIndex *refined_finite_elements;
     const MoFEMProblem *problem_ptr;
     const MoFEMField_multiIndex *moabfields;
     const MoFEMEntity_multiIndex *ents_moabfield;
@@ -1550,10 +1550,10 @@ struct FieldInterface {
      */
     PetscErrorCode postProcess();
     //
-    PetscErrorCode set_fe(const NumeredMoFEMFiniteElement *_fe_ptr); 
-    PetscErrorCode set_data_multIndex(const FEDofMoFEMEntity_multiIndex *_data_multiIndex);
-    PetscErrorCode set_row_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_row_multiIndex);
-    PetscErrorCode set_col_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_col_multiIndex);
+    PetscErrorCode setFE(const NumeredMoFEMFiniteElement *_fe_ptr); 
+    PetscErrorCode setData(const FEDofMoFEMEntity_multiIndex *_data_multiIndex);
+    PetscErrorCode setRowData(const FENumeredDofMoFEMEntity_multiIndex *_row_multiIndex);
+    PetscErrorCode setColData(const FENumeredDofMoFEMEntity_multiIndex *_col_multiIndex);
     string fe_name;
     const NumeredMoFEMFiniteElement *fe_ptr;
     const FEDofMoFEMEntity_multiIndex *data_multiIndex;
@@ -1748,7 +1748,7 @@ struct FieldInterface {
     PetscErrorCode operator()();
     PetscErrorCode postProcess();
  
-    PetscErrorCode set_dof(const DofMoFEMEntity *_dof_ptr);
+    PetscErrorCode setDof(const DofMoFEMEntity *_dof_ptr);
     const DofMoFEMEntity *dof_ptr;
     PetscErrorCode set_numered_dof(const NumeredDofMoFEMEntity *_dof_ptr);
     const NumeredDofMoFEMEntity *dof_numered_ptr;
@@ -1839,7 +1839,7 @@ struct FieldInterface {
   /** \brief Get ref entities from database (datastructure) 
     *
     */
-  virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedMoFemEntities_ptr) = 0;
+  virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr) = 0;
 
   /** \brief Get problem database (datastructure) 
     *
@@ -2084,7 +2084,7 @@ struct FieldInterface {
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_loop_methods Loops and methods
+ * \defgroup mofem_loop_methods Methods for Loops
  * \ingroup mofem
  ******************************************************************************/
 
