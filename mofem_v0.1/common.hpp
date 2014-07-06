@@ -195,7 +195,7 @@ typedef int ApproximationRank;
 typedef uint128_t LocalUId;
 typedef uint128_t GlobalUId;
 //typedef checked_uint128_t LocalUId;
-//typedef checked_uint128_t LocalUId;
+//typedef checked_uint128_t GlobalUId;
 typedef int ShortId;
 
 #define BITREFEDGES_SIZE 6 /*number of edges on tets*/
