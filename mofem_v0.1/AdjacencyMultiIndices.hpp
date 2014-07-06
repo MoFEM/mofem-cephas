@@ -36,10 +36,10 @@ struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap {
   const MoFEMEntity *MoFEMEntity_ptr; ///< field entity
   const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr; ///< finite element entity
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr);
-  inline UId get_MoFEMFiniteElement_unique_id() const { return EntMoFEMFiniteElement_ptr->get_unique_id(); }
+  inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return EntMoFEMFiniteElement_ptr->get_global_unique_id(); }
   inline EntityHandle get_MoFEMFiniteElement_meshset() const { return EntMoFEMFiniteElement_ptr->get_meshset(); }
   inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return EntMoFEMFiniteElement_ptr->get_ent(); }
-  inline UId get_ent_unique_id() const { return MoFEMEntity_ptr->get_unique_id(); };
+  inline GlobalUId get_ent_unique_id() const { return MoFEMEntity_ptr->get_global_unique_id(); };
   inline EntityHandle get_ent_meshset() const { return MoFEMEntity_ptr->get_meshset(); };
   inline EntityHandle get_ent_entity_handle() const { return MoFEMEntity_ptr->get_ent(); };
   BitFieldId get_ent_id() const { return MoFEMEntity_ptr->get_id(); }
@@ -54,10 +54,10 @@ struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap {
  * \param    hashed_unique< tag<Composite_unique_mi_tag>, <br>
       composite_key<
 	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap, <br>
-	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,UId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>, <br>
-	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,UId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_unique_id> > >, <br>
+	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>, <br>
+	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_unique_id> > >, <br>
  * \param    ordered_non_unique<
-      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,UId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id> >
+      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id> >
  *
  */
 typedef multi_index_container<
@@ -67,10 +67,10 @@ typedef multi_index_container<
       tag<Composite_unique_mi_tag>,       
       composite_key<
 	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
-	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,UId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>,
-	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,UId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_unique_id> > >,
+	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>,
+	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_unique_id> > >,
     ordered_non_unique<
-      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,UId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id> >,
     ordered_non_unique<
       tag<MoABFEEnt_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_entity_handle> >,
     ordered_non_unique<

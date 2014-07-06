@@ -55,8 +55,8 @@ struct FieldCore: public FieldInterface {
   //database
 
   //ref
-  RefMoFEMEntity_multiIndex refinedMoFemEntities;
-  RefMoFEMElement_multiIndex refinedMoFemElements;
+  RefMoFEMEntity_multiIndex refined_entities;
+  RefMoFEMElement_multiIndex refined_finite_elements;
   //field
   MoFEMField_multiIndex moabFields;
   MoFEMEntity_multiIndex entsMoabField;
@@ -304,7 +304,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode clear_ents_fields(const string &name,const Range enst,int verb = -1);
 
   //other auxiliary functions for fields
-  PetscErrorCode list_dofs_by_field_name(const string &name) const;
+  PetscErrorCode list_dofs_by_field_name(const string &name,bool synchronised = false) const;
   PetscErrorCode list_fields() const;
   BitFieldId get_BitFieldId(const string& name) const;
   string get_BitFieldId_name(const BitFieldId id) const;
@@ -444,7 +444,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
-  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedMoFemEntities_ptr);
+  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr);
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr);
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);
@@ -585,15 +585,15 @@ PetscErrorCode FieldCore::create_Mat(
       i.push_back(j.size());
       if(strcmp(type,MATMPIADJ)==0) {
 	DofIdx idx = Tag::get_index(miit_row);
-	if(dofs_col_by_idx.find(idx)->get_unique_id()!=miit_row->get_unique_id()) {
+	if(dofs_col_by_idx.find(idx)->get_local_unique_id()!=miit_row->get_local_unique_id()) {
 	  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data insonsistency");
 	}
       }
-      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_unique_id()) ) {
+      if( (MoFEMEntity_ptr == NULL) ? 1 : (MoFEMEntity_ptr->get_local_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_local_unique_id()) ) {
 	// get field ptr
 	MoFEMEntity_ptr = const_cast<MoFEMEntity*>(miit_row->get_MoFEMEntity_ptr());
-	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_unique_id());
-	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_unique_id());
+	adj_by_ent::iterator adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(MoFEMEntity_ptr->get_local_unique_id());
+	adj_by_ent::iterator hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(MoFEMEntity_ptr->get_local_unique_id());
 	dofs_col_view.clear();
 	for(;adj_miit!=hi_adj_miit;adj_miit++) {
 	  if(adj_miit->by_other&BYROW) {

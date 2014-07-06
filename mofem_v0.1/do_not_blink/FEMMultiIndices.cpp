@@ -407,7 +407,8 @@ void EntMoFEMFiniteElement_change_bit_off::operator()(MoFEMFiniteElement &MoFEMF
 EntMoFEMFiniteElement::EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr): 
   interface_MoFEMFiniteElement<MoFEMFiniteElement>(_MoFEMFiniteElement_ptr),interface_RefMoFEMElement<RefMoFEMElement>(_ref_MoFEMFiniteElement) {
   //get finite element entity
-  uid = get_unique_id_calculate();
+  local_uid = get_local_unique_id_calculate();
+  global_uid =  get_global_unique_id_calculate();
   //add ents to meshset
   //EntityHandle meshset = get_meshset();
   //EntityHandle ent = get_ent();
@@ -420,19 +421,19 @@ ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e) {
   DofMoFEMEntity_multiIndex_uid_view::iterator rit;
   rit = e.row_dof_view.begin();
   for(;rit!=e.row_dof_view.end();rit++) {
-    os << (*rit)->get_unique_id() << " ";
+    os << (*rit)->get_global_unique_id() << " ";
   }
   os << "col dof_uids ";
   DofMoFEMEntity_multiIndex_uid_view::iterator cit;
   rit = e.col_dof_view.begin();
   for(;rit!=e.row_dof_view.end();rit++) {
-    os << (*cit)->get_unique_id() << " ";
+    os << (*cit)->get_global_unique_id() << " ";
   }
   os << "data dof_uids ";
   DofMoFEMEntity_multiIndex_uid_view::iterator dit;
   dit = e.data_dof_view.begin();
   for(;rit!=e.data_dof_view.end();rit++) {
-    os << (*dit)->get_unique_id() << " ";
+    os << (*dit)->get_global_unique_id() << " ";
   }
   return os;
 }
@@ -444,7 +445,7 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
     MOFEM_DOFS_VIEW &mofem_dofs_view,
     const int operation_type) {
   PetscFunctionBegin;
-  UId uid;
+  GlobalUId global_uid;
   typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
   DofMoFEMEntity_multiIndex_uid_view::iterator it,it_end;
   if(operation_type==Interface::UNION) {
@@ -453,13 +454,13 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
     it = fe_dofs_view.begin();
     it_end = fe_dofs_view.end();
     for(;it!=it_end;it++) {
-      uid = (*it)->get_unique_id();
+      global_uid = (*it)->get_global_unique_id();
       if(mofem_it != mofem_it_end) {
-	if(mofem_it->get_unique_id() != uid) {
-	  mofem_it = mofem_dofs.get<Unique_mi_tag>().find(uid);
+	if(mofem_it->get_global_unique_id() != global_uid) {
+	  mofem_it = mofem_dofs.get<Unique_mi_tag>().find(global_uid);
 	}
       } else {
-	mofem_it = mofem_dofs.get<Unique_mi_tag>().find(uid);
+	mofem_it = mofem_dofs.get<Unique_mi_tag>().find(global_uid);
       }
       if(mofem_it != mofem_it_end) {
 	mofem_dofs_view.insert(&*mofem_it);
@@ -467,7 +468,7 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
       }
     }
   } else {
-    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   PetscFunctionReturn(0);
 }
@@ -548,23 +549,12 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntMoFEMFiniteElement::get_uid_side_number(
-  Interface &moab,const UId _ent_uid_,
-  const DofMoFEMEntity_multiIndex &dofsMoabField,
-  int &side_number, int &sense, int &offset) const { 
-  PetscFunctionBegin;
-  EntityHandle child = dofsMoabField.get<Unique_mi_tag>().find(_ent_uid_)->get_ent();
-  PetscErrorCode ierr;
-  ierr = moab.side_number(get_ent(),child,side_number,sense,offset); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
 PetscErrorCode NumeredMoFEMFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const {
   PetscFunctionBegin;
   FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"dof which index < %d > not found",idx);
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);
@@ -575,7 +565,7 @@ PetscErrorCode NumeredMoFEMFiniteElement::get_col_dofs_by_petsc_gloabl_dof_idx(D
   FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"dof which index < %d > not found",idx);
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);

@@ -81,6 +81,8 @@ int main(int argc, char *argv[]) {
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
@@ -97,10 +99,10 @@ int main(int argc, char *argv[]) {
     
   //Read mesh to MOAB
   const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  //option = "PARALLEL=BCAST_DELETE;"
+      //"PARTITION=GEOM_DIMENSION,PARTITION_VAL=3,PARTITION_DISTRIBUTE";//;DEBUG_IO";
+  option = "";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Create MoFEM (Joseph) database
   FieldCore core(moab);
@@ -193,13 +195,6 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
 
-  //Range ref_edges;
-  //ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBEDGE,ref_edges); CHKERRQ(ierr);
-  //rval = moab.list_entities(ref_edges); CHKERR_PETSC(rval);
-
-  //mField.list_dofs_by_field_name("TEMP");
-
-
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
@@ -216,6 +211,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("ELASTIC_PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_PROB"); CHKERRQ(ierr);
+
+  //mField.list_dofs_by_field_name("DISPLACEMENT",true);
 
   //print bcs
   ierr = mField.print_cubit_displacement_set(); CHKERRQ(ierr);

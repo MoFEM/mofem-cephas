@@ -475,15 +475,15 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
   ierr = calcTraction(); CHKERRQ(ierr);
 
   switch(snes_ctx) {
-    case ctx_SNESNone:
-    case ctx_SNESSetFunction: {
+    case CTX_SNESNONE:
+    case CTX_SNESSETFUNCTION: {
       tLocNodal *= *sCaleRhs;
       //cerr << "sCaleRhs " << *sCaleRhs << endl;
       //cerr << tLocNodal << endl;
       ierr = rHs(); CHKERRQ(ierr);
     }
     break;
-    case ctx_SNESSetJacobian: {
+    case CTX_SNESSETJACOBIAN: {
       tLocNodal *= *sCaleLhs;
       ierr = lHs(); CHKERRQ(ierr);
     }

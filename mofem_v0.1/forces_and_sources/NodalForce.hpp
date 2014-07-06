@@ -30,6 +30,9 @@
 
 namespace MoFEM {
 
+/** \brief Force applied to nodes
+  * \ingroup mofem_static_boundary_conditions
+  */
 struct NodalForce {
 
   FieldInterface &mField;

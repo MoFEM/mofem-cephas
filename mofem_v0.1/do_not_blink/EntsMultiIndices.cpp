@@ -27,7 +27,7 @@
 namespace MoFEM {
 
 //basic moab ent
-BasicMoFEMEntity::BasicMoFEMEntity(const EntityHandle _ent): ent(_ent) {
+BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent): ent(_ent) {
   switch (get_ent_type()) {
     case MBVERTEX:
     case MBEDGE:
@@ -39,12 +39,15 @@ BasicMoFEMEntity::BasicMoFEMEntity(const EntityHandle _ent): ent(_ent) {
     default:
       THROW_AT_LINE("this entity type is currently not implemented");
   }
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  ErrorCode rval;
+  rval = pcomm->get_owner_handle(ent,moab_owner,moab_owner_handle); CHKERR_THROW(rval);
 }
 //ref moab ent
 BitRefEdges MoFEM::RefMoFEMElement::DummyBitRefEdges = BitRefEdges(0);
 RefMoFEMEntity::RefMoFEMEntity(
   Interface &moab,const EntityHandle _ent): 
-    BasicMoFEMEntity(_ent),tag_parent_ent(NULL),tag_BitRefLevel(NULL) {
+    BasicMoFEMEntity(moab,_ent),tag_parent_ent(NULL),tag_BitRefLevel(NULL) {
   ErrorCode rval;
   Tag th_RefParentHandle,th_RefBitLevel;
   rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERR_THROW(rval);
@@ -54,6 +57,8 @@ RefMoFEMEntity::RefMoFEMEntity(
 }
 ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
   os << "ent " << e.ent;
+  os << " owner " << e.get_owner(); 
+  os << " owner ent " << e.get_owner_ent();
   os << " parent ent " << e.get_parent_ent();
   os << " BitRefLevel " << e.get_BitRefLevel();
   os << " ent type " << e.get_ent_type();
@@ -92,7 +97,8 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefM
   ErrorCode rval;
   EntityHandle ent = get_ent();
   rval = moab.tag_get_by_ptr(field_ptr->th_AppOrder,&ent,1,(const void **)&tag_order_data); CHKERR_THROW(rval);
-  uid = get_unique_id_calculate();
+  local_uid = get_local_unique_id_calculate();
+  global_uid = get_global_unique_id_calculate();
   rval = moab.tag_get_by_ptr(field_ptr->th_FieldData,&ent,1,(const void **)&tag_FieldData,&tag_FieldData_size); 
   if(rval == MB_SUCCESS) {
     if( (unsigned int)tag_FieldData_size != 0 ) {
@@ -103,14 +109,14 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefM
       assert(tag_size[0]/sizeof(ApproximationRank) == tag_FieldData_size/sizeof(FieldData));
     }
   }
-  //add entitity to field meshset
-  //EntityHandle meshset = get_meshset();
-  //rval = moab.add_entities(meshset,&ent,1); CHKERR_THROW(rval);
 }
 MoFEMEntity::~MoFEMEntity() {}
 ostream& operator<<(ostream& os,const MoFEMEntity& e) {
-  os << "ent_uid " << e.get_unique_id() << " entity "<< e.get_ent() << " type " << e.get_ent_type()
-    <<" order "<<e.get_max_order()<<" "<<*e.field_ptr;
+  os << "ent_global_uid " << (UId)e.get_global_unique_id()
+    << " ent_local_uid " << (UId)e.get_local_unique_id() 
+    << " entity "<< e.get_ent() << " type " << e.get_ent_type()
+    << " owner "<< e.get_owner() << " owner handle " << e.get_owner_ent()
+    << " order "<<e.get_max_order()<<" "<<*e.field_ptr;
   return os;
 }
 void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {

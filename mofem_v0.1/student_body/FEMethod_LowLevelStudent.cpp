@@ -476,11 +476,11 @@ PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
   PetscFunctionBegin;
   if(ParentMethod == NULL) {
     ParentMethod = new FEMethod_LowLevelStudent(moab,verbose);
-    ierr = ParentMethod->set_problem(problem_ptr); CHKERRQ(ierr);
-    ierr = ParentMethod->set_dofs_multiIndex(dofs_moabfield); CHKERRQ(ierr);
-    ierr = ParentMethod->set_fes_multiIndex(refinedMoFemElements,finite_elements); CHKERRQ(ierr);
-    ierr = ParentMethod->set_fes_data_multiIndex(finite_elements_moabents); CHKERRQ(ierr);
-    ierr = ParentMethod->set_adjacencies(fem_adjacencies); CHKERRQ(ierr);
+    ierr = ParentMethod->setProblem(problem_ptr); CHKERRQ(ierr);
+    ierr = ParentMethod->setDofs(dofs_moabfield); CHKERRQ(ierr);
+    ierr = ParentMethod->setFiniteElements(refined_finite_elements,finite_elements); CHKERRQ(ierr);
+    ierr = ParentMethod->setFiniteElementsEntities(finite_elements_moabents); CHKERRQ(ierr);
+    ierr = ParentMethod->setAdjacencies(fem_adjacencies); CHKERRQ(ierr);
     ierr = ParentMethod->preProcess(); CHKERRQ(ierr);
   }
   EntityHandle parent = fe_ptr->get_parent_ent();
@@ -501,7 +501,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
     assert(ParentMethod!=NULL);
     assert(ParentMethod->fe_ptr==NULL);
     ParentMethod->fe_ent_ptr = &*miit;
-    ierr = ParentMethod->set_data_multIndex( const_cast<FEDofMoFEMEntity_multiIndex*>(&(miit->data_dofs)) ); CHKERRQ(ierr);
+    ierr = ParentMethod->setData( const_cast<FEDofMoFEMEntity_multiIndex*>(&(miit->data_dofs)) ); CHKERRQ(ierr);
     ierr = ParentMethod->InitDataStructures();
   }
   PetscFunctionReturn(0);
