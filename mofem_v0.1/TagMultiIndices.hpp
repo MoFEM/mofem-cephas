@@ -45,6 +45,7 @@ namespace MoFEM {
   struct MoFEMFiniteElement_name_mi_tag {};
   struct SideNumber_mi_tag{};
   struct MoABEnt_MoABEnt_mi_tag {};
+  struct MoABEnt_Owner_mi_tag {};
   struct MoABEnt_mi_tag2 {};
   struct Idx_mi_tag { 
     static const bool IamNotPartitioned;

@@ -34,11 +34,17 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMField<MoFEMEntity> interface_type_MoFEMField;
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
-  static LocalUId get_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
+  static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
     if(_dof_>=512) THROW_AT_LINE("_dof>=512");
-    LocalUId _uid_ = ((LocalUId)_dof_)|((_ent_ptr_->get_unique_id())<<9);
+    LocalUId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_local_unique_id())<<9);
     return _uid_;
   }
+  static GlobalUId get_global_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
+    if(_dof_>=512) THROW_AT_LINE("_dof>=512");
+    GlobalUId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_global_unique_id())<<9);
+    return _uid_;
+  }
+
   static ShortId get_non_nonunique_short_id(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
     if(_dof_>=512) THROW_AT_LINE("_dof>=512")
     if(sizeof(ShortId) < sizeof(char)+2) THROW_AT_LINE("sizeof(ShortId)< sizeof(char)+9")
@@ -49,7 +55,8 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   //
   DofIdx dof;
   bool active;
-  LocalUId uid;
+  LocalUId local_uid;
+  GlobalUId global_uid;
   ShortId short_uid;
   DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const ApproximationOrder _dof_order,const ApproximationRank _dof_rank,const DofIdx _dof);
   inline DofIdx get_EntDofIdx() const { return dof; }
@@ -57,8 +64,11 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief unique dof id
     */
-  inline LocalUId get_unique_id() const { return uid; };
-  inline LocalUId get_unique_id_calculate() const { return get_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
+  inline LocalUId get_local_unique_id() const { return local_uid; };
+  inline LocalUId get_local_unique_id_calculate() const { return get_local_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
+
+  inline GlobalUId get_global_unique_id() const { return global_uid; };
+  inline GlobalUId get_global_unique_id_calculate() const { return get_global_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
 
   /** \brief get short uid it is unique in combination with entity handle
     *
@@ -94,7 +104,8 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 template <typename T>
 struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
   interface_DofMoFEMEntity(const T *_ptr): interface_MoFEMEntity<T>(_ptr) {};
-  inline LocalUId get_unique_id() const { return interface_MoFEMEntity<T>::field_ptr->get_unique_id(); }
+  inline LocalUId get_local_unique_id() const { return interface_MoFEMEntity<T>::field_ptr->get_local_unique_id(); }
+  inline GlobalUId get_global_unique_id() const { return interface_MoFEMEntity<T>::field_ptr->get_global_unique_id(); }
   inline ShortId get_non_nonunique_short_id() const { return interface_MoFEMEntity<T>::field_ptr->get_non_nonunique_short_id(); }
   inline DofIdx get_EntDofIdx() const { return interface_MoFEMEntity<T>::field_ptr->get_EntDofIdx(); }
   inline FieldData& get_FieldData() const { return interface_MoFEMEntity<T>::field_ptr->get_FieldData(); }
@@ -123,7 +134,7 @@ struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
   inline unsigned int get_part() const { return part;  }
   NumeredDofMoFEMEntity(const DofMoFEMEntity* _DofMoFEMEntity_ptr);
   inline const NumeredDofMoFEMEntity* get_NumeredDofMoFEMEntity_ptr() const { return this; };
-  inline bool operator<(const NumeredDofMoFEMEntity& _dof) const { return get_unique_id()<_dof.get_unique_id(); }
+  inline bool operator<(const NumeredDofMoFEMEntity& _dof) const { return (UId)get_global_unique_id()<(UId)_dof.get_global_unique_id(); }
   friend ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e);
 };
 
@@ -191,7 +202,7 @@ typedef multi_index_container<
   indexed_by<
     //uniqe
     ordered_unique< 
-      tag<Unique_mi_tag>, member<DofMoFEMEntity,LocalUId,&DofMoFEMEntity::uid> >,
+      tag<Unique_mi_tag>, member<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::global_uid> >,
     ordered_unique<
       tag<Composite_Entity_and_ShortId_mi_tag>, 
       composite_key<
@@ -243,14 +254,14 @@ typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
     ordered_unique< 
-      member<DofMoFEMEntity,const LocalUId,&DofMoFEMEntity::uid> >
+      member<DofMoFEMEntity,const GlobalUId,&DofMoFEMEntity::global_uid> >
   > > DofMoFEMEntity_multiIndex_uid_view;
 
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
     ordered_unique< 
-      const_mem_fun<DofMoFEMEntity,LocalUId,&DofMoFEMEntity::get_unique_id> >,
+      const_mem_fun<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique< 
       const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
   > > DofMoFEMEntity_multiIndex_active_view;
@@ -275,7 +286,7 @@ typedef multi_index_container<
  * \ingroup dof_multi_indices
  *
  * \param ordered_unique< 
- *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,LocalUId,&FEDofMoFEMEntity::get_unique_id> >,
+ *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FEDofMoFEMEntity::get_global_unique_id> >,
  * \param ordered_non_unique<
  *    tag<MoABEnt_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
  * \param ordered_non_unique<
@@ -310,7 +321,7 @@ typedef multi_index_container<
   FEDofMoFEMEntity,
   indexed_by<
     ordered_unique< 
-      tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,LocalUId,&FEDofMoFEMEntity::get_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FEDofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
     ordered_non_unique<
@@ -350,7 +361,7 @@ typedef multi_index_container<
  * \ingroup dof_multi_indices
  *
  * \param ordered_unique< 
- *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,LocalUId,&FEDofMoFEMEntity::get_unique_id> >,
+ *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FEDofMoFEMEntity::get_global_unique_id> >,
  * \param ordered_non_unique<
  *    tag<MoABEnt_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
  * \param ordered_non_unique<
@@ -385,7 +396,7 @@ typedef multi_index_container<
   FENumeredDofMoFEMEntity,
   indexed_by<
     ordered_unique< 
-      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,LocalUId,&FENumeredDofMoFEMEntity::get_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FENumeredDofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FENumeredDofMoFEMEntity::get_ent> >,
     ordered_non_unique<
@@ -425,7 +436,7 @@ typedef multi_index_container<
  * \ingroup dof_multi_indices
  *
  * \param    ordered_unique< 
-      tag<Unique_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,LocalUId,&NumeredDofMoFEMEntity::get_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&NumeredDofMoFEMEntity::get_global_unique_id> >,
  * \param    ordered_unique< 
       tag<Idx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::dof_idx> >,
  * \param    ordered_non_unique<
@@ -444,7 +455,7 @@ typedef multi_index_container<
   NumeredDofMoFEMEntity,
   indexed_by<
     ordered_unique< 
-      tag<Unique_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,LocalUId,&NumeredDofMoFEMEntity::get_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&NumeredDofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique< 
       tag<Idx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::dof_idx> >,
     ordered_non_unique<

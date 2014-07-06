@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   const char *option;
-  option = "PARALLEL=BCAST;";//;DEBUG_IO";
+  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
 
   //Create MoFEM (Joseph) database
