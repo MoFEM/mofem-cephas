@@ -193,6 +193,8 @@ typedef PetscScalar FieldData;
 typedef int ApproximationOrder;
 typedef int ApproximationRank;
 typedef uint128_t LocalUId;
+typedef uint128_t GlobalUId;
+//typedef checked_uint128_t LocalUId;
 //typedef checked_uint128_t LocalUId;
 typedef int ShortId;
 
