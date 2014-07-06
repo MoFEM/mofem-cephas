@@ -197,14 +197,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  ierr = mField.add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-  ierr = mField.initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-
-  ThermalElement::TimeSeriesMonitor monitor(mField,"THEMP_SERIES","TEMP");
-  monitor.ts_u = T;
-  ierr = mField.problem_basic_method_postProcess("THERMAL_PROBLEM",monitor); CHKERRQ(ierr);
-
-  ierr = mField.finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
+  //Range ref_edges;
+  //ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBEDGE,ref_edges); CHKERRQ(ierr);
+  //rval = moab.list_entities(ref_edges); CHKERR_PETSC(rval);
+  //mField.list_dofs_by_field_name("TEMP");
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);

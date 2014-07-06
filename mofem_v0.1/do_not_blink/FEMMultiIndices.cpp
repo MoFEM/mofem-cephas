@@ -444,7 +444,7 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
     MOFEM_DOFS_VIEW &mofem_dofs_view,
     const int operation_type) {
   PetscFunctionBegin;
-  UId uid;
+  LocalUId uid;
   typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
   DofMoFEMEntity_multiIndex_uid_view::iterator it,it_end;
   if(operation_type==Interface::UNION) {
@@ -467,7 +467,7 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
       }
     }
   } else {
-    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   PetscFunctionReturn(0);
 }
@@ -549,7 +549,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
 }
 
 PetscErrorCode EntMoFEMFiniteElement::get_uid_side_number(
-  Interface &moab,const UId _ent_uid_,
+  Interface &moab,const LocalUId _ent_uid_,
   const DofMoFEMEntity_multiIndex &dofsMoabField,
   int &side_number, int &sense, int &offset) const { 
   PetscFunctionBegin;
@@ -564,7 +564,7 @@ PetscErrorCode NumeredMoFEMFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(D
   FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"dof which index < %d > not found",idx);
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);
@@ -575,7 +575,7 @@ PetscErrorCode NumeredMoFEMFiniteElement::get_col_dofs_by_petsc_gloabl_dof_idx(D
   FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"dof which index < %d > not found",idx);
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);

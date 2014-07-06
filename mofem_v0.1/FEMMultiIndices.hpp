@@ -249,13 +249,13 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   DofMoFEMEntity_multiIndex_uid_view col_dof_view;
   DofMoFEMEntity_multiIndex_uid_view data_dof_view;
   FEDofMoFEMEntity_multiIndex data_dofs;
-  UId uid;
+  LocalUId uid;
   EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr);
-  const UId& get_unique_id() const { return uid; }
-  UId get_unique_id_calculate() const {
+  const LocalUId& get_unique_id() const { return uid; }
+  LocalUId get_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<=32);
-    UId _uid_ = (ref_ptr->get_ref_ent())|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
+    LocalUId _uid_ = (ref_ptr->get_ref_ent())|(((LocalUId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
   inline EntityHandle get_ent() const { return get_ref_ent(); }
@@ -292,7 +292,7 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_uid_side_number(
-    Interface &moab,const UId uid,
+    Interface &moab,const LocalUId uid,
     const DofMoFEMEntity_multiIndex &dofs_moabfield,
     int &side_number, int &sense, int &offset) const;
 };
@@ -311,7 +311,7 @@ struct interface_EntMoFEMFiniteElement:public interface_MoFEMFiniteElement<T>,in
   inline DofIdx get_nb_dofs_col() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_col(); }
   inline DofIdx get_nb_dofs_data() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_data(); }
   inline EntityHandle get_ent() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ref_ent(); };
-  inline UId get_unique_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_unique_id(); }
+  inline LocalUId get_unique_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_unique_id(); }
   //
   SideNumber_multiIndex &get_side_number_table() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_side_number_table(); }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_side_number_ptr(moab,ent); }
@@ -351,7 +351,7 @@ struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteEleme
  * \brief MultiIndex container for finite element enetities
  *
  * \param ordered_unique<
-      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,UId,&EntMoFEMFiniteElement::uid> >,
+      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,LocalUId,&EntMoFEMFiniteElement::uid> >,
  * \param    ordered_non_unique<
       tag<MoABEnt_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
  * \param    ordered_non_unique<
@@ -371,7 +371,7 @@ typedef multi_index_container<
   EntMoFEMFiniteElement,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,UId,&EntMoFEMFiniteElement::uid> >,
+      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,LocalUId,&EntMoFEMFiniteElement::uid> >,
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
     ordered_non_unique<
@@ -393,7 +393,7 @@ typedef multi_index_container<
  * \brief MultiIndex for entities uin the problem.
  *
  * \param  ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,UId,&NumeredMoFEMFiniteElement::get_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,LocalUId,&NumeredMoFEMFiniteElement::get_unique_id> >,
  * \param    ordered_non_unique<
       tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
  * \param    ordered_non_unique<
@@ -409,7 +409,7 @@ typedef multi_index_container<
   NumeredMoFEMFiniteElement,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,UId,&NumeredMoFEMFiniteElement::get_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,LocalUId,&NumeredMoFEMFiniteElement::get_unique_id> >,
     ordered_non_unique<
       tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
     ordered_non_unique<

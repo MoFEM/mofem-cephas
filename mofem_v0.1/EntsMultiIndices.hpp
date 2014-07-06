@@ -257,7 +257,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   const ApproximationOrder* tag_dof_order_data;
   const ApproximationRank* tag_dof_rank_data;
   int (*forder)(int);
-  UId uid;
+  LocalUId uid;
   MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_mab_ent_ptr);
   ~MoFEMEntity();
   inline EntityHandle get_ent() const { return get_ref_ent(); }
@@ -267,11 +267,11 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   inline int get_order_nb_dofs_diff(int order) const { return forder(order)-forder(order-1); }
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return ref_mab_ent_ptr; }
-  const UId& get_unique_id() const { return uid; }
-  UId get_unique_id_calculate() const {
+  const LocalUId& get_unique_id() const { return uid; }
+  LocalUId get_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<=32);
-    UId _uid_ = (ref_ptr->ent)|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
+    LocalUId _uid_ = (ref_ptr->ent)|(((LocalUId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
   const MoFEMEntity* get_MoFEMEntity_ptr() const { return this; };
@@ -292,7 +292,7 @@ struct interface_MoFEMEntity: public interface_MoFEMField<T>,interface_RefMoFEME
   inline int get_order_nb_dofs(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs(order); }
   inline int get_order_nb_dofs_diff(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs_diff(order); }
   inline ApproximationOrder get_max_order() const { return interface_MoFEMField<T>::field_ptr->get_max_order(); }
-  inline const UId& get_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_unique_id(); }
+  inline const LocalUId& get_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_unique_id(); }
   inline const MoFEMEntity* get_MoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_MoFEMEntity_ptr(); };
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_RefMoFEMEntity_ptr(); }
 };
@@ -315,7 +315,7 @@ struct MoFEMEntity_change_order {
  * \brief MultiIndex container keeps MoFEMEntity
  *
  * \param ordered_unique<
- *    tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
+ *    tag<Unique_mi_tag>, member<MoFEMEntity,LocalUId,&MoFEMEntity::uid> >,
  * \param ordered_non_unique<
  *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
  * \param ordered_non_unique<
@@ -334,7 +334,7 @@ typedef multi_index_container<
   MoFEMEntity,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
+      tag<Unique_mi_tag>, member<MoFEMEntity,LocalUId,&MoFEMEntity::uid> >,
     ordered_non_unique<
       tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
     ordered_non_unique<

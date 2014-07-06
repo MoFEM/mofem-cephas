@@ -55,8 +55,8 @@ struct FieldCore: public FieldInterface {
   //database
 
   //ref
-  RefMoFEMEntity_multiIndex refinedMoFemEntities;
-  RefMoFEMElement_multiIndex refinedMoFemElements;
+  RefMoFEMEntity_multiIndex refined_entities;
+  RefMoFEMElement_multiIndex refined_finite_elements;
   //field
   MoFEMField_multiIndex moabFields;
   MoFEMEntity_multiIndex entsMoabField;
@@ -107,6 +107,7 @@ struct FieldCore: public FieldInterface {
   //end recording
   PetscErrorCode record_end(const string& serie_name);
   PetscErrorCode print_series_steps();
+  bool check_series(const string& name) const;
   //get data back
   PetscErrorCode load_series_data(const string& serie_name,const int step_number);
 
@@ -303,11 +304,8 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode clear_ents_fields(const string &name,const Range enst,int verb = -1);
 
   //other auxiliary functions for fields
-  PetscErrorCode list_dof_by_field_name(const string &name) const;
-  PetscErrorCode list_ent_by_field_name(const string &name) const;
-  PetscErrorCode list_dof_by_field_id(const BitFieldId id) const;
-  PetscErrorCode list_ent_by_field_id(const BitFieldId id) const;
-  PetscErrorCode list_field() const;
+  PetscErrorCode list_dofs_by_field_name(const string &name) const;
+  PetscErrorCode list_fields() const;
   BitFieldId get_BitFieldId(const string& name) const;
   string get_BitFieldId_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
@@ -446,7 +444,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
-  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedMoFemEntities_ptr);
+  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr);
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr);
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);
@@ -530,7 +528,7 @@ PetscErrorCode FieldCore::create_Mat(
     typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
     moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
     moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-    if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
+    if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem < %s > is not found (top tip: check spelling)",name.c_str());
     //
     const NumeredDofMoFEMEntitys_by_idx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<Tag>();
     const NumeredDofMoFEMEntitys_by_idx &dofs_col_by_idx = p_miit->numered_dofs_cols.get<Tag>();
@@ -542,7 +540,7 @@ PetscErrorCode FieldCore::create_Mat(
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
     if(nb_dofs_row == 0) {
-      SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> has zero rows",name.c_str());
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"problem <%s> has zero rows",name.c_str());
     }
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type::iterator miit_row,hi_miit_row;
     if(Tag::IamNotPartitioned) {

@@ -124,7 +124,7 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentEnd() {
 PetscErrorCode FEMethod_UpLevelStudent::GetRowGlobalIndices(const string &field_name,vector<DofIdx> &RowGlobDofs) {
   PetscFunctionBegin;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
-  if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
+  if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"no such field <%s>",field_name.c_str());
   Indices_Type::iterator miit = row_nodesGlobIndices.find(fiit->get_MoFEMField_ptr());
   if(miit == row_nodesGlobIndices.end()) {
     ostringstream sss;

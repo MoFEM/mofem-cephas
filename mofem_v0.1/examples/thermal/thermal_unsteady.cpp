@@ -64,10 +64,8 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
+  option = "PARALLEL=BCAST;";//;DEBUG_IO";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
 
   //Create MoFEM (Joseph) database
   FieldCore core(moab);
@@ -208,17 +206,17 @@ int main(int argc, char *argv[]) {
   ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
   ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
   ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+
   PetscPrintf(PETSC_COMM_WORLD,
     "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
   ierr = mField.finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-
-  BARRIER_RANK_START(pcomm) 
+  
+  //mField.list_dofs_by_field_name("TEMP");
   if(pcomm->rank()==0) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
   }
-  BARRIER_RANK_END(pcomm) 
 
   /*EntityHandle fe_meshset = mField.get_finite_element_meshset("THERMAL_FE");
   Range tets;

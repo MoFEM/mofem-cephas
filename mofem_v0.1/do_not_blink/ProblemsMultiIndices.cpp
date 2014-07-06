@@ -78,7 +78,7 @@ PetscErrorCode MoFEMProblem::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
   NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit==numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"row dof <%d> not found",idx);
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);
@@ -88,7 +88,7 @@ PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
   NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().find(idx);
   if(dit==numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"row dof <%d> not found",idx);
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);

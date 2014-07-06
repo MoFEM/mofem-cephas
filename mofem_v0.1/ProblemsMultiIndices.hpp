@@ -134,10 +134,10 @@ struct MoFEMProblem {
     NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_col_dof_by_uid(UID);
 
   /// get iterator of dof in row by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_UID_FOR_LOOP_)
-  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_row_dof_by_uid(UId uid) const { return numered_dofs_rows.get<Unique_mi_tag>().find(uid); };
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_row_dof_by_uid(LocalUId uid) const { return numered_dofs_rows.get<Unique_mi_tag>().find(uid); };
 
   /// get iterator of dof in column by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_UID_FOR_LOOP_)
-  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_col_dof_by_uid(UId uid) const { return numered_dofs_cols.get<Unique_mi_tag>().find(uid); };
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_col_dof_by_uid(LocalUId uid) const { return numered_dofs_cols.get<Unique_mi_tag>().find(uid); };
 
   /**
     * use with loops to iterate row dofs 

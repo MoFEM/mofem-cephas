@@ -148,7 +148,9 @@
 }
 
 //set that with care, it turns off check for ublas
-//#define BOOST_UBLAS_NDEBUG
+//#define BOOST_UBLAS_NDEBUG 
+
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
 using namespace moab;
 using namespace std;
@@ -157,6 +159,25 @@ using namespace boost::multi_index;
 using namespace boost::multiprecision;
 
 namespace MoFEM {
+
+/** \brief Error handling
+  * 
+  * This is complementary to PETSC error codes. The numerical values for
+  * these are defined in include/petscerror.h. The names are defined in err.c
+  *
+  * MoAB error messeges are defined in naob/Types.hpp
+  *	
+  */
+enum MoFEMErrorCode {
+  MOFEM_SUCESS = 0,
+  MOFEM_DATA_INSONSISTENCY = 100,
+  MOFEM_NOT_IMPLEMENTED = 101,
+  MOFEM_NOT_FOUND = 102,
+  MOFEM_OPERATION_UNSUCCESSFUL = 103,
+  MOFEM_IMPOSIBLE_CASE = 104,
+  MOFEM_CHAR_THROW = 105,
+  MOFEM_STD_EXCEPTION_THROW = 106
+};
 
 //CONSTS
 
@@ -171,8 +192,11 @@ typedef int EntPart;
 typedef PetscScalar FieldData;
 typedef int ApproximationOrder;
 typedef int ApproximationRank;
-typedef uint128_t UId;
-//typedef checked_uint128_t UId;
+typedef uint128_t LocalUId;
+typedef uint128_t GlobalUId;
+//typedef checked_uint128_t LocalUId;
+//typedef checked_uint128_t GlobalUId;
+typedef int ShortId;
 
 #define BITREFEDGES_SIZE 6 /*number of edges on tets*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinments*/
@@ -279,3 +303,9 @@ struct MofemException {
 #include "SeriesMultiIndices.hpp"
 
 #endif //__COMMON_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem MoFEM 
+ ******************************************************************************/
+
+

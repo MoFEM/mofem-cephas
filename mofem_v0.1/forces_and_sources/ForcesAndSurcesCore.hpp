@@ -106,6 +106,85 @@ struct DataForcesAndSurcesCore {
      */
     virtual ublas::matrix<FieldData>& getDiffN() { return diffN; }
 
+    // shallow adaptor classes
+    typedef ublas::vector<FieldData,ublas::shallow_array_adaptor<FieldData> > vector_adaptor;
+    typedef ublas::matrix<FieldData,ublas::row_major,ublas::shallow_array_adaptor<FieldData> > matrix_adaptor;
+
+    /// \brief get shape functions at Gauss pts
+    inline const vector_adaptor getN(int gg) {
+      int size = getN().size2();
+      FieldData *data = &getN()(gg,0);
+      return vector_adaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
+    }
+
+    /** \brief get direvative of shape functions at Gauss pts
+      *
+      * retruned matrx on rows has shape functions, in columen its direvatives.
+      *
+      * \param gg nb. of Gauss pts.
+      *
+      */
+    inline const matrix_adaptor getDiffN(int gg) {
+      if(getN().size1() == getDiffN().size1()) {
+	int size = getN().size2();	
+	int dim = getDiffN().size2()/size;
+	FieldData *data = &getDiffN()(gg,0);
+	return matrix_adaptor(getN().size2(),dim,ublas::shallow_array_adaptor<FieldData>(getDiffN().size2(),data));
+      } else {
+	// in some cases, f.e. for direvatives of nodal shape functions ony one
+	// gauss point is needed
+	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+      }
+    }
+
+    /** \brief get shape functions at Gauss pts
+      *
+      * Note that multi field element, two diffren field can have different
+      * approximation orders. Since we use hierarhical approximation basis,
+      * shape functions are calulared once for element, using maximal
+      * apprimation order on given entity.
+      *
+      * Specifing addional parameters, only firsty nb_dofs are indicated as a
+      * row of shape function matrix.
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const vector_adaptor getN(int gg,const int nb_dofs) {
+      (void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
+      FieldData *data = &getN()(gg,0);
+      return vector_adaptor(nb_dofs,ublas::shallow_array_adaptor<FieldData>(nb_dofs,data));
+    }
+
+    /** \brief get derivatives of shape functions at Gauss pts
+      *
+      * Note that multi field element, two diffren field can have different
+      * approximation orders. Since we use hierarhical approximation basis,
+      * shape functions are calulared once for element, using maximal
+      * apprimation order on given entity.
+      *
+      * Specifing addional parameters, only firsty nb_dofs are indicated as a
+      * row of shape function derivative matrix.
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const matrix_adaptor getDiffN(int gg,const int nb_dofs) {
+      if(getN().size1() == getDiffN().size1()) {
+	(void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
+	int dim = getDiffN().size2()/getN().size2();
+	FieldData *data = &getDiffN()(gg,0);
+	return matrix_adaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
+      } else {
+	// in some cases, f.e. for direvatives of nodal shape functions ony one
+	// gauss point is needed
+	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+
+      }
+    }
+
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
 
     private:
@@ -115,7 +194,7 @@ struct DataForcesAndSurcesCore {
     ublas::vector<FieldData> fieldData;
     ublas::matrix<FieldData> N;
     ublas::matrix<FieldData> diffN;
-    
+
   };
 
   ublas::matrix<DofIdx> facesNodes; ///< nodes on finite element faces
@@ -540,6 +619,13 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      */
     inline ublas::matrix<FieldData>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
 
+    /** \bried if higher order geometry return normals at Gauss pts.
+      *
+      * \param gg gauss point number
+      */
+    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPt(const int gg) { 
+      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPt,gg); 
+    }
 
     /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
      */

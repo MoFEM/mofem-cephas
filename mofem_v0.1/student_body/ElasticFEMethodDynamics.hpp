@@ -263,7 +263,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	D = lambda*D_lambda + mu*D_mu;
 	
 	switch (ts_ctx) {
-	  case ctx_TSTSMonitorSet: {
+	  case CTX_TSTSMONITORSET: {
 	    PetscReal ftime;
 	    ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 	    PetscInt steps,snesfails,rejects,nonlinits,linits;
@@ -303,14 +303,14 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    ierr = VecGhostUpdateBegin(GhostU,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateEnd(GhostU,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    } break;
-	  case ctx_TSSetRHSFunction:
-	  case ctx_TSSetIFunction:
+	  case CTX_TSSETRHSFUNCTION:
+	  case CTX_TSSETIFUNCTION:
 	    ierr = VecZeroEntries(ts_F); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateBegin(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateEnd(ts_F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    break;
-	  case ctx_TSSetRHSJacobian:
-	  case ctx_TSSetIJacobian:
+	  case CTX_TSSETRHSJACOBIAN:
+	  case CTX_TSSETIJACOBIAN:
 	    ierr = MatZeroEntries(*ts_B); CHKERRQ(ierr);
 	    break;
 	  default:
@@ -324,7 +324,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       }
       if(fe_name=="COPUPLING_VV") {
 	switch (ts_ctx) {
-	  case ctx_TSTSMonitorSet: {
+	  case CTX_TSTSMONITORSET: {
 	    ierr = VecZeroEntries(GhostK); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateBegin(GhostK,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateEnd(GhostK,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -347,7 +347,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 
       if(fe_name=="STIFFNESS") {
 	switch (ts_ctx) {
-	  case ctx_TSTSMonitorSet: {
+	  case CTX_TSTSMONITORSET: {
 	    ierr = VecGhostUpdateBegin(GhostU,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateEnd(GhostU,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	    ierr = VecAssemblyBegin(GhostU); CHKERRQ(ierr);
@@ -365,7 +365,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       }
       if(fe_name=="COPUPLING_VV") {
 	switch (ts_ctx) {
-	  case ctx_TSTSMonitorSet: {
+	  case CTX_TSTSMONITORSET: {
 	    ierr = VecGhostUpdateBegin(GhostK,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	    ierr = VecGhostUpdateEnd(GhostK,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	    ierr = VecAssemblyBegin(GhostK); CHKERRQ(ierr);
@@ -390,11 +390,11 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       }
       if(fe_name=="COPUPLING_VU") {
 	switch (ts_ctx) {
-	  case ctx_TSSetRHSFunction:
-	  case ctx_TSSetIFunction:
+	  case CTX_TSSETRHSFUNCTION:
+	  case CTX_TSSETIFUNCTION:
 	    break;
-	  case ctx_TSSetRHSJacobian:
-	  case ctx_TSSetIJacobian: {
+	  case CTX_TSSETRHSJACOBIAN:
+	  case CTX_TSSETIJACOBIAN: {
 	    ierr = MatAssemblyBegin(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	    ierr = MatAssemblyEnd(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	    *ts_flag = SAME_NONZERO_PATTERN; 
@@ -426,7 +426,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       if(fe_name=="STIFFNESS") {
 	ierr = GetMatrices(); CHKERRQ(ierr);
 	switch (ts_ctx) {
-	  case ctx_TSTSMonitorSet: {
+	  case CTX_TSTSMONITORSET: {
 	    ierr = Fint(); CHKERRQ(ierr);
 	    Vec u_local;
 	    ierr = VecGhostGetLocalForm(u_by_row,&u_local); CHKERRQ(ierr);
@@ -447,14 +447,14 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    ierr = VecRestoreArray(GhostU,&array_U); CHKERRQ(ierr);
 	    ierr = VecGhostRestoreLocalForm(ts_u,&u_local); CHKERRQ(ierr);
 	    } break;
-	  case ctx_TSSetRHSFunction: {
+	  case CTX_TSSETRHSFUNCTION: {
 	    } break;
-	  case ctx_TSSetRHSJacobian: {
+	  case CTX_TSSETRHSJACOBIAN: {
 	    } break;
-	  case ctx_TSSetIFunction: {
+	  case CTX_TSSETIFUNCTION: {
 	    ierr = Fint(ts_F); CHKERRQ(ierr);
 	  } break;
-	  case ctx_TSSetIJacobian: {
+	  case CTX_TSSETIJACOBIAN: {
 	    ierr = Stiffness(); CHKERRQ(ierr);
 	    for(int rr = 0;rr<row_mat;rr++) {
 	      if(RowGlob[rr].size()==0) continue;
@@ -485,11 +485,11 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = MassLhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
-	  case ctx_TSSetRHSFunction: {
+	  case CTX_TSSETRHSFUNCTION: {
 	    } break;
-	  case ctx_TSSetRHSJacobian: {
+	  case CTX_TSSETRHSJACOBIAN: {
 	    } break;
-	  case ctx_TSSetIFunction: {
+	  case CTX_TSSETIFUNCTION: {
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    for(int rr = 0;rr<row_mat;rr++) {
 	      if(RowGlob[rr].size()==0) continue;
@@ -498,7 +498,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	      ierr = VecSetValues(ts_F,RowGlob[rr].size(),&(RowGlob[rr])[0],&(Mu_t.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	    }
 	  } break;
-	  case ctx_TSSetIJacobian: {
+	  case CTX_TSSETIJACOBIAN: {
 	    for(int rr = 0;rr<row_mat;rr++) {
 	      if(RowGlob[rr].size()==0) continue;
 	      if(RowGlob[rr].size()!=Mass[rr].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -517,7 +517,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = VVLhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
-	  case ctx_TSTSMonitorSet: {
+	  case CTX_TSTSMONITORSET: {
 	    Vec u_local;
 	    ierr = VecGhostGetLocalForm(ts_u,&u_local); CHKERRQ(ierr);
 	    double *array;
@@ -541,11 +541,11 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    array_K[0] += 0.5*inner_prod(velocities_row,VVvelocities_col);
 	    ierr = VecRestoreArray(GhostK,&array_K); CHKERRQ(ierr);
 	    } break;
-	  case ctx_TSSetRHSFunction: {
+	  case CTX_TSSETRHSFUNCTION: {
 	    } break;
-	  case ctx_TSSetRHSJacobian: {
+	  case CTX_TSSETRHSJACOBIAN: {
 	    } break;
-	  case ctx_TSSetIFunction: {
+	  case CTX_TSSETIFUNCTION: {
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    if(VV.size2()!=dot_velocities.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    ublas::vector<FieldData> VVu = prod(VV,dot_velocities);
@@ -553,7 +553,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    //cerr << "VVu " << VVu << endl;
 	    ierr = VecSetValues(ts_F,VelRowGlob.size(),&VelRowGlob[0],&(VVu.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	  } break;
-	  case ctx_TSSetIJacobian: {
+	  case CTX_TSSETIJACOBIAN: {
 	    if(VelRowGlob.size()!=VV.size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    if(VelColGlob.size()!=VV.size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    ierr = MatSetValues(*ts_B,VelRowGlob.size(),&(VelRowGlob)[0],VelColGlob.size(),&VelColGlob[0],&(VV.data())[0],ADD_VALUES); CHKERRQ(ierr);
@@ -569,11 +569,11 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = VULhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
-	  case ctx_TSSetRHSFunction: {
+	  case CTX_TSSETRHSFUNCTION: {
 	    } break;
-	  case ctx_TSSetRHSJacobian: {
+	  case CTX_TSSETRHSJACOBIAN: {
 	    } break;
-	  case ctx_TSSetIFunction: {
+	  case CTX_TSSETIFUNCTION: {
 	    ierr = GetVelocities_Form_TS_u_t(); CHKERRQ(ierr);
 	    for(int cc = 0;cc<col_mat;cc++) {
 	      if(ColGlob[cc].size()==0) continue;
@@ -583,7 +583,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	      ierr = VecSetValues(ts_F,VelRowGlob.size(),&VelRowGlob[0],&(VUu_t.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	    }
 	  } break;
-	  case ctx_TSSetIJacobian: {
+	  case CTX_TSSETIJACOBIAN: {
 	    for(int cc = 0;cc<col_mat;cc++) {
 	      if(ColGlob[cc].size()==0) continue;
 	      if(VelRowGlob.size()!=VU[cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");

@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
       ierr = ArcCtx->set_s(step_size); CHKERRQ(ierr);
       ierr = ArcCtx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,ArcCtx->x0); CHKERRQ(ierr);
-      MyFE.snes_ctx = FieldInterface::SnesMethod::ctx_SNESNone;
+      MyFE.snes_ctx = FieldInterface::SnesMethod::CTX_SNESNONE;
       MyFE.snes_x = D; MyFE.snes_f = F;
       ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
       MyArcMethod.snes_x = D; MyArcMethod.snes_f = F;

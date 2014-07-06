@@ -192,8 +192,8 @@ int main(int argc, char *argv[]) {
   }
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  feSpatial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetFunction;
-  feMaterial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetFunction;
+  feSpatial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETFUNCTION;
+  feMaterial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETFUNCTION;
   ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -201,8 +201,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = MatZeroEntries(Aij);  CHKERRQ(ierr);
-  feSpatial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetJacobian;
-  feMaterial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetJacobian;
+  feSpatial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETJACOBIAN;
+  feMaterial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETJACOBIAN;
   ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
