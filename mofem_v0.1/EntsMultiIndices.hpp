@@ -28,6 +28,7 @@ namespace MoFEM {
 
 /**
  * \brief keeps information about side number for the finite element
+ * \ingroup ent_multi_indices 
  */
 struct SideNumber {
   EntityHandle ent;
@@ -43,7 +44,8 @@ struct SideNumber {
 /** 
  * @relates multi_index_container
  * \brief SideNumber_multiIndex for SideNumber
- *
+ * \ingroup ent_multi_indices 
+ * 
  *  \param hashed_unique<
  *     member<SideNumber,EntityHandle,&SideNumber::ent> >,
  *  \param ordered_non_unique<
@@ -70,19 +72,36 @@ typedef multi_index_container<
 
 /** 
  * \brief this struct keeps basic methods for moab entity
+ * \ingroup ent_multi_indices 
  */
 struct BasicMoFEMEntity {
   EntityHandle ent;
-  /// \param ent handle to moab entity
-  BasicMoFEMEntity(const EntityHandle _ent);
+  int moab_owner;
+  EntityHandle moab_owner_handle;
+
+  BasicMoFEMEntity(Interface &moab,const EntityHandle _ent);
+
   /// get entity type
   inline EntityType get_ent_type() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
+
   /// get entity id
   inline EntityID get_ent_id() const { return (EntityID)(ent&MB_ID_MASK); };
+
+  inline int& get_owner() { return moab_owner; }
+  inline EntityHandle& get_owner_ent() { return moab_owner_handle; }
+
+  /** \brief maob partitioning owner
+    */
+  inline int get_owner() const { return moab_owner; }
+
+  /** \brief maob partitioning owner handle
+    */
+  inline EntityHandle get_owner_ent() const { return moab_owner_handle; }
 };
 
 /** 
  * \brief struct keeps handle to refined handle.
+ * \ingroup ent_multi_indices 
  */
 struct RefMoFEMEntity: public BasicMoFEMEntity {
   EntityHandle *tag_parent_ent;
@@ -107,9 +126,31 @@ struct RefMoFEMEntity: public BasicMoFEMEntity {
   friend ostream& operator<<(ostream& os,const RefMoFEMEntity& e);
 };
 
+
+/** 
+ * \brief interface to RefMoFEMEntity
+ * \ingroup ent_multi_indices 
+ */
+template <typename T>
+struct interface_RefMoFEMEntity {
+  const T *ref_ptr;
+  interface_RefMoFEMEntity(const T *_ref_ptr): ref_ptr(_ref_ptr) {}
+  inline EntityHandle get_ref_ent() const { return ref_ptr->get_ref_ent(); }
+  inline EntityHandle get_parent_ent() const { return ref_ptr->get_parent_ent(); }
+  inline const BitRefLevel& get_BitRefLevel() const { return ref_ptr->get_BitRefLevel(); }
+  inline EntityType get_ent_type() const { return ref_ptr->get_ent_type(); };
+  inline EntityType get_parent_ent_type() const { return ref_ptr->get_parent_ent_type(); };
+  inline EntityID get_ent_id() const { return ref_ptr->get_ent_id(); };
+  inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return ref_ptr->get_RefMoFEMEntity_ptr(); }
+  inline int get_owner() const { return ref_ptr->get_owner(); }
+  inline EntityHandle get_owner_ent() const { return ref_ptr->get_owner_ent(); }
+  virtual ~interface_RefMoFEMEntity() {}
+};
+
 /**
  * \typedef RefMoFEMEntity_multiIndex
  * type multiIndex container for RefMoFEMEntity
+ * \ingroup ent_multi_indices 
  *
  * \param hashed_unique MoABEnt_mi_tag 
  * \param ordered_non_unique Meshset_mi_tag 
@@ -124,6 +165,8 @@ typedef multi_index_container<
   indexed_by<
     hashed_unique<
       tag<MoABEnt_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::ent> >,
+    hashed_unique<
+      tag<MoABEnt_Owner_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::moab_owner_handle> >,
     ordered_non_unique<
       tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
     ordered_non_unique<
@@ -151,7 +194,9 @@ typedef multi_index_container<
   > > RefMoFEMEntity_multiIndex;
 
 
-/// \brief ref mofem entity, remove parent
+/** \brief ref mofem entity, remove parent
+ * \ingroup ent_multi_indices 
+ */
 struct RefMoFEMEntity_change_remove_parent {
   Interface &moab;
   Tag th_RefParentHandle;
@@ -165,21 +210,27 @@ struct RefMoFEMEntity_change_remove_parent {
   };
 };
 
-/// \brief ref mofem entity, left shift
+/** \brief ref mofem entity, left shift
+  * \ingroup ent_multi_indices 
+  */
 struct RefMoFEMEntity_change_left_shift {
   int shift;
   RefMoFEMEntity_change_left_shift(const int _shift): shift(_shift) {};
   void operator()(RefMoFEMEntity &e) { (*e.tag_BitRefLevel)<<=shift;  };
 };
 
-/// \brief ref mofem entity, right shift
+/** \brief ref mofem entity, right shift
+ * \ingroup ent_multi_indices 
+  */
 struct RefMoFEMEntity_change_right_shift {
   int shift;
   RefMoFEMEntity_change_right_shift(const int _shift): shift(_shift) {};
   void operator()(RefMoFEMEntity &e) { (*e.tag_BitRefLevel)>>=shift;  };
 };
 
-/// \brief ref mofem entity, change bit
+/** \brief ref mofem entity, change bit
+  * \ingroup ent_multi_indices 
+  */
 struct RefMoFEMEntity_change_add_bit {
   BitRefLevel bit;
   RefMoFEMEntity_change_add_bit(const BitRefLevel &_bit): bit(_bit) {};
@@ -189,7 +240,9 @@ struct RefMoFEMEntity_change_add_bit {
   }
 };
 
-/// \brief ref mofem entity, change bit
+/** \brief ref mofem entity, change bit
+  * \ingroup ent_multi_indices 
+  */
 struct RefMoFEMEntity_change_and_bit {
   BitRefLevel bit;
   RefMoFEMEntity_change_and_bit(const BitRefLevel &_bit): bit(_bit) {};
@@ -199,7 +252,9 @@ struct RefMoFEMEntity_change_and_bit {
   }
 };
 
-/// \brief ref mofem entity, change bit
+/** \brief ref mofem entity, change bit
+  * \ingroup ent_multi_indices 
+  */
 struct RefMoFEMEntity_change_xor_bit {
   BitRefLevel bit;
   RefMoFEMEntity_change_xor_bit(const BitRefLevel &_bit): bit(_bit) {};
@@ -209,7 +264,9 @@ struct RefMoFEMEntity_change_xor_bit {
   }
 };
 
-/// \brief ref mofem entity, change bit
+/** \brief ref mofem entity, change bit
+  * \ingroup ent_multi_indices 
+  */
 struct RefMoFEMEntity_change_set_bit {
   BitRefLevel bit;
   RefMoFEMEntity_change_set_bit(const BitRefLevel &_bit): bit(_bit) {};
@@ -218,7 +275,9 @@ struct RefMoFEMEntity_change_set_bit {
   }
 };
 
-/// \brief ref mofem entity, change bit
+/** \brief ref mofem entity, change bit
+  * \ingroup ent_multi_indices 
+  */
 struct RefMoFEMEntity_change_set_nth_bit {
   int n;
   bool b;
@@ -228,26 +287,10 @@ struct RefMoFEMEntity_change_set_nth_bit {
   }
 };
 
-/** 
- * \brief interface to RefMoFEMEntity
- */
-template <typename T>
-struct interface_RefMoFEMEntity {
-  const T *ref_ptr;
-  interface_RefMoFEMEntity(const T *_ref_ptr): ref_ptr(_ref_ptr) {}
-  inline EntityHandle get_ref_ent() const { return ref_ptr->get_ref_ent(); }
-  inline EntityHandle get_parent_ent() const { return ref_ptr->get_parent_ent(); }
-  inline const BitRefLevel& get_BitRefLevel() const { return ref_ptr->get_BitRefLevel(); }
-  inline EntityType get_ent_type() const { return ref_ptr->get_ent_type(); };
-  inline EntityType get_parent_ent_type() const { return ref_ptr->get_parent_ent_type(); };
-  inline EntityID get_ent_id() const { return ref_ptr->get_ent_id(); };
-  inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return ref_ptr->get_RefMoFEMEntity_ptr(); }
-  virtual ~interface_RefMoFEMEntity() {}
-};
-
 /**
- * \brief struct keeps handle to entity in the field.
- */
+  * \brief struct keeps handle to entity in the field.
+  * \ingroup ent_multi_indices 
+  */
 struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEMEntity<RefMoFEMEntity> {
   typedef interface_MoFEMField<MoFEMField> interface_type_MoFEMField;
   const RefMoFEMEntity *ref_mab_ent_ptr;
@@ -257,7 +300,8 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   const ApproximationOrder* tag_dof_order_data;
   const ApproximationRank* tag_dof_rank_data;
   int (*forder)(int);
-  UId uid;
+  LocalUId local_uid;
+  GlobalUId global_uid;
   MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_mab_ent_ptr);
   ~MoFEMEntity();
   inline EntityHandle get_ent() const { return get_ref_ent(); }
@@ -267,11 +311,18 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   inline int get_order_nb_dofs_diff(int order) const { return forder(order)-forder(order-1); }
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return ref_mab_ent_ptr; }
-  const UId& get_unique_id() const { return uid; }
-  UId get_unique_id_calculate() const {
+  const LocalUId& get_local_unique_id() const { return local_uid; }
+  LocalUId get_local_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<=32);
-    UId _uid_ = (ref_ptr->ent)|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
+    LocalUId _uid_ = (ref_ptr->ent)|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
+    return _uid_;
+  }
+  const GlobalUId& get_global_unique_id() const { return global_uid; }
+  GlobalUId get_global_unique_id_calculate() const {
+    char bit_number = get_bit_number();
+    assert(bit_number<=32);
+    GlobalUId _uid_ = (ref_ptr->moab_owner_handle)|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
   const MoFEMEntity* get_MoFEMEntity_ptr() const { return this; };
@@ -280,6 +331,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
 
 /**
  * \brief interface to MoFEMEntity
+ * \ingroup ent_multi_indices 
  *
  * interface to MoFEMEntity
  */
@@ -292,13 +344,15 @@ struct interface_MoFEMEntity: public interface_MoFEMField<T>,interface_RefMoFEME
   inline int get_order_nb_dofs(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs(order); }
   inline int get_order_nb_dofs_diff(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs_diff(order); }
   inline ApproximationOrder get_max_order() const { return interface_MoFEMField<T>::field_ptr->get_max_order(); }
-  inline const UId& get_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_unique_id(); }
+  inline const LocalUId& get_local_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_local_unique_id(); }
+  inline const LocalUId& get_global_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_global_unique_id(); }
   inline const MoFEMEntity* get_MoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_MoFEMEntity_ptr(); };
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_RefMoFEMEntity_ptr(); }
 };
 
 /**
  * \brief structure to chane MoFEMEntity order
+ * \ingroup ent_multi_indices 
  */
 struct MoFEMEntity_change_order {
   Interface& moab;
@@ -313,9 +367,10 @@ struct MoFEMEntity_change_order {
 /** 
  * @relates multi_index_container
  * \brief MultiIndex container keeps MoFEMEntity
+ * \ingroup ent_multi_indices 
  *
  * \param ordered_unique<
- *    tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
+ *    tag<Unique_mi_tag>, member<MoFEMEntity,LocalUId,&MoFEMEntity::local_uid> >,
  * \param ordered_non_unique<
  *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
  * \param ordered_non_unique<
@@ -334,7 +389,7 @@ typedef multi_index_container<
   MoFEMEntity,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, member<MoFEMEntity,UId,&MoFEMEntity::uid> >,
+      tag<Unique_mi_tag>, member<MoFEMEntity,GlobalUId,&MoFEMEntity::global_uid> >,
     ordered_non_unique<
       tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
     ordered_non_unique<
@@ -353,3 +408,10 @@ typedef multi_index_container<
 }
 
 #endif // __ENTSMULTIINDICES_HPP__
+
+/***************************************************************************//**
+ * \defgroup ent_multi_indices Entities structures and multi-indices
+ * \ingroup mofem
+ ******************************************************************************/
+
+

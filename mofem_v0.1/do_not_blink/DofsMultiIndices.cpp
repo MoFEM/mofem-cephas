@@ -39,17 +39,18 @@ DofMoFEMEntity::DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const Approxi
   assert(field_ptr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = _dof_order;
   ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof] = _dof_rank;
-  uid = get_unique_id_calculate();
+  local_uid = get_local_unique_id_calculate();
+  global_uid = get_global_unique_id_calculate();
   short_uid = get_non_nonunique_short_id_calculate();
 }
 ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
-  os << "dof_uid " << e.get_unique_id() 
+  os << "dof_uid " << e.get_global_unique_id()
     << " dof_order " << e.get_dof_order()
     << " dof_rank " << e.get_dof_rank()
     << " dof " << e.dof
-    << " active " << e.active 
-    << " " << *(e.field_ptr)
-    << " Data " << e.get_FieldData();
+    << " active " << e.active
+    << " " << *(e.field_ptr); /*
+    << " Data " << e.get_FieldData();*/
   return os;
 }
 DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}

@@ -49,6 +49,7 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 /** \brief data structure for finite element entity
+  * \ingroup mofem_forces_and_sources
   *
   * It keeps that about indices of degrees of freedom, dofs data, shape
   * functions, entity side number, type of entities, approximation order, etc.
@@ -215,6 +216,7 @@ struct DataForcesAndSurcesCore {
 };
 
 /** \brief this class derive data form other dats strucrure
+  * \ingroup mofem_forces_and_sources
   *
   *
   * It behavies like normal data struture it is used to share infromation with
@@ -255,7 +257,9 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
 };
 
-/// \brief base clas to get information form mofem and but them into DataForcesAndSurcesCore
+/** \brief base clas to get information form mofem and but them into DataForcesAndSurcesCore
+  * \ingroup mofem_forces_and_sources
+  */
 struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
   FieldInterface& mField;
@@ -336,7 +340,9 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
 
 };
 
-/// \brief base operator to do operations at Gauss Pt. leve
+/** \brief base operator to do operations at Gauss Pt. leve
+  * \ingroup mofem_forces_and_sources
+  */
 struct DataOperator {
 
   /** \brief operator for linear form, usaully to calulate values on right hand side
@@ -393,6 +399,7 @@ struct OpSetHoInvJac: public DataOperator {
 };
 
 /** \brief operator to calculate function values and its gradients at Gauss points
+  * \ingroup mofem_forces_and_sources
   */
 struct OpGetData: public DataOperator {
 
@@ -418,6 +425,7 @@ struct OpGetData: public DataOperator {
 };
 
 /** \brief Tet finite element  
+ * \ingroup mofem_forces_and_sources
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from TetElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
@@ -528,6 +536,7 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 };
 
 /** \brief calulate normals at Gauss points of triangle element
+  * \ingroup mofem_forces_and_sources
   */
 struct OpGetNormals: public DataOperator {
 
@@ -554,6 +563,7 @@ struct OpGetNormals: public DataOperator {
 };
 
 /** \brief Tri finite element  
+ * \ingroup mofem_forces_and_sources
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from TriElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
@@ -682,6 +692,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 };
 
 /** \brief Edge finite element  
+ * \ingroup mofem_forces_and_sources
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from EdgeElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
@@ -759,6 +770,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 };
 
 /** \brief Vertex finite element  
+ * \ingroup mofem_forces_and_sources
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from VertexElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
@@ -829,4 +841,11 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 }
 
 #endif //__CORE_FORCES_AND_SURCES_HPP
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources Forces and sources
+ ******************************************************************************/
+
+
+
 

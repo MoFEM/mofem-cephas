@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
       switch(ts_ctx) {
-	case ctx_TSSetIFunction: {
+	case CTX_TSSETIFUNCTION: {
 	  ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
 	  ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
 	  for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
 	  ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
 	}
 	break;
-	case ctx_TSSetIJacobian: {
+	case CTX_TSSETIJACOBIAN: {
 	  ierr = MatAssemblyBegin(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	  ierr = MatAssemblyEnd(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	  ierr = MatZeroRowsColumns(*ts_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
