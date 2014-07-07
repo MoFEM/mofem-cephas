@@ -59,8 +59,8 @@ int main(int argc, char *argv[]) {
   bit_levels.push_back(BitRefLevel().set(0));
 
   int ll = 1;
-  //for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SideSet|InterfaceSet,cit)) {
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,cit)) {
+  //for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|INTERFACESET,cit)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,cit)) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
     EntityHandle cubit_meshset = cit->get_meshset();
     {
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   //build fields
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elements
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   //Its build adjacencies for all ements in databse,
   //for pratical applications consider to build adjacencies
@@ -151,11 +151,11 @@ int main(int argc, char *argv[]) {
   Range tets_back_bit_level;
   ierr = mField.get_entities_by_ref_level(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRQ(ierr);
 
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,cit)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,cit)) {
 
     EntityHandle cubit_meshset = cit->get_meshset();
 
-    BlockSet_generic_attributes mydata;
+    BlockSetAttributes mydata;
     ierr = cit->get_attribute_data_structure(mydata); CHKERRQ(ierr);   
     cout << mydata << endl;  
 
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
     ierr = mField.partition_problem(problem_name.str()); CHKERRQ(ierr);
-    ierr = mField.partition_finite_elements(problem_name.str()); CHKERRQ(ierr);
+    ierr = mField.partition_finiteElementsPtr(problem_name.str()); CHKERRQ(ierr);
     ierr = mField.partition_ghost_dofs(problem_name.str()); CHKERRQ(ierr);
   }
 

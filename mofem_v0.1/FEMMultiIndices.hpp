@@ -28,6 +28,7 @@ namespace MoFEM {
 
 /**
  * \brief keeps data about abstract refined finite element
+ * \ingroup fe_multi_indices
  */
 struct RefMoFEMElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
@@ -50,6 +51,7 @@ struct RefMoFEMElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
 
 /**
  * \brief keeps data about abstract MESHSET finite element
+ * \ingroup fe_multi_indices
  */
 struct RefMoFEMElement_MESHSET: public RefMoFEMElement {
   RefMoFEMElement_MESHSET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
@@ -59,6 +61,7 @@ struct RefMoFEMElement_MESHSET: public RefMoFEMElement {
 
 /**
  * \brief keeps data about abstract PRISM finite element
+ * \ingroup fe_multi_indices
  */
 struct RefMoFEMElement_PRISM: public RefMoFEMElement {
   BitRefEdges *tag_BitRefEdges;
@@ -71,6 +74,7 @@ struct RefMoFEMElement_PRISM: public RefMoFEMElement {
 
 /**
  * \brief keeps data about abstract TET finite element
+ * \ingroup fe_multi_indices
  */
 struct RefMoFEMElement_TET: public RefMoFEMElement {
   BitRefEdges *tag_BitRefEdges;
@@ -88,6 +92,7 @@ struct RefMoFEMElement_TET: public RefMoFEMElement {
 
 /**
  * \brief keeps data about abstract TRI finite element
+ * \ingroup fe_multi_indices
  */
 struct RefMoFEMElement_TRI: public RefMoFEMElement {
   RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
@@ -98,6 +103,7 @@ struct RefMoFEMElement_TRI: public RefMoFEMElement {
 
 /**
  * \brief keeps data about abstract EDGE finite element
+ * \ingroup fe_multi_indices
  */
 struct RefMoFEMElement_EDGE: public RefMoFEMElement {
   RefMoFEMElement_EDGE(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
@@ -108,6 +114,7 @@ struct RefMoFEMElement_EDGE: public RefMoFEMElement {
 
 /**
  * \brief keeps data about abstract VERTEX finite element
+ * \ingroup fe_multi_indices
  */
 struct RefMoFEMElement_VERTEX: public RefMoFEMElement {
   RefMoFEMElement_VERTEX(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
@@ -118,6 +125,7 @@ struct RefMoFEMElement_VERTEX: public RefMoFEMElement {
 
 /**
  * \brief intrface to RefMoFEMElement
+ * \ingroup fe_multi_indices
  */
 template<typename T>
 struct interface_RefMoFEMElement: interface_RefMoFEMEntity<T> {
@@ -162,6 +170,7 @@ struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMEleme
 /**
  * \typedef RefMoFEMElement
  * type multiIndex container for RefMoFEMElement
+ * \ingroup fe_multi_indices
  *
  * \param hashed_unique MoABEnt_mi_tag 
  * \param ordered_non_unique Meshset_mi_tag 
@@ -194,6 +203,7 @@ typedef multi_index_container<
 
 /** 
  * \brief Finite element definition
+ * \ingroup fe_multi_indices
  */
 struct MoFEMFiniteElement {
   EntityHandle meshset; ///< meshset stores FE ents 
@@ -223,6 +233,7 @@ struct MoFEMFiniteElement {
 
 /**
  * \brief Inetface for FE
+ * \ingroup fe_multi_indices
  */
 template <typename T>
 struct interface_MoFEMFiniteElement {
@@ -240,34 +251,38 @@ struct interface_MoFEMFiniteElement {
 
 /**
  * \brief Finite element data for entitiy
+ * \ingroup fe_multi_indices
  */
 struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteElement>,interface_RefMoFEMElement<RefMoFEMElement> {
   typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
   typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
   typedef interface_MoFEMFiniteElement<MoFEMFiniteElement> interface_type_MoFEMFiniteElement;
-  /*const UId* tag_row_uids_data;
-  int tag_row_uids_size;
-  const UId* tag_col_uids_data;
-  int tag_col_uids_size;
-  const UId* tag_data_uids_data;
-  int tag_data_uids_size;*/
   DofMoFEMEntity_multiIndex_uid_view row_dof_view;
   DofMoFEMEntity_multiIndex_uid_view col_dof_view;
   DofMoFEMEntity_multiIndex_uid_view data_dof_view;
   FEDofMoFEMEntity_multiIndex data_dofs;
-  UId uid;
+  LocalUId local_uid;
+  GlobalUId global_uid;
   EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr);
-  const UId& get_unique_id() const { return uid; }
-  UId get_unique_id_calculate() const {
+  const LocalUId& get_local_unique_id() const { return local_uid; }
+  const GlobalUId& get_global_unique_id() const { return global_uid; }
+  LocalUId get_local_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<=32);
-    UId _uid_ = (ref_ptr->get_ref_ent())|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
+    LocalUId _uid_ = (ref_ptr->get_ref_ent())|(((LocalUId)bit_number)<<(8*sizeof(EntityHandle)));
+    return _uid_;
+  }
+  GlobalUId get_global_unique_id_calculate() const {
+    char bit_number = get_bit_number();
+    assert(bit_number<=32);
+    GlobalUId _uid_ = (ref_ptr->get_ref_ent())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
   inline EntityHandle get_ent() const { return get_ref_ent(); }
   inline DofIdx get_nb_dofs_row() const { return row_dof_view.size(); }
   inline DofIdx get_nb_dofs_col() const { return col_dof_view.size(); }
   inline DofIdx get_nb_dofs_data() const { return data_dof_view.size(); }
+  inline const FEDofMoFEMEntity_multiIndex& get_data_dofs() const { return data_dofs; };
   friend ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e);
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
@@ -296,14 +311,11 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION) const;
-  PetscErrorCode get_uid_side_number(
-    Interface &moab,const UId uid,
-    const DofMoFEMEntity_multiIndex &dofs_moabfield,
-    int &side_number, int &sense, int &offset) const;
 };
 
 /**
  * \brief interface to EntMoFEMFiniteElement
+ * \ingroup fe_multi_indices
  */
 template <typename T>
 struct interface_EntMoFEMFiniteElement:public interface_MoFEMFiniteElement<T>,interface_RefMoFEMElement<T> {
@@ -311,17 +323,21 @@ struct interface_EntMoFEMFiniteElement:public interface_MoFEMFiniteElement<T>,in
   inline EntityID get_ent_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ent_id(); }
   inline EntityType get_ent_type() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ent_type(); }
   //
+  inline const FEDofMoFEMEntity_multiIndex& get_data_dofs() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_data_dofs(); };
   inline DofIdx get_nb_dofs_row() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_row(); }
   inline DofIdx get_nb_dofs_col() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_col(); }
   inline DofIdx get_nb_dofs_data() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_data(); }
   inline EntityHandle get_ent() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ref_ent(); };
-  inline UId get_unique_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_unique_id(); }
+  inline LocalUId get_local_unique_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_local_unique_id(); }
+  inline GlobalUId get_global_unique_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_global_unique_id(); }
   //
   SideNumber_multiIndex &get_side_number_table() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_side_number_table(); }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_side_number_ptr(moab,ent); }
 };
 
-/// Partitioned Finite Element in Problem
+/** \brief Partitioned Finite Element in Problem
+ * \ingroup fe_multi_indices
+ */
 struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement> {
   typedef interface_MoFEMFiniteElement<EntMoFEMFiniteElement> interface_type_MoFEMFiniteElement;
   typedef interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement> interface_type_EntMoFEMFiniteElement;
@@ -330,32 +346,41 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
   FENumeredDofMoFEMEntity_multiIndex cols_dofs;
   NumeredMoFEMFiniteElement(const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr): interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement>(EntMoFEMFiniteElement_ptr),part(-1) {};
   inline unsigned int get_part() const { return part; };
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return rows_dofs; };
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return cols_dofs; };
+  PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
+  PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
   friend ostream& operator<<(ostream& os,const NumeredMoFEMFiniteElement& e) {
     os << "part " << e.part << " " << *(e.fe_ptr);
     return os;
   }
 };
 
-/// interface for NumeredMoFEMFiniteElement
+/** \brief interface for NumeredMoFEMFiniteElement
+ * \ingroup fe_multi_indices
+ */
 template <typename T>
 struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<T> {
   const T *ptr;
   interface_NumeredMoFEMFiniteElement(const T *_ptr): interface_EntMoFEMFiniteElement<T>(_ptr) {};
   inline unsigned int get_part() const { return ptr->get_part(); }
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return ptr->get_rows_dofs(); };
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return ptr->get_cols_dofs(); };
 };
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container for finite element enetities
+ * \brief MultiIndex container for EntMoFEMFiniteElement
+ * \ingroup fe_multi_indices
  *
  * \param ordered_unique<
-      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,UId,&EntMoFEMFiniteElement::uid> >,
+      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,GlobalUId,&EntMoFEMFiniteElement::global_uid> >,
  * \param    ordered_non_unique<
       tag<MoABEnt_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
  * \param    ordered_non_unique<
       tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
  * \param    ordered_non_unique<
-      tag<BitFEId_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, ltbit<BitFEId> >,
+      tag<BitFEId_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, LtBit<BitFEId> >,
  * \param    ordered_non_unique<
       tag<EntType_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityType,&EntMoFEMFiniteElement::get_ent_type> >,
  * \param    ordered_non_unique<
@@ -369,13 +394,13 @@ typedef multi_index_container<
   EntMoFEMFiniteElement,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,UId,&EntMoFEMFiniteElement::uid> >,
+      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,GlobalUId,&EntMoFEMFiniteElement::global_uid> >,
     ordered_non_unique<
       tag<MoABEnt_mi_tag>, const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
     ordered_non_unique<
       tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
     ordered_non_unique<
-      tag<BitFEId_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, ltbit<BitFEId> >,
+      tag<BitFEId_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, LtBit<BitFEId> >,
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityType,&EntMoFEMFiniteElement::get_ent_type> >,
     ordered_non_unique<
@@ -388,10 +413,11 @@ typedef multi_index_container<
 
 /** 
  * @relates multi_index_container
- * \brief MultiIndex for entities uin the problem.
+ * \brief MultiIndex for entities for NumeredMoFEMFiniteElement
+ * \ingroup fe_multi_indices
  *
  * \param  ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,UId,&NumeredMoFEMFiniteElement::get_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,GlobalUId,&NumeredMoFEMFiniteElement::get_global_unique_id> >,
  * \param    ordered_non_unique<
       tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
  * \param    ordered_non_unique<
@@ -407,7 +433,7 @@ typedef multi_index_container<
   NumeredMoFEMFiniteElement,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,UId,&NumeredMoFEMFiniteElement::get_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,GlobalUId,&NumeredMoFEMFiniteElement::get_global_unique_id> >,
     ordered_non_unique<
       tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
     ordered_non_unique<
@@ -428,48 +454,29 @@ typedef multi_index_container<
 	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
   > > NumeredMoFEMFiniteElement_multiIndex;
 
-// indexes
+/**  
+ * @relates multi_index_container
+ * \brief MultiIndex for entities for MoFEMFiniteElement
+ * \ingroup fe_multi_indices
+ */
 typedef multi_index_container<
   MoFEMFiniteElement,
   indexed_by<
     hashed_unique<
       tag<MoFEMFiniteElement_Meshset_mi_tag>, member<MoFEMFiniteElement,EntityHandle,&MoFEMFiniteElement::meshset> >,
     hashed_unique<
-      tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFiniteElement,BitFEId,&MoFEMFiniteElement::get_id>, hashbit<BitFEId>, eqbit<BitFEId> >,
+      tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFiniteElement,BitFEId,&MoFEMFiniteElement::get_id>, HashBit<BitFEId>, EqBit<BitFEId> >,
     ordered_unique<
       tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,boost::string_ref,&MoFEMFiniteElement::get_name_ref> >
   > > MoFEMFiniteElement_multiIndex;
 
-
-/*// modify procedures
-
-/// set uids for finite elements dofs in rows
-struct EntMoFEMFiniteElement_row_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_row_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-/// set uids for finite elements dofs in cols
-struct EntMoFEMFiniteElement_col_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_col_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view): 
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-/// set uids for finite elements dofs need to calulate element matrices and vectors
-struct EntMoFEMFiniteElement_data_dofs_change {
-  Interface &moab;
-  const DofMoFEMEntity_multiIndex_uid_view &uids_view;
-  EntMoFEMFiniteElement_data_dofs_change(Interface &_moab,const DofMoFEMEntity_multiIndex_uid_view &_uids_view):
-    moab(_moab),uids_view(_uids_view) {};
-  void operator()(EntMoFEMFiniteElement &MoFEMFiniteElement);
-};*/
-
 }
 
 #endif // __FEMMULTIINDICES_HPP__
+
+/***************************************************************************//**
+ * \defgroup fe_multi_indices Finite elements structures and multi-indices
+ * \ingroup mofem
+ ******************************************************************************/
+
+

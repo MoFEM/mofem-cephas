@@ -77,19 +77,19 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
       forder_face = fNBFACE_H1;
       forder_elem = fNBVOLUME_H1;
       break;
-    case Hdiv:
+    case HDIV:
       forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_Hdiv;
-      forder_edge = fNBEDGE_Hdiv;
-      forder_face = fNBFACE_Hdiv;
-      forder_elem = fNBVOLUME_Hdiv;
+      forder_vertex = fNBVERTEX_HDIV;
+      forder_edge = fNBEDGE_HDIV;
+      forder_face = fNBFACE_HDIV;
+      forder_elem = fNBVOLUME_HDIV;
       break;
-    case Hcurl:
+    case HCURL:
       forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_Hcurl;
-      forder_edge = fNBEDGE_Hcurl;
-      forder_face = fNBFACE_Hcurl;
-      forder_elem = fNBVOLUME_Hcurl;
+      forder_vertex = fNBVERTEX_HCURL;
+      forder_edge = fNBEDGE_HCURL;
+      forder_face = fNBFACE_HCURL;
+      forder_elem = fNBVOLUME_HCURL;
       break;
     case L2:
       forder_entityset = NULL;
@@ -98,7 +98,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
       forder_face = fNBFACE_L2;
       forder_elem = fNBVOLUME_L2;
       break;
-    case NoField:
+    case NOFIELD:
       forder_entityset = fNBENTITYSET_nofield;
       forder_vertex = NULL;
       forder_edge = NULL;
@@ -129,10 +129,10 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
   PetscFunctionBegin;
   //tets type
   EntityType type = (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
-  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,1,"incosistencies with type_from_handle");
+  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"incosistencies with type_from_handle");
   //tets id
   EntityID id = (EntityType)(ent&MB_ID_MASK);
-  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,1,"incosistencies with id_from_handle");
+  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"incosistencies with id_from_handle");
   PetscFunctionReturn(0);
 }
 

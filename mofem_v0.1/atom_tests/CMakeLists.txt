@@ -20,7 +20,7 @@ add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test mofem_Field ${PROJECT_LIBS})
 
 add_executable(elasticity_atom_test elasticity_atom_test.cpp)
-target_link_libraries(elasticity_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(elasticity_atom_test mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 add_executable(l2_approximation l2_approximation.cpp)
 target_link_libraries(l2_approximation mofem_student_body mofem_Field ${PROJECT_LIBS})
@@ -29,7 +29,7 @@ add_executable(hdiv_approximation hdiv_approximation.cpp)
 target_link_libraries(hdiv_approximation mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(trans_isotropic_test trans_isotropic_test.cpp)
-target_link_libraries(trans_isotropic_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(trans_isotropic_test mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 add_executable(mesh_smoothing_atom mesh_smoothing_atom.cpp)
 target_link_libraries(mesh_smoothing_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
@@ -41,22 +41,21 @@ add_executable(mesh_refine_atom mesh_refine_atom.cpp)
 target_link_libraries(mesh_refine_atom mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 add_executable(nonlinear_elasticity_atom nonlinear_elasticity_atom.cpp)
-target_link_libraries(nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(arc_length_nonlinear_elasticity_atom arc_length_nonlinear_elasticity_atom.cpp)
-target_link_libraries(arc_length_nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(arc_length_nonlinear_elasticity_atom  arc_length_nonlinear_elasticity_atom.cpp)
+target_link_libraries(arc_length_nonlinear_elasticity_atom mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 add_executable(field_axpy_atom_test field_axpy_atom_test.cpp)
 target_link_libraries(field_axpy_atom_test mofem_Field ${PROJECT_LIBS})
 
-add_executable(nonlinear_elasticity_thremal_expansion_atom nonlinear_elasticity_thremal_expansion_atom.cpp)
-target_link_libraries(nonlinear_elasticity_thremal_expansion_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(nonlinear_elasticity_thremal_expansion_atom nonlinear_elasticity_atom.cpp)
+set_target_properties(nonlinear_elasticity_thremal_expansion_atom PROPERTIES COMPILE_FLAGS -DNONLINEAR_TEMPERATUTE)
+target_link_libraries(nonlinear_elasticity_thremal_expansion_atom mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(arc_length_nonlinear_elasticity_thermal_atom arc_length_nonlinear_elasticity_thermal_atom.cpp)
-target_link_libraries(arc_length_nonlinear_elasticity_thermal_atom mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
-add_executable(thermal_conductivity_atom thermal_conductivity_atom.cpp)
-target_link_libraries(thermal_conductivity_atom mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(arc_length_nonlinear_elasticity_thermal_atom arc_length_nonlinear_elasticity_atom.cpp)
+set_target_properties(arc_length_nonlinear_elasticity_thermal_atom PROPERTIES COMPILE_FLAGS -DNONLINEAR_TEMPERATUTE)
+target_link_libraries(arc_length_nonlinear_elasticity_thermal_atom mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
 target_link_libraries(projection_from_10node_tet_atom mofem_student_body mofem_Field ${PROJECT_LIBS})
@@ -64,17 +63,44 @@ target_link_libraries(projection_from_10node_tet_atom mofem_student_body mofem_F
 add_executable(loops_atom_test loops_atom_test.cpp)
 target_link_libraries(loops_atom_test mofem_Field ${PROJECT_LIBS})
 
-add_executable(field_functions_atom_test field_functions_atom_test.cpp)
-target_link_libraries(field_functions_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(forces_and_sources_getting_orders_indices_atom_test forces_and_sources_getting_orders_indices_atom_test.cpp)
+target_link_libraries(forces_and_sources_getting_orders_indices_atom_test mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(homogenisation_disp_atom_test homogenisation_disp_atom_test.cpp)
-target_link_libraries(homogenisation_disp_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(forces_and_sources_getting_mult_H1_H1_atom_test forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
+target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(homogenisation_trac_atom_test homogenisation_trac_atom_test.cpp)
-target_link_libraries(homogenisation_trac_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(forces_and_sources_body_force_atom_test.cpp forces_and_sources_body_force_atom_test.cpp)
+target_link_libraries(forces_and_sources_body_force_atom_test.cpp mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-add_executable(homogenisation_periodic_atom_test homogenisation_periodic_atom_test.cpp)
-target_link_libraries(homogenisation_periodic_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+add_executable(forces_and_sources_calculate_jacobian forces_and_sources_calculate_jacobian.cpp)
+target_link_libraries(forces_and_sources_calculate_jacobian mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+add_executable(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
+target_link_libraries(forces_and_sources_testing_volume_element mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+add_executable(forces_and_sources_testing_field_approximation forces_and_sources_testing_field_approximation.cpp) 
+target_link_libraries(forces_and_sources_testing_field_approximation mofem_forces_and_sources mofem_student_body mofem_Field ${PROJECT_LIBS})
+
+add_executable(forces_and_sources_body_force_atom forces_and_sources_body_force_atom_test.cpp)
+target_link_libraries(forces_and_sources_body_force_atom mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
+target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+add_executable(forces_and_sources_testing_triangle_element forces_and_sources_testing_triangle_element.cpp)
+target_link_libraries(forces_and_sources_testing_triangle_element mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+add_executable(forces_and_sources_testing_edge_element forces_and_sources_testing_edge_element.cpp)
+target_link_libraries(forces_and_sources_testing_edge_element mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+add_executable(forces_and_sources_testing_vertex_element forces_and_sources_testing_vertex_element.cpp)
+target_link_libraries(forces_and_sources_testing_vertex_element mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+add_executable(forces_and_sources_neumann_forces_atom forces_and_sources_neumann_forces_atom_test.cpp)
+target_link_libraries(forces_and_sources_neumann_forces_atom mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+add_executable(forces_and_sources_neumann_forces_complex_for_lazy_atom forces_and_sources_neumann_forces_complex_for_lazy_atom_test.cpp)
+target_link_libraries(forces_and_sources_neumann_forces_complex_for_lazy_atom mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
@@ -106,18 +132,7 @@ cm_export_file("../meshes/cub_thermal_problem.cub" export_atom_tests)
 cm_export_file("../meshes/sphere.cub" export_atom_tests)
 cm_export_file("../meshes/loop_atom.cub" export_atom_tests)
 cm_export_file("../meshes/tri_axial_cube_atom.cub" export_atom_tests)
-cm_export_file("../meshes/Cube_RVE.cub" export_atom_tests)
-
-
-#Homogenisation atom test
-add_test(homogenisation_disp_atom_test_1 ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_disp_atom_test -my_file Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
-add_test(homogenisation_disp_atom_test_1_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/Cube_RVE.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/Cube_RVE.cub.txt)
-
-add_test(homogenisation_trac_atom_test_1 ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_trac_atom_test -my_file Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
-add_test(homogenisation_trac_atom_test_1_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/Cube_RVE.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/Cube_RVE.cub.txt)
-
-add_test(homogenisation_periodic_atom_test_1 ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_periodic_atom_test -my_file Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
-add_test(homogenisation_periodic_atom_test_1_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/Cube_RVE.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/Cube_RVE.cub.txt)
+cm_export_file("../meshes/elasticity_atom_test_body_force.cub" export_atom_tests)
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)
@@ -164,21 +179,21 @@ add_test(cubit_bc_atom_test_inlet_outlet_compare ${CMAKE_COMMAND} -E compare_fil
 #Elasticity atom tests
 add_test(elasticity_atom_test_01X ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/elasticity_atom_test -my_file elasticity_atom_test_01X.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary -my_order 5)
 add_test(elasticity_atom_test_01X_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/elasticity_atom_test_01X.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/elasticity_atom_test_01X.cub.txt)
+add_test(elasticity_atom_test_01Y ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/elasticity_atom_test -my_file elasticity_atom_test_01Y.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary -my_order 5)
+add_test(elasticity_atom_test_01Y_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/elasticity_atom_test_01Y.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/elasticity_atom_test_01Y.cub.txt)
+add_test(elasticity_atom_test_01Z ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/elasticity_atom_test -my_file elasticity_atom_test_01Z.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary -my_order 5)
+add_test(elasticity_atom_test_01Z_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/elasticity_atom_test_01Z.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/elasticity_atom_test_01Z.cub.txt)
 
 #Transversely Isotropic atom test
 add_test(traniso_mat_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/trans_isotropic_test -my_file trans_isotropic_cube.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor)
 add_test(traniso_mat_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/transIso_Mat_Blessed_File.txt ${CMAKE_BINARY_DIR}/atom_tests/transIso_Mat_Blessed_File.txt)
 
-add_test(elasticity_atom_test_01Y ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/elasticity_atom_test -my_file elasticity_atom_test_01Y.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary -my_order 5)
-add_test(elasticity_atom_test_01Y_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/elasticity_atom_test_01Y.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/elasticity_atom_test_01Y.cub.txt)
-
-add_test(elasticity_atom_test_01Z ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/elasticity_atom_test -my_file elasticity_atom_test_01Z.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -log_summary -my_order 5)
-add_test(elasticity_atom_test_01Z_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/elasticity_atom_test_01Z.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/elasticity_atom_test_01Z.cub.txt)
-
+#l2
 add_test(l2_atom_approximation ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/l2_approximation -my_file elasticity_atom_test_01X.cub -log_summary)
 add_test(l2_atom_approximation_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/l2_approximation.txt ${CMAKE_BINARY_DIR}/atom_tests/l2_approximation.txt)
 
-add_test(mesh_smoothing_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing_atom -my_file chees_atom.cub  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-12 -ksp_rtol 1e-12 -snes_monitor -snes_type newtonls -snes_linesearch_type bt -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason -my_penalty 1e10 -my_gamma 0.0 -my_alpha2 1 -log_summary)
+#mesh smoothing
+add_test(mesh_smoothing_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing_atom -my_file chees_atom.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_atol 1e-12 -ksp_rtol 1e-12 -snes_monitor -snes_type newtonls -snes_linesearch_type bt -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason -my_gamma 0.0 -my_alpha2 1 -log_summary)
 add_test(mesh_smoothing_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_smoothing.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_smoothing.txt)
 
 add_test(mesh_insert_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub -log_summary)
@@ -187,7 +202,6 @@ add_test(mesh_insert_T_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DI
 add_test(mesh_insert_T_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
 add_test(mesh_insert_T_4seasons_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file 4seasons.cub -log_summary)
 add_test(mesh_insert_T_4seasons_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_4seasons_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
-
 
 add_test(mesh_refine_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.cub -log_summary)
 add_test(mesh_refine_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt)
@@ -202,7 +216,7 @@ add_test(nonlinear_elasticity_atom_sheer_force_compare ${CMAKE_COMMAND} -E compa
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_elasticity_atom_test_sheer_force.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_elasticity_atom_test_sheer_force.cub.txt)
 
 #arc length elasticty
-add_test(arc_length_nonlinear_elasticity_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1. -my_ms 3 -my_order 5 -snes_converged_reason -log_summary)
+add_test(arc_length_nonlinear_elasticity_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1. -my_ms 3 -snes_converged_reason -log_summary)
 add_test(arc_length_nonlinear_elasticity_atom_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/arc_length_nonlinear_elasticity_atom.txt ${CMAKE_BINARY_DIR}/atom_tests/arc_length_nonlinear_elasticity_atom.txt)
 
 #hdiv approximation atom test
@@ -227,12 +241,6 @@ add_test(arc_length_nonlinear_elasticity_thermal_atom_compare ${CMAKE_COMMAND} -
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/arc_length_nonlinear_elasticity_thermal_atom.txt 
   ${CMAKE_BINARY_DIR}/atom_tests/arc_length_nonlinear_elasticity_thermal_atom.txt)
 
-#thermal problem
-add_test(thermal_conductivity_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_conductivity_atom -my_file cub_thermal_problem.cub -ksp_type fgmres -ksp_gmres_restart 30 -pc_type asm -sub_pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -my_max_pot_proc_ref_level 1 -log_summary)
-add_test(thermal_conductivity_atom_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_problem.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/thermal_problem.txt)
-
 #10 node TET projection
 add_test(projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.cub -log_summary)
 add_test(projection_from_10node_tet_atom_compare ${CMAKE_COMMAND} -E compare_files 
@@ -245,9 +253,139 @@ add_test(cubit_meshset_loop_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/loop_atom.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/loop_atom.cub.txt)
 
-#Field Functions Test
-add_test(field_functions_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_functions_atom_test -my_file tri_axial_cube_atom.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -my_order 1 -log_summary)
-add_test(field_functions_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/tri_axial_cube_atom.cub.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/tri_axial_cube_atom.cub.txt)
+#foces and sources functions Test
+add_test(forces_and_sources_getting_orders_indices_test 
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_orders_indices_atom_test -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_getting_orders_indices_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_orders_indices_atom_test.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_orders_indices_atom_test.txt)
+
+add_test(forces_and_sources_getting_mult_H1_H1_test 
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_mult_H1_H1_atom_test -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_getting_mult_H1_H1_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_mult_H1_H1_atom_test.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_mult_H1_H1_atom_test.txt)
+
+add_test(forces_and_sources_calculate_jacobian_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_calculate_jacobian -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_calculate_jacobian_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_calculate_jacobian.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_calculate_jacobian.txt)
+
+add_test(forces_and_sources_testing_volume_element_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_volume_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt)
+
+add_test(forces_and_sources_testing_field_approximation_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_field_approximation -my_file elasticity_atom_test_01X_pressure.cub 
+  -ksp_monitor -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist )
+add_test(forces_and_sources_testing_field_approximation_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_field_approximation.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_field_approximation.txt)
+
+add_test(forces_and_sources_body_force_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_body_force_atom -my_file elasticity_atom_test_body_force.cub)
+add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_body_force_atom_test.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_body_force_atom_test.txt)
+
+add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_higher_order_skin_normals_atom -my_file sphere.cub)
+add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_higher_order_skin_normals_atom.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_higher_order_skin_normals_atom.txt)
+
+add_test(forces_and_sources_testing_triangle_element_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_triangle_element -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_triangle_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_triangle_element.txt)
+
+add_test(forces_and_sources_testing_edge_element_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_testing_edge_element_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_edge_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element.txt)
+
+add_test(forces_and_sources_testing_vertex_element_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_vertex_element -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_testing_vertex_element_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_vertex_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_vertex_element.txt)
+
+add_test(forces_and_sources_neumann_elasticity_atom_test_01X_pressure
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_atom -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_neumann_elasticity_atom_test_01X_pressure_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_elasticity_atom_test_01X_pressure.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_elasticity_atom_test_01X_pressure.cub.txt)
+add_test(forces_and_sources_neumann_elasticity_atom_test_01X
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_atom -my_file elasticity_atom_test_01X.cub)
+add_test(forces_and_sources_neumann_elasticity_atom_test_01X_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_elasticity_atom_test_01X.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_elasticity_atom_test_01X.cub.txt)
+add_test(forces_and_sources_neumann_sphre_pressure_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_atom -my_file sphere.cub)
+add_test(forces_and_sources_neumann_sphre_pressure_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_sphere.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_sphere.cub.txt)
+
+add_test(forces_and_sources_neumann_forces_complex_for_lazy_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_complex_for_lazy_atom -my_file sphere.cub)
+add_test(forces_and_sources_neumann_forces_complex_for_lazy_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_neumann_forces_complex_for_lazy_atom.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_neumann_forces_complex_for_lazy_atom.txt)
+
+# add example test for forces_and_sources_fluid_pressure_element_atom
+cm_export_file("../meshes/fluid_presssure_cub_test.cub" export_atom_tests)
+add_executable(forces_and_sources_fluid_pressure_element_atom forces_and_sources_fluid_pressure_element.cpp)
+target_link_libraries(forces_and_sources_fluid_pressure_element_atom mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_fluid_pressure_element_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_fluid_pressure_element_atom -my_file fluid_presssure_cub_test.cub)
+add_test(forces_and_sources_fluid_pressure_element_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_fluid_pressure_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_fluid_pressure_element.txt)
+
+# add example test for temperature element
+cm_export_file("../meshes/simple_thermal_problem.cub" export_atom_tests)
+add_executable(forces_and_sources_thermal_elem_atom forces_and_sources_thermal_elem.cpp)
+target_link_libraries(forces_and_sources_thermal_elem_atom mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_thermal_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_elem_atom 
+  -my_file simple_thermal_problem.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor)
+add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem.txt)
+
+# add test test for temerature unsteady element
+add_executable(forces_and_sources_thermal_elem_unsteady_atom forces_and_sources_thermal_elem_unsteady.cpp)
+target_link_libraries(forces_and_sources_thermal_elem_unsteady_atom mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_thermal_elem_unsteady_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_elem_unsteady_atom 
+  -my_file simple_thermal_problem.cub 
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist 
+  -snes_type newtonls -snes_linesearch_type basic 
+  -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 
+  -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor)
+add_test(forces_and_sources_thermal_elem_unsteady_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem_unsteady.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem_unsteady.txt)
+
+# add theraml stress eleme
+cm_export_file("../meshes/elasticity_atom_test_thermal_expansion.cub" export_atom_tests)
+add_executable(forces_and_sources_thermal_stress_elem forces_and_sources_thermal_stress_elem.cpp)
+target_link_libraries(forces_and_sources_thermal_stress_elem mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_thermal_stress_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_stress_elem
+  -my_file elasticity_atom_test_thermal_expansion.cub)
+add_test(forces_and_sources_thermal_stress_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_stress_elem.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_stress_elem.txt)
+
+# add test for recording series
+add_executable(record_series_atom record_series_atom.cpp)
+target_link_libraries(record_series_atom mofem_Field ${PROJECT_LIBS})
+add_test(record_series_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/record_series_atom
+  -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/record_series_atom.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/record_series_atom.txt)
 

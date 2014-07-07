@@ -62,9 +62,9 @@ int main(int argc, char *argv[]) {
     ofstream myfile;
     myfile.open ((string(mesh_file_name)+".txt").c_str());
 
-  cout << "<<<< NodeSets >>>>>" << endl;
-  //NodeSets
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NodeSet,it)) {
+  cout << "<<<< NODESETs >>>>>" << endl;
+  //NODESETs
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
       //Displacement
       if (strcmp (&bc_data[0],"Displacement") == 0)
       {
-          displacement_cubit_bc_data mydata;
+          DisplacementCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
       //Force
       else if (strcmp (&bc_data[0],"Force") == 0)
       {
-          force_cubit_bc_data mydata;
+          ForceCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
       //Velocity
       else if (strcmp (&bc_data[0],"Velocity") == 0)
       {
-          velocity_cubit_bc_data mydata;
+          VelocityCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
       //Acceleration
       else if (strcmp (&bc_data[0],"Acceleration") == 0)
       {
-          acceleration_cubit_bc_data mydata;
+          AccelerationCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
       //Temperature
       else if (strcmp (&bc_data[0],"Temperature") == 0)
       {
-          temperature_cubit_bc_data mydata;
+          TemperatureCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -125,9 +125,9 @@ int main(int argc, char *argv[]) {
       
   }
 
-  cout << "<<<< SideSets >>>>>" << endl;
-  //SideSets
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SideSet,it)) {
+  cout << "<<<< SIDESETs >>>>>" << endl;
+  //SIDESETs
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
       //Pressure
       if (strcmp (&bc_data[0],"Pressure") == 0)
       {
-          pressure_cubit_bc_data mydata;
+          PressureCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
       //Heat Flux
       else if (strcmp (&bc_data[0],"HeatFlux") == 0)
       {
-          heatflux_cubit_bc_data mydata;
+          HeatfluxCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
       //cfd_bc
       else if (strcmp (&bc_data[0],"cfd_bc") == 0)
       {
-          cfd_cubit_bc_data mydata;
+          CfgCubitBcData mydata;
           ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
           
           //Interface bc (Hex:6 Dec:6)
@@ -189,9 +189,9 @@ int main(int argc, char *argv[]) {
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 
-  cout << "<<<< BlockSets >>>>>" << endl;
-  //BlockSets
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+  cout << "<<<< BLOCKSETs >>>>>" << endl;
+  //BLOCKSETs
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
   {
       cout << endl << *it << endl;
 
@@ -207,50 +207,44 @@ int main(int argc, char *argv[]) {
       ierr = it->print_Cubit_attributes(myfile); CHKERRQ(ierr);
   }
   
-        //Get block attributes and assign them as material properties/solution parameters based on the name of each block
+  //Get block attributes and assign them as material properties/solution parameters based on the name of each block
         
-        //Conventions:
-        //----------------------------------------------------------------------------------------
-        //Materials are defined with block names starting with MAT_ e.g. MAT_ELASTIC_abcd,
-        //MAT_FRACTcdef etc.
-        //Solution procedures are defined with block names starting with SOL_ e.g. SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
-        //----------------------------------------------------------------------------------------
+  //Conventions:
+  //----------------------------------------------------------------------------------------
+  //Materials are defined with block names starting with MAT_ e.g. MAT_ELASTIC_abcd,
+  //MAT_FRACTcdef etc.
+  //Solution procedures are defined with block names starting with SOL_ e.g. SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
+  //----------------------------------------------------------------------------------------
         
-        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
-            {
-                cout << endl << *it << endl;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+
+    cout << endl << *it << endl;
                 
-                //Get block name
-                string name = it->get_Cubit_name();
+    //Get block name
+    string name = it->get_Cubit_name();
 
-                //Elastic material
-                if (name.compare(0,11,"MAT_ELASTIC") == 0)
-                {
-                    Mat_Elastic mydata;
-                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-                    //Print data
-                    cout << mydata;
-                    myfile << mydata;
-                }
-                else if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
-                {
-                    Mat_Elastic_TransIso mydata;
-                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-                    //Print data
-                    cout << mydata;
-                    myfile << mydata;
-                }
-                else if (name.compare(0,10,"MAT_INTERF") == 0)
-                {
-                    Mat_Interf mydata;
-                    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-                    //Print data
-                    cout << mydata;
-                    myfile << mydata;
-                }
+    //Elastic material
+    if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+      Mat_Elastic_TransIso mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      //Print data
+      cout << mydata;
+      myfile << mydata;
+    } else if (name.compare(0,11,"MAT_ELASTIC") == 0) {
+      Mat_Elastic mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      //Print data
+      cout << mydata;
+      myfile << mydata;
+    } else if (name.compare(0,10,"MAT_INTERF") == 0) {
+      Mat_Interf mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      //Print data
+      cout << mydata;
+      myfile << mydata;
+    } else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
 
-                else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
-            }
+  }
         
   //Close mesh_file_name.txt
   myfile.close();

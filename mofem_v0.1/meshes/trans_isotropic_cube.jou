@@ -1,12 +1,12 @@
 reset
-brick x 100 y 100 z 100
-volume 1 sizing function type skeleton scale 10 time_accuracy_level 2 
-volume 1 sizing function type skeleton 
+brick x 1 y 1 z 1
+
 volume 1 scheme Tetmesh
+volume all size 1
+
 mesh volume 1
 set duplicate block elements on
-block 1 volume 1  
-block 1 attribute count 2
+block 1 volume 1 
 
 #!Define block attributes
 block 1 attribute count 5
@@ -22,7 +22,7 @@ block 1 attribute index 4 0.15
 block 1 attribute index 5 1
 
 #!Displacement bcs
-create Displacement  on surface 2  dof 3 fix  
+create Displacement  on surface 2  dof 3 fix  0
 create Displacement  on curve 6  dof 2 fix 0
 create displacement on curve 6 dof 2 fix 0
 create displacement on vertex 7 dof 1 dof 2 dof 3 fix 0
@@ -42,7 +42,8 @@ block 1 name "MAT_ELASTIC_TRANSISO_1"
 block 2 name "PotentialFlow" 
 
 block 1 description 'Transverse Isotropic material properties' 
-save as "/Users/mikecortis1/Documents/PhD/moFEM/mofem_v0.1/meshes/trans_isotropic_cube.cub" overwrite
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/trans_isotropic_cube.cub" overwrite
+
 
 
 

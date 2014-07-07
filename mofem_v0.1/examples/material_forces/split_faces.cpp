@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,BitRefLevel()); CHKERRQ(ierr);
 
   ierr = mField.build_fields(); CHKERRQ(ierr);
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -142,8 +142,8 @@ int main(int argc, char *argv[]) {
 	  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
 	}
 	Vec D_tmp_mesh_positions;
-	ierr = mField.VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,&D_tmp_mesh_positions); CHKERRQ(ierr);
-	ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING_PROBLEM",Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = mField.VecCreateGhost("MESH_SMOOTHING_PROBLEM",COL,&D_tmp_mesh_positions); CHKERRQ(ierr);
+	ierr = mField.set_local_VecCreateGhost("MESH_SMOOTHING_PROBLEM",COL,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = conf_prob.front_projection_data(mField,"MESH_SMOOTHING_PROBLEM"); CHKERRQ(ierr);
 	ierr = conf_prob.surface_projection_data(mField,"MESH_SMOOTHING_PROBLEM"); CHKERRQ(ierr);
 	Range tets;
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
 	    if(!flg) {
 	      ierr = mField.set_global_VecCreateGhost(
 		"MESH_SMOOTHING_PROBLEM",
-		Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+		COL,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	      nb_sub_steps++;
 	      nn = 1;
 	      break;
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
 	      if(reason < 0 || !flg) {
 		ierr = mField.set_global_VecCreateGhost(
 		  "MESH_SMOOTHING_PROBLEM",
-		  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+		  COL,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 		if(use_l2_instead_of_bt) {
 		  ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHBT); CHKERRQ(ierr);
 		  use_l2_instead_of_bt = false;
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
 	      } else {
 		ierr = mField.set_local_VecCreateGhost(
 		  "MESH_SMOOTHING_PROBLEM",
-		  Col,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+		  COL,D_tmp_mesh_positions,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 		ierr = conf_prob.set_coordinates_from_material_solution(mField); CHKERRQ(ierr);
 		if(nn == nb_sub_steps && do_not_project) {
 		  do_not_project = false;
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
 	ierr = conf_prob.delete_front_projection_data(mField); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method_material(mField.get_moab(),"MESH_NODE_POSITIONS");
-  ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",Col,ent_method_material); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("COUPLED_PROBLEM","MESH_NODE_POSITIONS",COL,ent_method_material); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;

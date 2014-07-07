@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(mesh_smoothing mesh_smoothing.cpp)
-target_link_libraries(mesh_smoothing mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
-
 add_executable(mesh_smoothing_lagrange_multipliers mesh_smoothing_lagrange_multipliers.cpp)
 target_link_libraries(mesh_smoothing_lagrange_multipliers mofem_complex_for_lazy mofem_student_body mofem_Field ${PROJECT_LIBS})
 
@@ -28,16 +25,6 @@ file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-
-#testing
-add_test(SimpleMeshSmoothingTest ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing 
-  -my_file chees.cub  -ksp_type fgmres  
-  -pc_type lu -pc_factor_mat_solver_package superlu_dist 
-  -ksp_atol 1e-10 -ksp_rtol 1e-12 -ksp_monitor
-  -snes_monitor -snes_type newtonls -snes_linesearch_type bt 
-  -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_converged_reason
-  -my_penalty 1e8 -my_gamma 0 -my_alpha2 1 -my_meshrefine 1
-  -log_summary)
 
 add_test(SimpleMeshSmoothingTest_LagrangeMultipliers ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/mesh_smoothing_lagrange_multipliers
   -my_file chees.cub -ksp_type fgmres 

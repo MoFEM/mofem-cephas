@@ -23,34 +23,32 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "ElasticFEMethodForDynamics.hpp"
+#include "ElasticFEMethodDynamics.hpp"
+#include "SurfacePressure.hpp"
+#include "NodalForce.hpp"
 
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-struct MyBC: public DynamicNeumannBC {
+struct TimeForceScale: public MethodsForOp {
 
-    PetscErrorCode f_CalcTraction(double ts_t,ublas::vector<double,ublas::bounded_array<double,3> >& traction) const {
-      PetscFunctionBegin;
-      
-      //Triangular loading over 10s (maximum at 5)
-      double scale = 0;
-      if(ts_t < 5.) scale = ts_t/5.;
-      if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
-      if(ts_t > 10.) scale = 0;
+  PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) {
+    PetscFunctionBegin;
 
-      //Set Direction of Traction On SideSet2
-      //traction[0] = 0; //X
-      //traction[1] = 0; //Y 
-      //traction[2] = scale; //Z*/
-      traction *= scale;
+    double ts_t = fe->ts_t;
+    
+    //Triangular loading over 10s (maximum at 5)
+    double scale = 0;
+    if(ts_t < 5.) scale = ts_t/5.;
+    if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
+    if(ts_t > 10.) scale = 0;
+    Nf *= scale;
 
-      PetscFunctionReturn(0);
-    }
+    PetscFunctionReturn(0);
+  }
 
 };
-
 
 int main(int argc, char *argv[]) {
 
@@ -181,6 +179,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",vel_order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"VELOCITIES",1); CHKERRQ(ierr);
 
+  ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+
   /****/
   //build database
 
@@ -188,7 +189,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_fields(); CHKERRQ(ierr);
 
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
 
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
@@ -201,60 +202,160 @@ int main(int argc, char *argv[]) {
 
   //partition
   ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
-  ierr = mField.printCubitDisplacementSet(); CHKERRQ(ierr);
-  ierr = mField.printCubitForceSet(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_displacement_set(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_force_set(); CHKERRQ(ierr);
   //print block sets with materials
-  ierr = mField.printCubitMaterials(); CHKERRQ(ierr);
+  ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
 
   //create matrices
   Vec D,F;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",COL,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   //TS
-  TsCtx TsCtx(mField,"ELASTIC_MECHANICS");
-  TsCtx.zero_matrix = false;
+  TsCtx ts_ctx(mField,"ELASTIC_MECHANICS");
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;
   const double rho = 1;
 
-  MyBC mybc;
-  CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+  struct DynamicBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
+    DynamicBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name,
+    Mat &_Aij,Vec _X,Vec _F): DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F) {}
 
-  DynamicElasticFEMethod MyFE(&myDirihletBC,mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho,&mybc);
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      ierr = iNitalize(); CHKERRQ(ierr);
+      ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(ts_u); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(ts_u); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
 
-  TsCtx::loops_to_do_type& loops_to_do_Rhs = TsCtx.get_loops_to_do_IFunction();
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
-  TsCtx::loops_to_do_type& loops_to_do_Mat = TsCtx.get_loops_to_do_IJacobian();
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS",&MyFE));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&MyFE));
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      switch(ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
+	  for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
+	    ierr = VecSetValue(ts_F,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+	  }
+	  ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
+	}
+	break;
+	case CTX_TSSETIJACOBIAN: {
+	  ierr = MatAssemblyBegin(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatZeroRowsColumns(*ts_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+	}
+	break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
+      }
+      PetscFunctionReturn(0);
+    }
 
-  //Monitor
-  TsCtx::loops_to_do_type& loops_to_do_Monitor = TsCtx.get_loops_to_do_Monitor();
-  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("STIFFNESS",&MyFE));
-  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&MyFE));
+  };
+
+  struct UpdateAndControl: public FieldInterface::FEMethod {
+
+    TS tS;
+    int jacobianLag;
+    UpdateAndControl(TS _ts): tS(_ts),jacobianLag(-1) {}
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      SNES snes;
+      ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
+      ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+  };
 
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&TsCtx); CHKERRQ(ierr);
-  ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&TsCtx); CHKERRQ(ierr);
-  ierr = TSMonitorSet(ts,f_TSMonitorSet,&TsCtx,PETSC_NULL); CHKERRQ(ierr);
+  DynamicBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"DISPLACEMENT",Aij,D,F);
+  DynamicElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho);
+  UpdateAndControl update_and_control(ts);
+
+  //Right hand side
+  //preprocess
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
+  //fe looops
+  TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("STIFFNESS",&my_fe));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS",&my_fe));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&my_fe));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&my_fe));
+  //Neumann boundary conditions
+  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  string fe_name_str ="FORCE_FE";
+  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
+    ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
+    neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
+
+  }
+  fe_name_str = "PRESSURE_FE";
+  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
+    ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+    neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
+  }
+  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  for(;mit!=neumann_forces.end();mit++) {
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(mit->first,&mit->second->getLoopFe()));
+  }
+  //nodal forces
+  boost::ptr_map<string,NodalForce> nodal_forces;
+  fe_name_str ="FORCE_FE";
+  nodal_forces.insert(fe_name_str,new NodalForce(mField));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
+    ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
+    nodal_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
+  }
+  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  for(;fit!=nodal_forces.end();fit++) {
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
+  }
+  //postprocess
+  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
+
+  //Left hand side
+  //preprocess
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  //loops finire elements
+  TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("STIFFNESS",&my_fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS",&my_fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&my_fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&my_fe));
+  //postrocess
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
+
+  //Monitor
+  TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("STIFFNESS",&my_fe));
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&my_fe));
+
+  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
 
   double ftime = 1;
   ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
@@ -275,14 +376,15 @@ int main(int argc, char *argv[]) {
   ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
   ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,
-    "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
+    "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",
+    steps,rejects,snesfails,ftime,nonlinits,linits);
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -293,14 +395,14 @@ int main(int argc, char *argv[]) {
   }
 
   PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab,"DISPLACEMENT");
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
   PostProcL2VelocitiesFieldsAndGradientOnRefMesh fe_post_proc_velocities(moab);
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","COPUPLING_VV",fe_post_proc_velocities);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","COPUPLING_VV",fe_post_proc_velocities);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_velocities.moab_post_proc.write_file("out_post_proc_velocities.vtk","VTK",""); CHKERR_PETSC(rval);

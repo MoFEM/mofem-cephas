@@ -31,19 +31,19 @@ extern "C" {
 #define NBFACE_H1(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
 /// number of dofs on volume for H1 space
 #define NBVOLUME_H1(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
-//Hcurl
-#define NBEDGE_Hcurl(P) (P+1)
-#define NBFACE_Hcurl(P) ((P>0) ? (P-1)*(P+1) : 0)
-#define NBVOLUME_Hcurl(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
-//Hdiv
-#define NBEDGE_Hdiv(P) (0)
-#define NBFACE_Hdiv(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
-#define NBVOLUME_Hdiv(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
-#define NBFACE_EDGE_Hdiv(P) ((P>0) ? P : 0)
-#define NBFACE_FACE_Hdiv(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
-#define NBVOLUME_EDGE_Hdiv(P) ((P>1) ? P-1 : 0)
-#define NBVOLUME_FACE_Hdiv(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
-#define NBVOLUME_VOLUME_Hdiv(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
+//HCURL
+#define NBEDGE_HCURL(P) (P+1)
+#define NBFACE_HCURL(P) ((P>0) ? (P-1)*(P+1) : 0)
+#define NBVOLUME_HCURL(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
+//HDIV
+#define NBEDGE_HDIV(P) (0)
+#define NBFACE_HDIV(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
+#define NBVOLUME_HDIV(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
+#define NBFACE_EDGE_HDIV(P) ((P>0) ? P : 0)
+#define NBFACE_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
+#define NBVOLUME_EDGE_HDIV(P) ((P>1) ? P-1 : 0)
+#define NBVOLUME_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
+#define NBVOLUME_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
 /** 
  * \brief Calulate Lagrange approximation basis
@@ -67,7 +67,7 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
  * \param p of edges
  */
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM);
-PetscErrorCode H1_FaceShapeFunctions_MBTRI(int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM);
+PetscErrorCode H1_FaceShapeFunctions_MBTRI(const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM);
 PetscErrorCode H1_EdgeShapeFunctions_MBTET(int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM);
 PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM);
 PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM);

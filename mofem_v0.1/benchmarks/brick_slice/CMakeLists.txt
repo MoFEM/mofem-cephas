@@ -36,4 +36,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brick_slice.cub
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brick_slice.jou
   DESTINATION mofem/benchmarks/brick_slice
   PERMISSIONS OWNER_READ OWNER_WRITE )
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plot_graphs.sh
+  DESTINATION mofem/benchmarks/brick_slice
+  PERMISSIONS OWNER_READ OWNER_WRITE )
 

@@ -33,7 +33,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public mofem_exception {
+struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public MofemException {
   virtual const char* what() const throw() {
     return "negative volume";
   }
@@ -46,9 +46,6 @@ struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public mofem_exceptio
  * structures which could be useful.
 */
 struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
-
-  BaseDirihletBC base_dirihlet_bc_method;
-  BaseDirihletBC *dirihlet_bc_method_ptr;
 
   //TET
   double V;
@@ -64,7 +61,6 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
   EntityHandle conn_face3[3];
   EntityHandle conn_face4[3];
 
-  FEMethod_UpLevelStudent(Interface& _moab,BaseDirihletBC *_dirihlet_bc_method_ptr,int verbose = 0);
   FEMethod_UpLevelStudent(Interface& _moab,int verbose = 0);
   ~FEMethod_UpLevelStudent();
 
@@ -329,15 +325,6 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
     * \brief hierarhical gemetry approximation, diff shape functions
     */
   PetscErrorCode GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(int rank,vector< ublas::matrix<FieldData> > &invH,vector< ublas::matrix<FieldData> > &diffNMatrix);
-
-
-  /**
-    * \brief hierarhical gemetry approximation, face normal
-    */
-  PetscErrorCode GetHierarchicalGeometryApproximation_FaceNormal(EntityHandle ent,
-    vector< ublas::vector<FieldData> > &Normals);
-
-
 
 };
 

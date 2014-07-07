@@ -73,6 +73,26 @@ ostream& operator<<(ostream& os,const MoFEMProblem& e) {
 BitFEId MoFEMProblem::get_BitFEId() const {
   return *tag_BitFEId_data;
 }
+PetscErrorCode MoFEMProblem::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofMoFEMEntity **dof_ptr) const {
+  PetscFunctionBegin;
+  NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
+  dit = numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit==numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
+  }
+  *dof_ptr = &*dit;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofMoFEMEntity **dof_ptr) const {
+  PetscFunctionBegin;
+  NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
+  dit = numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit==numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
+  }
+  *dof_ptr = &*dit;
+  PetscFunctionReturn(0);
+}
 void problem_MoFEMFiniteElement_change_bit_add::operator()(MoFEMProblem &p) {
   *(p.tag_BitFEId_data) |= f_id;
 }
@@ -106,7 +126,7 @@ void problem_zero_nb_cols_change::operator()(MoFEMProblem &e) {
   (*(DofIdx*)e.tag_ghost_nbdof_data_col) = 0;
   e.numered_dofs_cols.clear();
 }
-void problem_clear_numered_finite_elements_change::operator()(MoFEMProblem &e) { 
+void problem_clear_numered_finiteElementsPtr_change::operator()(MoFEMProblem &e) { 
   e.numeredFiniteElements.clear();
 }
 void problem_row_number_change::operator()(MoFEMProblem &e) {

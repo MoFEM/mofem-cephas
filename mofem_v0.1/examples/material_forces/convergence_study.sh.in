@@ -210,13 +210,12 @@ do
       -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 10 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
       -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_pot_proc_ref_level 0 -log_summary"
 
+
+    echo $COMMAND1
     if [ -z ${SHOWME+x} ]; then
       $COMMAND1 
     fi 2>&1 | tee -a $DIR_NAME/log_solution
 
-    if [ ! -z ${SHOWME+x} ]; then
-      echo $COMMAND1
-    fi
 
     COMMAND2="$MPIRUN_ONE_PROC $BIN_PATH/material_force \
       -my_file out_spatial.h5m \
@@ -224,13 +223,10 @@ do
 	-ksp_monitor -log_summary \
 	-my_gc $GC -pc_factor_mat_solver_package $PCFACTOR"
 
+    echo $COMMAND2
     if [ -z ${SHOWME+x} ]; then
       $COMMAND2 
     fi 2>&1 | tee -a $DIR_NAME/log_griffith_forces
-
-    if [ ! -z ${SHOWME+x} ]; then
-      echo $COMMAND2
-    fi
 
     if [ -z ${SHOWME+x} ]; then
       mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 

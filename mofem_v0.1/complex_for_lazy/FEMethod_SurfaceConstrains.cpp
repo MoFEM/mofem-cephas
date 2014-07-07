@@ -33,12 +33,12 @@ namespace MoFEM {
 
 const int debug_constrains = 1;
 
-PetscErrorCode C_SURFACE_FEMethod::preProcess() {
+PetscErrorCode ConstrainSurfacGeometry::preProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
   }
 
-void C_SURFACE_FEMethod::run_in_constructor() {
+void ConstrainSurfacGeometry::runInConstructor() {
     diffNTRI.resize(6);
     ShapeDiffMBTRI(&diffNTRI[0]);
     g_NTRI.resize(7*3);
@@ -46,16 +46,16 @@ void C_SURFACE_FEMethod::run_in_constructor() {
     G_TRI_W = G_TRI_W7;
     double def_VAL[3*9];
     fill(&def_VAL[0],&def_VAL[3*9],0);
-    lambda_global_row_indices.resize(3);
-    lambda_global_col_indices.resize(3);
-    dof_global_row_indices.resize(1+6+4+1);
-    dof_global_col_indices.resize(1+6+4+1);
-    dof_global_row_indices[0].resize(9);
-    dof_global_col_indices[0].resize(9);
-    ent_lambda_data.resize(3);
-    ent_dofs_data.resize(9);
+    lambdaGlobalRowIndices.resize(3);
+    lambdaGlobalColIndices.resize(3);
+    dofGlobalRowIndices.resize(1+6+4+1);
+    dofGlobalColIndices.resize(1+6+4+1);
+    dofGlobalRowIndices[0].resize(9);
+    dofGlobalColIndices[0].resize(9);
+    entLambdaData.resize(3);
+    entDofsData.resize(9);
     ent_idofs_data.resize(9);
-    coords.resize(9);
+    cOords.resize(9);
     //
     C_MAT_ELEM.resize(3,9);
     iC_MAT_ELEM.resize(3,9);
@@ -64,42 +64,42 @@ void C_SURFACE_FEMethod::run_in_constructor() {
     dC_MAT_ELEM.resize(3,9);
     dCT_MAT_ELEM.resize(9,9);
     //crack front nodes
-    if(mField.check_msId_meshset(201,SideSet)) {
+    if(mField.check_msId_meshset(201,SIDESET)) {
       Range crack_front_edges;
-      mField.get_Cubit_msId_entities_by_dimension(201,SideSet,1,crack_front_edges,true);
+      mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true);
       mField.get_moab().get_connectivity(crack_front_edges,crackFrontEdgesNodes,true);
       //projected nodes
       mField.get_moab().tag_get_handle(
-	"PROJECTION_CRACK_SURFACE",3,MB_TYPE_DOUBLE,th_projection,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL);
+	"PROJECTION_CRACK_SURFACE",3,MB_TYPE_DOUBLE,thProjection,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL);
     }
   }
  
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,string _lambda_field_name,int _verbose): 
-    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name(_lambda_field_name),
-    use_projection_from_crack_front(false) {
-    run_in_constructor();
+ConstrainSurfacGeometry::ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,string _lambdaFieldName,int _verbose): 
+    FEMethod(),mField(_mField),C(_C),lambdaFieldName(_lambdaFieldName),
+    useProjectionFromCrackFront(false) {
+    runInConstructor();
   }
-C_SURFACE_FEMethod::C_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Mat _C,int _verbose): 
-    FEMethod(),mField(_mField),moab(_mField.get_moab()),dirihlet_bc_method_ptr(_dirihlet_bc_method_ptr),C(_C),lambda_field_name("LAMBDA_SURFACE"),
-    use_projection_from_crack_front(false) {
-    run_in_constructor();
+ConstrainSurfacGeometry::ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,int _verbose): 
+    FEMethod(),mField(_mField),C(_C),lambdaFieldName("LAMBDA_SURFACE"),
+    useProjectionFromCrackFront(false) {
+    runInConstructor();
   }
 
-PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *iC,double *g,double *ig) {
+PetscErrorCode ConstrainSurfacGeometry::cOnstrain(double *dofs_iX,double *C,double *iC,double *g,double *ig) {
   PetscFunctionBegin;
   //set complex material position vector
   __CLPK_doublecomplex x_dofs_X0[9];
   __CLPK_doublecomplex x_dofs_X[9];
   for(int nn = 0;nn<3;nn++) {
     for(int dd = 0;dd<3;dd++) {
-      if(lambda_global_row_indices[nn] == -1) {
-	x_dofs_X0[nn*3+dd].r = ent_dofs_data[nn*3+dd];
+      if(lambdaGlobalRowIndices[nn] == -1) {
+	x_dofs_X0[nn*3+dd].r = entDofsData[nn*3+dd];
       } else {
-	x_dofs_X0[nn*3+dd].r = coords[nn*3+dd];
+	x_dofs_X0[nn*3+dd].r = cOords[nn*3+dd];
       }
-      x_dofs_X[nn*3+dd].r = ent_dofs_data[nn*3+dd];
+      x_dofs_X[nn*3+dd].r = entDofsData[nn*3+dd];
       if(dofs_iX != NULL) {
-	if(lambda_global_row_indices[nn] == -1) {
+	if(lambdaGlobalRowIndices[nn] == -1) {
 	  x_dofs_X0[nn*3+dd].i = dofs_iX[nn*3+dd];
 	} else {
 	  x_dofs_X0[nn*3+dd].i = 0;
@@ -115,23 +115,23 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
   //set direction if crack or interface surface
   Range adj_side_elems;
-  BitRefLevel bit = problem_ptr->get_BitRefLevel();
-  ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,0); CHKERRQ(ierr);
+  BitRefLevel bit = problemPtr->get_BitRefLevel();
+  ierr = mField.get_adjacencies(bit,&fAce,1,3,adj_side_elems,Interface::INTERSECT,0); CHKERRQ(ierr);
   adj_side_elems = adj_side_elems.subset_by_type(MBTET);
   if(adj_side_elems.size()==0) {
     Range adj_tets_on_surface;
     BitRefLevel bit_tet_on_surface;
     bit_tet_on_surface.set(BITREFLEVEL_SIZE-1);
-    ierr = mField.get_adjacencies(bit_tet_on_surface,&face,1,3,adj_tets_on_surface,Interface::INTERSECT,0); CHKERRQ(ierr);
+    ierr = mField.get_adjacencies(bit_tet_on_surface,&fAce,1,3,adj_tets_on_surface,Interface::INTERSECT,0); CHKERRQ(ierr);
     adj_side_elems.insert(*adj_tets_on_surface.begin());
   }
   if(adj_side_elems.size()!=1) {
     adj_side_elems.clear();
-    ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,5); CHKERRQ(ierr);
+    ierr = mField.get_adjacencies(bit,&fAce,1,3,adj_side_elems,Interface::INTERSECT,5); CHKERRQ(ierr);
     Range::iterator it = adj_side_elems.begin();
     for(;it!=adj_side_elems.end();it++) {	
       Range nodes;
-      rval = moab.get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
       PetscPrintf(PETSC_COMM_WORLD,"%lu %lu %lu %lu\n",nodes[0],nodes[1],nodes[2],nodes[3]);
     }
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -139,7 +139,7 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       rval = mField.get_moab().add_entities(out_meshset,adj_side_elems); CHKERR_PETSC(rval);
-      rval = mField.get_moab().add_entities(out_meshset,&face,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().add_entities(out_meshset,&fAce,1); CHKERR_PETSC(rval);
       rval = mField.get_moab().write_file("debug_error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     }
     SETERRQ1(PETSC_COMM_SELF,1,"expect 1 tet but is %u",adj_side_elems.size());
@@ -147,17 +147,17 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   EntityHandle side_elem = *adj_side_elems.begin();
   if(side_elem!=0) {
     int side_number,sense,offset;
-    rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
+    rval = mField.get_moab().side_number(side_elem,fAce,side_number,sense,offset); CHKERR_PETSC(rval);
     if(sense == -1) {
       __CLPK_doublecomplex xdot = { -1,0 };
       cblas_zscal(3,&xdot,x_normal,1);
     }
   }
-  if(use_projection_from_crack_front) {
+  if(useProjectionFromCrackFront) {
     Tag th_interface_side;
-    rval = moab.tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
+    rval = mField.get_moab().tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
     int side;
-    rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
+    rval = mField.get_moab().tag_get_data(th_interface_side,&fAce,1,&side); CHKERR_PETSC(rval);
     if(side == 1) {
       __CLPK_doublecomplex xdot = { -0.5,0 };
       cblas_zscal(3,&xdot,x_normal,1);
@@ -165,7 +165,7 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   }
   /*//save tag
   double normal0[3];
-  ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&*coords.begin(),normal0); CHKERRQ(ierr);
+  ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&*cOords.begin(),normal0); CHKERRQ(ierr);
   double area0 = cblas_dnrm2(3,normal0,1);
   cblas_dscal(3,1./area0,normal0,1);
   double def_NORMAL[9] = { 0,0,0 };
@@ -173,12 +173,12 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   rval = moab.tag_get_handle("NORMAL0",3,MB_TYPE_DOUBLE,th_normal0,MB_TAG_CREAT|MB_TAG_SPARSE,def_NORMAL); CHKERR_PETSC(rval);
   if(side_elem!=0) {
     int side_number,sense,offset;
-    rval = moab.side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
+    rval = moab.side_number(side_elem,fAce,side_number,sense,offset); CHKERR_PETSC(rval);
     if(sense == -1) {
       cblas_dscal(3,-1,normal0,1);
     }
   }
-  rval = moab.tag_set_data(th_normal0,&face,1,normal0); CHKERR_PETSC(rval);*/
+  rval = moab.tag_set_data(th_normal0,&fAce,1,normal0); CHKERR_PETSC(rval);*/
   //calulare complex normal length
   /*double __complex__ xarea = csqrt(
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
@@ -214,12 +214,12 @@ PetscErrorCode C_SURFACE_FEMethod::cOnstrain(double *dofs_iX,double *C,double *i
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode C_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
+PetscErrorCode ConstrainSurfacGeometry::iNtegrate(bool transpose,bool nonlinear) {
   PetscFunctionBegin;
   const double eps = 1e-10;
   double center[3]; 
-  tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
-  cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
+  tricircumcenter3d_tp(&cOords.data()[0],&cOords.data()[3],&cOords.data()[6],center,NULL,NULL);
+  cblas_daxpy(3,-1,&cOords.data()[0],1,center,1);
   double r = cblas_dnrm2(3,center,1);
   try {
     ierr = cOnstrain(NULL,&*C_MAT_ELEM.data().begin(),NULL,NULL,NULL); CHKERRQ(ierr);
@@ -236,7 +236,7 @@ PetscErrorCode C_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
 	for(int nnn = 0;nnn<3;nnn++) {
 	  dC_MAT_ELEM(nnn,dd) = ig_VEC_ELEM[nnn]/(r*eps);
 	}
-      	if_VEC_ELEM = prod(trans(iC_MAT_ELEM)/(r*eps),ent_lambda_data);
+      	if_VEC_ELEM = prod(trans(iC_MAT_ELEM)/(r*eps),entLambdaData);
 	for(int nnn = 0;nnn<3;nnn++) {
 	  for(int ddd = 0;ddd<3;ddd++) {
 	    dCT_MAT_ELEM(3*nnn+ddd,dd) = if_VEC_ELEM[3*nnn+ddd];
@@ -252,93 +252,93 @@ PetscErrorCode C_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode C_SURFACE_FEMethod::aSsemble(bool transpose,bool nonlinear) {
+PetscErrorCode ConstrainSurfacGeometry::aSsemble(bool transpose,bool nonlinear) {
     PetscFunctionBegin;
     if(nonlinear) {
       ierr = MatSetValues(C,
-	lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
-	dof_global_col_indices[0].size(),&(dof_global_col_indices[0].data()[0]),
+	lambdaGlobalRowIndices.size(),&(lambdaGlobalRowIndices.data()[0]),
+	dofGlobalColIndices[0].size(),&(dofGlobalColIndices[0].data()[0]),
 	&(dC_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
     } else {
       ierr = MatSetValues(C,
-	lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
-	dof_global_col_indices[0].size(),&(dof_global_col_indices[0].data()[0]),
+	lambdaGlobalRowIndices.size(),&(lambdaGlobalRowIndices.data()[0]),
+	dofGlobalColIndices[0].size(),&(dofGlobalColIndices[0].data()[0]),
 	&(C_MAT_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
     }
     if(transpose) {
       ierr = MatSetValues(C,
-	dof_global_row_indices[0].size(),&(dof_global_row_indices[0].data()[0]),
-	lambda_global_col_indices.size(),&(lambda_global_col_indices.data()[0]),
+	dofGlobalRowIndices[0].size(),&(dofGlobalRowIndices[0].data()[0]),
+	lambdaGlobalColIndices.size(),&(lambdaGlobalColIndices.data()[0]),
 	&CT_MAT_ELEM.data()[0],ADD_VALUES); CHKERRQ(ierr);
       if(nonlinear) {
 	ierr = MatSetValues(C,
-	  dof_global_row_indices[0].size(),&(dof_global_row_indices[0].data()[0]),
-	  dof_global_col_indices[0].size(),&(dof_global_col_indices[0].data()[0]),
+	  dofGlobalRowIndices[0].size(),&(dofGlobalRowIndices[0].data()[0]),
+	  dofGlobalColIndices[0].size(),&(dofGlobalColIndices[0].data()[0]),
 	  &dCT_MAT_ELEM.data()[0],ADD_VALUES); CHKERRQ(ierr); 
       }
     }
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
+PetscErrorCode ConstrainSurfacGeometry::operator()(bool transpose,bool nonlinear) {
     PetscFunctionBegin;
     try {
-      face = fe_ptr->get_ent();
+      fAce = fePtr->get_ent();
       const EntityHandle* conn_face; 
       int num_nodes; 
-      rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(fAce,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       for(int nn = 0;nn<num_nodes;nn++) {
   	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
-  	dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-  	hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+  	dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
+  	hi_dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
   	if(distance(dit,hi_dit)==0) {
-  	  lambda_global_row_indices[nn] = -1;
-	  ent_lambda_data[nn] = 0;
+  	  lambdaGlobalRowIndices[nn] = -1;
+	  entLambdaData[nn] = 0;
   	} else {
-  	  if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
-	  ent_lambda_data[nn] = dit->get_FieldData();
+  	  if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambdaFieldName.c_str());
+	  entLambdaData[nn] = dit->get_FieldData();
   	  int global_idx = dit->get_petsc_gloabl_dof_idx();
-  	  lambda_global_row_indices[nn] = global_idx;
+  	  lambdaGlobalRowIndices[nn] = global_idx;
   	  int local_idx = dit->get_petsc_local_dof_idx();
   	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
   	}
-  	dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-  	hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+  	dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+  	hi_dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
   	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
   	for(;dit!=hi_dit;dit++) {
-  	  ent_dofs_data[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
+  	  entDofsData[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
   	  int global_idx = dit->get_petsc_gloabl_dof_idx();
   	  assert(nn*3+dit->get_dof_rank()<9);
-  	  dof_global_col_indices[0][nn*3+dit->get_dof_rank()] = global_idx;
+  	  dofGlobalColIndices[0][nn*3+dit->get_dof_rank()] = global_idx;
   	  int local_idx = dit->get_petsc_local_dof_idx();
   	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
   	}
 	if(transpose) {
-	  dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
+	  hi_dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
 	  if(distance(dit,hi_dit)==0) {
-	    lambda_global_col_indices[nn] = -1;
+	    lambdaGlobalColIndices[nn] = -1;
 	  } else {
-	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
+	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambdaFieldName.c_str());
 	    int global_idx = dit->get_petsc_gloabl_dof_idx();
-	    lambda_global_col_indices[nn] = global_idx;
+	    lambdaGlobalColIndices[nn] = global_idx;
 	    int local_idx = dit->get_petsc_local_dof_idx();
 	    if(local_idx<0) {
 	      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
 	    }
 	  }
-	  if(lambda_global_row_indices[nn] == -1) {
-	    dof_global_row_indices[0][nn*3+0] = -1;
-	    dof_global_row_indices[0][nn*3+1] = -1;
-	    dof_global_row_indices[0][nn*3+2] = -1;
+	  if(lambdaGlobalRowIndices[nn] == -1) {
+	    dofGlobalRowIndices[0][nn*3+0] = -1;
+	    dofGlobalRowIndices[0][nn*3+1] = -1;
+	    dofGlobalRowIndices[0][nn*3+2] = -1;
 	  } else {
-	    dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	    hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    hi_dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	    if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	    for(;dit!=hi_dit;dit++) {
 	      int global_idx = dit->get_petsc_gloabl_dof_idx();
 	      assert(nn*3+dit->get_dof_rank()<9);
-	      dof_global_row_indices[0][nn*3+dit->get_dof_rank()] = global_idx;
+	      dofGlobalRowIndices[0][nn*3+dit->get_dof_rank()] = global_idx;
 	      int local_idx = dit->get_petsc_local_dof_idx();
 	      if(local_idx<0) {
 		SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -346,24 +346,21 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
 	    }
 	  }
 	}
-	DirihletBC.clear();
-	ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndicies(
-	  this,dof_global_row_indices,dof_global_col_indices,DirihletBC); CHKERRQ(ierr);
       }
-      rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
-      if(use_projection_from_crack_front) {
+      rval = mField.get_moab().get_coords(conn_face,num_nodes,&*cOords.data().begin()); CHKERR_PETSC(rval);
+      if(useProjectionFromCrackFront) {
 	for(int nn = 0;nn<3;nn++) {
 	  if(crackFrontEdgesNodes.find(conn_face[nn])!=crackFrontEdgesNodes.end()) {
 	    double projection[3];
-	    rval = mField.get_moab().tag_get_data(th_projection,&conn_face[nn],1,projection); CHKERR_PETSC(rval);
+	    rval = mField.get_moab().tag_get_data(thProjection,&conn_face[nn],1,projection); CHKERR_PETSC(rval);
 	    for(int dd = 0;dd<3;dd++) {
-	      coords[nn*3+dd] = projection[dd];
+	      cOords[nn*3+dd] = projection[dd];
 	    }
 	  }
 	}
       }
       if(!nonlinear) {
-	ublas::noalias(ent_dofs_data) = coords;
+	ublas::noalias(entDofsData) = cOords;
       }
       ierr = this->iNtegrate(transpose,nonlinear); CHKERRQ(ierr);
       ierr = this->aSsemble(transpose,nonlinear); CHKERRQ(ierr);
@@ -375,27 +372,27 @@ PetscErrorCode C_SURFACE_FEMethod::operator()(bool transpose,bool nonlinear) {
     PetscFunctionReturn(0);
   }
 
-PetscErrorCode C_SURFACE_FEMethod::postProcess() {
+PetscErrorCode ConstrainSurfacGeometry::postProcess() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
 
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,string _lambda_field_name,int _verbose): 
-    C_SURFACE_FEMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,_lambda_field_name,_verbose),g(_g) {
+ConstraunSurfaceGeometryRhs::ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,string _lambdaFieldName,int _verbose): 
+    ConstrainSurfacGeometry(_mField,PETSC_NULL,_lambdaFieldName,_verbose),g(_g) {
     g_VEC_ELEM.resize(3);
   }
-g_SURFACE_FEMethod::g_SURFACE_FEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,Vec _g,int _verbose): 
-    C_SURFACE_FEMethod(_mField,_dirihlet_bc_method_ptr,PETSC_NULL,_verbose),g(_g) {
+ConstraunSurfaceGeometryRhs::ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,int _verbose): 
+    ConstrainSurfacGeometry(_mField,PETSC_NULL,_verbose),g(_g) {
     g_VEC_ELEM.resize(3);
   }
 
-PetscErrorCode g_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
+PetscErrorCode ConstraunSurfaceGeometryRhs::iNtegrate(bool transpose,bool nonlinear) {
   PetscFunctionBegin;
   try {
     if(transpose) {
       ierr = cOnstrain(NULL,&*C_MAT_ELEM.data().begin(),NULL,g_VEC_ELEM.data().begin(),NULL); CHKERRQ(ierr);
       CT_MAT_ELEM = trans(C_MAT_ELEM);
-      f_VEC_ELEM = prod(CT_MAT_ELEM,ent_lambda_data);
+      f_VEC_ELEM = prod(CT_MAT_ELEM,entLambdaData);
     } else {
       ierr = cOnstrain(NULL,NULL,NULL,g_VEC_ELEM.data().begin(),NULL); CHKERRQ(ierr);
     }
@@ -406,23 +403,23 @@ PetscErrorCode g_SURFACE_FEMethod::iNtegrate(bool transpose,bool nonlinear) {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode g_SURFACE_FEMethod::aSsemble(bool transpose,bool nonlinear) {
+PetscErrorCode ConstraunSurfaceGeometryRhs::aSsemble(bool transpose,bool nonlinear) {
   PetscFunctionBegin;
-  if(lambda_global_row_indices.size()!=g_VEC_ELEM.size()) {
+  if(lambdaGlobalRowIndices.size()!=g_VEC_ELEM.size()) {
     SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
-	lambda_global_row_indices.size(),g_VEC_ELEM.size());
+	lambdaGlobalRowIndices.size(),g_VEC_ELEM.size());
   }
   ierr = VecSetOption(g,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
   ierr = VecSetValues(g,
-    lambda_global_row_indices.size(),&(lambda_global_row_indices.data()[0]),
+    lambdaGlobalRowIndices.size(),&(lambdaGlobalRowIndices.data()[0]),
     &(g_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
   if(transpose) {
-    if(dof_global_row_indices[0].size()!=f_VEC_ELEM.size()) {
+    if(dofGlobalRowIndices[0].size()!=f_VEC_ELEM.size()) {
       SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
-	dof_global_row_indices[0].size(),f_VEC_ELEM.size());
+	dofGlobalRowIndices[0].size(),f_VEC_ELEM.size());
     }
     ierr = VecSetValues(g,
-      dof_global_row_indices[0].size(),&(dof_global_row_indices[0].data()[0]),
+      dofGlobalRowIndices[0].size(),&(dofGlobalRowIndices[0].data()[0]),
       &(f_VEC_ELEM.data())[0],ADD_VALUES); CHKERRQ(ierr);
 
   }
