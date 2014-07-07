@@ -201,6 +201,14 @@ typedef multi_index_container<
   > > RefMoFEMElement_multiIndex;
 
 
+struct EntMoFEMFiniteElement;
+
+/** \brief user adjacency function
+  * \ingroup fe_multi_indices
+  */
+typedef PetscErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
+  Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+
 /** 
  * \brief Finite element definition
  * \ingroup fe_multi_indices
@@ -228,7 +236,24 @@ struct MoFEMFiniteElement {
   inline BitFieldId get_BitFieldId_data() const { return *((BitFieldId*)tag_BitFieldId_data); }
   /// get bit number
   inline unsigned int get_bit_number() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
+  
+  ElementAdjacencyTable element_adjacency_table; //<- allow to add user specific adjacency map
+
   friend ostream& operator<<(ostream& os,const MoFEMFiniteElement& e);
+};
+
+/** \brief default adjacency map
+  * \ingroup fe_multi_indices
+  */
+struct DefaultElementAdjacency {
+
+  static PetscErrorCode defaultVertex(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultEdge(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultTri(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultTet(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultPrism(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultMeshset(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+
 };
 
 /**
@@ -264,6 +289,7 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   LocalUId local_uid;
   GlobalUId global_uid;
   EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr);
+  inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return interface_MoFEMFiniteElement<MoFEMFiniteElement>::fe_ptr; };
   const LocalUId& get_local_unique_id() const { return local_uid; }
   const GlobalUId& get_global_unique_id() const { return global_uid; }
   LocalUId get_local_unique_id_calculate() const {
@@ -311,6 +337,18 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION) const;
+
+  PetscErrorCode get_element_adjacency(Interface &moab,const MoFEMField *field_ptr,Range &adjacency) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;	
+    const EntMoFEMFiniteElement *this_fe_ptr = this;
+    if(get_MoFEMFiniteElementPtr()->element_adjacency_table[get_ent_type()] == NULL) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    }
+    ierr = (get_MoFEMFiniteElementPtr()->element_adjacency_table[get_ent_type()])(moab,field_ptr,this_fe_ptr,adjacency); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
 };
 
 /**
@@ -320,6 +358,7 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
 template <typename T>
 struct interface_EntMoFEMFiniteElement:public interface_MoFEMFiniteElement<T>,interface_RefMoFEMElement<T> {
   interface_EntMoFEMFiniteElement(const T *_ptr): interface_MoFEMFiniteElement<T>(_ptr),interface_RefMoFEMElement<T>(_ptr) {};
+  inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return interface_MoFEMFiniteElement<T>::get_MoFEMFiniteElementPtr(); };
   inline EntityID get_ent_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ent_id(); }
   inline EntityType get_ent_type() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ent_type(); }
   //
@@ -333,6 +372,13 @@ struct interface_EntMoFEMFiniteElement:public interface_MoFEMFiniteElement<T>,in
   //
   SideNumber_multiIndex &get_side_number_table() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_side_number_table(); }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_side_number_ptr(moab,ent); }
+  //
+  inline PetscErrorCode get_element_adjacency(Interface &moab,const MoFEMField *field_ptr,Range &adjacency) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = interface_MoFEMFiniteElement<T>::get_element_adjacency(moab,field_ptr,adjacency); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 };
 
 /** \brief Partitioned Finite Element in Problem

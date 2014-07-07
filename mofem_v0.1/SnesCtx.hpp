@@ -1,3 +1,7 @@
+/** \file SnesCtx.hpp 
+ * \brief Context for PETSc SNES, i.e. nonlinear spolver
+ */
+
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION

@@ -179,6 +179,34 @@ enum MoFEMErrorCode {
   MOFEM_STD_EXCEPTION_THROW = 106
 };
 
+/// \brief approximation spaces
+enum FieldSpace { 
+  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
+  H1, 		///< continuous field
+  HDIV,		///< field with continuous normal traction
+  HCURL,	///< field with continuous tangents
+  L2,		///< field with C-1 continuity
+  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
+}; 
+
+
+/// \brief Those types control how functions respond on arguments, f.e. error handling
+enum MoFEMTypes {
+  MF_ZERO = 0,
+  MF_EXCL = 1<<0
+};
+
+/// \brief RowColData
+enum RowColData {
+  ROW,COL,DATA,LASTROWCOLDATA
+};
+
+enum ByWhat { 
+  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
+  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
+  BYALL = 1<<0|1<<1|1<<2 
+};
+
 //CONSTS
 
 const int max_ApproximationOrder = 10;
@@ -192,9 +220,9 @@ typedef int EntPart;
 typedef PetscScalar FieldData;
 typedef int ApproximationOrder;
 typedef int ApproximationRank;
-typedef uint128_t UId;
-typedef int ShortId;
+typedef uint128_t UId;  
 //typedef checked_uint128_tUId;
+typedef int ShortId;
 
 /** \brief loacl unique id
   *
@@ -246,34 +274,6 @@ typedef bitset<BITREFLEVEL_SIZE> BitRefLevel;
 typedef bitset<BITFIELDID_SIZE> BitFieldId;
 typedef bitset<BITFEID_SIZE> BitFEId;
 typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
-
-/// \brief approximation spaces
-enum FieldSpace { 
-  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
-  H1, 		///< continuous field
-  HDIV,		///< field with continuous normal traction
-  HCURL,	///< field with continuous tangents
-  L2,		///< field with C-1 continuity
-  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
-}; 
-
-
-/// \brief Those types control how functions respond on arguments, f.e. error handling
-enum MoFEMTypes {
-  MF_ZERO = 0,
-  MF_EXCL = 1<<0
-};
-
-/// \brief RowColData
-enum RowColData {
-  ROW,COL,DATA,LASTROWCOLDATA
-};
-
-enum ByWhat { 
-  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
-  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
-  BYALL = 1<<0|1<<1|1<<2 
-};
 
 //AUX STRUCTURES
 
