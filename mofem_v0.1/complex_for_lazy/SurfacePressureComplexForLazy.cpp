@@ -385,7 +385,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
 
   try {
 
-  EntityHandle ent = fe_ptr->get_ent();
+  EntityHandle ent = fePtr->get_ent();
   map<int,bCPreassure>::iterator mip = mapPreassure.begin();
   tLoc.resize(3);
   tLoc[0] = tLoc[1] = tLoc[2] = 0;

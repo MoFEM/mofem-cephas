@@ -142,8 +142,8 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       if(on_tag == "NoNE") {
 	SETERRQ(PETSC_COMM_SELF,1,"tag name not specified");
       }
-      field_it = moabfields->get<FieldName_mi_tag>().find(field_name);
-      if(field_it == moabfields->get<FieldName_mi_tag>().end()) {
+      field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+      if(field_it == fieldsPtr->get<FieldName_mi_tag>().end()) {
 	SETERRQ1(PETSC_COMM_SELF,1,"field not found %s",field_name.c_str());
       }
       int field_rank = field_it->get_max_rank();

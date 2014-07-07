@@ -274,10 +274,10 @@ PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
 }
 PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
   PetscFunctionBegin;
-  if(fe_ptr==NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-  FENumeredDofMoFEMEntity_multiIndex &rows_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*row_multiIndex);
-  FENumeredDofMoFEMEntity_multiIndex &cols_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*col_multiIndex);
-  FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(*data_multiIndex);
+  if(fePtr==NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  FENumeredDofMoFEMEntity_multiIndex &rows_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*rowPtr);
+  FENumeredDofMoFEMEntity_multiIndex &cols_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*colPtr);
+  FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(*dataPtr);
   row_nodesGlobIndices.clear();
   row_edgesGlobIndices.clear();
   row_facesGlobIndices.clear();
@@ -286,8 +286,8 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
   col_edgesGlobIndices.clear();
   col_facesGlobIndices.clear();
   col_elemGlobIndices.clear();
-  //EntityHandle ent = fe_ptr->get_ent();
-  switch (fe_ptr->get_ent_type()) {
+  //EntityHandle ent = fePtr->get_ent();
+  switch (fePtr->get_ent_type()) {
     case MBTET: {
 	FENumeredDofMoFEMEntity_multiIndex::iterator miit = rows_dofs.begin();
 	for(;miit!=rows_dofs.end();miit++) {
@@ -438,11 +438,11 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 }
 PetscErrorCode FEMethod_LowLevelStudent::LocalIndices() {
   PetscFunctionBegin;
-  if(fe_ptr==NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-  FENumeredDofMoFEMEntity_multiIndex &rows_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*row_multiIndex);
-  FENumeredDofMoFEMEntity_multiIndex &cols_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*col_multiIndex);
-  //EntityHandle ent = fe_ptr->get_ent();
-  switch (fe_ptr->get_ent_type()) {
+  if(fePtr==NULL) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  FENumeredDofMoFEMEntity_multiIndex &rows_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*rowPtr);
+  FENumeredDofMoFEMEntity_multiIndex &cols_dofs = const_cast<FENumeredDofMoFEMEntity_multiIndex&>(*colPtr);
+  //EntityHandle ent = fePtr->get_ent();
+  switch (fePtr->get_ent_type()) {
     case MBTET: {
 	FENumeredDofMoFEMEntity_multiIndex::iterator miit = rows_dofs.begin();
 	for(;miit!=rows_dofs.end();miit++) {
@@ -476,21 +476,21 @@ PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
   PetscFunctionBegin;
   if(ParentMethod == NULL) {
     ParentMethod = new FEMethod_LowLevelStudent(moab,verbose);
-    ierr = ParentMethod->setProblem(problem_ptr); CHKERRQ(ierr);
-    ierr = ParentMethod->setDofs(dofs_moabfield); CHKERRQ(ierr);
-    ierr = ParentMethod->setFiniteElements(refined_finite_elements,finite_elements); CHKERRQ(ierr);
-    ierr = ParentMethod->setFiniteElementsEntities(finite_elements_moabents); CHKERRQ(ierr);
-    ierr = ParentMethod->setAdjacencies(fem_adjacencies); CHKERRQ(ierr);
+    ierr = ParentMethod->setProblem(problemPtr); CHKERRQ(ierr);
+    ierr = ParentMethod->setDofs(dofsPtr); CHKERRQ(ierr);
+    ierr = ParentMethod->setFiniteElements(refinedFiniteElementsPtr,finiteElementsPtr); CHKERRQ(ierr);
+    ierr = ParentMethod->setFiniteElementsEntities(finiteElementsEntitiesPtr); CHKERRQ(ierr);
+    ierr = ParentMethod->setAdjacencies(adjacenciesPtr); CHKERRQ(ierr);
     ierr = ParentMethod->preProcess(); CHKERRQ(ierr);
   }
-  EntityHandle parent = fe_ptr->get_parent_ent();
+  EntityHandle parent = fePtr->get_parent_ent();
   if(verbose>2) {
     PetscPrintf(PETSC_COMM_WORLD,"Parent ent %u\n",parent);
   }
   EntMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator 
-    miit =  finite_elements_moabents->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(_fe_name,parent));
+    miit =  finiteElementsEntitiesPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(_fe_name,parent));
   EntMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator 
-    hi_miit = finite_elements_moabents->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(_fe_name,parent));
+    hi_miit = finiteElementsEntitiesPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(_fe_name,parent));
   if(distance(miit,hi_miit) > 1) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
   for(;miit!=hi_miit;miit++) {
     if(verbose>2) {
@@ -499,7 +499,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
     assert(ParentMethod!=NULL);
-    assert(ParentMethod->fe_ptr==NULL);
+    assert(ParentMethod->fePtr==NULL);
     ParentMethod->fe_ent_ptr = &*miit;
     ierr = ParentMethod->setData( const_cast<FEDofMoFEMEntity_multiIndex*>(&(miit->data_dofs)) ); CHKERRQ(ierr);
     ierr = ParentMethod->InitDataStructures();
@@ -508,7 +508,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
 }
 PetscErrorCode FEMethod_LowLevelStudent::DataOp() {
   PetscFunctionBegin;
-  FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(*data_multiIndex);
+  FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(*dataPtr);
   switch (fe_ent_ptr->get_ent_type()) {
     case MBTET: {
 	FEDofMoFEMEntity_multiIndex::iterator miit2 = data_dofs.begin();
@@ -2046,8 +2046,8 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_FaceGaussPoints(
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented yet");
   }
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = moabfields->get<FieldName_mi_tag>().find(field_name);
-  if(fiit==moabfields->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fiit = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+  if(fiit==fieldsPtr->get<FieldName_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,1,"no such field");
   Data.resize(g_dim);
   for(unsigned int gg = 0;gg<g_dim;gg++) {
     Data[gg] = ublas::zero_vector<FieldData>(fiit->get_max_rank());
@@ -2158,7 +2158,7 @@ PetscErrorCode FEMethod_LowLevelStudent::FaceData(EntityHandle ent,
   SideNumber* side = fe_ent_ptr->get_side_number_ptr(moab,ent);
   if(side->get_ent_type()!=MBTRI) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
-  const field_set_by_name &fields = moabfields->get<FieldName_mi_tag>();
+  const field_set_by_name &fields = fieldsPtr->get<FieldName_mi_tag>();
   field_set_by_name::iterator field_it = fields.find(field_name);
   if(field_it==fields.end()) {
     if(throw_error_if_no_field) {

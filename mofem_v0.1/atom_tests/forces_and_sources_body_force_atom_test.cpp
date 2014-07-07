@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -159,16 +159,16 @@ int main(int argc, char *argv[]) {
     my_split << mydata << endl;
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",COL,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  const MoFEMProblem *problem_ptr;
-  ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
+  const MoFEMProblem *problemPtr;
+  ierr = mField.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
   map<EntityHandle,double> m0,m1,m2;
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
     if(dit->get_dof_rank()!=1) continue;
 

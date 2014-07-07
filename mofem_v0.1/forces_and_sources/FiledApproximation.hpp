@@ -229,7 +229,7 @@ struct FieldApproximationH1 {
     VecZeroEntries(F);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements(problem_name,"TEST_FE",fe);  CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr(problem_name,"TEST_FE",fe);  CHKERRQ(ierr);
     ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);

@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -144,9 +144,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.problem_basic_method_preProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
 
   //postproc
   ierr = mField.problem_basic_method_postProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);

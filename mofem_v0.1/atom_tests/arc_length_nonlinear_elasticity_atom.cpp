@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
 
 
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
 
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
 
   //partition
   ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
     ierr = fe_neumann.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
   SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
-  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirihlet_bc.problem_ptr); CHKERRQ(ierr);
+  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirihlet_bc.problemPtr); CHKERRQ(ierr);
   ierr = my_dirihlet_bc.iNitalize(); CHKERRQ(ierr);
 
   struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {

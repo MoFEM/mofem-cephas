@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   //build fields
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elements
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -147,13 +147,13 @@ int main(int argc, char *argv[]) {
 
   //partition problems
   ierr = mField.simple_partition_problem("PROBLEM_HDIV"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("PROBLEM_HDIV"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("PROBLEM_HDIV"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("PROBLEM_HDIV"); CHKERRQ(ierr);
   ierr = mField.simple_partition_problem("PROBLEM_L2"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("PROBLEM_L2"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("PROBLEM_L2"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("PROBLEM_L2"); CHKERRQ(ierr);
   ierr = mField.compose_problem("PROBLEM_L2HDIV","PROBLEM_L2","PROBLEM_HDIV"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("PROBLEM_L2HDIV"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("PROBLEM_L2HDIV"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("PROBLEM_L2HDIV"); CHKERRQ(ierr);
 
   struct ApproxAnaliticalFunction {
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
 
       try {
-	fe_ent_ptr = fe_ptr->fe_ptr;
+	fe_ent_ptr = fePtr->fe_ptr;
 	ierr = InitDataStructures(); CHKERRQ(ierr);
 	ierr = GlobIndices(); CHKERRQ(ierr);
 	ierr = LocalIndices(); CHKERRQ(ierr);
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
 	ierr = Data_at_GaussPoints(); CHKERRQ(ierr);
 	ierr = GetRowNMatrix_at_GaussPoint(); CHKERRQ(ierr); //ierr = GetRowDiffNMatrix_at_GaussPoint(); CHKERRQ(ierr);
 	ierr = GetColNMatrix_at_GaussPoint(); CHKERRQ(ierr);
-	EntityHandle fe_handle = fe_ptr->get_ent();
+	EntityHandle fe_handle = fePtr->get_ent();
 
 	V = Shape_intVolumeMBTET(diffNTET,&*coords.data().begin()); 
 	if( V <= 0 ) SETERRQ1(PETSC_COMM_SELF,1,"V < 0 for EntityHandle = %lu\n",fe_handle);
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
 
       try {
-	fe_ent_ptr = fe_ptr->fe_ptr;
+	fe_ent_ptr = fePtr->fe_ptr;
 	ierr = InitDataStructures(); CHKERRQ(ierr);
 	ierr = GlobIndices(); CHKERRQ(ierr);
 	ierr = LocalIndices(); CHKERRQ(ierr);
@@ -440,7 +440,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode do_operator() {
       PetscFunctionBegin;
 
-      fe_ent_ptr = fe_ptr->fe_ptr;
+      fe_ent_ptr = fePtr->fe_ptr;
       ierr = InitDataStructures(); CHKERRQ(ierr);
       ierr = GlobIndices(); CHKERRQ(ierr);
       ierr = LocalIndices(); CHKERRQ(ierr);
@@ -559,7 +559,7 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
 
   HDIVApprox fe(moab,Aij,F);
-  ierr = mField.loop_finite_elements("PROBLEM_L2HDIV","ELEM_L2HDIV",fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("PROBLEM_L2HDIV","ELEM_L2HDIV",fe);  CHKERRQ(ierr);
 
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
@@ -604,10 +604,10 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D); CHKERRQ(ierr);
 
   HDIVApprox_Check fe_check(moab);
-  ierr = mField.loop_finite_elements("PROBLEM_HDIV","ELEM_HDIV",fe_check);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("PROBLEM_HDIV","ELEM_HDIV",fe_check);  CHKERRQ(ierr);
 
   HDIVApproxPostProc fe_post_proc(moab);
-  ierr = mField.loop_finite_elements("PROBLEM_HDIV","ELEM_HDIV",fe_post_proc);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("PROBLEM_HDIV","ELEM_HDIV",fe_post_proc);  CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = fe_post_proc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);

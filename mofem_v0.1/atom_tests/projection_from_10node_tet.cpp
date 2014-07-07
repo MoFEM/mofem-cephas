@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   rval = moab.get_entities_by_type(0,MBTET,tets,true); CHKERR_PETSC(rval);
   Range edges;
   rval = moab.get_entities_by_type(0,MBEDGE,edges,true); CHKERR_PETSC(rval);
-  ierr = mField.seed_finite_elements(edges); CHKERRQ(ierr);
+  ierr = mField.seed_finiteElementsPtr(edges); CHKERRQ(ierr);
 
   //add ents to field and set app. order
 
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   //build fields
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elements
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 
   //partition
   ierr = mField.partition_problem("TET_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TET_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("TET_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TET_PROBLEM"); CHKERRQ(ierr);
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     }
 
   PostProcDisplacementsOnRefMesh fe_postproc(moab,"MESH_NODE_POSITIONS");
-  ierr = mField.loop_finite_elements("TET_PROBLEM","TET_ELEM",fe_postproc);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TET_PROBLEM","TET_ELEM",fe_postproc);  CHKERRQ(ierr);
 
   /*if(pcomm->rank()==0) {
     rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
