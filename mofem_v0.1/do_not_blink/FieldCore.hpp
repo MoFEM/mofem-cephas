@@ -208,6 +208,16 @@ struct FieldCore: public FieldInterface {
         PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
     
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BlockSet|Mat_MoistureSet,it)) {
+      Mat_Moisture data;
+      ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
+      ostringstream ss;
+      ss << *it << endl;
+      ss << data;
+      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }
+
+    
     PetscFunctionReturn(0);
   }
 

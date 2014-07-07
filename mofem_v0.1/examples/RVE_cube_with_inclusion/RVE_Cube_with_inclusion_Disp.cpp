@@ -396,8 +396,21 @@ int main(int argc, char *argv[]) {
   ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,&myDirihletBC,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
   
-  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
-  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+//  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  if(pcomm->rank()==0){
+    PetscScalar    *avec;
+    VecGetArray(Stress_Homo, &avec);
+    
+    cout<< "\nStress_Homo = \n\n";
+    for(int ii=0; ii<6; ii++){
+      cout <<*avec<<endl; ;
+      avec++;
+    }
+  }
+  cout<< "\n\n";
+
   //=======================================================================================================================================================
   
   

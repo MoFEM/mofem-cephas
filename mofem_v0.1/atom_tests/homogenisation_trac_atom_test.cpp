@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -30,8 +30,9 @@
 #include "ElasticFE_RVELagrange_RigidBodyRotation.hpp"
 #include "RVEVolume.hpp"
 
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+
+//#include "PostProcVertexMethod.hpp"
+//#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 
@@ -39,9 +40,42 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
+#define RND_EPS 1e-6
+
+//Rounding
+double roundn(double n)
+{
+	//break n into fractional part (fract) and integral part (intp)
+    double fract, intp;
+    fract = modf(n,&intp);
+    
+//    //round up
+//    if (fract>=.5)
+//    {
+//        n*=10;
+//        ceil(n);
+//        n/=10;
+//    }
+//	//round down
+//    if (fract<=.5)
+//    {
+//		n*=10;
+//        floor(n);
+//        n/=10;
+//    }
+    // case where n approximates zero, set n to "positive" zero
+    if (abs(intp)==0)
+    {
+        if(abs(fract)<=RND_EPS)
+           {
+               n=0.000;
+           }
+    }
+    return n;
+}
 
 int main(int argc, char *argv[]) {
-  
+
   PetscInitialize(&argc,&argv,(char *)0,help);
   
   Core mb_instance;
@@ -331,7 +365,7 @@ int main(int argc, char *argv[]) {
   
   
   //Calculation of Homogenized stress
-  //=======================================================================================================================================================
+  //===========================================================================================================================================
   double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
   Vec RVE_volume_Vec;
   ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
@@ -352,8 +386,8 @@ int main(int argc, char *argv[]) {
   ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTraction(mField,&myDirihletBC,Aij,D,F,&RVE_volume,applied_strain, Stress_Homo);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTraction);  CHKERRQ(ierr);
   
-//  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
-//  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+  //  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
   if(pcomm->rank()==0){
     PetscScalar    *avec;
@@ -366,56 +400,44 @@ int main(int argc, char *argv[]) {
     }
   }
   cout<< "\n\n";
+  
+  //===========================================================================================================================================
+  
+  
+    //Open mesh_file_name.txt for writing
+    ofstream myfile;
+    myfile.open ((string(mesh_file_name)+".txt").c_str());
+    
+    //Output displacements
+    myfile << "<<<< Homonenised stress >>>>>" << endl;
+  
+    if(pcomm->rank()==0){
+      PetscScalar    *avec;
+      VecGetArray(Stress_Homo, &avec);
+      for(int ii=0; ii<6; ii++){
+        myfile << boost::format("%.3lf") % roundn(*avec) << endl;
+        avec++;
+      }
+    }
 
-  
-  //=======================================================================================================================================================
-  
-  PostProcVertexMethod ent_method(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
-  
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
-  
-  //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,"DISPLACEMENT",LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  
-  if(pcomm->rank()==0) {
-    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }
-  
-  //End Disp
-  /*Range ents;*/
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
-  //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) {
-  //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
-  //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
-  //}
-  /*}*/
-  
-  //Support stresses
-  //Range ents;
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
-  
-  //Destroy matrices
+    //Close mesh_file_name.txt
+    myfile.close();
+
+  //destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-  
-  
+
+
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-  
+
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
-  
+
   PetscFinalize();
-  
+  return 0;
+
 }
 

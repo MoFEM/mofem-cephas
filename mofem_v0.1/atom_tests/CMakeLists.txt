@@ -70,6 +70,12 @@ target_link_libraries(field_functions_atom_test mofem_student_body mofem_Field $
 add_executable(homogenisation_disp_atom_test homogenisation_disp_atom_test.cpp)
 target_link_libraries(homogenisation_disp_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+add_executable(homogenisation_trac_atom_test homogenisation_trac_atom_test.cpp)
+target_link_libraries(homogenisation_trac_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+
+add_executable(homogenisation_periodic_atom_test homogenisation_periodic_atom_test.cpp)
+target_link_libraries(homogenisation_periodic_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)
 cm_export_file("../meshes/velocity01.cub" export_atom_tests)
@@ -101,6 +107,17 @@ cm_export_file("../meshes/sphere.cub" export_atom_tests)
 cm_export_file("../meshes/loop_atom.cub" export_atom_tests)
 cm_export_file("../meshes/tri_axial_cube_atom.cub" export_atom_tests)
 cm_export_file("../meshes/Cube_RVE.cub" export_atom_tests)
+
+
+#Homogenisation atom test
+add_test(homogenisation_disp_atom_test_1 ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_disp_atom_test -my_file Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
+add_test(homogenisation_disp_atom_test_1_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/Cube_RVE.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/Cube_RVE.cub.txt)
+
+add_test(homogenisation_trac_atom_test_1 ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_trac_atom_test -my_file Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
+add_test(homogenisation_trac_atom_test_1_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/Cube_RVE.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/Cube_RVE.cub.txt)
+
+add_test(homogenisation_periodic_atom_test_1 ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_periodic_atom_test -my_file Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
+add_test(homogenisation_periodic_atom_test_1_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/Cube_RVE.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/Cube_RVE.cub.txt)
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
 add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.cub.txt)

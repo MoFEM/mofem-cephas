@@ -318,8 +318,8 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
     //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
     ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
-    //    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
-    
+    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+  
     
     //create a vector for 6 components of homogenized stress
     Vec Stress_Homo;
@@ -330,65 +330,46 @@ int main(int argc, char *argv[]) {
     ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,&myDirihletBC,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
     
-    if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
-    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//    if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+//    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
     //=================================================================================================================================================
    
     if(pcomm->rank()==0){
         PetscScalar    *avec;
         VecGetArray(Stress_Homo, &avec);
-        
-        cout<< "\n\nStress_Homo = \n\n";
+        cout<< "\nStress_Homo = \n\n";
         for(int ii=0; ii<6; ii++){
             cout <<*avec<<endl; ;
             avec++;
         }
     }
-    
+    cout<< "\n\n";
+  
+  
     //Open mesh_file_name.txt for writing
     ofstream myfile;
     myfile.open ((string(mesh_file_name)+".txt").c_str());
     
-//    //Output displacements
-//    cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-//    myfile << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-//    
-//    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dof_ptr))
-//    {
-//        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-//        
-//        if(dof_ptr->get_dof_rank()==0)
-//        {
-//            //Round and truncate to 3 decimal places
-//            double fval = dof_ptr->get_FieldData();
-//            cout << boost::format("%.3lf") % roundn(fval) << "  ";
-//            myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-//        }
-//        if(dof_ptr->get_dof_rank()==1)
-//        {
-//            //Round and truncate to 3 decimal places
-//            double fval = dof_ptr->get_FieldData();
-//            cout << boost::format("%.3lf") % roundn(fval) << "  ";
-//            myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-//        }
-//        if(dof_ptr->get_dof_rank()==2)
-//        {
-//            //Round and truncate to 3 decimal places
-//            double fval = dof_ptr->get_FieldData();
-//            cout << boost::format("%.3lf") % roundn(fval) << endl;
-//            myfile << boost::format("%.3lf") % roundn(fval) << endl;
-//        }
-//        
-//    }
-//    
+    //Output displacements
+    myfile << "<<<< Homonenised stress >>>>>" << endl;
+  
+    if(pcomm->rank()==0){
+      PetscScalar    *avec;
+      VecGetArray(Stress_Homo, &avec);
+      for(int ii=0; ii<6; ii++){
+        myfile << boost::format("%.3lf") % roundn(*avec) << endl;
+        avec++;
+      }
+    }
+
     //Close mesh_file_name.txt
     myfile.close();
 
-//  //destroy matrices
-//  ierr = VecDestroy(&F); CHKERRQ(ierr);
-//  ierr = VecDestroy(&D); CHKERRQ(ierr);
-//  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-//  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+  //destroy matrices
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);

@@ -332,10 +332,10 @@ namespace MoFEM {
 			
 			ierr = VecZeroEntries(Data); CHKERRQ(ierr);
       ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_FieldData(this,Data); CHKERRQ(ierr);
-						
+      
 			PetscFunctionReturn(0);
 		}
-//--------------------------------------------------------------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------------------------------------//
 		virtual PetscErrorCode GetMatParameters(double *_E_p, double *_E_z, double *_nu_p, double *_nu_pz, double *_G_zp) {
       PetscFunctionBegin;
 			
@@ -372,7 +372,7 @@ namespace MoFEM {
 			
       PetscFunctionReturn(0);
     }
-//--------------------------------------------------------------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------------------------------------//
 		virtual PetscErrorCode calculateD(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
       PetscFunctionBegin;
 			
@@ -421,7 +421,7 @@ namespace MoFEM {
 			
       PetscFunctionReturn(0);
     }
-//--------------------------------------------------------------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------------------------------------//
 		virtual PetscErrorCode Fint() {
       PetscFunctionBegin;
 			
@@ -500,7 +500,7 @@ namespace MoFEM {
 			
       PetscFunctionReturn(0);
     }
-//--------------------------------------------------------------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------------------------------------//
     virtual PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
       try {
@@ -517,7 +517,7 @@ namespace MoFEM {
       }
       PetscFunctionReturn(0);
     }
-//--------------------------------------------------------------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------------------------------------//
 		virtual PetscErrorCode Stiffness() {
       PetscFunctionBegin;
 			
@@ -566,7 +566,7 @@ namespace MoFEM {
       }
       PetscFunctionReturn(0);
     }
-//--------------------------------------------------------------------------------------------------------------------------------------------------//
+    //--------------------------------------------------------------------------------------------------------------------------------------------------//
     PetscErrorCode operator()() {
 			
 			PetscFunctionBegin;
@@ -808,7 +808,7 @@ namespace MoFEM {
 			
       ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
       ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
-						
+      
 			K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
@@ -961,7 +961,7 @@ namespace MoFEM {
     TranIsotropicFibreDirRotElasticFEMethod(
                                             FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec& _D,Vec& _F):
     ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,0,0) {
-    
+      
 			propeties_from_BlockSet_Mat_ElasticSet = false;
 			for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_ElasticSet,it)) {
 				propeties_from_BlockSet_Mat_ElasticSet = true;
@@ -1175,7 +1175,7 @@ namespace MoFEM {
 			double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
       ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
       ierr = calculateD(_E_p,_E_z,_nu_p,_nu_pz,_G_zp); CHKERRQ(ierr);
-						
+      
 			K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
@@ -1916,7 +1916,7 @@ namespace MoFEM {
 			normalized_phi.resize(GradU_at_GaussPt.size());
 			ierr = ComputeGradient(normalized_phi); CHKERRQ(ierr);
 			
-//			cout<<GradU_at_GaussPt.size()<<endl;
+      //			cout<<GradU_at_GaussPt.size()<<endl;
       
 			for(;viit!=GradU_at_GaussPt.end();viit++,mit++,gg++) {
 				
