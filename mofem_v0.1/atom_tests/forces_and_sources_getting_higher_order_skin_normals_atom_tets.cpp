@@ -171,13 +171,13 @@ int main(int argc, char *argv[]) {
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getEdgesOrder(data); CHKERRQ(ierr);
-      ierr = getFacesOrder(data); CHKERRQ(ierr);
+      ierr = getTrisOrder(data); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getNodesFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
       ierr = shapeTRIFunctions_H1(data,G_TRI_X4,G_TRI_Y4,4); CHKERRQ(ierr);
 
