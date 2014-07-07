@@ -26,10 +26,15 @@
 
 namespace MoFEM {
 
-/** \brief user adjacency function
+/** \brief user adjacency function table
   * \ingroup fe_multi_indices
   */
 typedef int (*FieldOrderTable[MBMAXTYPE])(const int order);
+
+/** \brief user adjacency function
+  * \ingroup fe_multi_indices
+  */
+typedef int (*FieldOrderFunct)(const int order);
 
 /** 
   * \brief keeps data about field

@@ -203,10 +203,16 @@ typedef multi_index_container<
 
 struct EntMoFEMFiniteElement;
 
-/** \brief user adjacency function
+/** \brief user adjacency function table
   * \ingroup fe_multi_indices
   */
 typedef PetscErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
+  Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+
+/** \brief user adjacency function 
+  * \ingroup fe_multi_indices
+  */
+typedef PetscErrorCode (*ElementAdjacencyFunct)(
   Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
 
 /** 

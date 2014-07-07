@@ -21,9 +21,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include<FieldCore.hpp>
-#include<FEM.h>
-#include<version.h>
+#include "version.h"
+
+#include "FieldCore.hpp"
+//#include "CoreDataStructures.hpp"
+
+#include "FEM.h"
 
 namespace MoFEM {
 
@@ -545,7 +548,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
   }
   if(verb > 2) {
     list_fields();
-    list_finiteElementsPtr();
+    list_finite_elements();
     list_problem();
   }
   PetscFunctionReturn(0);
@@ -1335,6 +1338,16 @@ PetscErrorCode FieldCore::add_finite_element(const string &MoFEMFiniteElement_na
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode FieldCore::modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this MoFEMFiniteElement is there");
+  const_cast<MoFEMFiniteElement*>(&*it_MoFEMFiniteElement)->element_adjacency_table[type] = function;
+  PetscFunctionReturn(0);
+}
 PetscErrorCode FieldCore::modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_data) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
@@ -1449,7 +1462,7 @@ EntityHandle FieldCore::get_finite_element_meshset(const BitFEId id) const {
 EntityHandle FieldCore::get_finite_element_meshset(const string& name) const {	
   return get_finite_element_meshset(get_BitFEId(name));
 }
-PetscErrorCode FieldCore::list_finiteElementsPtr() const {
+PetscErrorCode FieldCore::list_finite_elements() const {
   PetscFunctionBegin;
   typedef MoFEMFiniteElement_multiIndex::index<BitFEId_mi_tag>::type finiteElements_by_id;
   const finiteElements_by_id &BitFEId_set = finiteElements.get<BitFEId_mi_tag>();
