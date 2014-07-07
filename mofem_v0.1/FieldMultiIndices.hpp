@@ -26,6 +26,11 @@
 
 namespace MoFEM {
 
+/** \brief user adjacency function
+  * \ingroup fe_multi_indices
+  */
+typedef int (*FieldOrderTable[MBMAXTYPE])(const int order);
+
 /** 
   * \brief keeps data about field
   *
@@ -41,11 +46,7 @@ struct MoFEMField {
   int tag_name_size; 			///< number of bits necessery to keep field name
   const void* tag_name_prefix_data; 	///< tag keeps name prefix of the field
   int tag_name_prefix_size; 		///< number of bits necessery to keep field name prefix
-  int (*forder_entityset)(int); 	///< nb. dofs on meshset for given space
-  int (*forder_vertex)(int); 		///< nb. dofs on node for given space
-  int (*forder_edge)(int); 		///< nb. dofs on edge for given space
-  int (*forder_face)(int); 		///< nb. dofs on face for given space
-  int (*forder_elem)(int); 		///< nb. dofs on elem for given space
+  FieldOrderTable forder_table;		///< nb. dofs table for entities
   /**
     * \brief constructor for moab field
     *
@@ -77,11 +78,6 @@ struct interface_MoFEMField {
   inline string get_name() const { return field_ptr->get_name(); };
   inline FieldSpace get_space() const { return field_ptr->get_space(); };
   inline ApproximationRank get_max_rank() const { return field_ptr->get_max_rank(); };
-  inline int forder_entityset(int p) const { return field_ptr->forder_entityset(p); };
-  inline int forder_vertex(int p) const { return field_ptr->forder_vertex(p); };
-  inline int forder_edge(int p) const { return field_ptr->forder_edge(p); };
-  inline int forder_face(int p) const { return field_ptr->forder_face(p); };
-  inline int forder_elem(int p) const { return field_ptr->forder_elem(p); };
   inline const MoFEMField* get_MoFEMField_ptr() const { return field_ptr->get_MoFEMField_ptr(); };
 };
 

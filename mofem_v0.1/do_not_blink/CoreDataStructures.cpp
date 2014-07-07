@@ -69,41 +69,34 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
   //dof rank
   string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
   rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); CHKERR_THROW(rval);
+  for(int tt = 0;tt<MBMAXTYPE;tt++) { forder_table[tt] = NULL; }
   switch (*tag_space_data) {
     case H1:
-      forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_H1;
-      forder_edge = fNBEDGE_H1;
-      forder_face = fNBFACE_H1;
-      forder_elem = fNBVOLUME_H1;
+      forder_table[MBVERTEX] = fNBVERTEX_H1;
+      forder_table[MBEDGE] = fNBEDGE_H1;
+      forder_table[MBTRI] = fNBFACE_H1;
+      forder_table[MBTET] = fNBVOLUME_H1;
       break;
     case HDIV:
-      forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_HDIV;
-      forder_edge = fNBEDGE_HDIV;
-      forder_face = fNBFACE_HDIV;
-      forder_elem = fNBVOLUME_HDIV;
+      forder_table[MBVERTEX] = fNBVERTEX_HDIV;
+      forder_table[MBEDGE] = fNBEDGE_HDIV;
+      forder_table[MBTRI] = fNBFACE_HDIV;
+      forder_table[MBTET] = fNBVOLUME_HDIV;
       break;
     case HCURL:
-      forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_HCURL;
-      forder_edge = fNBEDGE_HCURL;
-      forder_face = fNBFACE_HCURL;
-      forder_elem = fNBVOLUME_HCURL;
+      forder_table[MBVERTEX] = fNBVERTEX_HCURL;
+      forder_table[MBEDGE] = fNBEDGE_HCURL;
+      forder_table[MBTRI] = fNBFACE_HCURL;
+      forder_table[MBTET] = fNBVOLUME_HCURL;
       break;
     case L2:
-      forder_entityset = NULL;
-      forder_vertex = fNBVERTEX_L2;
-      forder_edge = fNBEDGE_L2;
-      forder_face = fNBFACE_L2;
-      forder_elem = fNBVOLUME_L2;
+      forder_table[MBVERTEX] = fNBVERTEX_L2;
+      forder_table[MBEDGE] = fNBEDGE_L2;
+      forder_table[MBTRI] = fNBFACE_L2;
+      forder_table[MBTET] = fNBVOLUME_L2;
       break;
     case NOFIELD:
-      forder_entityset = fNBENTITYSET_nofield;
-      forder_vertex = NULL;
-      forder_edge = NULL;
-      forder_face = NULL;
-      forder_elem = NULL;
+      forder_table[MBENTITYSET] = fNBENTITYSET_nofield;
       break;
     default:
       THROW_AT_LINE("not implemented");
