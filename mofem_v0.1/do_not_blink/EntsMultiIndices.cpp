@@ -22,6 +22,9 @@
 */
 
 
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
+
 #include <CoreDataStructures.hpp>
 
 namespace MoFEM {

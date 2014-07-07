@@ -52,19 +52,10 @@
 #include <boost/utility/string_ref.hpp>
 
 //MOAB
-#include<moab_mpi.h>
-#include<moab/ParallelComm.hpp>
-#include<MBParallelConventions.h>
 #include<moab/Core.hpp>
 #include<moab/Interface.hpp>
-#include<moab/Skinner.hpp>
-#include<moab/GeomUtil.hpp>
 #include<moab/Range.hpp>
-#include<moab/MeshTopoUtil.hpp>
-#include<moab/MergeMesh.hpp>
-#include<moab/AdaptiveKDTree.hpp>
 #include<MBTagConventions.hpp>
-#include<io/Tqdcfr.hpp>
 
 //PETSC
 #include<petscmat.h>
@@ -77,10 +68,6 @@
 #include<petscsnes.h>
 #include<petscts.h>
 #include<petsctime.h>
-
-//MOFEM
-#include<FEM.h>
-#include<H1HdivHcurlL2.h>
 
 //DEFINES
 #define MYPCOMM_INDEX 0

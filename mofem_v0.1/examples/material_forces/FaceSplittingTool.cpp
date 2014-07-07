@@ -28,6 +28,12 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
+#include<moab/Skinner.hpp>
+#include<moab/AdaptiveKDTree.hpp>
+
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
+
 namespace MoFEM {
 
 PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(

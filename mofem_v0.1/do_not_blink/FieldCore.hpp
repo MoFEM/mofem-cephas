@@ -23,6 +23,9 @@
 
 #include "FieldInterface.hpp"
 
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
+
 namespace MoFEM {
 
 /** \brief Core FieldInterface class

@@ -29,6 +29,17 @@
 
 #include "ForcesAndSurcesCore.hpp"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include<cblas.h>
+  #include<lapack_wrap.h>
+#ifdef __cplusplus
+}
+#endif
+
+#include<moab/Skinner.hpp>
+
 namespace MoFEM {
 
 struct FluidPressure {

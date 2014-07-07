@@ -27,6 +27,7 @@
 #define __FILEDAPPROXIMATION_HPP
 
 #include "FieldInterface.hpp"
+#include "FEM.h"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>

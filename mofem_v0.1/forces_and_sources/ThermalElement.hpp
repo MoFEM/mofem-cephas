@@ -28,6 +28,8 @@
 #include "ForcesAndSurcesCore.hpp"
 #include "TsCtx.hpp"
 
+#include<moab/Skinner.hpp>
+
 namespace MoFEM {
 
 /** \brief struture grouping operators and data used for thermal problems

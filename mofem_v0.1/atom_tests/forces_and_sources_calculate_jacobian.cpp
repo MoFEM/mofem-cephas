@@ -26,6 +26,8 @@
 #include <fstream>
 #include <iostream>
 
+#include<FEM.h>
+
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;

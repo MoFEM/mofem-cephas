@@ -25,6 +25,7 @@
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
+#include <moab/Skinner.hpp>
 
 #include "Projection10NodeCoordsOnField.hpp"
 

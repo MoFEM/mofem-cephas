@@ -19,10 +19,17 @@
 
 #include "FEMethod_SurfaceConstrains.hpp"
 
+#include<FEM.h>
+#include<H1HdivHcurlL2.h>
+
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
+
 #include <math.h>
 #include <complex>
 extern "C" {
 #include <complex.h>
+
 void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
   double circumcenter[3],double *xi,double *eta,double *zeta);
 void tricircumcenter3d_tp(double a[3],double b[3],double c[3],

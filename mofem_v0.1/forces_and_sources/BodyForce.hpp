@@ -29,6 +29,15 @@
 
 #include "ForcesAndSurcesCore.hpp"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include<cblas.h>
+  #include<lapack_wrap.h>
+#ifdef __cplusplus
+}
+#endif
+
 namespace MoFEM {
 
 /** \brief Body forces elements

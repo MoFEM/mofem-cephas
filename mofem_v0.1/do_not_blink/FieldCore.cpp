@@ -24,7 +24,7 @@
 #include "version.h"
 
 #include "FieldCore.hpp"
-//#include "CoreDataStructures.hpp"
+#include "CoreDataStructures.hpp"
 
 #include "FEM.h"
 

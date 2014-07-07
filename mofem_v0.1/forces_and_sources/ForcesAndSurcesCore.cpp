@@ -25,6 +25,10 @@
 
 
 #include "ForcesAndSurcesCore.hpp"
+
+#include<FEM.h>
+#include<H1HdivHcurlL2.h>
+
 extern "C" {
 #include "gm_rule.h"
 }
