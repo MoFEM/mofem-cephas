@@ -26,6 +26,8 @@
 #include <fstream>
 #include <iostream>
 
+#include<FEM.h>
+
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -185,22 +187,22 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
-      ierr = getFacesSense(data); CHKERRQ(ierr);
+      ierr = getTrisSense(data); CHKERRQ(ierr);
       ierr = getEdgesOrder(data); CHKERRQ(ierr);
-      ierr = getFacesOrder(data); CHKERRQ(ierr);
-      ierr = getVolumesOrder(data); CHKERRQ(ierr);
+      ierr = getTrisOrder(data); CHKERRQ(ierr);
+      ierr = getTetsOrder(data); CHKERRQ(ierr);
       ierr = getFaceNodes(data); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getTetRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetsRowIndices(data,"FIELD1"); CHKERRQ(ierr);
 
       ierr = getNodesFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getVolumesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetsFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
       EntityHandle ent = fePtr->get_ent();
       int num_nodes;
@@ -210,7 +212,7 @@ int main(int argc, char *argv[]) {
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
 
       invJac.resize(3,3);
-      ierr = ShapeJacMBTET(&*data.nOdes[0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
+      ierr = ShapeJacMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
       ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {

@@ -84,19 +84,19 @@ PetscErrorCode MapDataTET(It &it,
     case MBEDGE:
       assert(side_number>=0);
       assert(side_number<6);
-      nb_dofs_for_order = it->forder_edge(max_order);
+      nb_dofs_for_order = it->get_order_nb_dofs(max_order);
       edges[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
       edges[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
       break;
     case MBTRI:
       assert(side_number>=0);
       assert(side_number<4);
-      nb_dofs_for_order = it->forder_face(max_order);
+      nb_dofs_for_order = it->get_order_nb_dofs(max_order);
       faces[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
       faces[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
       break;
     case MBTET:
-      nb_dofs_for_order = it->forder_elem(max_order);
+      nb_dofs_for_order = it->get_order_nb_dofs(max_order);
       volume[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
       volume[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
       break;
@@ -133,18 +133,18 @@ PetscErrorCode MapDataPRISM(It &it,
     case MBEDGE:
       assert(side_number>=0);
       assert(side_number<9);
-      nb_dofs_for_order = it->forder_edge(max_order);
+      nb_dofs_for_order = it->get_order_nb_dofs(max_order);
       edges[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
       edges[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
       break;
     case MBTRI:
       assert(side_number==3||side_number==4);
-      nb_dofs_for_order = it->forder_face(max_order);
+      nb_dofs_for_order = it->get_order_nb_dofs(max_order);
       faces[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
       faces[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
       break;
     case MBPRISM:
-      nb_dofs_for_order = it->forder_elem(max_order);
+      nb_dofs_for_order = it->get_order_nb_dofs(max_order);
       volume[ent_ptr].resize(max_rank*nb_dofs_for_order,-1);
       volume[ent_ptr][it->get_EntDofIdx()] = UnaryOp()(&*it);
       break;
@@ -1254,7 +1254,7 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	  data.resize(g_dim);
 	  unsigned int rank = field_ptr->get_max_rank();
 	  unsigned int order = ent_ptr->get_max_order();
-	  unsigned int nb_dofs = ent_ptr->forder(order);
+	  unsigned int nb_dofs = ent_ptr->get_order_nb_dofs(order);
 	  if(nb_dofs == 0) continue;
 	  if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
 	  if(base_functions_by_gauss_pt.size()/g_dim > nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
@@ -1276,7 +1276,7 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	  ublas::vector<FieldData> &dof_data = dit->second;
 	  unsigned int rank = field_ptr->get_max_rank();
 	  unsigned int order = ent_ptr->get_max_order();
-	  unsigned int nb_dofs = ent_ptr->forder(order);
+	  unsigned int nb_dofs = ent_ptr->get_order_nb_dofs(order);
 	  if(nb_dofs == 0) continue;
 	  if(dof_data.size()/rank != nb_dofs) {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
@@ -1426,7 +1426,7 @@ PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
 	  diff_data.resize(g_dim);
 	  unsigned int rank = field_ptr->get_max_rank();
 	  unsigned int order = ent_ptr->get_max_order();
-	  unsigned int nb_dofs = ent_ptr->forder(order);
+	  unsigned int nb_dofs = ent_ptr->get_order_nb_dofs(order);
 	  if(nb_dofs == 0) continue;
 	  if(dof_data.size()/rank != nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
 	  if(diff_base_functions_by_gauss_pt.size()/(dim*g_dim) > nb_dofs) SETERRQ(PETSC_COMM_SELF,1,"data inconsitencies");
@@ -1532,7 +1532,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 	  data.resize(g_dim);
 	  int rank = field_ptr->get_max_rank();
 	  int order = ent_ptr->get_max_order();
-	  unsigned int nb_dofs = rank*ent_ptr->forder(order); 
+	  unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
 	  if(nb_dofs!=dit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	  unsigned int gg = 0;
 	  for(;gg<g_dim;gg++) {
@@ -1542,7 +1542,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 	    ublas::noalias(mat) = ublas::zero_matrix<FieldData>(rank,nb_dofs);
 	    for(int rr = 0;rr<rank;rr++) {
 	      ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr);
-	      for(int jj = 0;jj<ent_ptr->forder(order);jj++) {
+	      for(int jj = 0;jj<ent_ptr->get_order_nb_dofs(order);jj++) {
 		mr(rank*jj + rr) = (base_functions_by_gauss_pt[gg])[jj];
 	      }
 	    }
@@ -1552,7 +1552,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 	case HDIV: {
 	  unsigned int rank = field_ptr->get_max_rank();
 	  unsigned int order = ent_ptr->get_max_order();
-	  unsigned int nb_dofs = ent_ptr->forder(order);
+	  unsigned int nb_dofs = ent_ptr->get_order_nb_dofs(order);
 	  if(nb_dofs == 0) continue;
 	  vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
 	  data.resize(g_dim);

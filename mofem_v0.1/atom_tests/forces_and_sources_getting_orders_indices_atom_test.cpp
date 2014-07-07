@@ -20,6 +20,7 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "ForcesAndSurcesCore.hpp"
+#include "FEM.h"
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -168,28 +169,28 @@ int main(int argc, char *argv[]) {
 
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
-      ierr = getFacesSense(data); CHKERRQ(ierr);
+      ierr = getTrisSense(data); CHKERRQ(ierr);
       ierr = getEdgesOrder(data); CHKERRQ(ierr);
-      ierr = getFacesOrder(data); CHKERRQ(ierr);
-      ierr = getVolumesOrder(data); CHKERRQ(ierr);
+      ierr = getTrisOrder(data); CHKERRQ(ierr);
+      ierr = getTetsOrder(data); CHKERRQ(ierr);
       ierr = getFaceNodes(data); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getTetRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetsRowIndices(data,"FIELD1"); CHKERRQ(ierr);
 
       my_split << "FIELD1:\n";
       my_split << data << endl;
 
       ierr = getEdgesOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFacesOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getVolumesOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTrisOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetsOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getColNodesIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getEdgeColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFacesColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTetColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getEdgesColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTrisColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetsColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
 
       my_split << "FIELD2:\n";
       my_split << derived_data << endl;

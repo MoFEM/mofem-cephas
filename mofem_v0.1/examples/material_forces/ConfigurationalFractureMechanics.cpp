@@ -31,7 +31,8 @@
 #include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
 #include "FaceSplittingTool.hpp"
 
-#include <petscsnes.h>
+#include<moab/Skinner.hpp>
+#include<petscsnes.h>
 
 using namespace MoFEM;
 

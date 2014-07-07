@@ -22,6 +22,9 @@
 */
 
 
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
+
 #include <CoreDataStructures.hpp>
 
 namespace MoFEM {
@@ -67,33 +70,9 @@ ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
 }
 
 //moab ent
-MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_ent_ptr): 
-  interface_MoFEMField<MoFEMField>(_FieldData),interface_RefMoFEMEntity<RefMoFEMEntity>(_ref_ent_ptr),ref_mab_ent_ptr(_ref_ent_ptr),
+MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_field_ptr,const RefMoFEMEntity *_ref_ent_ptr): 
+  interface_MoFEMField<MoFEMField>(_field_ptr),interface_RefMoFEMEntity<RefMoFEMEntity>(_ref_ent_ptr),ref_mab_ent_ptr(_ref_ent_ptr),
   tag_order_data(NULL),tag_FieldData(NULL),tag_FieldData_size(0),tag_dof_order_data(NULL),tag_dof_rank_data(NULL) {
-  const EntityType type = get_ent_type(); 
-  switch (type) {
-    case MBVERTEX:
-      forder = field_ptr->forder_vertex;
-      break;
-    case MBEDGE:
-      forder = field_ptr->forder_edge;
-      break;
-    case MBTRI:
-      forder = field_ptr->forder_face;
-      break;
-    case MBTET:
-      forder = field_ptr->forder_elem;
-      break;
-    case MBPRISM:
-      forder = field_ptr->forder_elem;
-      break;
-    case MBENTITYSET:
-      forder = field_ptr->forder_entityset;
-      break;
-    default: {
-      THROW_AT_LINE("data inconsistency");
-    }
-  }
   ErrorCode rval;
   EntityHandle ent = get_ent();
   rval = moab.tag_get_by_ptr(field_ptr->th_AppOrder,&ent,1,(const void **)&tag_order_data); CHKERR_THROW(rval);
@@ -121,7 +100,7 @@ ostream& operator<<(ostream& os,const MoFEMEntity& e) {
 }
 void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
   ErrorCode rval;
-  int nb_dofs = e.forder(order)*e.get_max_rank();
+  int nb_dofs = e.get_order_nb_dofs(order)*e.get_max_rank();
   ApproximationOrder& ent_order = *((ApproximationOrder*)e.tag_order_data);
   ent_order = order;
   EntityHandle ent = e.get_ent();

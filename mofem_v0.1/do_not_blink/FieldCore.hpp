@@ -22,7 +22,9 @@
 #define __MOABFIELD_CORE_HPP__
 
 #include "FieldInterface.hpp"
-#include "CoreDataStructures.hpp"
+
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
 
 namespace MoFEM {
 
@@ -315,6 +317,7 @@ struct FieldCore: public FieldInterface {
 
   //MoFEMFiniteElement
   PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
+  PetscErrorCode modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function);
   PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
   PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
   PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
@@ -347,7 +350,7 @@ struct FieldCore: public FieldInterface {
   string get_BitFEId_name(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const string& name) const;
-  PetscErrorCode list_finiteElementsPtr() const;
+  PetscErrorCode list_finite_elements() const;
 
   //problem
   PetscErrorCode add_problem(const BitProblemId id,const string& name);
@@ -361,8 +364,8 @@ struct FieldCore: public FieldInterface {
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
-  PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &EntFe,int verb = -1);
-  PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &EntFe,int verb = -1);
+  PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &ent_fe,int verb = -1);
+  PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &ent_fe,int verb = -1);
   PetscErrorCode build_finiteElementsPtr(int verb = -1);
   PetscErrorCode clear_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finiteElementsPtr(const string &name,const Range &ents,int verb = -1);

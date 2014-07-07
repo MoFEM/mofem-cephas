@@ -198,12 +198,9 @@ struct DataForcesAndSurcesCore {
 
   };
 
-  ublas::matrix<DofIdx> facesNodes; ///< nodes on finite element faces
-
-  boost::ptr_vector<EntData> nOdes; ///< data on nodes, shape function, dofs values, etc.
-  boost::ptr_vector<EntData> eDges; ///< data on edges, shape function, dofs values, etc.
-  boost::ptr_vector<EntData> fAces; ///< data on faces, shape function, dofs values, etc.
-  boost::ptr_vector<EntData> vOlumes; ///< data on volume, shape function, dofs values, etc.
+  ublas::matrix<DofIdx> facesNodes; 			///< nodes on finite element faces
+  bitset<LASTSPACE> spacesOnEntities[MBMAXTYPE]; 	///< spaces on entity types
+  boost::ptr_vector<EntData> dataOnEntities[MBMAXTYPE]; ///< data on nodes, shape function, dofs values, etc.
 
   DataForcesAndSurcesCore(EntityType type);
   virtual ~DataForcesAndSurcesCore() {}
@@ -272,14 +269,14 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   PetscErrorCode getOrder(const string &field_name,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
-  PetscErrorCode getFacesSense(DataForcesAndSurcesCore &data);
+  PetscErrorCode getTrisSense(DataForcesAndSurcesCore &data);
 
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data);
-  PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data);
-  PetscErrorCode getVolumesOrder(DataForcesAndSurcesCore &data);
+  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data);
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data);
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getVolumesOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getNodesIndices(
     const string &field_name,
@@ -301,12 +298,12 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
-  PetscErrorCode getEdgeRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getEdgeColIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getFacesRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getFacesColIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getNodesFieldData(
     const string &field_name,
@@ -320,23 +317,38 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getEdgeFieldData(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getFacesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getVolumesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getFaceNodes(DataForcesAndSurcesCore &data);
 
+  /** \brief computes approximation functions for tetrahedral and H1 space
+    */
   PetscErrorCode shapeTETFunctions_H1(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+  /** \brief computes approximation functions for tetrahedral and L2 space
+    */
   PetscErrorCode shapeTETFunctions_L2(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+  /** \brief computes approximation functions for triangle and H1 space
+    */
   PetscErrorCode shapeTRIFunctions_H1(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const int G_DIM);
+
+
+  /** \brief computes approximation functions for edge and H1 space
+    */
   PetscErrorCode shapeEDGEFunctions_H1(
     DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM);
+
+
+
 
 };
 
@@ -429,8 +441,8 @@ struct OpGetData: public DataOperator {
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from TetElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpNH1 and
- * vecUserOpNH1NH1. 
+ * number of operator added pushing objects to vecUserOpN and
+ * vecUserOpSymmNN. 
  *
  */
 struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
@@ -509,18 +521,18 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -567,8 +579,8 @@ struct OpGetNormals: public DataOperator {
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from TriElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpNH1 and
- * vecUserOpNH1NH1. 
+ * number of operator added pushing objects to vecUserOpN and
+ * vecUserOpSymmNN. 
  *
  */
 struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
@@ -666,18 +678,18 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     TriElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -696,8 +708,8 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from EdgeElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpNH1 and
- * vecUserOpNH1NH1. 
+ * number of operator added pushing objects to vecUserOpN and
+ * vecUserOpSymmNN. 
  *
  */
 struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
@@ -744,18 +756,18 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     EdgeElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -774,8 +786,8 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from VertexElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpNH1 and
- * vecUserOpNH1NH1. 
+ * number of operator added pushing objects to vecUserOpN and
+ * vecUserOpSymmNN. 
  *
  */
 struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
@@ -813,18 +825,18 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     VertexElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;

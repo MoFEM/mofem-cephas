@@ -827,6 +827,7 @@ struct FieldInterface {
 
   /**
     * \brief add finite element
+    * \ingroup mofem_fe
     * \param name finite element name
     *
     * Example \code
@@ -836,7 +837,18 @@ struct FieldInterface {
     */
   virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL) = 0;
 
-  /** \brief set field data which finite element use
+  /** 
+    * \brief modify finite element table, only for advaenced user
+    * \ingroup mofem_fe
+    *
+    * Using that functions means that you like to do something not usual.
+    *
+    */
+  virtual PetscErrorCode modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function) = 0;
+
+
+  /** \brief set field data which finite element usea
+   * \ingroup mofem_fe
    *
    * \param name finite element name
    * \param name field name
@@ -844,14 +856,31 @@ struct FieldInterface {
    * This function will set memory in the form of a vector
    */
   virtual PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
+
+  /** \brief set of field data which finite element usea
+   * \ingroup mofem_fe
+   *
+   * \param name finite element name
+   * \param name field name
+   *
+   * This function will set memory in the form of a vector
+   */
   virtual PetscErrorCode modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
 
     /** \brief set field row which finite element use
+     * \ingroup mofem_fe
      *
      * \param name finite element name
      * \param name field name
      */
   virtual PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+
+    /** \brief set off field row which finite element use
+     * \ingroup mofem_fe
+     *
+     * \param name finite element name
+     * \param name field name
+     */
   virtual PetscErrorCode modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
 
@@ -861,6 +890,13 @@ struct FieldInterface {
      * \param name field name
      */  
   virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+
+    /** \brief set field col which finite element use
+     * \ingroup mofem_fe
+     *
+     * \param name finite element name
+     * \param name field name
+     */  
   virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
   /** \brief add EDGES entities fromm meshset to finite element database given by name
@@ -969,8 +1005,10 @@ struct FieldInterface {
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name,const bool recursive = false) = 0;
 
-  /// list finite elements in database
-  virtual PetscErrorCode list_finiteElementsPtr() const = 0;
+  /** \brief list finite elements in database
+   * \ingroup mofem_fe
+   */
+  virtual PetscErrorCode list_finite_elements() const = 0;
 
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
@@ -2085,6 +2123,12 @@ struct FieldInterface {
 
 /***************************************************************************//**
  * \defgroup mofem_loop_methods Methods for Loops
+ * \ingroup mofem
+ ******************************************************************************/
+
+
+/***************************************************************************//**
+ * \defgroup mofem_fe Finite elements
  * \ingroup mofem
  ******************************************************************************/
 
