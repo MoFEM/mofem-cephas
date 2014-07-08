@@ -322,6 +322,7 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getFaceNodes(DataForcesAndSurcesCore &data);
+  PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data);
 
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
@@ -334,6 +335,13 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   PetscErrorCode shapeTETFunctions_L2(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+  /** \brief computes approximation functions for tetrahedral and H1 space
+    */
+  PetscErrorCode shapeTETFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
 
   /** \brief computes approximation functions for triangle and H1 space
     */

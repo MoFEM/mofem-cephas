@@ -55,7 +55,7 @@ struct CrackFrontData {
   PetscErrorCode setCrackFrontIndices(FieldInterface::FEMethod *fe_ptr,string &material_field_name,vector<DofIdx>& GlobIndices,bool not_at_crack_front) {
     PetscFunctionBegin;
     if(!crackFrontEdgeNodes.empty()) {
-    for(_IT_GET_FEROW_DOFS_FOR_LOOP_(fe_ptr,material_field_name,dof)) {
+    for(_IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(fe_ptr,material_field_name,dof)) {
       Range::iterator nit = find(crackFrontEdgeNodes.begin(),crackFrontEdgeNodes.end(),dof->get_ent());
       if(not_at_crack_front) {
 	//if nit is not a part of crack front set

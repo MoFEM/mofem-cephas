@@ -25,9 +25,6 @@ target_link_libraries(elasticity_atom_test mofem_student_body mofem_forces_and_s
 add_executable(l2_approximation l2_approximation.cpp)
 target_link_libraries(l2_approximation mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(hdiv_approximation hdiv_approximation.cpp)
-target_link_libraries(hdiv_approximation mofem_student_body mofem_Field ${PROJECT_LIBS})
-
 add_executable(trans_isotropic_test trans_isotropic_test.cpp)
 target_link_libraries(trans_isotropic_test mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
@@ -239,10 +236,6 @@ add_test(nonlinear_elasticity_atom_sheer_force_compare ${CMAKE_COMMAND} -E compa
 #arc length elasticty
 add_test(arc_length_nonlinear_elasticity_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr -1. -my_ms 3 -snes_converged_reason -log_summary)
 add_test(arc_length_nonlinear_elasticity_atom_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/arc_length_nonlinear_elasticity_atom.txt ${CMAKE_BINARY_DIR}/atom_tests/arc_length_nonlinear_elasticity_atom.txt)
-
-#hdiv approximation atom test
-add_test(hdiv_atom_approximation ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hdiv_approximation -my_file elasticity_atom_test_01X.cub -my_max_pot_proc_ref_level 2 -ksp_type fgmres -ksp_atol 1e-16 -ksp_rtol 0 -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -log_summary)
-add_test(hdiv_atom_approximation_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/hdiv_approximation.txt ${CMAKE_BINARY_DIR}/atom_tests/hdiv_approximation.txt)
 
 #field axpy
 add_test(field_axpy ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.cub -log_summary)

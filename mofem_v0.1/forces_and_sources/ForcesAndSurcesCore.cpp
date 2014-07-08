@@ -488,6 +488,16 @@ PetscErrorCode ForcesAndSurcesCore::getFaceNodes(DataForcesAndSurcesCore &data) 
     PetscFunctionReturn(0);
   }
 
+PetscErrorCode ForcesAndSurcesCore::getSpacesOnEntities(DataForcesAndSurcesCore &data) {
+  PetscFunctionBegin;
+
+  for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,dof)) {
+    data.spacesOnEntities[dof->get_ent_type()].set(dof->get_space());
+  }
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM) {
@@ -581,6 +591,23 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_L2(
 
     PetscFunctionReturn(0);
   }
+
+PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM) {
+    PetscFunctionBegin;
+
+    PetscErrorCode ierr;
+
+	  //ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f_e,gNTET_dim); CHKERRQ(ierr);
+	  //ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f,gNTET_dim); CHKERRQ(ierr);
+
+
+
+    PetscFunctionReturn(0);
+  }
+
+
 
 PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
     DataForcesAndSurcesCore &data,
@@ -953,6 +980,8 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   ierr = getTetsOrder(data); CHKERRQ(ierr);
   ierr = getFaceNodes(data); CHKERRQ(ierr);
 
+  ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+
   int order = 1;
   for(unsigned int ee = 0;ee<data.dataOnEntities[MBEDGE].size();ee++) {
     order = max(order,data.dataOnEntities[MBEDGE][ee].getOrder());
@@ -963,8 +992,21 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   gaussPts.resize(4,nb_gauss_pts);
   ierr = Grundmann_Moeller_integration_points_3D_TET(
     rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)); CHKERRQ(ierr);
-  ierr = shapeTETFunctions_H1(data,
-    &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+
+  if((data.spacesOnEntities[MBVERTEX]).test(H1)) {
+    ierr = shapeTETFunctions_H1(data,
+      &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+  }
+
+  if((data.spacesOnEntities[MBTET]).test(L2)) {
+    ierr = shapeTETFunctions_L2(data,
+      &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+  }
+
+  if((data.spacesOnEntities[MBTET]).test(HDIV)) {
+    ierr = shapeTETFunctions_Hdiv(data,
+      &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+  }
 
   EntityHandle ent = fePtr->get_ent();
   int num_nodes;
