@@ -33,8 +33,8 @@ namespace MoFEM {
     
     bool propeties_from_BlockSet_Mat_ElasticSet;
     ElasticFE_RVELagrange_Disp(
-                               FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain):
-    FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
+                               FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain):
+    FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
     Aij(_Aij),F(_F), applied_strain(_applied_strain){
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
       
@@ -100,7 +100,7 @@ namespace MoFEM {
       
       
     };
-    
+
     ErrorCode rval;
     
     ParallelComm* pcomm;
@@ -125,7 +125,7 @@ namespace MoFEM {
     vector<vector<DofIdx> > RowGlob;
     vector<vector<DofIdx> > ColGlob;
     vector<vector<ublas::matrix<double> > > rowNMatrices;
-    
+
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
       // Note MAT_FLUSH_ASSEMBLY
@@ -155,7 +155,7 @@ namespace MoFEM {
       typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
       const EntityHandle* conn_face;
       int num_nodes;
-      EntityHandle face_tri;  face_tri=fe_ptr->get_ent();
+      EntityHandle face_tri;  face_tri=fePtr->get_ent();
       rval = moab.get_connectivity(face_tri,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       //        cout<< "num_nodes ="<<num_nodes << endl;
       //        cout<< "conn_face ="<<conn_face << endl;
@@ -175,10 +175,10 @@ namespace MoFEM {
         string field_name;
         
         //minimum and maximum row and column indices for each node on the surface
-        niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",conn_face[nn]));
-        hi_niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",conn_face[nn]));
-        col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
-        hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
+        niit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",conn_face[nn]));
+        hi_niit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",conn_face[nn]));
+        col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
+        hi_col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
         
         
         // two different loops, i.e. one for row and one for column (may be need it for multiphysics problems)
@@ -221,11 +221,11 @@ namespace MoFEM {
         //            cout<<"side_number "<<side_number<<endl;
         //            cout<<"FaceEdgeSense[ee] "<<FaceEdgeSense[ee]<<endl;
         //            cout<<"edge "<<edge<<endl;
-        eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",edge));
-        hi_eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",edge));
+        eiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",edge));
+        hi_eiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",edge));
         
-        col_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
-        col_hi_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
+        col_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
+        col_hi_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
         
         if(eiit!=hi_eiit) {
           FaceEdgeOrder[ee] = eiit->get_max_order();
@@ -300,11 +300,11 @@ namespace MoFEM {
       
       //Find the rows and column indices for face of the triangle
       dofs_iterator fiit,hi_fiit, col_fiit, col_hi_fiit;
-      fiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",face_tri));
-      hi_fiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",face_tri));
+      fiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",face_tri));
+      hi_fiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",face_tri));
       
-      col_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",face_tri));
-      col_hi_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",face_tri));
+      col_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",face_tri));
+      col_hi_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",face_tri));
       
       //cout<<"fiit!=hi_fiit  "<<(fiit!=hi_fiit) << endl;
       if(fiit!=hi_fiit) {
@@ -568,8 +568,7 @@ namespace MoFEM {
     
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      //        cout<<"Hi from class ElasticFE_RVELagrange_Disp"<<endl;
-      
+//        cout<<"Hi from class ElasticFE_RVELagrange_Disp"<<endl;
       ierr = GetN_and_Indices(); CHKERRQ(ierr);
       ierr = Get_H_mat();
       ierr = Lhs(); CHKERRQ(ierr);

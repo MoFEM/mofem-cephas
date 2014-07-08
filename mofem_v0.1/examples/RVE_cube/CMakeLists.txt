@@ -25,7 +25,7 @@ target_link_libraries(RVE_Cube_Traction mofem_student_body mofem_Field ${PROJECT
 add_executable(RVE_Cube_Periodic RVE_Cube_Periodic.cpp)
 target_link_libraries(RVE_Cube_Periodic mofem_student_body mofem_Field ${PROJECT_LIBS})
 
-add_executable(RVE_Cube_Disp_transoport RVE_Cube_Disp_transoport.cpp)
-target_link_libraries(RVE_Cube_Disp_transoport mofem_student_body mofem_Field ${PROJECT_LIBS})
+#add_executable(RVE_Cube_Disp_transoport RVE_Cube_Disp_transoport.cpp)
+#target_link_libraries(RVE_Cube_Disp_transoport mofem_student_body mofem_Field ${PROJECT_LIBS})
 
 

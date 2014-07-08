@@ -29,8 +29,8 @@ namespace MoFEM {
     
     
     ElasticFE_RVELagrange_Periodic(
-                                   FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData>_applied_strain):
-    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F, _applied_strain){};
+                                   FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData>_applied_strain):
+    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F, _applied_strain){};
     
     
     vector<vector<vector<DofIdx> > > RowGlob;  //The outer vector is of size 2 (one for -ve triangles and one for +ve triangles)
@@ -57,7 +57,7 @@ namespace MoFEM {
       int num_nodes, num_nodes1;
       dofs_iterator niit,hi_niit;   //for rows
       dofs_iterator col_niit,hi_col_niit;  // for columns
-      prism_periodic=fe_ptr->get_ent();
+      prism_periodic=fePtr->get_ent();
       //Indices for row and column for nodes for Prisms element
       
       //        cout<<"row_mat "<<row_mat<<endl;
@@ -82,11 +82,11 @@ namespace MoFEM {
           area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
           
           //minimum and maximum row and column indices for each node on the prism triangle
-          niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
-          hi_niit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
+          niit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
+          hi_niit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
           
-          col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_Prism[count]));
-          hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_Prism[count]));
+          col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_Prism[count]));
+          hi_col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_Prism[count]));
           
           if(ff==0){
             for(;niit!=hi_niit;niit++) {
@@ -152,10 +152,10 @@ namespace MoFEM {
           //                std::cin >> wait;
           
           dofs_iterator eiit,hi_eiit,col_eiit,col_hi_eiit;
-          eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",edge));
-          hi_eiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",edge));
-          col_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
-          col_hi_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
+          eiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",edge));
+          hi_eiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",edge));
+          col_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
+          col_hi_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
           
           //For rows (we will get indices only for -ve edges, i.e. eiit!=hi_eiit===True)
           if(ff==0){
@@ -258,11 +258,11 @@ namespace MoFEM {
         rval = moab.side_element(prism_periodic,2,ff_arr[ff],Tri_Prism); CHKERR_PETSC(rval);
         
         dofs_iterator fiit,hi_fiit, col_fiit, col_hi_fiit;
-        fiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",Tri_Prism));
-        hi_fiit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",Tri_Prism));
+        fiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",Tri_Prism));
+        hi_fiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",Tri_Prism));
         
-        col_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
-        col_hi_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
+        col_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
+        col_hi_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
         
         if(col_fiit != col_hi_fiit)  row_mat=4;
         //            cout<<"row_mat hi "<<row_mat<<endl;

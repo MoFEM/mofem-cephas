@@ -31,8 +31,8 @@ namespace MoFEM {
     double *RVE_volume;
     Vec Stress_Homo;
     
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume,ublas::vector<FieldData> _applied_strain, Vec& _Stress_Homo):
-    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F, _applied_strain), DVec(_D),RVE_volume(_RVE_volume), Stress_Homo(_Stress_Homo){};
+    ElasticFE_RVELagrange_Homogenized_Stress_Disp(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume,ublas::vector<FieldData> _applied_strain, Vec& _Stress_Homo):
+    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F, _applied_strain), DVec(_D),RVE_volume(_RVE_volume), Stress_Homo(_Stress_Homo){};
     
     
     
@@ -133,7 +133,7 @@ namespace MoFEM {
             //                    cout<<"For nodes"<<endl;
             const EntityHandle* conn;
             int num_nodes;
-            rval = mField.get_moab().get_connectivity(fe_ptr->get_ent(),conn,num_nodes,true); CHKERR_PETSC(rval);
+            rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn,num_nodes,true); CHKERR_PETSC(rval);
             //                    cout<<"num_nodes  =  "<<num_nodes<<endl;
             for(int nn = 0;nn<num_nodes; nn++) {
               for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",conn[nn],iit)) {
@@ -149,7 +149,7 @@ namespace MoFEM {
             for(int ee=0; ee<3; ee++) {
               EntityHandle edge;
               
-              rval = moab.side_element(fe_ptr->get_ent(),1,rr-1,edge); CHKERR_PETSC(rval);
+              rval = moab.side_element(fePtr->get_ent(),1,rr-1,edge); CHKERR_PETSC(rval);
               for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",edge,iit)) {
                 Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
               }
@@ -161,7 +161,7 @@ namespace MoFEM {
             
           case 4: //for face
             //                    cout<<"For Face"<<endl;
-            for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",fe_ptr->get_ent(),iit)) {
+            for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",fePtr->get_ent(),iit)) {
               Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
             }
             //                    for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";

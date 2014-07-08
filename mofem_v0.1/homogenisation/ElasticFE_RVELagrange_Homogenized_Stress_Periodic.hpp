@@ -32,8 +32,8 @@ namespace MoFEM {
     Vec Stress_Homo;
     double *RVE_volume;
     
-    ElasticFE_RVELagrange_Homogenized_Stress_Periodic(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume, ublas::vector<FieldData> _applied_strain, Vec& _Stress_Homo):
-    ElasticFE_RVELagrange_Periodic(_mField, _dirihlet_ptr,_Aij, _D, _F, _applied_strain), DVec(_D),RVE_volume(_RVE_volume), Stress_Homo(_Stress_Homo){};
+    ElasticFE_RVELagrange_Homogenized_Stress_Periodic(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume, ublas::vector<FieldData> _applied_strain, Vec& _Stress_Homo):
+    ElasticFE_RVELagrange_Periodic(_mField,_Aij, _D, _F, _applied_strain), DVec(_D),RVE_volume(_RVE_volume), Stress_Homo(_Stress_Homo){};
     
     
     
@@ -136,7 +136,7 @@ namespace MoFEM {
           //Canonical numbering of two triangles (actual canonical number is [3, 4], here we use only 3 as we have lagrange multipliers only for one
           int ff_arr[]={3, 3};
           const EntityHandle*  conn_Prism;  int num_nodes_Prism;
-          prism_periodic=fe_ptr->get_ent();
+          prism_periodic=fePtr->get_ent();
           rval = moab.get_connectivity(prism_periodic,conn_Prism,num_nodes_Prism,true); CHKERR_PETSC(rval);
           //                cout<<"num_nodes_Prism  "<<num_nodes_Prism<<endl;
           EntityHandle Tri_Prism;

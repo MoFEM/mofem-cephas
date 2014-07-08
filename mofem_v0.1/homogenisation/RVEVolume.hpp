@@ -30,8 +30,8 @@ namespace MoFEM {
   struct RVEVolume: public ElasticFEMethod {
     Vec RVE_volume_Vec;
     
-    RVEVolume(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu, Vec _RVE_volume_Vec):
-    ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu), RVE_volume_Vec(_RVE_volume_Vec){};
+    RVEVolume(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu, Vec _RVE_volume_Vec):
+    ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu), RVE_volume_Vec(_RVE_volume_Vec){};
     
     
     PetscErrorCode postProcess() {
@@ -59,8 +59,8 @@ namespace MoFEM {
   struct RVEVolumeTrans: public TranIsotropicFibreDirRotElasticFEMethod {
     Vec RVE_volume_Vec;
     
-    RVEVolumeTrans(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F, Vec _RVE_volume_Vec):
-    TranIsotropicFibreDirRotElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F), RVE_volume_Vec(_RVE_volume_Vec){};
+    RVEVolumeTrans(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F, Vec _RVE_volume_Vec):
+    TranIsotropicFibreDirRotElasticFEMethod(_mField,_Aij,_D,_F), RVE_volume_Vec(_RVE_volume_Vec){};
     
     
     PetscErrorCode postProcess() {

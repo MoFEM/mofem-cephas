@@ -29,11 +29,8 @@ namespace MoFEM {
   struct ElasticFE_RVELagrange_Traction: public ElasticFE_RVELagrange_Disp {
     
     ElasticFE_RVELagrange_Traction(
-                                   FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain):
-    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F, _applied_strain){};
-    
-    
-    vector<DofIdx> DirihletBC;
+                                   FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain):
+    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F, _applied_strain){};
     
     
     double coords_face[9];
@@ -51,7 +48,7 @@ namespace MoFEM {
       typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
       const EntityHandle* conn_face;
       int num_nodes;
-      EntityHandle face_tri;  face_tri=fe_ptr->get_ent();
+      EntityHandle face_tri;  face_tri=fePtr->get_ent();
       rval = moab.get_connectivity(face_tri,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       //        cout<< "num_nodes ="<<num_nodes << endl;
       //        cout<< "conn_face ="<<conn_face << endl;
@@ -67,8 +64,8 @@ namespace MoFEM {
       
       //minimum and maximum rows indices for each node on the surface
       row_dofs_iterator niit,hi_niit;   //iterator for rows
-      niit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("Lagrange_mul_disp");
-      hi_niit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("Lagrange_mul_disp");
+      niit = rowPtr->get<FieldName_mi_tag>().lower_bound("Lagrange_mul_disp");
+      hi_niit = rowPtr->get<FieldName_mi_tag>().upper_bound("Lagrange_mul_disp");
       int nn = 0;
       for(;niit!=hi_niit;niit++) {
         RowGlob[row_mat][nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_petsc_gloabl_dof_idx();
@@ -81,8 +78,8 @@ namespace MoFEM {
         string field_name;
         
         //minimum and maximum row and column indices for each node on the surface
-        col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
-        hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
+        col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
+        hi_col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
         
         // two different loops, i.e. one for row and one for column (may be need it for multiphysics problems)
         for(;col_niit!=hi_col_niit;col_niit++) {
@@ -125,8 +122,8 @@ namespace MoFEM {
         //            cout<<"FaceEdgeSense[ee] "<<FaceEdgeSense[ee]<<endl;
         //            cout<<"edge "<<edge<<endl<<endl;
         
-        col_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
-        col_hi_eiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
+        col_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
+        col_hi_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
         
         if(col_eiit!=col_hi_eiit) {
           //                cout<<"Hello "<<endl;
@@ -190,8 +187,8 @@ namespace MoFEM {
       
       //Find the column indices for face of the triangle (indices for the rows are the same as for nodes)
       dofs_iterator col_fiit, col_hi_fiit;
-      col_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",face_tri));
-      col_hi_fiit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",face_tri));
+      col_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",face_tri));
+      col_hi_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",face_tri));
       
       if(col_fiit!=col_hi_fiit) {
         ColGlob[row_mat].resize(distance(col_fiit,col_hi_fiit));
@@ -254,7 +251,7 @@ namespace MoFEM {
       //To find the side of the element (+X, -X, +Y, -Y, +Z, -Z)
       const EntityHandle *conn_face;
       int num_nodes_face;
-      rval = moab.get_connectivity(fe_ptr->get_ent(),conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
+      rval = moab.get_connectivity(fePtr->get_ent(),conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
       //        cout<<"num_nodes_face "<<num_nodes_face<<endl<<endl;
       rval = moab.get_coords(conn_face,num_nodes_face,coords_face); CHKERR_PETSC(rval);
       //        for(int ii=0; ii<9; ii++) cout<<"coord "<<coords_face[ii]<<"   ";
@@ -334,7 +331,7 @@ namespace MoFEM {
       NTN.resize(1,row_mat);
       const EntityHandle *conn_face;
       int num_nodes_face;
-      rval = moab.get_connectivity(fe_ptr->get_ent(),conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
+      rval = moab.get_connectivity(fePtr->get_ent(),conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
       //        cout<<"num_nodes_face "<<num_nodes_face<<endl<<endl;
       
       //Calculate C Matrix, i.e. (NT x N)
@@ -498,10 +495,6 @@ namespace MoFEM {
       
       ierr = GetN_and_Indices(); CHKERRQ(ierr);
       ierr = Get_H_mat();
-      
-      //        cout<<"Before BCs "<<endl;
-      //        ierr = dirihlet_bc_method_ptr->SetDirihletBC_to_ElementIndiciesCol(this,ColGlob,DirihletBC); CHKERRQ(ierr);
-      //        cout<<"After BCs "<<endl;
       
       ierr = Lhs(); CHKERRQ(ierr);
       ierr = Rhs(); CHKERRQ(ierr);

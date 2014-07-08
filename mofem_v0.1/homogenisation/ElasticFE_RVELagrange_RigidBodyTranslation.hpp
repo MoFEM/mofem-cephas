@@ -27,8 +27,8 @@ namespace MoFEM {
   
   struct ElasticFE_RVELagrange_RigidBodyTranslation: public ElasticFE_RVELagrange_Disp {
     
-    ElasticFE_RVELagrange_RigidBodyTranslation(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData> _applied_strain):
-    ElasticFE_RVELagrange_Disp(_mField, _dirihlet_ptr,_Aij, _D, _F, _applied_strain){};
+    ElasticFE_RVELagrange_RigidBodyTranslation(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData> _applied_strain):
+    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F, _applied_strain){};
     
     virtual PetscErrorCode GetN_and_Indices() {
       PetscFunctionBegin;
@@ -42,15 +42,15 @@ namespace MoFEM {
       typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
       const EntityHandle* conn_face;
       int num_nodes;
-      EntityHandle face_tri;  face_tri=fe_ptr->get_ent();
+      EntityHandle face_tri;  face_tri=fePtr->get_ent();
       rval = moab.get_connectivity(face_tri,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       //        cout<< "num_nodes ="<<num_nodes << endl;
       //        cout<< "conn_face ="<<conn_face << endl;
       
       //minimum and maximum rows indices for each node on the surface
       row_dofs_iterator niit,hi_niit;   //iterator for rows
-      niit = row_multiIndex->get<FieldName_mi_tag>().lower_bound("Lagrange_mul_disp_rigid_trans");
-      hi_niit = row_multiIndex->get<FieldName_mi_tag>().upper_bound("Lagrange_mul_disp_rigid_trans");
+      niit = rowPtr->get<FieldName_mi_tag>().lower_bound("Lagrange_mul_disp_rigid_trans");
+      hi_niit = rowPtr->get<FieldName_mi_tag>().upper_bound("Lagrange_mul_disp_rigid_trans");
       int nn = 0;
       for(;niit!=hi_niit;niit++) {
         RowGlob[row_mat][nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_petsc_gloabl_dof_idx();
@@ -61,8 +61,8 @@ namespace MoFEM {
         dofs_iterator col_niit,hi_col_niit;  // iterator for columns
         
         //minimum and maximum row and column indices for each node on the surface
-        col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
-        hi_col_niit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
+        col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
+        hi_col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
         
         // two different loops, i.e. one for row and one for column (may be need it for multiphysics problems)
         for(;col_niit!=hi_col_niit;col_niit++) {
