@@ -35,7 +35,7 @@ PetscErrorCode arc_length_mult_shell(Mat A,Vec x,Vec f) {
   double f_lambda;
   f_lambda = ctx->arc_ptr->diag*lambda + db_dot_x;
   ierr = ctx->set_lambda(f,&f_lambda,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAXPY(f,-lambda,ctx->arc_ptr->F_lambda); CHKERRQ(ierr);
+  ierr = VecAXPY(f,lambda,ctx->arc_ptr->F_lambda); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
