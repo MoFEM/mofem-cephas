@@ -131,15 +131,15 @@ struct ThermalStressElement {
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
       if(rank != 3) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
       }
 
       unsigned int nb_dofs = data.getIndices().size();
       if(nb_dofs % rank != 0) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
       }
       if(data.getN().size2() < nb_dofs/rank) {
-	SETERRQ3(PETSC_COMM_SELF,1,
+	SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
 	  "data inconsistency N.size2 %d nb_dof %d rank %d",data.getN().size2(),nb_dofs,rank);
       }
 
@@ -159,6 +159,10 @@ struct ThermalStressElement {
 	//sig_thernal = - (E/1-2mu) * eps_thermal 
 	//var_eps = [ diff_N[0], diffN[1], diffN[2] ]
 
+	if(dAta.refTemperature != dAta.refTemperature) {
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA ,"invalid data");
+	}
+
 	double phi = (commonData.temperatureAtGaussPts[gg]-dAta.refTemperature);
       	double eps_thermal = dAta.thermalExpansion*phi;
 	double sig_thermal = -eps_thermal*(dAta.youngModulus/(1.-2*dAta.poissonRatio));
@@ -170,6 +174,12 @@ struct ThermalStressElement {
 	cblas_daxpy(nb_dofs,val,diff_N,1,&Nf[0],1);
 	
       }
+
+      for(int ii = 0;ii<Nf.size();ii++) {
+	if(Nf[ii] != Nf[ii]) {
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA ,"invalid data");
+	}
+      }
       
       ierr = VecSetValues(F,data.getIndices().size(),
 	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
@@ -177,7 +187,7 @@ struct ThermalStressElement {
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);

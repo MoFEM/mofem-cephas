@@ -324,11 +324,22 @@ int main(int argc, char *argv[]) {
 	PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
 	ierr = mField.load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
 	ierr = VecZeroEntries(F_thermal); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
 	ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(F_thermal); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(F_thermal); CHKERRQ(ierr);
+
+	PetscReal nrm_F;
+	ierr = VecNorm(F,NORM_2,&nrm_F); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"norm2 F = %6.4e\n",nrm_F);
+  
+	PetscReal nrm_F_thremal;
+	ierr = VecNorm(F_thermal,NORM_2,&nrm_F_thremal); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"norm2 F_thernal = %6.4e\n",nrm_F_thremal);
 
 	ierr = VecScale(F_thermal,-1); CHKERRQ(ierr);
 	ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
@@ -350,11 +361,22 @@ int main(int argc, char *argv[]) {
     } else {
 
       ierr = VecZeroEntries(F_thermal); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
       ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F_thermal); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F_thermal); CHKERRQ(ierr);
+ 
+      PetscReal nrm_F;
+      ierr = VecNorm(F,NORM_2,&nrm_F); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"norm2 F = %6.4e\n",nrm_F);
+  
+      PetscReal nrm_F_thremal;
+      ierr = VecNorm(F_thermal,NORM_2,&nrm_F_thremal); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"norm2 F_thernal = %6.4e\n",nrm_F_thremal);
 
       ierr = VecScale(F_thermal,-1); CHKERRQ(ierr);
       ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
