@@ -175,11 +175,11 @@ struct ThermalStressElement {
 	
       }
 
-      for(int ii = 0;ii<Nf.size();ii++) {
+      /*for(unsigned int ii = 0;ii<Nf.size();ii++) {
 	if(Nf[ii] != Nf[ii]) {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA ,"invalid data");
 	}
-      }
+      }*/
       
       ierr = VecSetValues(F,data.getIndices().size(),
 	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
