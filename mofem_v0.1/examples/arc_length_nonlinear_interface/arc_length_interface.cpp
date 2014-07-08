@@ -392,7 +392,7 @@ int main(int argc, char *argv[]) {
             ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
             ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	    //add F_lambda
-	    ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	    ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
 	    ierr = VecAXPY(snes_f,-1.,F_body_force); CHKERRQ(ierr);
 	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
 	    //snes_f norm

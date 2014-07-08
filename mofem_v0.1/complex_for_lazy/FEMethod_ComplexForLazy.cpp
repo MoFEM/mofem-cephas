@@ -853,6 +853,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      NULL,NULL,NULL,NULL,
 	      &*iFint_h.data().begin(),iFint_h_edge,iFint_h_face,&*iFint_h_volume.data().begin(),
 	      g_dim,g_TET_W); CHKERRQ(ierr);
+	    iFint_h *= -1;
 	  }
 	  break;
 	  case scaled_themp_direvative_material: {
@@ -876,6 +877,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	      &*iFint_H.data().begin(),NULL,NULL,NULL,
 	      NULL,NULL,NULL,NULL,
 	      g_dim,g_TET_W); CHKERRQ(ierr);
+	    iFint_H *= -1;
 	  }
 	  break;
 	  default:

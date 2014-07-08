@@ -217,7 +217,6 @@ struct NeummanForcesSurfaceComplexForLazy {
     feMaterial.sCaleLhs = sCale;
     feMaterial.sCaleRhs = sCale;
 
-
   }
 
   static PetscErrorCode getLoadFactor() {
