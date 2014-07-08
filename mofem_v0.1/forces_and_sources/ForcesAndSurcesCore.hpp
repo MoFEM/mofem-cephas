@@ -492,6 +492,8 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   **/
   virtual int getRule(int order) { return order; };
 
+  /** \brief default oparator for TET element
+    */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
@@ -609,6 +611,8 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   virtual int getRule(int order) { return order; };
 
+  /** \brief default oparator for TRI element
+    */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
@@ -730,6 +734,8 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   virtual int getRule(int order) { return order; };
 
+  /** \brief default oparator for EDGE element
+    */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
@@ -803,6 +809,8 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   PetscErrorCode ierr;
   ublas::vector<double> coords;
 
+  /** \brief default oparator for VERTEX element
+    */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
