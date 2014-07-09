@@ -161,7 +161,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   try {
 
   fExtNode.resize(9);	
-  fExtFace.resize(data.fAces[0].getFieldData().size());
+  fExtFace.resize(data.dataOnEntities[MBTRI][0].getFieldData().size());
   fExtEdge.resize(3);
   for(int ee = 0;ee<3;ee++) {
     int nb_edge_dofs = dOfs_x_edge_indices[ee].size();
@@ -280,7 +280,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   kExtNodeFace.resize(9,dOfs_x_face_indices.size());
   kExtEdgeFace.resize(3);
   for(int ee = 0;ee<3;ee++) {
-    kExtEdgeFace[ee].resize(dOfs_x_edge_indices[ee].size(),data.fAces[0].getIndices().size());
+    kExtEdgeFace[ee].resize(dOfs_x_edge_indices[ee].size(),data.dataOnEntities[MBTRI][0].getIndices().size());
     Kext_edge_face[ee] = &*kExtEdgeFace[ee].data().begin();
   }
   kExtFaceFace.resize(dOfs_x_face_indices.size(),dOfs_x_face_indices.size());
@@ -385,7 +385,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
 
   try {
 
-  EntityHandle ent = fe_ptr->get_ent();
+  EntityHandle ent = fePtr->get_ent();
   map<int,bCPreassure>::iterator mip = mapPreassure.begin();
   tLoc.resize(3);
   tLoc[0] = tLoc[1] = tLoc[2] = 0;
@@ -475,15 +475,15 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
   ierr = calcTraction(); CHKERRQ(ierr);
 
   switch(snes_ctx) {
-    case ctx_SNESNone:
-    case ctx_SNESSetFunction: {
+    case CTX_SNESNONE:
+    case CTX_SNESSETFUNCTION: {
       tLocNodal *= *sCaleRhs;
       //cerr << "sCaleRhs " << *sCaleRhs << endl;
       //cerr << tLocNodal << endl;
       ierr = rHs(); CHKERRQ(ierr);
     }
     break;
-    case ctx_SNESSetJacobian: {
+    case CTX_SNESSETJACOBIAN: {
       tLocNodal *= *sCaleLhs;
       ierr = lHs(); CHKERRQ(ierr);
     }

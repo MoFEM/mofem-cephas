@@ -104,14 +104,14 @@ int main(int argc, char *argv[]) {
   //or numbered. user can add entities to mesh, add dofs or elenents if
   //necessaery. in case of modifications data structures are updated.
   ierr = mField.build_fields(); CHKERRQ(ierr);
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   //to solve problem it needt to be respresented in matrix vector form. this
   //demand numbertion of dofs and proble  partitioning.
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   ierr = fluid_pressure_fe.setNeumannFluidPressureFiniteElementOperators("DISPLACEMENT",F,false,false); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

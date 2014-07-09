@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -192,19 +192,19 @@ int main(int argc, char *argv[]) {
   }
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  feSpatial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetFunction;
-  feMaterial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetFunction;
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
+  feSpatial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETFUNCTION;
+  feMaterial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETFUNCTION;
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = MatZeroEntries(Aij);  CHKERRQ(ierr);
-  feSpatial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetJacobian;
-  feMaterial.snes_ctx = FieldInterface::SnesMethod::ctx_SNESSetJacobian;
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
+  feSpatial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETJACOBIAN;
+  feMaterial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETJACOBIAN;
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
@@ -226,9 +226,9 @@ int main(int argc, char *argv[]) {
   VecView(F,viewer);
   PetscViewerDestroy(&viewer);
 
-  /*const MoFEMProblem *problem_ptr;
-  ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
+  /*const MoFEMProblem *problemPtr;
+  ierr = mField.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);

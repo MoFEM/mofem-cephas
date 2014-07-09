@@ -25,6 +25,7 @@
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
+#include <moab/Skinner.hpp>
 
 #include "Projection10NodeCoordsOnField.hpp"
 
@@ -124,7 +125,7 @@ int main(int argc, char *argv[]) {
   Projection10NodeCoordsOnField ent_method(mField,"FIELD1");
   ierr = mField.loop_dofs("FIELD1",ent_method); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -134,7 +135,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -188,7 +189,7 @@ int main(int argc, char *argv[]) {
   fe1.get_op_to_do_Rhs().push_back(new MyOp(my_split));
   fe1.get_op_to_do_Lhs().push_back(new MyOp(my_split));
 
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

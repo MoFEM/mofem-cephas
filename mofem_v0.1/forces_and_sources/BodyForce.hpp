@@ -29,8 +29,20 @@
 
 #include "ForcesAndSurcesCore.hpp"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include<cblas.h>
+  #include<lapack_wrap.h>
+#ifdef __cplusplus
+}
+#endif
+
 namespace MoFEM {
 
+/** \brief Body forces elements
+  * \ingroup mofem_body_forces
+  */
 struct BodyFroceConstantField {
 
   FieldInterface &mField;
@@ -136,4 +148,10 @@ struct BodyFroceConstantField {
 }
 
 #endif //__BODY_FORCE_HPP
+
+/***************************************************************************//**
+ * \defgroup mofem_body_forces Body forces elements
+ * \ingroup mofem_forces_and_sources 
+ ******************************************************************************/
+
 

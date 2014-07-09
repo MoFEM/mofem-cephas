@@ -28,6 +28,9 @@
 
 #include "common.hpp"
 
+#include<FEM.h>
+#include<H1HdivHcurlL2.h>
+
 namespace MoFEM {
 
 const int prism_adj_edges[] = { 6,7,8, -1,-1,-1, 0,1,2 };

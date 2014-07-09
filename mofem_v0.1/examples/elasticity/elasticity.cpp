@@ -19,17 +19,21 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-#include <petscksp.h>
 
+#include "FEMethod_UpLevelStudent.hpp"
 #include "ElasticFEMethod.hpp"
+
 #include "SurfacePressure.hpp"
 #include "NodalForce.hpp"
 #include "FluidPressure.hpp"
 #include "BodyForce.hpp"
+#include "ThermalStressElement.hpp"
+
 #include "Projection10NodeCoordsOnField.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+
+#include <petscksp.h>
 
 using namespace MoFEM;
 
@@ -37,6 +41,37 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
+
+const double young_modulus = 1;
+const double poisson_ratio = 0.0;
+
+PetscErrorCode write_soltion(FieldInterface &mField,const string out_file, const string out_ref_file) {
+  PetscFunctionBegin;
+
+  PostProcVertexMethod ent_method(mField.get_moab(),"DISPLACEMENT");
+  ierr = mField.loop_dofs("ELASTIC_PROB","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
+ 
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("ELASTIC_PROB","ELASTIC",out_meshset); CHKERRQ(ierr);
+    rval = mField.get_moab().write_file(out_file.c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+ 
+  if(pcomm->rank()==0) {
+
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
+      mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+    fe_post_proc_method.do_broadcast = false;
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
+    rval = fe_post_proc_method.moab_post_proc.write_file(out_ref_file.c_str(),"VTK",""); CHKERR_PETSC(rval);
+  }
+
+  PetscFunctionReturn(0);
+}
 
 int main(int argc, char *argv[]) {
 
@@ -46,6 +81,8 @@ int main(int argc, char *argv[]) {
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
@@ -62,16 +99,10 @@ int main(int argc, char *argv[]) {
     
   //Read mesh to MOAB
   const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  //option = "PARALLEL=BCAST_DELETE;"
+      //"PARTITION=GEOM_DIMENSION,PARTITION_VAL=3,PARTITION_DISTRIBUTE";//;DEBUG_IO";
+  option = "";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-
-  //We need that for code profiling
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
-  ierr = PetscTime(&v1); CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   //Create MoFEM (Joseph) database
   FieldCore core(moab);
@@ -88,15 +119,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
-  /***/
   //Define problem
 
   //Fields
-  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+  ierr = mField.add_field("DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("ELASTIC",MF_ZERO); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
@@ -105,15 +135,14 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //define problems
-  ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.add_problem("ELASTIC_PROB"); CHKERRQ(ierr);
 
   //set finite elements for problem
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_PROB","ELASTIC"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_PROB",bit_level0); CHKERRQ(ierr);
 
-  /***/
   //Declare problem
 
   //add entitities (by tets) to the field
@@ -136,15 +165,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
-  ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_PROB","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_PROB","DISPLACEMENT"); CHKERRQ(ierr);
 
   ierr = mField.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_PROB","BODY_FORCE"); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
     Range tets;
     rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
@@ -153,16 +182,21 @@ int main(int argc, char *argv[]) {
 
   //define fluid pressure finite elements
   FluidPressure fluid_pressure_fe(mField);
-  fluid_pressure_fe.addNeumannFluidPressureBCElements("ELASTIC_MECHANICS","DISPLACEMENT");
+  fluid_pressure_fe.addNeumannFluidPressureBCElements("ELASTIC_PROB","DISPLACEMENT");
 
-  /****/
+  //define elements for thermo elasticity if themperature field avelible
+  ThermalStressElement thermal_stress_elem(mField);
+  if(mField.check_field("TEMP")) {
+    ierr = thermal_stress_elem.addThermalSterssElement("ELASTIC_PROB","ELASTIC","DISPLACEMENT","TEMP"); CHKERRQ(ierr);
+  }
+
   //build database
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
 
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
 
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
@@ -170,14 +204,15 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
-  /****/
   //mesh partitioning 
 
   //partition
-  ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("ELASTIC_PROB"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("ELASTIC_PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("ELASTIC_PROB"); CHKERRQ(ierr);
+
+  //mField.list_dofs_by_field_name("DISPLACEMENT",true);
 
   //print bcs
   ierr = mField.print_cubit_displacement_set(); CHKERRQ(ierr);
@@ -187,11 +222,11 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec F,D;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",COL,&D); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_PROB",ROW,&F); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("ELASTIC_PROB",COL,&D); CHKERRQ(ierr);
 
   Mat Aij;
-  ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_PROB",&Aij); CHKERRQ(ierr);
 
   struct MyElasticFEMethod: public ElasticFEMethod {
     MyElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
@@ -215,9 +250,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   //Assemble F and Aij
-  const double young_modulus = 1;
-  const double poisson_ratio = 0.0;
-
   DisplacementBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"DISPLACEMENT",Aij,D,F);
   MyElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
@@ -227,34 +259,34 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
   
   //preproc
-  ierr = mField.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_preProcess("ELASTIC_PROB",my_dirihlet_bc); CHKERRQ(ierr);
   //loop elems
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",my_fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",my_fe);  CHKERRQ(ierr);
   //forces and preassures on surface
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
   //noadl forces
   boost::ptr_map<string,NodalForce> nodal_forces;
   ierr = MetaNodalForces::setNodalForceElementOperators(mField,nodal_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",fit->first,fit->second->getLoopFe()); CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB",fit->first,fit->second->getLoopFe()); CHKERRQ(ierr);
   }
   //body forces
   BodyFroceConstantField body_forces_methods(mField);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   //fluid pressure
   ierr = fluid_pressure_fe.setNeumannFluidPressureFiniteElementOperators("DISPLACEMENT",F,false,true); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
   //postproc
-  ierr = mField.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_postProcess("ELASTIC_PROB",my_dirihlet_bc); CHKERRQ(ierr);
 
   //set matrix possitives define and symetric for cholesky and icc preceonditionser
   ierr = MatSetOption(Aij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
@@ -278,46 +310,101 @@ int main(int argc, char *argv[]) {
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
-  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  if(mField.check_field("TEMP")) {
+    
+    //read time series and do thermo elastci analysis
+    Vec F_thermal;
+    ierr = VecDuplicate(F,&F_thermal); CHKERRQ(ierr);
+    ierr = thermal_stress_elem.setThermalStressRhsOperators("DISPLACEMENT","TEMP",F_thermal); CHKERRQ(ierr);
 
-  //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    if( mField.check_series("THEMP_SERIES") ) {
 
-  PostProcVertexMethod ent_method(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
+      for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(mField,"THEMP_SERIES",sit)) {
 
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
+	PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
+	ierr = mField.load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+	ierr = VecZeroEntries(F_thermal); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+	ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(F_thermal); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(F_thermal); CHKERRQ(ierr);
+
+	PetscReal nrm_F;
+	ierr = VecNorm(F,NORM_2,&nrm_F); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"norm2 F = %6.4e\n",nrm_F);
   
-  //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
-    mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+	PetscReal nrm_F_thremal;
+	ierr = VecNorm(F_thermal,NORM_2,&nrm_F_thremal); CHKERRQ(ierr);
+	PetscPrintf(PETSC_COMM_WORLD,"norm2 F_thernal = %6.4e\n",nrm_F_thremal);
 
-  if(pcomm->rank()==0) {
-    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
+	ierr = VecScale(F_thermal,-1); CHKERRQ(ierr);
+	ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
+	ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+	//Save data on mesh
+	ierr = mField.set_global_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+	ostringstream o1;
+	o1 << "out_" << sit->step_number << ".vtk";
+	ostringstream o2;
+	o2 << "out_post_proc_" << sit->step_number << ".vtk";
+	ierr = write_soltion(mField,o1.str(),o2.str());   CHKERRQ(ierr);
+
+      }
+
+    } else {
+
+      ierr = VecZeroEntries(F_thermal); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+      ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(F_thermal); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F_thermal); CHKERRQ(ierr);
+ 
+      PetscReal nrm_F;
+      ierr = VecNorm(F,NORM_2,&nrm_F); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"norm2 F = %6.4e\n",nrm_F);
+  
+      PetscReal nrm_F_thremal;
+      ierr = VecNorm(F_thermal,NORM_2,&nrm_F_thremal); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"norm2 F_thernal = %6.4e\n",nrm_F_thremal);
+
+      ierr = VecScale(F_thermal,-1); CHKERRQ(ierr);
+      ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
+      ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+      //Save data on mesh
+      ierr = mField.set_global_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = write_soltion(mField,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
+
+    }
+
+    ierr = VecDestroy(&F_thermal); CHKERRQ(ierr);
+
+  } else {
+
+    // elastic analys
+  
+    ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+    //Save data on mesh
+    ierr = mField.set_global_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = write_soltion(mField,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
+
   }
-
-  //End Disp
-  /*Range ents;*/
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NODESET,0,ents,true); CHKERRQ(ierr);
-  //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) { 
-    //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
-      //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
-    //}
-  /*}*/
-
-  //Support stresses
-  //Range ents;
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NODESET,0,ents,true); CHKERRQ(ierr);
       
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
@@ -325,11 +412,6 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
-
-  ierr = PetscTime(&v2);CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-
-  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
   PetscFinalize();

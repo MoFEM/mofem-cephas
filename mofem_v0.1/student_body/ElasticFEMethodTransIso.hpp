@@ -329,7 +329,7 @@ namespace MoFEM {
       PetscFunctionBegin;
 
       if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
-        EntityHandle ent = fe_ptr->get_ent();
+        EntityHandle ent = fePtr->get_ent();
         for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
           
           if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
@@ -578,7 +578,7 @@ namespace MoFEM {
       PetscFunctionBegin;
       
       if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
-        EntityHandle ent = fe_ptr->get_ent();
+        EntityHandle ent = fePtr->get_ent();
         for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
           
           if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
@@ -807,7 +807,7 @@ namespace MoFEM {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       
-      EntityHandle fe_handle = fe_ptr->get_ent();
+      EntityHandle fe_handle = fePtr->get_ent();
       
       Range tetNodes;
       rval = moab.get_connectivity(&fe_handle,1,tetNodes); CHKERR_THROW(rval);
@@ -992,7 +992,7 @@ namespace MoFEM {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       
-      EntityHandle fe_handle = fe_ptr->get_ent();
+      EntityHandle fe_handle = fePtr->get_ent();
       
       Range tetNodes;
       rval = moab.get_connectivity(&fe_handle,1,tetNodes); CHKERR_THROW(rval);

@@ -20,6 +20,7 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "ForcesAndSurcesCore.hpp"
+#include "FEM.h"
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -121,7 +122,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -131,7 +132,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -189,7 +190,11 @@ int main(int argc, char *argv[]) {
   
 	  my_split << "gg " << gg << " : ";
 	  my_split.precision(2);
-	  my_split << NN << endl;
+	  //my_split << NN << endl;
+	  my_split << NN - outer_prod(row_data.getN(gg),col_data.getN(gg)) << endl;
+	  if(row_type != MBVERTEX) {
+	    my_split << row_data.getDiffN(gg) << endl;
+	  }
 
 	  if(row_type == MBVERTEX) {
 	    my_split << row_data.getDiffN() << endl;
@@ -225,24 +230,24 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
 
       ierr = getEdgesSense(data_row); CHKERRQ(ierr);
-      ierr = getFacesSense(data_row); CHKERRQ(ierr);
+      ierr = getTrisSense(data_row); CHKERRQ(ierr);
       ierr = getEdgesSense(data_col); CHKERRQ(ierr);
-      ierr = getFacesSense(data_col); CHKERRQ(ierr);
+      ierr = getTrisSense(data_col); CHKERRQ(ierr);
 
       ierr = getEdgesOrder(data_row); CHKERRQ(ierr);
       ierr = getEdgesOrder(data_col); CHKERRQ(ierr);
-      ierr = getFacesOrder(data_row); CHKERRQ(ierr);
-      ierr = getFacesOrder(data_col); CHKERRQ(ierr);
-      ierr = getVolumesOrder(data_row); CHKERRQ(ierr);
-      ierr = getVolumesOrder(data_col); CHKERRQ(ierr);
+      ierr = getTrisOrder(data_row); CHKERRQ(ierr);
+      ierr = getTrisOrder(data_col); CHKERRQ(ierr);
+      ierr = getTetsOrder(data_row); CHKERRQ(ierr);
+      ierr = getTetsOrder(data_col); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
-      ierr = getEdgeRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFacesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTetRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getTetColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getEdgesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTrisRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetsRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetsColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
       ierr = getFaceNodes(data_row); CHKERRQ(ierr);
       ierr = getFaceNodes(data_col); CHKERRQ(ierr);
 
@@ -270,7 +275,7 @@ int main(int argc, char *argv[]) {
   };
 
   ForcesAndSurcesCore_TestFE fe1(mField);
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

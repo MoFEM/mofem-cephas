@@ -28,6 +28,12 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
+#include<moab/Skinner.hpp>
+#include<moab/AdaptiveKDTree.hpp>
+
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
+
 namespace MoFEM {
 
 PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
@@ -57,8 +63,8 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
     "NORMAL_FACE_SPLIT",4,MB_TYPE_DOUBLE,th_normal_mfield,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
 
   //material prositions
-  const DofMoFEMEntity_multiIndex *dofs_moabfield_ptr;
-  ierr = mField.get_dofs(&dofs_moabfield_ptr); CHKERRQ(ierr);
+  const DofMoFEMEntity_multiIndex *dofsPtr_ptr;
+  ierr = mField.get_dofs(&dofsPtr_ptr); CHKERRQ(ierr);
   typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dof_iterator;
 
   Range crack_front_edges;
@@ -71,9 +77,9 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
   rval = mField.get_moab().get_connectivity(entities,nodes,true); CHKERR_PETSC(rval);
   for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
     dof_iterator dit = 
-      dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));
+      dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));
     dof_iterator hi_dit = 
-      dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));	
+      dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));	
     if(distance(dit,hi_dit)!=3) {
       SETERRQ(PETSC_COMM_SELF,1,"should three coordinates");
     }
@@ -91,9 +97,9 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
     if(freez == 0 && crack_front_edges_nodes.find(*nit)!=crack_front_edges_nodes.end() ) {
 
       dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("GRIFFITH_FORCE_TANGENT",*nit));
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("GRIFFITH_FORCE_TANGENT",*nit));
       hi_dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("GRIFFITH_FORCE_TANGENT",*nit));	
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("GRIFFITH_FORCE_TANGENT",*nit));	
       if(distance(dit,hi_dit)!=3) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
@@ -121,9 +127,9 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
 	edge0_nodes = subtract(edge0_nodes,common_node);
       }
       dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[0]));
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[0]));
       hi_dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[0]));	
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[0]));	
       if(distance(dit,hi_dit)!=3) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
@@ -132,9 +138,9 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
 	deltaX[dit->get_dof_rank()] = dit->get_FieldData();
       }
       dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[1]));
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[1]));
       hi_dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[1]));	
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",edge0_nodes[1]));	
       if(distance(dit,hi_dit)!=3) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
@@ -145,9 +151,9 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       cblas_dscal(3,dot,deltaX,1);
 
       dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MATERIAL_FORCE",*nit));
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MATERIAL_FORCE",*nit));
       hi_dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MATERIAL_FORCE",*nit));	
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MATERIAL_FORCE",*nit));	
       if(distance(dit,hi_dit)!=3) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
@@ -160,9 +166,9 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
       //cerr << "force_nrm2 " << force_nrm2 << endl;
 
       dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("GRIFFITH_FORCE",*nit));
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("GRIFFITH_FORCE",*nit));
       hi_dit = 
-	dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("GRIFFITH_FORCE",*nit));	
+	dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("GRIFFITH_FORCE",*nit));	
       if(distance(dit,hi_dit)!=3) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
@@ -318,8 +324,8 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
   rval = mField.get_moab().tag_get_handle("NORMAL_FACE_SPLIT",th_normal_mfield); CHKERR_THROW(rval);
 
   //material prositions
-  const DofMoFEMEntity_multiIndex *dofs_moabfield_ptr;
-  ierr = mField.get_dofs(&dofs_moabfield_ptr); CHKERRQ(ierr);
+  const DofMoFEMEntity_multiIndex *dofsPtr_ptr;
+  ierr = mField.get_dofs(&dofsPtr_ptr); CHKERRQ(ierr);
   typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dof_iterator;
 
   for(Range::iterator nit = outer_surface_skin_nodes.begin();nit!=outer_surface_skin_nodes.end();nit++) {
@@ -338,9 +344,9 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
     double coords[3]; 
     rval = mField.get_moab().get_coords(&*nit,1,coords); CHKERR_PETSC(rval);
     dof_iterator dit = 
-      dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));
+      dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));
     dof_iterator hi_dit = 
-      dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));	
+      dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));	
     if(distance(dit,hi_dit)==3) {
       //get coords from material field
       for(;dit!=hi_dit;dit++) {
@@ -366,8 +372,8 @@ PetscErrorCode FaceSplittingTools::calculateDistanceFromCrackSurface(Range &node
     for(unsigned int nn = 0;nn<nit_edges_nodes.size();nn++) {
       if(vec_normals[nn*4+3]==0) continue;
       EntityHandle nn_node = nit_edges_nodes[nn];
-      dit = dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",nn_node));
-      hi_dit = dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",nn_node));	
+      dit = dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",nn_node));
+      hi_dit = dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",nn_node));	
       double nn_coords[3] = {0,0,0};
       rval = mField.get_moab().get_coords(&nn_node,1,nn_coords); CHKERR_PETSC(rval);
       for(;dit!=hi_dit;dit++) {
@@ -1355,22 +1361,22 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
   }
 
   BitRefLevel preserve_ref = BitRefLevel().set(BITREFLEVEL_SIZE-2);
-  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
-  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+  const RefMoFEMEntity_multiIndex *refinedEntitiesPtr_ptr;
+  ierr = mField.get_ref_ents(&refinedEntitiesPtr_ptr); CHKERRQ(ierr);
   RefMoFEMEntity_multiIndex::index<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>::type::iterator refit,hi_refit;
-  refit = refinedMoFemEntities_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
-  hi_refit = refinedMoFemEntities_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
+  refit = refinedEntitiesPtr_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
+  hi_refit = refinedEntitiesPtr_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   Range already_refined_edges;
   for(;refit!=hi_refit;refit++) {
     EntityHandle parent_ent = refit->get_parent_ent(); 
     already_refined_edges.insert(parent_ent);
     RefMoFEMEntity_multiIndex::iterator parent_rit;
-    parent_rit = refinedMoFemEntities_ptr->find(parent_ent);
-    if(parent_rit == refinedMoFemEntities_ptr->end()) {
+    parent_rit = refinedEntitiesPtr_ptr->find(parent_ent);
+    if(parent_rit == refinedEntitiesPtr_ptr->end()) {
       SETERRQ1(PETSC_COMM_SELF,1,
 	  "data inconsistency, entity in database not found %lu",refit->get_parent_ent());
     }
-    bool success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+    bool success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
 	->modify(parent_rit,RefMoFEMEntity_change_add_bit(preserve_ref));
     if(!success) {
       SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessfull");
@@ -1380,7 +1386,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
   Range preserve_ref_tets;
   ierr = mField.get_entities_by_type_and_ref_level(
     preserve_ref,BitRefLevel().set(),MBTET,preserve_ref_tets); CHKERRQ(ierr);
-  ierr = mField.seed_finite_elements(preserve_ref_tets); CHKERRQ(ierr);
+  ierr = mField.seed_finiteElementsPtr(preserve_ref_tets); CHKERRQ(ierr);
 
   int current_ref_bit = meshRefineBitLevels.first();
   for(int ll = 1;ll<nb_ref_levels+1;ll++) {
@@ -1389,7 +1395,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 
       Range level_tets;
       ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
-      ierr = mField.seed_finite_elements(level_tets); CHKERRQ(ierr);
+      ierr = mField.seed_finiteElementsPtr(level_tets); CHKERRQ(ierr);
 
       Range level_edges;
       ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
@@ -1405,8 +1411,8 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 	EntityHandle ent = *nit;
 	do {
 	  RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator refit;
-	  refit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(ent);
-	  if(refit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+	  refit = refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().find(ent);
+	  if(refit == refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().end()) {
 	    break;
 	  }
 	  if(refit->get_parent_ent() != 0) {
@@ -1470,8 +1476,8 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   PetscFunctionBegin;
 
-  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
-  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+  const RefMoFEMEntity_multiIndex *refinedEntitiesPtr_ptr;
+  ierr = mField.get_ref_ents(&refinedEntitiesPtr_ptr); CHKERRQ(ierr);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   BitRefLevel back_up_level;
 
@@ -1486,14 +1492,14 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   Range interface_elements;
   ierr = mField.get_entities_by_type_and_ref_level(
     inheret_ents_from_level,inheret_ents_from_level_mask,MBTET,interface_elements); CHKERRQ(ierr);
-  ierr = mField.seed_finite_elements(interface_elements); CHKERRQ(ierr);
+  ierr = mField.seed_finiteElementsPtr(interface_elements); CHKERRQ(ierr);
 
   EntityHandle bit_meshset;
   rval = mField.get_moab().create_meshset(MESHSET_SET,bit_meshset); CHKERR_PETSC(rval);
   {
 
     ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,bit_meshset); CHKERRQ(ierr);
-    ierr = mField.seed_finite_elements(bit_meshset); CHKERRQ(ierr);
+    ierr = mField.seed_finiteElementsPtr(bit_meshset); CHKERRQ(ierr);
 
     EntityHandle meshset_interface;
     ierr = mField.get_Cubit_msId_meshset(200,SIDESET,meshset_interface); CHKERRQ(ierr);
@@ -1569,15 +1575,15 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       for(Range::iterator tit = tets_on_surface.begin();tit!=tets_on_surface.end();tit++) {
 
 	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
-	mit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(*tit);
-	if(mit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+	mit = refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().find(*tit);
+	if(mit == refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().end()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
 	}
 	bool success;
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
 	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
 	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-1,true));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 
@@ -1602,14 +1608,14 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 
       for(Range::iterator eit = ents_to_set_level.begin();eit!=ents_to_set_level.end();eit++) {
 	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
-	mit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(*eit);
-	if(mit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+	mit = refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().find(*eit);
+	if(mit == refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().end()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
 	}
 	bool success;
-	//success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	//success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
 	//  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
 	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-1,true));
 	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       }
@@ -1654,14 +1660,14 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   for(Range::iterator eit = ents_to_preserve.begin();
     eit!=ents_to_preserve.end();eit++) {
     RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
-    mit = refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().find(*eit);
-    if(mit == refinedMoFemEntities_ptr->get<MoABEnt_mi_tag>().end()) {
+    mit = refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().find(*eit);
+    if(mit == refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().end()) {
       SETERRQ1(
 	PETSC_COMM_SELF,1,"no such ent in database, type %lu",
 	mField.get_moab().type_from_handle(*eit));
     }
     bool success;
-    success = const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)
+    success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
       ->modify(mit,RefMoFEMEntity_change_add_bit(preserve_ref));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   }
@@ -1704,8 +1710,8 @@ PetscErrorCode FaceSplittingTools::projectCrackFrontNodes() {
   PetscFunctionBegin;
 
  //material prositions
-  const DofMoFEMEntity_multiIndex *dofs_moabfield_ptr;
-  ierr = mField.get_dofs(&dofs_moabfield_ptr); CHKERRQ(ierr);
+  const DofMoFEMEntity_multiIndex *dofsPtr_ptr;
+  ierr = mField.get_dofs(&dofsPtr_ptr); CHKERRQ(ierr);
   typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dof_iterator;
   //
   Range crack_front_edges;
@@ -1718,9 +1724,9 @@ PetscErrorCode FaceSplittingTools::projectCrackFrontNodes() {
     new_coords.resize(3);
     rval = mField.get_moab().tag_get_data(th_projection,&*nit,1,&*new_coords.data().begin()); CHKERR_PETSC(rval);
     dof_iterator dit = 
-      dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));
+      dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));
     dof_iterator hi_dit = 
-      dofs_moabfield_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));
+      dofsPtr_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",*nit));
     if(distance(dit,hi_dit)!=3) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistencies");
     }
@@ -1750,8 +1756,8 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
     PetscPrintf(PETSC_COMM_WORLD,"\n");
   }
 
-  const RefMoFEMEntity_multiIndex *refinedMoFemEntities_ptr;
-  ierr = mField.get_ref_ents(&refinedMoFemEntities_ptr); CHKERRQ(ierr);
+  const RefMoFEMEntity_multiIndex *refinedEntitiesPtr_ptr;
+  ierr = mField.get_ref_ents(&refinedEntitiesPtr_ptr); CHKERRQ(ierr);
 
   BitRefLevel maskPreserv;
   ierr = getMask(maskPreserv); CHKERRQ(ierr);
@@ -1829,9 +1835,9 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
   }
 
   //squash bits
-  RefMoFEMEntity_multiIndex::iterator mit = refinedMoFemEntities_ptr->begin();
+  RefMoFEMEntity_multiIndex::iterator mit = refinedEntitiesPtr_ptr->begin();
 
-  for(;mit!=refinedMoFemEntities_ptr->end();mit++) {
+  for(;mit!=refinedEntitiesPtr_ptr->end();mit++) {
     
     if(mit->get_ent_type() == MBENTITYSET) continue;
     if(mit->get_BitRefLevel().none()) continue;
@@ -1877,7 +1883,7 @@ PetscErrorCode FaceSplittingTools::squashIndices(const int verb) {
 
     //cerr << mit->get_BitRefLevel() << " : " << new_bit << endl;
 
-    const_cast<RefMoFEMEntity_multiIndex*>(refinedMoFemEntities_ptr)->modify(mit,RefMoFEMEntity_change_set_bit(new_bit));
+    const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)->modify(mit,RefMoFEMEntity_change_set_bit(new_bit));
   }
 
   //ref meshset ref level 0
@@ -2098,7 +2104,7 @@ PetscErrorCode main_select_faces_for_splitting(FieldInterface& mField,FaceSplitt
   BitRefLevel bit_last_ref = BitRefLevel().set(face_splitting.meshRefineBitLevels.back());
   Range tets_on_last_ref_level;
   ierr = mField.get_entities_by_type_and_ref_level(bit_last_ref,BitRefLevel().set(),MBTET,tets_on_last_ref_level); CHKERRQ(ierr);
-  ierr = mField.seed_finite_elements(tets_on_last_ref_level); CHKERRQ(ierr);
+  ierr = mField.seed_finiteElementsPtr(tets_on_last_ref_level); CHKERRQ(ierr);
 
   ierr = face_splitting.buildKDTreeForCrackSurface(bit_level0); CHKERRQ(ierr);
   ierr = face_splitting.initBitLevelData(bit_last_ref);  CHKERRQ(ierr);

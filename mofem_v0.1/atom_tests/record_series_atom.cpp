@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   PetscInt order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    order = 1;
+    order = 3;
   }
 
   //Read mesh to MOAB
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
   my_split << "TEST_SERIES1" << endl;
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(mField2,"TEST_SERIES1",sit)) {
 
-    ierr = mField.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = mField2.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
 
     my_split << "next step:\n";
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField2,"FIELD_B",dof)) {
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   my_split << "TEST_SERIES2" << endl;
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(mField2,"TEST_SERIES2",sit)) {
 
-    ierr = mField.load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = mField2.load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRQ(ierr);
 
     my_split << "next step:\n";
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField2,"FIELD_A",dof)) {

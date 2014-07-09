@@ -216,7 +216,7 @@ add_test(nonlinear_elasticity_atom_sheer_force_compare ${CMAKE_COMMAND} -E compa
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_elasticity_atom_test_sheer_force.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_elasticity_atom_test_sheer_force.cub.txt)
 
 #arc length elasticty
-add_test(arc_length_nonlinear_elasticity_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1. -my_ms 3 -snes_converged_reason -log_summary)
+add_test(arc_length_nonlinear_elasticity_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity_atom -my_file elasticity_atom_test_01X_pressure.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr -1. -my_ms 3 -snes_converged_reason -log_summary)
 add_test(arc_length_nonlinear_elasticity_atom_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/arc_length_nonlinear_elasticity_atom.txt ${CMAKE_BINARY_DIR}/atom_tests/arc_length_nonlinear_elasticity_atom.txt)
 
 #hdiv approximation atom test
@@ -371,9 +371,14 @@ add_test(forces_and_sources_thermal_elem_unsteady_atom_test_compare ${CMAKE_COMM
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem_unsteady.txt)
 
 # add theraml stress eleme
+cm_export_file("../meshes/elasticity_atom_test_thermal_expansion.cub" export_atom_tests)
 add_executable(forces_and_sources_thermal_stress_elem forces_and_sources_thermal_stress_elem.cpp)
 target_link_libraries(forces_and_sources_thermal_stress_elem mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
-
+add_test(forces_and_sources_thermal_stress_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_stress_elem
+  -my_file elasticity_atom_test_thermal_expansion.cub)
+add_test(forces_and_sources_thermal_stress_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_stress_elem.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_stress_elem.txt)
 
 # add test for recording series
 add_executable(record_series_atom record_series_atom.cpp)
@@ -383,5 +388,4 @@ add_test(record_series_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/re
 add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/record_series_atom.txt
   ${CMAKE_BINARY_DIR}/atom_tests/record_series_atom.txt)
-
 

@@ -96,15 +96,16 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 4;
-  ierr = mField.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
+  int order_temp = 2;
+  ierr = mField.set_field_order(root_set,MBTET,"TEMP",order_temp); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,"TEMP",order_temp); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBEDGE,"TEMP",order_temp); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
 
-  ierr = mField.set_field_order(root_set,MBTET,"DISP",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"DISP",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"DISP",order); CHKERRQ(ierr);
+  int order_disp = 3;
+  ierr = mField.set_field_order(root_set,MBTET,"DISP",order_disp); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,"DISP",order_disp); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBEDGE,"DISP",order_disp); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"DISP",1); CHKERRQ(ierr);
 
   ThermalStressElement thermal_stress_elem(mField);
@@ -115,7 +116,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -124,13 +125,46 @@ int main(int argc, char *argv[]) {
   /****/
   //mesh partitioning 
   //partition
-  ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.simple_partition_problem("PROB"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("PROB"); CHKERRQ(ierr);
 
-  
+  //set temerature at nodes
+  for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(mField,"TEMP",MBVERTEX,dof)) {
+    EntityHandle ent = dof->get_ent();
+    ublas::vector<double> coords(3);
+    rval = moab.get_coords(&ent,1,&coords[0]); CHKERR_PETSC(rval);
+    dof->get_FieldData() = 1;
+  }
 
+  Vec F;
+  ierr = mField.VecCreateGhost("PROB",ROW,&F); CHKERRQ(ierr);
+  ierr = thermal_stress_elem.setThermalStressRhsOperators("DISP","TEMP",F,1); CHKERRQ(ierr);
+
+  ierr = mField.loop_finiteElementsPtr("PROB","ELAS",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+
+  /*ierr = mField.set_global_VecCreateGhost("PROB",COL,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method(moab,"DISP");
+  ierr = mField.loop_dofs("PROB","DISP",COL,ent_method); CHKERRQ(ierr);
+  EntityHandle out_meshset;
+  rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+  ierr = mField.problem_get_FE("PROB","ELAS",out_meshset); CHKERRQ(ierr);
+  rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+  rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);*/
+
+  PetscViewer viewer;
+  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_stress_elem.txt",&viewer); CHKERRQ(ierr);
+  ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  ierr = VecView(F,viewer); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  ierr = VecZeroEntries(F); CHKERRQ(ierr);
+
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;

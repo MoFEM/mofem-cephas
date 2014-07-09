@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_fields(); CHKERRQ(ierr);
 
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
 
   //build adjacencies
   ierr = mField.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
 
   //partition
   ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
@@ -363,7 +363,7 @@ int main(int argc, char *argv[]) {
     ierr = fe_neumann.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
   SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
-  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirihlet_bc.problem_ptr); CHKERRQ(ierr);
+  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirihlet_bc.problemPtr); CHKERRQ(ierr);
   ierr = my_dirihlet_bc.iNitalize(); CHKERRQ(ierr);
 
   struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
         
 	//PetscAttachDebugger();
         switch(snes_ctx) {
-          case ctx_SNESSetFunction: {
+          case CTX_SNESSETFUNCTION: {
             ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
             ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
             ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -404,7 +404,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
       switch(snes_ctx) {
-        case ctx_SNESSetFunction: {
+        case CTX_SNESSETFUNCTION: {
 	  //snes_f
           ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -420,7 +420,7 @@ int main(int argc, char *argv[]) {
 
     PetscErrorCode potsProcessLoadPath() {
       PetscFunctionBegin;
-      NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+      NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
       Range::iterator nit = nodeSet.begin();
       for(;nit!=nodeSet.end();nit++) {
 	NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
@@ -460,7 +460,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
       switch(snes_ctx) {
-        case ctx_SNESSetFunction: {
+        case CTX_SNESSETFUNCTION: {
 	  //F_lambda
           ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -474,7 +474,7 @@ int main(int argc, char *argv[]) {
 	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
 	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
 	  //add F_lambda
-	  ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	  ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
 	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
 	  double fnorm;
 	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
@@ -572,18 +572,6 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  if(step>1) {
-    ierr = mField.set_other_global_VecCreateGhost(
-      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    double x0_nrm;
-    ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
-    ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
-  } else {
-    ierr = arc_ctx->set_s(0); CHKERRQ(ierr);
-    ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
-  }
-  ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
   int its_d;
   ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
@@ -599,6 +587,20 @@ int main(int argc, char *argv[]) {
     reduction = step_size_reduction;
     step++;
   }
+
+
+  if(step>1) {
+    ierr = mField.set_other_global_VecCreateGhost(
+      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    double x0_nrm;
+    ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
+    ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+  } else {
+    ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
+    ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+  }
+  ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
   Vec D0,x00;
   ierr = VecDuplicate(D,&D0); CHKERRQ(ierr);
@@ -705,7 +707,7 @@ int main(int argc, char *argv[]) {
 	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
       }*/
       PostProcStressNonLinearElasticity fe_post_proc_method(moab,fe);
-      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+      ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
       if(pcomm->rank()==0) {
 	ostringstream sss;
 	sss << "out_post_proc_" << step << ".vtk";

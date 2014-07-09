@@ -52,19 +52,10 @@
 #include <boost/utility/string_ref.hpp>
 
 //MOAB
-#include<moab_mpi.h>
-#include<moab/ParallelComm.hpp>
-#include<MBParallelConventions.h>
 #include<moab/Core.hpp>
 #include<moab/Interface.hpp>
-#include<moab/Skinner.hpp>
-#include<moab/GeomUtil.hpp>
 #include<moab/Range.hpp>
-#include<moab/MeshTopoUtil.hpp>
-#include<moab/MergeMesh.hpp>
-#include<moab/AdaptiveKDTree.hpp>
 #include<MBTagConventions.hpp>
-#include<io/Tqdcfr.hpp>
 
 //PETSC
 #include<petscmat.h>
@@ -77,10 +68,6 @@
 #include<petscsnes.h>
 #include<petscts.h>
 #include<petsctime.h>
-
-//MOFEM
-#include<FEM.h>
-#include<H1HdivHcurlL2.h>
 
 //DEFINES
 #define MYPCOMM_INDEX 0
@@ -148,7 +135,9 @@
 }
 
 //set that with care, it turns off check for ublas
-//#define BOOST_UBLAS_NDEBUG
+//#define BOOST_UBLAS_NDEBUG 
+
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
 using namespace moab;
 using namespace std;
@@ -158,32 +147,25 @@ using namespace boost::multiprecision;
 
 namespace MoFEM {
 
-//CONSTS
-
-const int max_ApproximationOrder = 10;
-const EntityHandle no_handle = (EntityHandle)-1;
-
-//TYPEDEFS
-typedef PetscInt DofIdx;
-typedef int FEIdx;
-typedef int EntIdx;
-typedef int EntPart;
-typedef PetscScalar FieldData;
-typedef int ApproximationOrder;
-typedef int ApproximationRank;
-typedef uint128_t UId;
-//typedef checked_uint128_t UId;
-
-#define BITREFEDGES_SIZE 6 /*number of edges on tets*/
-#define BITREFLEVEL_SIZE 128 /*max number of refinments*/
-#define BITFIELDID_SIZE 32 /*max number of fields*/
-#define BITFEID_SIZE 32 /*max number of finite elements*/
-#define BITPROBLEMID_SIZE 32 /*max number of problems*/
-typedef bitset<BITREFEDGES_SIZE> BitRefEdges;
-typedef bitset<BITREFLEVEL_SIZE> BitRefLevel;
-typedef bitset<BITFIELDID_SIZE> BitFieldId;
-typedef bitset<BITFEID_SIZE> BitFEId;
-typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
+/** \brief Error handling
+  * 
+  * This is complementary to PETSC error codes. The numerical values for
+  * these are defined in include/petscerror.h. The names are defined in err.c
+  *
+  * MoAB error messeges are defined in naob/Types.hpp
+  *	
+  */
+enum MoFEMErrorCode {
+  MOFEM_SUCESS = 0,
+  MOFEM_DATA_INSONSISTENCY = 100,
+  MOFEM_NOT_IMPLEMENTED = 101,
+  MOFEM_NOT_FOUND = 102,
+  MOFEM_OPERATION_UNSUCCESSFUL = 103,
+  MOFEM_IMPOSIBLE_CASE = 104,
+  MOFEM_CHAR_THROW = 105,
+  MOFEM_STD_EXCEPTION_THROW = 106,
+  MOFEM_INVALID_DATA = 107
+};
 
 /// \brief approximation spaces
 enum FieldSpace { 
@@ -212,6 +194,74 @@ enum ByWhat {
   BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
   BYALL = 1<<0|1<<1|1<<2 
 };
+
+//CONSTS
+
+const int max_ApproximationOrder = 10;
+const EntityHandle no_handle = (EntityHandle)-1;
+
+//TYPEDEFS
+typedef PetscInt DofIdx;
+typedef int FEIdx;
+typedef int EntIdx;
+typedef int EntPart;
+typedef PetscScalar FieldData;
+typedef int ApproximationOrder;
+typedef int ApproximationRank;
+typedef uint128_t UId;  
+//typedef checked_uint128_tUId;
+typedef int ShortId;
+
+/** \brief loacl unique id
+  *
+  * It is based on local entitu handle
+  */
+struct LocalUId: public UId {
+  LocalUId(): UId() {}
+  LocalUId(const UId &u): UId(u) {}
+  friend bool operator< (const LocalUId& lhs, const LocalUId& rhs);
+  friend bool operator> (const LocalUId& lhs, const LocalUId& rhs);
+  friend bool operator==(const LocalUId& lhs, const LocalUId& rhs);
+  friend bool operator!=(const LocalUId& lhs, const LocalUId& rhs);
+};
+
+inline bool operator< (const LocalUId& lhs, const LocalUId& rhs){ return (UId)rhs > (UId)lhs; }
+inline bool operator> (const LocalUId& lhs, const LocalUId& rhs){ return rhs < lhs; }
+inline bool operator==(const LocalUId& lhs, const LocalUId& rhs) { return (UId)lhs == (UId)rhs; }
+inline bool operator!=(const LocalUId& lhs, const LocalUId& rhs) { return !(lhs == rhs); }
+
+
+/** \brief loacl unique id
+  *
+  * It is based on owner entity handle. Eeach entity is own by some
+  * proc/partition, which own set entity handles, which are not unique across
+  * mesh on diffrent processors.
+  *
+  */
+struct GlobalUId: public UId {
+  GlobalUId(): UId() {}
+  GlobalUId(const UId &u): UId(u) {}
+  friend bool operator< (const GlobalUId& lhs, const GlobalUId& rhs);
+  friend bool operator> (const GlobalUId& lhs, const GlobalUId& rhs);
+  friend bool operator==(const GlobalUId& lhs, const GlobalUId& rhs);
+  friend bool operator!=(const GlobalUId& lhs, const GlobalUId& rhs);
+};
+
+inline bool operator< (const GlobalUId& lhs, const GlobalUId& rhs){ return (UId)rhs > (UId)lhs; }
+inline bool operator> (const GlobalUId& lhs, const GlobalUId& rhs){ return rhs < lhs; }
+inline bool operator==(const GlobalUId& lhs, const GlobalUId& rhs) { return (UId)lhs == (UId)rhs; }
+inline bool operator!=(const GlobalUId& lhs, const GlobalUId& rhs) { return !(lhs == rhs); }
+
+#define BITREFEDGES_SIZE 6 /*number of edges on tets*/
+#define BITREFLEVEL_SIZE 128 /*max number of refinments*/
+#define BITFIELDID_SIZE 32 /*max number of fields*/
+#define BITFEID_SIZE 32 /*max number of finite elements*/
+#define BITPROBLEMID_SIZE 32 /*max number of problems*/
+typedef bitset<BITREFEDGES_SIZE> BitRefEdges;
+typedef bitset<BITREFLEVEL_SIZE> BitRefLevel;
+typedef bitset<BITFIELDID_SIZE> BitFieldId;
+typedef bitset<BITFEID_SIZE> BitFEId;
+typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
 
 //AUX STRUCTURES
 
@@ -279,3 +329,9 @@ struct MofemException {
 #include "SeriesMultiIndices.hpp"
 
 #endif //__COMMON_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem MoFEM 
+ ******************************************************************************/
+
+

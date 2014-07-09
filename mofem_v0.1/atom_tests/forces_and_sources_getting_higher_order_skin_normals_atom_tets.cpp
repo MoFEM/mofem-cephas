@@ -25,6 +25,7 @@
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
+#include <moab/Skinner.hpp>
 
 #include "Projection10NodeCoordsOnField.hpp"
 
@@ -122,7 +123,7 @@ int main(int argc, char *argv[]) {
   Projection10NodeCoordsOnField ent_method(mField,"FIELD1");
   ierr = mField.loop_dofs("FIELD1",ent_method); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -132,7 +133,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -171,13 +172,13 @@ int main(int argc, char *argv[]) {
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getEdgesOrder(data); CHKERRQ(ierr);
-      ierr = getFacesOrder(data); CHKERRQ(ierr);
+      ierr = getTrisOrder(data); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getNodesFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
       ierr = shapeTRIFunctions_H1(data,G_TRI_X4,G_TRI_Y4,4); CHKERRQ(ierr);
 
@@ -211,7 +212,7 @@ int main(int argc, char *argv[]) {
   };
 
   ForcesAndSurcesCore_TestFE fe1(mField);
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

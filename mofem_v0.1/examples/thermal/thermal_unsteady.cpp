@@ -65,9 +65,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
 
   //Create MoFEM (Joseph) database
   FieldCore core(moab);
@@ -131,7 +129,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -144,7 +142,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.partition_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("THERMAL_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
 
@@ -208,17 +206,17 @@ int main(int argc, char *argv[]) {
   ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
   ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
   ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+
   PetscPrintf(PETSC_COMM_WORLD,
     "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
   ierr = mField.finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-
-  BARRIER_RANK_START(pcomm) 
+  
+  //mField.list_dofs_by_field_name("TEMP");
   if(pcomm->rank()==0) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
   }
-  BARRIER_RANK_END(pcomm) 
 
   /*EntityHandle fe_meshset = mField.get_finite_element_meshset("THERMAL_FE");
   Range tets;
@@ -259,7 +257,7 @@ int main(int argc, char *argv[]) {
       fe_post_proc_method.do_broadcast = false;
       ostringstream ss;
       ss << "out_post_proc_" << sit->step_number << ".vtk";
-      ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
+      ierr = mField.loop_finiteElementsPtr("THERMAL_PROBLEM","THERMAL_FE",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
       rval = fe_post_proc_method.moab_post_proc.write_file(ss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
     }
 

@@ -220,7 +220,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
       if(is_fully_damaged) {
 
-	EntityHandle ent = fe_ptr->get_ent();
+	EntityHandle ent = fePtr->get_ent();
 	int set_prism_as_demaged = 1;
 	rval = mField.get_moab().tag_set_data(th_damaged_prism,&ent,1,&set_prism_as_demaged); CHKERR_PETSC(rval);
 
@@ -296,7 +296,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
     //History
     int g_dim = g_NTRI.size()/3;
-    EntityHandle fe_ent = fe_ptr->get_ent();
+    EntityHandle fe_ent = fePtr->get_ent();
     vector<double> def_kappa(g_dim,0);
     rval = moab.tag_get_handle("_KAPPA",g_dim,MB_TYPE_DOUBLE,th_kappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_EXCL,&def_kappa[0]);  
     if(rval==MB_ALREADY_ALLOCATED) {
@@ -310,12 +310,12 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
     switch(snes_ctx) {
       break;
-      case ctx_SNESNone: 
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESNONE: 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = RhsInt(); CHKERRQ(ierr);
       }
       break;
-      case ctx_SNESSetJacobian: { 
+      case CTX_SNESSETJACOBIAN: { 
 	ierr = SNESGetIterationNumber(snes,&iter); CHKERRQ(ierr);
 	ierr = LhsInt(); CHKERRQ(ierr);
       }
@@ -413,7 +413,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: { 
+      case CTX_SNESSETFUNCTION: { 
 	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
 	ierr = calulate_db(); CHKERRQ(ierr);
 	ierr = calulate_lambda_int(lambda_int); CHKERRQ(ierr);
@@ -429,8 +429,8 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
-    dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problem_ptr->get_nb_local_dofs_row());
+    dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problemPtr->get_nb_local_dofs_row());
     double *array;
     double *array_int_lambda;
     ierr = VecZeroEntries(GhostLambdaInt); CHKERRQ(ierr);
@@ -473,9 +473,9 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     ierr = VecGhostUpdateBegin(arc_ptr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(arc_ptr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
-    dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_dit = problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(
-      problem_ptr->get_nb_local_dofs_row()+problem_ptr->get_nb_ghost_dofs_row());
+    dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(
+      problemPtr->get_nb_local_dofs_row()+problemPtr->get_nb_ghost_dofs_row());
     double *array;
     ierr = VecGetArray(arc_ptr->db,&array); CHKERRQ(ierr);
     for(;dit!=hi_dit;dit++) {
@@ -497,7 +497,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
-      case ctx_SNESSetFunction: {
+      case CTX_SNESSETFUNCTION: {
 	//calulate residual for arc length row
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
@@ -505,7 +505,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 	  arc_ptr->res_lambda,lambda_int,arc_ptr->s);
       }
       break; 
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	//calulate diagonal therm
 	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
@@ -522,7 +522,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case ctx_SNESSetJacobian: {
+      case CTX_SNESSETJACOBIAN: {
 	ierr = VecAssemblyBegin(GhostDiag); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(GhostDiag); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(GhostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

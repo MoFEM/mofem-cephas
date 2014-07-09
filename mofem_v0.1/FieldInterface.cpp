@@ -28,7 +28,7 @@
 namespace MoFEM {
 
 //SNES
-PetscErrorCode FieldInterface::SnesMethod::set_snes_ctx(const snes_context ctx_) {
+PetscErrorCode FieldInterface::SnesMethod::set_snes_ctx(const SNESContext ctx_) {
   PetscFunctionBegin;
   snes_ctx = ctx_;
   PetscFunctionReturn(0);
@@ -39,7 +39,7 @@ PetscErrorCode FieldInterface::SnesMethod::set_snes(SNES _snes) {
   PetscFunctionReturn(0);
 }
 //TS
-PetscErrorCode FieldInterface::TSMethod::set_ts_ctx(const ts_context ctx_) {
+PetscErrorCode FieldInterface::TSMethod::set_ts_ctx(const TSContext ctx_) {
   PetscFunctionBegin;
   ts_ctx = ctx_;
   PetscFunctionReturn(0);
@@ -51,18 +51,18 @@ PetscErrorCode FieldInterface::TSMethod::set_ts(TS _ts) {
 }
 //BasicMethod
 FieldInterface::BasicMethod::BasicMethod():
-  refinedMoFemEntities(NULL),refinedMoFemElements(NULL),
-  problem_ptr(NULL),moabfields(NULL),ents_moabfield(NULL),dofs_moabfield(NULL),
-  finite_elements(NULL),finite_elements_moabents(NULL),fem_adjacencies(NULL) {};
-PetscErrorCode FieldInterface::BasicMethod::set_problem(const MoFEMProblem *_problem_ptr) {
+  refinedEntitiesPtr(NULL),refinedFiniteElementsPtr(NULL),
+  problemPtr(NULL),fieldsPtr(NULL),entitiesPtr(NULL),dofsPtr(NULL),
+  finiteElementsPtr(NULL),finiteElementsEntitiesPtr(NULL),adjacenciesPtr(NULL) {};
+PetscErrorCode FieldInterface::BasicMethod::setProblem(const MoFEMProblem *_problemPtr) {
   PetscFunctionBegin;
-  if(_problem_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  problem_ptr = _problem_ptr;
+  if(_problemPtr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  problemPtr = _problemPtr;
   PetscFunctionReturn(0);
 }
 FieldInterface::FEMethod::FEMethod(): BasicMethod(),
-  fe_ptr(NULL),data_multiIndex(NULL),
-  row_multiIndex(NULL),col_multiIndex(NULL) {}
+  fePtr(NULL),dataPtr(NULL),
+  rowPtr(NULL),colPtr(NULL) {}
 
 PetscErrorCode FieldInterface::FEMethod::preProcess() {
   PetscFunctionBegin;
@@ -79,72 +79,72 @@ PetscErrorCode FieldInterface::FEMethod::operator()() {
   SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class (operator)");
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::FEMethod::set_fe(const NumeredMoFEMFiniteElement *_fe_ptr) {
+PetscErrorCode FieldInterface::FEMethod::setFE(const NumeredMoFEMFiniteElement *_fe_ptr) {
   PetscFunctionBegin;
   if(_fe_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  fe_ptr = _fe_ptr;
+  fePtr = _fe_ptr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::FEMethod::set_data_multIndex(const FEDofMoFEMEntity_multiIndex *_data_multiIndex) {
+PetscErrorCode FieldInterface::FEMethod::setData(const FEDofMoFEMEntity_multiIndex *_data_ptr) {
   PetscFunctionBegin;
-  if(_data_multiIndex == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  data_multiIndex = _data_multiIndex;
+  if(_data_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  dataPtr = _data_ptr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::FEMethod::set_row_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_row_multiIndex) {
+PetscErrorCode FieldInterface::FEMethod::setRowData(const FENumeredDofMoFEMEntity_multiIndex *_row_ptr) {
   PetscFunctionBegin;
-  if(_row_multiIndex == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  row_multiIndex = _row_multiIndex;
+  if(_row_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  rowPtr = _row_ptr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::FEMethod::set_col_multIndex(const FENumeredDofMoFEMEntity_multiIndex *_col_multiIndex) {
+PetscErrorCode FieldInterface::FEMethod::setColData(const FENumeredDofMoFEMEntity_multiIndex *_col_ptr) {
   PetscFunctionBegin;
-  if(_col_multiIndex == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  col_multiIndex = _col_multiIndex;
+  if(_col_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  colPtr = _col_ptr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::BasicMethod::set_fields(const MoFEMField_multiIndex *_moabfields) {
+PetscErrorCode FieldInterface::BasicMethod::setFields(const MoFEMField_multiIndex *_fieldsPtr) {
   PetscFunctionBegin;
-  if(_moabfields == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  moabfields = _moabfields;
+  if(_fieldsPtr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  fieldsPtr = _fieldsPtr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::BasicMethod::set_ents_multiIndex(
-    const RefMoFEMEntity_multiIndex *_refinedMoFemEntities,
-    const MoFEMEntity_multiIndex* _ents_moabfield) {
+PetscErrorCode FieldInterface::BasicMethod::setEnts(
+    const RefMoFEMEntity_multiIndex *_refinedEntitiesPtr,
+    const MoFEMEntity_multiIndex* _entitiesPtr) {
   PetscFunctionBegin;
-  if(_refinedMoFemEntities == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  refinedMoFemEntities = _refinedMoFemEntities;
-  if(_ents_moabfield == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  ents_moabfield = _ents_moabfield;
+  if(_refinedEntitiesPtr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  refinedEntitiesPtr = _refinedEntitiesPtr;
+  if(_entitiesPtr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  entitiesPtr = _entitiesPtr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::BasicMethod::set_dofs_multiIndex(const DofMoFEMEntity_multiIndex *_dofs_moabfield) {
+PetscErrorCode FieldInterface::BasicMethod::setDofs(const DofMoFEMEntity_multiIndex *_dofsPtr) {
   PetscFunctionBegin;
-  if(_dofs_moabfield == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  dofs_moabfield = _dofs_moabfield;
+  if(_dofsPtr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  dofsPtr = _dofsPtr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::BasicMethod::set_fes_multiIndex(
-    const RefMoFEMElement_multiIndex *_refinedMoFemElements,
-    const MoFEMFiniteElement_multiIndex *_finite_elements) {
+PetscErrorCode FieldInterface::BasicMethod::setFiniteElements(
+    const RefMoFEMElement_multiIndex *_refinedFiniteElementsPtr,
+    const MoFEMFiniteElement_multiIndex *_finiteElementsPtr) {
   PetscFunctionBegin;
-  if(_refinedMoFemElements == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  refinedMoFemElements = _refinedMoFemElements;
-  if(_finite_elements == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  finite_elements = _finite_elements;
+  if(_refinedFiniteElementsPtr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  refinedFiniteElementsPtr = _refinedFiniteElementsPtr;
+  if(_finiteElementsPtr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  finiteElementsPtr = _finiteElementsPtr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::BasicMethod::set_adjacencies(const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *_fem_adjacencies) {
+PetscErrorCode FieldInterface::BasicMethod::setAdjacencies(const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *_adjacenciesPtr) {
   PetscFunctionBegin;
-  if(_fem_adjacencies == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  fem_adjacencies = _fem_adjacencies;
+  if(_adjacenciesPtr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  adjacenciesPtr = _adjacenciesPtr;
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::BasicMethod::set_fes_data_multiIndex(const EntMoFEMFiniteElement_multiIndex *_finite_elements_moabents) {
+PetscErrorCode FieldInterface::BasicMethod::setFiniteElementsEntities(const EntMoFEMFiniteElement_multiIndex *_finiteElementsEntitiesPtr) {
   PetscFunctionBegin;
-  if(_finite_elements_moabents == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  finite_elements_moabents = _finite_elements_moabents;
+  if(_finiteElementsEntitiesPtr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
+  finiteElementsEntitiesPtr = _finiteElementsEntitiesPtr;
   PetscFunctionReturn(0);
 }
 FieldInterface::EntMethod::EntMethod(): BasicMethod(),dof_ptr(NULL) {}
@@ -163,7 +163,7 @@ PetscErrorCode FieldInterface::EntMethod::operator()() {
   SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldInterface::EntMethod::set_dof(const DofMoFEMEntity *_dof_ptr) {
+PetscErrorCode FieldInterface::EntMethod::setDof(const DofMoFEMEntity *_dof_ptr) {
   PetscFunctionBegin;
   if(_dof_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
   dof_ptr = _dof_ptr;
@@ -172,7 +172,7 @@ PetscErrorCode FieldInterface::EntMethod::set_dof(const DofMoFEMEntity *_dof_ptr
 PetscErrorCode FieldInterface::EntMethod::set_numered_dof(const NumeredDofMoFEMEntity *_dof_ptr) {
   PetscFunctionBegin;
   //if(_dof_ptr == NULL) SETERRQ(PETSC_COMM_SELF,1,"can not be NULL");
-  dof_numered_ptr = _dof_ptr;
+  dofPtr = _dof_ptr;
   PetscFunctionReturn(0);
 }
 

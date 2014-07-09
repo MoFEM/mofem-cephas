@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
 
 
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
 
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
 
   //partition
   ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
     ierr = fe_neumann.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
   SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
-  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirihlet_bc.problem_ptr); CHKERRQ(ierr);
+  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirihlet_bc.problemPtr); CHKERRQ(ierr);
   ierr = my_dirihlet_bc.iNitalize(); CHKERRQ(ierr);
 
   struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {
@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
         
 	//PetscAttachDebugger();
         switch(snes_ctx) {
-          case ctx_SNESSetFunction: {
+          case CTX_SNESSETFUNCTION: {
             ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
             ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
             ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -393,7 +393,7 @@ int main(int argc, char *argv[]) {
       PetscErrorCode postProcess() {
         PetscFunctionBegin;
         switch(snes_ctx) {
-          case ctx_SNESSetFunction: {
+          case CTX_SNESSETFUNCTION: {
 	    //snes_f
             ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
             ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -411,7 +411,7 @@ int main(int argc, char *argv[]) {
 	      ierr = VecAssemblyEnd(F_lambda_for_neumann_forces); CHKERRQ(ierr);
 	      ierr = VecAXPY(arc_ptr->F_lambda,1,F_lambda_for_neumann_forces); CHKERRQ(ierr);
 	      //add F_lambda
-	      ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),F_lambda_for_neumann_forces); CHKERRQ(ierr);
+	      ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),F_lambda_for_neumann_forces); CHKERRQ(ierr);
 	    }
 	    for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
 	      ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);

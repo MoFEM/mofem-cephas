@@ -19,10 +19,17 @@
 
 #include "FEMethod_SurfaceConstrains.hpp"
 
+#include<FEM.h>
+#include<H1HdivHcurlL2.h>
+
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
+
 #include <math.h>
 #include <complex>
 extern "C" {
 #include <complex.h>
+
 void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
   double circumcenter[3],double *xi,double *eta,double *zeta);
 void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
@@ -115,7 +122,7 @@ PetscErrorCode ConstrainSurfacGeometry::cOnstrain(double *dofs_iX,double *C,doub
   ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
   //set direction if crack or interface surface
   Range adj_side_elems;
-  BitRefLevel bit = problem_ptr->get_BitRefLevel();
+  BitRefLevel bit = problemPtr->get_BitRefLevel();
   ierr = mField.get_adjacencies(bit,&fAce,1,3,adj_side_elems,Interface::INTERSECT,0); CHKERRQ(ierr);
   adj_side_elems = adj_side_elems.subset_by_type(MBTET);
   if(adj_side_elems.size()==0) {
@@ -283,14 +290,14 @@ PetscErrorCode ConstrainSurfacGeometry::aSsemble(bool transpose,bool nonlinear) 
 PetscErrorCode ConstrainSurfacGeometry::operator()(bool transpose,bool nonlinear) {
     PetscFunctionBegin;
     try {
-      fAce = fe_ptr->get_ent();
+      fAce = fePtr->get_ent();
       const EntityHandle* conn_face; 
       int num_nodes; 
       rval = mField.get_moab().get_connectivity(fAce,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       for(int nn = 0;nn<num_nodes;nn++) {
   	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
-  	dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
-  	hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
+  	dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
+  	hi_dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
   	if(distance(dit,hi_dit)==0) {
   	  lambdaGlobalRowIndices[nn] = -1;
 	  entLambdaData[nn] = 0;
@@ -302,8 +309,8 @@ PetscErrorCode ConstrainSurfacGeometry::operator()(bool transpose,bool nonlinear
   	  int local_idx = dit->get_petsc_local_dof_idx();
   	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
   	}
-  	dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-  	hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+  	dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+  	hi_dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
   	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
   	for(;dit!=hi_dit;dit++) {
   	  entDofsData[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
@@ -314,8 +321,8 @@ PetscErrorCode ConstrainSurfacGeometry::operator()(bool transpose,bool nonlinear
   	  if(local_idx<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
   	}
 	if(transpose) {
-	  dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
-	  hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
+	  dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
+	  hi_dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambdaFieldName,conn_face[nn]));
 	  if(distance(dit,hi_dit)==0) {
 	    lambdaGlobalColIndices[nn] = -1;
 	  } else {
@@ -332,8 +339,8 @@ PetscErrorCode ConstrainSurfacGeometry::operator()(bool transpose,bool nonlinear
 	    dofGlobalRowIndices[0][nn*3+1] = -1;
 	    dofGlobalRowIndices[0][nn*3+2] = -1;
 	  } else {
-	    dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	    hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    hi_dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	    if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	    for(;dit!=hi_dit;dit++) {
 	      int global_idx = dit->get_petsc_gloabl_dof_idx();

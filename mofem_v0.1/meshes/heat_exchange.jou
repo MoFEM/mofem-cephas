@@ -11,24 +11,37 @@ unite volume all
 create temperature  on surface 2  value 0
 #create temperature  on surface 6  value 1
 
+create Displacement  on surface 2 dof 1 dof 2 dof 3 fix 0
+
 #create heatflux on surface all value -1  
 #modify heatflux 1 add surface 817 
-block 2 surface all
-block 2 name 'HEAT_FLUX'
-block 2 attribute count 1
-block 2 attribute index 1 1
 
-
-block 1 volume 1 
-block 1 name 'MAT_THERMAL'
-block 1 attribute count 2
+set duplicate block elements on
+block 1 volume 1
+block 1 name 'MAT_ELASTIC_1'
+block 1 attribute count 4
 block 1 attribute index 1 1
-block 1 attribute index 2 1
+block 1 attribute index 2 0 
+block 1 attribute index 3 1
+block 1 attribute index 4 -10
+
+block 2 volume 1 
+block 2 name 'MAT_THERMAL_1'
+block 2 attribute count 2
+block 2 attribute index 1 1
+block 2 attribute index 2 1
+
+block 3 surface all
+block 3 name 'HEAT_FLUX'
+block 3 attribute count 1
+block 3 attribute index 1 1
+
 
 volume all scheme Tetmesh
 volume all size auto factor 5
 mesh volume all
 
 save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/heat_exchange.cub" overwrite
+
 
 

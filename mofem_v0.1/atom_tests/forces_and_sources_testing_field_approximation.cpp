@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&A); CHKERRQ(ierr);
 
   /*PostProcDisplacementsOnRefMesh fe_postproc(moab,"FIELD1");
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe_postproc);  CHKERRQ(ierr);
+  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",fe_postproc);  CHKERRQ(ierr);
   if(pcomm->rank()==0) {
     rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }*/
@@ -239,10 +239,10 @@ int main(int argc, char *argv[]) {
   }
   my_split << nodes_vals << endl;
 
-  const MoFEMProblem *problem_ptr;
-  ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
+  const MoFEMProblem *problemPtr;
+  ierr = mField.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
   map<EntityHandle,double> m0,m1,m2;
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);

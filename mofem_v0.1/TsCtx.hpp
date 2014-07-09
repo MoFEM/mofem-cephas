@@ -1,3 +1,7 @@
+/** \file TsCtx.hpp 
+ * \brief Context for PETSc Time Stepping 
+ */
+
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION

@@ -45,6 +45,7 @@ namespace MoFEM {
   struct MoFEMFiniteElement_name_mi_tag {};
   struct SideNumber_mi_tag{};
   struct MoABEnt_MoABEnt_mi_tag {};
+  struct MoABEnt_Owner_mi_tag {};
   struct MoABEnt_mi_tag2 {};
   struct Idx_mi_tag { 
     static const bool IamNotPartitioned;
@@ -90,6 +91,7 @@ namespace MoFEM {
   struct Composite_Name_Ent_And_Part_mi_tag {};
   struct Composite_Cubit_msId_and_MeshSetType_mi_tag {};
   struct Composite_Name_And_Part_mi_tag {};
+  struct Composite_Entity_and_ShortId_mi_tag {};
 
   struct SeriesID_mi_tag {};
   struct SeriesName_mi_tag {};

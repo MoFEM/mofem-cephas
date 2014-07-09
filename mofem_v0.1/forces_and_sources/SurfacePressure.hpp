@@ -28,6 +28,7 @@
 #define __NEUMANN_FORCES_HPP
 
 #include "ForcesAndSurcesCore.hpp"
+#include "FEM.h"
 
 namespace MoFEM {
 
@@ -49,6 +50,9 @@ struct MethodsForOp {
 
 };
 
+/** \brief Force and pressures applied to surfaces
+  * \ingroup mofem_static_boundary_conditions
+  */
 struct NeummanForcesSurface {
 
   FieldInterface &mField;
@@ -433,4 +437,10 @@ struct MetaNeummanForces {
 }
 
 #endif //__NEUMAN_FORCES_HPP
+
+/***************************************************************************//**
+ * \defgroup mofem_static_boundary_conditions Static boundary conditions 
+ * \ingroup mofem_forces_and_sources 
+ ******************************************************************************/
+
 

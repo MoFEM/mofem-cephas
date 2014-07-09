@@ -98,11 +98,11 @@ struct ArcLengthCtx {
 
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
+    NumeredDofMoFEMEntity_multiIndex& dofsPtr_no_const 
 	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
     NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit;
-    dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
-    hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
+    dit = dofsPtr_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+    hi_dit = dofsPtr_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
     if(distance(dit,hi_dit)!=1) {
       PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
 	"can not find unique LAMBDA (load factor)",PETSC_NULL);
@@ -140,8 +140,8 @@ struct ArcLengthSnesCtx: public SnesCtx {
 
 /**
  * Shell matrix which has tructure
- * [ K 		dF_lambda]
- * [ db		diag	]
+ * [ K 		-dF_lambda]
+ * [ db		 diag	]
  */
 struct ArcLengthMatShell {
 
@@ -238,15 +238,15 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
       PetscFunctionBegin;
       
       switch(snes_ctx) {
-        case ctx_SNESNone:
-        case ctx_SNESSetFunction: {
+        case CTX_SNESNONE:
+        case CTX_SNESSETFUNCTION: {
           //F_lambda
           ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
           ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         }
         break;
-        case ctx_SNESSetJacobian: {
+        case CTX_SNESSETJACOBIAN: {
         }
         break;
         default:
@@ -260,9 +260,9 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
       PetscFunctionBegin;
       
       switch(snes_ctx) {
-        case ctx_SNESNone: {
+        case CTX_SNESNONE: {
         }
-        case ctx_SNESSetFunction: {
+        case CTX_SNESSETFUNCTION: {
           //F_lambda
           ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -273,7 +273,7 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
           PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
         }
         break;
-        case ctx_SNESSetJacobian: {
+        case CTX_SNESSETJACOBIAN: {
         }
         break;
         default:
@@ -287,7 +287,7 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
 /**
  * apply oppertor for Arc Length precoditionet
  * solves K*pc_x = pc_f
- * solves K*x_lambda = dF_lambda
+ * solves K*x_lambda = -dF_lambda
  * solves ddlambda = ( res_lambda - db*x_lambda )/( diag + db*pc_x )
  * calulate pc_x = pc_x + ddlambda*x_lambda
  */

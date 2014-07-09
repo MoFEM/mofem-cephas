@@ -26,7 +26,9 @@
 
 namespace MoFEM {
 
-/// \brief keeps data about problem
+/** \brief keeps data about problem
+  * \ingroup problems_multi_indices
+  */
 struct MoFEMProblem {
   EntityHandle meshset;
   BitProblemId* tag_id_data;
@@ -47,6 +49,7 @@ struct MoFEMProblem {
 
   /**
     * use with loops to iterate problem fes 
+    * \ingroup problems_multi_indices
     *
     * for(_IT_NUMEREDFEMOFEMENTITY_FOR_LOOP_(MOFEMPROBLEM,NAME,IT)) {
     *   ...
@@ -66,11 +69,14 @@ struct MoFEMProblem {
   }
 
   /**
-    * use with loops to iterate problem fes 
+    * \brief use with loops to iterate problem fes 
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_AND_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,PART,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_AND_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,PART,IT) \
@@ -86,11 +92,14 @@ struct MoFEMProblem {
   }
 
   /**
-    * use with loops to iterate row dofs 
+    * \brief use with loops to iterate row dofs 
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(MOFEMPROBLEM,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(MOFEMPROBLEM,IT) \
@@ -99,10 +108,13 @@ struct MoFEMProblem {
 
   /**
     * use with loops to iterate col dofs 
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(MOFEMPROBLEM,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(MOFEMPROBLEM,IT) \
@@ -122,29 +134,34 @@ struct MoFEMProblem {
   NumeredDofMoFEMEntity_multiIndex::iterator get_numered_dofs_cols_end() const { return numered_dofs_cols.end(); }
 
   /**
-    * get iterator of dof in row by uid
+    * \brief get iterator of dof in row by uid
+    * \ingroup problems_multi_indices
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_UID_(MOFEMPROBLEM,UID,IT) \
     NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_row_dof_by_uid(UID);
 
   /**
-    * get iterator of dof in col by uid
+    * \brief get iterator of dof in col by uid
+    * \ingroup problems_multi_indices
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_UID_(MOFEMPROBLEM,UID,IT) \
     NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_col_dof_by_uid(UID);
 
   /// get iterator of dof in row by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_UID_FOR_LOOP_)
-  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_row_dof_by_uid(UId uid) const { return numered_dofs_rows.get<Unique_mi_tag>().find(uid); };
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_row_dof_by_uid(GlobalUId uid) const { return numered_dofs_rows.get<Unique_mi_tag>().find(uid); };
 
   /// get iterator of dof in column by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_UID_FOR_LOOP_)
-  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_col_dof_by_uid(UId uid) const { return numered_dofs_cols.get<Unique_mi_tag>().find(uid); };
+  NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator get_col_dof_by_uid(GlobalUId uid) const { return numered_dofs_cols.get<Unique_mi_tag>().find(uid); };
 
   /**
-    * use with loops to iterate row dofs 
+    * \brief use with loops to iterate row dofs
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDDOFMOFEMENTITY_BY_LOCIDX_ROW_FOR_LOOP_(MOFEMPROBLEM,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(MOFEMPROBLEM,IT) \
@@ -152,11 +169,13 @@ struct MoFEMProblem {
     IT!=MOFEMPROBLEM->get_numered_dofs_rows_by_locidx_end(MOFEMPROBLEM->get_nb_local_dofs_row()); IT++
 
   /**
-    * use with loops to iterate col dofs 
+    * \brief use with loops to iterate col dofs 
     *
+    * \code 
     * for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(MOFEMPROBLEM,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(MOFEMPROBLEM,IT) \
@@ -180,11 +199,14 @@ struct MoFEMProblem {
     { return numered_dofs_cols.get<PetscLocalIdx_mi_tag>().upper_bound(locidx); }
 
   /**
-    * use with loops to iterate row dofs 
+    * \brief use with loops to iterate row dofs 
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDDOFMOFEMENTITY_BY_ENT_ROW_FOR_LOOP_(MOFEMPROBLEM,ENT,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(MOFEMPROBLEM,ENT,IT) \
@@ -192,11 +214,14 @@ struct MoFEMProblem {
     IT!=MOFEMPROBLEM->get_numered_dofs_rows_by_ent_end(ENT); IT++
 
   /**
-    * use with loops to iterate col dofs 
+    * \brief use with loops to iterate col dofs 
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_ENT_FOR_LOOP_(MOFEMPROBLEM,ENT,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_ENT_FOR_LOOP_(MOFEMPROBLEM,ENT,IT) \
@@ -220,11 +245,14 @@ struct MoFEMProblem {
     { return numered_dofs_cols.get<MoABEnt_mi_tag>().upper_bound(ent); }
 
   /**
-    * use with loops to iterate row dofs 
+    * use with loops to iterate row dofs
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(MOFEMPROBLEM,NAME,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(MOFEMPROBLEM,NAME,IT) \
@@ -232,11 +260,14 @@ struct MoFEMProblem {
     IT!=MOFEMPROBLEM->get_numered_dofs_rows_end(NAME); IT++
 
   /**
-    * use with loops to iterate col dofs 
+    * \brief use with loops to iterate col dofs 
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_FOR_LOOP_(MOFEMPROBLEM,NAME,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_FOR_LOOP_(MOFEMPROBLEM,NAME,IT) \
@@ -260,11 +291,14 @@ struct MoFEMProblem {
     { return numered_dofs_cols.get<FieldName_mi_tag>().upper_bound(name); }
 
   /**
-    * use with loops to iterate row dofs 
+    * \brief use with loops to iterate row dofs 
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDDOFMOFEMENTITY_BY_NAME_ENT_PART_ROW_FOR_LOOP_(MOFEMPROBLEM,NAME,ENT,PART,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,ENT,PART,IT) \
@@ -273,10 +307,13 @@ struct MoFEMProblem {
 
   /**
     * use with loops to iterate col dofs 
+    * \ingroup problems_multi_indices
     *
+    * \code
     * for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_ENT_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,ENT,PART,IT)) {
     *   ...
     * }
+    * \endcode
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_ENT_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,ENT,PART,IT) \
@@ -301,6 +338,7 @@ struct MoFEMProblem {
 
   MoFEMProblem(Interface &moab,const EntityHandle _meshset);
   inline BitProblemId get_id() const { return *((BitProblemId*)tag_id_data); }
+
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }
   inline DofIdx get_nb_dofs_row() const { return *((DofIdx*)tag_nbdof_data_row); }
   inline DofIdx get_nb_dofs_col() const { return *((DofIdx*)tag_nbdof_data_col); }
@@ -316,6 +354,11 @@ struct MoFEMProblem {
   friend ostream& operator<<(ostream& os,const MoFEMProblem& e);
 };
 
+/**  
+ * @relates multi_index_container
+ * \brief MultiIndex for entities for MoFEMProblem
+ * \ingroup fe_multi_indices
+ */
 typedef multi_index_container<
   MoFEMProblem,
   indexed_by<
@@ -327,70 +370,92 @@ typedef multi_index_container<
       tag<MoFEMProblem_mi_tag>, const_mem_fun<MoFEMProblem,string,&MoFEMProblem::get_name> >
   > > MoFEMProblem_multiIndex;
 
-/// \brief add ref level to problem
+/** \brief add ref level to problem
+  * \ingroup problems_multi_indices
+  */
 struct problem_change_ref_level_bit_add {
   BitRefLevel bit;
   problem_change_ref_level_bit_add(const BitRefLevel _bit): bit(_bit) {};
   void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) |= bit; };
 };
 
-/// \brief set ref level to problem
+/** \brief set ref level to problem
+  * \ingroup problems_multi_indices
+  */
 struct problem_change_ref_level_bit_set {
   BitRefLevel bit;
   problem_change_ref_level_bit_set(const BitRefLevel _bit): bit(_bit) {};
   void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) = bit; };
 };
 
-/// \brief set prof dof bit ref mask
+/** \brief set prof dof bit ref mask
+  * \ingroup problems_multi_indices
+  */
 struct problem_change_ref_level_bit_dof_mask_set {
   BitRefLevel bit;
   problem_change_ref_level_bit_dof_mask_set(const BitRefLevel _bit): bit(_bit) {};
   void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel_DofMask) = bit; };
 };
 
-/// \brief add finite element to problem
+/** \brief add finite element to problem
+  * \ingroup problems_multi_indices
+  */
 struct problem_MoFEMFiniteElement_change_bit_add {
   BitFEId f_id;
   problem_MoFEMFiniteElement_change_bit_add(const BitFEId _f_id): f_id(_f_id) {};
   void operator()(MoFEMProblem &p);
 };
 
-/// \brief increase nb. dof in row
+/** \brief increase nb. dof in row
+  * \ingroup problems_multi_indices
+  */
 struct problem_row_change {
   const DofMoFEMEntity *dof_ptr;
   problem_row_change(const DofMoFEMEntity *_dof_ptr);
   void operator()(MoFEMProblem &e);
 };
 
-/// \brief increase nb. dof in col
+/** \brief increase nb. dof in col
+  * \ingroup problems_multi_indices
+  */
 struct problem_col_change {
   const DofMoFEMEntity *dof_ptr;
   problem_col_change(const DofMoFEMEntity *_dof_ptr);
   void operator()(MoFEMProblem &e);
 };
 
-/// \brief zero nb. of dofs in row
+/** \brief zero nb. of dofs in row
+  * \ingroup problems_multi_indices
+  */
 struct problem_zero_nb_rows_change {
   void operator()(MoFEMProblem &e);
 };
 
-/// \brief zero nb. of dofs in col
+/** \brief zero nb. of dofs in col
+  * \ingroup problems_multi_indices
+  */
 struct problem_zero_nb_cols_change {
   void operator()(MoFEMProblem &e);
 };
 
-/// \brief clear problem finite elements 
-struct problem_clear_numered_finite_elements_change {
+/** \brief clear problem finite elements 
+  * \ingroup problems_multi_indices
+  */
+struct problem_clear_numered_finiteElementsPtr_change {
   void operator()(MoFEMProblem &e);
 };
 
-/// \brief number dofs in row
+/** \brief number dofs in row
+  * \ingroup problems_multi_indices
+  */
 struct problem_row_number_change {
   problem_row_number_change() {};
   void operator()(MoFEMProblem &e);
 };
 
-/// \brief number dofs in col
+/** \brief number dofs in col
+  * \ingroup problems_multi_indices
+  */
 struct problem_col_number_change {
   problem_col_number_change() {};
   void operator()(MoFEMProblem &e);
@@ -399,3 +464,10 @@ struct problem_col_number_change {
 }
 
 #endif //__PROBLEMSMULTIINDICES_HPP__
+
+/***************************************************************************//**
+ * \defgroup problems_multi_indices Problems structures and multi-indices
+ * \ingroup mofem
+ ******************************************************************************/
+
+
