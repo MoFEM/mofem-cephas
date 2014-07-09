@@ -941,7 +941,7 @@ PetscErrorCode OpGetData::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TetElementForcesAndSurcesCore::operator()() {
+PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
   if(fePtr->get_ent_type() != MBTET) PetscFunctionReturn(0);

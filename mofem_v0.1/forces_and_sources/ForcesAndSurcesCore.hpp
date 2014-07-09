@@ -440,12 +440,12 @@ struct OpGetData: public DataOperator {
  * \ingroup mofem_forces_and_sources
  *
  * User is implementing own operator at Guass piint level, by own object
- * derived from TetElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ * derived from TetElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
  * vecUserOpSymmNN. 
  *
  */
-struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
   DerivedDataForcesAndSurcesCore derivedData;
@@ -458,14 +458,14 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
   OpSetHoInvJac opSetHoInvJac;
 
-  TetElementForcesAndSurcesCore(FieldInterface &_mField):
+  TetElementForcesAndSourcesCore(FieldInterface &_mField):
     ForcesAndSurcesCore(_mField),data(MBTET),
     derivedData(data),opSetInvJac(invJac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsInvJac,3,3),
     opSetHoInvJac(hoGaussPtsInvJac) {};
     
-  virtual ~TetElementForcesAndSurcesCore() {}
+  virtual ~TetElementForcesAndSourcesCore() {}
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -513,13 +513,13 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
     inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
-    PetscErrorCode setPtrFE(TetElementForcesAndSurcesCore *ptr) { 
+    PetscErrorCode setPtrFE(TetElementForcesAndSourcesCore *ptr) { 
       PetscFunctionBegin;
       ptrFE = ptr;
       PetscFunctionReturn(0);
     }
     private:
-    TetElementForcesAndSurcesCore *ptrFE; 
+    TetElementForcesAndSourcesCore *ptrFE; 
 
   };
 
