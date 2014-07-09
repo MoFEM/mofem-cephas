@@ -352,6 +352,13 @@ typedef multi_index_container<
 	FEDofMoFEMEntity,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
 	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
+	> >,
+    ordered_non_unique<
+      tag<Composite_EntType_and_Space_mi_tag>, 
+      composite_key<
+	FEDofMoFEMEntity,
+	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,
+	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,FieldSpace,&FEDofMoFEMEntity::get_space>
 	> >
   > > FEDofMoFEMEntity_multiIndex;
 

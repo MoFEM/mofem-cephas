@@ -182,8 +182,20 @@ struct DataForcesAndSurcesCore {
 	// in some cases, f.e. for direvatives of nodal shape functions ony one
 	// gauss point is needed
 	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
-
       }
+    }
+
+    /** \brief get Hdiv of shape functions at Gauss pts
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const matrix_adaptor getHdivN(int gg) {
+      int dim = 3;
+      int nb_dofs = getDiffN().size2()/dim;
+      FieldData *data = &getDiffN()(gg,0);
+      return matrix_adaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
     }
 
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
@@ -265,15 +277,15 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   virtual ~ForcesAndSurcesCore() {}
 
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getOrder(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getOrder(const string &field_name,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getTrisSense(DataForcesAndSurcesCore &data);
 
-  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data);
-  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data);
-  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data);
+  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);
@@ -381,7 +393,7 @@ struct DataOperator {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode op(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
+  PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
 
 
   /** \brief operator for linear form, usaully to calulate values on left hand side
@@ -394,7 +406,7 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode op(DataForcesAndSurcesCore &data);
+  PetscErrorCode opRhs(DataForcesAndSurcesCore &data);
 
 
 };
@@ -461,8 +473,13 @@ struct OpGetData: public DataOperator {
  */
 struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
-  DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derivedData;
+  DataForcesAndSurcesCore dataH1;
+  DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataL2;
+  DerivedDataForcesAndSurcesCore derivedDataL2;
+  DataForcesAndSurcesCore dataHdiv;
+  DerivedDataForcesAndSurcesCore derivedDataHdiv;
+
   OpSetInvJac opSetInvJac;
 
   string meshPositionsFieldName;
@@ -473,8 +490,11 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetHoInvJac opSetHoInvJac;
 
   TetElementForcesAndSourcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTET),
-    derivedData(data),opSetInvJac(invJac),
+    ForcesAndSurcesCore(_mField),
+    dataH1(MBTET),derivedDataH1(dataH1),
+    dataL2(MBTET),derivedDataL2(dataL2),
+    dataHdiv(MBTET),derivedDataHdiv(dataHdiv),
+    opSetInvJac(invJac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsInvJac,3,3),
     opSetHoInvJac(hoGaussPtsInvJac) {};
@@ -505,6 +525,11 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
    * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
   **/
   virtual int getRule(int order) { return order; };
+  virtual PetscErrorCode setGaussPts(int order) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
+    PetscFunctionReturn(0);
+  }
 
   /** \brief default oparator for TET element
     */
@@ -537,18 +562,19 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpN_H1; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN_H1H1;
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs_H1() { return vecUserOpN_H1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs_H1H1() { return vecUserOpSymmNN_H1H1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
+
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;

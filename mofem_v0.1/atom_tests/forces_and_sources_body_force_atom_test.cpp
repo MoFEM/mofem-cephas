@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     my_split << mydata << endl;
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 

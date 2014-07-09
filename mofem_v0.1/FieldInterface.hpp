@@ -1855,7 +1855,7 @@ struct FieldInterface {
    * \param problem_name fe_name \param method is class derived form
    * FieldInterface::FEMethod
   **/ 
-  virtual PetscErrorCode loop_finiteElementsPtr(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
+  virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
    *
@@ -1872,7 +1872,7 @@ struct FieldInterface {
    * \param problem_name fe_name \param method is class derived form
    * FieldInterface::FEMethod
   **/ 
-  virtual PetscErrorCode loop_finiteElementsPtr(
+  virtual PetscErrorCode loop_finite_elements(
     const string &problem_name,const string &fe_name,FEMethod &method,
     int lower_rank,int upper_rank,int verb = -1) = 0;
 
@@ -2069,7 +2069,7 @@ struct FieldInterface {
   /** \brief Get finite elements multi index
     *
     */
-  virtual PetscErrorCode get_finiteElementsPtr(const MoFEMFiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
+  virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
 
   /** 
     * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)

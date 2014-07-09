@@ -176,12 +176,12 @@ int main(int argc, char *argv[]) {
   ierr = MetaNeummanForces::setNeumannFluxFiniteElementOperators(mField,neumann_forces,F,"POTENTIAL_FIELD"); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
-    ierr = mField.loop_finiteElementsPtr("POTENTIAL_PROBLEM",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("POTENTIAL_PROBLEM",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
   //evaluate laplacian in body
   LaplacianElem elem(mField,A,F);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("POTENTIAL_PROBLEM","POTENTIAL_ELEM",elem);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("POTENTIAL_PROBLEM","POTENTIAL_ELEM",elem);  CHKERRQ(ierr);
   
   //post proces fix boundary conditiond
   ierr = mField.problem_basic_method_postProcess("POTENTIAL_PROBLEM",fix_dofs); CHKERRQ(ierr);
@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
   }
 
   PostProcScalarFieldsAndGradientOnRefMesh fe_post_proc_method(moab,"POTENTIAL_FIELD");
-  ierr = mField.loop_finiteElementsPtr("POTENTIAL_PROBLEM","POTENTIAL_ELEM",fe_post_proc_method);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("POTENTIAL_PROBLEM","POTENTIAL_ELEM",fe_post_proc_method);  CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);

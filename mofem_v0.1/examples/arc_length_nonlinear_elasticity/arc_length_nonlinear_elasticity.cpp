@@ -707,7 +707,7 @@ int main(int argc, char *argv[]) {
 	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
       }*/
       PostProcStressNonLinearElasticity fe_post_proc_method(moab,fe);
-      ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
       if(pcomm->rank()==0) {
 	ostringstream sss;
 	sss << "out_post_proc_" << step << ".vtk";

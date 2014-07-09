@@ -22,8 +22,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __BODY_FORCE_HPP
-#define __BODY_FORCE_HPP
+#ifndef __THERMAL_ELEMENT_HPP
+#define __THERMAL_ELEMENT_HPP
 
 #include "ForcesAndSurcesCore.hpp"
 #include "TsCtx.hpp"
@@ -941,8 +941,8 @@ struct ThermalElement {
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       //add finite element
-      feRhs.get_op_to_do_Rhs_H1().push_back(new OpGetGradAtGaussPts(field_name,commonData));
-      feRhs.get_op_to_do_Rhs_H1().push_back(new OpThermalRhs(field_name,F,sit->second,commonData));
+      feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
+      feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,F,sit->second,commonData));
     }
     PetscFunctionReturn(0);
   }
@@ -955,7 +955,7 @@ struct ThermalElement {
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       //add finite elemen
-      feLhs.get_op_to_do_Lhs_H1H1().push_back(new OpThermalLhs(field_name,A,sit->second,commonData));
+      feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,A,sit->second,commonData));
     }
     PetscFunctionReturn(0);
   }
@@ -987,12 +987,12 @@ struct ThermalElement {
       map<int,BlockData>::iterator sit = setOfBlocks.begin();
       for(;sit!=setOfBlocks.end();sit++) {
 	//add finite element
-	feLhs.get_op_to_do_Lhs_H1H1().push_back(new OpThermalLhs(field_name,sit->second,commonData));
-	feLhs.get_op_to_do_Lhs_H1H1().push_back(new OpHeatCapacityLsh(field_name,sit->second,commonData));
-	feRhs.get_op_to_do_Rhs_H1().push_back(new OpGetRateAtGaussPts(rate_name,commonData));
-	feRhs.get_op_to_do_Rhs_H1().push_back(new OpGetGradAtGaussPts(field_name,commonData));
-	feRhs.get_op_to_do_Rhs_H1().push_back(new OpThermalRhs(field_name,sit->second,commonData));
-	feRhs.get_op_to_do_Rhs_H1().push_back(new OpHeatCapacityRhs(field_name,sit->second,commonData));
+	feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,sit->second,commonData));
+	feLhs.get_op_to_do_Lhs().push_back(new OpHeatCapacityLsh(field_name,sit->second,commonData));
+	feRhs.get_op_to_do_Rhs().push_back(new OpGetRateAtGaussPts(rate_name,commonData));
+	feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
+	feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,sit->second,commonData));
+	feRhs.get_op_to_do_Rhs().push_back(new OpHeatCapacityRhs(field_name,sit->second,commonData));
       }
     }
     {
@@ -1026,7 +1026,7 @@ struct ThermalElement {
 
 }
 
-#endif //__BODY_FORCE_HPP
+#endif //__THERMAL_ELEMENT_HPP
 
 /***************************************************************************//**
  * \defgroup mofem_thermal_elem Thermal element

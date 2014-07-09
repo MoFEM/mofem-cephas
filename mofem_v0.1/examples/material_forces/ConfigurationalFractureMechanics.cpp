@@ -1471,7 +1471,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
       if(fe_post_proc_stresses_method!=NULL) delete fe_post_proc_stresses_method;
       fe_post_proc_stresses_method = new PostProcStressNonLinearElasticity(mField.get_moab(),my_fe);
       fe_post_proc_stresses_method->do_broadcast = false;
-      ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","ELASTIC",*fe_post_proc_stresses_method,0,pcomm->size());  CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",*fe_post_proc_stresses_method,0,pcomm->size());  CHKERRQ(ierr);
     }
   }
 
@@ -1527,13 +1527,13 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
   ierr = MatZeroEntries(projSurfaceCtx->C); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("C_ALL_MATRIX","C_SURFACE_ELEM",CFE_SURFACE);  CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",CFE_CRACK_SURFACE);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",CFE_SURFACE);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",CFE_CRACK_SURFACE);  CHKERRQ(ierr);
   for(map<int,ConstrainSurfacGeometry*>::iterator mit = CFE_SURFACE_msId_ptr.begin();
     mit!=CFE_SURFACE_msId_ptr.end();mit++) {
     ostringstream ss0;
     ss0 << "C_SURFACE_ELEM_msId_" << mit->first;
-    ierr = mField.loop_finiteElementsPtr("C_ALL_MATRIX",ss0.str(),*(mit->second));  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_ALL_MATRIX",ss0.str(),*(mit->second));  CHKERRQ(ierr);
   }
 
   ierr = MatAssemblyBegin(projSurfaceCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -1784,7 +1784,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
   ierr = MatZeroEntries(projFrontCtx->C); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
@@ -1811,7 +1811,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
   C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(mField,projFrontCtx_tangent.C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatMultTranspose(projFrontCtx_tangent.C,LambdaVec,GriffithForceVec); CHKERRQ(ierr);
@@ -1884,7 +1884,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
   ierr = MatZeroEntries(projFrontCtx->C); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
@@ -1914,7 +1914,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& mFie
   ierr = mField.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
   C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(mField,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
@@ -2802,7 +2802,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   ierr = VecGhostUpdateEnd(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = mField.problem_basic_method_preProcess(problem,fix_material_pts); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr(problem,fe,material_fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements(problem,fe,material_fe);  CHKERRQ(ierr);
   ierr = mField.problem_basic_method_postProcess(problem,fix_material_pts); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

@@ -389,3 +389,8 @@ add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/record_series_atom.txt
   ${CMAKE_BINARY_DIR}/atom_tests/record_series_atom.txt)
 
+# add test for hdiv space
+add_executable(forces_and_sources_hdiv_approximation_functions forces_and_sources_hdiv_approximation_functions.cpp)
+target_link_libraries(forces_and_sources_hdiv_approximation_functions mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+
