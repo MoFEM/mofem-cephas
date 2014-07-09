@@ -224,8 +224,8 @@ struct FieldApproximationH1 {
     FUNEVAL &function_evaluator) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
-    fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    fe.get_op_to_do_Rhs_H1().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    fe.get_op_to_do_Lhs_H1H1().push_back(new OpApprox(field_name,A,F,function_evaluator));
     MatZeroEntries(A);
     VecZeroEntries(F);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

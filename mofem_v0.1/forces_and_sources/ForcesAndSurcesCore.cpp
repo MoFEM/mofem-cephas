@@ -599,15 +599,131 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
 
     PetscErrorCode ierr;
 
-	  //ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f_e,gNTET_dim); CHKERRQ(ierr);
-	  //ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],&diffNTETinvJac[0],PHI_f,gNTET_dim); CHKERRQ(ierr);
+    //calulate shape function for tet, needed to construct shape functions for h_div 
 
+    if(data.dataOnEntities[MBVERTEX][0].getN().size1() != G_DIM) {
+      data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,4);
+      ierr = ShapeMBTET(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
+    }
+    //that is cheep to calate, no harm done if recalulated
+    data.dataOnEntities[MBVERTEX][0].getDiffN().resize(4,3);
+    ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
 
+    //face shape functions
+
+    double *PHI_f_e[4][3];
+    double *PHI_f[4];
+
+    N_face_edge.resize(4,6);
+    N_face_bubble.resize(4);
+    int faces_order[4];
+    for(int ff = 0;ff<4;ff++) {
+      if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      }
+      faces_order[ff] = data.dataOnEntities[MBTRI][ff].getOrder();
+      //three edges on face
+      for(int ee = 0;ee<3;ee++) {
+	N_face_edge(ff,ee).resize(G_DIM,3*NBFACE_EDGE_HDIV(faces_order[ff]));
+	PHI_f_e[ff][ee] = &((N_face_edge(ff,ee))(0,0));
+      }
+      N_face_bubble[ff].resize(G_DIM,3*NBFACE_FACE_HDIV(faces_order[ff]));
+      PHI_f[ff] = &(N_face_bubble[ff](0,0));
+    }
+
+    ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(
+      &data.facesNodes(0,0),faces_order,
+      &data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
+      PHI_f_e,G_DIM); CHKERRQ(ierr);
+
+    ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(
+      &data.facesNodes(0,0),faces_order,
+      &data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
+      PHI_f,G_DIM); CHKERRQ(ierr);
+
+    //volume shape functions
+
+    double *PHI_v_e[6];
+    double *PHI_v_f[4];
+    double *PHI_v;
+
+    int volume_order = data.dataOnEntities[MBTET][0].getOrder();
+    double coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
+
+    N_volume_edge.resize(6);
+    for(int ee = 0;ee<6;ee++) {
+      N_volume_edge[ee].resize(G_DIM,3*NBVOLUME_EDGE_HDIV(volume_order));
+      PHI_v_e[ee] = &(N_volume_edge[ee](0,0));
+    }
+    ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
+      volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+      PHI_v_e,G_DIM); CHKERRQ(ierr);
+
+    N_volume_face.resize(4);
+    for(int ff = 0;ff<4;ff++) {
+      N_volume_face[ff].resize(G_DIM,3*NBVOLUME_FACE_HDIV(volume_order));
+      PHI_v_f[ff] = &(N_volume_face[ff](0,0));
+    }
+    ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
+      volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+      PHI_v_f,G_DIM); CHKERRQ(ierr);
+
+    N_volume_bubble.resize(G_DIM,3*NBVOLUME_VOLUME_HDIV(volume_order));
+    PHI_v = &(N_volume_bubble(0,0));
+    ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(
+      volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+      PHI_v,G_DIM); CHKERRQ(ierr);
+
+    // set shape functions into data strucrure
+
+    //faces
+    if(data.dataOnEntities[MBTRI].size()!=4) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+    }
+    for(int ff = 0;ff<4;ff++) {
+      int col = 0;
+      data.dataOnEntities[MBTRI][ff].getDiffN().resize(G_DIM,3*G_DIM*NBFACE_HDIV(faces_order[ff]));
+      for(int ee = 0;ee<3;ee++) {
+	for(int dd = 0;dd<N_face_edge(ff,ee).size2();dd++,col++) {
+	  for(int gg = 0;gg<G_DIM;gg++) {
+	    data.dataOnEntities[MBTRI][ff].getDiffN()(gg,col) = N_face_edge(ff,ee)(gg,dd);
+	  }
+	}
+      }
+      for(int dd = 0;dd<N_face_bubble[ff].size2();dd++,col++) {
+	for(int gg = 0;gg<G_DIM;gg++) {
+	  data.dataOnEntities[MBTRI][ff].getDiffN()(gg,col) = N_face_bubble[ff](gg,dd);
+	}
+      }
+    }
+
+    //volume
+    int col = 0;
+    data.dataOnEntities[MBTET][0].getDiffN().resize(G_DIM,NBVOLUME_HDIV(volume_order));
+    for(int ee = 0;ee<6;ee++) {
+      for(int dd = 0;dd<N_volume_edge[ee].size2();dd++,col++) {
+	for(int gg = 0;gg<G_DIM;gg++) {
+	  data.dataOnEntities[MBTET][0].getDiffN()(gg,col) = N_volume_edge[ee](gg,dd);
+	}
+      }
+    }
+    for(int ff = 0;ff<4;ff++) {
+      for(int dd = 0;dd<N_volume_face[ff].size2();dd++,col++) {
+	for(int gg = 0;gg<G_DIM;gg++) {
+	  data.dataOnEntities[MBTET][0].getDiffN()(gg,col) = N_volume_face[ff](gg,dd);
+	}
+      }
+    }
+    for(int dd = 0;dd<N_volume_bubble.size2();dd++,col++) {
+      for(int gg = 0;gg<G_DIM;gg++) {
+	data.dataOnEntities[MBTET][0].getDiffN()(gg,col) = N_volume_bubble(gg,dd);
+      }
+    }
 
     PetscFunctionReturn(0);
   }
-
-
 
 PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
     DataForcesAndSurcesCore &data,
@@ -697,8 +813,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCor
 }
 
 
-PetscErrorCode DataOperator::opSymmetric(
-    DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data) {
+PetscErrorCode DataOperator::op(
+    DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
@@ -714,6 +830,11 @@ PetscErrorCode DataOperator::opSymmetric(
     ierr = doWork(
       -1,VV,MBVERTEX,MBTET,
       row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTET][VV]); CHKERRQ(ierr);
+    if(!symm) {
+      ierr = doWork(
+	VV,-1,MBTET,MBVERTEX,
+	row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTET][VV]); CHKERRQ(ierr);
+    }
   }
 
   for(unsigned int ee = 0;ee<row_data.dataOnEntities[MBEDGE].size();ee++) {
@@ -725,6 +846,11 @@ PetscErrorCode DataOperator::opSymmetric(
     ierr = doWork(
 	ee,-1,MBEDGE,MBVERTEX,
 	row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
+    if(!symm) {
+      ierr = doWork(
+	-1,ee,MBVERTEX,MBEDGE,
+	row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
+    }
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
       int G_DIM_VOLUME = col_data.dataOnEntities[MBTET][VV].getN().size1();
       if(G_DIM != G_DIM_VOLUME) {
@@ -733,6 +859,11 @@ PetscErrorCode DataOperator::opSymmetric(
       ierr = doWork(
 	ee,VV,MBEDGE,MBTET,
 	row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBTET][VV]); CHKERRQ(ierr);
+      if(!symm) {
+	ierr = doWork(
+	  VV,ee,MBTET,MBEDGE,
+	  row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBTET][VV]); CHKERRQ(ierr);
+      }
     }
     for(unsigned int EE = ee;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
       int G_DIM_EE = col_data.dataOnEntities[MBEDGE][EE].getN().size1();
@@ -742,6 +873,11 @@ PetscErrorCode DataOperator::opSymmetric(
       ierr = doWork(
 	  ee,EE,MBEDGE,MBEDGE,
 	  row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBEDGE][EE]); CHKERRQ(ierr);
+      if(!symm && ee != EE) {
+	ierr = doWork(
+	  EE,ee,MBEDGE,MBEDGE,
+	  row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBEDGE][EE]); CHKERRQ(ierr);
+      }
     }
     for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
       int G_DIM_FF = col_data.dataOnEntities[MBTRI][FF].getN().size1();
@@ -751,6 +887,11 @@ PetscErrorCode DataOperator::opSymmetric(
       ierr = doWork(
 	  ee,FF,MBEDGE,MBTRI,
 	  row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBTRI][FF]); CHKERRQ(ierr);
+      if(!symm) {
+	ierr = doWork(
+	  FF,ee,MBTRI,MBEDGE,
+	  row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBTRI][FF]); CHKERRQ(ierr);
+      }
     }
   }
 
@@ -763,6 +904,11 @@ PetscErrorCode DataOperator::opSymmetric(
     ierr = doWork(
 	ff,-1,MBTRI,MBVERTEX,
 	row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
+    if(!symm) {
+      ierr = doWork(
+	-1,ff,MBVERTEX,MBTRI,
+	row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
+    }
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
       int G_DIM_VOLUME = col_data.dataOnEntities[MBTET][VV].getN().size1();
       if(G_DIM != G_DIM_VOLUME) {
@@ -771,6 +917,11 @@ PetscErrorCode DataOperator::opSymmetric(
       ierr = doWork(
 	ff,VV,MBTRI,MBTET,
 	row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBTET][VV]); CHKERRQ(ierr);
+      if(!symm) {
+	ierr = doWork(
+	  VV,ff,MBTET,MBTRI,
+	  row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBTET][VV]); CHKERRQ(ierr);
+      }
     }
     for(unsigned int FF = ff;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
       int G_DIM_FF = col_data.dataOnEntities[MBTRI][FF].getN().size1();
@@ -780,6 +931,11 @@ PetscErrorCode DataOperator::opSymmetric(
       ierr = doWork(
 	  ff,FF,MBTRI,MBTRI,
 	  row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBTRI][FF]); CHKERRQ(ierr);
+      if(!symm && ff!=FF) {
+	ierr = doWork(
+	  FF,ff,MBTRI,MBTRI,
+	  row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBTRI][FF]); CHKERRQ(ierr);
+      }
     }
   }
 
@@ -1019,8 +1175,6 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   ierr = ShapeJacMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
   ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
-  DataForcesAndSurcesCore *col_data = &derivedData;
-
   coordsAtGaussPts.resize(nb_gauss_pts,3);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
     for(int dd = 0;dd<3;dd++) {
@@ -1080,8 +1234,8 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   }
 
   for(
-    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpN.begin();
-    oit != vecUserOpN.end(); oit++) {
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpN_H1.begin();
+    oit != vecUserOpN_H1.end(); oit++) {
 
     oit->setPtrFE(this);
     BitFieldId data_id = mField.get_field_structure(oit->col_field_name)->get_id();
@@ -1114,8 +1268,8 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   }
 
   for(
-    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpSymmNN.begin();
-    oit != vecUserOpSymmNN.end(); oit++) {
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpSymmNN_H1H1.begin();
+    oit != vecUserOpSymmNN_H1H1.end(); oit++) {
 
     oit->setPtrFE(this);
     BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
@@ -1140,21 +1294,21 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
     ierr = getTrisRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
     ierr = getTetsRowIndices(data,oit->row_field_name); CHKERRQ(ierr);
     //col indices
-    ierr = getColNodesIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getEdgesColIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTrisColIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTetsColIndices(*col_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getColNodesIndices(derivedData,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgesColIndices(derivedData,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTrisColIndices(derivedData,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTetsColIndices(derivedData,oit->col_field_name); CHKERRQ(ierr);
     //col data
-    ierr = getEdgesOrder(*col_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTrisOrder(*col_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTetsOrder(*col_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getNodesFieldData(*col_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getEdgesFieldData(*col_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTrisFieldData(*col_data,oit->col_field_name); CHKERRQ(ierr);
-    ierr = getTetsFieldData(*col_data,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgesOrder(derivedData,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTrisOrder(derivedData,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTetsOrder(derivedData,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getNodesFieldData(derivedData,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getEdgesFieldData(derivedData,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTrisFieldData(derivedData,oit->col_field_name); CHKERRQ(ierr);
+    ierr = getTetsFieldData(derivedData,oit->col_field_name); CHKERRQ(ierr);
 
     try {
-      ierr = oit->opSymmetric(data,*col_data); CHKERRQ(ierr);
+      ierr = oit->op(data,derivedData,true); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -1381,7 +1535,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     }
 
     try {
-      ierr = oit->opSymmetric(data,derivedData); CHKERRQ(ierr);
+      ierr = oit->op(data,derivedData,true); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -1499,7 +1653,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     ierr = getEdgesFieldData(data,oit->col_field_name); CHKERRQ(ierr);
 
     try {
-      ierr = oit->opSymmetric(data,*col_data); CHKERRQ(ierr);
+      ierr = oit->op(data,*col_data,true); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -1573,7 +1727,7 @@ PetscErrorCode VertexElementForcesAndSurcesCore::operator()() {
     ierr = getNodesFieldData(*col_data,oit->col_field_name); CHKERRQ(ierr);
 
     try {
-      ierr = oit->opSymmetric(data,*col_data); CHKERRQ(ierr);
+      ierr = oit->op(data,*col_data,true); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

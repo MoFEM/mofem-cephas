@@ -1170,8 +1170,11 @@ PetscErrorCode FieldCore::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,
     // insert dofmoabent into mofem databse
     int DD = 0;
     int oo = 0;
-    for(;oo<=e_miit->get_max_order();oo++) {
-      for(int dd = 0;dd<e_miit->get_order_nb_dofs_diff(oo);dd++) {
+    // loop orders
+    for(;oo<=e_miit->get_max_order();oo++) { 
+      //loop nb. dofs at order oo
+      for(int dd = 0;dd<e_miit->get_order_nb_dofs_diff(oo);dd++) {  
+	//loop rank
 	for(int rr = 0;rr<e_miit->get_max_rank();rr++,DD++) {
 	  pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
 	  try {

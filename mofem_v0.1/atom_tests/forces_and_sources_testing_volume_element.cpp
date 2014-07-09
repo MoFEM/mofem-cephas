@@ -196,8 +196,8 @@ int main(int argc, char *argv[]) {
 
   };
 
-  fe1.get_op_to_do_Rhs().push_back(new MyOp(my_split));
-  fe1.get_op_to_do_Lhs().push_back(new MyOp(my_split));
+  fe1.get_op_to_do_Rhs_H1().push_back(new MyOp(my_split));
+  fe1.get_op_to_do_Lhs_H1H1().push_back(new MyOp(my_split));
 
   ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 

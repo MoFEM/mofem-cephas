@@ -336,6 +336,13 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
 
+
+  ublas::matrix<ublas::matrix<FieldData> > N_face_edge;
+  ublas::vector<ublas::matrix<FieldData> > N_face_bubble;
+  ublas::vector<ublas::matrix<FieldData> > N_volume_edge;
+  ublas::vector<ublas::matrix<FieldData> > N_volume_face;
+  ublas::matrix<FieldData> N_volume_bubble;
+
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
   PetscErrorCode shapeTETFunctions_Hdiv(
@@ -355,9 +362,6 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   PetscErrorCode shapeEDGEFunctions_H1(
     DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM);
 
-
-
-
 };
 
 /** \brief base operator to do operations at Gauss Pt. leve
@@ -376,7 +380,9 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode opSymmetric(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data);
+
+  PetscErrorCode op(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
+
 
   /** \brief operator for linear form, usaully to calulate values on left hand side
     */
@@ -531,18 +537,18 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
+  boost::ptr_vector<UserDataOperator> vecUserOpN_H1; 
+  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN_H1H1;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs_H1() { return vecUserOpN_H1; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs_H1H1() { return vecUserOpSymmNN_H1H1; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
