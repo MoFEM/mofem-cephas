@@ -43,8 +43,8 @@ namespace MoFEM {
 
 struct ThermalStressElement {
 
-  struct MyVolumeFE: public TetElementForcesAndSurcesCore {
-    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSurcesCore(_mField) {}
+  struct MyVolumeFE: public TetElementForcesAndSourcesCore {
+    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
     int getRule(int order) { return order-1; };
   };
 
@@ -71,12 +71,12 @@ struct ThermalStressElement {
   };
   CommonData commonData;
 
-  struct OpGetTemperatureAtGaussPts: public TetElementForcesAndSurcesCore::UserDataOperator {
+  struct OpGetTemperatureAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
     int verb;
     OpGetTemperatureAtGaussPts(const string field_name,CommonData &common_data,int _verb = 0):
-      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       commonData(common_data),verb(_verb) {}
 
     PetscErrorCode doWork(
@@ -105,14 +105,14 @@ struct ThermalStressElement {
   };
 
 
-  struct OpThermalStressRhs: public TetElementForcesAndSurcesCore::UserDataOperator {
+  struct OpThermalStressRhs: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     BlockData &dAta;
     CommonData &commonData;
     int verb;
     OpThermalStressRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data,int _verb = 0):
-      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),commonData(common_data),verb(_verb) { }
 
     ublas::vector<double> Nf;
