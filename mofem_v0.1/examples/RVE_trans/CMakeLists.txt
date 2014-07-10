@@ -18,35 +18,35 @@
 
 # ================= Potential flow for fibre directions ==================================
 add_executable(potential_flow_all potential_flow_all.cpp)
-target_link_libraries(potential_flow_all mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(potential_flow_all mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 # ======================= Linear displacement BCs ========================================
 add_executable(RVE_disp RVE_disp.cpp)
-target_link_libraries(RVE_disp mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_disp mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 # ======================= Traction BCs ========================================
 add_executable(RVE_trac RVE_trac.cpp)
-target_link_libraries(RVE_trac mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_trac mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 # ======================= Periodic BCs ========================================
 add_executable(RVE_periodic RVE_periodic.cpp)
-target_link_libraries(RVE_periodic mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_periodic mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 
 
 
 # ================= Potential flow for fibre directions with no inteface elements ==================================
 add_executable(potential_flow_all_no_interface potential_flow_all_no_interface.cpp)
-target_link_libraries(potential_flow_all_no_interface mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(potential_flow_all_no_interface mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 # ======================= Linear displacement BCs with no interface element ========================================
 add_executable(RVE_disp_no_interface RVE_disp_no_interface.cpp)
-target_link_libraries(RVE_disp_no_interface mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_disp_no_interface mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 # ======================= Traction BCs with no interface element ========================================
 add_executable(RVE_trac_no_interface RVE_trac_no_interface.cpp)
-target_link_libraries(RVE_trac_no_interface mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_trac_no_interface mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
 # ======================= Periodic BCs with no interface element ========================================
 add_executable(RVE_periodic_no_interface RVE_periodic_no_interface.cpp)
-target_link_libraries(RVE_periodic_no_interface mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_periodic_no_interface mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})

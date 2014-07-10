@@ -33,7 +33,7 @@
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Periodic.hpp"
 #include "RVEVolume.hpp"
 
-#include "ElasticFEMethodForInterface.hpp"
+#include "ElasticFEMethodInterface.hpp"
 
 using namespace MoFEM;
 
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
     
     //    const clock_t begin_time = clock();
     ierr = mField.build_fields(); CHKERRQ(ierr);
-    ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+    ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
     ierr = mField.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
     ierr = mField.build_problems(); CHKERRQ(ierr);
     
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
 	
 	///Getting No. of Fibres to be used for Potential Flow Problem
 	int noOfFibres=0;
-	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|UnknownCubitName,it)) {
+	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
 		
 		std::size_t found=it->get_Cubit_name().find("PotentialFlow");
 		if (found==std::string::npos) continue;
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     
     rval = moab.write_file("meshset_Trans_ISO.vtk","VTK","",&meshset_Trans_ISO,1); CHKERR_PETSC(rval);
     
-	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it)){
+	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
         
 		if(it->get_Cubit_name() == "MAT_ELASTIC_1") {
 			Range TetsInBlock;
@@ -233,7 +233,11 @@ int main(int argc, char *argv[]) {
     
 	Range prims_on_problem_bit_level;
 	ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims_on_problem_bit_level); CHKERRQ(ierr);
-	mField.seed_finite_elements(prims_on_problem_bit_level);
+  //to create meshset from range
+  EntityHandle meshset_prims_on_problem_bit_level;
+  rval = moab.create_meshset(MESHSET_SET,meshset_prims_on_problem_bit_level); CHKERR_PETSC(rval);
+	rval = moab.add_entities(meshset_prims_on_problem_bit_level,prims_on_problem_bit_level); CHKERR_PETSC(rval);
+  ierr = mField.seed_ref_level_MESHSET(meshset_prims_on_problem_bit_level,BitRefLevel().set()); CHKERRQ(ierr);
 	
     /***/
     //Define problem
@@ -241,8 +245,8 @@ int main(int argc, char *argv[]) {
     //Fields
     ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
     ierr = mField.add_field("Lagrange_mul_disp",H1,3); CHKERRQ(ierr);  //For lagrange multipliers to control the periodic motion
-    ierr = mField.add_field("Lagrange_mul_disp_rigid_trans",NoField,3); CHKERRQ(ierr);  //To control the rigid body motion (3 Traslations and 3 rotations)
-    ierr = mField.add_field("Lagrange_mul_disp_rigid_rotation",NoField,3); CHKERRQ(ierr); //Controla 3 rigid body rotations about x, y and z axis
+    ierr = mField.add_field("Lagrange_mul_disp_rigid_trans",NOFIELD,3); CHKERRQ(ierr);  //To control the rigid body motion (3 Traslations and 3 rotations)
+    ierr = mField.add_field("Lagrange_mul_disp_rigid_rotation",NOFIELD,3); CHKERRQ(ierr); //Controla 3 rigid body rotations about x, y and z axis
 
     
     //FE
@@ -346,11 +350,17 @@ int main(int argc, char *argv[]) {
     //Add finite element to lagrange element for rigid body translation
     Range Tris_NewWholeMesh, Tri_OldNewSurf, SurfacesFaces;
     ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTRI,Tris_NewWholeMesh); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(103,SideSet,2,Tri_OldNewSurf,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,Tri_OldNewSurf,true); CHKERRQ(ierr);
     SurfacesFaces = intersect(Tris_NewWholeMesh,Tri_OldNewSurf);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
-    ierr = mField.seed_finite_elements(SurfacesFaces); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+  
+  //to create meshset from range
+  EntityHandle BoundFacesMeshset;
+  rval = moab.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
+	rval = moab.add_entities(BoundFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
+  ierr = mField.seed_ref_level_MESHSET(BoundFacesMeshset,BitRefLevel().set()); CHKERRQ(ierr);
+
+  ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
 
     
@@ -360,9 +370,9 @@ int main(int argc, char *argv[]) {
 
     //Populating the Multi-index container with -ve triangles
     Range Tri_OldNewSurfNeg, SurTrisNeg;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,SideSet,2,Tri_OldNewSurfNeg,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(101,SIDESET,2,Tri_OldNewSurfNeg,true); CHKERRQ(ierr);
     SurTrisNeg = intersect(Tris_NewWholeMesh,Tri_OldNewSurfNeg);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
 
     Face_CenPos_Handle_multiIndex Face_CenPos_Handle_varNeg, Face_CenPos_Handle_varPos;
     double TriCen[3], coords_Tri[9];
@@ -409,9 +419,9 @@ int main(int argc, char *argv[]) {
     
     //Populating the Multi-index container with +ve triangles
     Range Tri_OldNewSurfPos, SurTrisPos;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SideSet,2,Tri_OldNewSurfPos,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,Tri_OldNewSurfPos,true); CHKERRQ(ierr);
     SurTrisPos = intersect(Tris_NewWholeMesh,Tri_OldNewSurfPos);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
     
     
     for(Range::iterator it = SurTrisPos.begin(); it!=SurTrisPos.end();  it++) {
@@ -608,7 +618,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.build_fields(); CHKERRQ(ierr);
     
     //build finite elemnts
-    ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+    ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
     
     //build adjacencies
     ierr = mField.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
@@ -621,22 +631,22 @@ int main(int argc, char *argv[]) {
     
     //partition
     ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-    ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    ierr = mField.partition_finiteElementsPtr("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     //what are ghost nodes, see Petsc Manual
     ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     
     //create matrices
     Vec F,D;
-    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Row,&F); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",Col,&D); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",COL,&D); CHKERRQ(ierr);
     
     Mat Aij;
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
     struct MyElasticFEMethod: public ElasticFEMethod {
-        MyElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
+        MyElasticFEMethod(FieldInterface& _mField,
                           Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu):
-        ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
+        ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu) {};
         
         PetscErrorCode Fint(Vec F_int) {
             PetscFunctionBegin;
@@ -650,9 +660,6 @@ int main(int argc, char *argv[]) {
             PetscFunctionReturn(0);
         }
     };
-    
-    CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
-    ierr = myDirihletBC.Init(); CHKERRQ(ierr);
     
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"POTENTIAL_FIELD",dof_ptr)) {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
@@ -673,7 +680,7 @@ int main(int argc, char *argv[]) {
     double PoissonRatio;
     double alpha;
     
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BlockSet,it))
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
     {
         cout << endl << *it << endl;
         
@@ -714,30 +721,30 @@ int main(int argc, char *argv[]) {
 //    alpha = 50;
 //    cout<<"alpha   = "<<alpha<<endl;
 	
-    InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
-    MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-    TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F);
+    InterfaceFEMethod IntMyFE(mField,Aij,D,F,YoungModulus*alpha);
+    MyElasticFEMethod MyFE(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+    TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,Aij,D,F);
     
-    ElasticFE_RVELagrange_Periodic MyFE_RVELagrangePeriodic(mField,&myDirihletBC,Aij,D,F,applied_strain);
-    ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField,&myDirihletBC,Aij,D,F,applied_strain);
-    ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,&myDirihletBC,Aij,D,F,applied_strain);
+    ElasticFE_RVELagrange_Periodic MyFE_RVELagrangePeriodic(mField,Aij,D,F,applied_strain);
+    ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField,Aij,D,F,applied_strain);
+    ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,Aij,D,F,applied_strain);
 
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
     
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
-	ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
+	ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
 	PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",MyFE_RVELagrangeRigidBodyRotation);  CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",MyFE_RVELagrangeRigidBodyRotation);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -764,7 +771,7 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     
     //Save data on mesh
-    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Row,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
     
     
@@ -775,11 +782,11 @@ int main(int argc, char *argv[]) {
     ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
     ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
     
-    RVEVolume MyRVEVol(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), RVE_volume_Vec);
-    RVEVolumeTrans MyRVEVolTrans(mField,&myDirihletBC,Aij,D,F, RVE_volume_Vec);
+    RVEVolume MyRVEVol(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), RVE_volume_Vec);
+    RVEVolumeTrans MyRVEVolTrans(mField,Aij,D,F, RVE_volume_Vec);
 
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyRVEVolTrans);  CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyRVEVolTrans);  CHKERRQ(ierr);
     
     ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
     ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
@@ -792,8 +799,8 @@ int main(int argc, char *argv[]) {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
 
 //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(mField,&myDirihletBC,Aij,D,F,&RVE_volume,applied_strain, Stress_Homo);
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressPeriodic);  CHKERRQ(ierr);
+    ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(mField,Aij,D,F,&RVE_volume,applied_strain, Stress_Homo);
+    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressPeriodic);  CHKERRQ(ierr);
 
     if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
     ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
@@ -802,7 +809,7 @@ int main(int argc, char *argv[]) {
  
 
      PostProcVertexMethod ent_method(moab);
-    ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",Row,ent_method); CHKERRQ(ierr);
+    ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
     
     if(pcomm->rank()==0) {
         EntityHandle out_meshset;
@@ -816,8 +823,8 @@ int main(int argc, char *argv[]) {
     
 //    TranIso_PostProc_FibreDirRot_OnRefMesh fe_post_proc_method( mField, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
 //
-//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+//    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+//    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
 //    
 //    PetscSynchronizedFlush(PETSC_COMM_WORLD);
 //    if(pcomm->rank()==0) {
@@ -825,7 +832,7 @@ int main(int argc, char *argv[]) {
 //    }
 //    
 //    PostProcCohesiveForces fe_post_proc_prisms(mField,YoungModulus*alpha);
-//    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
+//    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
 //    PetscSynchronizedFlush(PETSC_COMM_WORLD);
 //    if(pcomm->rank()==0) {
 //        rval = fe_post_proc_prisms.moab_post_proc.write_file("out_post_proc_prisms.vtk","VTK",""); CHKERR_PETSC(rval);
