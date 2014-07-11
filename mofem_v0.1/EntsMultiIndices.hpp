@@ -299,16 +299,15 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   int tag_FieldData_size;
   const ApproximationOrder* tag_dof_order_data;
   const ApproximationRank* tag_dof_rank_data;
-  int (*forder)(int);
   LocalUId local_uid;
   GlobalUId global_uid;
-  MoFEMEntity(Interface &moab,const MoFEMField *_FieldData,const RefMoFEMEntity *_ref_mab_ent_ptr);
+  MoFEMEntity(Interface &moab,const MoFEMField *_field_ptr,const RefMoFEMEntity *_ref_mab_ent_ptr);
   ~MoFEMEntity();
   inline EntityHandle get_ent() const { return get_ref_ent(); }
   inline int get_nb_dofs_on_ent() const { return tag_FieldData_size/sizeof(FieldData); }
   inline FieldData* get_ent_FieldData() const { return const_cast<FieldData*>(tag_FieldData); }
-  inline int get_order_nb_dofs(int order) const { return forder(order); }
-  inline int get_order_nb_dofs_diff(int order) const { return forder(order)-forder(order-1); }
+  inline int get_order_nb_dofs(int order) const { return (interface_MoFEMField<MoFEMField>::field_ptr->forder_table[get_ent_type()])(order); }
+  inline int get_order_nb_dofs_diff(int order) const { return get_order_nb_dofs(order)-get_order_nb_dofs(order-1); }
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return ref_mab_ent_ptr; }
   const LocalUId& get_local_unique_id() const { return local_uid; }

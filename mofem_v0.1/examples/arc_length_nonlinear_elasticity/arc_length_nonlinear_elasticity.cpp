@@ -474,7 +474,7 @@ int main(int argc, char *argv[]) {
 	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
 	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
 	  //add F_lambda
-	  ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	  ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
 	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
 	  double fnorm;
 	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
@@ -572,18 +572,6 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  if(step>1) {
-    ierr = mField.set_other_global_VecCreateGhost(
-      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    double x0_nrm;
-    ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
-    ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
-  } else {
-    ierr = arc_ctx->set_s(0); CHKERRQ(ierr);
-    ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
-  }
-  ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
   int its_d;
   ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
@@ -599,6 +587,20 @@ int main(int argc, char *argv[]) {
     reduction = step_size_reduction;
     step++;
   }
+
+
+  if(step>1) {
+    ierr = mField.set_other_global_VecCreateGhost(
+      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    double x0_nrm;
+    ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
+    ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+  } else {
+    ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
+    ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+  }
+  ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
   Vec D0,x00;
   ierr = VecDuplicate(D,&D0); CHKERRQ(ierr);

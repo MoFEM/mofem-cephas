@@ -21,9 +21,13 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include<FieldCore.hpp>
-#include<FEM.h>
-#include<version.h>
+#include "FieldCore.hpp"
+#include "CoreDataStructures.hpp"
+
+#include "FEM.h"
+#include "version.h"
+
+#include<moab/Skinner.hpp>
 
 namespace MoFEM {
 

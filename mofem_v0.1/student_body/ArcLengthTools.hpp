@@ -140,8 +140,8 @@ struct ArcLengthSnesCtx: public SnesCtx {
 
 /**
  * Shell matrix which has tructure
- * [ K 		dF_lambda]
- * [ db		diag	]
+ * [ K 		-dF_lambda]
+ * [ db		 diag	]
  */
 struct ArcLengthMatShell {
 
@@ -287,7 +287,7 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
 /**
  * apply oppertor for Arc Length precoditionet
  * solves K*pc_x = pc_f
- * solves K*x_lambda = dF_lambda
+ * solves K*x_lambda = -dF_lambda
  * solves ddlambda = ( res_lambda - db*x_lambda )/( diag + db*pc_x )
  * calulate pc_x = pc_x + ddlambda*x_lambda
  */

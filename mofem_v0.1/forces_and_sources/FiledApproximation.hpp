@@ -27,6 +27,7 @@
 #define __FILEDAPPROXIMATION_HPP
 
 #include "FieldInterface.hpp"
+#include "FEM.h"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -44,20 +45,20 @@ struct FieldApproximationH1 {
 
   FieldInterface &mField;
   const string problemName;
-  TetElementForcesAndSurcesCore fe;
+  TetElementForcesAndSourcesCore fe;
 
   FieldApproximationH1(
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
-  struct OpApprox: public TetElementForcesAndSurcesCore::UserDataOperator {
+  struct OpApprox: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     Mat &A;
     Vec &F;
     FUNEVAL &functionEvaluator;
 
     OpApprox(const string &field_name,Mat &_A,Vec &_F,FUNEVAL &function_evaluator):
-      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       A(_A),F(_F),functionEvaluator(function_evaluator) {}
     ~OpApprox() {}
 

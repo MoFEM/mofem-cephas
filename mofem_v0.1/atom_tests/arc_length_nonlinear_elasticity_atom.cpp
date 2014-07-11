@@ -411,7 +411,7 @@ int main(int argc, char *argv[]) {
 	      ierr = VecAssemblyEnd(F_lambda_for_neumann_forces); CHKERRQ(ierr);
 	      ierr = VecAXPY(arc_ptr->F_lambda,1,F_lambda_for_neumann_forces); CHKERRQ(ierr);
 	      //add F_lambda
-	      ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),F_lambda_for_neumann_forces); CHKERRQ(ierr);
+	      ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),F_lambda_for_neumann_forces); CHKERRQ(ierr);
 	    }
 	    for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
 	      ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);

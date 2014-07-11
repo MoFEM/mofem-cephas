@@ -52,19 +52,10 @@
 #include <boost/utility/string_ref.hpp>
 
 //MOAB
-#include<moab_mpi.h>
-#include<moab/ParallelComm.hpp>
-#include<MBParallelConventions.h>
 #include<moab/Core.hpp>
 #include<moab/Interface.hpp>
-#include<moab/Skinner.hpp>
-#include<moab/GeomUtil.hpp>
 #include<moab/Range.hpp>
-#include<moab/MeshTopoUtil.hpp>
-#include<moab/MergeMesh.hpp>
-#include<moab/AdaptiveKDTree.hpp>
 #include<MBTagConventions.hpp>
-#include<io/Tqdcfr.hpp>
 
 //PETSC
 #include<petscmat.h>
@@ -77,10 +68,6 @@
 #include<petscsnes.h>
 #include<petscts.h>
 #include<petsctime.h>
-
-//MOFEM
-#include<FEM.h>
-#include<H1HdivHcurlL2.h>
 
 //DEFINES
 #define MYPCOMM_INDEX 0
@@ -176,7 +163,36 @@ enum MoFEMErrorCode {
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
   MOFEM_IMPOSIBLE_CASE = 104,
   MOFEM_CHAR_THROW = 105,
-  MOFEM_STD_EXCEPTION_THROW = 106
+  MOFEM_STD_EXCEPTION_THROW = 106,
+  MOFEM_INVALID_DATA = 107
+};
+
+/// \brief approximation spaces
+enum FieldSpace { 
+  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
+  H1, 		///< continuous field
+  HDIV,		///< field with continuous normal traction
+  HCURL,	///< field with continuous tangents
+  L2,		///< field with C-1 continuity
+  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
+}; 
+
+
+/// \brief Those types control how functions respond on arguments, f.e. error handling
+enum MoFEMTypes {
+  MF_ZERO = 0,
+  MF_EXCL = 1<<0
+};
+
+/// \brief RowColData
+enum RowColData {
+  ROW,COL,DATA,LASTROWCOLDATA
+};
+
+enum ByWhat { 
+  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
+  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
+  BYALL = 1<<0|1<<1|1<<2 
 };
 
 //CONSTS
@@ -192,9 +208,9 @@ typedef int EntPart;
 typedef PetscScalar FieldData;
 typedef int ApproximationOrder;
 typedef int ApproximationRank;
-typedef uint128_t UId;
-typedef int ShortId;
+typedef uint128_t UId;  
 //typedef checked_uint128_tUId;
+typedef int ShortId;
 
 /** \brief loacl unique id
   *
@@ -246,34 +262,6 @@ typedef bitset<BITREFLEVEL_SIZE> BitRefLevel;
 typedef bitset<BITFIELDID_SIZE> BitFieldId;
 typedef bitset<BITFEID_SIZE> BitFEId;
 typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
-
-/// \brief approximation spaces
-enum FieldSpace { 
-  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
-  H1, 		///< continuous field
-  HDIV,		///< field with continuous normal traction
-  HCURL,	///< field with continuous tangents
-  L2,		///< field with C-1 continuity
-  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
-}; 
-
-
-/// \brief Those types control how functions respond on arguments, f.e. error handling
-enum MoFEMTypes {
-  MF_ZERO = 0,
-  MF_EXCL = 1<<0
-};
-
-/// \brief RowColData
-enum RowColData {
-  ROW,COL,DATA,LASTROWCOLDATA
-};
-
-enum ByWhat { 
-  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
-  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
-  BYALL = 1<<0|1<<1|1<<2 
-};
 
 //AUX STRUCTURES
 
