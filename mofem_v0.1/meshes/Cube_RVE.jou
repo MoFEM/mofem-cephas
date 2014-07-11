@@ -3,7 +3,7 @@
 
 cubit.cmd('new')
 cubit.cmd('brick x 1 y 1 z 1')
-interval=2; 
+interval=1; 
 
 str1='block 1 ' +' volume 1'; cubit.cmd(str1)
 str1='block 1 ' +' name "MAT_ELASTIC"'; cubit.cmd(str1)
@@ -38,6 +38,7 @@ cubit.cmd('sideset 102 surface 1 5 6')  # all +ve boundary surfaces
 cubit.cmd('sideset 103 surface 1 2 3 4 5 6')  # all boundary surfaces
 
 cubit.cmd('save as "/Users/zahur/Desktop/RVE_Meshes/Cube_RVE/Cube_RVE.cub" overwrite')
+
 
 
 
