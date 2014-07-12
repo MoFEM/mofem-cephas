@@ -188,3 +188,4 @@ add_custom_target(doc
   COMMENT "Generating API documentation with Doxygen" VERBATIM
   )
 endif(DOXYGEN_FOUND)
+
