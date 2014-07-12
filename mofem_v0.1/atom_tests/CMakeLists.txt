@@ -393,4 +393,26 @@ add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
 add_executable(forces_and_sources_hdiv_approximation_functions forces_and_sources_hdiv_approximation_functions.cpp)
 target_link_libraries(forces_and_sources_hdiv_approximation_functions mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
+#Homogenisation atom test
+add_executable(homogenisation_disp_atom_test homogenisation_disp_atom_test.cpp)
+target_link_libraries(homogenisation_disp_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+
+add_executable(homogenisation_trac_atom_test homogenisation_trac_atom_test.cpp)
+target_link_libraries(homogenisation_trac_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+
+add_executable(homogenisation_periodic_atom_test homogenisation_periodic_atom_test.cpp)
+target_link_libraries(homogenisation_periodic_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+
+cm_export_file("../meshes/Cube_RVE.cub" export_atom_tests)
+
+add_test(homogenisation_disp_atom_test_1 ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_disp_atom_test -my_file Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
+add_test(homogenisation_disp_atom_test_1_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/Cube_RVE.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/Cube_RVE.cub.txt)
+
+add_test(homogenisation_trac_atom_test_1 ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_trac_atom_test -my_file Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
+add_test(homogenisation_trac_atom_test_1_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/Cube_RVE.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/Cube_RVE.cub.txt)
+
+add_test(homogenisation_periodic_atom_test_1 ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_periodic_atom_test -my_file Cube_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
+add_test(homogenisation_periodic_atom_test_1_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/Cube_RVE.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/Cube_RVE.cub.txt)
+
+
 
