@@ -389,6 +389,29 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   PetscErrorCode shapeEDGEFunctions_H1(
     DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM);
 
+  /** \brief it is used to calulate nb. of Gauss integartion points
+   *
+   * for more details pleas look 
+   *   Reference:
+   *
+   * Albert Nijenhuis, Herbert Wilf,
+   * Combinatorial Algorithms for Computers and Calculators,
+   * Second Edition,
+   * Academic Press, 1978,
+   * ISBN: 0-12-519260-6,
+   * LC: QA164.N54.
+   *
+   * More details about algorithm 
+   * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
+  **/
+  virtual int getRule(int order) { return order; };
+
+  virtual PetscErrorCode setGaussPts(int order) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
+    PetscFunctionReturn(0);
+  }
+
 };
 
 /** \brief base operator to do operations at Gauss Pt. leve
@@ -562,28 +585,6 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
 
-  /** \brief it is used to calulate nb. of Gauss integartion points
-   *
-   * for more details pleas look 
-   *   Reference:
-   *
-   * Albert Nijenhuis, Herbert Wilf,
-   * Combinatorial Algorithms for Computers and Calculators,
-   * Second Edition,
-   * Academic Press, 1978,
-   * ISBN: 0-12-519260-6,
-   * LC: QA164.N54.
-   *
-   * More details about algorithm 
-   * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
-  **/
-  virtual int getRule(int order) { return order; };
-  virtual PetscErrorCode setGaussPts(int order) {
-    PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
-    PetscFunctionReturn(0);
-  }
-
   /** \brief default oparator for TET element
     */
   struct UserDataOperator: public DataOperator {
@@ -680,8 +681,11 @@ struct OpGetNormals: public DataOperator {
  */
 struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
-  DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derivedData;
+  DataForcesAndSurcesCore dataH1;
+  DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataHdiv;
+  DerivedDataForcesAndSurcesCore derivedDataHdiv;
+
   string meshPositionsFieldName;
 
   ublas::matrix<FieldData> nOrmals_at_GaussPt;
@@ -690,7 +694,9 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   OpGetNormals opHONormals;
 
   TriElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTRI),derivedData(data),
+    ForcesAndSurcesCore(_mField),
+    dataH1(MBTRI),derivedDataH1(dataH1),
+    dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt) {};
 
@@ -701,8 +707,6 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::vector<double> coords;
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
-
-  virtual int getRule(int order) { return order; };
 
   /** \brief default oparator for TRI element
     */
@@ -824,8 +828,6 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::vector<double> coords;
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
-
-  virtual int getRule(int order) { return order; };
 
   /** \brief default oparator for EDGE element
     */

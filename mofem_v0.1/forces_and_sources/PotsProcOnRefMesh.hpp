@@ -112,7 +112,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       }
     }
 
-    moab_ref.list_entities(tets);
+    //moab_ref.list_entities(tets);
 
     PetscFunctionReturn(0);
   }

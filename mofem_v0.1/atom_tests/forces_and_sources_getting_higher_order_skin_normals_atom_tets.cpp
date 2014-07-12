@@ -165,10 +165,10 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
-
-
     PetscErrorCode operator()() {
       PetscFunctionBegin;
+
+      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
