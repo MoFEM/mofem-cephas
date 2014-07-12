@@ -392,6 +392,10 @@ add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
 # add test for hdiv space
 add_executable(forces_and_sources_hdiv_approximation_functions forces_and_sources_hdiv_approximation_functions.cpp)
 target_link_libraries(forces_and_sources_hdiv_approximation_functions mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_hdiv_approximation_functions_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions)
+add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_approximation_functions.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt)
 
 #Homogenisation atom test
 add_executable(homogenisation_disp_atom_test homogenisation_disp_atom_test.cpp)

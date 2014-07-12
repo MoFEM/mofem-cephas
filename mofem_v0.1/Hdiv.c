@@ -27,48 +27,9 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f_e[4][3],int GDIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  const int face_edges_nodes[] = { 0,1, 1,2, 2,0 };
-  const int face_oposite_edges_node[] = { 2, 0, 1 };
-  double Phi_f_e[4][3][3];
   int ff = 0;
   for(;ff<4;ff++) {
-    int ee = 0;
-    for(;ee<3;ee++) {
-      double _Spin_[9];
-      int n0_idx = faces_nodes[3*ff+face_edges_nodes[2*ee+0]];
-      int n1_idx = faces_nodes[3*ff+face_edges_nodes[2*ee+1]];
-      ierr = Spin(_Spin_,&diffN[3*n0_idx]); CHKERRQ(ierr);
-      cblas_dgemv(CblasRowMajor,CblasNoTrans,
-	3,3,1.,_Spin_,3,&diffN[3*n1_idx],1,0,Phi_f_e[ff][ee],1);
-    }
-  }
-  int ii = 0;
-  for(;ii<GDIM;ii++) {
-    int node_shift = ii*4;
-    ff = 0;
-    for(;ff<4;ff++) {
-      if(p[ff]<1) continue;
-      int shift = ii*NBFACE_EDGE_HDIV(p[ff]); 
-      int ee = 0;
-      for(;ee<3;ee++) {
-	int n0_idx = faces_nodes[3*ff+face_edges_nodes[2*ee+0]];
-	int n1_idx = faces_nodes[3*ff+face_edges_nodes[2*ee+1]];
-	double ksi_0i = N[node_shift+n1_idx]-N[node_shift+n0_idx];
-	double Psi_l[p[ff]+1];
-	ierr = Lagrange_basis(p[ff],ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
-	int nOposite_idx = faces_nodes[3*ff+face_oposite_edges_node[ee]];
-	double lambda = N[node_shift+nOposite_idx];
-	int l = 0;
-	for(;l<=p[ff]-1;l++) {
-	  int idx = 3*shift+3*l;
-	  cblas_dcopy(3,Phi_f_e[ff][ee],1,&(PHI_f_e[ff][ee])[idx],1);
-	  cblas_dscal(3,lambda*Psi_l[l],&(PHI_f_e[ff][ee])[idx],1);
-	  //int dd = 0;
-	  //for(;dd<3;dd++) (PHI_f_e[ff][ee])[idx+dd] = ((ii+1)*10000)+(ff*1000)+(ee*100)+(dd*10)+l;
-	}
-	if(l!=NBFACE_EDGE_HDIV(p[ff])) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",l,NBFACE_EDGE_HDIV(p[ff]));
-      }
-    }
+    ierr = Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(&faces_nodes[3*ff],p[ff],N,diffN,PHI_f_e[ff],GDIM); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
@@ -76,46 +37,9 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f[],int GDIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  double Phi_f[4][3];
   int ff = 0;
   for(;ff<4;ff++) {
-    int vert_i = faces_nodes[3*ff+1];
-    int vert_j = faces_nodes[3*ff+2];
-    double _Spin_[9];
-    ierr = Spin(_Spin_,&diffN[3*vert_i]); CHKERRQ(ierr);
-    cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1.,_Spin_,3,&diffN[3*vert_j],1,0,Phi_f[ff],1);
-  }
-  int ii = 0;
-  for(;ii<GDIM;ii++) {
-    int node_shift = ii*4;
-    ff = 0;
-    for(;ff<4;ff++) {
-      if(p[ff]<3) continue;
-      double ksi_0i = N[ node_shift+faces_nodes[3*ff+1] ] - N[ node_shift+faces_nodes[3*ff+0] ];
-      double ksi_0j = N[ node_shift+faces_nodes[3*ff+2] ] - N[ node_shift+faces_nodes[3*ff+0] ];
-      double Psi_l[p[ff]+1],Psi_m[p[ff]+1];
-      ierr = Lagrange_basis(p[ff],ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
-      ierr = Lagrange_basis(p[ff],ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
-      double Beta_0ij = 
-	N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
-      int shift = ii*NBFACE_FACE_HDIV(p[ff]); 
-      int jj = 0;
-      int oo = 0;
-      for(;oo<=p[ff]-3;oo++) {
-	int l = 0;
-	for(;l<=oo;l++) {
-	  int m = 0;
-	  m = oo - l;
-	  if(m>=0) {
-	    double *phi_f = &(PHI_f[ff])[3*shift+3*jj];
-	    cblas_dcopy(3,Phi_f[ff],1,phi_f,1);
-	    cblas_dscal(3,Beta_0ij*Psi_l[l]*Psi_m[m],phi_f,1);
-	    jj++;
-	  } 
-	}
-      }
-      if(jj!=NBFACE_FACE_HDIV(p[ff])) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,NBFACE_FACE_HDIV(p[ff]));
-    }
+    ierr = Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(&faces_nodes[3*ff],p[ff],N,diffN,PHI_f[ff],GDIM); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
@@ -264,3 +188,87 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
   }
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+  int *faces_nodes,int p,double *N,double *diffN,double *PHI_f_e[3],int GDIM) {
+  PetscFunctionBegin;
+  if(p<1) PetscFunctionReturn(0);
+  PetscErrorCode ierr;
+  const int face_edges_nodes[] = { 0,1, 1,2, 2,0 };
+  const int face_oposite_edges_node[] = { 2, 0, 1 };
+  double Phi_f_e[3][3];
+  int ee = 0;
+  for(;ee<3;ee++) {
+    double _Spin_[9];
+    int n0_idx = faces_nodes[face_edges_nodes[2*ee+0]];
+    int n1_idx = faces_nodes[face_edges_nodes[2*ee+1]];
+    ierr = Spin(_Spin_,&diffN[3*n0_idx]); CHKERRQ(ierr);
+    cblas_dgemv(CblasRowMajor,CblasNoTrans,
+      3,3,1.,_Spin_,3,&diffN[3*n1_idx],1,0,Phi_f_e[ee],1);
+  }
+  int ii = 0;
+  for(;ii<GDIM;ii++) {
+    int node_shift = ii*4;
+    int shift = ii*NBFACE_EDGE_HDIV(p); 
+    int ee = 0;
+    for(;ee<3;ee++) {
+      int n0_idx = faces_nodes[face_edges_nodes[2*ee+0]];
+      int n1_idx = faces_nodes[face_edges_nodes[2*ee+1]];
+      double ksi_0i = N[node_shift+n1_idx]-N[node_shift+n0_idx];
+      double Psi_l[p+1];
+      ierr = Lagrange_basis(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
+      int nOposite_idx = faces_nodes[face_oposite_edges_node[ee]];
+      double lambda = N[node_shift+nOposite_idx];
+      int l = 0;
+      for(;l<=p-1;l++) {
+	int idx = 3*shift+3*l;
+	cblas_dcopy(3,Phi_f_e[ee],1,&(PHI_f_e[ee])[idx],1);
+	cblas_dscal(3,lambda*Psi_l[l],&(PHI_f_e[ee])[idx],1);
+      }
+      if(l!=NBFACE_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",l,NBFACE_EDGE_HDIV(p));
+    }
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
+  int *faces_nodes,int p,double *N,double *diffN,double *PHI_f,int GDIM) {
+  PetscFunctionBegin;
+  if(p<3) PetscFunctionReturn(0);
+  PetscErrorCode ierr;
+  double Phi_f[3];
+  int vert_i = faces_nodes[1];
+  int vert_j = faces_nodes[2];
+  double _Spin_[9];
+  ierr = Spin(_Spin_,&diffN[3*vert_i]); CHKERRQ(ierr);
+  cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1.,_Spin_,3,&diffN[3*vert_j],1,0,Phi_f,1);
+  int ii = 0;
+  for(;ii<GDIM;ii++) {
+    int node_shift = ii*4;
+    double ksi_0i = N[ node_shift+faces_nodes[1] ] - N[ node_shift+faces_nodes[0] ];
+    double ksi_0j = N[ node_shift+faces_nodes[2] ] - N[ node_shift+faces_nodes[0] ];
+    double Psi_l[p+1],Psi_m[p+1];
+    ierr = Lagrange_basis(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
+    ierr = Lagrange_basis(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
+    double Beta_0ij = 
+      N[node_shift+faces_nodes[0]]*N[node_shift+faces_nodes[1]]*N[node_shift+faces_nodes[2]];
+    int shift = ii*NBFACE_FACE_HDIV(p); 
+    int jj = 0;
+    int oo = 0;
+    for(;oo<=p-3;oo++) {
+      int l = 0;
+      for(;l<=oo;l++) {
+	int m = 0;
+	m = oo - l;
+	if(m>=0) {
+	  double *phi_f = &(PHI_f)[3*shift+3*jj];
+	  cblas_dcopy(3,Phi_f,1,phi_f,1);
+	  cblas_dscal(3,Beta_0ij*Psi_l[l]*Psi_m[m],phi_f,1);
+	  jj++;
+	} 
+      }
+    }
+    if(jj!=NBFACE_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,NBFACE_FACE_HDIV(p));
+  }
+  PetscFunctionReturn(0);
+}
+

@@ -1038,6 +1038,39 @@ PetscErrorCode OpSetInvJac::doWork(
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OpSetPiolaTransform::doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data)  {
+  PetscFunctionBegin;
+
+  try {
+
+  const double c = 1./6.;
+
+  unsigned int nb_gauss_pts = data.getHdivN().size1();
+  unsigned int nb_dofs = data.getHdivN().size2()/3;
+  unsigned int gg = 0;
+  piolaN.resize(nb_gauss_pts,data.getHdivN().size2());
+  for(;gg<nb_gauss_pts;gg++) {
+    unsigned int dd = 0;
+    for(;dd<nb_dofs;dd++) {
+      cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,c/vOlume,
+	&*Jac.data().begin(),3,&data.getHdivN()(gg,3*dd),1,0.,&piolaN(gg,3*dd),1);
+    }
+  }
+  data.getHdivN().data().swap(piolaN.data());
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode OpSetHoInvJac::doWork(
     int side,
     EntityType type,
@@ -1078,6 +1111,38 @@ PetscErrorCode OpSetHoInvJac::doWork(
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode OpSetHoPiolaTransform::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscFunctionBegin;
+
+  try{
+
+  unsigned int nb_gauss_pts = data.getHdivN().size1();
+  unsigned int nb_dofs = data.getHdivN().size2()/3;
+  unsigned int gg = 0;
+  piolaN.resize(nb_gauss_pts,data.getHdivN().size2());
+
+  for(;gg<nb_gauss_pts;gg++) {
+    unsigned int dd = 0;
+    for(;dd<nb_dofs;dd++) {
+      cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1./detHoJac[gg],
+	&hoJac(gg,0),3,&data.getHdivN()(gg,3*dd),1,0.,&piolaN(gg,3*dd),1);
+    }
+  }
+  data.getHdivN().data().swap(piolaN.data());
+
+
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode OpGetData::doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -1208,8 +1273,10 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   coords.resize(num_nodes*3);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
   vOlume = Shape_intVolumeMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.data().begin()); 
+  Jac.resize(3,3);
   invJac.resize(3,3);
-  ierr = ShapeJacMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
+  ierr = ShapeJacMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*Jac.data().begin()); CHKERRQ(ierr);
+  noalias(invJac) = Jac;
   ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
   coordsAtGaussPts.resize(nb_gauss_pts,3);
@@ -1221,6 +1288,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
 
   try {
     ierr = opSetInvJac.opRhs(dataH1); CHKERRQ(ierr);
+    ierr = opPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
   } catch (exception& ex) {
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -1244,14 +1312,19 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
     ierr = getTetsFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     try {
       ierr = opHOatGaussPoints.opRhs(dataH1); CHKERRQ(ierr);
+      hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(),hoGaussPtsJac.size2());
+      ublas::noalias(hoGaussPtsInvJac) = hoGaussPtsJac;
       ublas::matrix<double> jac(3,3);
       hoGaussPtsDetJac.resize(nb_gauss_pts);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	cblas_dcopy(9,&hoGaussPtsInvJac(gg,0),1,&jac(0,0),1);
-	ierr = Shape_invJac(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
+	cblas_dcopy(9,&hoGaussPtsJac(gg,0),1,&jac(0,0),1);
 	hoGaussPtsDetJac[gg] = Shape_detJac(&jac(0,0));
+	ierr = Shape_invJac(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
       }
+
       ierr = opSetHoInvJac.opRhs(dataH1); CHKERRQ(ierr);
+      ierr = opSetHoPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+
     } catch (exception& ex) {
       ostringstream ss;
       ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
