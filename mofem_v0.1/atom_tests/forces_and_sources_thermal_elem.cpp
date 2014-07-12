@@ -144,9 +144,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.problem_basic_method_preProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
 
   //postproc
   ierr = mField.problem_basic_method_postProcess("TEST_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);

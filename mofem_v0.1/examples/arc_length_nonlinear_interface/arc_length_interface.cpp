@@ -439,7 +439,7 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(F_body_force); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F_body_force,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F_body_force,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F_body_force); CHKERRQ(ierr);
@@ -517,7 +517,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   for(;mit!=neumann_forces.end();mit++) {
-    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
   ierr = VecGhostUpdateBegin(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -602,7 +602,7 @@ int main(int argc, char *argv[]) {
     int_my_fe.snes_ctx = FieldInterface::FEMethod::CTX_SNESNONE;
     ierr = int_my_fe.set_ctx_int(NonLinearInterfaceFEMethod::ctx_KappaUpdate); CHKERRQ(ierr);
     //run this on all processors, so we could save history tags on all parts and restart
-    ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","INTERFACE",int_my_fe,0,pcomm->size());  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",int_my_fe,0,pcomm->size());  CHKERRQ(ierr);
     //Standard procedure
     ierr = int_my_fe.set_ctx_int(NonLinearInterfaceFEMethod::ctx_InterfaceNone); CHKERRQ(ierr);
     //Remove nodes of damaged prisms
@@ -655,7 +655,7 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","INTERFACE",int_my_fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",int_my_fe);  CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -677,7 +677,7 @@ int main(int argc, char *argv[]) {
   }
 
   PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab,"DISPLACEMENT");
-  ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);

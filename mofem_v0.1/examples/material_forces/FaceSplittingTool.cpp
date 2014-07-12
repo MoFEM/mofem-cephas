@@ -1363,9 +1363,9 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
   BitRefLevel preserve_ref = BitRefLevel().set(BITREFLEVEL_SIZE-2);
   const RefMoFEMEntity_multiIndex *refinedEntitiesPtr_ptr;
   ierr = mField.get_ref_ents(&refinedEntitiesPtr_ptr); CHKERRQ(ierr);
-  RefMoFEMEntity_multiIndex::index<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>::type::iterator refit,hi_refit;
-  refit = refinedEntitiesPtr_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
-  hi_refit = refinedEntitiesPtr_ptr->get<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>().upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
+  RefMoFEMEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type::iterator refit,hi_refit;
+  refit = refinedEntitiesPtr_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>().lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
+  hi_refit = refinedEntitiesPtr_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>().upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   Range already_refined_edges;
   for(;refit!=hi_refit;refit++) {
     EntityHandle parent_ent = refit->get_parent_ent(); 

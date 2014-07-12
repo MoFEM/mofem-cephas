@@ -641,7 +641,7 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     ierr = MatSetOption(proj_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
     ierr = MatZeroEntries(proj_ctx.C); CHKERRQ(ierr);
-    ierr = mField.loop_finiteElementsPtr("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
     ierr = MatAssemblyBegin(proj_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(proj_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     /*{

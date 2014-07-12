@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&A); CHKERRQ(ierr);
 
   /*PostProcDisplacementsOnRefMesh fe_postproc(moab,"FIELD1");
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",fe_postproc);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe_postproc);  CHKERRQ(ierr);
   if(pcomm->rank()==0) {
     rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }*/

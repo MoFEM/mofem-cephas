@@ -469,13 +469,13 @@ int main(int argc, char *argv[]) {
       ierr = myMetaNeummanForces::setNeumannFluxFiniteElementOperators(mField,neumann_forces,F[cc],"POTENTIAL_FIELD",fibreList[cc]); CHKERRQ(ierr);
       boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
       for(;mit!=neumann_forces.end();mit++) {
-        ierr = mField.loop_finiteElementsPtr( sss.str().c_str() ,mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+        ierr = mField.loop_finite_elements( sss.str().c_str() ,mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
       }
       
       LaplacianElem elem(mField,A[cc],F[cc]);
       
       ierr = MatZeroEntries(A[cc]); CHKERRQ(ierr);
-      ierr = mField.loop_finiteElementsPtr( sss.str().c_str() , rrr.str().c_str() ,elem);  CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements( sss.str().c_str() , rrr.str().c_str() ,elem);  CHKERRQ(ierr);
       
       //post proces fix boundary conditiond
       ierr = mField.problem_basic_method_postProcess( sss.str().c_str() ,fix_dofs); CHKERRQ(ierr);

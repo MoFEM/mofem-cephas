@@ -174,7 +174,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<ParentEntType_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> >,
     ordered_non_unique<
-      tag<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>, 
+      tag<Composite_EntType_and_ParentEntType_mi_tag>, 
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,

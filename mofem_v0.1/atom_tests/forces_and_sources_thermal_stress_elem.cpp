@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("PROB",ROW,&F); CHKERRQ(ierr);
   ierr = thermal_stress_elem.setThermalStressRhsOperators("DISP","TEMP",F,1); CHKERRQ(ierr);
 
-  ierr = mField.loop_finiteElementsPtr("PROB","ELAS",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("PROB","ELAS",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 

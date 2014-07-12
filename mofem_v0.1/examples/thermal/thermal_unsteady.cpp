@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
       fe_post_proc_method.do_broadcast = false;
       ostringstream ss;
       ss << "out_post_proc_" << sit->step_number << ".vtk";
-      ierr = mField.loop_finiteElementsPtr("THERMAL_PROBLEM","THERMAL_FE",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
       rval = fe_post_proc_method.moab_post_proc.write_file(ss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
     }
 

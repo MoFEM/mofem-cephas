@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   ierr = fluid_pressure_fe.setNeumannFluidPressureFiniteElementOperators("DISPLACEMENT",F,false,false); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
