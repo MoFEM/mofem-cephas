@@ -701,6 +701,10 @@ int main(int argc, char *argv[]) {
     //Close mesh_file_name.txt
     myfile.close();
 
+
+  ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
+  ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
+
   //destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);

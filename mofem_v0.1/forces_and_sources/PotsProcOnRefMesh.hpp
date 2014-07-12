@@ -146,7 +146,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     rval = postProcMesh.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
     rval = postProcMesh.add_entities(meshset,tets); CHKERR_PETSC(rval);
     //create higher order entities 
-    //rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
+    rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
 
     tets.clear();
     rval = postProcMesh.get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
