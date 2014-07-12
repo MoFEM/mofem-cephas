@@ -316,7 +316,6 @@ int main(int argc, char *argv[]) {
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
   cout<<"Final RVE_volume = "<< RVE_volume <<endl;
   
-  
   //create a vector for 6 components of homogenized stress
   Vec Stress_Homo;
   ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
@@ -357,6 +356,9 @@ int main(int argc, char *argv[]) {
       avec++;
     }
   }
+
+  ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
+  ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
   
   //Close mesh_file_name.txt
   myfile.close();
