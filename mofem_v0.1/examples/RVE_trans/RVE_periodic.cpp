@@ -490,7 +490,7 @@ int main(int argc, char *argv[]) {
     xyzcoord_iterator Tri_Pos;
     Range PrismRange;
     double XPos, YPos, ZPos;
-    int count=0;
+    //int count=0;
     
     //loop over -ve triangles to create prisims elemenet between +ve and -ve triangles
 //    count1=1;

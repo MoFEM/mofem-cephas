@@ -163,7 +163,7 @@ namespace MoFEM {
         ee = 0; int row_mat1=1;
         for (;ee<3;ee++,row_mat1++){
           rowNMatrices[row_mat1].resize(g_TRI_dim);
-          unsigned int gg = 0; unsigned int gg1=0;
+          int gg = 0; int gg1=0;
           int nodes_edge=NBEDGE_H1(FaceEdgeOrder[ee]);
           //                cout<<"nodes_edge  "<<nodes_edge<<endl;
           for(;gg<g_TRI_dim;gg++) {
@@ -215,7 +215,7 @@ namespace MoFEM {
         ierr = H1_FaceShapeFunctions_MBTRI(face_nodes,face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
         
         rowNMatrices[row_mat].resize(g_TRI_dim);
-        unsigned int gg = 0;  unsigned int gg1=0;
+        int gg = 0; int gg1=0;
         int nodes_face=NBFACE_H1(face_order);
         //            for(int ii=0; ii<N_face.size(); ii++) cout<<"N_face  "<<N_face[ii]<<endl;
         for(;gg<g_TRI_dim;gg++) {
