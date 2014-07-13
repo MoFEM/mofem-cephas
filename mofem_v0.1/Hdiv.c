@@ -197,14 +197,23 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   const int face_edges_nodes[] = { 0,1, 1,2, 2,0 };
   const int face_oposite_edges_node[] = { 2, 0, 1 };
   double Phi_f_e[3][3];
-  int ee = 0;
-  for(;ee<3;ee++) {
-    double _Spin_[9];
-    int n0_idx = faces_nodes[face_edges_nodes[2*ee+0]];
-    int n1_idx = faces_nodes[face_edges_nodes[2*ee+1]];
-    ierr = Spin(_Spin_,&diffN[3*n0_idx]); CHKERRQ(ierr);
-    cblas_dgemv(CblasRowMajor,CblasNoTrans,
-      3,3,1.,_Spin_,3,&diffN[3*n1_idx],1,0,Phi_f_e[ee],1);
+  if(diffN!=NULL) {
+    int ee = 0;
+    for(;ee<3;ee++) {
+      double _Spin_[9];
+      int n0_idx = faces_nodes[face_edges_nodes[2*ee+0]];
+      int n1_idx = faces_nodes[face_edges_nodes[2*ee+1]];
+      ierr = Spin(_Spin_,&diffN[3*n0_idx]); CHKERRQ(ierr);
+      cblas_dgemv(CblasRowMajor,CblasNoTrans,
+	3,3,1.,_Spin_,3,&diffN[3*n1_idx],1,0,Phi_f_e[ee],1);
+    }
+  } else {
+    int ee = 0;
+    for(;ee<3;ee++) {
+      Phi_f_e[ee][0] = 0; 
+      Phi_f_e[ee][1] = 0;
+      Phi_f_e[ee][2] = 1;
+    }
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -236,11 +245,17 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
   if(p<3) PetscFunctionReturn(0);
   PetscErrorCode ierr;
   double Phi_f[3];
-  int vert_i = faces_nodes[1];
-  int vert_j = faces_nodes[2];
-  double _Spin_[9];
-  ierr = Spin(_Spin_,&diffN[3*vert_i]); CHKERRQ(ierr);
-  cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1.,_Spin_,3,&diffN[3*vert_j],1,0,Phi_f,1);
+  if(diffN!=NULL) {
+    int vert_i = faces_nodes[1];
+    int vert_j = faces_nodes[2];
+    double _Spin_[9];
+    ierr = Spin(_Spin_,&diffN[3*vert_i]); CHKERRQ(ierr);
+    cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1.,_Spin_,3,&diffN[3*vert_j],1,0,Phi_f,1);
+  } else {
+    Phi_f[0] = 0;
+    Phi_f[1] = 0;
+    Phi_f[2] = 1;
+  }
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*4;

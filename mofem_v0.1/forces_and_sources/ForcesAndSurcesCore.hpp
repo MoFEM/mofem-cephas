@@ -384,6 +384,12 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     const double *G_X,const double *G_Y,const int G_DIM);
 
 
+  /** \brief computes approximation functions for triangle and H1 space
+    */
+  PetscErrorCode shapeTRIFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const int G_DIM);
+
   /** \brief computes approximation functions for edge and H1 space
     */
   PetscErrorCode shapeEDGEFunctions_H1(
