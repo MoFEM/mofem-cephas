@@ -425,6 +425,9 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const MoFEMFi
       //add faces
       adjacency.insert(fe_ent);
       break;
+    case HDIV:
+      adjacency.insert(fe_ent);
+      break;
     case NOFIELD:
       adjacency.insert(field_ptr->get_meshset());
       break;
