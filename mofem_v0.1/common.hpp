@@ -25,6 +25,21 @@
 #define __COMMON_HPP__
 
 #include "config.h"
+#include "definitions.h"
+
+//PETSC
+#include<petscmat.h>
+#include<petscao.h>
+#include<petscbt.h>
+#include<petscmat.h>
+#include<petscao.h>
+#include<petscbt.h>
+#include<petsclog.h>
+#include<petscsnes.h>
+#include<petscts.h>
+#include<petsctime.h>
+
+#ifdef __cplusplus
 
 //STL
 #include<string>
@@ -57,88 +72,6 @@
 #include<moab/Range.hpp>
 #include<MBTagConventions.hpp>
 
-//PETSC
-#include<petscmat.h>
-#include<petscao.h>
-#include<petscbt.h>
-#include<petscmat.h>
-#include<petscao.h>
-#include<petscbt.h>
-#include<petsclog.h>
-#include<petscsnes.h>
-#include<petscts.h>
-#include<petsctime.h>
-
-//DEFINES
-#define MYPCOMM_INDEX 0
-//This Is form MOAB
-#define MB_TYPE_WIDTH 4
-#define MB_ID_WIDTH (8*sizeof(EntityHandle)-MB_TYPE_WIDTH)
-#define MB_TYPE_MASK ((EntityHandle)0xF << MB_ID_WIDTH)
-//             2^MB_TYPE_WIDTH-1 ------^
-
-#define MB_START_ID ((EntityID)1)        //!< All entity id's currently start at 1
-#define MB_END_ID ((EntityID)MB_ID_MASK) //!< Last id is the complement of the MASK
-#define MB_ID_MASK (~MB_TYPE_MASK)
-
-#define NOT_USED(x) ( (void)(x) )
-
-/** \brief set barrier start
- *
- * Run code in sequence, starting from process 0, and ends on last process.
- */
-#define BARRIER_RANK_START(PCMB) \
-  { for(unsigned int i = 0; \
-  i<PCMB->proc_config().proc_rank(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
-/// set barrier end
-#define BARRIER_RANK_END(PCMB) \
-  { for(unsigned int i = PCMB->proc_config().proc_rank(); \
-  i<PCMB->proc_config().proc_size(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
-
-
-//ERROR
-/// check moab error
-#define CHKERR(a) do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    assert(1); \
-  } \
-} while (false) 
-
-/// check moab error and communicate it using petsc interface
-#define CHKERR_PETSC(a) do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::ostringstream ss; \
-    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    std::string str(ss.str()); \
-    SETERRQ(PETSC_COMM_SELF,1,str.c_str()); \
-  } \
-} while (false)
-
-#define CHKERR_THROW(a) do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::ostringstream ss; \
-    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    std::string str(ss.str()); \
-    throw str.c_str(); \
-  } \
-} while (false)
-
-#define THROW_AT_LINE(a) { \
-  std::ostringstream ss; \
-  ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  std::string str(ss.str()); \
-  throw str.c_str(); \
-}
-
-//set that with care, it turns off check for ublas
-//#define BOOST_UBLAS_NDEBUG 
-
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-
 using namespace moab;
 using namespace std;
 using boost::multi_index_container;
@@ -146,6 +79,8 @@ using namespace boost::multi_index;
 using namespace boost::multiprecision;
 
 namespace MoFEM {
+
+#endif //__cplusplus
 
 /** \brief Error handling
   * 
@@ -195,12 +130,33 @@ enum ByWhat {
   BYALL = 1<<0|1<<1|1<<2 
 };
 
-//CONSTS
+/**
+  * Tyeps of sets and boundary conditions
+  *
+  */
+enum CubitBC {
+  UNKNOWNSET = 0,
+  NODESET = 1<<0,
+  SIDESET = 1<<1,
+  BLOCKSET = 1<<2,
+  MATERIALSET = 1<<3,
+  DISPLACEMENTSET = 1<<4,
+  FORCESET = 1<<5,
+  PRESSURESET = 1<<6,
+  VELOCITYSET = 1<<7,
+  ACCELERATIONSET = 1<<8,
+  TEMPERATURESET = 1<<9,
+  HEATFLUXSET = 1<<10,
+  INTERFACESET = 1<<11,
+  UNKNOWNCUBITNAME = 1<< 12,
+  MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
+  MAT_INTERFSET = 1 <<14,
+  MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
+  BLOCK_BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
+  LASTCUBITSET
+};
 
-const int max_ApproximationOrder = 10;
-const EntityHandle no_handle = (EntityHandle)-1;
-
-//TYPEDEFS
+//typedefs
 typedef PetscInt DofIdx;
 typedef int FEIdx;
 typedef int EntIdx;
@@ -208,9 +164,24 @@ typedef int EntPart;
 typedef PetscScalar FieldData;
 typedef int ApproximationOrder;
 typedef int ApproximationRank;
+
+#ifdef __cplusplus
+
+//consts
+const int max_ApproximationOrder = 10;
+
+//typedefs
+const EntityHandle no_handle = (EntityHandle)-1;
 typedef uint128_t UId;  
 //typedef checked_uint128_tUId;
 typedef int ShortId;
+
+/** 
+ * \typedef CubitBC_BitSet
+ * bc & material meshsets
+ *
+ */
+typedef bitset<32> CubitBC_BitSet;
 
 /** \brief loacl unique id
   *
@@ -315,6 +286,9 @@ struct MofemException {
   }
 };
 
+#endif //__cplusplus
+
+#ifdef __cplusplus
 }
 
 //MULTIINDICES
@@ -327,6 +301,8 @@ struct MofemException {
 #include "AdjacencyMultiIndices.hpp"
 #include "BCMultiIndices.hpp"
 #include "SeriesMultiIndices.hpp"
+
+#endif //__cplusplus
 
 #endif //__COMMON_HPP__
 

@@ -189,12 +189,6 @@ int main(int argc, char *argv[]) {
 	EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->ent;
 
 	int sense = side_table.get<1>().find(boost::make_tuple(type,side))->sense;
-	//ublas::vector<double> diffNTRI(6,0);
-	//ierr = ShapeDiffMBTRI(&diffNTRI[0]); CHKERRQ(ierr);
-	//cerr << diffNTRI << endl;
-	//ublas::vector<double> normal(3,0);
-	//ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],face_coords[side],&normal[0]); CHKERRQ(ierr);
-	//cerr << side << " " << normal << endl;
 
 	ublas::vector<FieldData> t(3,0);
 	int dd = 0;

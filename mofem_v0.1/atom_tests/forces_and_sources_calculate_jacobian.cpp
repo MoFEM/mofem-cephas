@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     ublas::matrix<double> dataDiffFIELD1;
     ublas::vector<double> coords;
     PrintJacobian opPrintJac;
-    OpSetInvJac opSetInvJac;
+    OpSetInvJacH1 opSetInvJac;
     OpGetData opGetData_FIELD1;
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 

@@ -57,6 +57,9 @@ namespace MoFEM {
   */
 struct DataForcesAndSurcesCore {
 
+  // shallow adaptor classes
+  typedef ublas::vector<FieldData,ublas::shallow_array_adaptor<FieldData> > VectorAdaptor;
+  typedef ublas::matrix<FieldData,ublas::row_major,ublas::shallow_array_adaptor<FieldData> > MatrixAdaptor;
 
   /** \brief data on single entity
     */
@@ -109,15 +112,11 @@ struct DataForcesAndSurcesCore {
      */
     virtual ublas::matrix<FieldData>& getDiffN() { return diffN; }
 
-    // shallow adaptor classes
-    typedef ublas::vector<FieldData,ublas::shallow_array_adaptor<FieldData> > vector_adaptor;
-    typedef ublas::matrix<FieldData,ublas::row_major,ublas::shallow_array_adaptor<FieldData> > matrix_adaptor;
-
     /// \brief get shape functions at Gauss pts
-    inline const vector_adaptor getN(int gg) {
+    inline const VectorAdaptor getN(int gg) {
       int size = getN().size2();
       FieldData *data = &getN()(gg,0);
-      return vector_adaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
+      return VectorAdaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
     }
 
     /** \brief get direvative of shape functions at Gauss pts
@@ -127,16 +126,16 @@ struct DataForcesAndSurcesCore {
       * \param gg nb. of Gauss pts.
       *
       */
-    inline const matrix_adaptor getDiffN(int gg) {
+    inline const MatrixAdaptor getDiffN(int gg) {
       if(getN().size1() == getDiffN().size1()) {
 	int size = getN().size2();	
 	int dim = getDiffN().size2()/size;
 	FieldData *data = &getDiffN()(gg,0);
-	return matrix_adaptor(getN().size2(),dim,ublas::shallow_array_adaptor<FieldData>(getDiffN().size2(),data));
+	return MatrixAdaptor(getN().size2(),dim,ublas::shallow_array_adaptor<FieldData>(getDiffN().size2(),data));
       } else {
 	// in some cases, f.e. for direvatives of nodal shape functions ony one
 	// gauss point is needed
-	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
     }
 
@@ -154,10 +153,10 @@ struct DataForcesAndSurcesCore {
       * \param number of of shape functions
       *
       */
-    inline const vector_adaptor getN(int gg,const int nb_dofs) {
+    inline const VectorAdaptor getN(int gg,const int nb_dofs) {
       (void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
       FieldData *data = &getN()(gg,0);
-      return vector_adaptor(nb_dofs,ublas::shallow_array_adaptor<FieldData>(nb_dofs,data));
+      return VectorAdaptor(nb_dofs,ublas::shallow_array_adaptor<FieldData>(nb_dofs,data));
     }
 
     /** \brief get derivatives of shape functions at Gauss pts
@@ -174,28 +173,34 @@ struct DataForcesAndSurcesCore {
       * \param number of of shape functions
       *
       */
-    inline const matrix_adaptor getDiffN(int gg,const int nb_dofs) {
+    inline const MatrixAdaptor getDiffN(int gg,const int nb_dofs) {
       if(getN().size1() == getDiffN().size1()) {
 	(void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
 	int dim = getDiffN().size2()/getN().size2();
 	FieldData *data = &getDiffN()(gg,0);
-	return matrix_adaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
+	return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
       } else {
 	// in some cases, f.e. for direvatives of nodal shape functions ony one
 	// gauss point is needed
-	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
     }
 
     /** \brief get shape functions for Hdiv space 
       */
-    inline const ublas::matrix<FieldData>&  getHdivN() const { return getDiffN(); };
+    inline const ublas::matrix<FieldData>&  getHdivN() const { return getN(); };
 
+    /** \brief get direvatives of shape functions for Hdiv space 
+      */
+    inline const ublas::matrix<FieldData>&  getDiffHdivN() const { return getDiffN(); };
 
     /** \brief get shape functions for Hdiv space 
       */
-    inline ublas::matrix<FieldData>&  getHdivN() { return getDiffN(); };
+    inline ublas::matrix<FieldData>&  getHdivN() { return getN(); };
 
+    /** \brief get direvatives of shape functions for Hdiv space 
+      */
+    inline ublas::matrix<FieldData>&  getDiffHdivN() { return getDiffN(); };
 
     /** \brief get Hdiv of shape functions at Gauss pts
       *
@@ -203,11 +208,34 @@ struct DataForcesAndSurcesCore {
       * \param number of of shape functions
       *
       */
-    inline const matrix_adaptor getHdivN(int gg) {
+    inline const MatrixAdaptor getHdivN(int gg) {
       int dim = 3;
       int nb_dofs = getHdivN().size2()/dim;
       FieldData *data = &getHdivN()(gg,0);
-      return matrix_adaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
+      return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
+    }
+
+    /** \brief get DiffHdiv of shape functions at Gauss pts
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const MatrixAdaptor getDiffHdivN(int gg) {
+      int nb_dofs = getDiffHdivN().size2()/9;
+      FieldData *data = &getDiffHdivN()(gg,0);
+      return MatrixAdaptor(nb_dofs,9,ublas::shallow_array_adaptor<FieldData>(9*nb_dofs,data));
+    }
+
+    /** \brief get DiffHdiv of shape functions at Gauss pts
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const MatrixAdaptor getDiffHdivN(int dof,int gg) {
+      FieldData *data = &getDiffHdivN()(gg,9*dof);
+      return MatrixAdaptor(3,3,ublas::shallow_array_adaptor<FieldData>(9,data));
     }
 
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
@@ -370,6 +398,13 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   ublas::vector<ublas::matrix<FieldData> > N_volume_face;
   ublas::matrix<FieldData> N_volume_bubble;
 
+  ublas::matrix<ublas::matrix<FieldData> > diffN_face_edge;
+  ublas::vector<ublas::matrix<FieldData> > diffN_face_bubble;
+  ublas::vector<ublas::matrix<FieldData> > diffN_volume_edge;
+  ublas::vector<ublas::matrix<FieldData> > diffN_volume_face;
+  ublas::matrix<FieldData> diffN_volume_bubble;
+
+
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
   PetscErrorCode shapeTETFunctions_Hdiv(
@@ -455,11 +490,11 @@ struct DataOperator {
 
 };
 
-/// \brieftransform local reference direvatives of shape funcion to global diervatives 
-struct OpSetInvJac: public DataOperator {
+/// \brief transform local reference direvatives of shape funcion to global diervatives 
+struct OpSetInvJacH1: public DataOperator {
 
   ublas::matrix<double> &invJac;
-  OpSetInvJac(ublas::matrix<double> &_invJac): invJac(_invJac) {}
+  OpSetInvJacH1(ublas::matrix<double> &_invJac): invJac(_invJac) {}
 
   ublas::matrix<FieldData> diffNinvJac;
   PetscErrorCode doWork(
@@ -467,14 +502,40 @@ struct OpSetInvJac: public DataOperator {
 
 };
 
+/// \brief transform local reference direvatives of shape funcion to global diervatives 
+struct OpSetInvJacHdiv: public DataOperator {
+
+  ublas::matrix<double> &invJac;
+  OpSetInvJacHdiv(ublas::matrix<double> &_invJac): invJac(_invJac) {}
+
+  ublas::matrix<FieldData> diffHdiv_invJac;
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
 /** \brief transform local reference direvatives of shape funcion to global diervatives if higer order geometry is given 
   */
-struct OpSetHoInvJac: public DataOperator {
+struct OpSetHoInvJacH1: public DataOperator {
 
   ublas::matrix<double> &invHoJac;
-  OpSetHoInvJac(ublas::matrix<double> &_invHoJac): invHoJac(_invHoJac) {}
+  OpSetHoInvJacH1(ublas::matrix<double> &_invHoJac): invHoJac(_invHoJac) {}
 
   ublas::matrix<FieldData> diffNinvJac;
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+ 
+};
+
+
+/** \brief transform local reference direvatives of shape funcion to global diervatives if higer order geometry is given 
+  */
+struct OpSetHoInvJacHdiv: public DataOperator {
+
+  ublas::matrix<double> &invHoJac;
+  OpSetHoInvJacHdiv(ublas::matrix<double> &_invHoJac): invHoJac(_invHoJac) {}
+
+  ublas::matrix<FieldData> diffHdiv_invJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
  
@@ -490,6 +551,7 @@ struct OpSetPiolaTransform: public DataOperator {
       vOlume(_vOlume),Jac(_Jac) {}
 
     ublas::matrix<FieldData> piolaN;
+    ublas::matrix<FieldData> piolaDiffN;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -505,6 +567,7 @@ struct OpSetHoPiolaTransform: public DataOperator {
       detHoJac(_detJac),hoJac(_Jac) {}
 
     ublas::matrix<FieldData> piolaN;
+    ublas::matrix<FieldData> piolaDiffN;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -555,28 +618,33 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DataForcesAndSurcesCore dataHdiv;
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
 
-  OpSetInvJac opSetInvJac;
+  OpSetInvJacH1 opSetInvJacH1;
   OpSetPiolaTransform opPiolaTransform;
+  OpSetInvJacHdiv opSetInvJacHdiv;
 
   string meshPositionsFieldName;
   ublas::matrix<FieldData> hoCoordsAtGaussPtsPts;
   ublas::matrix<FieldData> hoGaussPtsJac;
   ublas::matrix<FieldData> hoGaussPtsInvJac;
   ublas::vector<FieldData> hoGaussPtsDetJac;
+
   OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
-  OpSetHoInvJac opSetHoInvJac;
+  OpSetHoInvJacH1 opSetHoInvJacH1;
   OpSetHoPiolaTransform opSetHoPiolaTransform;
+  OpSetHoInvJacHdiv opSetHoInvJacHdiv;
 
   TetElementForcesAndSourcesCore(FieldInterface &_mField):
     ForcesAndSurcesCore(_mField),
     dataH1(MBTET),derivedDataH1(dataH1),
     dataL2(MBTET),derivedDataL2(dataL2),
     dataHdiv(MBTET),derivedDataHdiv(dataHdiv),
-    opSetInvJac(invJac),opPiolaTransform(vOlume,Jac),
+    opSetInvJacH1(invJac),
+    opPiolaTransform(vOlume,Jac),opSetInvJacHdiv(invJac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsJac,3,3),
-    opSetHoInvJac(hoGaussPtsInvJac),
-    opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac) {};
+    opSetHoInvJacH1(hoGaussPtsInvJac),
+    opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
+    opSetHoInvJacHdiv(hoGaussPtsInvJac) {};
     
   virtual ~TetElementForcesAndSourcesCore() {}
 
@@ -617,6 +685,12 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       ptrFE = ptr;
       PetscFunctionReturn(0);
     }
+
+    //differential operators
+    PetscErrorCode getDivergenceMatrixOperato_Hdiv(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
+      int gg,ublas::vector<FieldData> &div);
+
     private:
     TetElementForcesAndSourcesCore *ptrFE; 
 
