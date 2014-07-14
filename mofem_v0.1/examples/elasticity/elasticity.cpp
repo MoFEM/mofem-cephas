@@ -66,7 +66,7 @@ PetscErrorCode write_soltion(FieldInterface &mField,const string out_file, const
     PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
       mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
     fe_post_proc_method.do_broadcast = false;
-    ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
     rval = fe_post_proc_method.moab_post_proc.write_file(out_ref_file.c_str(),"VTK",""); CHKERR_PETSC(rval);
   }
 
@@ -261,30 +261,30 @@ int main(int argc, char *argv[]) {
   //preproc
   ierr = mField.problem_basic_method_preProcess("ELASTIC_PROB",my_dirihlet_bc); CHKERRQ(ierr);
   //loop elems
-  ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",my_fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC",my_fe);  CHKERRQ(ierr);
   //forces and preassures on surface
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
-    ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_PROB",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
   //noadl forces
   boost::ptr_map<string,NodalForce> nodal_forces;
   ierr = MetaNodalForces::setNodalForceElementOperators(mField,nodal_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
-    ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB",fit->first,fit->second->getLoopFe()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_PROB",fit->first,fit->second->getLoopFe()); CHKERRQ(ierr);
   }
   //body forces
   BodyFroceConstantField body_forces_methods(mField);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }
-  ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_PROB","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   //fluid pressure
   ierr = fluid_pressure_fe.setNeumannFluidPressureFiniteElementOperators("DISPLACEMENT",F,false,true); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_PROB","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
   //postproc
   ierr = mField.problem_basic_method_postProcess("ELASTIC_PROB",my_dirihlet_bc); CHKERRQ(ierr);
 
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
 	ierr = VecGhostUpdateBegin(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-	ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(F_thermal); CHKERRQ(ierr);
@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
       ierr = VecGhostUpdateBegin(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-      ierr = mField.loop_finiteElementsPtr("ELASTIC_PROB","ELASTIC",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F_thermal); CHKERRQ(ierr);

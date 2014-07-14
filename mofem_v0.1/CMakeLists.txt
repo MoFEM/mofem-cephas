@@ -101,7 +101,6 @@ include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
 include_directories("${PROJECT_SOURCE_DIR}/homogenisation")
 
-
 add_library(mofem_Field 
   FieldInterface.cpp
   SnesCtx.cpp
@@ -189,5 +188,4 @@ add_custom_target(doc
   COMMENT "Generating API documentation with Doxygen" VERBATIM
   )
 endif(DOXYGEN_FOUND)
-
 

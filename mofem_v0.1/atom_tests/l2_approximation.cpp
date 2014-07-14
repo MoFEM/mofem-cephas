@@ -243,10 +243,10 @@ int main(int argc, char *argv[]) {
   };
 
   ScalarApprox fe(moab);
-  ierr = mField2.loop_finiteElementsPtr("PROBLEM_SCALAR_L2","ELEM_L2_SCALAR",fe);  CHKERRQ(ierr);
+  ierr = mField2.loop_finite_elements("PROBLEM_SCALAR_L2","ELEM_L2_SCALAR",fe);  CHKERRQ(ierr);
 
   ScalarApprox_Check fe_check(moab);
-  ierr = mField2.loop_finiteElementsPtr("PROBLEM_SCALAR_L2","ELEM_L2_SCALAR",fe_check);  CHKERRQ(ierr);
+  ierr = mField2.loop_finite_elements("PROBLEM_SCALAR_L2","ELEM_L2_SCALAR",fe_check);  CHKERRQ(ierr);
 
   PetscFinalize();
 

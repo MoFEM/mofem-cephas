@@ -251,8 +251,8 @@ BitProblemId FieldCore::get_problem_shift() {
 }
 PetscErrorCode FieldCore::clear_map() {
   PetscFunctionBegin;
-  refinedEntitiesPtr.clear();
-  refinedFiniteElementsPtr.clear();
+  refinedEntities.clear();
+  refinedFiniteElements.clear();
   moabFields.clear();
   entsMoabField.clear();
   dofsMoabField.clear();
@@ -282,8 +282,8 @@ PetscErrorCode FieldCore::add_field(const string& name,const BitFieldId id,const
     rval = moab.tag_set_data(th_FieldSpace,&meshset,1,&space); CHKERR_PETSC(rval);
     //add meshset to ref_ents // meshset dof on all level sets
     if(space == NOFIELD) {
-      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntitiesPtr.insert(RefMoFEMEntity(moab,meshset));
-      bool success = refinedEntitiesPtr.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
+      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,meshset));
+      bool success = refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsucceeded");
     }
     //name
@@ -402,7 +402,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
       if(p.first->get_space()==NOFIELD) {
 	assert(p.first->meshset == *mit);
 	//add field to ref ents
-	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntitiesPtr.insert(RefMoFEMEntity(moab,*mit));
+	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*mit));
 	NOT_USED(p_ref_ent);
       } else {
 	Range ents;
@@ -414,7 +414,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
 	}
 	Range::iterator eit = ents.begin();
 	for(;eit!=ents.end();eit++) {
-	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntitiesPtr.insert(RefMoFEMEntity(moab,*eit));
+	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
 	  try {
 	    MoFEMEntity moabent(moab,&*p.first,&*p_ref_ent.first);
 	    pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsMoabField.insert(moabent);
@@ -445,28 +445,28 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.get_entities_by_handle(*mit,ents,true); CHKERR_PETSC(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
-	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntitiesPtr.insert(RefMoFEMEntity(moab,*eit));
+	pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
 	pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
 	try {
 	switch (moab.type_from_handle(*eit)) {
 	  case MBVERTEX:
-	    p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*p_ref_ent.first)));
+	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*p_ref_ent.first)));
 	    break;
 	  case MBEDGE:
-	    p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*p_ref_ent.first)));
+	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*p_ref_ent.first)));
 	    break;
 	  case MBTRI:
-	    p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ref_ent.first)));
+	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ref_ent.first)));
 	    break;
 	  case MBTET:
-	    p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ref_ent.first)));
+	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ref_ent.first)));
 	    break;
 	  case MBPRISM:
 	    ierr = add_prism_to_mofem_database(*eit,verb); CHKERRQ(ierr);
-	    p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ref_ent.first)));
+	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ref_ent.first)));
 	    break;
 	  case MBENTITYSET:
-  	    p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ref_ent.first)));
+  	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ref_ent.first)));
 	    break;
 	  default:
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");
@@ -529,7 +529,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
 	continue;
       }
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p;
-      p = refinedEntitiesPtr.insert(mofem_ent);
+      p = refinedEntities.insert(mofem_ent);
     }
   }
   //build series steps
@@ -963,8 +963,8 @@ PetscErrorCode FieldCore::set_field_order(const Range &ents,const BitFieldId id,
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } else {
       *(ApproximationOrder*)tag_data_order[ee] = order;
-      RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedEntitiesPtr.get<MoABEnt_mi_tag>().find(*eit);
-      if(miit_ref_ent==refinedEntitiesPtr.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
+      RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<MoABEnt_mi_tag>().find(*eit);
+      if(miit_ref_ent==refinedEntities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
       try { 
 	MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
 	//if(moabent.get_order_nb_dofs(moabent.get_max_order())==0) continue; 
@@ -1061,8 +1061,8 @@ PetscErrorCode FieldCore::dofs_NoField(const BitFieldId id,map<EntityType,int> &
   field_set_by_id::iterator miit = set_id.find(id);
   if(miit == set_id.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"field not found");
   //serch if field meshset is in database
-  RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedEntitiesPtr.get<MoABEnt_mi_tag>().find(miit->meshset);
-  if(miit_ref_ent==refinedEntitiesPtr.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
+  RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<MoABEnt_mi_tag>().find(miit->meshset);
+  if(miit_ref_ent==refinedEntities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
   pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
   try {
     //create database entity
@@ -1133,8 +1133,8 @@ PetscErrorCode FieldCore::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,
   Range::iterator eit = ents_of_id_meshset.begin();
   for(;eit!=ents_of_id_meshset.end();eit++) {
     // check if ent is in ref meshset
-    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedEntitiesPtr.get<MoABEnt_mi_tag>().find(*eit);
-    if(miit_ref_ent==refinedEntitiesPtr.get<MoABEnt_mi_tag>().end()) {
+    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<MoABEnt_mi_tag>().find(*eit);
+    if(miit_ref_ent==refinedEntities.get<MoABEnt_mi_tag>().end()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
     }
     // create mofem entity linked to ref ent
@@ -1170,8 +1170,11 @@ PetscErrorCode FieldCore::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,
     // insert dofmoabent into mofem databse
     int DD = 0;
     int oo = 0;
-    for(;oo<=e_miit->get_max_order();oo++) {
-      for(int dd = 0;dd<e_miit->get_order_nb_dofs_diff(oo);dd++) {
+    // loop orders
+    for(;oo<=e_miit->get_max_order();oo++) { 
+      //loop nb. dofs at order oo
+      for(int dd = 0;dd<e_miit->get_order_nb_dofs_diff(oo);dd++) {  
+	//loop rank
 	for(int rr = 0;rr<e_miit->get_max_rank();rr++,DD++) {
 	  pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
 	  try {
@@ -1674,7 +1677,7 @@ PetscErrorCode FieldCore::add_ents_to_finite_element_EntType_by_bit_ref(const Bi
   const BitFEId id = get_BitFEId(name);
   const EntityHandle idm = get_finite_element_meshset(id);
   typedef RefMoFEMElement_multiIndex::index<EntType_mi_tag>::type refMoabFE_by_type;
-  refMoabFE_by_type &ref_MoFEMFiniteElement = refinedFiniteElementsPtr.get<EntType_mi_tag>();
+  refMoabFE_by_type &ref_MoFEMFiniteElement = refinedFiniteElements.get<EntType_mi_tag>();
   refMoabFE_by_type::iterator miit = ref_MoFEMFiniteElement.lower_bound(type);
   refMoabFE_by_type::iterator hi_miit = ref_MoFEMFiniteElement.upper_bound(type);
   if(verb > 1) {
@@ -1851,8 +1854,8 @@ PetscErrorCode FieldCore::build_finite_element_uids_view(EntMoFEMFiniteElement &
     //this part is to build MoFEMFiniteElement_dof_uid_view
     Range::iterator eit2 = adj_ents.begin();
     for(;eit2!=adj_ents.end();eit2++) {
-      ref_ent_by_ent::iterator ref_ent_miit = refinedEntitiesPtr.get<MoABEnt_mi_tag>().find(*eit2);
-      if(ref_ent_miit==refinedEntitiesPtr.get<MoABEnt_mi_tag>().end()) {
+      ref_ent_by_ent::iterator ref_ent_miit = refinedEntities.get<MoABEnt_mi_tag>().find(*eit2);
+      if(ref_ent_miit==refinedEntities.get<MoABEnt_mi_tag>().end()) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"ref ent not in database"); 
       }
       const BitRefLevel& bit_ref_ent = ref_ent_miit->get_BitRefLevel();
@@ -1918,10 +1921,10 @@ PetscErrorCode FieldCore::build_finiteElementsPtr(int verb) {
     Range::iterator eit = MoFEMFiniteElement_ents.begin();
     for(;eit!=MoFEMFiniteElement_ents.end();eit++) {
       // note: iterator is a wrapper
-      // check if is in refinedFiniteElementsPtr database
+      // check if is in refinedFiniteElements database
       ref_MoFEMFiniteElement_by_ent::iterator ref_MoFEMFiniteElement_miit; 
-      ref_MoFEMFiniteElement_miit = refinedFiniteElementsPtr.get<MoABEnt_mi_tag>().find(*eit);
-      if(ref_MoFEMFiniteElement_miit == refinedFiniteElementsPtr.get<MoABEnt_mi_tag>().end()) {
+      ref_MoFEMFiniteElement_miit = refinedFiniteElements.get<MoABEnt_mi_tag>().find(*eit);
+      if(ref_MoFEMFiniteElement_miit == refinedFiniteElements.get<MoABEnt_mi_tag>().end()) {
 	ostringstream ss;
 	ss << "ref MoFEMFiniteElement not in database ent = " << *eit;
 	ss << " type " << moab.type_from_handle(*eit);
@@ -2939,7 +2942,7 @@ PetscErrorCode FieldCore::partition_check_matrix_fill_in(const string &problem_n
       PetscPrintf(PETSC_COMM_WORLD,"\tcheck element %s\n",fe->get_name().c_str());
     }
 
-    ierr = loop_finiteElementsPtr(problem_name,fe->get_name(),method,0,pcomm->size(),verb);  CHKERRQ(ierr);
+    ierr = loop_finite_elements(problem_name,fe->get_name(),method,0,pcomm->size(),verb);  CHKERRQ(ierr);
 
   }
 
@@ -3052,27 +3055,27 @@ PetscErrorCode FieldCore::seed_finiteElementsPtr(const Range &entities,int verb)
   PetscFunctionBegin;
   for(Range::iterator eit = entities.begin();eit!=entities.end();eit++) {
     RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator 
-      eiit = refinedEntitiesPtr.get<MoABEnt_mi_tag>().find(*eit);
-    if(eiit == refinedEntitiesPtr.get<MoABEnt_mi_tag>().end())  {
+      eiit = refinedEntities.get<MoABEnt_mi_tag>().find(*eit);
+    if(eiit == refinedEntities.get<MoABEnt_mi_tag>().end())  {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"entity is not in database");
     }
     if(eiit->get_BitRefLevel().none()) continue;
     pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
     switch (eiit->get_ent_type()) {
       case MBVERTEX: 
-	p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*eiit)));	
+	p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*eiit)));	
 	break;
       case MBEDGE: 
-	p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*eiit)));	
+	p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*eiit)));	
 	break;
       case MBTRI: 
-	p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*eiit)));	
+	p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*eiit)));	
 	break;
       case MBTET: 
-	p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*eiit)));	
+	p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*eiit)));	
 	break;
       case MBPRISM: 
-	p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*eiit)));	
+	p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*eiit)));	
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"not implemented");
@@ -3096,18 +3099,18 @@ PetscErrorCode FieldCore::seed_ref_level_2D(const Range &ents2d,const BitRefLeve
     }
     Range::iterator tit = ents2d.begin();
     for(;tit!=ents2d.end();tit++) {
-      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntitiesPtr.insert(RefMoFEMEntity(moab,*tit));
+      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*tit));
       if(debug > 0) {
 	ierr = test_moab(moab,*tit); CHKERRQ(ierr);
       }
       if(!((p_ent.first->get_BitRefLevel()&bit)==bit)) {
-        bool success = refinedEntitiesPtr.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+        bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
       pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       switch (p_ent.first->get_ent_type()) {
         case MBTRI: 
-	 p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ent.first)));	
+	 p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ent.first)));	
 	  assert(p_MoFEMFiniteElement.first->get_BitRefEdges_ulong()!=-1);
 	 break;
 	default:
@@ -3124,9 +3127,9 @@ PetscErrorCode FieldCore::seed_ref_level_2D(const Range &ents2d,const BitRefLeve
       rval = moab.get_adjacencies(ents2d,dd,true,ents,Interface::UNION); CHKERR_PETSC(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
-        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntitiesPtr.insert(RefMoFEMEntity(moab,*eit));
+        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
         if(!((p_ent.first->get_BitRefLevel()&bit)==bit)) {
-	  bool success = refinedEntitiesPtr.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+	  bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
 	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
         if(verbose>2) {
@@ -3150,22 +3153,22 @@ PetscErrorCode FieldCore::seed_ref_level_3D(const Range &ents3d,const BitRefLeve
     }
     Range::iterator tit = ents3d.begin();
     for(;tit!=ents3d.end();tit++) {
-      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntitiesPtr.insert(RefMoFEMEntity(moab,*tit));
+      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*tit));
       if(debug > 0) {
 	ierr = test_moab(moab,*tit); CHKERRQ(ierr);
       }
-      bool success = refinedEntitiesPtr.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+      bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       switch (p_ent.first->get_ent_type()) {
         case MBTET: 
-	 p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));	
+	 p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));	
 	 break;
 	case MBPRISM:
-	  p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
+	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
 	  break;
         case MBENTITYSET:
-	  p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ent.first)));
+	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ent.first)));
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -3181,8 +3184,8 @@ PetscErrorCode FieldCore::seed_ref_level_3D(const Range &ents3d,const BitRefLeve
       rval = moab.get_adjacencies(ents3d.subset_by_type(MBTET),dd,true,ents,Interface::UNION); CHKERR_PETSC(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
-        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntitiesPtr.insert(RefMoFEMEntity(moab,*eit));
-	bool success = refinedEntitiesPtr.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
+	bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         if(verbose>2) {
 	  ostringstream ss;
@@ -3206,12 +3209,12 @@ PetscErrorCode FieldCore::seed_ref_level_3D(const EntityHandle meshset,const Bit
 }
 PetscErrorCode FieldCore::seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit) {
   PetscFunctionBegin;
-  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntitiesPtr.insert(RefMoFEMEntity(moab,meshset));
+  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,meshset));
   if(!((p_ent.first->get_BitRefLevel()&bit)==bit)) {
-    refinedEntitiesPtr.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+    refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
   }
   ptrWrapperRefMoFEMElement pack_fe(new RefMoFEMElement_MESHSET(moab,&*p_ent.first));
-  pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElementsPtr.insert(pack_fe);
+  pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElements.insert(pack_fe);
   if(verbose > 0) {
     ostringstream ss;
     ss << "add meshset as ref_ent " << *(p_MoFEMFiniteElement.first->get_RefMoFEMElement()) << endl;
@@ -3232,12 +3235,12 @@ PetscErrorCode FieldCore::shift_right_bit_ref(const int shift,int verb) {
     delete_bits.set(0);
     ierr = delete_ents_by_bit_ref(delete_bits,delete_bits,verb); CHKERRQ(ierr);
   }
-  RefMoFEMEntity_multiIndex::iterator ent_it = refinedEntitiesPtr.begin();
-  for(;ent_it!=refinedEntitiesPtr.end();ent_it++) {
+  RefMoFEMEntity_multiIndex::iterator ent_it = refinedEntities.begin();
+  for(;ent_it!=refinedEntities.end();ent_it++) {
     if(verb>5) {
       cout << ent_it->get_BitRefLevel() << " : ";
     }
-    bool success = refinedEntitiesPtr.modify(ent_it,RefMoFEMEntity_change_right_shift(shift));
+    bool success = refinedEntities.modify(ent_it,RefMoFEMEntity_change_right_shift(shift));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"inconsistency in data");
     if(verb>5) {
       cout << ent_it->get_BitRefLevel() << endl;
@@ -3353,7 +3356,7 @@ PetscErrorCode FieldCore::update_meshset_by_entities_children(
   } CHKERR_PETSC(rval);
 
   typedef RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents = refinedEntitiesPtr.get<Composite_EntityHandle_And_ParentEntityType_mi_tag>();
+  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntityHandle_And_ParentEntityType_mi_tag>();
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
     if(verb>2) {
@@ -4089,9 +4092,9 @@ PetscErrorCode FieldCore::problem_basic_method_preProcess(const string &problem_
   typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
   ierr = method.setProblem(&*p_miit); CHKERRQ(ierr);
   ierr = method.setFields(&moabFields); CHKERRQ(ierr);
-  ierr = method.setEnts(&refinedEntitiesPtr,&entsMoabField); CHKERRQ(ierr);
+  ierr = method.setEnts(&refinedEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.setDofs(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.setFiniteElements(&refinedFiniteElementsPtr,&finiteElements); CHKERRQ(ierr);
+  ierr = method.setFiniteElements(&refinedFiniteElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.setFiniteElementsEntities(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.setAdjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
@@ -4111,9 +4114,9 @@ PetscErrorCode FieldCore::problem_basic_method_postProcess(const string &problem
   typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
   ierr = method.setProblem(&*p_miit); CHKERRQ(ierr);
   ierr = method.setFields(&moabFields); CHKERRQ(ierr);
-  ierr = method.setEnts(&refinedEntitiesPtr,&entsMoabField); CHKERRQ(ierr);
+  ierr = method.setEnts(&refinedEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.setDofs(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.setFiniteElements(&refinedFiniteElementsPtr,&finiteElements); CHKERRQ(ierr);
+  ierr = method.setFiniteElements(&refinedFiniteElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.setFiniteElementsEntities(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.setAdjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   PetscLogEventBegin(USER_EVENT_postProcess,0,0,0,0);
@@ -4121,15 +4124,15 @@ PetscErrorCode FieldCore::problem_basic_method_postProcess(const string &problem
   PetscLogEventEnd(USER_EVENT_postProcess,0,0,0,0);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::loop_finiteElementsPtr(const string &problem_name,const string &fe_name,FEMethod &method,int verb) {
+PetscErrorCode FieldCore::loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   //
-  ierr = loop_finiteElementsPtr(problem_name,fe_name,method,pcomm->rank(),pcomm->rank(),verb); CHKERRQ(ierr);
+  ierr = loop_finite_elements(problem_name,fe_name,method,pcomm->rank(),pcomm->rank(),verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::loop_finiteElementsPtr(
+PetscErrorCode FieldCore::loop_finite_elements(
   const string &problem_name,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -4143,9 +4146,9 @@ PetscErrorCode FieldCore::loop_finiteElementsPtr(
   method.feName = fe_name;
   ierr = method.setProblem(&*p_miit); CHKERRQ(ierr);
   ierr = method.setFields(&moabFields); CHKERRQ(ierr);
-  ierr = method.setEnts(&refinedEntitiesPtr,&entsMoabField); CHKERRQ(ierr);
+  ierr = method.setEnts(&refinedEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.setDofs(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.setFiniteElements(&refinedFiniteElementsPtr,&finiteElements); CHKERRQ(ierr);
+  ierr = method.setFiniteElements(&refinedFiniteElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.setFiniteElementsEntities(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.setAdjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
@@ -4186,9 +4189,9 @@ PetscErrorCode FieldCore::loop_dofs(const string &problem_name,const string &fie
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem not in database %s",problem_name.c_str());
   ierr = method.setFields(&moabFields); CHKERRQ(ierr);
-  ierr = method.setEnts(&refinedEntitiesPtr,&entsMoabField); CHKERRQ(ierr);
+  ierr = method.setEnts(&refinedEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.setDofs(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.setFiniteElements(&refinedFiniteElementsPtr,&finiteElements); CHKERRQ(ierr);
+  ierr = method.setFiniteElements(&refinedFiniteElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.setFiniteElementsEntities(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.setAdjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   dofs_by_name *dofs;
@@ -4223,9 +4226,9 @@ PetscErrorCode FieldCore::loop_dofs(const string &field_name,EntMethod &method,i
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = method.setFields(&moabFields); CHKERRQ(ierr);
-  ierr = method.setEnts(&refinedEntitiesPtr,&entsMoabField); CHKERRQ(ierr);
+  ierr = method.setEnts(&refinedEntities,&entsMoabField); CHKERRQ(ierr);
   ierr = method.setDofs(&dofsMoabField); CHKERRQ(ierr);
-  ierr = method.setFiniteElements(&refinedFiniteElementsPtr,&finiteElements); CHKERRQ(ierr);
+  ierr = method.setFiniteElements(&refinedFiniteElements,&finiteElements); CHKERRQ(ierr);
   ierr = method.setFiniteElementsEntities(&finiteElementsMoFEMEnts); CHKERRQ(ierr);
   ierr = method.setAdjacencies(&entFEAdjacencies); CHKERRQ(ierr);
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator miit,hi_miit;
@@ -4246,9 +4249,9 @@ PetscErrorCode FieldCore::loop_dofs(const string &field_name,EntMethod &method,i
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode FieldCore::get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr) {
+PetscErrorCode FieldCore::get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntities_ptr) {
   PetscFunctionBegin;
-  *refinedEntitiesPtr_ptr = &refinedEntitiesPtr;
+  *refinedEntities_ptr = &refinedEntities;
   PetscFunctionReturn(0);
 }
 PetscErrorCode FieldCore::get_problem(const string &problem_name,const MoFEMProblem **problemPtr) {
@@ -4289,7 +4292,7 @@ DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
 DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator FieldCore::get_dofs_by_name_and_type_end(const string &field_name,const EntityType type) {
   return dofsMoabField.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,type));
 }
-PetscErrorCode FieldCore::get_finiteElementsPtr(const MoFEMFiniteElement_multiIndex **finiteElements_ptr) {
+PetscErrorCode FieldCore::get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr) {
   PetscFunctionBegin;
   *finiteElements_ptr = &finiteElements;
   PetscFunctionReturn(0);
@@ -4796,8 +4799,8 @@ PetscErrorCode FieldCore::remove_ents_by_bit_ref(const BitRefLevel &bit,const Bi
   if(verb==-1) verb = verbose;
   ierr = delete_finiteElementsPtr_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
   ierr = remove_ents_from_field_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
-  RefMoFEMEntity_multiIndex::iterator ent_it = refinedEntitiesPtr.begin();
-  for(;ent_it!=refinedEntitiesPtr.end();) {
+  RefMoFEMEntity_multiIndex::iterator ent_it = refinedEntities.begin();
+  for(;ent_it!=refinedEntities.end();) {
     BitRefLevel bit2 = ent_it->get_BitRefLevel(); 
     if(ent_it->get_ent_type()==MBENTITYSET) {
       ent_it++;
@@ -4811,7 +4814,7 @@ PetscErrorCode FieldCore::remove_ents_by_bit_ref(const BitRefLevel &bit,const Bi
       ent_it++;
       continue;
     }
-    ent_it = refinedEntitiesPtr.erase(ent_it);
+    ent_it = refinedEntities.erase(ent_it);
   }
   PetscFunctionReturn(0);
 }
@@ -4843,8 +4846,8 @@ PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const Bi
     Range::iterator eit = ents_to_delete.begin();
     for(;eit != ents_to_delete.end();eit++) {
       RefMoFEMEntity_multiIndex::index<MoABEnt_MoABEnt_mi_tag>::type::iterator pit,hi_pit;
-      pit = refinedEntitiesPtr.get<MoABEnt_MoABEnt_mi_tag>().lower_bound(*eit);
-      hi_pit = refinedEntitiesPtr.get<MoABEnt_MoABEnt_mi_tag>().upper_bound(*eit);
+      pit = refinedEntities.get<MoABEnt_MoABEnt_mi_tag>().lower_bound(*eit);
+      hi_pit = refinedEntities.get<MoABEnt_MoABEnt_mi_tag>().upper_bound(*eit);
       for(;pit!=hi_pit;pit++) {
 	EntityHandle ent = pit->get_ref_ent();
 	if(ents_to_delete.find(ent) != ents_to_delete.end()) {
@@ -4864,8 +4867,8 @@ PetscErrorCode FieldCore::delete_ents_by_bit_ref(const BitRefLevel &bit,const Bi
 	ss << "parent:\n" << RefMoFEMEntity(moab,*eit) << endl;
 	SETERRQ1(PETSC_COMM_SELF,1,
 	  "entity can not be removed, it is parent for some other entity\n%s",ss.str().c_str());*/
-	bool success = refinedEntitiesPtr.modify(
-	  refinedEntitiesPtr.project<0>(pit),RefMoFEMEntity_change_remove_parent(moab));
+	bool success = refinedEntities.modify(
+	  refinedEntities.project<0>(pit),RefMoFEMEntity_change_remove_parent(moab));
 	if(!success) {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"mofification unsucessfull");
 	}
@@ -4900,8 +4903,8 @@ PetscErrorCode FieldCore::delete_finiteElementsPtr_by_bit_ref(const BitRefLevel 
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = remove_ents_from_finite_element_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
-  RefMoFEMElement_multiIndex::iterator fe_it = refinedFiniteElementsPtr.begin();
-  for(;fe_it!=refinedFiniteElementsPtr.end();) {
+  RefMoFEMElement_multiIndex::iterator fe_it = refinedFiniteElements.begin();
+  for(;fe_it!=refinedFiniteElements.end();) {
     BitRefLevel bit2 = fe_it->get_BitRefLevel(); 
     if(fe_it->get_ent_type()==MBENTITYSET) {
       fe_it++;
@@ -4915,7 +4918,7 @@ PetscErrorCode FieldCore::delete_finiteElementsPtr_by_bit_ref(const BitRefLevel 
       fe_it++;
       continue;
     }
-    fe_it = refinedFiniteElementsPtr.erase(fe_it);
+    fe_it = refinedFiniteElements.erase(fe_it);
   }
   PetscFunctionReturn(0);
 }

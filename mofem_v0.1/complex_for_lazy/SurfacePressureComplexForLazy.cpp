@@ -161,7 +161,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   try {
 
   fExtNode.resize(9);	
-  fExtFace.resize(data.dataOnEntities[MBTRI][0].getFieldData().size());
+  fExtFace.resize(dataH1.dataOnEntities[MBTRI][0].getFieldData().size());
   fExtEdge.resize(3);
   for(int ee = 0;ee<3;ee++) {
     int nb_edge_dofs = dOfs_x_edge_indices[ee].size();
@@ -280,7 +280,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   kExtNodeFace.resize(9,dOfs_x_face_indices.size());
   kExtEdgeFace.resize(3);
   for(int ee = 0;ee<3;ee++) {
-    kExtEdgeFace[ee].resize(dOfs_x_edge_indices[ee].size(),data.dataOnEntities[MBTRI][0].getIndices().size());
+    kExtEdgeFace[ee].resize(dOfs_x_edge_indices[ee].size(),dataH1.dataOnEntities[MBTRI][0].getIndices().size());
     Kext_edge_face[ee] = &*kExtEdgeFace[ee].data().begin();
   }
   kExtFaceFace.resize(dOfs_x_face_indices.size(),dOfs_x_face_indices.size());

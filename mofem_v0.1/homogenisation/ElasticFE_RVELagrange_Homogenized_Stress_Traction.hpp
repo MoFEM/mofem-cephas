@@ -33,7 +33,7 @@ namespace MoFEM {
     
     
     ElasticFE_RVELagrange_Homogenized_Stress_Traction(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume, ublas::vector<FieldData> _applied_strain, Vec& _Stress_Homo):
-    ElasticFE_RVELagrange_Traction(_mField,_Aij, _D, _F, _applied_strain), DVec(_D),RVE_volume(_RVE_volume), Stress_Homo(_Stress_Homo){};
+    ElasticFE_RVELagrange_Traction(_mField,_Aij, _D, _F, _applied_strain), DVec(_D), Stress_Homo(_Stress_Homo),RVE_volume(_RVE_volume) {};
     
     
     PetscErrorCode preProcess() {

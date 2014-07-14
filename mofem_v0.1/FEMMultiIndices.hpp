@@ -143,7 +143,7 @@ typedef multi_index_container<
     hashed_unique<
       const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
     hashed_unique<
-      tag<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>,
+      tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
 	const RefMoFEMEntity*,
 	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_ref_ent>,
@@ -193,7 +193,7 @@ typedef multi_index_container<
 	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent>,
 	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMElement,int,&ptrWrapperRefMoFEMElement::get_BitRefEdges_ulong> > >,
     hashed_unique<
-      tag<Composite_EntType_mi_tag_and_ParentEntType_mi_tag>,
+      tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
 	ptrWrapperRefMoFEMElement,
 	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_ref_ent>,

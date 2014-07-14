@@ -56,7 +56,7 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
     lit->second->ts_t = t;
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::CTX_TSSETIFUNCTION);
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finiteElementsPtr(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::CTX_TSNONE);
   }
   //post process
@@ -112,7 +112,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     lit->second->ts_a = a;
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::CTX_TSSETIJACOBIAN);
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finiteElementsPtr(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::CTX_TSNONE); CHKERRQ(ierr);
   }
   //post process
@@ -165,7 +165,7 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     lit->second->ts_F = PETSC_NULL;
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::CTX_TSTSMONITORSET);
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finiteElementsPtr(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problem_name,lit->first,*(lit->second)); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::CTX_TSNONE);
   }
   //post process

@@ -80,17 +80,8 @@ struct DataForcesAndSurcesCore {
     /// \brief get shape functions
     virtual const ublas::matrix<FieldData>& getN() const { return N; }
 
-    /// \brief get direvatives of shape fucntiosn
-    virtual const ublas::matrix<FieldData>& getDiffN() const { return diffN; }
-
-    virtual int& getSense() { return sEnse; }
-    virtual ApproximationOrder& getOrder() { return oRder; }
-    virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
-    virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
-    virtual ublas::matrix<FieldData>& getN() { return N; }
-
-    /** \brief get direvatives of shape functions
-     *
+    /** \brief get direvatives of shape fucntiosn
+      *
      * Matrix at rows has nb. of Gauss pts, at columns it has direvative of
      * shape functions. Colummns are orgasised as follows, [ dN1/dx, dN1/dy,
      * dN1/dz, dN2/dx, dN2/dy, dN2/dz, ... ]
@@ -103,6 +94,17 @@ struct DataForcesAndSurcesCore {
      * dimension, for EDGES is one, for TRIS is 2 and TETS is 3. 
      *
      * Note that for node element this function make no sense.
+     *
+     */   
+    virtual const ublas::matrix<FieldData>& getDiffN() const { return diffN; }
+
+    virtual int& getSense() { return sEnse; }
+    virtual ApproximationOrder& getOrder() { return oRder; }
+    virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
+    virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    virtual ublas::matrix<FieldData>& getN() { return N; }
+
+    /** \brief get direvatives of shape functions
      *
      */
     virtual ublas::matrix<FieldData>& getDiffN() { return diffN; }
@@ -182,8 +184,30 @@ struct DataForcesAndSurcesCore {
 	// in some cases, f.e. for direvatives of nodal shape functions ony one
 	// gauss point is needed
 	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
-
       }
+    }
+
+    /** \brief get shape functions for Hdiv space 
+      */
+    inline const ublas::matrix<FieldData>&  getHdivN() const { return getDiffN(); };
+
+
+    /** \brief get shape functions for Hdiv space 
+      */
+    inline ublas::matrix<FieldData>&  getHdivN() { return getDiffN(); };
+
+
+    /** \brief get Hdiv of shape functions at Gauss pts
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const matrix_adaptor getHdivN(int gg) {
+      int dim = 3;
+      int nb_dofs = getHdivN().size2()/dim;
+      FieldData *data = &getHdivN()(gg,0);
+      return matrix_adaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
     }
 
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
@@ -236,12 +260,15 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     ApproximationOrder getOrder() const { return oRder; }
     ApproximationOrder& getOrder() { return oRder; }
 
-    int getSense() const { return entData.getSense(); }
-    const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
-    const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
-    int& getSense() { return entData.getSense(); }
-    ublas::matrix<FieldData>& getN() { return entData.getN(); }
-    ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
+    inline int getSense() const { return entData.getSense(); }
+    inline const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
+    inline const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
+    inline ublas::matrix<FieldData>& getN() { return entData.getN(); }
+    inline ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
+    inline const ublas::matrix<FieldData>&  getHdivN() const { return entData.getHdivN(); };
+    inline ublas::matrix<FieldData>&  getHdivN() { return entData.getHdivN(); };
+
+
 
     private:
     ApproximationOrder oRder;
@@ -265,15 +292,15 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   virtual ~ForcesAndSurcesCore() {}
 
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getOrder(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getOrder(const string &field_name,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getTrisSense(DataForcesAndSurcesCore &data);
 
-  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data);
-  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data);
-  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data);
+  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);
@@ -322,6 +349,7 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getFaceNodes(DataForcesAndSurcesCore &data);
+  PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data);
 
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
@@ -335,6 +363,20 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
 
+
+  ublas::matrix<ublas::matrix<FieldData> > N_face_edge;
+  ublas::vector<ublas::matrix<FieldData> > N_face_bubble;
+  ublas::vector<ublas::matrix<FieldData> > N_volume_edge;
+  ublas::vector<ublas::matrix<FieldData> > N_volume_face;
+  ublas::matrix<FieldData> N_volume_bubble;
+
+  /** \brief computes approximation functions for tetrahedral and H1 space
+    */
+  PetscErrorCode shapeTETFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+
   /** \brief computes approximation functions for triangle and H1 space
     */
   PetscErrorCode shapeTRIFunctions_H1(
@@ -347,8 +389,28 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   PetscErrorCode shapeEDGEFunctions_H1(
     DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM);
 
+  /** \brief it is used to calulate nb. of Gauss integartion points
+   *
+   * for more details pleas look 
+   *   Reference:
+   *
+   * Albert Nijenhuis, Herbert Wilf,
+   * Combinatorial Algorithms for Computers and Calculators,
+   * Second Edition,
+   * Academic Press, 1978,
+   * ISBN: 0-12-519260-6,
+   * LC: QA164.N54.
+   *
+   * More details about algorithm 
+   * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
+  **/
+  virtual int getRule(int order) { return order; };
 
-
+  virtual PetscErrorCode setGaussPts(int order) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
+    PetscFunctionReturn(0);
+  }
 
 };
 
@@ -368,7 +430,9 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode opSymmetric(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data);
+
+  PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
+
 
   /** \brief operator for linear form, usaully to calulate values on left hand side
     */
@@ -380,12 +444,12 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode op(DataForcesAndSurcesCore &data);
+  PetscErrorCode opRhs(DataForcesAndSurcesCore &data);
 
 
 };
 
-/// \brief operator on Gauss pts level, calulates inverse of Jacobian
+/// \brieftransform local reference direvatives of shape funcion to global diervatives 
 struct OpSetInvJac: public DataOperator {
 
   ublas::matrix<double> &invJac;
@@ -397,7 +461,7 @@ struct OpSetInvJac: public DataOperator {
 
 };
 
-/** \brief operator on Gauss pts level, calulates inverse of Jacobian for higher order geometry approximation
+/** \brief transform local reference direvatives of shape funcion to global diervatives if higer order geometry is given 
   */
 struct OpSetHoInvJac: public DataOperator {
 
@@ -409,6 +473,37 @@ struct OpSetHoInvJac: public DataOperator {
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
  
 };
+
+/** \brief apply covariant (Piola) transfor for Hdiv space
+  */
+struct OpSetPiolaTransform: public DataOperator {
+
+    double &vOlume;
+    ublas::matrix<double> &Jac;
+    OpSetPiolaTransform(double &_vOlume,ublas::matrix<double> &_Jac): 
+      vOlume(_vOlume),Jac(_Jac) {}
+
+    ublas::matrix<FieldData> piolaN;
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
+/** \brief apply covariant (Piola) transfor for Hdiv space for HO geometry
+  */
+struct OpSetHoPiolaTransform: public DataOperator {
+
+    ublas::vector<double> &detHoJac;
+    ublas::matrix<double> &hoJac;
+    OpSetHoPiolaTransform(ublas::vector<double> &_detJac,ublas::matrix<double> &_Jac): 
+      detHoJac(_detJac),hoJac(_Jac) {}
+
+    ublas::matrix<FieldData> piolaN;
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
 
 /** \brief operator to calculate function values and its gradients at Gauss points
   * \ingroup mofem_forces_and_sources
@@ -447,23 +542,35 @@ struct OpGetData: public DataOperator {
  */
 struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
-  DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derivedData;
+  DataForcesAndSurcesCore dataH1;
+  DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataL2;
+  DerivedDataForcesAndSurcesCore derivedDataL2;
+  DataForcesAndSurcesCore dataHdiv;
+  DerivedDataForcesAndSurcesCore derivedDataHdiv;
+
   OpSetInvJac opSetInvJac;
+  OpSetPiolaTransform opPiolaTransform;
 
   string meshPositionsFieldName;
   ublas::matrix<FieldData> hoCoordsAtGaussPtsPts;
+  ublas::matrix<FieldData> hoGaussPtsJac;
   ublas::matrix<FieldData> hoGaussPtsInvJac;
   ublas::vector<FieldData> hoGaussPtsDetJac;
   OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
   OpSetHoInvJac opSetHoInvJac;
+  OpSetHoPiolaTransform opSetHoPiolaTransform;
 
   TetElementForcesAndSourcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTET),
-    derivedData(data),opSetInvJac(invJac),
+    ForcesAndSurcesCore(_mField),
+    dataH1(MBTET),derivedDataH1(dataH1),
+    dataL2(MBTET),derivedDataL2(dataL2),
+    dataHdiv(MBTET),derivedDataHdiv(dataHdiv),
+    opSetInvJac(invJac),opPiolaTransform(vOlume,Jac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsInvJac,3,3),
-    opSetHoInvJac(hoGaussPtsInvJac) {};
+    opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsJac,3,3),
+    opSetHoInvJac(hoGaussPtsInvJac),
+    opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac) {};
     
   virtual ~TetElementForcesAndSourcesCore() {}
 
@@ -471,26 +578,12 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   PetscErrorCode ierr;
   double vOlume;
   ublas::vector<double> coords;
+
+  ublas::matrix<double> Jac;;
   ublas::matrix<double> invJac;
+
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
-
-  /** \brief it is used to calulate nb. of Gauss integartion points
-   *
-   * for more details pleas look 
-   *   Reference:
-   *
-   * Albert Nijenhuis, Herbert Wilf,
-   * Combinatorial Algorithms for Computers and Calculators,
-   * Second Edition,
-   * Academic Press, 1978,
-   * ISBN: 0-12-519260-6,
-   * LC: QA164.N54.
-   *
-   * More details about algorithm 
-   * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
-  **/
-  virtual int getRule(int order) { return order; };
 
   /** \brief default oparator for TET element
     */
@@ -524,7 +617,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   };
 
   boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
+  boost::ptr_vector<UserDataOperator> vecUserOpNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
@@ -534,7 +627,8 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
+
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -587,8 +681,11 @@ struct OpGetNormals: public DataOperator {
  */
 struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
-  DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derivedData;
+  DataForcesAndSurcesCore dataH1;
+  DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataHdiv;
+  DerivedDataForcesAndSurcesCore derivedDataHdiv;
+
   string meshPositionsFieldName;
 
   ublas::matrix<FieldData> nOrmals_at_GaussPt;
@@ -597,7 +694,9 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   OpGetNormals opHONormals;
 
   TriElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTRI),derivedData(data),
+    ForcesAndSurcesCore(_mField),
+    dataH1(MBTRI),derivedDataH1(dataH1),
+    dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt) {};
 
@@ -608,8 +707,6 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::vector<double> coords;
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
-
-  virtual int getRule(int order) { return order; };
 
   /** \brief default oparator for TRI element
     */
@@ -731,8 +828,6 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::vector<double> coords;
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
-
-  virtual int getRule(int order) { return order; };
 
   /** \brief default oparator for EDGE element
     */

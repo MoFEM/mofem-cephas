@@ -54,7 +54,7 @@ namespace MoFEM {
       rowNMatrices.resize(1+3+1);  // shape functions are the same for +ve and negative triangles (so only calculate for one face)
       
       typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
-      int num_nodes, num_nodes1;
+      int /*num_nodes,*/ num_nodes1;
       dofs_iterator niit,hi_niit;   //for rows
       dofs_iterator col_niit,hi_col_niit;  // for columns
       prism_periodic=fePtr->get_ent();
@@ -226,7 +226,8 @@ namespace MoFEM {
         int ee = 0; int row_mat1=1;
         for (;ee<3;ee++,row_mat1++){
           rowNMatrices[row_mat1].resize(g_TRI_dim);
-          unsigned int gg = 0; unsigned int gg1=0;
+          int gg = 0; 
+	  int gg1=0;
           int nodes_edge=NBEDGE_H1(FaceEdgeOrder[ee]);
           //                cout<<"nodes_edge  "<<nodes_edge<<endl;
           for(;gg<g_TRI_dim;gg++) {
@@ -291,7 +292,7 @@ namespace MoFEM {
             ierr = H1_FaceShapeFunctions_MBTRI(face_nodes,face_order,&g_NTRI[0],&diffNTRI[0],&N_face[0],&diffN_face[0],g_TRI_dim); CHKERRQ(ierr);
             
             rowNMatrices[row_mat].resize(g_TRI_dim);
-            unsigned int gg = 0;  unsigned int gg1=0;
+            int gg = 0;  int gg1=0;
             int nodes_face=NBFACE_H1(face_order);
             
             for(;gg<g_TRI_dim;gg++) {

@@ -22,8 +22,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __BODY_FORCE_HPP
-#define __BODY_FORCE_HPP
+#ifndef __THERMAL_ELEMENT_HPP
+#define __THERMAL_ELEMENT_HPP
 
 #include "ForcesAndSurcesCore.hpp"
 #include "TsCtx.hpp"
@@ -1026,7 +1026,7 @@ struct ThermalElement {
 
 }
 
-#endif //__BODY_FORCE_HPP
+#endif //__THERMAL_ELEMENT_HPP
 
 /***************************************************************************//**
  * \defgroup mofem_thermal_elem Thermal element

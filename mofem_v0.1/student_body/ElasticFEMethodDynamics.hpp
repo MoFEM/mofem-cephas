@@ -292,7 +292,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    }*/
 	    if(steps%10==0) { 
 	      rval = fe_post_proc_method.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
-	      ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
+	      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
 	      if(pcomm->rank()==0) {
 		ostringstream sss;
 		sss << (int)(ftime*1e3) << "_out.vtk";

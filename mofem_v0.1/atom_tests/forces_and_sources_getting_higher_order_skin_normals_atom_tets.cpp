@@ -165,14 +165,14 @@ int main(int argc, char *argv[]) {
       PetscFunctionReturn(0);
     }
 
-
-
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
+      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+
       ierr = getEdgesSense(data); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data); CHKERRQ(ierr);
-      ierr = getTrisOrder(data); CHKERRQ(ierr);
+      ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
       tAngent2_at_GaussPt.resize(4,3);
 
       try {
-	ierr = op.op(data); CHKERRQ(ierr);
+	ierr = op.opRhs(data); CHKERRQ(ierr);
 	ierr = op.calculateNormals(); CHKERRQ(ierr);
       } catch (exception& ex) {
 	ostringstream ss;
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   };
 
   ForcesAndSurcesCore_TestFE fe1(mField);
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

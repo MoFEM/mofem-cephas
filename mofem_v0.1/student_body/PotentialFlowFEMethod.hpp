@@ -170,7 +170,7 @@ struct LaplacianElem: public FEMethod_UpLevelStudent {
       PetscFunctionBegin;
 
       int order = 1;
-      for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,"POTENTIAL_FIELD",dof)) {
+      for(_IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(this,"POTENTIAL_FIELD",dof)) {
 	order = max(order,dof->get_max_order());
       }
 
