@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addHdivFunctionsPostProc("HDIV");  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",post_proc);  CHKERRQ(ierr);
 
-  //rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);
+  rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);
 
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

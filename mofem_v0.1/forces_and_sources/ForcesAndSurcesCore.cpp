@@ -788,6 +788,64 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
     PetscFunctionReturn(0);
   }
 
+PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const int G_DIM) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+
+  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,3);
+  ierr = ShapeMBTRI(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
+
+  double *PHI_f_e[3];
+  double *PHI_f;
+
+  N_face_edge.resize(1,3);
+  N_face_bubble.resize(1);
+  int face_order = data.dataOnEntities[MBTRI][0].getOrder();
+  //three edges on face
+  for(int ee = 0;ee<3;ee++) {
+    N_face_edge(0,ee).resize(G_DIM,3*NBFACE_EDGE_HDIV(face_order));
+    PHI_f_e[ee] = &((N_face_edge(0,ee))(0,0));
+  }
+  N_face_bubble[0].resize(G_DIM,3*NBFACE_FACE_HDIV(face_order));
+  PHI_f = &*(N_face_bubble[0].data().begin());
+
+  int face_nodes[3] = { 0,1,2 };
+  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(face_nodes,face_order,
+    &data.dataOnEntities[MBVERTEX][0].getN()(0,0),NULL,
+    PHI_f_e,G_DIM); CHKERRQ(ierr);
+  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(face_nodes,face_order,
+    &data.dataOnEntities[MBVERTEX][0].getN()(0,0),NULL,
+    PHI_f,G_DIM); CHKERRQ(ierr);
+
+  // set shape functions into data strucrure
+
+  if(data.dataOnEntities[MBTRI].size()!=1) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+  }
+  data.dataOnEntities[MBTRI][0].getDiffN().resize(G_DIM,3*NBFACE_HDIV(face_order),0);
+  int col = 0;
+  for(int oo = 0;oo<face_order;oo++) {
+    for(int ee = 0;ee<3;ee++) {
+      for(int dd = 3*NBFACE_EDGE_HDIV(oo);dd<3*NBFACE_EDGE_HDIV(oo+1);dd++,col++) {
+	for(int gg = 0;gg<G_DIM;gg++) {
+	  data.dataOnEntities[MBTRI][0].getDiffN()(gg,col) = N_face_edge(0,ee)(gg,dd);
+	}
+      }
+    }
+    for(int dd = 3*NBFACE_FACE_HDIV(oo);dd<3*NBFACE_FACE_HDIV(oo+1);dd++,col++) {
+      for(int gg = 0;gg<G_DIM;gg++) {
+	data.dataOnEntities[MBTRI][0].getDiffN()(gg,col) = N_face_bubble[0](gg,dd);
+      }	
+    }
+  }
+
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -1572,6 +1630,38 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OpSetPiolaTransoformOnTriangle::doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data) {
+  PetscFunctionBegin;
+
+  if(type != MBTRI) PetscFunctionReturn(0);
+	
+  double l0 = cblas_dnrm2(3,&normal[0],1);
+  int nb_gauss_pts = data.getHdivN().size1();
+  int nb_dofs = data.getHdivN().size2()/3;
+  int gg = 0;
+  for(;gg<nb_gauss_pts;gg++) {
+    
+    int dd = 0;
+    for(;dd<nb_dofs;dd++) {
+      double val = data.getHdivN()(gg,3*dd);
+      if(nOrmals_at_GaussPt.size1()==(unsigned int)nb_gauss_pts) {
+	double l = cblas_dnrm2(3,&nOrmals_at_GaussPt(gg,0),1);
+	cblas_dcopy(3,&nOrmals_at_GaussPt(gg,0),1,&data.getHdivN()(gg,3*dd),1);
+	cblas_dscal(3,val/pow(l,2),&data.getHdivN()(gg,3*dd),1);
+      } else {
+	cblas_dcopy(3,&normal[0],1,&data.getHdivN()(gg,3*dd),1);
+	cblas_dscal(3,val/pow(l0,2),&data.getHdivN()(gg,3*dd),1);
+      }
+    }    
+
+  }
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode OpGetNormals::calculateNormals() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -1634,6 +1724,10 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
 
   ierr = shapeTRIFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
 
+  if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+    ierr = shapeTRIFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr); CHKERRQ(ierr);
+  }
+
   EntityHandle ent = fePtr->get_ent();
   int num_nodes;
   const EntityHandle* conn;
@@ -1671,6 +1765,10 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
+  }
+
+  if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+    ierr = opSetPiolaTransoformOnTriangle.opRhs(dataHdiv); CHKERRQ(ierr);
   }
 
   for(

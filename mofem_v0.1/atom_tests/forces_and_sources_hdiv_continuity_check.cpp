@@ -10,6 +10,8 @@
 #include <fstream>
 #include <iostream>
 
+#include<moab/Skinner.hpp>
+
 extern "C" {
 #include "gm_rule.h"
 }
@@ -72,13 +74,18 @@ int main(int argc, char *argv[]) {
   //FE
   ierr = mField.add_finite_element("TET_FE"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("TRI_FE"); CHKERRQ(ierr);
-
+  ierr = mField.add_finite_element("SKIN_FE"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("TET_FE","HDIV"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("TET_FE","HDIV"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("TET_FE","HDIV"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("TET_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+  ierr = mField.modify_finite_element_add_field_row("SKIN_FE","HDIV"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("SKIN_FE","HDIV"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("SKIN_FE","HDIV"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("SKIN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   ierr = mField.modify_finite_element_add_field_row("TRI_FE","HDIV"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("TRI_FE","HDIV"); CHKERRQ(ierr);
@@ -90,6 +97,7 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM","TET_FE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM","SKIN_FE"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM","TRI_FE"); CHKERRQ(ierr);
 
   //set refinment level for problem
@@ -102,8 +110,17 @@ int main(int argc, char *argv[]) {
 
   //add entities to finite element
   ierr = mField.add_ents_to_finite_element_by_TETs(root_set,"TET_FE"); CHKERRQ(ierr);
+
+  Range tets;
+  ierr = mField.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+  Skinner skin(&moab);
+  Range skin_faces; // skin faces from 3d ents
+  rval = skin.find_skin(tets,false,skin_faces); CHKERR(rval);
+  ierr = mField.add_ents_to_finite_element_by_TRIs(skin_faces,"SKIN_FE"); CHKERRQ(ierr);
+
   Range faces;
   ierr = mField.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,faces); CHKERRQ(ierr);
+  faces = subtract(faces,skin_faces);
   ierr = mField.add_ents_to_finite_element_by_TRIs(faces,"TRI_FE"); CHKERRQ(ierr);
 
   //set app. order
@@ -243,6 +260,55 @@ int main(int argc, char *argv[]) {
 
   };
 
+  struct OpFacesSkinFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
+
+    FieldInterface &mField;
+    Tag tH1,tH2;
+    TeeStream &mySplit;
+
+    OpFacesSkinFluxes(FieldInterface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
+      TriElementForcesAndSurcesCore::UserDataOperator("HDIV"),
+      mField(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
+
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      ErrorCode rval;
+
+      if(type != MBTRI) PetscFunctionReturn(0);
+  
+      EntityHandle face = getMoFEMFEPtr()->get_ent();
+
+      double *t_ptr;
+      rval = mField.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERR_PETSC(rval);
+      double *tn_ptr;
+      rval = mField.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERR_PETSC(rval);
+
+      *tn_ptr = getNormals_at_GaussPt()(0,0)*t_ptr[0]+getNormals_at_GaussPt()(0,1)*t_ptr[1]+getNormals_at_GaussPt()(0,2)*t_ptr[2];
+
+      int nb_dofs = data.getHdivN().size2()/3;
+      int dd = 0;
+      for(;dd<nb_dofs;dd++) {
+	*tn_ptr += 
+	  -getNormals_at_GaussPt()(0,0)*data.getHdivN()(0,3*dd+0) 
+	  -getNormals_at_GaussPt()(0,1)*data.getHdivN()(0,3*dd+1)
+	  -getNormals_at_GaussPt()(0,2)*data.getHdivN()(0,3*dd+2);
+      }
+
+      mySplit.precision(5);
+
+      mySplit << face << " " << std::fixed << fabs(*tn_ptr) << endl;
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+
+
   struct OpFacesFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     FieldInterface &mField;
@@ -301,6 +367,7 @@ int main(int argc, char *argv[]) {
 
   MyTetFE tet_fe(mField);
   MyTriFE tri_fe(mField);
+  MyTriFE skin_fe(mField);
 
 
   Tag th1;
@@ -311,6 +378,7 @@ int main(int argc, char *argv[]) {
   Tag th2;
   rval = moab.tag_get_handle("TN",1,MB_TYPE_DOUBLE,th2,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
   tri_fe.get_op_to_do_Rhs().push_back(new OpFacesFluxes(mField,th1,th2,my_split));
+  skin_fe.get_op_to_do_Rhs().push_back(new OpFacesSkinFluxes(mField,th1,th2,my_split));
 
   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
     rval = moab.tag_set_data(th1,&*fit,1,&def_val); CHKERR_PETSC(rval);
@@ -318,7 +386,10 @@ int main(int argc, char *argv[]) {
   }
 
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
+  my_split << "intrnal\n";
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TRI_FE",tri_fe);  CHKERRQ(ierr);
+  my_split << "skin\n";
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);
 
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
