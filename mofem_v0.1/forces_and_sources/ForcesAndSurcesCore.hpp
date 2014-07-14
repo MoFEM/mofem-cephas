@@ -676,6 +676,25 @@ struct OpGetNormals: public DataOperator {
 
 };
 
+/** \brief transfrom Hdiv space fluxes from reference elemento to physical triangle
+ */
+struct OpSetPiolaTransoformOnTriangle: public DataOperator {
+
+  const ublas::vector<double> &normal;
+  const ublas::matrix<FieldData> &nOrmals_at_GaussPt;
+
+  OpSetPiolaTransoformOnTriangle(
+    const ublas::vector<double> &_normal,
+    const ublas::matrix<FieldData> &_nOrmals_at_GaussPt):
+    normal(_normal),nOrmals_at_GaussPt(_nOrmals_at_GaussPt) {}
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data);
+
+};
+
 /** \brief Tri finite element  
  * \ingroup mofem_forces_and_sources
  *
@@ -686,6 +705,14 @@ struct OpGetNormals: public DataOperator {
  *
  */
 struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  double aRea;;
+  ublas::vector<double> normal;
+  ublas::vector<double> coords;
+  ublas::matrix<double> gaussPts;
+  ublas::matrix<double> coordsAtGaussPts;
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
@@ -698,21 +725,15 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::matrix<FieldData> tAngent1_at_GaussPt;
   ublas::matrix<FieldData> tAngent2_at_GaussPt;
   OpGetNormals opHONormals;
+  OpSetPiolaTransoformOnTriangle opSetPiolaTransoformOnTriangle;
 
   TriElementForcesAndSurcesCore(FieldInterface &_mField):
     ForcesAndSurcesCore(_mField),
     dataH1(MBTRI),derivedDataH1(dataH1),
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt) {};
-
-  ErrorCode rval;
-  PetscErrorCode ierr;
-  double aRea;;
-  ublas::vector<double> normal;
-  ublas::vector<double> coords;
-  ublas::matrix<double> gaussPts;
-  ublas::matrix<double> coordsAtGaussPts;
+    opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt),
+    opSetPiolaTransoformOnTriangle(normal,nOrmals_at_GaussPt) {};
 
   /** \brief default oparator for TRI element
     */

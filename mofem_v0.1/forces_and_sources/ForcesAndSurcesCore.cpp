@@ -1630,6 +1630,38 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OpSetPiolaTransoformOnTriangle::doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data) {
+  PetscFunctionBegin;
+
+  if(type != MBTRI) PetscFunctionReturn(0);
+	
+  double l0 = cblas_dnrm2(3,&normal[0],1);
+  int nb_gauss_pts = data.getHdivN().size1();
+  int nb_dofs = data.getHdivN().size2()/3;
+  int gg = 0;
+  for(;gg<nb_gauss_pts;gg++) {
+    
+    int dd = 0;
+    for(;dd<nb_dofs;dd++) {
+      double val = data.getHdivN()(gg,3*dd);
+      if(nOrmals_at_GaussPt.size1()==(unsigned int)nb_gauss_pts) {
+	double l = cblas_dnrm2(3,&nOrmals_at_GaussPt(gg,0),1);
+	cblas_dcopy(3,&nOrmals_at_GaussPt(gg,0),1,&data.getHdivN()(gg,3*dd),1);
+	cblas_dscal(3,val/pow(l,2),&data.getHdivN()(gg,3*dd),1);
+      } else {
+	cblas_dcopy(3,&normal[0],1,&data.getHdivN()(gg,3*dd),1);
+	cblas_dscal(3,val/pow(l0,2),&data.getHdivN()(gg,3*dd),1);
+      }
+    }    
+
+  }
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode OpGetNormals::calculateNormals() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -1692,6 +1724,10 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
 
   ierr = shapeTRIFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
 
+  if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+    ierr = shapeTRIFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr); CHKERRQ(ierr);
+  }
+
   EntityHandle ent = fePtr->get_ent();
   int num_nodes;
   const EntityHandle* conn;
@@ -1729,6 +1765,10 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
+  }
+
+  if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+    ierr = opSetPiolaTransoformOnTriangle.opRhs(dataHdiv); CHKERRQ(ierr);
   }
 
   for(
