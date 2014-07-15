@@ -878,10 +878,10 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_Hdiv(
   int face_nodes[3] = { 0,1,2 };
   ierr = Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(face_nodes,face_order,
     &data.dataOnEntities[MBVERTEX][0].getN()(0,0),NULL,
-    PHI_f_e,NULL,G_DIM); CHKERRQ(ierr);
+    PHI_f_e,NULL,G_DIM,3); CHKERRQ(ierr);
   ierr = Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(face_nodes,face_order,
     &data.dataOnEntities[MBVERTEX][0].getN()(0,0),NULL,
-    PHI_f,NULL,G_DIM); CHKERRQ(ierr);
+    PHI_f,NULL,G_DIM,3); CHKERRQ(ierr);
 
   // set shape functions into data strucrure
 
@@ -1177,13 +1177,16 @@ PetscErrorCode OpSetInvJacHdiv::doWork(
 
     unsigned int nb_gauss_pts = data.getDiffHdivN().size1();
     unsigned int nb_dofs = data.getDiffHdivN().size2()/9;
-
-    for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(unsigned int dd = 0;dd<nb_dofs;dd++) {
+    
+    unsigned int gg = 0;
+    for(;gg<nb_gauss_pts;gg++) {
+      unsigned int dd = 0;
+      for(;dd<nb_dofs;dd++) {
+	const double *DiffHdivN = &((data.getDiffHdivN(gg))(dd,0));
 	for(int kk = 0;kk<3;kk++) {
 	  cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
-	    &*invJac.data().begin(),3,&data.getDiffHdivN()(gg,9*dd+kk),3,
-	    0.,&diffHdiv_invJac(gg,3*dd+kk),3); 
+	    &*invJac.data().begin(),3,&DiffHdivN[kk],3,
+	    0.,&diffHdiv_invJac(gg,9*dd+kk),3); 
 	}
       }
     }
@@ -1224,7 +1227,7 @@ PetscErrorCode OpSetPiolaTransform::doWork(
       int kk = 0;
       for(;kk<3;kk++) {
 	cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,c/vOlume,
-	  &*Jac.data().begin(),3,&data.getDiffHdivN()(gg,9*dd+3*kk),1,0.,&piolaDiffN(gg,9*dd+kk),1);
+	  &*Jac.data().begin(),3,&data.getDiffHdivN()(gg,9*dd+3*kk),1,0.,&piolaDiffN(gg,9*dd+3*kk),1);
       }
     }
   }
@@ -1301,9 +1304,10 @@ PetscErrorCode OpSetHoInvJacHdiv::doWork(
   for(;gg<nb_gauss_pts;gg++) {
     double *inv_h = &invHoJac(gg,0);
     for(unsigned dd = 0;dd<nb_dofs;dd++) {
-      double *diff_hdiv = &data.getDiffHdivN()(gg,9*dd);
+      const double *diff_hdiv = &(data.getDiffHdivN(gg)(dd,0));
       double *diff_hdiv_inv_jac = &diffHdiv_invJac(gg,9*dd);
-      for(int kk = 0;kk<3;kk++) {
+      int kk = 0;
+      for(;kk<3;kk++) {
 	cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,&diff_hdiv[kk],3,0.,&diff_hdiv_inv_jac[kk],3); 
       }
     }
@@ -1754,11 +1758,10 @@ PetscErrorCode TetElementForcesAndSourcesCore::UserDataOperator::getDivergenceMa
 
   int dd = 0;
   for(;dd<nb_dofs;dd++) {
-      cout << "G " << data.getDiffHdivN(dd,gg) << endl;
-    int ii = 0;
-    for(;ii<3;ii++) {
-      div[dd] += (data.getDiffHdivN(dd,gg))(ii,ii);
-    }
+    div[dd] = 
+      (data.getDiffHdivN(dd,gg))(0,0)+
+      (data.getDiffHdivN(dd,gg))(1,1)+
+      (data.getDiffHdivN(dd,gg))(2,2);
   }
 
   } catch (exception& ex) {

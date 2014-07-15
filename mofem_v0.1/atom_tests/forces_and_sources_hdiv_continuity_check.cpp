@@ -301,8 +301,6 @@ int main(int argc, char *argv[]) {
 
   };
 
-
-
   struct OpFacesFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     FieldInterface &mField;
