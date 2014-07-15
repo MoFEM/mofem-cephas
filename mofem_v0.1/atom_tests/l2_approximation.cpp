@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
   //build fields
   ierr = mField2.build_fields(); CHKERRQ(ierr);
   //build finite elements
-  ierr = mField2.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField2.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField2.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 
   //partition problems
   ierr = mField2.simple_partition_problem("PROBLEM_SCALAR_L2"); CHKERRQ(ierr);
-  ierr = mField2.partition_finiteElementsPtr("PROBLEM_SCALAR_L2"); CHKERRQ(ierr);
+  ierr = mField2.partition_finite_elements("PROBLEM_SCALAR_L2"); CHKERRQ(ierr);
   ierr = mField2.partition_ghost_dofs("PROBLEM_SCALAR_L2"); CHKERRQ(ierr);
 
   struct ApproxAnaliticalFunction {

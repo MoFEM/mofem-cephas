@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
   //build fields
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elements
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
 
   //partition problems
   ierr = mField.partition_problem("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("POTENTIAL_PROBLEM"); CHKERRQ(ierr);
 
   //print bcs
