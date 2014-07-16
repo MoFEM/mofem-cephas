@@ -39,6 +39,20 @@ PetscErrorCode print_MoFem_verison() {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode FieldCore::QueryInterface(const MOFEMuuid& uuid,FieldUnknownInterface** iface) {
+  PetscFunctionBegin;
+  *iface = NULL;
+  if(uuid == IDD_MOFEMUnknown) {
+    *iface = this;
+  }
+  if(uuid == IDD_MOFEMCoreInterface) {
+    *iface = this;
+  }
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"unknown inteface");
+  PetscFunctionReturn(0);
+}
+
+
 FieldCore::FieldCore(Interface& _moab,int _verbose): 
   moab(_moab),verbose(_verbose) {
 

@@ -21,9 +21,11 @@
 #ifndef __MOABFIELD_HPP__
 #define __MOABFIELD_HPP__
 
-#include "common.hpp"
+#include "FieldUnknownInterface.hpp"
 
 namespace MoFEM {
+
+static const MOFEMuuid IDD_MOFEMCoreInterface = MOFEMuuid( BitIntefaceId(1<<1) );
 
 /**
  * \brief The user interface
@@ -34,7 +36,11 @@ namespace MoFEM {
  *  (*) define problems, <br>
  *  (*) manage refined meshses
  */
-struct FieldInterface {
+struct FieldInterface: public FieldUnknownInterface {
+
+  ///destructor
+  virtual ~FieldInterface() {}
+
   /// get moab interface
   virtual Interface& get_moab() = 0; 
 
