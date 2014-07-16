@@ -21,13 +21,6 @@
 #ifndef __POTENTIALFLOWFEMETHOD_HPP__
 #define __POTENTIALFLOWFEMETHOD_HPP__
 
-#include <boost/numeric/ublas/symmetric.hpp>
-#include "FEMethod_UpLevelStudent.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-extern "C" {
-#include <gm_rule.h>
-}
-
 namespace MoFEM {
 
 struct LaplacianElem: public FEMethod_UpLevelStudent {

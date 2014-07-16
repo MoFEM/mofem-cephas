@@ -22,6 +22,8 @@
 
 #include "SurfacePressureComplexForLazy.hpp"
 
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"

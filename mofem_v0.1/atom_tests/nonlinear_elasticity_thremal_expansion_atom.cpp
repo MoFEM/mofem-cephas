@@ -21,6 +21,8 @@
 #include "FieldCore.hpp"
 #include <petscksp.h>
 
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "SnesCtx.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"

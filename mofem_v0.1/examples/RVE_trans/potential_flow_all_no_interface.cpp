@@ -19,15 +19,21 @@
 
 //#include "FunctionsForFieldData.hpp"
 //#include "cholesky.hpp"
+
+extern "C" {
+#include <gm_rule.h>
+}
+
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "FEMethod_UpLevelStudent.hpp"
+
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "PotentialFlowFEMethod.hpp"
 #include "SurfacePressure.hpp"
 
 #include <petscksp.h>
 #include "Projection10NodeCoordsOnField.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;
 

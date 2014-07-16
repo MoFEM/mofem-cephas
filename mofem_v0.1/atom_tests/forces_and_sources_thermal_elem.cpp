@@ -19,9 +19,14 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
+
+#include "ForcesAndSurcesCore.hpp"
+#include "TsCtx.hpp"
 #include "ThermalElement.hpp"
 #include "DirihletBC.hpp"
 
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 

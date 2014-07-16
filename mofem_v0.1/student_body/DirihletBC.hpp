@@ -20,10 +20,6 @@
 #ifndef __MOABFEMETHOD_DIRIHLETBC_HPP__
 #define __MOABFEMETHOD_DIRIHLETBC_HPP__
 
-#include "FieldInterface.hpp"
-
-#include <boost/numeric/ublas/matrix.hpp>
-
 using namespace boost::numeric;
 
 namespace MoFEM {

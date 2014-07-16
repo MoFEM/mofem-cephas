@@ -20,13 +20,17 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "FEMethod_UpLevelStudent.hpp"
+
+#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include <boost/numeric/ublas/symmetric.hpp>
+extern "C" {
+#include <gm_rule.h>
+}
 #include "PotentialFlowFEMethod.hpp"
 #include "SurfacePressure.hpp"
 
 #include <petscksp.h>
 #include "Projection10NodeCoordsOnField.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-
 using namespace MoFEM;
 
 ErrorCode rval;

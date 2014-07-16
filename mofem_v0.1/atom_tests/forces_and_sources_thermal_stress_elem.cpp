@@ -19,8 +19,22 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
+
+#include "ForcesAndSurcesCore.hpp"
+#include "SnesCtx.hpp"
+#include "TsCtx.hpp"
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include<cblas.h>
+  #include<lapack_wrap.h>
+#ifdef __cplusplus
+}
+#endif
 #include "ThermalStressElement.hpp"
 
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 

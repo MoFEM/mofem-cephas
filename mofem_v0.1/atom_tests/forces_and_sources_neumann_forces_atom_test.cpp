@@ -28,6 +28,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "FEM.h"
 #include "Projection10NodeCoordsOnField.hpp"
 
 namespace bio = boost::iostreams;

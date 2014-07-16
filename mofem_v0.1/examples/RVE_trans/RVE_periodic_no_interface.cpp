@@ -17,6 +17,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
+extern "C" {
+#include <gm_rule.h>
+}
+
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "FEMethod_UpLevelStudent.hpp"

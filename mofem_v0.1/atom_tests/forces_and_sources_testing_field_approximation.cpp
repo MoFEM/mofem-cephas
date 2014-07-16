@@ -17,6 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "FEM.h"
+
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "ForcesAndSurcesCore.hpp"
@@ -27,6 +29,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "Projection10NodeCoordsOnField.hpp"

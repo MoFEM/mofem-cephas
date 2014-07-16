@@ -24,13 +24,6 @@
 #ifndef __MOABTS_HPP__
 #define __MOABTS_HPP__
 
-#include "FieldInterface.hpp"
-#include <petsc.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-
-#include<petscts.h>
-
 namespace MoFEM {
 
 struct TsCtx {
