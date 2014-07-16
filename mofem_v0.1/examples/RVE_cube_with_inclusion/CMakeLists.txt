@@ -25,5 +25,8 @@ target_link_libraries(RVE_Cube_with_inclusion_Traction mofem_student_body mofem_
 add_executable(RVE_Cube_with_inclusion_Periodic RVE_Cube_with_inclusion_Periodic.cpp)
 target_link_libraries(RVE_Cube_with_inclusion_Periodic mofem_student_body mofem_Field ${PROJECT_LIBS})
 
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 

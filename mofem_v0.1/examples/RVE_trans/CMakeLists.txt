@@ -50,3 +50,8 @@ target_link_libraries(RVE_trac_no_interface mofem_student_body mofem_forces_and_
 # ======================= Periodic BCs with no interface element ========================================
 add_executable(RVE_periodic_no_interface RVE_periodic_no_interface.cpp)
 target_link_libraries(RVE_periodic_no_interface mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
+
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

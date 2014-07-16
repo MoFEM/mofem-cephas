@@ -17,15 +17,20 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 add_executable(RVE_Cube_Disp RVE_Cube_Disp.cpp)
-target_link_libraries(RVE_Cube_Disp mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_Cube_Disp mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 add_executable(RVE_Cube_Traction RVE_Cube_Traction.cpp)
-target_link_libraries(RVE_Cube_Traction mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_Cube_Traction mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 add_executable(RVE_Cube_Periodic RVE_Cube_Periodic.cpp)
-target_link_libraries(RVE_Cube_Periodic mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_Cube_Periodic mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
 
 #add_executable(RVE_Cube_Disp_transoport RVE_Cube_Disp_transoport.cpp)
-#target_link_libraries(RVE_Cube_Disp_transoport mofem_student_body mofem_Field ${PROJECT_LIBS})
+#target_link_libraries(RVE_Cube_Disp_transoport mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 

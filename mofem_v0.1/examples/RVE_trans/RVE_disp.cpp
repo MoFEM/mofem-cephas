@@ -341,11 +341,11 @@ int main(int argc, char *argv[]) {
     }
     
     //Assemble F and Aij
-    double YoungModulusP;
-    double PoissonRatioP;
-    double YoungModulusZ;
-    double PoissonRatioPZ;
-    double ShearModulusZP;
+//    double YoungModulusP;
+//    double PoissonRatioP;
+//    double YoungModulusZ;
+//    double PoissonRatioPZ;
+//    double ShearModulusZP;
     double YoungModulus;
     double PoissonRatio;
     double alpha;
@@ -357,20 +357,20 @@ int main(int argc, char *argv[]) {
         //Get block name
         string name = it->get_Cubit_name();
         
-        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
-        {
-            Mat_Elastic_TransIso mydata;
-            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-            cout << mydata;
-            YoungModulusP=mydata.data.Youngp;
-            YoungModulusZ=mydata.data.Youngz;
-            PoissonRatioP=mydata.data.Poissonp;
-            PoissonRatioPZ=mydata.data.Poissonpz;
-            if (mydata.data.Shearzp!=0) {
-                ShearModulusZP=mydata.data.Shearzp;
-            }else{
-                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
-        }
+//        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
+//        {
+//            Mat_Elastic_TransIso mydata;
+//            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+//            cout << mydata;
+//            YoungModulusP=mydata.data.Youngp;
+//            YoungModulusZ=mydata.data.Youngz;
+//            PoissonRatioP=mydata.data.Poissonp;
+//            PoissonRatioPZ=mydata.data.Poissonpz;
+//            if (mydata.data.Shearzp!=0) {
+//                ShearModulusZP=mydata.data.Shearzp;
+//            }else{
+//                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
+//        }
         if (name.compare(0,11,"MAT_ELASTIC") == 0)
         {
             Mat_Elastic mydata;
@@ -510,8 +510,10 @@ int main(int argc, char *argv[]) {
     ierr = VecDestroy(&D); CHKERRQ(ierr);
     ierr = MatDestroy(&Aij); CHKERRQ(ierr);
     ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-    
-    
+    ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
+    ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
+
+  
     ierr = PetscTime(&v2);CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
     

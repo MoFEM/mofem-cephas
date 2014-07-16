@@ -407,13 +407,13 @@ add_test(forces_and_sources_hdiv_continuity_check_atom_compare ${CMAKE_COMMAND} 
 
 #Homogenisation atom test
 add_executable(homogenisation_disp_atom_test homogenisation_disp_atom_test.cpp)
-target_link_libraries(homogenisation_disp_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(homogenisation_disp_atom_test mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 add_executable(homogenisation_trac_atom_test homogenisation_trac_atom_test.cpp)
-target_link_libraries(homogenisation_trac_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(homogenisation_trac_atom_test mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 add_executable(homogenisation_periodic_atom_test homogenisation_periodic_atom_test.cpp)
-target_link_libraries(homogenisation_periodic_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(homogenisation_periodic_atom_test mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 cm_export_file("../meshes/Cube_RVE.cub" export_atom_tests)
 
