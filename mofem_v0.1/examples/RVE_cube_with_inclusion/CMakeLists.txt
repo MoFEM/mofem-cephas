@@ -17,13 +17,13 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 add_executable(RVE_Cube_with_inclusion_Disp RVE_Cube_with_inclusion_Disp.cpp)
-target_link_libraries(RVE_Cube_with_inclusion_Disp mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_Cube_with_inclusion_Disp mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 add_executable(RVE_Cube_with_inclusion_Traction RVE_Cube_with_inclusion_Traction.cpp)
-target_link_libraries(RVE_Cube_with_inclusion_Traction mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_Cube_with_inclusion_Traction mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 add_executable(RVE_Cube_with_inclusion_Periodic RVE_Cube_with_inclusion_Periodic.cpp)
-target_link_libraries(RVE_Cube_with_inclusion_Periodic mofem_student_body mofem_Field ${PROJECT_LIBS})
+target_link_libraries(RVE_Cube_with_inclusion_Periodic mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
