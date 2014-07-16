@@ -1386,7 +1386,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
   Range preserve_ref_tets;
   ierr = mField.get_entities_by_type_and_ref_level(
     preserve_ref,BitRefLevel().set(),MBTET,preserve_ref_tets); CHKERRQ(ierr);
-  ierr = mField.seed_finiteElementsPtr(preserve_ref_tets); CHKERRQ(ierr);
+  ierr = mField.seed_finite_elements(preserve_ref_tets); CHKERRQ(ierr);
 
   int current_ref_bit = meshRefineBitLevels.first();
   for(int ll = 1;ll<nb_ref_levels+1;ll++) {
@@ -1395,7 +1395,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 
       Range level_tets;
       ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
-      ierr = mField.seed_finiteElementsPtr(level_tets); CHKERRQ(ierr);
+      ierr = mField.seed_finite_elements(level_tets); CHKERRQ(ierr);
 
       Range level_edges;
       ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
@@ -1492,14 +1492,14 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   Range interface_elements;
   ierr = mField.get_entities_by_type_and_ref_level(
     inheret_ents_from_level,inheret_ents_from_level_mask,MBTET,interface_elements); CHKERRQ(ierr);
-  ierr = mField.seed_finiteElementsPtr(interface_elements); CHKERRQ(ierr);
+  ierr = mField.seed_finite_elements(interface_elements); CHKERRQ(ierr);
 
   EntityHandle bit_meshset;
   rval = mField.get_moab().create_meshset(MESHSET_SET,bit_meshset); CHKERR_PETSC(rval);
   {
 
     ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,bit_meshset); CHKERRQ(ierr);
-    ierr = mField.seed_finiteElementsPtr(bit_meshset); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(bit_meshset); CHKERRQ(ierr);
 
     EntityHandle meshset_interface;
     ierr = mField.get_Cubit_msId_meshset(200,SIDESET,meshset_interface); CHKERRQ(ierr);
@@ -2104,7 +2104,7 @@ PetscErrorCode main_select_faces_for_splitting(FieldInterface& mField,FaceSplitt
   BitRefLevel bit_last_ref = BitRefLevel().set(face_splitting.meshRefineBitLevels.back());
   Range tets_on_last_ref_level;
   ierr = mField.get_entities_by_type_and_ref_level(bit_last_ref,BitRefLevel().set(),MBTET,tets_on_last_ref_level); CHKERRQ(ierr);
-  ierr = mField.seed_finiteElementsPtr(tets_on_last_ref_level); CHKERRQ(ierr);
+  ierr = mField.seed_finite_elements(tets_on_last_ref_level); CHKERRQ(ierr);
 
   ierr = face_splitting.buildKDTreeForCrackSurface(bit_level0); CHKERRQ(ierr);
   ierr = face_splitting.initBitLevelData(bit_last_ref);  CHKERRQ(ierr);

@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = mField.add_field("HDIV",HDIV,1); CHKERRQ(ierr);
-  ierr = mField.add_field("L2",L2,1); CHKERRQ(ierr);
+  //ierr = mField.add_field("L2",L2,1); CHKERRQ(ierr);
 
   //FE
   ierr = mField.add_finite_element("TEST_FE"); CHKERRQ(ierr);
@@ -92,14 +92,14 @@ int main(int argc, char *argv[]) {
   int order = 4;
   ierr = mField.set_field_order(root_set,MBTET,"HDIV",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTRI,"HDIV",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTET,"L2",order); CHKERRQ(ierr);
+  //ierr = mField.set_field_order(root_set,MBTET,"L2",order); CHKERRQ(ierr);
 
   /****/
   //build database
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -140,12 +140,12 @@ int main(int argc, char *argv[]) {
   
       const double eps = 1e-6;
       int dd = 0;
-      int size = data.getDiffN().data().size();
+      int size = data.getHdivN().data().size();
       for(;dd<size;dd++) {
-	if(fabs(data.getDiffN().data()[dd])<eps) data.getDiffN().data()[dd] = 0;
+	if(fabs(data.getHdivN().data()[dd])<eps) data.getHdivN().data()[dd] = 0;
       }
 
-      mySplit << std::fixed << data.getDiffN() << endl;
+      mySplit << std::fixed << data.getHdivN() << endl;
       
 
       PetscFunctionReturn(0);

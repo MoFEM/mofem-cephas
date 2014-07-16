@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 100 = %d\n",corner_edges.size()); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of NODESET 101 = %d\n",corner_nodes.size()); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 102 = %d\n",surface_faces.size()); CHKERRQ(ierr);
-    ierr = mField.seed_finiteElementsPtr(surface_faces); CHKERRQ(ierr);
+    ierr = mField.seed_finite_elements(surface_faces); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(surface_faces,"C_SURFACE_ELEM"); CHKERRQ(ierr);
 
     if(surface_faces.empty()) SETERRQ(PETSC_COMM_SELF,1,"no surface elements");
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
       rval = moab.create_meshset(MESHSET_SET,coner_nodes_meshset); CHKERR_PETSC(rval);	
       rval = moab.add_entities(coner_nodes_meshset,corner_nodes); CHKERR_PETSC(rval);
       //add surface elements
-      ierr = mField.seed_finiteElementsPtr(corner_nodes); CHKERRQ(ierr);
+      ierr = mField.seed_finite_elements(corner_nodes); CHKERRQ(ierr);
     }
     {
       Range surface_nodes;
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_fields(); CHKERRQ(ierr);
 
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
   ierr = mField.build_adjacencies(problem_level); CHKERRQ(ierr);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
 
   //partition
   ierr = mField.partition_problem("MESH_SMOOTHING"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("MESH_SMOOTHING"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("MESH_SMOOTHING"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("MESH_SMOOTHING"); CHKERRQ(ierr);
 
   {

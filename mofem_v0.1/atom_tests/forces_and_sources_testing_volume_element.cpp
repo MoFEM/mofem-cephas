@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 

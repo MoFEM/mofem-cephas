@@ -407,7 +407,7 @@ struct FieldInterface {
   * \param EntityHandle meshset
   *
   */
-  virtual PetscErrorCode seed_finiteElementsPtr(const EntityHandle meshset,int verb = -1) = 0;
+  virtual PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1) = 0;
 
   /**
   * Create finite elements based from eneties in meshses. Throw error if entity is not in database
@@ -415,7 +415,7 @@ struct FieldInterface {
   * \param Range entities
   *
   */
-  virtual PetscErrorCode seed_finiteElementsPtr(const Range &entities,int verb = -1) = 0;
+  virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
 
   /**
   * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjencies) in a particular BitRefLevel
@@ -658,7 +658,7 @@ struct FieldInterface {
 
   /** \brief remove finite element from mofem database
     */
-  virtual PetscErrorCode delete_finiteElementsPtr_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief left shift bit ref level
     * this results of deletion of enetities on far left side
@@ -1099,15 +1099,15 @@ struct FieldInterface {
 
   /** build finite elements
     */
-  virtual PetscErrorCode build_finiteElementsPtr(int verb = -1) = 0;
+  virtual PetscErrorCode build_finite_elements(int verb = -1) = 0;
 
   /** clear finite elements
     */
-  virtual PetscErrorCode clear_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** clear finite elements
     */
-  virtual PetscErrorCode clear_finiteElementsPtr(const string &name,const Range &ents,int verb = -1) = 0;
+  virtual PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1) = 0;
 
   /** \brief build ajacencies 
     *
@@ -1129,7 +1129,7 @@ struct FieldInterface {
     * \param bit
     * \param mask
     */
-  virtual PetscErrorCode clear_adjacencies_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief clear adjacency map for entities on given bit level
     *
@@ -1196,7 +1196,7 @@ struct FieldInterface {
    * \param name problem name 
    * \param do_skip if true, MultiIndices are set for finite element only on entities own by given partition
    */
-  virtual PetscErrorCode partition_finiteElementsPtr(const string &name,bool do_skip = true,int verb = -1) = 0;
+  virtual PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1) = 0;
 
   /** \brief check if matrix fill in correspond to finite element indices
     *

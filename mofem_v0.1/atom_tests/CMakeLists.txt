@@ -405,6 +405,11 @@ add_test(forces_and_sources_hdiv_continuity_check_atom_compare ${CMAKE_COMMAND} 
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_continuity_check.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_continuity_check.txt)
 
+# add test for hdvi divergence operator
+add_executable(forces_and_sources_hdiv_divergence_operator forces_and_sources_hdiv_divergence_operator.cpp)
+target_link_libraries(forces_and_sources_hdiv_divergence_operator mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_hdiv_divergence_operator_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator)
+
 #Homogenisation atom test
 add_executable(homogenisation_disp_atom_test homogenisation_disp_atom_test.cpp)
 target_link_libraries(homogenisation_disp_atom_test mofem_student_body mofem_Field ${PROJECT_LIBS})

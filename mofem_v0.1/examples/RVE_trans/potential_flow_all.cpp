@@ -404,7 +404,7 @@ int main(int argc, char *argv[]) {
     //build fields
     ierr = mField.build_fields(); CHKERRQ(ierr);
     //build finite elements
-    ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements(); CHKERRQ(ierr);
     //build adjacencies
     ierr = mField.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
     //build problem
@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
       ostringstream sss;
       sss << "POTENTIAL_PROBLEM" << fibreList[cc];
       ierr = mField.partition_problem( sss.str().c_str() ); CHKERRQ(ierr);
-      ierr = mField.partition_finiteElementsPtr( sss.str().c_str() ); CHKERRQ(ierr);
+      ierr = mField.partition_finite_elements( sss.str().c_str() ); CHKERRQ(ierr);
       ierr = mField.partition_ghost_dofs( sss.str().c_str() ); CHKERRQ(ierr);
     }
     

@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -189,12 +189,6 @@ int main(int argc, char *argv[]) {
 	EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->ent;
 
 	int sense = side_table.get<1>().find(boost::make_tuple(type,side))->sense;
-	//ublas::vector<double> diffNTRI(6,0);
-	//ierr = ShapeDiffMBTRI(&diffNTRI[0]); CHKERRQ(ierr);
-	//cerr << diffNTRI << endl;
-	//ublas::vector<double> normal(3,0);
-	//ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],face_coords[side],&normal[0]); CHKERRQ(ierr);
-	//cerr << side << " " << normal << endl;
 
 	ublas::vector<FieldData> t(3,0);
 	int dd = 0;
@@ -306,8 +300,6 @@ int main(int argc, char *argv[]) {
     }
 
   };
-
-
 
   struct OpFacesFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
 

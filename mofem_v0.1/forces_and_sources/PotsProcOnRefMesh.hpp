@@ -253,14 +253,14 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
       switch(type) {
 	case MBTRI:
-	  for(unsigned int dd = 0;dd<data.getDiffN().size2()/3;dd++) {
+	  for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
 	    ostringstream ss;
 	    ss << "HDIV_FACE_" << side << "_" << dd;
 	    rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
 	  }
 	  break;
 	case MBTET:
-	  for(unsigned int dd = 0;dd<data.getDiffN().size2()/3;dd++) {
+	  for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
 	    ostringstream ss;
 	    ss << "HDIV_TET_" << dd;
 	    rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
@@ -270,8 +270,8 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
       }
 
-      for(unsigned int gg = 0;gg<data.getDiffN().size1();gg++) {
-	for(unsigned int dd = 0;dd<data.getDiffN().size2()/3;dd++) {
+      for(unsigned int gg = 0;gg<data.getHdivN().size1();gg++) {
+	for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
 	  ierr = postProcMesh.tag_set_data(th[dd],&mapGaussPts[gg],1,&data.getHdivN(gg)(dd,0)); CHKERRQ(ierr);
 	}
       }
