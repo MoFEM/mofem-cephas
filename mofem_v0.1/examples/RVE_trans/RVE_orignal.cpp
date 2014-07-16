@@ -287,11 +287,11 @@ int main(int argc, char *argv[]) {
     }
     
     //Assemble F and Aij
-    double YoungModulusP;
-    double PoissonRatioP;
-    double YoungModulusZ;
-    double PoissonRatioPZ;
-    double ShearModulusZP;
+//    double YoungModulusP;
+//    double PoissonRatioP;
+//    double YoungModulusZ;
+//    double PoissonRatioPZ;
+//    double ShearModulusZP;
     double YoungModulus=135000;
     double PoissonRatio;
     double alpha;
@@ -303,20 +303,20 @@ int main(int argc, char *argv[]) {
         //Get block name
         string name = it->get_Cubit_name();
         
-        if (name.compare(0,12,"MAT_TRANSISO") == 0)
-        {
-            Mat_TransIso mydata;
-            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-            cout << mydata;
-            YoungModulusP=mydata.data.Youngp;
-            YoungModulusZ=mydata.data.Youngz;
-            PoissonRatioP=mydata.data.Poissonp;
-            PoissonRatioPZ=mydata.data.Poissonpz;
-            if (mydata.data.Shearzp!=0) {
-                ShearModulusZP=mydata.data.Shearzp;
-            }else{
-                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
-        }
+//        if (name.compare(0,12,"MAT_TRANSISO") == 0)
+//        {
+//            Mat_TransIso mydata;
+//            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+//            cout << mydata;
+//            YoungModulusP=mydata.data.Youngp;
+//            YoungModulusZ=mydata.data.Youngz;
+//            PoissonRatioP=mydata.data.Poissonp;
+//            PoissonRatioPZ=mydata.data.Poissonpz;
+//            if (mydata.data.Shearzp!=0) {
+//                ShearModulusZP=mydata.data.Shearzp;
+//            }else{
+//                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
+//        }
         if (name.compare(0,11,"MAT_ELASTIC") == 0)
         {
             Mat_Elastic mydata;
