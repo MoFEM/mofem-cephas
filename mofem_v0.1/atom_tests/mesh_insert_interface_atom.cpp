@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   //build fields
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elements
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   //Its build adjacencies for all ements in databse,
   //for pratical applications consider to build adjacencies
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
     ierr = mField.partition_problem(problem_name.str()); CHKERRQ(ierr);
-    ierr = mField.partition_finiteElementsPtr(problem_name.str()); CHKERRQ(ierr);
+    ierr = mField.partition_finite_elements(problem_name.str()); CHKERRQ(ierr);
     ierr = mField.partition_ghost_dofs(problem_name.str()); CHKERRQ(ierr);
   }
 

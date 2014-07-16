@@ -249,8 +249,8 @@ struct FieldCore: public FieldInterface {
   }
 
   //refine
-  PetscErrorCode seed_finiteElementsPtr(const Range &entities,int verb = -1);
-  PetscErrorCode seed_finiteElementsPtr(const EntityHandle meshset,int verb = -1);
+  PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
+  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
   PetscErrorCode seed_ref_level_2D(const Range &ents2d,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_3D(const Range &ents3d,const BitRefLevel &bit,int verb = -1);
@@ -272,7 +272,7 @@ struct FieldCore: public FieldInterface {
   //remove entities
   PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent = false,int verb = -1);
   PetscErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  PetscErrorCode delete_finiteElementsPtr_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode shift_left_bit_ref(const int shif,int verb = -1);
   PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1);
 
@@ -375,17 +375,17 @@ struct FieldCore: public FieldInterface {
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
   PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &ent_fe,int verb = -1);
   PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &ent_fe,int verb = -1);
-  PetscErrorCode build_finiteElementsPtr(int verb = -1);
-  PetscErrorCode clear_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  PetscErrorCode clear_finiteElementsPtr(const string &name,const Range &ents,int verb = -1);
+  PetscErrorCode build_finite_elements(int verb = -1);
+  PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
 
   //entFEAdjacencies
   PetscErrorCode build_adjacencies(const Range &ents,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  PetscErrorCode clear_adjacencies_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  PetscErrorCode clear_adjacencies_finiteElementsPtr(const string &name,const Range &ents,int verb = -1);
+  PetscErrorCode clear_adjacencies_finite_elements(const string &name,const Range &ents,int verb = -1);
   PetscErrorCode clear_adjacencies_entities(const string &name,const Range &ents,int verb = -1);
 
   PetscErrorCode list_adjacencies() const;
@@ -398,7 +398,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
-  PetscErrorCode partition_finiteElementsPtr(const string &name,bool do_skip = true,int verb = -1);
+  PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
   PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
 
   //save meshsets

@@ -99,27 +99,27 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
     
-    PetscErrorCode GetMatParameters(double *_Moist_diffusivity) {
-      PetscFunctionBegin;
-      
-      EntityHandle ent = fe_ptr->get_ent();
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_MoistureSet,it)) {
-        
-        Mat_Moisture mydata;
-        ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-        
-        Range meshsets;
-        rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-        for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-          if( moab.contains_entities(*mit,&ent,1) ) {
-            *_Moist_diffusivity = mydata.data.Diffusivity;
-            //                    cout<< " mydata.data.Diffusivity "<<mydata.data.Diffusivity<<endl;
-            break;
-          }
-        }
-      }
-      PetscFunctionReturn(0);
-    }
+//    PetscErrorCode GetMatParameters(double *_Moist_diffusivity) {
+//      PetscFunctionBegin;
+//      
+//      EntityHandle ent = fe_ptr->get_ent();
+//      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BlockSet|Mat_MoistureSet,it)) {
+//        
+//        Mat_Moisture mydata;
+//        ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+//        
+//        Range meshsets;
+//        rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+//        for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+//          if( moab.contains_entities(*mit,&ent,1) ) {
+//            *_Moist_diffusivity = mydata.data.Diffusivity;
+//            //                    cout<< " mydata.data.Diffusivity "<<mydata.data.Diffusivity<<endl;
+//            break;
+//          }
+//        }
+//      }
+//      PetscFunctionReturn(0);
+//    }
     
     
     
