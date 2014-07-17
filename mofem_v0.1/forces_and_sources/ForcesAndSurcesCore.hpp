@@ -662,15 +662,15 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   /** \brief default oparator for TET element
     */
   struct UserDataOperator: public DataOperator {
-    bool symm;
     string row_field_name;
     string col_field_name;
+    bool symm;
     UserDataOperator(
       const string &_field_name):
-	row_field_name(_field_name),col_field_name(_field_name),ptrFE(NULL),symm(true) {};
+	row_field_name(_field_name),col_field_name(_field_name),symm(true),ptrFE(NULL) {};
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
-	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL),symm(true) {};
+	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
     inline double getVolume() { return ptrFE->vOlume; }
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
@@ -813,15 +813,15 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   /** \brief default oparator for TRI element
     */
   struct UserDataOperator: public DataOperator {
-    bool symm;
     string row_field_name;
     string col_field_name;
+    bool symm;
     UserDataOperator(
       const string &_field_name):
-	row_field_name(_field_name),col_field_name(_field_name),ptrFE(NULL),symm(true) {};
+	row_field_name(_field_name),col_field_name(_field_name),symm(true),ptrFE(NULL) {};
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
-	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL),symm(true) {};
+	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
     inline double getArea() { return ptrFE->aRea; }
 
