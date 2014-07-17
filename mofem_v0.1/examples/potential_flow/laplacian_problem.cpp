@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
     fix_nodes.insert(adj.begin(),adj.end());
     rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
   }
-  FixMaterialPoints fix_dofs(mField,"POTENTIAL_FIELD",A,D,F,fix_nodes);
+  FixBcAtEntities fix_dofs(mField,"POTENTIAL_FIELD",A,D,F,fix_nodes);
   //initialize data structure
   ierr = mField.problem_basic_method_preProcess("POTENTIAL_PROBLEM",fix_dofs); CHKERRQ(ierr);
 

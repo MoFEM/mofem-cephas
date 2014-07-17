@@ -398,10 +398,27 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
   FENumeredDofMoFEMEntity_multiIndex cols_dofs;
   NumeredMoFEMFiniteElement(const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr): interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement>(EntMoFEMFiniteElement_ptr),part(-1) {};
   inline unsigned int get_part() const { return part; };
+
+  /** \brief get FE dof 
+    * \ingroup mofem_dofs
+    */
   inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return rows_dofs; };
+
+  /** \brief get FE dof 
+    * \ingroup mofem_dofs
+    */
   inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return cols_dofs; };
+
+  /** \brief get FE dof by petsc index
+    * \ingroup mofem_dofs
+    */
   PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
+
+  /** \brief get FE dof by petsc index
+    * \ingroup mofem_dofs
+    */
   PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
+
   friend ostream& operator<<(ostream& os,const NumeredMoFEMFiniteElement& e) {
     os << "part " << e.part << " " << *(e.fe_ptr);
     return os;

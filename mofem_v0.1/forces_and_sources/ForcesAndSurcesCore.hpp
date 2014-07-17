@@ -296,8 +296,6 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     inline const ublas::matrix<FieldData>&  getHdivN() const { return entData.getHdivN(); };
     inline ublas::matrix<FieldData>&  getHdivN() { return entData.getHdivN(); };
 
-
-
     private:
     ApproximationOrder oRder;
     ublas::vector<DofIdx> iNdices;
@@ -601,7 +599,7 @@ struct OpGetData: public DataOperator {
 };
 
 /** \brief Tet finite element  
- * \ingroup mofem_forces_and_sources
+ * \ingroup mofem_forces_and_sources_tet_element 
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from TetElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
@@ -660,6 +658,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> coordsAtGaussPts;
 
   /** \brief default oparator for TET element
+    * \ingroup mofem_forces_and_sources_tet_element
     */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
@@ -1063,6 +1062,12 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources Forces and sources
  ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_tet_element Tetrahedral Element 
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/
+
 
 
 

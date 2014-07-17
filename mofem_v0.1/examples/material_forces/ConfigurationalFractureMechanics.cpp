@@ -2155,7 +2155,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
   ierr = mField.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
   corners_nodes.merge(nodes_to_block);
 
-  FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
+  FixBcAtEntities fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
@@ -2516,7 +2516,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     other_body_surface_constrains[msId]->nonlinear = true;
   }
   //dirichlet constrains
-  FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
+  FixBcAtEntities fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
@@ -2792,7 +2792,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&material_fe.thermal_expansion,&flg); CHKERRQ(ierr);
   material_fe.snes_f = F_Material;
   material_fe.set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETFUNCTION);
-  FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
+  FixBcAtEntities fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.snes_x = PETSC_NULL;
   fix_material_pts.snes_f = F_Material;
   fix_material_pts.set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETFUNCTION);

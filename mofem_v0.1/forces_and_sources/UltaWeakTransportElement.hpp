@@ -32,20 +32,22 @@ struct UltraWeakTransportElement {
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
     MyVolumeFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return order-1; };
+    int getRule(int order) { return order+1; };
   };
 
   MyVolumeFE feVolFluxFlux;   
+  MyVolumeFE feVolValueFlux;  
 
   /** \brief define surface element
     *
     */
   struct MyTriFE: public TriElementForcesAndSurcesCore {
     MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
-    int getRule(int order) { return ceil(order/2); };
+    int getRule(int order) { return order+1; };
   };
 
-  UltraWeakTransportElement(FieldInterface &m_field): mField(m_field),feVolFluxFlux(m_field) {};
+  UltraWeakTransportElement(FieldInterface &m_field): mField(m_field),
+    feVolFluxFlux(m_field),feVolValueFlux(m_field) {};
 
   virtual PetscErrorCode getFlux(const double x,const double y,const double z,double &flux) {
     PetscFunctionBegin;
@@ -110,7 +112,6 @@ struct UltraWeakTransportElement {
 
     }
 
-
     PetscFunctionReturn(0);
   }
 
@@ -157,14 +158,16 @@ struct UltraWeakTransportElement {
 	  }
       
 	  //FIXME this multiplication should be done in blas or ublas
-	  for(int rr = 0;rr<nb_row;rr++) {
+	  /*for(int rr = 0;rr<nb_row;rr++) {
 	    for(int cc = 0;cc<nb_col;cc++) {
 	      NN(rr,cc) += w*(
-		row_data.getHdivN(gg)(rr,0)*col_data.getHdivN(gg)(rr,0)+
-		row_data.getHdivN(gg)(rr,1)*col_data.getHdivN(gg)(rr,1)+
-		row_data.getHdivN(gg)(rr,2)*col_data.getHdivN(gg)(rr,2) );
+		row_data.getHdivN(gg)(rr,0)*col_data.getHdivN(gg)(cc,0)+
+		row_data.getHdivN(gg)(rr,1)*col_data.getHdivN(gg)(cc,1)+
+		row_data.getHdivN(gg)(rr,2)*col_data.getHdivN(gg)(cc,2) );
 	    }
-	  }
+	  }*/
+	  noalias(NN) += w*prod(row_data.getHdivN(gg),trans(col_data.getHdivN(gg))); 
+
 
 	}
 
@@ -173,6 +176,7 @@ struct UltraWeakTransportElement {
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &NN(0,0),ADD_VALUES); CHKERRQ(ierr);
+
 	if(row_side != col_side || row_type != col_type) {
 	  transNN.resize(nb_col,nb_row);
 	  noalias(transNN) = trans(NN);
@@ -195,14 +199,15 @@ struct UltraWeakTransportElement {
 
   };
 
+
   /** \brief u in L2 and tau in Hdiv, calulates Aij = Asemble int u * div(tau) dTet 
     */
-  struct OpLhsDivTauDotU_HdivL2: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpLhsVDotDivSigma_L2Hdiv: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
 
-    OpLhsDivTauDotU_HdivL2(
+    OpLhsVDotDivSigma_L2Hdiv(
       UltraWeakTransportElement &ctx,
       const string field_name_row,string field_name_col,Mat _Aij):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
@@ -215,90 +220,7 @@ struct UltraWeakTransportElement {
 
     }
 
-    ublas::matrix<FieldData> NN;
-    ublas::vector<FieldData> div_vec;
-
-    PetscErrorCode doWork(
-      int row_side,int col_side,
-      EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
-      PetscFunctionBegin;
-
-      PetscErrorCode ierr;
-
-      try {
-
-	if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
-	if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
-
-	int nb_row = row_data.getFieldData().size();
-	int nb_col = col_data.getFieldData().size();
-	NN.resize(nb_row,nb_col);
-	bzero(&NN(0,0),NN.data().size()*sizeof(FieldData));
-
-	div_vec.resize(nb_row,0);
-
-	int nb_gauss_pts = row_data.getHdivN().size1();
-	int gg = 0;
-	for(;gg<nb_gauss_pts;gg++) {
-
-	  double w = getGaussPts()(3,gg)*getVolume();
-	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac()(gg);
-	  }
-
-	  ierr = getDivergenceMatrixOperato_Hdiv(
-	    row_side,row_type,row_data,gg,div_vec); CHKERRQ(ierr);
-
-      	  //FIXME this multiplication should be done in blas or ublas
-	  for(int rr = 0;rr<nb_row;rr++) {
-	    for(int cc = 0;cc<nb_col;cc++) {
-	      NN(rr,cc) += w*(div_vec[rr]*col_data.getN(gg)[cc]);
-	    }
-	  }
-
-	}
-
-	ierr = MatSetValues(
-	  Aij,
-	  nb_row,&row_data.getIndices()[0],
-	  nb_col,&col_data.getIndices()[0],
-	  &NN(0,0),ADD_VALUES); CHKERRQ(ierr);
-
-      } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-
-  /** \brief u in L2 and tau in Hdiv, calulates Aij = Asemble int u * div(tau) dTet 
-    */
-  struct OpLhsDivTauDotU_L2Hdiv: public TetElementForcesAndSourcesCore::UserDataOperator {
-
-    UltraWeakTransportElement &cTx;
-    Mat Aij;
-
-    OpLhsDivTauDotU_L2Hdiv(
-      UltraWeakTransportElement &ctx,
-      const string field_name_row,string field_name_col,Mat _Aij):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
-      cTx(ctx),Aij(_Aij) {
-  
-      //this operator is not symmetric settig this varible makes element
-      //operator to loop over element entities (subsimplicies) without
-      //assumption that off-diagonal matrices are symmetric.
-      symm = false;
-
-    }
-
-    ublas::matrix<FieldData> NN;
+    ublas::matrix<FieldData> NN,transNN;
     ublas::vector<FieldData> div_vec;
 
     PetscErrorCode doWork(
@@ -343,11 +265,28 @@ struct UltraWeakTransportElement {
 
 	}
 
+	/*cerr << row_side << " " << col_side << endl;
+	cerr << row_type << " " << col_type << endl;
+	cerr << row_data.getIndices() << endl;
+	cerr << col_data.getIndices() << endl;
+	cerr << row_data.getFieldData() << endl;
+	cerr << col_data.getFieldData() << endl;
+	cerr << NN << endl << endl;*/
+
 	ierr = MatSetValues(
 	  Aij,
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &NN(0,0),ADD_VALUES); CHKERRQ(ierr);
+
+	transNN.resize(nb_col,nb_row);
+	ublas::noalias(transNN) = trans(NN);
+	ierr = MatSetValues(
+	  Aij,
+	  nb_col,&col_data.getIndices()[0],
+	  nb_row,&row_data.getIndices()[0],
+	  &transNN(0,0),ADD_VALUES); CHKERRQ(ierr);
+
 
       } catch (const std::exception& ex) {
 	ostringstream ss;

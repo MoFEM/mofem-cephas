@@ -208,7 +208,7 @@ struct ThermalElement {
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -960,7 +960,7 @@ struct ThermalElement {
   /** \brief this function is used in case of statonary problem for heat flux terms
     * \infroup mofem_thermal_elem 
     */
-  PetscErrorCode setThermalFluxFiniteElementLhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+  PetscErrorCode setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     bool ho_geometry = false;
     if(mField.check_field(mesh_nodals_positions)) {

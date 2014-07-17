@@ -93,7 +93,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     gaussPts_FirstOrder.resize(elem_nodes.size(),4,0);
     Range::iterator nit = elem_nodes.begin();
     for(int gg = 0;nit!=elem_nodes.end();nit++,gg++) {
-      moab_ref.get_coords(&*nit,1,&gaussPts_FirstOrder(gg,0));
+      rval = moab_ref.get_coords(&*nit,1,&gaussPts_FirstOrder(gg,0)); CHKERR_PETSC(rval);
       little_map[*nit] = gg;
     }
     gaussPts_FirstOrder = trans(gaussPts_FirstOrder);
@@ -106,7 +106,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     for(int tt = 0;tit!=tets.end();tit++,tt++) {
       const EntityHandle *conn;
       int num_nodes;
-      moab_ref.get_connectivity(*tit,conn,num_nodes,false);
+      rval = moab_ref.get_connectivity(*tit,conn,num_nodes,false); CHKERR_PETSC(rval);
       for(int nn = 0;nn<num_nodes;nn++) {
 	refTets(tt,nn) = little_map[conn[nn]];
       }
@@ -142,14 +142,18 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       tets.insert(tet);
     }
  
+    //cerr << tets.size() << endl;
+
     EntityHandle meshset;
-    rval = postProcMesh.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+    rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
     rval = postProcMesh.add_entities(meshset,tets); CHKERR_PETSC(rval);
     //create higher order entities 
     rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
 
     tets.clear();
     rval = postProcMesh.get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+
+    //cerr << "<-- " << tets.size() << endl;
     Range nodes;
     rval = postProcMesh.get_connectivity(tets,nodes,false); CHKERR_PETSC(rval);
 
@@ -161,12 +165,12 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     }
     gaussPts = trans(gaussPts);
 
-    cerr << gaussPts << endl;
+    //cerr << gaussPts << endl;
 
     ublas::matrix<FieldData> N;
     N.resize(nodes.size(),4);
     ierr = ShapeMBTET(&*N.data().begin(),&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nodes.size()); CHKERRQ(ierr);
-    cerr << N << endl;
+    //cerr << N << endl;
 
     ublas::matrix<double> coords_at_gauss_pts;
     coords_at_gauss_pts.resize(nodes.size(),3);
@@ -179,7 +183,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       int num_nodes;
       mField.get_moab().get_connectivity(fe_ent,conn,num_nodes,false);
       rval = mField.get_moab().get_coords(conn,num_nodes,&coords[0]); CHKERR_PETSC(rval);
-      cerr << coords << endl;
+      //cerr << coords << endl;
     }
 
     for(unsigned int gg = 0;gg<nodes.size();gg++) {
@@ -188,7 +192,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       }
     }
 
-    cerr << coords_at_gauss_pts << endl;
+    //cerr << coords_at_gauss_pts << endl;
 
     mapGaussPts.resize(nodes.size());
     nit = nodes.begin();
@@ -197,20 +201,11 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       mapGaussPts[gg] = *nit;
     }
 
+    tets.clear();
+    rval = postProcMesh.get_entities_by_type(0,MBTET,tets,true); CHKERR_PETSC(rval);
+    //cerr << "<--- <--- " << tets.size() << endl;
 
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    int rank = pcomm->rank();
 
-
-    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
-    if(pcomm_post_proc_mesh == NULL) {
-      pcomm_post_proc_mesh = new ParallelComm(&postProcMesh,PETSC_COMM_WORLD);
-    }
-
-    Range::iterator tit = tets.begin();
-    for(;tit!=tets.end();tit++) {
-      rval = postProcMesh.tag_set_data(pcomm_post_proc_mesh->part_tag(),&*tit,1,&rank); CHKERR_PETSC(rval);
-    }
 
     } catch (exception& ex) {
       ostringstream ss;
@@ -281,9 +276,116 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   };
 
+  struct OpGetFieldValues: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    Interface &postProcMesh;
+    vector<EntityHandle> &mapGaussPts;
+
+    OpGetFieldValues(
+      Interface &post_proc_mesh,
+      vector<EntityHandle> &map_gauss_pts,
+      const string field_name): 
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts) {}
+
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+
+      ErrorCode rval;
+      PetscErrorCode ierr;
+       
+      const FENumeredDofMoFEMEntity *dof_ptr;
+      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+
+      string tag_name = dof_ptr->get_name()+"VAL";
+      int rank = dof_ptr->get_max_rank();    
+
+      int tag_length = rank;
+      FieldSpace space = dof_ptr->get_space();
+      switch(space) {
+	case L2:
+	case H1:
+	  break;
+	case HCURL:
+	case HDIV:
+	  tag_length *= 3;
+	  break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
+      }
+
+      double def_VAL[tag_length];
+      bzero(def_VAL,tag_length*sizeof(double));
+      Tag th;
+      rval = postProcMesh.tag_get_handle(tag_name.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+
+      // zero tags, this for Vertex if H1 and TRI if Hdiv, EDGE for Hcurl
+      // no need for L2
+      const void* tags_ptr[mapGaussPts.size()];
+      int nb_gauss_pts = data.getN().size1();
+      switch(space) {
+	case H1:
+	  if(type == MBVERTEX) {
+	    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	      rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
+	    }
+	  }
+	case L2:
+	  rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
+	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	    for(int rr = 0;rr<rank;rr++) {
+	      ((double*)tags_ptr[gg])[rr] += cblas_ddot(
+		data.getFieldData().size(),&(data.getN(gg)[0]),1,&(data.getFieldData()[rr]),rank);
+	    }
+	  }
+	  break;
+	case HDIV:
+	  if(type == MBTRI && side == 0) {
+	    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	      rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
+	    }
+	  }
+	  rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
+	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	    for(int rr = 0;rr<rank;rr++) {
+	      for(int dd = 0;dd<3;dd++) {
+		((double*)tags_ptr[gg])[3*rr+dd] += cblas_ddot(
+		  data.getFieldData().size(),&(data.getHdivN(gg)(0,dd)),3,&(data.getFieldData()[rr]),rank);
+		
+	      }
+	    }
+	  }
+	  break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
+      }
+
+      PetscFunctionReturn(0);
+
+    }
+
+  };
+
   PetscErrorCode addHdivFunctionsPostProc(const string field_name) {
     PetscFunctionBegin;
     get_op_to_do_Rhs().push_back(new OpHdivFunctions(postProcMesh,mapGaussPts,field_name));
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode addFieldValuesPostProc(const string field_name) {
+    PetscFunctionBegin;
+    get_op_to_do_Rhs().push_back(new OpGetFieldValues(postProcMesh,mapGaussPts,field_name));
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode clearOperators() {
+    PetscFunctionBegin;
+    get_op_to_do_Rhs().clear();
     PetscFunctionReturn(0);
   }
 
@@ -296,9 +398,33 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
-    ErrorCode rval;
+
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
-    rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERR_PETSC(rval);
+    if(pcomm_post_proc_mesh == NULL) {
+      pcomm_post_proc_mesh = new ParallelComm(&postProcMesh,PETSC_COMM_WORLD);
+    }
+
+    Range edges;
+    rval = postProcMesh.get_entities_by_type(0,MBEDGE,edges,false);  CHKERR_PETSC(rval);
+    rval = postProcMesh.delete_entities(edges); CHKERR_PETSC(rval);
+    Range tris;
+    rval = postProcMesh.get_entities_by_type(0,MBTRI,tris,false);  CHKERR_PETSC(rval);
+    rval = postProcMesh.delete_entities(tris); CHKERR_PETSC(rval);
+
+    Range tets;
+    rval = postProcMesh.get_entities_by_type(0,MBTET,tets,false);  CHKERR_PETSC(rval);
+
+    //cerr << "total tets size " << tets.size() << endl;
+
+    int rank = pcomm->rank();
+    Range::iterator tit = tets.begin();
+    for(;tit!=tets.end();tit++) {
+      rval = postProcMesh.tag_set_data(pcomm_post_proc_mesh->part_tag(),&*tit,1,&rank); CHKERR_PETSC(rval);
+    }
+
+    rval = pcomm->resolve_shared_ents(0); CHKERR_PETSC(rval);
+
     PetscFunctionReturn(0);
   }
 

@@ -17,15 +17,16 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "FEM.h"
+
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 
 #include "ForcesAndSurcesCore.hpp"
 #include "TsCtx.hpp"
+#include "PotsProcOnRefMesh.hpp"
 #include "UltaWeakTransportElement.hpp"
 #include "DirichletBC.hpp"
-
-#include "FEM.h"
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -93,9 +94,18 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 1;
+  PetscInt order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    order = 2;
+  }
+
   ierr = m_field.set_field_order(root_set,MBTET,"FLUXES",order+1); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
+ 
+  //ierr = m_field.set_field_order(root_set,MBVERTEX,"VALUES",1); CHKERRQ(ierr);
+  //ierr = m_field.set_field_order(root_set,MBEDGE,"VALUES",order); CHKERRQ(ierr);
+  //ierr = m_field.set_field_order(root_set,MBTRI,"VALUES",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTET,"VALUES",order); CHKERRQ(ierr);
 
   //build field
@@ -119,8 +129,8 @@ int main(int argc, char *argv[]) {
  
     PetscErrorCode getFlux(const double x,const double y,const double z,double &flux) {
       PetscFunctionBegin;
-      double d = sqrt(x*x+y*y+z*z);
-      flux = 1-pow(d,5./4.);
+      //double d = sqrt(x*x+y*y+z*z);
+      flux = 1;//-pow(d,5./4.);
       PetscFunctionReturn(0);
     }
 
@@ -128,6 +138,20 @@ int main(int argc, char *argv[]) {
 
   MyUltraWeakFE ufe(m_field);
   ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
+
+  //same solvers and some partitioners have to (dummy) values on diagonal
+  ierr = m_field.add_finite_element("DIAG",MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("DIAG","VALUES"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("DIAG","VALUES"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("DIAG","VALUES"); CHKERRQ(ierr);
+
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_THERMALSET,it)) {
+
+    Range tets;
+    rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"DIAG"); CHKERRQ(ierr);
+
+  }
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
@@ -142,26 +166,88 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_FLUXFLUX"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_FLUXVALUE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_VALUEFLUX"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","DIAG"); CHKERRQ(ierr);
 
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   //mesh partitioning 
   //partition
-  ierr = m_field.simple_partition_problem("ULTRAWEAK"); CHKERRQ(ierr);
+  ierr = m_field.partition_problem("ULTRAWEAK"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("ULTRAWEAK"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("ULTRAWEAK"); CHKERRQ(ierr);
 
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ULTRAWEAK",&Aij); CHKERRQ(ierr);
+  Vec F,D;
+  ierr = m_field.VecCreateGhost("ULTRAWEAK",COL,&D); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("ULTRAWEAK",ROW,&F); CHKERRQ(ierr);
 
-  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
-  std::string wait;
-  std::cin >> wait;
+  ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
+  ierr = VecZeroEntries(F); CHKERRQ(ierr);
+
+  ufe.feVolFluxFlux.get_op_to_do_Lhs().push_back(new MyUltraWeakFE::OpLhsTauDotSigma_HdivHdiv(ufe,"FLUXES",Aij));
+  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_FLUXFLUX",ufe.feVolFluxFlux); CHKERRQ(ierr);
+
+  ufe.feVolValueFlux.get_op_to_do_Lhs().push_back(new MyUltraWeakFE::OpLhsVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",Aij));
+  ufe.feVolValueFlux.get_op_to_do_Rhs().push_back(new MyUltraWeakFE::OpL2Source(ufe,"VALUES",F));
+  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_VALUEFLUX",ufe.feVolValueFlux); CHKERRQ(ierr);
+
+  /*Skinner skin(&moab);
+  Range tets;
+  ierr = mField.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+  Skinner skin(&moab);
+  Range skin_faces; // skin faces from 3d ents
+  rval = skin.find_skin(tets,false,skin_faces); CHKERR(rval);*/
+
+  //FixBcAtEntities fix_values_on_skin(m_field,"VALUES",Aij,D,F,Range &ents)
+
+  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+
+  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
+  //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
+  //std::string wait;
+  //std::cin >> wait;
+
+  ierr = VecZeroEntries(D); CHKERRQ(ierr);
+
+  //solve
+  KSP solver;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+  ierr = KSPSetUp(solver); CHKERRQ(ierr);
+
+  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  ierr = m_field.set_global_VecCreateGhost("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+  //VecView(D,PETSC_VIEWER_STDOUT_WORLD);
 
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
 
+  PostPocOnRefinedMesh post_proc(m_field);
+  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+
+  ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_VALUEFLUX",post_proc);  CHKERRQ(ierr);
+  rval = post_proc.postProcMesh.write_file("out_values.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+  //rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);
+  ierr = post_proc.clearOperators(); CHKERRQ(ierr);
+
+  ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_FLUXFLUX",post_proc);  CHKERRQ(ierr);
+  rval = post_proc.postProcMesh.write_file("out_fluxes.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+  ierr = post_proc.clearOperators(); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

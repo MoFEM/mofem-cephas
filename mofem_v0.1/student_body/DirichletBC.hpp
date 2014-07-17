@@ -90,17 +90,17 @@ struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndP
 };
 
 
-struct FixMaterialPoints: public DisplacementBCFEMethodPreAndPostProc {
+struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
   Range &eNts;
   vector<string> fieldNames;
-  FixMaterialPoints(
+  FixBcAtEntities(
     FieldInterface& _mField,const string &_field_name,Mat &_Aij,Vec _X,Vec _F,Range &ents): 
     DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),eNts(ents) {
     fieldNames.push_back(fieldName);
   }
 
-  FixMaterialPoints(
+  FixBcAtEntities(
     FieldInterface& _mField,const string &_field_name,Range &ents): 
     DisplacementBCFEMethodPreAndPostProc(_mField,_field_name),eNts(ents) {
     fieldNames.push_back(fieldName);
