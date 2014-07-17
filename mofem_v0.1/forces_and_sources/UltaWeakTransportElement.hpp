@@ -27,24 +27,92 @@ namespace MoFEM {
 
 struct UltraWeakTransportElement {
 
-  struct virtual PetscErrorCode getFlux(const double x,const double y,const double z,double &flux) = 0; 
+  FieldInterface &mField;
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
+    MyVolumeFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order-1; };
   };
 
-  MyVolumeFE fe;   
+  MyVolumeFE feVolFluxFlux;   
 
   /** \brief define surface element
     *
     */
   struct MyTriFE: public TriElementForcesAndSurcesCore {
-    MyTriFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
+    MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
     int getRule(int order) { return ceil(order/2); };
   };
 
+  UltraWeakTransportElement(FieldInterface &m_field): mField(m_field),feVolFluxFlux(m_field) {};
+
+  virtual PetscErrorCode getFlux(const double x,const double y,const double z,double &flux) {
+    PetscFunctionBegin;
+    flux  = 0;
+    PetscFunctionReturn(0);
+  } 
+
+  /** \brief data for calulation het conductivity and heat capacity elements
+    * \infroup mofem_thermal_elem 
+    */
+  struct BlockData {
+    double cOnductivity;
+    double cApacity;
+    Range tEts; ///< constatins elements in block set
+  }; 
+  map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
+
+  /// \brief add finite elements
+  PetscErrorCode addFiniteElements(
+    const string &fluxes_name,const string &values_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    PetscFunctionBegin;
+
+    PetscErrorCode ierr;
+    ErrorCode rval;
+
+    ierr = mField.add_finite_element("ULTRAWEAK_FLUXFLUX",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_FLUXFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_FLUXFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXFLUX",fluxes_name); CHKERRQ(ierr);
+    if(mField.check_field(mesh_nodals_positions)) {
+      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXFLUX",fluxes_name); CHKERRQ(ierr);
+    }
+
+    ierr = mField.add_finite_element("ULTRAWEAK_FLUXVALUE",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_FLUXVALUE",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_FLUXVALUE",values_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXVALUE",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXVALUE",values_name); CHKERRQ(ierr);
+    if(mField.check_field(mesh_nodals_positions)) {
+      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXVALUE",fluxes_name); CHKERRQ(ierr);
+    }
+
+    ierr = mField.add_finite_element("ULTRAWEAK_VALUEFLUX",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_VALUEFLUX",values_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_VALUEFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_VALUEFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_VALUEFLUX",values_name); CHKERRQ(ierr);
+    if(mField.check_field(mesh_nodals_positions)) {
+      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_VALUEFLUX",fluxes_name); CHKERRQ(ierr);
+    }
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
+
+      Mat_Thermal temp_data;
+      ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);  
+      setOfBlocks[it->get_msId()].cOnductivity = temp_data.data.Conductivity;
+      setOfBlocks[it->get_msId()].cApacity = temp_data.data.HeatCapacity;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"ULTRAWEAK_FLUXFLUX"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"ULTRAWEAK_FLUXVALUE"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"ULTRAWEAK_VALUEFLUX"); CHKERRQ(ierr);
+
+    }
+
+
+    PetscFunctionReturn(0);
+  }
 
   /** \brief tau,sigma in Hdiv, calulates Aij = Asemble int sigma_dot_tau dTet 
     */
@@ -67,6 +135,8 @@ struct UltraWeakTransportElement {
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
+      PetscErrorCode ierr;
+
       try {
 
 	if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -77,21 +147,22 @@ struct UltraWeakTransportElement {
 	NN.resize(nb_row,nb_col);
 	bzero(&NN(0,0),NN.data().size()*sizeof(FieldData));
 
-	int nb_gauss_pts = data_row.getHdivN().size1();
+	int nb_gauss_pts = row_data.getHdivN().size1();
 	int gg = 0;
 	for(;gg<nb_gauss_pts;gg++) {
 
-	  double w = getGaussPts(gg,3)*getVolume();
+	  double w = getGaussPts()(3,gg)*getVolume();
 	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac();
+	    w *= getHoGaussPtsDetJac()(gg);
 	  }
       
+	  //FIXME this multiplication should be done in blas or ublas
 	  for(int rr = 0;rr<nb_row;rr++) {
 	    for(int cc = 0;cc<nb_col;cc++) {
 	      NN(rr,cc) += w*(
-		data_row.getHdivN(gg)(rr,0)*data_col.getHdivN(gg)(rr,0)+
-		data_row.getHdivN(gg)(rr,1)*data_col.getHdivN(gg)(rr,1)+
-		data_row.getHdivN(gg)(rr,2)*data_col.getHdivN(gg)(rr,2) );
+		row_data.getHdivN(gg)(rr,0)*col_data.getHdivN(gg)(rr,0)+
+		row_data.getHdivN(gg)(rr,1)*col_data.getHdivN(gg)(rr,1)+
+		row_data.getHdivN(gg)(rr,2)*col_data.getHdivN(gg)(rr,2) );
 	    }
 	  }
 
@@ -103,7 +174,7 @@ struct UltraWeakTransportElement {
 	  nb_col,&col_data.getIndices()[0],
 	  &NN(0,0),ADD_VALUES); CHKERRQ(ierr);
 	if(row_side != col_side || row_type != col_type) {
-	  transK.resize(nb_col,nb_row);
+	  transNN.resize(nb_col,nb_row);
 	  noalias(transNN) = trans(NN);
 	  ierr = MatSetValues(
 	    Aij,
@@ -154,6 +225,8 @@ struct UltraWeakTransportElement {
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
+      PetscErrorCode ierr;
+
       try {
 
 	if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -166,21 +239,22 @@ struct UltraWeakTransportElement {
 
 	div_vec.resize(nb_row,0);
 
-	int nb_gauss_pts = data_row.getHdivN().size1();
+	int nb_gauss_pts = row_data.getHdivN().size1();
 	int gg = 0;
 	for(;gg<nb_gauss_pts;gg++) {
 
-	  double w = getGaussPts(gg,3)*getVolume();
+	  double w = getGaussPts()(3,gg)*getVolume();
 	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac();
+	    w *= getHoGaussPtsDetJac()(gg);
 	  }
 
 	  ierr = getDivergenceMatrixOperato_Hdiv(
 	    row_side,row_type,row_data,gg,div_vec); CHKERRQ(ierr);
-      
+
+      	  //FIXME this multiplication should be done in blas or ublas
 	  for(int rr = 0;rr<nb_row;rr++) {
 	    for(int cc = 0;cc<nb_col;cc++) {
-	      NN(rr,cc) += w*(div_vec[rr]*getN(gg)[cc]);
+	      NN(rr,cc) += w*(div_vec[rr]*col_data.getN(gg)[cc]);
 	    }
 	  }
 
@@ -234,6 +308,8 @@ struct UltraWeakTransportElement {
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
+      PetscErrorCode ierr;
+
       try {
 
 	if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
@@ -246,21 +322,22 @@ struct UltraWeakTransportElement {
 
 	div_vec.resize(nb_col,0);
 
-	int nb_gauss_pts = data_row.getHdivN().size1();
+	int nb_gauss_pts = row_data.getHdivN().size1();
 	int gg = 0;
 	for(;gg<nb_gauss_pts;gg++) {
 
-	  double w = getGaussPts(gg,3)*getVolume();
+	  double w = getGaussPts()(3,gg)*getVolume();
 	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac();
+	    w *= getHoGaussPtsDetJac()(gg);
 	  }
 
 	  ierr = getDivergenceMatrixOperato_Hdiv(
 	    col_side,col_type,col_data,gg,div_vec); CHKERRQ(ierr);
       
+	  //FIXME this multiplication should be done in blas or ublas
 	  for(int rr = 0;rr<nb_row;rr++) {
 	    for(int cc = 0;cc<nb_col;cc++) {
-	      NN(rr,cc) += w*(getN(gg)[rr]*div_vec[cc]);
+	      NN(rr,cc) += w*(row_data.getN(gg)[rr]*div_vec[cc]);
 	    }
 	  }
 
@@ -283,14 +360,14 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpL2Source public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpL2Source: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Vec F;
 
     OpL2Source(
       UltraWeakTransportElement &ctx,
-      const string field_name,Mat _F):
+      const string field_name,Vec _F):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),F(_F) {}
       
@@ -299,21 +376,23 @@ struct UltraWeakTransportElement {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
+      PetscErrorCode ierr;
+
       try {
 
 	if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
 	int nb_row = data.getFieldData().size();
 	Nf.resize(nb_row);
-	bzero(&Nf(0,0),Nf.data().size()*sizeof(FieldData));
+	bzero(&Nf[0],Nf.data().size()*sizeof(FieldData));
 
-	int nb_gauss_pts = data_row.getHdivN().size1();
+	int nb_gauss_pts = data.getHdivN().size1();
 	int gg = 0;
 	for(;gg<nb_gauss_pts;gg++) {
 
-	  double w = getGaussPts(gg,3)*getVolume();
+	  double w = getGaussPts()(3,gg)*getVolume();
 	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac();
+	    w *= getHoGaussPtsDetJac()(gg);
 	  }
       
 	  for(int rr = 0;rr<nb_row;rr++) {
@@ -327,11 +406,9 @@ struct UltraWeakTransportElement {
 	
 	}
 
-	ierr = MatSetValues(
-	  Aij,
-	  nb_row,&row_data.getIndices()[0],
-	  nb_col,&col_data.getIndices()[0],
-	  &NN(0,0),ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValues(
+	  F,nb_row,&data.getIndices()[0],
+	  &Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
 	ostringstream ss;
@@ -345,9 +422,7 @@ struct UltraWeakTransportElement {
 
   };
 
-
-
-}
+};
 
 
 }

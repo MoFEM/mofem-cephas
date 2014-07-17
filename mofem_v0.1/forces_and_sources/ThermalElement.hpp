@@ -859,7 +859,7 @@ struct ThermalElement {
     ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_FE"); CHKERRQ(ierr);
 
     //takes skin of block of entities
-    Skinner skin(&mField.get_moab());
+    //Skinner skin(&mField.get_moab());
     // loop over all blocksets and get data which name is FluidPressure
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
 

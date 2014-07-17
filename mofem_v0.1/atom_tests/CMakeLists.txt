@@ -410,6 +410,10 @@ add_executable(forces_and_sources_hdiv_divergence_operator forces_and_sources_hd
 target_link_libraries(forces_and_sources_hdiv_divergence_operator mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 add_test(forces_and_sources_hdiv_divergence_operator_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator)
 
+# add test for ultra weak finite element
+add_executable(forces_and_sources_ultra_weak_transport forces_and_sources_ultra_weak_transport.cpp)
+target_link_libraries(forces_and_sources_ultra_weak_transport mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
 #Homogenisation atom test
 add_executable(homogenisation_disp_atom_test homogenisation_disp_atom_test.cpp)
 target_link_libraries(homogenisation_disp_atom_test mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
