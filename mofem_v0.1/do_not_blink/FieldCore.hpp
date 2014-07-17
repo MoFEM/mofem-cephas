@@ -33,6 +33,9 @@ namespace MoFEM {
  * This class is not used directly by the user
  */
 struct FieldCore: public FieldInterface {
+
+  PetscErrorCode QueryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+
   ErrorCode rval;
   PetscErrorCode ierr;
   //Data and low level methods 

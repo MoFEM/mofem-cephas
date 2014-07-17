@@ -131,32 +131,6 @@ enum ByWhat {
   BYALL = 1<<0|1<<1|1<<2 
 };
 
-/**
-  * Tyeps of sets and boundary conditions
-  *
-  */
-enum CubitBC {
-  UNKNOWNSET = 0,
-  NODESET = 1<<0,
-  SIDESET = 1<<1,
-  BLOCKSET = 1<<2,
-  MATERIALSET = 1<<3,
-  DISPLACEMENTSET = 1<<4,
-  FORCESET = 1<<5,
-  PRESSURESET = 1<<6,
-  VELOCITYSET = 1<<7,
-  ACCELERATIONSET = 1<<8,
-  TEMPERATURESET = 1<<9,
-  HEATFLUXSET = 1<<10,
-  INTERFACESET = 1<<11,
-  UNKNOWNCUBITNAME = 1<< 12,
-  MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
-  MAT_INTERFSET = 1 <<14,
-  MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
-  BLOCK_BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
-  LASTCUBITSET
-};
-
 //typedefs
 typedef PetscInt DofIdx;
 typedef int FEIdx;
@@ -176,13 +150,6 @@ const EntityHandle no_handle = (EntityHandle)-1;
 typedef uint128_t UId;  
 //typedef checked_uint128_tUId;
 typedef int ShortId;
-
-/** 
- * \typedef CubitBC_BitSet
- * bc & material meshsets
- *
- */
-typedef bitset<32> CubitBC_BitSet;
 
 /** \brief loacl unique id
   *
@@ -229,11 +196,14 @@ inline bool operator!=(const GlobalUId& lhs, const GlobalUId& rhs) { return !(lh
 #define BITFIELDID_SIZE 32 /*max number of fields*/
 #define BITFEID_SIZE 32 /*max number of finite elements*/
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/
+#define BITINTERFACEUID_SIZE 32 
+
 typedef bitset<BITREFEDGES_SIZE> BitRefEdges;
 typedef bitset<BITREFLEVEL_SIZE> BitRefLevel;
 typedef bitset<BITFIELDID_SIZE> BitFieldId;
 typedef bitset<BITFEID_SIZE> BitFEId;
 typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
+typedef bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
 
 //AUX STRUCTURES
 
