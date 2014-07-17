@@ -17,9 +17,19 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "FEM.h"
+
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
+
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+
 #include "Projection10NodeCoordsOnField.hpp"
+
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
 using namespace MoFEM;

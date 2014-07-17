@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ElasticFE_RVELagrange_Disp_Transport_HPP__
-#define __ElasticFE_RVELagrange_Disp_Transport_HPP__
+#ifndef __ELASTICFE_RVELAGRANGE_DISP_TRANSPORT_HPP__
+#define __ELASTICFE_RVELAGRANGE_DISP_TRANSPORT_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
 
@@ -34,8 +34,8 @@ namespace MoFEM {
     
     bool propeties_from_BlockSet_Mat_ElasticSet;
     ElasticFE_RVELagrange_Disp_Transport(
-                               FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain):
-    FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
+                               FieldInterface& _mField,BaseDirichletBC *_dirichlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain):
+    FEMethod_UpLevelStudent(_mField.get_moab(),_dirichlet_ptr,1), mField(_mField),
     Aij(_Aij),F(_F), applied_strain(_applied_strain){
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 

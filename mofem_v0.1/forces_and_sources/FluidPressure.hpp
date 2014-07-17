@@ -27,17 +27,6 @@
 #ifndef __FLUID_PRESSURE_HPP
 #define __FLUID_PRESSURE_HPP
 
-#include "ForcesAndSurcesCore.hpp"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include<cblas.h>
-  #include<lapack_wrap.h>
-#ifdef __cplusplus
-}
-#endif
-
 #include<moab/Skinner.hpp>
 
 namespace MoFEM {

@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ElasticFE_RVELagrange_Traction_HPP__
-#define __ElasticFE_RVELagrange_Traction_HPP__
+#ifndef __ELASTICFE_RVELAGRANGE_TRACTION_HPP__
+#define __ELASTICFE_RVELAGRANGE_TRACTION_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
 #include "ElasticFE_RVELagrange_Disp.hpp"

@@ -17,6 +17,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
+extern "C" {
+#include <gm_rule.h>
+}
+
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "FEMethod_UpLevelStudent.hpp"
@@ -700,7 +705,7 @@ int main(int argc, char *argv[]) {
     
     ElasticFE_RVELagrange_Periodic MyFE_RVELagrangePeriodic(mField,Aij,D,F,applied_strain);
     ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField,Aij,D,F,applied_strain);
-//    ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,&myDirihletBC,Aij,D,F,applied_strain);
+//    ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,&myDirichletBC,Aij,D,F,applied_strain);
 
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

@@ -27,6 +27,7 @@
 #include <iostream>
 #include <moab/Skinner.hpp>
 
+#include "FEM.h"
 #include "Projection10NodeCoordsOnField.hpp"
 
 namespace bio = boost::iostreams;

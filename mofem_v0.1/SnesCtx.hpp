@@ -24,11 +24,6 @@
 #ifndef __MOABSNES_HPP__
 #define __MOABSNES_HPP__
 
-#include "FieldInterface.hpp"
-#include <petsc.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-
 namespace MoFEM {
 
 struct SnesCtx {

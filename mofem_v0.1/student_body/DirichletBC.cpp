@@ -20,8 +20,10 @@
 
 #include <moab/ParallelComm.hpp>
 #include <MBParallelConventions.h>
+#include <boost/numeric/ublas/matrix.hpp>
 
-#include "DirihletBC.hpp"
+#include "FieldInterface.hpp"
+#include "DirichletBC.hpp"
 
 using namespace boost::numeric;
 

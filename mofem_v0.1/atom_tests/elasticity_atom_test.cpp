@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double young_modulus = 1;
   const double poisson_ratio = 0.0;
-  DisplacementBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"DISPLACEMENT",Aij,D,F);
+  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"DISPLACEMENT",Aij,D,F);
   MyElasticFEMethod fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
   //preproc
-  ierr = mField.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirichlet_bc); CHKERRQ(ierr);
   //loop elements
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe);  CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
   //postproc
-  ierr = mField.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirichlet_bc); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

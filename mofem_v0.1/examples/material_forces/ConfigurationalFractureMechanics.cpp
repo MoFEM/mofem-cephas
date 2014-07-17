@@ -1413,10 +1413,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     ierr = fe_forces.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
-  SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
+  SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
-  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   //nodal forces
@@ -1432,13 +1432,13 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
   //postproc
-  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
-  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -2515,7 +2515,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     other_body_surface_constrains[msId] = new SnesConstrainSurfacGeometry(mField,ss.str());
     other_body_surface_constrains[msId]->nonlinear = true;
   }
-  //dirihlet constrains
+  //dirichlet constrains
   FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE");
@@ -2528,10 +2528,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ss << "LAMBDA_SURFACE_msId_" << msId;
     fix_material_pts.fieldNames.push_back(ss.str());
   }
-  SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",K,D,F);
-  my_dirihlet_bc.fixFields.push_back("MESH_NODE_POSITIONS");
-  my_dirihlet_bc.fixFields.push_back("LAMBDA_SURFACE");
-  my_dirihlet_bc.fixFields.push_back("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
+  SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"SPATIAL_POSITION",K,D,F);
+  my_dirichlet_bc.fixFields.push_back("MESH_NODE_POSITIONS");
+  my_dirichlet_bc.fixFields.push_back("LAMBDA_SURFACE");
+  my_dirichlet_bc.fixFields.push_back("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
   //boundary conditions
   Tag th_scale;
   const EntityHandle root_meshset = mField.get_moab().get_root_set();
@@ -2552,12 +2552,12 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ierr = fe_forces.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
   //portsproc
-  MyPrePostProcessFEMethod pre_post_method(mField,&arc_ctx,&my_dirihlet_bc);
-  AssembleLambdaFEMethod assemble_F_lambda(mField,&arc_ctx,&my_dirihlet_bc);
+  MyPrePostProcessFEMethod pre_post_method(mField,&arc_ctx,&my_dirichlet_bc);
+  AssembleLambdaFEMethod assemble_F_lambda(mField,&arc_ctx,&my_dirichlet_bc);
 
   //rhs
   arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
-  arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&fix_material_pts);
   arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&ct_gc);
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = arc_snes_ctx.get_loops_to_do_Rhs();
@@ -2590,11 +2590,11 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_elem));
 
   arc_snes_ctx.get_postProcess_to_do_Rhs().push_back(&fix_material_pts);
-  arc_snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  arc_snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   arc_snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_method);
 
   //lhs
-  arc_snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  arc_snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
   arc_snes_ctx.get_preProcess_to_do_Mat().push_back(&fix_material_pts);
   SnesCtx::loops_to_do_type& loops_to_do_Mat = arc_snes_ctx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("dCT_CRACKFRONT_AREA_ELEM",&dct_gc));
@@ -2613,7 +2613,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_elem));
   arc_snes_ctx.get_postProcess_to_do_Mat().push_back(&fix_material_pts);
-  arc_snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  arc_snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
   /*const MoFEMProblem *problemPtr;
   ierr = mField.get_problem("COUPLED_PROBLEM",&problemPtr); CHKERRQ(ierr);
