@@ -17,6 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
+#include "FieldInterface.hpp"
+#include <petsc.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+
 #include "SnesCtx.hpp"
 
 namespace MoFEM {

@@ -25,9 +25,6 @@
 #ifndef __THERMAL_ELEMENT_HPP
 #define __THERMAL_ELEMENT_HPP
 
-#include "ForcesAndSurcesCore.hpp"
-#include "TsCtx.hpp"
-
 #include<moab/Skinner.hpp>
 
 namespace MoFEM {

@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ElasticFE_RVELagrange_Homogenized_Stress_Disp_HPP__
-#define __ElasticFE_RVELagrange_Homogenized_Stress_Disp__
+#ifndef __ELASTICFE_RVELAGRANGE_HOMOGENIZED_STRESS_DISP_HPP__
+#define __ELASTICFE_RVELAGRANGE_HOMOGENIZED_STRESS_DISP_HPP__
 
 #include "ElasticFE_RVELagrange_Disp.hpp"
 

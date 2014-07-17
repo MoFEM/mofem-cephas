@@ -20,10 +20,6 @@
 #ifndef __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 #define __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-
 using namespace MoFEM;
 
 struct PostProcOnRefMesh_Base {

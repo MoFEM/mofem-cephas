@@ -23,6 +23,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "FEM.h"
 #include "ElasticFEMethodDynamics.hpp"
 #include "SurfacePressure.hpp"
 #include "NodalForce.hpp"
@@ -287,13 +288,13 @@ int main(int argc, char *argv[]) {
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  DynamicBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"DISPLACEMENT",Aij,D,F);
+  DynamicBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"DISPLACEMENT",Aij,D,F);
   DynamicElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho);
   UpdateAndControl update_and_control(ts);
 
   //Right hand side
   //preprocess
-  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("STIFFNESS",&my_fe));
@@ -333,11 +334,11 @@ int main(int argc, char *argv[]) {
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
   //postprocess
-  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
+  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
 
   //Left hand side
   //preprocess
-  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
   //loops finire elements
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("STIFFNESS",&my_fe));
@@ -345,7 +346,7 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VV",&my_fe));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&my_fe));
   //postrocess
-  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
 
   //Monitor

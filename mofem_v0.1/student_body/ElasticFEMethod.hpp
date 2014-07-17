@@ -87,7 +87,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     vector< ublas::matrix<FieldData> > invH;
     vector< FieldData > detH;
 
-    vector<DofIdx> DirihletBC;
+    vector<DofIdx> DirichletBC;
 
     vector<double> g_NTET;
     const double *G_TET_W;

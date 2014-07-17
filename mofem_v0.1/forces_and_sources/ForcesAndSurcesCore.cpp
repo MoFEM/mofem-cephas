@@ -1724,7 +1724,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
     }
 
     try {
-      ierr = oit->opLhs(*row_op_data,*row_op_data,true); CHKERRQ(ierr);
+      ierr = oit->opLhs(*row_op_data,*row_op_data,oit->symm); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -2113,7 +2113,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     }
 
     try {
-      ierr = oit->opLhs(*row_op_data,*row_op_data,true); CHKERRQ(ierr);
+      ierr = oit->opLhs(*row_op_data,*row_op_data,oit->symm); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

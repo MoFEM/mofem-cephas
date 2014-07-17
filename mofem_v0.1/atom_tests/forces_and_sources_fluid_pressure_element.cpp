@@ -19,6 +19,18 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
+
+#include "ForcesAndSurcesCore.hpp"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include<cblas.h>
+  #include<lapack_wrap.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include "FluidPressure.hpp"
 
 #include <boost/iostreams/tee.hpp>

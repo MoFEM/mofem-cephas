@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ElasticFE_RVELagrange_Disp_HPP__
-#define __ElasticFE_RVELagrange_Disp_HPP__
+#ifndef __ELASTICFE_RVELAGRANGE_DISP_HPP__
+#define __ELASTICFE_RVELAGRANGE_DISP_HPP__
 
 #include "FEMethod_UpLevelStudent.hpp"
 #include <moab/ParallelComm.hpp>
@@ -81,4 +81,4 @@ namespace MoFEM {
   
 }
 
-#endif //__ELASTICFEMETHOD_HPP__
+#endif

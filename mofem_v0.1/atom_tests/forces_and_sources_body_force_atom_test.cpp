@@ -19,6 +19,19 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
+
+#include "ForcesAndSurcesCore.hpp"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include<cblas.h>
+  #include<lapack_wrap.h>
+#ifdef __cplusplus
+}
+#endif
+
+#include "FEM.h"
 #include "BodyForce.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
 

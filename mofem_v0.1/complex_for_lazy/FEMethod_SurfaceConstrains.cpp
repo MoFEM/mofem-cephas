@@ -17,6 +17,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
+#include "FieldInterface.hpp"
+
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/io.hpp>
+
+using namespace boost::numeric;
+
 #include "FEMethod_SurfaceConstrains.hpp"
 
 #include<FEM.h>

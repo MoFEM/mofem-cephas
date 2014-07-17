@@ -17,17 +17,37 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "common.hpp"
+
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 
 #include "FEMethod_UpLevelStudent.hpp"
 #include "ElasticFEMethod.hpp"
 
+#include "ForcesAndSurcesCore.hpp"
+#include "SnesCtx.hpp"
+#include "TsCtx.hpp"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include<cblas.h>
+  #include<lapack_wrap.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include "SurfacePressure.hpp"
 #include "NodalForce.hpp"
 #include "FluidPressure.hpp"
 #include "BodyForce.hpp"
+
 #include "ThermalStressElement.hpp"
+
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector.hpp>
 
 #include "Projection10NodeCoordsOnField.hpp"
 #include "PostProcVertexMethod.hpp"
@@ -35,6 +55,7 @@
 
 #include <petscksp.h>
 
+using namespace boost::numeric;
 using namespace MoFEM;
 
 ErrorCode rval;
@@ -250,7 +271,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   //Assemble F and Aij
-  DisplacementBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"DISPLACEMENT",Aij,D,F);
+  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"DISPLACEMENT",Aij,D,F);
   MyElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -259,7 +280,7 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
   
   //preproc
-  ierr = mField.problem_basic_method_preProcess("ELASTIC_PROB",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_preProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
   //loop elems
   ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC",my_fe);  CHKERRQ(ierr);
   //forces and preassures on surface
@@ -286,7 +307,7 @@ int main(int argc, char *argv[]) {
   ierr = fluid_pressure_fe.setNeumannFluidPressureFiniteElementOperators("DISPLACEMENT",F,false,true); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("ELASTIC_PROB","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
   //postproc
-  ierr = mField.problem_basic_method_postProcess("ELASTIC_PROB",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_postProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
 
   //set matrix possitives define and symetric for cholesky and icc preceonditionser
   ierr = MatSetOption(Aij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
