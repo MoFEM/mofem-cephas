@@ -34,8 +34,8 @@ namespace MoFEM {
     
     bool propeties_from_BlockSet_Mat_ElasticSet;
     ElasticFE_RVELagrange_Disp_Transport(
-                               FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain):
-    FEMethod_UpLevelStudent(_mField.get_moab(),_dirihlet_ptr,1), mField(_mField),
+                               FieldInterface& _mField,BaseDirichletBC *_dirichlet_ptr,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain):
+    FEMethod_UpLevelStudent(_mField.get_moab(),_dirichlet_ptr,1), mField(_mField),
     Aij(_Aij),F(_F), applied_strain(_applied_strain){
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 

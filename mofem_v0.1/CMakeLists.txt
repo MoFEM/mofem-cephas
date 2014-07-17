@@ -127,7 +127,7 @@ add_library(mofem_Field
 add_library(mofem_student_body
   student_body/FEMethod_LowLevelStudent.cpp
   student_body/FEMethod_UpLevelStudent.cpp
-  student_body/DirihletBC.cpp
+  student_body/DirichletBC.cpp
   student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
   student_body/ArcLengthTools.cpp
 )

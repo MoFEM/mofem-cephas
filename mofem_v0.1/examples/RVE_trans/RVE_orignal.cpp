@@ -257,9 +257,9 @@ int main(int argc, char *argv[]) {
     ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
     
     struct MyElasticFEMethod: public ElasticFEMethod {
-        MyElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_ptr,
+        MyElasticFEMethod(FieldInterface& _mField,BaseDirichletBC *_dirichlet_ptr,
                           Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu):
-        ElasticFEMethod(_mField,_dirihlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
+        ElasticFEMethod(_mField,_dirichlet_ptr,_Aij,_D,_F,_lambda,_mu) {};
         
         PetscErrorCode Fint(Vec F_int) {
             PetscFunctionBegin;
@@ -274,8 +274,8 @@ int main(int argc, char *argv[]) {
         }
     };
     
-    CubitDisplacementDirihletBC myDirihletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
-    ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+    CubitDisplacementDirichletBC myDirichletBC(mField,"ELASTIC_MECHANICS","DISPLACEMENT");
+    ierr = myDirichletBC.Init(); CHKERRQ(ierr);
     
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"POTENTIAL_FIELD",dof_ptr)) {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
@@ -337,9 +337,9 @@ int main(int argc, char *argv[]) {
 	//alpha = 10000;
     cout<<"alpha   = "<<alpha<<endl;
 	
-    InterfaceFEMethod IntMyFE(mField,&myDirihletBC,Aij,D,F,YoungModulus*alpha);
-    MyElasticFEMethod MyFE(mField,&myDirihletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-    TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,&myDirihletBC,Aij,D,F);
+    InterfaceFEMethod IntMyFE(mField,&myDirichletBC,Aij,D,F,YoungModulus*alpha);
+    MyElasticFEMethod MyFE(mField,&myDirichletBC,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+    TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,&myDirichletBC,Aij,D,F);
     
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

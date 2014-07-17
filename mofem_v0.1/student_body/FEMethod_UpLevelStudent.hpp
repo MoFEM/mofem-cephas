@@ -23,7 +23,7 @@
 #include "CoreDataStructures.hpp"
 #include "FieldInterface.hpp"
 #include "FEMethod_LowLevelStudent.hpp"
-#include "DirihletBC.hpp"
+#include "DirichletBC.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>

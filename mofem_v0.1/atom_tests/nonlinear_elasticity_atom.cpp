@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
     ierr = fe_spatial.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
 
-  SpatialPositionsBCFEMethodPreAndPostProc MyDirihletBC(mField,"SPATIAL_POSITION",Aij,D,F);
+  SpatialPositionsBCFEMethodPreAndPostProc MyDirichletBC(mField,"SPATIAL_POSITION",Aij,D,F);
 
   SnesCtx snes_ctx(mField,"ELASTIC_MECHANICS");
   
@@ -258,16 +258,16 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
-  snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyDirihletBC);
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyDirichletBC);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  snes_ctx.get_postProcess_to_do_Rhs().push_back(&MyDirihletBC);
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&MyDirichletBC);
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-  snes_ctx.get_preProcess_to_do_Mat().push_back(&MyDirihletBC);
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&MyDirichletBC);
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  snes_ctx.get_postProcess_to_do_Mat().push_back(&MyDirihletBC);
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&MyDirichletBC);
 
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

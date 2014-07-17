@@ -23,7 +23,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 
 #include "FieldInterface.hpp"
-#include "DirihletBC.hpp"
+#include "DirichletBC.hpp"
 
 using namespace boost::numeric;
 

@@ -76,7 +76,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   //elem data
   ublas::matrix<double> diffNTRI;
   const double *G_TRI_W;
-  vector<DofIdx> DirihletBC;
+  vector<DofIdx> DirichletBC;
   ublas::vector<DofIdx> disp_dofs_col_idx,disp_dofs_row_idx;
   ublas::vector<DofIdx> local_disp_dofs_row_idx;
   ublas::vector<DofIdx> lambda_dofs_row_indx,lambda_dofs_col_indx;

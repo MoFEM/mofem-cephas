@@ -38,9 +38,9 @@ static char help[] = "...\n\n";
 
 struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
-  NL_ElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-      FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
+  NL_ElasticFEMethod(FieldInterface& _mField,BaseDirichletBC *_dirichlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_ComplexForLazy_Data(_mField,_dirichlet_bc_method_ptr,_verbose), 
+      FEMethod_DriverComplexForLazy_Spatial(_mField,_dirichlet_bc_method_ptr,_lambda,_mu,_verbose)  {
     //set_PhysicalEquationNumber(neohookean);
     set_PhysicalEquationNumber(hooke);
   }
@@ -207,12 +207,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+  DirichletBCMethod_DriverComplexForLazy myDirichletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
+  ierr = myDirichletBC.Init(); CHKERRQ(ierr);
 
   const double YoungModulus = 1.;
   const double PoissonRatio = 0.;
-  NL_ElasticFEMethod MyFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  NL_ElasticFEMethod MyFE(mField,&myDirichletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   MyFE.thermal_expansion = 0.1;
 
   SnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
