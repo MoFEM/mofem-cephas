@@ -37,6 +37,13 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   PostPocOnRefinedMesh(FieldInterface &m_field):
     TetElementForcesAndSourcesCore(m_field),postProcMesh(coreMesh) {}
+
+  ~PostPocOnRefinedMesh() {
+    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+    if(pcomm_post_proc_mesh != NULL) {
+      delete pcomm_post_proc_mesh;
+    }
+  }
   
   ublas::matrix<int> refTets;
   ublas::matrix<double> gaussPts_FirstOrder;
@@ -427,6 +434,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
     PetscFunctionReturn(0);
   }
+
 
 };
 
