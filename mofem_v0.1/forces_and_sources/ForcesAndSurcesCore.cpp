@@ -1091,6 +1091,8 @@ PetscErrorCode OpSetInvJacH1::doWork(
 
   try {
 
+    if(data.getDiffN().size2()==0) PetscFunctionReturn(0);
+
     diffNinvJac.resize(data.getDiffN().size1(),data.getDiffN().size2());
     unsigned int nb_gauss_pts = data.getN().size1();
     unsigned int nb_dofs = data.getN().size2();
@@ -1102,6 +1104,10 @@ PetscErrorCode OpSetInvJacH1::doWork(
       }
     }
   
+    //cerr << type << endl;
+    //cerr << data.getDiffN() << endl;
+    //cerr << endl;
+
     switch (type) {
   
       case MBVERTEX: {
@@ -1224,6 +1230,8 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
   PetscFunctionBegin;
 
   try {
+
+  if(data.getDiffN().size2()==0) PetscFunctionReturn(0);
 
   unsigned int nb_gauss_pts = data.getN().size1();
   unsigned int nb_dofs = data.getN().size2();
@@ -1482,6 +1490,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
 
   try {
     ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
+    ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
     ierr = opPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
     ierr = opSetInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
   } catch (exception& ex) {
@@ -1516,11 +1525,10 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
 	hoGaussPtsDetJac[gg] = Shape_detJac(&jac(0,0));
 	ierr = Shape_invJac(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
       }
-
       ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
+      ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
       ierr = opSetHoPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
       ierr = opSetHoInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
-
     } catch (exception& ex) {
       ostringstream ss;
       ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
