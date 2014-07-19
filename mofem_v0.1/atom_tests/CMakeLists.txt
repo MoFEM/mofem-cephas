@@ -413,6 +413,14 @@ add_test(forces_and_sources_hdiv_divergence_operator_atom ${MPI_RUN} -np 1 ${CMA
 # add test for ultra weak finite element
 add_executable(forces_and_sources_ultra_weak_transport forces_and_sources_ultra_weak_transport.cpp)
 target_link_libraries(forces_and_sources_ultra_weak_transport mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_test(forces_and_sources_ultra_weak_transport_atom ${MPI_RUN} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_ultra_weak_transport -my_file simple_thermal_problem.cub 
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor 
+  -my_max_post_proc_ref_level 1 -my_order 0
+  -log_summary)
+add_test(forces_and_sources_ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_ultra_weak_transport.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_ultra_weak_transport.txt)
 
 #Homogenisation atom test
 add_executable(homogenisation_disp_atom_test homogenisation_disp_atom_test.cpp)
