@@ -770,7 +770,7 @@ struct OpSetPiolaTransoformOnTriangle: public DataOperator {
 };
 
 /** \brief Tri finite element  
- * \ingroup mofem_forces_and_sources
+ * \ingroup mofem_forces_and_sources_tri_element
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from TriElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
@@ -810,6 +810,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     opSetPiolaTransoformOnTriangle(normal,nOrmals_at_GaussPt) {};
 
   /** \brief default oparator for TRI element
+    * \ingroup mofem_forces_and_sources_tri_element
     */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
@@ -1068,6 +1069,10 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
 
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_tri_element Triangular Element 
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/
 
 
 

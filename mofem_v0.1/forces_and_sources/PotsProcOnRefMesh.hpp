@@ -30,13 +30,20 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+/** \brief Post processing 
+  * \ingroup mofem_fs_post_proc  
+  */
 struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   Core coreMesh;
   Interface &postProcMesh;
 
-  PostPocOnRefinedMesh(FieldInterface &m_field):
-    TetElementForcesAndSourcesCore(m_field),postProcMesh(coreMesh) {}
+  bool tenNodesPostProcTets;
+  int nbOfRefLevels;
+
+  PostPocOnRefinedMesh(FieldInterface &m_field,bool ten_nodes_post_proc_tets = true,int nb_ref_levels = -1):
+    TetElementForcesAndSourcesCore(m_field),postProcMesh(coreMesh),
+    tenNodesPostProcTets(ten_nodes_post_proc_tets),nbOfRefLevels(nb_ref_levels) {}
 
   ~PostPocOnRefinedMesh() {
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
@@ -58,9 +65,13 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    PetscBool flg = PETSC_TRUE;
     int max_level = 0;
-    PetscOptionsGetInt(PETSC_NULL,"-my_max_post_proc_ref_level",&max_level,&flg);
+    if(nbOfRefLevels == -1) {
+      PetscBool flg = PETSC_TRUE;
+      PetscOptionsGetInt(PETSC_NULL,"-my_max_post_proc_ref_level",&max_level,&flg);
+    } else {
+     max_level = nbOfRefLevels;
+    }
 
     double base_coords[] = {
       0,0,0,
@@ -155,7 +166,9 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
     rval = postProcMesh.add_entities(meshset,tets); CHKERR_PETSC(rval);
     //create higher order entities 
-    rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
+    if(tenNodesPostProcTets) {
+      rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
+    }
 
     tets.clear();
     rval = postProcMesh.get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
@@ -441,4 +454,10 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 }
 
 #endif //__POSTPROC_ON_REF_MESH_HPP
+
+/***************************************************************************//**
+ * \defgroup mofem_fs_post_proc Post Process
+ * \ingroup mofem_forces_and_sources 
+ ******************************************************************************/
+
 

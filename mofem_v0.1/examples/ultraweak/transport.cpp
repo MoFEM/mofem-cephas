@@ -33,7 +33,6 @@
 #include <fstream>
 #include <iostream>
 
-#include <moab/Skinner.hpp>
 #include <petscksp.h>
 
 namespace bio = boost::iostreams;
@@ -131,19 +130,10 @@ int main(int argc, char *argv[]) {
    
     MyUltraWeakFE(FieldInterface &m_field): UltraWeakTransportElement(m_field) {};
  
-    PetscErrorCode getFlux(EntityHandle ent,const double x,const double y,const double z,double &flux) {
+    PetscErrorCode getFlux(const double x,const double y,const double z,double &flux) {
       PetscFunctionBegin;
       //double d = sqrt(x*x+y*y+z*z);
       flux = 1;//-pow(d,5./4.);
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode getBcOnValues(
-      const EntityHandle ent,
-      const double x,const double y,const double z,
-      double &value) {
-      PetscFunctionBegin;
-      value = 1;
       PetscFunctionReturn(0);
     }
 
@@ -165,22 +155,6 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"DIAG"); CHKERRQ(ierr);
 
   }
-
-  Range tets;
-  ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
-  Skinner skin(&moab);
-  Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(tets,false,skin_faces); CHKERR(rval);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_FLUXFLUX"); CHKERRQ(ierr);
-
-  /*for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|TEMPERATURESET,it)) {
-
-    Range tris;
-    ierr = it->get_Cubit_msId_entities_by_dimension(m_field.get_moab(),2,tris,true); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_finite_element_by_TETs(tris,"ULTRAWEAK_FLUXVALUE"); CHKERRQ(ierr);
-
-  }*/
-
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
@@ -235,8 +209,14 @@ int main(int argc, char *argv[]) {
   ufe.feVolValueFlux.get_op_to_do_Rhs().push_back(new MyUltraWeakFE::OpL2Source(ufe,"VALUES",F));
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_VALUEFLUX",ufe.feVolValueFlux); CHKERRQ(ierr);
 
-  ufe.feTriFluxValue.get_op_to_do_Rhs().push_back(new MyUltraWeakFE::OpRhsBcOnValues(ufe,"FLUXES",F));
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_FLUXFLUX",ufe.feTriFluxValue); CHKERRQ(ierr);
+  /*Skinner skin(&moab);
+  Range tets;
+  ierr = mField.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+  Skinner skin(&moab);
+  Range skin_faces; // skin faces from 3d ents
+  rval = skin.find_skin(tets,false,skin_faces); CHKERR(rval);*/
+
+  //FixBcAtEntities fix_values_on_skin(m_field,"VALUES",Aij,D,F,Range &ents)
 
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -301,7 +281,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_VALUEFLUX",post_proc);  CHKERRQ(ierr);
   rval = post_proc.postProcMesh.write_file("out_values.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-  //rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);
+  rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);
   ierr = post_proc.clearOperators(); CHKERRQ(ierr);
 
   ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
@@ -315,11 +295,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_finite_elements("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR",post_proc_error);  CHKERRQ(ierr);
   rval = post_proc_error.postProcMesh.write_file("out_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   ierr = post_proc_error.clearOperators(); CHKERRQ(ierr);
-
-  //if(pcomm->rank()==0) {
-    //EntityHandle fe_meshset = m_field.get_finite_element_meshset("ULTRAWEAK_FLUXFLUX"); 
-    //rval = moab.write_file("error.vtk","VTK","",&fe_meshset,1); CHKERR_PETSC(rval); CHKERR_PETSC(rval);
-  //}
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
