@@ -299,6 +299,8 @@ struct UltraWeakTransportElement {
 
   };
 
+  /** \brief calulate source therms
+    */
   struct OpL2Source: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
@@ -334,12 +336,14 @@ struct UltraWeakTransportElement {
 	    w *= getHoGaussPtsDetJac()(gg);
 	  }
       
+
+	  const double x = getCoordsAtGaussPts()(gg,0);
+	  const double y = getCoordsAtGaussPts()(gg,1);
+	  const double z = getCoordsAtGaussPts()(gg,2);
+	  double flux;
+	  ierr = cTx.getFlux(x,y,z,flux); CHKERRQ(ierr);
+
 	  for(int rr = 0;rr<nb_row;rr++) {
-	    const double x = getCoordsAtGaussPts()(gg,0);
-	    const double y = getCoordsAtGaussPts()(gg,1);
-	    const double z = getCoordsAtGaussPts()(gg,2);
-	    double flux;
-	    ierr = cTx.getFlux(x,y,z,flux); CHKERRQ(ierr);
 	    Nf[rr] += w*data.getN(gg)[rr]*flux;
 	  }
 	
@@ -355,6 +359,176 @@ struct UltraWeakTransportElement {
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  ublas::vector<ublas::vector<FieldData> > valuesGradientAtGaussPts;
+  ublas::vector<FieldData> divergenceAtGaussPts;
+  ublas::vector<ublas::vector<FieldData> > fluxesAtGaussPts;
+
+  struct OpValuesGradientAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    UltraWeakTransportElement &cTx;
+
+    OpValuesGradientAtGaussPts(
+      UltraWeakTransportElement &ctx,
+      const string field_name):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      cTx(ctx) {}
+
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      try {
+
+      if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+  
+      int nb_gauss_pts = data.getDiffN().size1();
+
+      cTx.valuesGradientAtGaussPts.resize(nb_gauss_pts);
+
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
+	cTx.valuesGradientAtGaussPts[gg].resize(3);
+	noalias(cTx.valuesGradientAtGaussPts[gg]) = prod( trans(data.getDiffN(gg)), data.getFieldData() );
+      }
+      
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpFluxDivergenceAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    UltraWeakTransportElement &cTx;
+
+    OpFluxDivergenceAtGaussPts(
+      UltraWeakTransportElement &ctx,
+      const string field_name):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      cTx(ctx) {}
+
+    ublas::vector<FieldData> div_vec;
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+
+      try {
+
+      if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+
+      int nb_gauss_pts = data.getDiffN().size1();
+      int nb_dofs = data.getFieldData().size();
+
+      cTx.fluxesAtGaussPts.resize(nb_gauss_pts);
+      cTx.divergenceAtGaussPts.resize(nb_gauss_pts);
+      if(type == MBTRI && side == 0) {
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	  cTx.fluxesAtGaussPts[gg].resize(3);
+	  bzero(&(cTx.fluxesAtGaussPts[gg][0]),3*sizeof(FieldData));
+	}
+	bzero(&cTx.divergenceAtGaussPts[0],nb_gauss_pts*sizeof(FieldData));
+      }
+
+      div_vec.resize(nb_dofs);
+
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
+	ierr = getDivergenceMatrixOperato_Hdiv(
+	  side,type,data,gg,div_vec); CHKERRQ(ierr);
+
+	cTx.divergenceAtGaussPts[gg] += inner_prod(div_vec,data.getFieldData());
+	noalias(cTx.fluxesAtGaussPts[gg]) += prod( trans(data.getHdivN(gg)), data.getFieldData());
+
+      }
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+
+  /** \brief calulate error evaluator
+    */
+  struct OpError_L2Norm: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    UltraWeakTransportElement &cTx;
+
+    OpError_L2Norm(
+      UltraWeakTransportElement &ctx,
+      const string field_name):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      cTx(ctx) {}
+
+    ublas::vector<FieldData> deltaFlux;
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      PetscErrorCode ierr;
+      ErrorCode rval;
+
+      try {
+
+      if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+      int nb_gauss_pts = data.getN().size1();
+      EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+    
+      double def_VAL = 0;
+      Tag th_error_div_sigma;
+      rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_DIVSIGMA_F",1,MB_TYPE_DOUBLE,th_error_div_sigma,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
+      Tag th_error_flux;
+      rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
+      if(type == MBTRI && side == 0) {
+	cTx.mField.get_moab().tag_set_data(th_error_div_sigma,&fe_ent,1,&def_VAL);
+      }
+      
+      double* error_div_ptr;
+      rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_div_sigma,&fe_ent,1,(const void**)&error_div_ptr); CHKERR_PETSC(rval);
+      double* error_flux_ptr;
+      rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr); CHKERR_PETSC(rval);
+
+      deltaFlux.resize(3);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	double w = getGaussPts()(3,gg)*getVolume();
+	if(getHoGaussPtsDetJac().size()>0) {
+	  w *= getHoGaussPtsDetJac()(gg);
+	}
+
+	const double x = getCoordsAtGaussPts()(gg,0);
+	const double y = getCoordsAtGaussPts()(gg,1);
+	const double z = getCoordsAtGaussPts()(gg,2);
+	double flux;
+	ierr = cTx.getFlux(x,y,z,flux); CHKERRQ(ierr);
+
+	*error_div_ptr += w*( pow(cTx.divergenceAtGaussPts[gg] - flux,2) );
+	noalias(deltaFlux) = cTx.fluxesAtGaussPts[gg]-cTx.valuesGradientAtGaussPts[gg];
+	*error_flux_ptr += w*( inner_prod(deltaFlux,deltaFlux) );
+
+      }
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
 
       PetscFunctionReturn(0);
     }
