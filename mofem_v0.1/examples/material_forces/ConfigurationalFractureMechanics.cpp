@@ -34,6 +34,10 @@
 #include<moab/Skinner.hpp>
 #include<petscsnes.h>
 
+#ifndef __SDIR__
+#define __SDIR__ "unknown file source"
+#endif
+
 using namespace MoFEM;
 
 phisical_equation_volume eq_solid = hooke; /*stvenant_kirchhoff;*/
