@@ -306,8 +306,8 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,CubitB
         type |= MAT_ELASTICSET; }
     else if (name.compare(0,11,"MAT_THERMAL") == 0) {
         type |= MAT_THERMALSET; }
-//    else if (name.compare(0,15,"MAT_MOISTURESET") == 0) {
-//      type |= MAT_MOISTURESET; }
+    else if (name.compare(0,15,"MAT_MOISTURE") == 0) {
+      type |= MAT_MOISTURESET; }
     else if (name.compare(0,10,"MAT_INTERF") == 0) {
         type |= MAT_INTERFSET; }
     else if (name.compare(0,11,"BODY_FORCES") == 0) {
@@ -554,7 +554,27 @@ ostream& operator<<(ostream& os,const Mat_Thermal& e)
         os << "User attribute 8 = " << e.data.User8 << endl << endl;
         return os;
     }
+  
+  
+  
+  ostream& operator<<(ostream& os,const Mat_Moisture& e)
+  {
+    os << endl << "Material Properties" << endl;
+    os << "-------------------" << endl;
+    os << "Diffusivity  = " << e.data.Diffusivity << endl;
+    os << "User attribute 1 = " << e.data.User1 << endl;
+    os << "User attribute 2 = " << e.data.User2 << endl;
+    os << "User attribute 3 = " << e.data.User3 << endl;
+    os << "User attribute 4 = " << e.data.User4 << endl;
+    os << "User attribute 5 = " << e.data.User5 << endl;
+    os << "User attribute 6 = " << e.data.User6 << endl;
+    os << "User attribute 7 = " << e.data.User7 << endl;
+    os << "User attribute 8 = " << e.data.User8 << endl << endl;
+    return os;
+  }
 
+
+  
 ostream& operator<<(ostream& os,const Block_BodyForces& e)
     {
         os << endl << "Block Body Forces" << endl;
