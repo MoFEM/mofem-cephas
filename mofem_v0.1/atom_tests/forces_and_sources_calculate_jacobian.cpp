@@ -26,6 +26,8 @@
 #include <fstream>
 #include <iostream>
 
+#include<FEM.h>
+
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -163,7 +165,7 @@ int main(int argc, char *argv[]) {
     ublas::matrix<double> dataDiffFIELD1;
     ublas::vector<double> coords;
     PrintJacobian opPrintJac;
-    OpSetInvJac opSetInvJac;
+    OpSetInvJacH1 opSetInvJac;
     OpGetData opGetData_FIELD1;
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
@@ -184,25 +186,27 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
+      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+
       ierr = getEdgesSense(data); CHKERRQ(ierr);
-      ierr = getFacesSense(data); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data); CHKERRQ(ierr);
-      ierr = getFacesOrder(data); CHKERRQ(ierr);
-      ierr = getVolumesOrder(data); CHKERRQ(ierr);
+      ierr = getTrisSense(data); CHKERRQ(ierr);
+      ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTetsOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceNodes(data); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getTetRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetsRowIndices(data,"FIELD1"); CHKERRQ(ierr);
 
       ierr = getNodesFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesFieldData(data,"FIELD1"); CHKERRQ(ierr);
-      ierr = getVolumesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetsFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
-      EntityHandle ent = fe_ptr->get_ent();
+      EntityHandle ent = fePtr->get_ent();
       int num_nodes;
       const EntityHandle* conn;
       rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
@@ -210,13 +214,13 @@ int main(int argc, char *argv[]) {
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
 
       invJac.resize(3,3);
-      ierr = ShapeJacMBTET(&*data.nOdes[0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
+      ierr = ShapeJacMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
       ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
-	ierr = opSetInvJac.op(data); CHKERRQ(ierr);
-	ierr = opPrintJac.op(data); CHKERRQ(ierr);
-	ierr = opGetData_FIELD1.op(data); CHKERRQ(ierr);
+	ierr = opSetInvJac.opRhs(data); CHKERRQ(ierr);
+	ierr = opPrintJac.opRhs(data); CHKERRQ(ierr);
+	ierr = opGetData_FIELD1.opRhs(data); CHKERRQ(ierr);
       } catch (exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;

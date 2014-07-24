@@ -112,6 +112,7 @@ include_directories("${PROJECT_SOURCE_DIR}/forces_and_sources")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
+include_directories("${PROJECT_SOURCE_DIR}/homogenisation")
 
 add_library(mofem_Field 
   FieldInterface.cpp
@@ -139,7 +140,7 @@ add_library(mofem_Field
 add_library(mofem_student_body
   student_body/FEMethod_LowLevelStudent.cpp
   student_body/FEMethod_UpLevelStudent.cpp
-  student_body/DirihletBC.cpp
+  student_body/DirichletBC.cpp
   student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
   student_body/ArcLengthTools.cpp
 )
@@ -154,6 +155,17 @@ add_library(mofem_complex_for_lazy
 add_library(mofem_forces_and_sources
   forces_and_sources/ForcesAndSurcesCore.cpp
 )
+
+add_library(mofem_homogenisation
+  homogenisation/ElasticFE_RVELagrange_Disp.cpp
+  homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Disp.cpp
+  homogenisation/ElasticFE_RVELagrange_Traction.cpp
+  homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Traction.cpp
+  homogenisation/ElasticFE_RVELagrange_Periodic.cpp
+  homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
+  homogenisation/ElasticFE_RVELagrange_RigidBodyTranslation.cpp
+  homogenisation/ElasticFE_RVELagrange_RigidBodyRotation.cpp
+  )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
@@ -202,5 +214,4 @@ add_custom_target(doc
   COMMENT "Generating API documentation with Doxygen" VERBATIM
   )
 endif(DOXYGEN_FOUND)
-
 

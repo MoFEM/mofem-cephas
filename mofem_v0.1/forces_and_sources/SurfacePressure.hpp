@@ -28,6 +28,7 @@
 #define __NEUMANN_FORCES_HPP
 
 #include "ForcesAndSurcesCore.hpp"
+#include "FEM.h"
 
 namespace MoFEM {
 

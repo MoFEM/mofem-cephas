@@ -17,6 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "FEM.h"
+
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "ForcesAndSurcesCore.hpp"
@@ -27,6 +29,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
@@ -239,10 +242,10 @@ int main(int argc, char *argv[]) {
   }
   my_split << nodes_vals << endl;
 
-  const MoFEMProblem *problem_ptr;
-  ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
+  const MoFEMProblem *problemPtr;
+  ierr = mField.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
   map<EntityHandle,double> m0,m1,m2;
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);

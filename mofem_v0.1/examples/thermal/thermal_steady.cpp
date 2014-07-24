@@ -19,9 +19,15 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "ThermalElement.hpp"
-#include "DirihletBC.hpp"
 
+#include "ForcesAndSurcesCore.hpp"
+#include "TsCtx.hpp"
+#include "ThermalElement.hpp"
+
+#include "DirichletBC.hpp"
+
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
@@ -147,10 +153,10 @@ int main(int argc, char *argv[]) {
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("THERMAL_PROBLEM",&A); CHKERRQ(ierr);
 
-  TemperatureBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"TEMP",A,T,F);
+  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"TEMP",A,T,F);
   ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
   ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",(&A)); CHKERRQ(ierr);
-  ierr = thermal_elements.setThermalFluxFiniteElementLhsOperators("TEMP",F); CHKERRQ(ierr);
+  ierr = thermal_elements.setThermalFluxFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(T); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -161,7 +167,7 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
   
   //preproc
-  ierr = mField.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
@@ -169,7 +175,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
 
   //postproc
-  ierr = mField.problem_basic_method_postProcess("THERMAL_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_postProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -191,7 +197,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = mField.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
 
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

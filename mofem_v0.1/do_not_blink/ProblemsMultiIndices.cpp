@@ -126,7 +126,7 @@ void problem_zero_nb_cols_change::operator()(MoFEMProblem &e) {
   (*(DofIdx*)e.tag_ghost_nbdof_data_col) = 0;
   e.numered_dofs_cols.clear();
 }
-void problem_clear_numered_finite_elements_change::operator()(MoFEMProblem &e) { 
+void problem_clear_numered_finiteElementsPtr_change::operator()(MoFEMProblem &e) { 
   e.numeredFiniteElements.clear();
 }
 void problem_row_number_change::operator()(MoFEMProblem &e) {

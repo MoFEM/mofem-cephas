@@ -25,6 +25,21 @@
 #define __COMMON_HPP__
 
 #include "config.h"
+#include "definitions.h"
+
+//PETSC
+#include<petscmat.h>
+#include<petscao.h>
+#include<petscbt.h>
+#include<petscmat.h>
+#include<petscao.h>
+#include<petscbt.h>
+#include<petsclog.h>
+#include<petscsnes.h>
+#include<petscts.h>
+#include<petsctime.h>
+
+#ifdef __cplusplus
 
 //STL
 #include<string>
@@ -52,105 +67,10 @@
 #include <boost/utility/string_ref.hpp>
 
 //MOAB
-#include<moab_mpi.h>
-#include<moab/ParallelComm.hpp>
-#include<MBParallelConventions.h>
 #include<moab/Core.hpp>
 #include<moab/Interface.hpp>
-#include<moab/Skinner.hpp>
-#include<moab/GeomUtil.hpp>
 #include<moab/Range.hpp>
-#include<moab/MeshTopoUtil.hpp>
-#include<moab/MergeMesh.hpp>
-#include<moab/AdaptiveKDTree.hpp>
 #include<MBTagConventions.hpp>
-#include<io/Tqdcfr.hpp>
-
-//PETSC
-#include<petscmat.h>
-#include<petscao.h>
-#include<petscbt.h>
-#include<petscmat.h>
-#include<petscao.h>
-#include<petscbt.h>
-#include<petsclog.h>
-#include<petscsnes.h>
-#include<petscts.h>
-#include<petsctime.h>
-
-//MOFEM
-#include<FEM.h>
-#include<H1HdivHcurlL2.h>
-
-//DEFINES
-#define MYPCOMM_INDEX 0
-//This Is form MOAB
-#define MB_TYPE_WIDTH 4
-#define MB_ID_WIDTH (8*sizeof(EntityHandle)-MB_TYPE_WIDTH)
-#define MB_TYPE_MASK ((EntityHandle)0xF << MB_ID_WIDTH)
-//             2^MB_TYPE_WIDTH-1 ------^
-
-#define MB_START_ID ((EntityID)1)        //!< All entity id's currently start at 1
-#define MB_END_ID ((EntityID)MB_ID_MASK) //!< Last id is the complement of the MASK
-#define MB_ID_MASK (~MB_TYPE_MASK)
-
-#define NOT_USED(x) ( (void)(x) )
-
-/** \brief set barrier start
- *
- * Run code in sequence, starting from process 0, and ends on last process.
- */
-#define BARRIER_RANK_START(PCMB) \
-  { for(unsigned int i = 0; \
-  i<PCMB->proc_config().proc_rank(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
-/// set barrier end
-#define BARRIER_RANK_END(PCMB) \
-  { for(unsigned int i = PCMB->proc_config().proc_rank(); \
-  i<PCMB->proc_config().proc_size(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
-
-
-//ERROR
-/// check moab error
-#define CHKERR(a) do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    assert(1); \
-  } \
-} while (false) 
-
-/// check moab error and communicate it using petsc interface
-#define CHKERR_PETSC(a) do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::ostringstream ss; \
-    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    std::string str(ss.str()); \
-    SETERRQ(PETSC_COMM_SELF,1,str.c_str()); \
-  } \
-} while (false)
-
-#define CHKERR_THROW(a) do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::ostringstream ss; \
-    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    std::string str(ss.str()); \
-    throw str.c_str(); \
-  } \
-} while (false)
-
-#define THROW_AT_LINE(a) { \
-  std::ostringstream ss; \
-  ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  std::string str(ss.str()); \
-  throw str.c_str(); \
-}
-
-//set that with care, it turns off check for ublas
-//#define BOOST_UBLAS_NDEBUG 
-
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
 using namespace moab;
 using namespace std;
@@ -159,6 +79,8 @@ using namespace boost::multi_index;
 using namespace boost::multiprecision;
 
 namespace MoFEM {
+
+#endif //__cplusplus
 
 /** \brief Error handling
   * 
@@ -176,15 +98,40 @@ enum MoFEMErrorCode {
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
   MOFEM_IMPOSIBLE_CASE = 104,
   MOFEM_CHAR_THROW = 105,
-  MOFEM_STD_EXCEPTION_THROW = 106
+  MOFEM_STD_EXCEPTION_THROW = 106,
+  MOFEM_INVALID_DATA = 107,
+  MOFEM_ATOM_TEST_INVALID = 108
 };
 
-//CONSTS
+/// \brief approximation spaces
+enum FieldSpace { 
+  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
+  H1, 		///< continuous field
+  HDIV,		///< field with continuous normal traction
+  HCURL,	///< field with continuous tangents
+  L2,		///< field with C-1 continuity
+  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
+}; 
 
-const int max_ApproximationOrder = 10;
-const EntityHandle no_handle = (EntityHandle)-1;
 
-//TYPEDEFS
+/// \brief Those types control how functions respond on arguments, f.e. error handling
+enum MoFEMTypes {
+  MF_ZERO = 0,
+  MF_EXCL = 1<<0
+};
+
+/// \brief RowColData
+enum RowColData {
+  ROW,COL,DATA,LASTROWCOLDATA
+};
+
+enum ByWhat { 
+  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
+  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
+  BYALL = 1<<0|1<<1|1<<2 
+};
+
+//typedefs
 typedef PetscInt DofIdx;
 typedef int FEIdx;
 typedef int EntIdx;
@@ -192,9 +139,17 @@ typedef int EntPart;
 typedef PetscScalar FieldData;
 typedef int ApproximationOrder;
 typedef int ApproximationRank;
-typedef uint128_t UId;
-typedef int ShortId;
+
+#ifdef __cplusplus
+
+//consts
+const int max_ApproximationOrder = 10;
+
+//typedefs
+const EntityHandle no_handle = (EntityHandle)-1;
+typedef uint128_t UId;  
 //typedef checked_uint128_tUId;
+typedef int ShortId;
 
 /** \brief loacl unique id
   *
@@ -241,39 +196,14 @@ inline bool operator!=(const GlobalUId& lhs, const GlobalUId& rhs) { return !(lh
 #define BITFIELDID_SIZE 32 /*max number of fields*/
 #define BITFEID_SIZE 32 /*max number of finite elements*/
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/
+#define BITINTERFACEUID_SIZE 32 
+
 typedef bitset<BITREFEDGES_SIZE> BitRefEdges;
 typedef bitset<BITREFLEVEL_SIZE> BitRefLevel;
 typedef bitset<BITFIELDID_SIZE> BitFieldId;
 typedef bitset<BITFEID_SIZE> BitFEId;
 typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
-
-/// \brief approximation spaces
-enum FieldSpace { 
-  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
-  H1, 		///< continuous field
-  HDIV,		///< field with continuous normal traction
-  HCURL,	///< field with continuous tangents
-  L2,		///< field with C-1 continuity
-  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
-}; 
-
-
-/// \brief Those types control how functions respond on arguments, f.e. error handling
-enum MoFEMTypes {
-  MF_ZERO = 0,
-  MF_EXCL = 1<<0
-};
-
-/// \brief RowColData
-enum RowColData {
-  ROW,COL,DATA,LASTROWCOLDATA
-};
-
-enum ByWhat { 
-  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
-  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
-  BYALL = 1<<0|1<<1|1<<2 
-};
+typedef bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
 
 //AUX STRUCTURES
 
@@ -327,6 +257,9 @@ struct MofemException {
   }
 };
 
+#endif //__cplusplus
+
+#ifdef __cplusplus
 }
 
 //MULTIINDICES
@@ -339,6 +272,8 @@ struct MofemException {
 #include "AdjacencyMultiIndices.hpp"
 #include "BCMultiIndices.hpp"
 #include "SeriesMultiIndices.hpp"
+
+#endif //__cplusplus
 
 #endif //__COMMON_HPP__
 

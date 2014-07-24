@@ -20,6 +20,7 @@
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
 #include "ForcesAndSurcesCore.hpp"
+#include "FEM.h"
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -228,25 +229,28 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      ierr = getEdgesSense(data_row); CHKERRQ(ierr);
-      ierr = getFacesSense(data_row); CHKERRQ(ierr);
-      ierr = getEdgesSense(data_col); CHKERRQ(ierr);
-      ierr = getFacesSense(data_col); CHKERRQ(ierr);
+      ierr = getSpacesOnEntities(data_row); CHKERRQ(ierr);
+      ierr = getSpacesOnEntities(data_col); CHKERRQ(ierr);
 
-      ierr = getEdgesOrder(data_row); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data_col); CHKERRQ(ierr);
-      ierr = getFacesOrder(data_row); CHKERRQ(ierr);
-      ierr = getFacesOrder(data_col); CHKERRQ(ierr);
-      ierr = getVolumesOrder(data_row); CHKERRQ(ierr);
-      ierr = getVolumesOrder(data_col); CHKERRQ(ierr);
+      ierr = getEdgesSense(data_row); CHKERRQ(ierr);
+      ierr = getTrisSense(data_row); CHKERRQ(ierr);
+      ierr = getEdgesSense(data_col); CHKERRQ(ierr);
+      ierr = getTrisSense(data_col); CHKERRQ(ierr);
+
+      ierr = getEdgesOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getEdgesOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getTrisOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getTrisOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getTetsOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getTetsOrder(data_col,H1); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
-      ierr = getEdgeRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getEdgeColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFacesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getFacesColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTetRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
-      ierr = getTetColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getEdgesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getEdgesColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTrisRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetsRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetsColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
       ierr = getFaceNodes(data_row); CHKERRQ(ierr);
       ierr = getFaceNodes(data_col); CHKERRQ(ierr);
 
@@ -254,7 +258,7 @@ int main(int argc, char *argv[]) {
       ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
       try {
-	ierr = op.opSymmetric(data_row,data_col); CHKERRQ(ierr);
+	ierr = op.opLhs(data_row,data_col,true); CHKERRQ(ierr);
       } catch (exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;

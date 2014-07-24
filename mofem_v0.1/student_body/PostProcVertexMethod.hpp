@@ -20,9 +20,6 @@
 #ifndef __POSTPROCVERTEXMETHOD_HPP__
 #define __POSTPROCVERTEXMETHOD_HPP__
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-
 using namespace MoFEM;
 
 // Write Displacements DOFS on Vertices
@@ -51,8 +48,8 @@ struct PostProcVertexMethod: public FieldInterface::EntMethod {
       PetscFunctionBegin;
       PetscPrintf(PETSC_COMM_WORLD,"Start postprocess\n");
 
-      MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it = moabfields->get<FieldName_mi_tag>().find(field_name);
-      if(field_it==moabfields->get<FieldName_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"field < %s > not found (top tip: check spelling)",field_name.c_str());
+      MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+      if(field_it==fieldsPtr->get<FieldName_mi_tag>().end()) SETERRQ1(PETSC_COMM_SELF,1,"field < %s > not found (top tip: check spelling)",field_name.c_str());
 
       double def_VAL[field_it->get_max_rank()];
       bzero(def_VAL,field_it->get_max_rank()*sizeof(double));
@@ -90,7 +87,7 @@ struct PostProcVertexMethod: public FieldInterface::EntMethod {
       if(V_glob_array == NULL) {
 	fval = dof_ptr->get_FieldData();
       } else {
-	fval = V_glob_array[dof_numered_ptr->get_petsc_gloabl_dof_idx()];
+	fval = V_glob_array[dofPtr->get_petsc_gloabl_dof_idx()];
       }
       Range::iterator nit = find(nodes.begin(),nodes.end(),ent);
       if(nit==nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");

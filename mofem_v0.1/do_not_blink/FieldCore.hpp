@@ -22,7 +22,9 @@
 #define __MOABFIELD_CORE_HPP__
 
 #include "FieldInterface.hpp"
-#include "CoreDataStructures.hpp"
+
+#include <moab/ParallelComm.hpp>
+#include <MBParallelConventions.h>
 
 namespace MoFEM {
 
@@ -31,6 +33,9 @@ namespace MoFEM {
  * This class is not used directly by the user
  */
 struct FieldCore: public FieldInterface {
+
+  PetscErrorCode QueryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+
   ErrorCode rval;
   PetscErrorCode ierr;
   //Data and low level methods 
@@ -55,8 +60,8 @@ struct FieldCore: public FieldInterface {
   //database
 
   //ref
-  RefMoFEMEntity_multiIndex refined_entities;
-  RefMoFEMElement_multiIndex refined_finite_elements;
+  RefMoFEMEntity_multiIndex refinedEntities;
+  RefMoFEMElement_multiIndex refinedFiniteElements;
   //field
   MoFEMField_multiIndex moabFields;
   MoFEMEntity_multiIndex entsMoabField;
@@ -101,7 +106,7 @@ struct FieldCore: public FieldInterface {
   //start recording
   PetscErrorCode record_begin(const string& serie_name);
   //recording functions
-  PetscErrorCode record_problem(const string& serie_name,const MoFEMProblem *problem_ptr,RowColData rc);
+  PetscErrorCode record_problem(const string& serie_name,const MoFEMProblem *problemPtr,RowColData rc);
   PetscErrorCode record_problem(const string& serie_name,const string& problem_name,RowColData rc);
   PetscErrorCode record_field(const string& serie_name,const string& field_name,const BitRefLevel &bit,const BitRefLevel &mask);
   //end recording
@@ -315,6 +320,7 @@ struct FieldCore: public FieldInterface {
 
   //MoFEMFiniteElement
   PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
+  PetscErrorCode modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function);
   PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
   PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
   PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
@@ -361,8 +367,8 @@ struct FieldCore: public FieldInterface {
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
-  PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &EntFe,int verb = -1);
-  PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &EntFe,int verb = -1);
+  PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &ent_fe,int verb = -1);
+  PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &ent_fe,int verb = -1);
   PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
@@ -395,7 +401,7 @@ struct FieldCore: public FieldInterface {
   //vector and matrices 
   PetscErrorCode VecCreateGhost(const string &name,RowColData rc,Vec *V);
   PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
-  PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode); 
+  PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problemPtr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode); 
   PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
   PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
@@ -444,9 +450,10 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
-  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr);
-  PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
+  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr);
+  PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problemPtr);
   PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr);
+
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);
 
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const string &field_name);
@@ -464,7 +471,7 @@ struct FieldCore: public FieldInterface {
 
   //Copy Vector of Field to Another
   PetscErrorCode set_other_local_VecCreateGhost(
-    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
+    const MoFEMProblem *problemPtr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
   PetscErrorCode set_other_local_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
   PetscErrorCode set_other_global_VecCreateGhost(
@@ -477,7 +484,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
   PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
   PetscErrorCode get_adjacencies(
-    const MoFEMProblem *problem_ptr,
+    const MoFEMProblem *problemPtr,
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0);
   PetscErrorCode get_adjacencies(
     const BitRefLevel &bit,

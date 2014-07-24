@@ -162,10 +162,10 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	  if(*iit >= local_size) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  (velocities[cc])[iii] = array[*iit];
 	  NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator ciit,hi_ciit;
-	  ciit = problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().find(*iit);
-	  hi_ciit = problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().end();
+	  ciit = problemPtr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().find(*iit);
+	  hi_ciit = problemPtr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().end();
 	  if(ciit==hi_ciit) {
-	    for(ciit =  problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().begin();
+	    for(ciit =  problemPtr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().begin();
 	      ciit!=hi_ciit;ciit++) {
 	      cerr << *it << " " << ColLocal.size() << endl;
 	      cerr << *ciit << endl;
@@ -248,7 +248,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 		
       ierr = ElasticFEMethod::preProcess(); CHKERRQ(ierr);
 
-      if(fe_name=="STIFFNESS") {
+      if(feName=="STIFFNESS") {
 	// See FEAP - - A Finite Element Analysis Program
 	D_lambda = ublas::zero_matrix<FieldData>(6,6);
 	for(int rr = 0;rr<3;rr++) {
@@ -274,9 +274,9 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
 	    PetscPrintf(PETSC_COMM_WORLD,
 	      "\tsteps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
-	    ierr = mField.set_global_VecCreateGhost(problem_ptr->get_name(),COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	    ierr = mField.set_local_VecCreateGhost(problem_ptr->get_name(),ROW,u_by_row,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	    //NumeredDofMoFEMEntity_multiIndex &numered_dofs_cols = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_cols);
+	    ierr = mField.set_global_VecCreateGhost(problemPtr->get_name(),COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	    ierr = mField.set_local_VecCreateGhost(problemPtr->get_name(),ROW,u_by_row,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	    //NumeredDofMoFEMEntity_multiIndex &numered_dofs_cols = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_cols);
 	    /*Range::iterator nit = SIDESET2Nodes.begin();
 	    for(;nit!=SIDESET2Nodes.end();nit++) {
 	      NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
@@ -319,10 +319,10 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	
 	PetscFunctionReturn(0);
       }
-      if(fe_name=="MASS") {
+      if(feName=="MASS") {
 	PetscFunctionReturn(0);
       }
-      if(fe_name=="COPUPLING_VV") {
+      if(feName=="COPUPLING_VV") {
 	switch (ts_ctx) {
 	  case CTX_TSTSMONITORSET: {
 	    ierr = VecZeroEntries(GhostK); CHKERRQ(ierr);
@@ -334,7 +334,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	}
 	PetscFunctionReturn(0);
       }
-      if(fe_name=="COPUPLING_VU") {
+      if(feName=="COPUPLING_VU") {
 	PetscFunctionReturn(0);
       }
 
@@ -345,7 +345,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
 
-      if(fe_name=="STIFFNESS") {
+      if(feName=="STIFFNESS") {
 	switch (ts_ctx) {
 	  case CTX_TSTSMONITORSET: {
 	    ierr = VecGhostUpdateBegin(GhostU,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -360,10 +360,10 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	}
 	PetscFunctionReturn(0);
       }
-      if(fe_name=="MASS") {
+      if(feName=="MASS") {
 	PetscFunctionReturn(0);
       }
-      if(fe_name=="COPUPLING_VV") {
+      if(feName=="COPUPLING_VV") {
 	switch (ts_ctx) {
 	  case CTX_TSTSMONITORSET: {
 	    ierr = VecGhostUpdateBegin(GhostK,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -388,7 +388,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	}
 	PetscFunctionReturn(0);
       }
-      if(fe_name=="COPUPLING_VU") {
+      if(feName=="COPUPLING_VU") {
 	switch (ts_ctx) {
 	  case CTX_TSSETRHSFUNCTION:
 	  case CTX_TSSETIFUNCTION:
@@ -423,7 +423,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	VecSetOption(ts_F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
       }
 
-      if(fe_name=="STIFFNESS") {
+      if(feName=="STIFFNESS") {
 	ierr = GetMatrices(); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case CTX_TSTSMONITORSET: {
@@ -476,7 +476,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	ierr = OpStudentEnd(); CHKERRQ(ierr);
 	PetscFunctionReturn(0);
       }
-      if(fe_name=="MASS") {
+      if(feName=="MASS") {
 	for(int cc = 0;cc<col_mat;cc++) {
 	  ColGlob[cc].resize(0);
 	  ColLocal[cc].resize(0);
@@ -513,7 +513,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	ierr = OpStudentEnd(); CHKERRQ(ierr);
 	PetscFunctionReturn(0);
       }
-      if(fe_name=="COPUPLING_VV") {
+      if(feName=="COPUPLING_VV") {
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = VVLhs(); CHKERRQ(ierr);
 	switch (ts_ctx) {
@@ -564,7 +564,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	ierr = OpStudentEnd(); CHKERRQ(ierr);
 	PetscFunctionReturn(0);
       }
-      if(fe_name=="COPUPLING_VU") {
+      if(feName=="COPUPLING_VU") {
 	ierr = GetMatricesCols(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
 	ierr = VULhs(); CHKERRQ(ierr);

@@ -19,6 +19,19 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
+
+#include "ForcesAndSurcesCore.hpp"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include<cblas.h>
+  #include<lapack_wrap.h>
+#ifdef __cplusplus
+}
+#endif
+
+#include "FEM.h"
 #include "BodyForce.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
 
@@ -165,10 +178,10 @@ int main(int argc, char *argv[]) {
 
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",COL,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  const MoFEMProblem *problem_ptr;
-  ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
+  const MoFEMProblem *problemPtr;
+  ierr = mField.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
   map<EntityHandle,double> m0,m1,m2;
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
     if(dit->get_dof_rank()!=1) continue;
 

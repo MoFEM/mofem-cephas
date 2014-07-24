@@ -23,6 +23,15 @@
 #include "FieldInterface.hpp"
 #include "SnesCtx.hpp"
 
+/*
+   Defines the function where the compiled source is located; used 
+   in printing error messages. This is defined here in case the user
+   does not declare it.
+*/
+#ifndef __SDIR__
+#define __SDIR__ "unknown file source"
+#endif
+
 namespace MoFEM {
 
 /**
@@ -98,11 +107,11 @@ struct ArcLengthCtx {
 
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    NumeredDofMoFEMEntity_multiIndex& dofs_moabfield_no_const 
+    NumeredDofMoFEMEntity_multiIndex& dofsPtr_no_const 
 	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
     NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit;
-    dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
-    hi_dit = dofs_moabfield_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
+    dit = dofsPtr_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+    hi_dit = dofsPtr_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
     if(distance(dit,hi_dit)!=1) {
       PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
 	"can not find unique LAMBDA (load factor)",PETSC_NULL);
@@ -140,8 +149,8 @@ struct ArcLengthSnesCtx: public SnesCtx {
 
 /**
  * Shell matrix which has tructure
- * [ K 		dF_lambda]
- * [ db		diag	]
+ * [ K 		-dF_lambda]
+ * [ db		 diag	]
  */
 struct ArcLengthMatShell {
 
@@ -287,7 +296,7 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
 /**
  * apply oppertor for Arc Length precoditionet
  * solves K*pc_x = pc_f
- * solves K*x_lambda = dF_lambda
+ * solves K*x_lambda = -dF_lambda
  * solves ddlambda = ( res_lambda - db*x_lambda )/( diag + db*pc_x )
  * calulate pc_x = pc_x + ddlambda*x_lambda
  */

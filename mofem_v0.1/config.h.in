@@ -1,3 +1,8 @@
 // the configured options and settings for MoFEM
 #define ADD_
 
+//set that with care, it turns off check for ublas
+//#define BOOST_UBLAS_NDEBUG 
+
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
+

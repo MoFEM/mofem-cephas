@@ -27,7 +27,7 @@
 #ifndef __FLUID_PRESSURE_HPP
 #define __FLUID_PRESSURE_HPP
 
-#include "ForcesAndSurcesCore.hpp"
+#include<moab/Skinner.hpp>
 
 namespace MoFEM {
 

@@ -17,14 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __MOABFEMETHOD_DIRIHLETBC_HPP__
-#define __MOABFEMETHOD_DIRIHLETBC_HPP__
-
-#include "FieldInterface.hpp"
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
+#ifndef __MOABFEMETHOD_DIRICHLETBC_HPP__
+#define __MOABFEMETHOD_DIRICHLETBC_HPP__
 
 using namespace boost::numeric;
 
@@ -96,17 +90,17 @@ struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndP
 };
 
 
-struct FixMaterialPoints: public DisplacementBCFEMethodPreAndPostProc {
+struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
   Range &eNts;
   vector<string> fieldNames;
-  FixMaterialPoints(
+  FixBcAtEntities(
     FieldInterface& _mField,const string &_field_name,Mat &_Aij,Vec _X,Vec _F,Range &ents): 
     DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),eNts(ents) {
     fieldNames.push_back(fieldName);
   }
 
-  FixMaterialPoints(
+  FixBcAtEntities(
     FieldInterface& _mField,const string &_field_name,Range &ents): 
     DisplacementBCFEMethodPreAndPostProc(_mField,_field_name),eNts(ents) {
     fieldNames.push_back(fieldName);
@@ -120,4 +114,4 @@ struct FixMaterialPoints: public DisplacementBCFEMethodPreAndPostProc {
 
     
 }
-#endif //__MOABFEMETHOD_DIRIHLETBC_HPP__
+#endif //__MOABFEMETHOD_DIRICHLETBC_HPP__

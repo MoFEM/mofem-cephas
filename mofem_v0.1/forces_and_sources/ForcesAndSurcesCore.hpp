@@ -57,6 +57,9 @@ namespace MoFEM {
   */
 struct DataForcesAndSurcesCore {
 
+  // shallow adaptor classes
+  typedef ublas::vector<FieldData,ublas::shallow_array_adaptor<FieldData> > VectorAdaptor;
+  typedef ublas::matrix<FieldData,ublas::row_major,ublas::shallow_array_adaptor<FieldData> > MatrixAdaptor;
 
   /** \brief data on single entity
     */
@@ -80,17 +83,8 @@ struct DataForcesAndSurcesCore {
     /// \brief get shape functions
     virtual const ublas::matrix<FieldData>& getN() const { return N; }
 
-    /// \brief get direvatives of shape fucntiosn
-    virtual const ublas::matrix<FieldData>& getDiffN() const { return diffN; }
-
-    virtual int& getSense() { return sEnse; }
-    virtual ApproximationOrder& getOrder() { return oRder; }
-    virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
-    virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
-    virtual ublas::matrix<FieldData>& getN() { return N; }
-
-    /** \brief get direvatives of shape functions
-     *
+    /** \brief get direvatives of shape fucntiosn
+      *
      * Matrix at rows has nb. of Gauss pts, at columns it has direvative of
      * shape functions. Colummns are orgasised as follows, [ dN1/dx, dN1/dy,
      * dN1/dz, dN2/dx, dN2/dy, dN2/dz, ... ]
@@ -104,18 +98,25 @@ struct DataForcesAndSurcesCore {
      *
      * Note that for node element this function make no sense.
      *
+     */   
+    virtual const ublas::matrix<FieldData>& getDiffN() const { return diffN; }
+
+    virtual int& getSense() { return sEnse; }
+    virtual ApproximationOrder& getOrder() { return oRder; }
+    virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
+    virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    virtual ublas::matrix<FieldData>& getN() { return N; }
+
+    /** \brief get direvatives of shape functions
+     *
      */
     virtual ublas::matrix<FieldData>& getDiffN() { return diffN; }
 
-    // shallow adaptor classes
-    typedef ublas::vector<FieldData,ublas::shallow_array_adaptor<FieldData> > vector_adaptor;
-    typedef ublas::matrix<FieldData,ublas::row_major,ublas::shallow_array_adaptor<FieldData> > matrix_adaptor;
-
     /// \brief get shape functions at Gauss pts
-    inline const vector_adaptor getN(int gg) {
+    inline const VectorAdaptor getN(int gg) {
       int size = getN().size2();
       FieldData *data = &getN()(gg,0);
-      return vector_adaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
+      return VectorAdaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
     }
 
     /** \brief get direvative of shape functions at Gauss pts
@@ -125,16 +126,16 @@ struct DataForcesAndSurcesCore {
       * \param gg nb. of Gauss pts.
       *
       */
-    inline const matrix_adaptor getDiffN(int gg) {
+    inline const MatrixAdaptor getDiffN(int gg) {
       if(getN().size1() == getDiffN().size1()) {
 	int size = getN().size2();	
 	int dim = getDiffN().size2()/size;
 	FieldData *data = &getDiffN()(gg,0);
-	return matrix_adaptor(getN().size2(),dim,ublas::shallow_array_adaptor<FieldData>(getDiffN().size2(),data));
+	return MatrixAdaptor(getN().size2(),dim,ublas::shallow_array_adaptor<FieldData>(getDiffN().size2(),data));
       } else {
 	// in some cases, f.e. for direvatives of nodal shape functions ony one
 	// gauss point is needed
-	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
     }
 
@@ -152,10 +153,10 @@ struct DataForcesAndSurcesCore {
       * \param number of of shape functions
       *
       */
-    inline const vector_adaptor getN(int gg,const int nb_dofs) {
+    inline const VectorAdaptor getN(int gg,const int nb_dofs) {
       (void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
       FieldData *data = &getN()(gg,0);
-      return vector_adaptor(nb_dofs,ublas::shallow_array_adaptor<FieldData>(nb_dofs,data));
+      return VectorAdaptor(nb_dofs,ublas::shallow_array_adaptor<FieldData>(nb_dofs,data));
     }
 
     /** \brief get derivatives of shape functions at Gauss pts
@@ -172,18 +173,69 @@ struct DataForcesAndSurcesCore {
       * \param number of of shape functions
       *
       */
-    inline const matrix_adaptor getDiffN(int gg,const int nb_dofs) {
+    inline const MatrixAdaptor getDiffN(int gg,const int nb_dofs) {
       if(getN().size1() == getDiffN().size1()) {
 	(void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
 	int dim = getDiffN().size2()/getN().size2();
 	FieldData *data = &getDiffN()(gg,0);
-	return matrix_adaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
+	return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
       } else {
 	// in some cases, f.e. for direvatives of nodal shape functions ony one
 	// gauss point is needed
-	return matrix_adaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
-
+	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
+    }
+
+    /** \brief get shape functions for Hdiv space 
+      */
+    inline const ublas::matrix<FieldData>&  getHdivN() const { return getN(); };
+
+    /** \brief get direvatives of shape functions for Hdiv space 
+      */
+    inline const ublas::matrix<FieldData>&  getDiffHdivN() const { return getDiffN(); };
+
+    /** \brief get shape functions for Hdiv space 
+      */
+    inline ublas::matrix<FieldData>&  getHdivN() { return getN(); };
+
+    /** \brief get direvatives of shape functions for Hdiv space 
+      */
+    inline ublas::matrix<FieldData>&  getDiffHdivN() { return getDiffN(); };
+
+    /** \brief get Hdiv of shape functions at Gauss pts
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const MatrixAdaptor getHdivN(int gg) {
+      int dim = 3;
+      int nb_dofs = getHdivN().size2()/dim;
+      FieldData *data = &getHdivN()(gg,0);
+      return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
+    }
+
+    /** \brief get DiffHdiv of shape functions at Gauss pts
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const MatrixAdaptor getDiffHdivN(int gg) {
+      int nb_dofs = getDiffHdivN().size2()/9;
+      FieldData *data = &getDiffHdivN()(gg,0);
+      return MatrixAdaptor(nb_dofs,9,ublas::shallow_array_adaptor<FieldData>(9*nb_dofs,data));
+    }
+
+    /** \brief get DiffHdiv of shape functions at Gauss pts
+      *
+      * \param gg nb. of Gauss point
+      * \param number of of shape functions
+      *
+      */
+    inline const MatrixAdaptor getDiffHdivN(int dof,int gg) {
+      FieldData *data = &getDiffHdivN()(gg,9*dof);
+      return MatrixAdaptor(3,3,ublas::shallow_array_adaptor<FieldData>(9,data));
     }
 
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
@@ -198,12 +250,9 @@ struct DataForcesAndSurcesCore {
 
   };
 
-  ublas::matrix<DofIdx> facesNodes; ///< nodes on finite element faces
-
-  boost::ptr_vector<EntData> nOdes; ///< data on nodes, shape function, dofs values, etc.
-  boost::ptr_vector<EntData> eDges; ///< data on edges, shape function, dofs values, etc.
-  boost::ptr_vector<EntData> fAces; ///< data on faces, shape function, dofs values, etc.
-  boost::ptr_vector<EntData> vOlumes; ///< data on volume, shape function, dofs values, etc.
+  ublas::matrix<DofIdx> facesNodes; 			///< nodes on finite element faces
+  bitset<LASTSPACE> spacesOnEntities[MBMAXTYPE]; 	///< spaces on entity types
+  boost::ptr_vector<EntData> dataOnEntities[MBMAXTYPE]; ///< data on nodes, shape function, dofs values, etc.
 
   DataForcesAndSurcesCore(EntityType type);
   virtual ~DataForcesAndSurcesCore() {}
@@ -239,12 +288,13 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     ApproximationOrder getOrder() const { return oRder; }
     ApproximationOrder& getOrder() { return oRder; }
 
-    int getSense() const { return entData.getSense(); }
-    const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
-    const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
-    int& getSense() { return entData.getSense(); }
-    ublas::matrix<FieldData>& getN() { return entData.getN(); }
-    ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
+    inline int getSense() const { return entData.getSense(); }
+    inline const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
+    inline const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
+    inline ublas::matrix<FieldData>& getN() { return entData.getN(); }
+    inline ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
+    inline const ublas::matrix<FieldData>&  getHdivN() const { return entData.getHdivN(); };
+    inline ublas::matrix<FieldData>&  getHdivN() { return entData.getHdivN(); };
 
     private:
     ApproximationOrder oRder;
@@ -268,18 +318,18 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
   virtual ~ForcesAndSurcesCore() {}
 
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getOrder(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getOrder(const string &field_name,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
-  PetscErrorCode getFacesSense(DataForcesAndSurcesCore &data);
+  PetscErrorCode getTrisSense(DataForcesAndSurcesCore &data);
 
-  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data);
-  PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data);
-  PetscErrorCode getVolumesOrder(DataForcesAndSurcesCore &data);
+  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getFacesOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getVolumesOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getNodesIndices(
     const string &field_name,
@@ -301,12 +351,12 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
-  PetscErrorCode getEdgeRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getEdgeColIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getFacesRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getFacesColIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getNodesFieldData(
     const string &field_name,
@@ -320,23 +370,86 @@ struct ForcesAndSurcesCore: public FieldInterface::FEMethod {
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getEdgeFieldData(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getFacesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getVolumesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getFaceNodes(DataForcesAndSurcesCore &data);
+  PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data);
 
+  /** \brief computes approximation functions for tetrahedral and H1 space
+    */
   PetscErrorCode shapeTETFunctions_H1(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+  /** \brief computes approximation functions for tetrahedral and L2 space
+    */
   PetscErrorCode shapeTETFunctions_L2(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+
+  ublas::matrix<ublas::matrix<FieldData> > N_face_edge;
+  ublas::vector<ublas::matrix<FieldData> > N_face_bubble;
+  ublas::vector<ublas::matrix<FieldData> > N_volume_edge;
+  ublas::vector<ublas::matrix<FieldData> > N_volume_face;
+  ublas::matrix<FieldData> N_volume_bubble;
+
+  ublas::matrix<ublas::matrix<FieldData> > diffN_face_edge;
+  ublas::vector<ublas::matrix<FieldData> > diffN_face_bubble;
+  ublas::vector<ublas::matrix<FieldData> > diffN_volume_edge;
+  ublas::vector<ublas::matrix<FieldData> > diffN_volume_face;
+  ublas::matrix<FieldData> diffN_volume_bubble;
+
+
+  /** \brief computes approximation functions for tetrahedral and H1 space
+    */
+  PetscErrorCode shapeTETFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+
+  /** \brief computes approximation functions for triangle and H1 space
+    */
   PetscErrorCode shapeTRIFunctions_H1(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const int G_DIM);
+
+
+  /** \brief computes approximation functions for triangle and H1 space
+    */
+  PetscErrorCode shapeTRIFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const int G_DIM);
+
+  /** \brief computes approximation functions for edge and H1 space
+    */
   PetscErrorCode shapeEDGEFunctions_H1(
     DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM);
+
+  /** \brief it is used to calulate nb. of Gauss integartion points
+   *
+   * for more details pleas look 
+   *   Reference:
+   *
+   * Albert Nijenhuis, Herbert Wilf,
+   * Combinatorial Algorithms for Computers and Calculators,
+   * Second Edition,
+   * Academic Press, 1978,
+   * ISBN: 0-12-519260-6,
+   * LC: QA164.N54.
+   *
+   * More details about algorithm 
+   * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
+  **/
+  virtual int getRule(int order) { return order; };
+
+  virtual PetscErrorCode setGaussPts(int order) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
+    PetscFunctionReturn(0);
+  }
 
 };
 
@@ -356,7 +469,9 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode opSymmetric(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data);
+
+  PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
+
 
   /** \brief operator for linear form, usaully to calulate values on left hand side
     */
@@ -368,16 +483,16 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode op(DataForcesAndSurcesCore &data);
+  PetscErrorCode opRhs(DataForcesAndSurcesCore &data);
 
 
 };
 
-/// \brief operator on Gauss pts level, calulates inverse of Jacobian
-struct OpSetInvJac: public DataOperator {
+/// \brief transform local reference direvatives of shape funcion to global diervatives 
+struct OpSetInvJacH1: public DataOperator {
 
   ublas::matrix<double> &invJac;
-  OpSetInvJac(ublas::matrix<double> &_invJac): invJac(_invJac) {}
+  OpSetInvJacH1(ublas::matrix<double> &_invJac): invJac(_invJac) {}
 
   ublas::matrix<FieldData> diffNinvJac;
   PetscErrorCode doWork(
@@ -385,18 +500,77 @@ struct OpSetInvJac: public DataOperator {
 
 };
 
-/** \brief operator on Gauss pts level, calulates inverse of Jacobian for higher order geometry approximation
+/// \brief transform local reference direvatives of shape funcion to global diervatives 
+struct OpSetInvJacHdiv: public DataOperator {
+
+  ublas::matrix<double> &invJac;
+  OpSetInvJacHdiv(ublas::matrix<double> &_invJac): invJac(_invJac) {}
+
+  ublas::matrix<FieldData> diffHdiv_invJac;
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
+/** \brief transform local reference direvatives of shape funcion to global diervatives if higer order geometry is given 
   */
-struct OpSetHoInvJac: public DataOperator {
+struct OpSetHoInvJacH1: public DataOperator {
 
   ublas::matrix<double> &invHoJac;
-  OpSetHoInvJac(ublas::matrix<double> &_invHoJac): invHoJac(_invHoJac) {}
+  OpSetHoInvJacH1(ublas::matrix<double> &_invHoJac): invHoJac(_invHoJac) {}
 
   ublas::matrix<FieldData> diffNinvJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
  
 };
+
+
+/** \brief transform local reference direvatives of shape funcion to global diervatives if higer order geometry is given 
+  */
+struct OpSetHoInvJacHdiv: public DataOperator {
+
+  ublas::matrix<double> &invHoJac;
+  OpSetHoInvJacHdiv(ublas::matrix<double> &_invHoJac): invHoJac(_invHoJac) {}
+
+  ublas::matrix<FieldData> diffHdiv_invJac;
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+ 
+};
+
+/** \brief apply covariant (Piola) transfor for Hdiv space
+  */
+struct OpSetPiolaTransform: public DataOperator {
+
+    double &vOlume;
+    ublas::matrix<double> &Jac;
+    OpSetPiolaTransform(double &_vOlume,ublas::matrix<double> &_Jac): 
+      vOlume(_vOlume),Jac(_Jac) {}
+
+    ublas::matrix<FieldData> piolaN;
+    ublas::matrix<FieldData> piolaDiffN;
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
+/** \brief apply covariant (Piola) transfor for Hdiv space for HO geometry
+  */
+struct OpSetHoPiolaTransform: public DataOperator {
+
+    ublas::vector<double> &detHoJac;
+    ublas::matrix<double> &hoJac;
+    OpSetHoPiolaTransform(ublas::vector<double> &_detJac,ublas::matrix<double> &_Jac): 
+      detHoJac(_detJac),hoJac(_Jac) {}
+
+    ublas::matrix<FieldData> piolaN;
+    ublas::matrix<FieldData> piolaDiffN;
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
 
 /** \brief operator to calculate function values and its gradients at Gauss points
   * \ingroup mofem_forces_and_sources
@@ -425,70 +599,77 @@ struct OpGetData: public DataOperator {
 };
 
 /** \brief Tet finite element  
- * \ingroup mofem_forces_and_sources
+ * \ingroup mofem_forces_and_sources_tet_element 
  *
  * User is implementing own operator at Guass piint level, by own object
- * derived from TetElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpNH1 and
- * vecUserOpNH1NH1. 
+ * derived from TetElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
+ * number of operator added pushing objects to vecUserOpN and
+ * vecUserOpSymmNN. 
  *
  */
-struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
-  DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derivedData;
-  OpSetInvJac opSetInvJac;
+  DataForcesAndSurcesCore dataH1;
+  DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataL2;
+  DerivedDataForcesAndSurcesCore derivedDataL2;
+  DataForcesAndSurcesCore dataHdiv;
+  DerivedDataForcesAndSurcesCore derivedDataHdiv;
+
+  OpSetInvJacH1 opSetInvJacH1;
+  OpSetPiolaTransform opPiolaTransform;
+  OpSetInvJacHdiv opSetInvJacHdiv;
 
   string meshPositionsFieldName;
   ublas::matrix<FieldData> hoCoordsAtGaussPtsPts;
+  ublas::matrix<FieldData> hoGaussPtsJac;
   ublas::matrix<FieldData> hoGaussPtsInvJac;
   ublas::vector<FieldData> hoGaussPtsDetJac;
-  OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
-  OpSetHoInvJac opSetHoInvJac;
 
-  TetElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTET),
-    derivedData(data),opSetInvJac(invJac),
+  OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
+  OpSetHoInvJacH1 opSetHoInvJacH1;
+  OpSetHoPiolaTransform opSetHoPiolaTransform;
+  OpSetHoInvJacHdiv opSetHoInvJacHdiv;
+
+  TetElementForcesAndSourcesCore(FieldInterface &_mField):
+    ForcesAndSurcesCore(_mField),
+    dataH1(MBTET),derivedDataH1(dataH1),
+    dataL2(MBTET),derivedDataL2(dataL2),
+    dataHdiv(MBTET),derivedDataHdiv(dataHdiv),
+    opSetInvJacH1(invJac),
+    opPiolaTransform(vOlume,Jac),opSetInvJacHdiv(invJac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsInvJac,3,3),
-    opSetHoInvJac(hoGaussPtsInvJac) {};
+    opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsJac,3,3),
+    opSetHoInvJacH1(hoGaussPtsInvJac),
+    opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
+    opSetHoInvJacHdiv(hoGaussPtsInvJac) {};
     
-  virtual ~TetElementForcesAndSurcesCore() {}
+  virtual ~TetElementForcesAndSourcesCore() {}
 
   ErrorCode rval;
   PetscErrorCode ierr;
   double vOlume;
   ublas::vector<double> coords;
+
+  ublas::matrix<double> Jac;;
   ublas::matrix<double> invJac;
+
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
 
-  /** \brief it is used to calulate nb. of Gauss integartion points
-   *
-   * for more details pleas look 
-   *   Reference:
-   *
-   * Albert Nijenhuis, Herbert Wilf,
-   * Combinatorial Algorithms for Computers and Calculators,
-   * Second Edition,
-   * Academic Press, 1978,
-   * ISBN: 0-12-519260-6,
-   * LC: QA164.N54.
-   *
-   * More details about algorithm 
-   * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
-  **/
-  virtual int getRule(int order) { return order; };
-
+  /** \brief default oparator for TET element
+    * \ingroup mofem_forces_and_sources_tet_element
+    */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
+    bool symm;
     UserDataOperator(
       const string &_field_name):
-	row_field_name(_field_name),col_field_name(_field_name),ptrFE(NULL) {};
+	row_field_name(_field_name),col_field_name(_field_name),symm(true),ptrFE(NULL) {};
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
-	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
+	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
     inline double getVolume() { return ptrFE->vOlume; }
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
@@ -498,29 +679,36 @@ struct TetElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::matrix<double>& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
     inline ublas::vector<double>& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
     inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
-    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
-    PetscErrorCode setPtrFE(TetElementForcesAndSurcesCore *ptr) { 
+    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
+    PetscErrorCode setPtrFE(TetElementForcesAndSourcesCore *ptr) { 
       PetscFunctionBegin;
       ptrFE = ptr;
       PetscFunctionReturn(0);
     }
+
+    //differential operators
+    PetscErrorCode getDivergenceMatrixOperato_Hdiv(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
+      int gg,ublas::vector<FieldData> &div);
+
     private:
-    TetElementForcesAndSurcesCore *ptrFE; 
+    TetElementForcesAndSourcesCore *ptrFE; 
 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
+
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -562,30 +750,35 @@ struct OpGetNormals: public DataOperator {
 
 };
 
+/** \brief transfrom Hdiv space fluxes from reference elemento to physical triangle
+ */
+struct OpSetPiolaTransoformOnTriangle: public DataOperator {
+
+  const ublas::vector<double> &normal;
+  const ublas::matrix<FieldData> &nOrmals_at_GaussPt;
+
+  OpSetPiolaTransoformOnTriangle(
+    const ublas::vector<double> &_normal,
+    const ublas::matrix<FieldData> &_nOrmals_at_GaussPt):
+    normal(_normal),nOrmals_at_GaussPt(_nOrmals_at_GaussPt) {}
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data);
+
+};
+
 /** \brief Tri finite element  
  * \ingroup mofem_forces_and_sources
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from TriElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpNH1 and
- * vecUserOpNH1NH1. 
+ * number of operator added pushing objects to vecUserOpN and
+ * vecUserOpSymmNN. 
  *
  */
 struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
-
-  DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derivedData;
-  string meshPositionsFieldName;
-
-  ublas::matrix<FieldData> nOrmals_at_GaussPt;
-  ublas::matrix<FieldData> tAngent1_at_GaussPt;
-  ublas::matrix<FieldData> tAngent2_at_GaussPt;
-  OpGetNormals opHONormals;
-
-  TriElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBTRI),derivedData(data),
-    meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt) {};
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -595,17 +788,39 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
 
-  virtual int getRule(int order) { return order; };
+  DataForcesAndSurcesCore dataH1;
+  DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataHdiv;
+  DerivedDataForcesAndSurcesCore derivedDataHdiv;
 
+  string meshPositionsFieldName;
+
+  ublas::matrix<FieldData> nOrmals_at_GaussPt;
+  ublas::matrix<FieldData> tAngent1_at_GaussPt;
+  ublas::matrix<FieldData> tAngent2_at_GaussPt;
+  OpGetNormals opHONormals;
+  OpSetPiolaTransoformOnTriangle opSetPiolaTransoformOnTriangle;
+
+  TriElementForcesAndSurcesCore(FieldInterface &_mField):
+    ForcesAndSurcesCore(_mField),
+    dataH1(MBTRI),derivedDataH1(dataH1),
+    dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
+    meshPositionsFieldName("MESH_NODE_POSITIONS"),
+    opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt),
+    opSetPiolaTransoformOnTriangle(normal,nOrmals_at_GaussPt) {};
+
+  /** \brief default oparator for TRI element
+    */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
+    bool symm;
     UserDataOperator(
       const string &_field_name):
-	row_field_name(_field_name),col_field_name(_field_name),ptrFE(NULL) {};
+	row_field_name(_field_name),col_field_name(_field_name),symm(true),ptrFE(NULL) {};
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
-	row_field_name(_row_field_name),col_field_name(_col_field_name),ptrFE(NULL) {};
+	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
     inline double getArea() { return ptrFE->aRea; }
 
@@ -655,7 +870,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \bried return pointer to NumeredMoFEMFiniteElement 
      */
-    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
+    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
 
     PetscErrorCode setPtrFE(TriElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
@@ -666,18 +881,18 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     TriElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -696,8 +911,8 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from EdgeElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpNH1 and
- * vecUserOpNH1NH1. 
+ * number of operator added pushing objects to vecUserOpN and
+ * vecUserOpSymmNN. 
  *
  */
 struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
@@ -716,8 +931,8 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
 
-  virtual int getRule(int order) { return order; };
-
+  /** \brief default oparator for EDGE element
+    */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
@@ -734,7 +949,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
     inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
-    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
+    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
     PetscErrorCode setPtrFE(EdgeElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
       ptrFE = ptr;
@@ -744,18 +959,18 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     EdgeElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -774,8 +989,8 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  *
  * User is implementing own operator at Guass piint level, by own object
  * derived from VertexElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpNH1 and
- * vecUserOpNH1NH1. 
+ * number of operator added pushing objects to vecUserOpN and
+ * vecUserOpSymmNN. 
  *
  */
 struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
@@ -791,6 +1006,8 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   PetscErrorCode ierr;
   ublas::vector<double> coords;
 
+  /** \brief default oparator for VERTEX element
+    */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
     string col_field_name;
@@ -803,7 +1020,7 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     virtual ~UserDataOperator() {}
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline const FieldInterface::FEMethod* getFEMethod() { return ptrFE; }
-    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fe_ptr; };
+    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
     PetscErrorCode setPtrFE(VertexElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;
       ptrFE = ptr;
@@ -813,18 +1030,18 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     VertexElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNH1NH1;
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
    * It can be ussed to calulate nodal forces or other quantities on the mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpNH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
    * It can be ussed to calulate matrices or other quantities on mesh.
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNH1NH1; }
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -845,6 +1062,12 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources Forces and sources
  ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_tet_element Tetrahedral Element 
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/
+
 
 
 

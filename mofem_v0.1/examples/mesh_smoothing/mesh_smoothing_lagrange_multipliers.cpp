@@ -22,6 +22,8 @@
 
 #include "SurfacePressureComplexForLazy.hpp"
 
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
@@ -202,7 +204,7 @@ int main(int argc, char *argv[]) {
   Vec D;
   ierr = mField.VecCreateGhost("MESH_SMOOTHING",COL,&D); CHKERRQ(ierr);
 
-  FixMaterialPoints fix_material_pts(mField,"MESH_NODE_POSITIONS",corner_nodes);
+  FixBcAtEntities fix_material_pts(mField,"MESH_NODE_POSITIONS",corner_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
   MyMeshSmoothing_ElasticFEMethod_LagnageMultiplaiers bulk_fe(mField);
   SnesConstrainSurfacGeometry surface_fe(mField);
@@ -260,10 +262,10 @@ int main(int argc, char *argv[]) {
   double *array;
   ierr = VecGetArray(F,&array); CHKERRQ(ierr);
 
-  const MoFEMProblem *problem_ptr;
-  ierr = mField.get_problem("MESH_SMOOTHING",&problem_ptr); CHKERRQ(ierr);
+  const MoFEMProblem *problemPtr;
+  ierr = mField.get_problem("MESH_SMOOTHING",&problemPtr); CHKERRQ(ierr);
 
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_SURFACE",dof)) {
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,"LAMBDA_SURFACE",dof)) {
     EntityHandle ent = dof->get_ent();
     double *data_ptr;
     rval = moab.tag_get_by_ptr(th_res_surface,&ent,1,(const void **)&data_ptr); CHKERR_PETSC(rval);
@@ -275,7 +277,7 @@ int main(int argc, char *argv[]) {
     rval = moab.tag_set_by_ptr(th_lambda_surface,&ent,1,(const void **)&data_ptr); CHKERR_PETSC(rval);
   }
 
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"MESH_NODE_POSITIONS",dof)) {
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,"MESH_NODE_POSITIONS",dof)) {
     EntityHandle ent = dof->get_ent();
     double *data_ptr;
     rval = moab.tag_get_by_ptr(th_res_quality,&ent,1,(const void **)&data_ptr); CHKERR_PETSC(rval);

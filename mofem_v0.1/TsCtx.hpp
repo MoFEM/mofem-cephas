@@ -1,3 +1,7 @@
+/** \file TsCtx.hpp 
+ * \brief Context for PETSc Time Stepping 
+ */
+
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
@@ -19,13 +23,6 @@
 
 #ifndef __MOABTS_HPP__
 #define __MOABTS_HPP__
-
-#include "FieldInterface.hpp"
-#include <petsc.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-
-#include<petscts.h>
 
 namespace MoFEM {
 

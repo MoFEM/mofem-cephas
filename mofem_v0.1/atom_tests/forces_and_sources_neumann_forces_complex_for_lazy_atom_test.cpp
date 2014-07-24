@@ -27,6 +27,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "FEM.h"
 #include "Projection10NodeCoordsOnField.hpp"
 
 namespace bio = boost::iostreams;
@@ -226,9 +227,9 @@ int main(int argc, char *argv[]) {
   VecView(F,viewer);
   PetscViewerDestroy(&viewer);
 
-  /*const MoFEMProblem *problem_ptr;
-  ierr = mField.get_problem("TEST_PROBLEM",&problem_ptr); CHKERRQ(ierr);
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problem_ptr,dit)) {
+  /*const MoFEMProblem *problemPtr;
+  ierr = mField.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);

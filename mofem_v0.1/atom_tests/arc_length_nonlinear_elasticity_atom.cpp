@@ -339,9 +339,9 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
     ierr = fe_neumann.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
-  SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
-  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirihlet_bc.problem_ptr); CHKERRQ(ierr);
-  ierr = my_dirihlet_bc.iNitalize(); CHKERRQ(ierr);
+  SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"SPATIAL_POSITION",Aij,D,F);
+  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
+  ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
 
   struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {
     
@@ -411,7 +411,7 @@ int main(int argc, char *argv[]) {
 	      ierr = VecAssemblyEnd(F_lambda_for_neumann_forces); CHKERRQ(ierr);
 	      ierr = VecAXPY(arc_ptr->F_lambda,1,F_lambda_for_neumann_forces); CHKERRQ(ierr);
 	      //add F_lambda
-	      ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),F_lambda_for_neumann_forces); CHKERRQ(ierr);
+	      ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),F_lambda_for_neumann_forces); CHKERRQ(ierr);
 	    }
 	    for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
 	      ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
       }
   };
 
-  MyPrePostProcessFEMethod pre_post_method(mField,arc_ctx,&my_dirihlet_bc,F_lambda_for_neumann_forces);
+  MyPrePostProcessFEMethod pre_post_method(mField,arc_ctx,&my_dirichlet_bc,F_lambda_for_neumann_forces);
   ArcLengthSnesCtx snes_ctx(mField,"ELASTIC_MECHANICS",arc_ctx);
   
   SNES snes;
@@ -476,20 +476,20 @@ int main(int argc, char *argv[]) {
 
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
-  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
   snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_method);
-  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
-  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

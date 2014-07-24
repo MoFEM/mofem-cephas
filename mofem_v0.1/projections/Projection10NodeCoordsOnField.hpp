@@ -17,17 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
-
 #ifndef __PROJECTION10NODECOORDSONFIELD_HPP__
 #define __PROJECTION10NODECOORDSONFIELD_HPP__
-
-#include "FieldInterface.hpp"
-#include "CoreDataStructures.hpp"
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
 
 using namespace boost::numeric;
 
@@ -142,8 +133,8 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       if(on_tag == "NoNE") {
 	SETERRQ(PETSC_COMM_SELF,1,"tag name not specified");
       }
-      field_it = moabfields->get<FieldName_mi_tag>().find(field_name);
-      if(field_it == moabfields->get<FieldName_mi_tag>().end()) {
+      field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+      if(field_it == fieldsPtr->get<FieldName_mi_tag>().end()) {
 	SETERRQ1(PETSC_COMM_SELF,1,"field not found %s",field_name.c_str());
       }
       int field_rank = field_it->get_max_rank();

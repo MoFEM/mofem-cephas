@@ -1,3 +1,7 @@
+/** \file SnesCtx.hpp 
+ * \brief Context for PETSc SNES, i.e. nonlinear spolver
+ */
+
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
@@ -19,11 +23,6 @@
 
 #ifndef __MOABSNES_HPP__
 #define __MOABSNES_HPP__
-
-#include "FieldInterface.hpp"
-#include <petsc.h>
-#include <petscmat.h>
-#include <petscsnes.h>
 
 namespace MoFEM {
 

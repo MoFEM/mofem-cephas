@@ -17,6 +17,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
+#include "FEMethod_UpLevelStudent.hpp"
+#include "ElasticFEMethodInterface.hpp"
+
+#include "SnesCtx.hpp"
+#include "ArcLengthTools.hpp"
+
 #include "NonLinearFEMethodInterface.hpp"
 #include "SurfacePressure.hpp"
 #include "NodalForce.hpp"
@@ -326,7 +333,7 @@ int main(int argc, char *argv[]) {
 
     PetscErrorCode potsProcessLoadPath() {
       PetscFunctionBegin;
-      NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
+      NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
       NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
       lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
       if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
@@ -392,7 +399,7 @@ int main(int argc, char *argv[]) {
             ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
             ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	    //add F_lambda
-	    ierr = VecAXPY(snes_f,-arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	    ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
 	    ierr = VecAXPY(snes_f,-1.,F_body_force); CHKERRQ(ierr);
 	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
 	    //snes_f norm
@@ -416,9 +423,9 @@ int main(int argc, char *argv[]) {
   ArcLengthSnesCtx snes_ctx(mField,"ELASTIC_MECHANICS",arc_ctx);
   MyPrePostProcessFEMethodRhs pre_post_proc_fe(mField,F_body_force,arc_ctx);
 
-  DisplacementBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"DISPLACEMENT",Aij,D,F);
-  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirihlet_bc.problem_ptr); CHKERRQ(ierr);
-  ierr = my_dirihlet_bc.iNitalize(); CHKERRQ(ierr);
+  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"DISPLACEMENT",Aij,D,F);
+  ierr = mField.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
+  ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
   ElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   NonLinearInterfaceFEMethod int_my_fe(mField,Aij,D,F,young_modulus,h,beta,ft,Gf,"DISPLACEMENT",NonLinearInterfaceFEMethod::ctx_IntLinearSoftening);
 
@@ -484,21 +491,21 @@ int main(int argc, char *argv[]) {
 
   //Rhs
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
-  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_proc_fe);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&int_my_fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&my_arc_method));
   snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_proc_fe);
-  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
 
   //Mat
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&int_my_fe));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&my_arc_method));
-  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
   int its_d = 6;
   double gamma = 0.5,reduction = 1;
@@ -523,8 +530,8 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(arc_ctx->F_lambda); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(arc_ctx->F_lambda); CHKERRQ(ierr);
-  for(vector<int>::iterator vit = my_dirihlet_bc.dofsIndices.begin();
-    vit!=my_dirihlet_bc.dofsIndices.end();vit++) {
+  for(vector<int>::iterator vit = my_dirichlet_bc.dofsIndices.begin();
+    vit!=my_dirichlet_bc.dofsIndices.end();vit++) {
     ierr = VecSetValue(arc_ctx->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
   }
   ierr = VecAssemblyBegin(arc_ctx->F_lambda); CHKERRQ(ierr);

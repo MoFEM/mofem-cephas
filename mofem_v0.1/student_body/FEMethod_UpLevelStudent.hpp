@@ -23,7 +23,7 @@
 #include "CoreDataStructures.hpp"
 #include "FieldInterface.hpp"
 #include "FEMethod_LowLevelStudent.hpp"
-#include "DirihletBC.hpp"
+#include "DirichletBC.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -165,19 +165,6 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    &
    */
   PetscErrorCode GetGaussDataVector(const string &field_name,vector<ublas::vector<FieldData> > &Data);
-
-
-  /** \brief Field data at Gauss points for Hcurl and Hdiv space
-   *
-   * Note that size of the global vector is determined by number of gauss
-   * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
-   * g_NTET.size()/4
-   *
-   * \param field_name name of the approx. field 
-   * \param vector of matrices on return values of field at gauss points 
-   */
-  PetscErrorCode GetGaussDataVector_HcurlHdiv(const string &field_name,vector<ublas::matrix<FieldData> > &Data);
-
 
   /** \brief Field data direvatives at Gauss points for L2 and H1 space
    *

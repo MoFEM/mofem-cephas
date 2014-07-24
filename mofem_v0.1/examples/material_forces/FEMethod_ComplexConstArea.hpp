@@ -76,7 +76,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   //elem data
   ublas::matrix<double> diffNTRI;
   const double *G_TRI_W;
-  vector<DofIdx> DirihletBC;
+  vector<DofIdx> DirichletBC;
   ublas::vector<DofIdx> disp_dofs_col_idx,disp_dofs_row_idx;
   ublas::vector<DofIdx> local_disp_dofs_row_idx;
   ublas::vector<DofIdx> lambda_dofs_row_indx,lambda_dofs_col_indx;
@@ -94,7 +94,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   PetscErrorCode getData(bool is_that_C_otherwise_dC,bool trans) {
     PetscFunctionBegin;
     try {
-    face = fe_ptr->get_ent();
+    face = fePtr->get_ent();
     try {
       fill(lambda_dofs_row_indx.begin(),lambda_dofs_row_indx.end(),-1);
       fill(lambda_dofs_col_indx.begin(),lambda_dofs_col_indx.end(),-1);
@@ -119,8 +119,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  // it is C
 	  // get rows which are Lagrabge multipliers
 	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
-	  dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
 	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	    if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -139,14 +139,14 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	  // it is dC
 	  // get rows which are material nodal positions
 	  FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
-	  dit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = data_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  dit = dataPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = dataPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
 	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	    lambda[nn] = dit->get_FieldData();
 	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
-	    diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	    hi_diit = row_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    diit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	    hi_diit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	    if(distance(diit,hi_diit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	    for(;diit!=hi_diit;diit++) {
 	      if(diit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -165,8 +165,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       try {
 	//get columns which are material nodal positions
 	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
-	dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
-	hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
+	hi_dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	for(;dit!=hi_dit;dit++) {
 	  if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -182,8 +182,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       if(trans) {
 	try {
 	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
-	  dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
-	  hi_dit = col_multiIndex->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
+	  hi_dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
 	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
 	    if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
@@ -218,7 +218,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     bzero(i_diffX_xi,3*sizeof(double));
     bzero(i_diffX_eta,3*sizeof(double));
     Range adj_side_elems;
-    BitRefLevel bit = problem_ptr->get_BitRefLevel();
+    BitRefLevel bit = problemPtr->get_BitRefLevel();
     ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems); CHKERRQ(ierr);
     adj_side_elems = adj_side_elems.subset_by_type(MBTET);
     if(adj_side_elems.size()==0) {
@@ -365,9 +365,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     if(Q != PETSC_NULL) {
-      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,lambda_field_name,dofs)) {
+      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,lambda_field_name,dofs)) {
 	ierr = MatGetVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
-	//ierr = mField.VecCreateGhost(problem_ptr->get_name(),COL,&mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
+	//ierr = mField.VecCreateGhost(problemPtr->get_name(),COL,&mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
 	ierr = VecZeroEntries(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
       }
     }
@@ -419,8 +419,8 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     if(Q != PETSC_NULL) {
       ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
       Vec Qv;
-      ierr = mField.VecCreateGhost(problem_ptr->get_name(),COL,&Qv); CHKERRQ(ierr);
-      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,lambda_field_name,dofs)) {
+      ierr = mField.VecCreateGhost(problemPtr->get_name(),COL,&Qv); CHKERRQ(ierr);
+      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,lambda_field_name,dofs)) {
 	if(mapV.find(dofs->get_petsc_gloabl_dof_idx())==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	ierr = VecAssemblyBegin(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
@@ -432,7 +432,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	if(dofs->get_part()==pcomm->rank()) {
 	  vector<DofIdx> glob_idx;
 	  vector<double> vals;
-	  for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_ENT_FOR_LOOP_(problem_ptr,dofs->get_ent(),diit)) {
+	  for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_ENT_FOR_LOOP_(problemPtr,dofs->get_ent(),diit)) {
 	    if(diit->get_name() != "MESH_NODE_POSITIONS") continue;
 	    glob_idx.push_back(diit->get_petsc_gloabl_dof_idx());
 	    vals.push_back(array[diit->get_petsc_local_dof_idx()]);
@@ -535,7 +535,7 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-    EntityHandle face = fe_ptr->get_ent();
+    EntityHandle face = fePtr->get_ent();
     try {
 	ierr = getData(false,false); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
@@ -653,10 +653,10 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
     Vec LambdaVec;
     ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,&LambdaVec); CHKERRQ(ierr);
-    const MoFEMProblem *front_problem_ptr;
-    ierr = mField.get_problem("C_CRACKFRONT_MATRIX",&front_problem_ptr); CHKERRQ(ierr);
+    const MoFEMProblem *front_problemPtr;
+    ierr = mField.get_problem("C_CRACKFRONT_MATRIX",&front_problemPtr); CHKERRQ(ierr);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(front_problem_ptr,"LAMBDA_CRACKFRONT_AREA",dit)) {
+    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(front_problemPtr,"LAMBDA_CRACKFRONT_AREA",dit)) {
       if(dit->get_part()!=pcomm->rank()) continue;
       ierr = VecSetValue(LambdaVec,dit->get_petsc_gloabl_dof_idx(),gc,INSERT_VALUES); CHKERRQ(ierr);
     }

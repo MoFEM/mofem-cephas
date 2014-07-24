@@ -19,9 +19,14 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "ThermalElement.hpp"
-#include "DirihletBC.hpp"
 
+#include "ForcesAndSurcesCore.hpp"
+#include "TsCtx.hpp"
+#include "ThermalElement.hpp"
+#include "DirichletBC.hpp"
+
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -146,21 +151,21 @@ int main(int argc, char *argv[]) {
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  TemperatureBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"TEMP",A,T,F);
+  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"TEMP",A,T,F);
   ThermalElement::UpdateAndControl update_velocities(mField,ts,"TEMP","TEMP_RATE");
   ThermalElement::TimeSeriesMonitor monitor(mField,"THEMP_SERIES","TEMP");
 
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
-  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
-  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
 
   //and temperature element functions
   ierr = thermal_elements.setTimeSteppingProblem(ts_ctx,"TEMP","TEMP_RATE"); CHKERRQ(ierr);
 
   //postprocess
-  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
-  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_velocities);
   ts_ctx.get_postProcess_to_do_Monitor().push_back(&monitor);
 
