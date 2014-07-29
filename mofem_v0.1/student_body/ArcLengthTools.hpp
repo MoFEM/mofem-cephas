@@ -23,6 +23,15 @@
 #include "FieldInterface.hpp"
 #include "SnesCtx.hpp"
 
+/*
+   Defines the function where the compiled source is located; used 
+   in printing error messages. This is defined here in case the user
+   does not declare it.
+*/
+#ifndef __SDIR__
+#define __SDIR__ "unknown file source"
+#endif
+
 namespace MoFEM {
 
 /**

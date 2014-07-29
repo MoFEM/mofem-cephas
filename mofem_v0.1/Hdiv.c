@@ -284,7 +284,7 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
 		for(;kk<3;kk++) {
 		  diffPHI_v[9*shift + 3*9*jj + 9*0 + 3*dd + kk] = diff*ed[0][kk]; 
 		  diffPHI_v[9*shift + 3*9*jj + 9*1 + 3*dd + kk] = diff*ed[1][kk]; 
-		  diffPHI_v[9*shift + 3*3*jj + 9*2 + 3*dd + kk] = diff*ed[2][kk]; 
+		  diffPHI_v[9*shift + 3*9*jj + 9*2 + 3*dd + kk] = diff*ed[2][kk]; 
 		}
 	      }
 	    }
