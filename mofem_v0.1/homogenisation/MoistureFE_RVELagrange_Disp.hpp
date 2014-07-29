@@ -20,7 +20,6 @@
 #ifndef __MOISTUREFE_RVELAGRANGE_DISP_HPP__
 #define __MOISTUREFE_RVELAGRANGE_DISP_HPP__
 
-#include "FEMethod_UpLevelStudent.hpp"
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include <moab/ParallelComm.hpp>
 

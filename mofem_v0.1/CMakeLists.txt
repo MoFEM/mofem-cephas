@@ -154,6 +154,7 @@ add_library(mofem_homogenisation
   homogenisation/ElasticFE_RVELagrange_RigidBodyRotation.cpp
   homogenisation/MoistureFE_RVELagrange_Disp.cpp
   homogenisation/MoistureFE_RVELagrange_Homogenized_Stress_Disp.cpp
+  #homogenisation/MoistureFE_RVELagrange_Traction.cpp
   )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
