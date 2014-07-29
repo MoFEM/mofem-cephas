@@ -1,8 +1,7 @@
 
 
-Steady problem,
-======================
-
+Steady problem moisture transport
+===================================
 
 make && mpirun -np 1 ./moisture_trans \
   -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/moisture/simple_moisture_problem.cub \
@@ -10,5 +9,9 @@ make && mpirun -np 1 ./moisture_trans \
   -my_order 1 -my_max_post_proc_ref_level 2
 
 
+Simple cube RVE homogenisation for moisture transport
+========================================================
+
+make && mpirun -np 1 ./RVE_moisture_trans_disp -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/moisture/Cube_moisture_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0
 
 

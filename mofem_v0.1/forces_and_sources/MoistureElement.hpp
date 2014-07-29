@@ -40,7 +40,7 @@ namespace MoFEM {
    * loop attach operator.
    *
    */
-
+  
   struct MoistureElement {
     
     /// \brief  definition of volume element
@@ -62,20 +62,20 @@ namespace MoFEM {
        * More details about algorithm
        * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
        **/
-      int getRule(int order) { return order-1; };
+      int getRule(int order) { return order>0 order-1,0); };
     };
     
     MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
     MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
     MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
     MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
-
+    
     
     
     FieldInterface &mField;
     MoistureElement(FieldInterface &m_field):
     feRhs(m_field),feLhs(m_field),mField(m_field){}
-
+    
     
     /** \brief data for calulation het conductivity and heat capacity elements
      * \infroup mofem_moisture_elem
@@ -85,7 +85,7 @@ namespace MoFEM {
       Range tEts; ///< constatins elements in block set
     };
     map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
-
+    
     
     /** \brief add moisture element on tets
      * \infroup mofem_moisture_elem
@@ -109,7 +109,7 @@ namespace MoFEM {
       }
       ierr = mField.modify_problem_add_finite_element(problem_name,"MOISTURE_FE"); CHKERRQ(ierr);
       
-
+      
       // loop over all blocksets and get data which name is FluidPressure
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_MOISTURESET,it)) {
         Mat_Moisture moisture_data;
@@ -120,8 +120,8 @@ namespace MoFEM {
       }
       PetscFunctionReturn(0);
     }
- 
-
+    
+    
     /** \brief this function is used in case of stationary problem to set elements for rhs
      * \infroup mofem_moisture_elem
      */
@@ -135,7 +135,7 @@ namespace MoFEM {
       }
       PetscFunctionReturn(0);
     }
-
+    
     
     /** \brief common data used by volume elements
      * \infroup mofem_thermal_elem
@@ -149,7 +149,7 @@ namespace MoFEM {
       }
     };
     CommonData commonData;
-
+    
     
     /// \brief operator to calulete temeperature gradient at Gauss points
     struct OpGetGradAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
@@ -158,7 +158,7 @@ namespace MoFEM {
       OpGetGradAtGaussPts(const string field_name,CommonData &common_data):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       commonData(common_data) {}
-
+      
       /** \brief operator calulating temeratire gradients
        *
        * temerature gradient is calculated multiplying direvatives of shape functions by degrees of freedom
@@ -192,7 +192,7 @@ namespace MoFEM {
       }
       
     };
-
+    
     /** \biref operator to calculate right hand side of moisture transport from concentration
      * \infroup mofem_moisture_elem
      */
@@ -277,7 +277,7 @@ namespace MoFEM {
       }
       
     };
-
+    
     
     
     /** \brief this fucntion is used in case of stationary heat conductivity problem for lhs
@@ -290,19 +290,19 @@ namespace MoFEM {
         //add finite elemen
         feLhs.get_op_to_do_Lhs().push_back(new OpMoistureLhs(field_name,A,sit->second,commonData));
       }
-//      cout<<"Hi from function setMoistureFiniteElementLhsOperators"<<endl;
-//      cout<<"field_name = "<<field_name<<endl;
+      //      cout<<"Hi from function setMoistureFiniteElementLhsOperators"<<endl;
+      //      cout<<"field_name = "<<field_name<<endl;
       
-
+      
       PetscFunctionReturn(0);
     }
-
+    
     
     /** \biref operator to calculate left hand side of het conductivity terms
      * \infroup mofem_moisture_elem
      */
     struct OpMoistureLhs: public TetElementForcesAndSourcesCore::UserDataOperator {
-
+      
       BlockData &dAta;
       CommonData &commonData;
       bool useTsB;
@@ -314,10 +314,10 @@ namespace MoFEM {
       OpMoistureLhs(const string field_name,Mat *_A,BlockData &data,CommonData &common_data):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),useTsB(false),A(_A) {}
-
+      
       ublas::matrix<double> K,transK;
       
-
+      
       
       /** \brief calculate moisture diffusivity matrix
        *
@@ -341,16 +341,16 @@ namespace MoFEM {
           bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
           
           for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-//            cout<<"gg = "<<gg<<endl;
-//            cout<<"dAta.dIffusivity = "<<dAta.dIffusivity<<endl;
-//            cout<<"getGaussPts()(3,gg) = "<<getGaussPts()(3,gg)<<endl;
-//            cout<<"row_data.getN().size1() = "<<row_data.getN().size1()<<endl;
-             double val = dAta.dIffusivity*getVolume()*getGaussPts()(3,gg);
+            //            cout<<"gg = "<<gg<<endl;
+            //            cout<<"dAta.dIffusivity = "<<dAta.dIffusivity<<endl;
+            //            cout<<"getGaussPts()(3,gg) = "<<getGaussPts()(3,gg)<<endl;
+            //            cout<<"row_data.getN().size1() = "<<row_data.getN().size1()<<endl;
+            double val = dAta.dIffusivity*getVolume()*getGaussPts()(3,gg);
             if(getHoGaussPtsDetJac().size()>0) {
               val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
             }
             
-          //ublas
+            //ublas
             noalias(K) += val*prod(row_data.getDiffN(gg,nb_row),trans(col_data.getDiffN(gg,nb_col)));
             
           }
@@ -393,7 +393,7 @@ namespace MoFEM {
 #endif //__MOISTURE_ELEMENT_HPP
 
 /***************************************************************************//**
-* \defgroup mofem_moisture_elem Moisture element
-* \ingroup mofem_forces_and_sources
-******************************************************************************/
+                                                                              * \defgroup mofem_moisture_elem Moisture element
+                                                                              * \ingroup mofem_forces_and_sources
+                                                                              ******************************************************************************/
 
