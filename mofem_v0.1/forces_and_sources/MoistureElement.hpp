@@ -62,7 +62,7 @@ namespace MoFEM {
        * More details about algorithm
        * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
        **/
-      int getRule(int order) { return order>0 order-1,0); };
+      int getRule(int order) { return order-1; };
     };
     
     MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
