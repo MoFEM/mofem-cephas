@@ -310,7 +310,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FixMaterialPoints::iNitalize() {
+PetscErrorCode FixBcAtEntities::iNitalize() {
   PetscFunctionBegin;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   if(map_zero_rows.empty()) {
@@ -333,7 +333,7 @@ PetscErrorCode FixMaterialPoints::iNitalize() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FixMaterialPoints::preProcess() {
+PetscErrorCode FixBcAtEntities::preProcess() {
     PetscFunctionBegin;
     ierr = iNitalize(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
