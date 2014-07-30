@@ -34,9 +34,8 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public MofemException {
-  virtual const char* what() const throw() {
-    return "negative volume";
-  }
+  FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume(): 
+    MofemException(MOFEM_DATA_INSONSISTENCY,"Negative volume") {}
 };
 
 /** 

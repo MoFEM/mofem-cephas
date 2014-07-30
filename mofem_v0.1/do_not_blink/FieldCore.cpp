@@ -248,7 +248,10 @@ const MoFEMField* FieldCore::get_field_structure(const string& name) {
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
-  if(miit==set.end()) return NULL;
+  if(miit==set.end()) {
+    throw MofemException(MOFEM_NOT_FOUND,
+      string("field < "+name+" > not in databse (top tip: check spelling)").c_str());
+  }
   return &*miit;
 }
 BitFieldId FieldCore::get_field_shift() {
