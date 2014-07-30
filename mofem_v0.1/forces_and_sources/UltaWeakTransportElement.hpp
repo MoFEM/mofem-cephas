@@ -27,6 +27,10 @@ namespace MoFEM {
 
 /** \brief Ultra weak transport problem
   * \ingroup mofem_ultra_weak_transport_elem
+  *
+  * Note to solve this system you need to use mumps or propper preconditioner
+  * for sadlle problem. SuperLU works, but very poorly for larger systems.
+  (
   */
 struct UltraWeakTransportElement {
 
@@ -35,7 +39,7 @@ struct UltraWeakTransportElement {
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
     MyVolumeFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*order; };
+    int getRule(int order) { return order; };
   };
 
   MyVolumeFE feVol;   
@@ -45,7 +49,7 @@ struct UltraWeakTransportElement {
     */
   struct MyTriFE: public TriElementForcesAndSurcesCore {
     MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
-    int getRule(int order) { return 2*order; };
+    int getRule(int order) { return order; };
   };
 
   MyTriFE feTriFluxValue;
@@ -711,10 +715,15 @@ struct UltraWeakTransportElement {
 	  double flux;
 	  ierr = cTx.getBcOnFluxes(fe_ent,x,y,z,flux); CHKERRQ(ierr);
 
+	  //cerr << data.getHdivN() << endl;
+
+	  double area;
 	  if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
-	    noalias(normalN) = prod(data.getHdivN(gg),getNormals_at_GaussPt(gg));
+	    area = 2.*norm_2(getNormals_at_GaussPt(gg));
+	    noalias(normalN) = prod(data.getHdivN(gg),getNormals_at_GaussPt(gg))/area;
 	  } else {
-	    noalias(normalN) = prod(data.getHdivN(gg),getNormal());
+	    area = 2.*getArea();
+	    noalias(normalN) = prod(data.getHdivN(gg),getNormal())/area;
 	  }
 
 	  double w = getGaussPts()(2,gg);
@@ -728,13 +737,11 @@ struct UltraWeakTransportElement {
 	cholesky_decompose(NN,L);
 	cholesky_solve(L,Nf,ublas::lower());
 
-	for(int dd = 0;dd<nb_dofs;dd++) {
-
-	  const FENumeredDofMoFEMEntity *dof_ptr;
-	  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[dd],&dof_ptr); CHKERRQ(ierr);
-	  dof_ptr->get_FieldData() = Nf[dd];
-
+	/*cerr << Nf << endl;
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	  cerr << prod(trans(data.getHdivN(gg)),Nf) << endl;
 	}
+	cerr << endl;*/
 
 	ierr = VecSetValues(X,data.getIndices().size(),&data.getIndices()[0],&Nf[0],INSERT_VALUES); CHKERRQ(ierr);
 

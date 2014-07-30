@@ -19,3 +19,6 @@
 add_executable(transport transport.cpp)
 target_link_libraries(transport mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
       const double x,const double y,const double z,
       double &value) {
       PetscFunctionBegin;
-      value = 0;
+      value = 1;
       PetscFunctionReturn(0);
     }
 
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
       const double x,const double y,const double z,
       double &flux) {
       PetscFunctionBegin;
-      flux = 0.6;
+      flux = 0.;
       PetscFunctionReturn(0);
     }
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   rval = skin.find_skin(tets,false,skin_faces); CHKERR(rval);
   
   // note: what is essential (dirichlet) is neutral (neumann) for ultra wik comparic to classical FE
-  Range neumann_tris;
+  /*Range neumann_tris;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|TEMPERATURESET,it)) {
 
     Range tris;
@@ -178,8 +178,8 @@ int main(int argc, char *argv[]) {
   }
   Range dirichel_tris = subtract(skin_faces,neumann_tris);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(dirichel_tris,"ULTRAWEAK_FLUXDIRICHLET"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(neumann_tris,"ULTRAWEAK_FLUXNEUMANN"); CHKERRQ(ierr);
-  //ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_FLUXNEUMANN"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_TRIs(neumann_tris,"ULTRAWEAK_FLUXNEUMANN"); CHKERRQ(ierr);*/
+  ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_FLUXNEUMANN"); CHKERRQ(ierr);
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
@@ -242,6 +242,8 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(D0); CHKERRQ(ierr);
 
+  ierr = m_field.set_global_VecCreateGhost("ULTRAWEAK",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
   IS dirchlet_ids;
   ierr = ufe.getDirihletBCIndices(&dirchlet_ids); CHKERRQ(ierr);
 
@@ -275,8 +277,6 @@ int main(int argc, char *argv[]) {
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
   //std::string wait;
   //std::cin >> wait;
-
-
   ierr = MatZeroRowsColumnsIS(Aij,dirchlet_ids,1,D0,F); CHKERRQ(ierr);
 
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
@@ -367,6 +367,7 @@ int main(int argc, char *argv[]) {
   ierr = ISDestroy(&dirchlet_ids); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&D0); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
