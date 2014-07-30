@@ -105,8 +105,9 @@ int main(int argc, char *argv[]) {
   //Define problem
   
   //Fields
-  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("Lagrange_mul_disp",H1,3); CHKERRQ(ierr);
+  int field_rank=3;
+  ierr = mField.add_field("DISPLACEMENT",H1,field_rank); CHKERRQ(ierr);
+  ierr = mField.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);
   
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -243,7 +244,7 @@ int main(int argc, char *argv[]) {
   const double young_modulus = 1;
   const double poisson_ratio = 0.0;
   MyElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,Aij,D,F,applied_strain);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -301,7 +302,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
   //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
-  //    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+//    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
   
   
   //create a vector for 6 components of homogenized stress
@@ -310,7 +311,7 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
   
   //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo);
+  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
   
 //  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
@@ -344,7 +345,7 @@ int main(int argc, char *argv[]) {
   
   //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fcd e_post_proc_method);  CHKERRQ(ierr);
   
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);

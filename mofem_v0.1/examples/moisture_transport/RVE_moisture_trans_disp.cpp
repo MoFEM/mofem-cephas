@@ -27,8 +27,8 @@
 #include "TsCtx.hpp"
 #include "MoistureElement.hpp"
 
-#include "MoistureFE_RVELagrange_Disp.hpp"
-#include "MoistureFE_RVELagrange_Homogenized_Stress_Disp.hpp"
+#include "ElasticFE_RVELagrange_Disp.hpp"
+#include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
 #include "RVEVolume.hpp"
 //
 #include "PostProcVertexMethod.hpp"
@@ -105,9 +105,10 @@ int main(int argc, char *argv[]) {
   /***/
   //Define problem
   
-  //Fields
-  ierr = mField.add_field("CONC",H1,1); CHKERRQ(ierr);
-  ierr = mField.add_field("LAGRANGE_MUL_FIELD",H1,1); CHKERRQ(ierr);
+  //Field
+  int field_rank=1;
+  ierr = mField.add_field("CONC",H1,field_rank); CHKERRQ(ierr);
+  ierr = mField.add_field("LAGRANGE_MUL_FIELD",H1,field_rank); CHKERRQ(ierr);
   
   
   //Problem
@@ -211,7 +212,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.MatCreateMPIAIJWithArrays("MOISTURE_PROBLEM",&A); CHKERRQ(ierr);
 
   ierr = moisture_elements.setMoistureFiniteElementLhsOperators("CONC",(&A)); CHKERRQ(ierr);
-  MoistureFE_RVELagrange_Disp MyFE_RVELagrange(mField,A,C,F,applied_strain);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,A,C,F,applied_strain,"CONC","LAGRANGE_MUL_FIELD",field_rank);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -251,7 +252,7 @@ int main(int argc, char *argv[]) {
   
 //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 //  ierr = VecView(C,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
+  
   
   //Save data on mesh
   ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -280,7 +281,7 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
   
   //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  MoistureFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C,F,&RVE_volume, applied_strain, Stress_Homo);
+  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C,F,&RVE_volume, applied_strain, Stress_Homo,"CONC","LAGRANGE_MUL_FIELD",field_rank);
   ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
   
 //  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;

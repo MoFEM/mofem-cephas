@@ -31,9 +31,12 @@ namespace MoFEM {
     Mat Aij;
     Vec F;
     ublas::vector<FieldData> applied_strain;
-    bool propeties_from_BlockSet_Mat_ElasticSet;
+    const string field_main;
+    const string field_lagrange;
+    int rank_field;
     
-    ElasticFE_RVELagrange_Disp(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain);
+    ElasticFE_RVELagrange_Disp(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain,
+                               const string& _field_main, const string& _field_lagrange, int _rank_field);
     
     
     ErrorCode rval;

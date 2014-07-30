@@ -56,7 +56,8 @@ namespace MoFEM {
     
     PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Disp::Calculate_Homo_Stress() {
       PetscFunctionBegin;
-      X_mat.resize(3,6);    X_mat.clear();
+      
+      X_mat.resize(rank_field,1.5*rank_field+1.5);  X_mat.clear();  // for rank_field=3 X_mat.resize(3,6)  and for rank_field=3 X_mat.resize(1,3)
       nodes_coord.resize(3,3);
       gauss_coord.resize(3,g_TRI_dim);
       D_mat.resize(row_mat);
@@ -73,19 +74,29 @@ namespace MoFEM {
       //coordinates for all gauss points
       gauss_coord=prod(nodes_coord, g_NTRI_mat);
       
-      //        cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
-      //        cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
-      //        cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
-      //        std::string wait;
-      //        std::cin >> wait;
+//        cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
+//        cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
+//        cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
+//        std::string wait;
+//        std::cin >> wait;
       
       for(int rr=0; rr<row_mat; rr++){
         for(int gg = 0;gg<g_TRI_dim;gg++) {
           double w = area*G_W_TRI[gg];
-          X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
-          X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
-          X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
-          X_mat=0.5*X_mat;
+          
+          switch(rank_field) {
+            case 3:
+              X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
+              X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
+              X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
+              X_mat=0.5*X_mat;
+              break;
+            case 1:
+              X_mat(0,0)=gauss_coord(0,gg);  X_mat(0,1)=gauss_coord(1,gg);  X_mat(0,2)=gauss_coord(2,gg);
+              break;
+            default:
+              SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+          }
           
           ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
           ublas::matrix<FieldData> &col_Mat = X_mat;
@@ -108,9 +119,8 @@ namespace MoFEM {
             D_mat[rr]+=prod(H_mat[rr], D_mat1);
           }
         }
-        //            cout<<"row_mat  =  "<<row_mat<<endl;
-        //            cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl;
-        
+//            cout<<"row_mat  =  "<<row_mat<<endl;
+//            cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl;
         
         //To get Lambda for stress calculation
         Lamda[rr].resize(RowGlob[rr].size());
@@ -122,12 +132,12 @@ namespace MoFEM {
             rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn,num_nodes,true); CHKERR_PETSC(rval);
             //                    cout<<"num_nodes  =  "<<num_nodes<<endl;
             for(int nn = 0;nn<num_nodes; nn++) {
-              for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",conn[nn],iit)) {
-                Lamda[rr][3*nn+iit->get_dof_rank()]=iit->get_FieldData();
+              for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,conn[nn],iit)) {
+                Lamda[rr][rank_field*nn+iit->get_dof_rank()]=iit->get_FieldData();
               }
             }
-            //                    for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
-            //                    cout<<endl;
+//                    for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
+//                    cout<<endl;
             break;
             
           case 1:  case 2:  case 3: { //For edges
@@ -136,7 +146,7 @@ namespace MoFEM {
               EntityHandle edge;
               
               rval = moab.side_element(fePtr->get_ent(),1,rr-1,edge); CHKERR_PETSC(rval);
-              for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",edge,iit)) {
+              for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,edge,iit)) {
                 Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
               }
               //                        for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
@@ -147,7 +157,7 @@ namespace MoFEM {
             
           case 4: //for face
             //                    cout<<"For Face"<<endl;
-            for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"Lagrange_mul_disp",fePtr->get_ent(),iit)) {
+            for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,fePtr->get_ent(),iit)) {
               Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
             }
             //                    for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
@@ -159,9 +169,19 @@ namespace MoFEM {
       }
       
       //        cout<< "rank "<< pcomm->rank() << " Stress_Homo after  =   "<<Stress_Homo_elem<<endl;
-      int Indices[6]={0, 1, 2, 3, 4, 5};
-      ierr = VecSetValues(Stress_Homo,6,Indices,&(Stress_Homo_elem.data())[0],ADD_VALUES); CHKERRQ(ierr);
-      
+      int Indices6[6]={0, 1, 2, 3, 4, 5};
+      int Indices3[3]={0, 1, 2};
+      switch(rank_field) {
+        case 3:
+          ierr = VecSetValues(Stress_Homo,6,Indices6,&(Stress_Homo_elem.data())[0],ADD_VALUES); CHKERRQ(ierr);
+          break;
+        case 1:
+          ierr = VecSetValues(Stress_Homo,3,Indices3,&(Stress_Homo_elem.data())[0],ADD_VALUES); CHKERRQ(ierr);
+          break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+
       PetscFunctionReturn(0);
     }
     
