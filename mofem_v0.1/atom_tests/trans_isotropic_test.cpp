@@ -448,7 +448,7 @@ int main(int argc, char *argv[]) {
   //Solver
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-  ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
@@ -475,7 +475,7 @@ int main(int argc, char *argv[]) {
     mField,LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP),YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP,noAA,AxVector,AxAngle);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_fibre_post_proc_method);  CHKERRQ(ierr);
 
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
   if(pcomm->rank()==0) {
       rval = fe_fibre_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
@@ -491,7 +491,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
   PetscFinalize();
 

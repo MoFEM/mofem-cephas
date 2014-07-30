@@ -25,7 +25,7 @@ namespace MoFEM {
   PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Disp::preProcess() {
       PetscFunctionBegin;
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-      PetscSynchronizedFlush(PETSC_COMM_WORLD);
+      PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
       ierr = PetscTime(&v1); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -40,7 +40,7 @@ namespace MoFEM {
       ierr = PetscTime(&v2); CHKERRQ(ierr);
       ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-      PetscSynchronizedFlush(PETSC_COMM_WORLD);
+      PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
       
       ierr = VecScale(Stress_Homo, 1.0/(*RVE_volume)); CHKERRQ(ierr);
       

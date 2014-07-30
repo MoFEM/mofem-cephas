@@ -24,6 +24,9 @@
 #include <complex>
 
 extern "C" {
+
+#include "/usr/include/complex.h"
+
 void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
   double circumcenter[3],double *xi,double *eta,double *zeta);
 void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
@@ -300,9 +303,9 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     rval = moab.tag_set_data(th_normal2,&face,1,normal2); CHKERR_PETSC(rval);*/
     //calulare complex normal length
     double __complex__ x_nrm2 = csqrt(
-      cpow((x_normal[0].r+I*x_normal[0].i),2)+
-      cpow((x_normal[1].r+I*x_normal[1].i),2)+
-      cpow((x_normal[2].r+I*x_normal[2].i),2));
+      cpow((x_normal[0].r+I*x_normal[0].i),2+I*0)+
+      cpow((x_normal[1].r+I*x_normal[1].i),2+I*0)+
+      cpow((x_normal[2].r+I*x_normal[2].i),2+I*0));
     // calulate dA/dX 
     __CLPK_doublecomplex xNSpinX_xi[3],xNSpinX_eta[3];
     bzero(xNSpinX_xi,3*sizeof(__CLPK_doublecomplex));

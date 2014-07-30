@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) {
   //Solver
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-  ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
   
@@ -374,7 +374,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
   
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
   
   PetscFinalize();
   return 0;

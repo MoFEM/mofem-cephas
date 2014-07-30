@@ -75,9 +75,8 @@ PetscErrorCode pc_setup_arc_length(PC pc) {
   ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
   PCShellCtx *ctx = (PCShellCtx*)void_ctx;
   ierr = PCSetFromOptions(ctx->pc); CHKERRQ(ierr);
-  MatStructure flag;
-  ierr = PCGetOperators(pc,&ctx->ShellAij,&ctx->Aij,&flag); CHKERRQ(ierr);
-  ierr = PCSetOperators(ctx->pc,ctx->ShellAij,ctx->Aij,flag); CHKERRQ(ierr);
+  ierr = PCGetOperators(pc,&ctx->ShellAij,&ctx->Aij); CHKERRQ(ierr);
+  ierr = PCSetOperators(ctx->pc,ctx->ShellAij,ctx->Aij); CHKERRQ(ierr);
   ierr = PCSetUp(ctx->pc); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

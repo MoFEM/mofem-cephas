@@ -713,13 +713,9 @@ int main(int argc, char *argv[]) {
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
     
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
-	ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
-	PetscSynchronizedFlush(PETSC_COMM_WORLD);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
 //    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",MyFE_RVELagrangeRigidBodyRotation);  CHKERRQ(ierr);
 //    PetscSynchronizedFlush(PETSC_COMM_WORLD);
 
@@ -738,7 +734,7 @@ int main(int argc, char *argv[]) {
     //Solver
     KSP solver;
     ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-    ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+    ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
     ierr = KSPSetUp(solver); CHKERRQ(ierr);
     
@@ -828,7 +824,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
     
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
     
     PetscFinalize();
     

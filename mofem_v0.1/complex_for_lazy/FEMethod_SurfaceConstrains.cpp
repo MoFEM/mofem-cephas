@@ -36,13 +36,18 @@ using namespace boost::numeric;
 
 #include <math.h>
 #include <complex>
+
 extern "C" {
-#include <complex.h>
+  #include "/usr/include/complex.h"
+}
+
+extern "C" {
 
 void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
   double circumcenter[3],double *xi,double *eta,double *zeta);
 void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
   double circumcenter[3],double *xi,double *eta);
+
 }
 
 namespace MoFEM {

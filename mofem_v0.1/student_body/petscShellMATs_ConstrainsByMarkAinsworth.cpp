@@ -30,7 +30,7 @@ PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
       ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
       ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr); // need to be calulated when C is changed
       ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr); // neet to be recalculated when C is changed
-      ierr = KSPSetOperators(ksp,CCT,CCT,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+      ierr = KSPSetOperators(ksp,CCT,CCT); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
       ierr = KSPSetInitialGuessKnoll(ksp,PETSC_TRUE); CHKERRQ(ierr);
       ierr = KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits); CHKERRQ(ierr);

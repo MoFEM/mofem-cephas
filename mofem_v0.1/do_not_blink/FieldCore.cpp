@@ -394,7 +394,7 @@ PetscErrorCode FieldCore::initialiseDatabseInformationFromMesh(int verb) {
 	  PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
 	}
 	//PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-	//PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+	//PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
 	//ierr = seed_ref_level_MESHSET(*mit,0); CHKERRQ(ierr);
       }
     } catch (const char* msg) {
@@ -1306,7 +1306,7 @@ PetscErrorCode FieldCore::list_dofs_by_field_name(const string &field_name,bool 
     ss << *dit << endl;
     if(synchronised) {
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+      PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
     } else {
       PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
@@ -2027,7 +2027,7 @@ PetscErrorCode FieldCore::build_adjacencies(const Range &ents,int verb) {
   if(verbose>0) {
     PetscPrintf(PETSC_COMM_WORLD,"Nb. entFEAdjacencies %u\n",entFEAdjacencies.size());
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Nb. entFEAdjacencies %u\n",entFEAdjacencies.size());
-    //PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+    //PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   }
   *build_MoFEM |= 1<<2;
   PetscFunctionReturn(0);
@@ -2155,7 +2155,7 @@ PetscErrorCode FieldCore::build_problems(int verb) {
 	ss<<*miit_dd_col<<endl;
       }
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+      PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
     }
   }
   *build_MoFEM |= 1<<3;
@@ -2270,7 +2270,7 @@ PetscErrorCode FieldCore::simple_partition_problem(const string &name,const int 
     ss << "simple_partition_problem: rank = " << pcomm->rank() << " FEs col ghost dofs " << *p_miit 
       << " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   }
   *build_MoFEM |= 1<<4;
   PetscFunctionReturn(0);
@@ -2410,7 +2410,7 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
     ss << "partition_problem: rank = " << pcomm->rank() << " FEs col ghost dofs " << *p_miit 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   }
   if(verb>2) {
     ostringstream ss;
@@ -2427,7 +2427,7 @@ PetscErrorCode FieldCore::partition_problem(const string &name,int verb) {
 	ss<<*miit_dd_col<<endl;
     }
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   }
   ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRQ(ierr);
   ierr = ISRestoreIndices(is_gather_num,&petsc_idx);  CHKERRQ(ierr);
@@ -2671,7 +2671,7 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
     ss << "partition_problem: rank = " << pcomm->rank() << " FEs col ghost dofs " << *p_miit 
       << " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   }
   if(verb>2) {
     ostringstream ss;
@@ -2688,7 +2688,7 @@ PetscErrorCode FieldCore::compose_problem(const string &name,const string &probl
 	ss<<*miit_dd_col<<endl;
     }
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   }
   if(debug>0) {
     typedef NumeredDofMoFEMEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofMoFEMEntitys_by_idx;
@@ -2799,7 +2799,7 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
 	miit = p.first->cols_dofs.get<Unique_mi_tag>().begin();
 	for(;miit!=p.first->cols_dofs.get<Unique_mi_tag>().end();miit++) ss << "cols: " << *miit << endl;
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
       }
     }
   }
@@ -2812,7 +2812,7 @@ PetscErrorCode FieldCore::partition_finite_elements(const string &name,bool do_s
     ss << *p_miit;
     ss << " Nb. elems " << count << " on proc " << pcomm->rank() << endl;
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   }
   *build_MoFEM |= 1<<5;  
   PetscFunctionReturn(0);
@@ -3056,7 +3056,7 @@ PetscErrorCode FieldCore::partition_ghost_dofs(const string &name,int verb) {
       }
     }
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   }
   *build_MoFEM |= 1<<6;
   PetscFunctionReturn(0);

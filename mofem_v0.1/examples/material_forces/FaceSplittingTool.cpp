@@ -854,7 +854,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"mesh_level_nodes.size() %d\n",mesh_level_nodes.size());
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"mesh_level_edges.size() %d\n",mesh_level_edges.size());
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"mesh_level_tris.size() %d\n",mesh_level_tris.size());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   }
 
   Range _crack_front_tets_faces_;
@@ -994,7 +994,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"_nodes_on_skin_surface_.size() %d\n",_nodes_on_skin_surface_.size());
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"_crack_front_free_faces_nodes_.size() %d\n",_crack_front_free_faces_nodes_.size());
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"_crack_front_body_skin_edges_nodes_.size() %d\n",_crack_front_body_skin_edges_nodes_.size());
-      PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+      PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
     }
 
     //if(_nodes_on_skin_surface_.empty()) {
@@ -1970,7 +1970,7 @@ PetscErrorCode FaceSplittingTools::calculate_qualityAfterProjectingNodes(
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"dofs_X = [ %6.4e  %6.4e %6.4e %6.4e]\n",dofs_X[4],dofs_X[5],dofs_X[6],dofs_X[7]);
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"dofs_X = [ %6.4e  %6.4e %6.4e %6.4e]\n",dofs_X[8],dofs_X[9],dofs_X[10],dofs_X[11]);
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"dofs_X = [ %6.4e  %6.4e %6.4e %6.4e]\n",dofs_X[12],dofs_X[13],dofs_X[14],dofs_X[15]);
-	PetscSynchronizedFlush(PETSC_COMM_WORLD);*/
+	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);*/
 	//CHKERRQ(ierr);
       }
     }

@@ -24,15 +24,6 @@
 
 #include <CoreDataStructures.hpp>
 
-/*
-   Defines the function where the compiled source is located; used 
-   in printing error messages. This is defined here in case the user
-   does not declare it.
-*/
-#ifndef __SDIR__
-#define __SDIR__ "unknown file source"
-#endif
-
 namespace MoFEM {
 
 //moab base meshsets
@@ -152,11 +143,13 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBC_BitSet _CubitBCType,c
       rval = moab.tag_get_by_ptr(bhTag,&meshset,1,(const void **)&msId); CHKERR(rval);CHKERR_THROW(rval);
     break;
     default: {
-      PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
-	"not implemented yet",PETSC_NULL);
-      PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
-	"not implemented yet",PETSC_NULL);
-
+      PetscTraceBackErrorHandler(
+	PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+      PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
     }
   }
 

@@ -2865,8 +2865,10 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
       int num_nodes; 
       rval = mField.get_moab().get_connectivity(*fit,conn,num_nodes,true); 
       if (MB_SUCCESS != rval) { 
-	PetscAbortErrorHandler(PETSC_COMM_SELF,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,rval,PETSC_ERROR_INITIAL,
-	  "can not get connectibility",PETSC_NULL);
+	PetscTraceBackErrorHandler(
+	  PETSC_COMM_WORLD,
+	  __LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	  MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"can not get connectibility",PETSC_NULL);
 	CHKERRABORT(PETSC_COMM_SELF,rval);
       }
       for(int nn = 0;nn<num_nodes; nn++) {
@@ -3628,7 +3630,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
     ierr = PetscTime(&v2);CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Step Time Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD);
+    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
     if(odd_face_split != 0) {
       

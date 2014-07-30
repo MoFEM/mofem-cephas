@@ -24,15 +24,6 @@
 
 #include <CoreDataStructures.hpp>
 
-/*
-   Defines the function where the compiled source is located; used 
-   in printing error messages. This is defined here in case the user
-   does not declare it.
-*/
-#ifndef __SDIR__
-#define __SDIR__ "unknown file source"
-#endif
-
 namespace MoFEM {
 
 //ref moab MoFEMFiniteElement
@@ -208,12 +199,12 @@ RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_
     case MBTET:
     break;
     default:
-      PetscTraceBackErrorHandler(PETSC_COMM_WORLD,
-	__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
+      PetscTraceBackErrorHandler(
+	PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,
 	"this work only for TETs",PETSC_NULL);
       THROW_AT_LINE("this work only for TETs");
-      //PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
-	//"this work only for TETs",PETSC_NULL);
   }
   rval = moab.tag_get_handle("_RefType",th_RefType); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefType,&ref_ptr->ent,1,(const void **)&tag_type_data); CHKERR_THROW(rval);
@@ -238,10 +229,13 @@ SideNumber* RefMoFEMElement_TET::get_side_number_ptr(Interface &moab,EntityHandl
   p_miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset));
   miit = p_miit.first;
   if(miit->ent != ent) {
-    PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
-	"data inconsistency",PETSC_NULL);
-    PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
-	"data insonsistency",PETSC_NULL);
+    PetscTraceBackErrorHandler(
+      PETSC_COMM_WORLD,
+      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
+      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+    PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
+      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
+      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
   }
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
@@ -273,10 +267,13 @@ RefMoFEMElement_TRI::RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_
     rval = moab.side_element(tri,1,ee,edge); CHKERR_THROW(rval);
     rval = moab.side_number(tri,edge,side_number,sense,offset); CHKERR_THROW(rval);
     if(ee != side_number) {
-      PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
-	"data inconsistency",PETSC_NULL);
-      PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
-	"data insonsistency",PETSC_NULL);
+      PetscTraceBackErrorHandler(
+	PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+      PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
     }
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(edge,ee,sense,offset));
   }

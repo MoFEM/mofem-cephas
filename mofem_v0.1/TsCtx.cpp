@@ -85,22 +85,21 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
   PetscLogEventEnd(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
   PetscFunctionReturn(0);
 }
-PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat *A,Mat *B,MatStructure *flag,void *ctx) {
+PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat A,Mat B,void *ctx) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
   if(ts_ctx->zero_matrix) {
-    ierr = MatZeroEntries(*B); CHKERRQ(ierr);
+    ierr = MatZeroEntries(B); CHKERRQ(ierr);
   }
   //preproces
   TsCtx::basic_method_to_do::iterator bit = ts_ctx->preProcess_IJacobian.begin();
   for(;bit!=ts_ctx->preProcess_IJacobian.end();bit++) {
     (*bit)->ts_u = u;
     (*bit)->ts_u_t = u_t;
-    (*bit)->ts_A = A;
-    (*bit)->ts_B = B;
-    (*bit)->ts_flag = flag;
+    (*bit)->ts_A = &A;
+    (*bit)->ts_B = &B;
     (*bit)->ts_t = t;
     (*bit)->ts_a = a;
     ierr = (*bit)->set_ts_ctx(FieldInterface::TSMethod::CTX_TSSETIJACOBIAN);
@@ -112,9 +111,8 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   for(;lit!=ts_ctx->loops_to_do_IJacobian.end();lit++) {
     lit->second->ts_u = u;
     lit->second->ts_u_t = u_t;
-    lit->second->ts_A = A;
-    lit->second->ts_B = B;
-    lit->second->ts_flag = flag;
+    lit->second->ts_A = &A;
+    lit->second->ts_B = &B;
     lit->second->ts_t = t;
     lit->second->ts_a = a;
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::CTX_TSSETIJACOBIAN);
@@ -127,9 +125,8 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   for(;bit!=ts_ctx->postProcess_IJacobian.end();bit++) {
     (*bit)->ts_u = u;
     (*bit)->ts_u_t = u_t;
-    (*bit)->ts_A = A;
-    (*bit)->ts_B = B;
-    (*bit)->ts_flag = flag;
+    (*bit)->ts_A = &A;
+    (*bit)->ts_B = &B;
     (*bit)->ts_t = t;
     (*bit)->ts_a = a;
     ierr = (*bit)->set_ts_ctx(FieldInterface::TSMethod::CTX_TSSETIJACOBIAN);
@@ -138,8 +135,8 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     ierr = (*bit)->set_ts_ctx(FieldInterface::TSMethod::CTX_TSNONE); CHKERRQ(ierr);
   }
   if(ts_ctx->zero_matrix) {
-    ierr = MatAssemblyBegin(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(*B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   }
   PetscLogEventEnd(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
   PetscFunctionReturn(0);

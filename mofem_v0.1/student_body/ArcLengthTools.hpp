@@ -113,10 +113,13 @@ struct ArcLengthCtx {
     dit = dofsPtr_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
     hi_dit = dofsPtr_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
     if(distance(dit,hi_dit)!=1) {
-      PetscTraceBackErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
-	"can not find unique LAMBDA (load factor)",PETSC_NULL);
-      PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,__LINE__,PETSC_FUNCTION_NAME,__FILE__,__SDIR__,1,PETSC_ERROR_INITIAL,
-	"can not find unique LAMBDA (load factor)",PETSC_NULL);
+      PetscTraceBackErrorHandler(
+	PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL);
+      PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL);
     }
 
   }

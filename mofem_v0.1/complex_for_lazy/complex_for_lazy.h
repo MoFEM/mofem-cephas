@@ -22,12 +22,13 @@
 
 #include "FEM.h"
 #include "H1HdivHcurlL2.h"
-#include "complex.h"
 #include "assert.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "/usr/include/complex.h"
 
 enum phisical_equation_volume { hooke = 0, stvenant_kirchhoff = 1,neohookean = 2,eberleinholzapfel1 = 3};
 void set_PhysicalEquationNumber(enum phisical_equation_volume eq);

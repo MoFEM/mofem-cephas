@@ -563,7 +563,7 @@ PetscErrorCode FieldCore::create_Mat(
       ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
       if(verb > 0) {
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tcreate_Mat: row lower %d row upper %d\n",rstart,rend);
-	PetscSynchronizedFlush(PETSC_COMM_WORLD); 
+	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
       }
       miit_row = dofs_row_by_idx.lower_bound(rstart);
       hi_miit_row = dofs_row_by_idx.lower_bound(rend);

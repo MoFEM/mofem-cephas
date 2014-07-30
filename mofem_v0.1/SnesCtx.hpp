@@ -67,13 +67,13 @@ struct SnesCtx {
 
   friend PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
   friend PetscErrorCode SnesFunc(SNES snes,Vec x,Vec f,SnesCtx *);
-  friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ctx);
+  friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
 };
 
 PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
 PetscErrorCode SnesFunc(SNES snes,Vec x,Vec f,SnesCtx *);
-PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ctx);
+PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
 }
 

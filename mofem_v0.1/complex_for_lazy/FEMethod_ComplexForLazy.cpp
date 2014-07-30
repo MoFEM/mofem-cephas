@@ -19,9 +19,11 @@
 
 #include "FEMethod_ComplexForLazy.hpp"
 #include "FEM.h"
-#include "complex_for_lazy.h"
 
 extern "C" {
+
+#include "complex_for_lazy.h"
+
 void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
   double circumcenter[3],double *xi,double *eta,double *zeta);
 void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
