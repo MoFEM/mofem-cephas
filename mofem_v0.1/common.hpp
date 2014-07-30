@@ -251,9 +251,19 @@ struct HashBit
 { inline unsigned int operator()(const id_type& value) const {
   return value.to_ulong(); } };
 
-struct MofemException {
-  virtual const char* what() const throw() {
-    return "somthing goes wrong";
+struct MofemException: public std::exception {
+  MoFEMErrorCode errorCode;
+  char errorMessage[255];
+  MofemException(MoFEMErrorCode error_code): 
+    errorCode(error_code) {
+    strcpy(errorMessage,"Huston we have a problem, somthing is wrong");
+  }
+  MofemException(MoFEMErrorCode error_code,const char error_message[]): 
+    errorCode(error_code) {
+    strcpy(errorMessage,error_message);
+  }
+  const char* what() const throw() {
+    return errorMessage;
   }
 };
 
