@@ -17,6 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
+#include "FieldInterface.hpp"
+#include <petsc.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+
 #include "SnesCtx.hpp"
 
 namespace MoFEM {
@@ -49,7 +55,7 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
     lit->second->snes_f = f;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Rhs: %s\n",lit->first.c_str());
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = snes_ctx->mField.loop_finiteElementsPtr(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
     ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
   bit = snes_ctx->postProcess_Rhs.begin();
@@ -95,7 +101,7 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat *A,Mat *B,MatStructure *flag,void *ct
     lit->second->snes_flag = flag;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Mat: %s\n",lit->first.c_str());
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = snes_ctx->mField.loop_finiteElementsPtr(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problem_name,lit->first,*(lit->second));  CHKERRQ(ierr);
     ierr = lit->second->set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESNONE);
   }
   bit = snes_ctx->postProcess_Mat.begin();

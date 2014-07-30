@@ -45,20 +45,20 @@ struct FieldApproximationH1 {
 
   FieldInterface &mField;
   const string problemName;
-  TetElementForcesAndSurcesCore fe;
+  TetElementForcesAndSourcesCore fe;
 
   FieldApproximationH1(
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
-  struct OpApprox: public TetElementForcesAndSurcesCore::UserDataOperator {
+  struct OpApprox: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     Mat &A;
     Vec &F;
     FUNEVAL &functionEvaluator;
 
     OpApprox(const string &field_name,Mat &_A,Vec &_F,FUNEVAL &function_evaluator):
-      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       A(_A),F(_F),functionEvaluator(function_evaluator) {}
     ~OpApprox() {}
 
@@ -230,7 +230,7 @@ struct FieldApproximationH1 {
     VecZeroEntries(F);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = mField.loop_finiteElementsPtr(problem_name,"TEST_FE",fe);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements(problem_name,"TEST_FE",fe);  CHKERRQ(ierr);
     ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);

@@ -78,7 +78,7 @@ namespace MoFEM {
   struct MoFEMProblem_mi_tag {};
   struct ParentEntType_mi_tag {};
 
-  struct Composite_EntType_mi_tag_and_ParentEntType_mi_tag {};
+  struct Composite_EntType_and_ParentEntType_mi_tag {};
   struct Composite_EntityType_And_ParentEntityType_mi_tag {};
   struct Composite_EntityHandle_And_ParentEntityType_mi_tag {};
   struct Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
@@ -92,6 +92,7 @@ namespace MoFEM {
   struct Composite_Cubit_msId_and_MeshSetType_mi_tag {};
   struct Composite_Name_And_Part_mi_tag {};
   struct Composite_Entity_and_ShortId_mi_tag {};
+  struct Composite_EntType_and_Space_mi_tag {};
 
   struct SeriesID_mi_tag {};
   struct SeriesName_mi_tag {};

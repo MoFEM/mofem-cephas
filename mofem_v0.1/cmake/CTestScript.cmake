@@ -72,7 +72,6 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   nonlinear_elasticity_atom_pressure_compare
   nonlinear_elasticity_atom_sheer_force_compare
   arc_length_nonlinear_elasticity_atom_compare
-  hdiv_atom_approximation_compare
   field_axpy_compare
   nonlinear_elasticity_atom_thermal_compare
   arc_length_nonlinear_elasticity_thermal_atom_compare
@@ -95,7 +94,11 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   forces_and_sources_fluid_pressure_element_atom_test_compare
   forces_and_sources_thermal_elem_atom_test_compare
   forces_and_sources_thermal_elem_unsteady_atom_test_compare
+  forces_and_sources_thermal_stress_elem_atom_test_compare
   record_series_atom_test_compare
+  homogenisation_disp_atom_test_1_compare
+  homogenisation_trac_atom_test_1_compare
+  homogenisation_periodic_atom_test_1_compare
   #this stuff is too big
   SimpleElasticityTest
   SimpleInterfaceTest

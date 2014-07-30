@@ -17,12 +17,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FEMethod_UpLevelStudent.hpp"
-#include "ElasticFEMethodInterface.hpp"
-
-#include "SnesCtx.hpp"
-#include "ArcLengthTools.hpp"
-
 namespace MoFEM {
 
 /** \brief Inteface element for damage with linear cohesive law

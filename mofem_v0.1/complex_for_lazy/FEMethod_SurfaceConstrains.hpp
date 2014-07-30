@@ -20,15 +20,6 @@
 #ifndef __MOABSURFACECONSTRAINS_HPP__
 #define __MOABSURFACECONSTRAINS_HPP__
 
-#include "FieldInterface.hpp"
-#include "DirihletBC.hpp"
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
-using namespace boost::numeric;
-
 namespace MoFEM {
 
 struct ConstrainSurfacGeometry:public FieldInterface::FEMethod {

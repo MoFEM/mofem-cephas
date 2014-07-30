@@ -27,17 +27,6 @@
 #ifndef __FLUID_PRESSURE_HPP
 #define __FLUID_PRESSURE_HPP
 
-#include "ForcesAndSurcesCore.hpp"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include<cblas.h>
-  #include<lapack_wrap.h>
-#ifdef __cplusplus
-}
-#endif
-
 #include<moab/Skinner.hpp>
 
 namespace MoFEM {
@@ -167,7 +156,7 @@ struct FluidPressure {
         rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->get_msId()].tRis,true); CHKERR_PETSC(rval);
         //this get triangles only on block surfaces
         Range tets_skin_tris;
-        rval = skin.find_skin(tets,false,tets_skin_tris); CHKERR(rval);
+        rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERR(rval);
         setOfFluids[bit->get_msId()].tRis.merge(tets_skin_tris);
         ostringstream ss;
         ss << setOfFluids[bit->get_msId()] << endl;

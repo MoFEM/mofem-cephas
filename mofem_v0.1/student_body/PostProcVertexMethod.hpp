@@ -20,9 +20,6 @@
 #ifndef __POSTPROCVERTEXMETHOD_HPP__
 #define __POSTPROCVERTEXMETHOD_HPP__
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-
 using namespace MoFEM;
 
 // Write Displacements DOFS on Vertices

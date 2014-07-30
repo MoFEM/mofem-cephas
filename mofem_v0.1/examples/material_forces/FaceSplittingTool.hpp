@@ -37,7 +37,6 @@ namespace MoFEM {
 struct FaceSplittingTools {
 
   FieldInterface& mField;
-  AdaptiveKDTree kdTree;
   
   Interface& moab_distance_from_crack_surface;
   Core mb_instance_distance_from_crack_surface;
@@ -45,9 +44,8 @@ struct FaceSplittingTools {
 
   FaceSplittingTools(FieldInterface& _mField): 
     mField(_mField),
-    kdTree(&_mField.get_moab(),true),
     moab_distance_from_crack_surface(mb_instance_distance_from_crack_surface),
-    kdTree_DistanceFromCrackSurface(&moab_distance_from_crack_surface,true),
+    kdTree_DistanceFromCrackSurface(&moab_distance_from_crack_surface),
     th_b(NULL),th_distance(NULL),th_projection(NULL) {
 
     kdTree_rootMeshset_DistanceFromCrackSurface = 0;
@@ -73,7 +71,13 @@ struct FaceSplittingTools {
 
   }
 
-  ~FaceSplittingTools() {}
+  ~FaceSplittingTools() {
+    cleanMeshsets();
+    /*if(kdTree_rootMeshset_DistanceFromCrackSurface!=0) {
+      mField.get_moab().delete_entities(&kdTree_rootMeshset_DistanceFromCrackSurface,1);
+      kdTree_rootMeshset_DistanceFromCrackSurface = 0;
+    }*/
+  }
  
   PetscErrorCode cleanMeshsets() {
     PetscFunctionBegin;
@@ -97,17 +101,19 @@ struct FaceSplittingTools {
 
     if(th_b != NULL) {
       rval = mField.get_moab().tag_delete(th_b); CHKERR_PETSC(rval);
+      th_b = NULL;
     }
 
     if(th_distance != NULL) {
       rval = mField.get_moab().tag_delete(th_distance); CHKERR_PETSC(rval);
+      th_distance = NULL;
     }
 
     if(th_projection != NULL) {
       rval = mField.get_moab().tag_delete(th_projection); CHKERR_PETSC(rval);
+      th_projection = NULL;
     }
-
-    
+   
     PetscFunctionReturn(0);
   }
 

@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -229,17 +229,20 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
+      ierr = getSpacesOnEntities(data_row); CHKERRQ(ierr);
+      ierr = getSpacesOnEntities(data_col); CHKERRQ(ierr);
+
       ierr = getEdgesSense(data_row); CHKERRQ(ierr);
       ierr = getTrisSense(data_row); CHKERRQ(ierr);
       ierr = getEdgesSense(data_col); CHKERRQ(ierr);
       ierr = getTrisSense(data_col); CHKERRQ(ierr);
 
-      ierr = getEdgesOrder(data_row); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data_col); CHKERRQ(ierr);
-      ierr = getTrisOrder(data_row); CHKERRQ(ierr);
-      ierr = getTrisOrder(data_col); CHKERRQ(ierr);
-      ierr = getTetsOrder(data_row); CHKERRQ(ierr);
-      ierr = getTetsOrder(data_col); CHKERRQ(ierr);
+      ierr = getEdgesOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getEdgesOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getTrisOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getTrisOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getTetsOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getTetsOrder(data_col,H1); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
@@ -255,7 +258,7 @@ int main(int argc, char *argv[]) {
       ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
       try {
-	ierr = op.opSymmetric(data_row,data_col); CHKERRQ(ierr);
+	ierr = op.opLhs(data_row,data_col,true); CHKERRQ(ierr);
       } catch (exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
@@ -275,7 +278,7 @@ int main(int argc, char *argv[]) {
   };
 
   ForcesAndSurcesCore_TestFE fe1(mField);
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

@@ -19,8 +19,22 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
+
+#include "ForcesAndSurcesCore.hpp"
+#include "SnesCtx.hpp"
+#include "TsCtx.hpp"
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include<cblas.h>
+  #include<lapack_wrap.h>
+#ifdef __cplusplus
+}
+#endif
 #include "ThermalStressElement.hpp"
 
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
@@ -116,7 +130,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -126,7 +140,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("PROB"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("PROB"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("PROB"); CHKERRQ(ierr);
 
@@ -142,7 +156,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("PROB",ROW,&F); CHKERRQ(ierr);
   ierr = thermal_stress_elem.setThermalStressRhsOperators("DISP","TEMP",F,1); CHKERRQ(ierr);
 
-  ierr = mField.loop_finiteElementsPtr("PROB","ELAS",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("PROB","ELAS",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 

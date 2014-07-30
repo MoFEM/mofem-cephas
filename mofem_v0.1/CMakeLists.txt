@@ -18,10 +18,9 @@
 
 cmake_minimum_required (VERSION 2.8)
 
+#petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
-include(cmake/ExportFile.cmake)
-include(cmake/FindTAO.cmake)
 
 message(${PETSCVAR_CXX})
 
@@ -35,6 +34,20 @@ find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C Fortran CXX)
+
+#SIGMA tools
+include(cmake/FindTETGEN.cmake)
+include(cmake/FindTriangle.cmake)
+include(cmake/FindiMesh.cmake)
+include(cmake/FindCGM.cmake)
+include(cmake/FindLASSO.cmake)
+include(cmake/FindMESHKIT.cmake)
+
+#PETSC tools
+include(cmake/FindTAO.cmake)
+
+#other
+include(cmake/ExportFile.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 1)
@@ -99,6 +112,7 @@ include_directories("${PROJECT_SOURCE_DIR}/forces_and_sources")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
+include_directories("${PROJECT_SOURCE_DIR}/homogenisation")
 
 add_library(mofem_Field 
   FieldInterface.cpp
@@ -126,7 +140,7 @@ add_library(mofem_Field
 add_library(mofem_student_body
   student_body/FEMethod_LowLevelStudent.cpp
   student_body/FEMethod_UpLevelStudent.cpp
-  student_body/DirihletBC.cpp
+  student_body/DirichletBC.cpp
   student_body/petscShellMATs_ConstrainsByMarkAinsworth.cpp
   student_body/ArcLengthTools.cpp
 )
@@ -142,6 +156,17 @@ add_library(mofem_forces_and_sources
   forces_and_sources/ForcesAndSurcesCore.cpp
 )
 
+add_library(mofem_homogenisation
+  homogenisation/ElasticFE_RVELagrange_Disp.cpp
+  homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Disp.cpp
+  homogenisation/ElasticFE_RVELagrange_Traction.cpp
+  homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Traction.cpp
+  homogenisation/ElasticFE_RVELagrange_Periodic.cpp
+  homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
+  homogenisation/ElasticFE_RVELagrange_RigidBodyTranslation.cpp
+  homogenisation/ElasticFE_RVELagrange_RigidBodyRotation.cpp
+  )
+
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")
@@ -153,8 +178,10 @@ resolve_libraries(PROJECT_LIBS "
   ${TAO_LIBRARY}
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}")
-#message(STATUS ${PETSCVAR_BLASLAPACK_LIB})
+
+#add mofem cbals thrid part lib
 set(PROJECT_LIBS "mofem_cblas ${PROJECT_LIBS}")
+
 message(STATUS ${PROJECT_LIBS})
 
 file(COPY
@@ -187,5 +214,4 @@ add_custom_target(doc
   COMMENT "Generating API documentation with Doxygen" VERBATIM
   )
 endif(DOXYGEN_FOUND)
-
 

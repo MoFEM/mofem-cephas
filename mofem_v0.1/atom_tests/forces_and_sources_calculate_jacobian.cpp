@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     ublas::matrix<double> dataDiffFIELD1;
     ublas::vector<double> coords;
     PrintJacobian opPrintJac;
-    OpSetInvJac opSetInvJac;
+    OpSetInvJacH1 opSetInvJac;
     OpGetData opGetData_FIELD1;
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
@@ -186,11 +186,13 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
+      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getTrisSense(data); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data); CHKERRQ(ierr);
-      ierr = getTrisOrder(data); CHKERRQ(ierr);
-      ierr = getTetsOrder(data); CHKERRQ(ierr);
+      ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTetsOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceNodes(data); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
@@ -216,9 +218,9 @@ int main(int argc, char *argv[]) {
       ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
-	ierr = opSetInvJac.op(data); CHKERRQ(ierr);
-	ierr = opPrintJac.op(data); CHKERRQ(ierr);
-	ierr = opGetData_FIELD1.op(data); CHKERRQ(ierr);
+	ierr = opSetInvJac.opRhs(data); CHKERRQ(ierr);
+	ierr = opPrintJac.opRhs(data); CHKERRQ(ierr);
+	ierr = opGetData_FIELD1.opRhs(data); CHKERRQ(ierr);
       } catch (exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
@@ -242,7 +244,7 @@ int main(int argc, char *argv[]) {
   };
 
   ForcesAndSurcesCore_TestFE fe1(mField);
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

@@ -100,10 +100,8 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
 
   typedef map<string,vector< ublas::vector<FieldData> > > H1L2_Data_at_Gauss_pt;
   typedef map<string,vector< ublas::matrix<FieldData> > > H1_DiffData_at_Gauss_pt;
-  typedef map<string,vector< ublas::matrix<FieldData> > > HcurlHdiv_Data_at_Gauss_pt;
   H1L2_Data_at_Gauss_pt h1l2_data_at_gauss_pt;
   H1_DiffData_at_Gauss_pt h1_diff_data_at_gauss_pt;
-  HcurlHdiv_Data_at_Gauss_pt hcurl_hdiv_data_at_gauss_pt;
   PetscErrorCode Data_at_GaussPoints();
   PetscErrorCode DiffData_at_GaussPoints();
 
@@ -187,15 +185,6 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
   vector< vector<double> > diffH1faceNinvJac;
   vector<double> diffH1elemNinvJac;
   vector<double> diffL2elemNinvJac;
-  //Hdiv Face
-  vector< vector< ublas::vector<double> > > Hdiv_egde_faceN;
-  vector< ublas::vector<double> > Hdiv_face_bubbleN;
-  //Hdiv Volume
-  vector< ublas::vector<double> > Hdiv_edge_volumeN;
-  vector< ublas::vector<double> > Hdiv_face_volumeN;
-  ublas::vector< double > Hdiv_volumeN;
-  vector< vector<double> > Hdiv_faceN_byOrder;
-  vector<double> Hdiv_volumeN_byOrder;
 
   /// get element shape functions
   PetscErrorCode get_ShapeFunction(
@@ -229,34 +218,6 @@ struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
     EntityType type = MBMAXTYPE,
     EntityHandle edge_handle = no_handle);
 
-  /**
-   * get face data at Gauss points 
-   *
-   * \param ent face entity
-   * \param field_name
-   * \Data vector with data at Gauss pts
-   *
-   */
-  PetscErrorCode Data_at_FaceGaussPoints(
-    EntityHandle ent,const string &field_name,
-    vector<ublas::vector<FieldData> > &Data);
-
-  /**
-   * get face data on entities
-   *
-   * \param ent face entity (in)
-   * \param field_name (in)
-   * \param DataNodes (out)
-   * \param DataEdges (out)
-   * \param DataFaces (out)
-   *
-   */
-  PetscErrorCode FaceData(EntityHandle ent,
-    string field_name,
-    vector< int > &DataEdgesOrder,int &DataFaceOrder,
-    ublas::vector<FieldData> &DataNodes,
-    vector< ublas::vector<FieldData> > &DataEdges,
-    ublas::vector<FieldData> &DataFace,bool throw_error_if_no_field = true);
 
   PetscErrorCode InitDataStructures();
 

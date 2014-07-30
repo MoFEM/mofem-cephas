@@ -24,6 +24,15 @@
 
 #include <CoreDataStructures.hpp>
 
+/*
+   Defines the function where the compiled source is located; used 
+   in printing error messages. This is defined here in case the user
+   does not declare it.
+*/
+#ifndef __SDIR__
+#define __SDIR__ "unknown file source"
+#endif
+
 namespace MoFEM {
 
 //moab base meshsets
@@ -35,8 +44,8 @@ PetscErrorCode CubitMeshSets::get_tags_hanlders(Interface &moab) {
   rval = moab.tag_get_handle((string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle((string(NEUMANN_SET_TAG_NAME)+"__BC_DATA").c_str(),ssTag_data); CHKERR(rval);CHKERR_THROW(rval);
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME,bhTag); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("BLOCK_HEADER",bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("Block_Attributes",block_attribs); CHKERR(rval); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(BLOCK_HEADER,bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,block_attribs); CHKERR(rval); CHKERR_THROW(rval);
   rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR(rval);CHKERR_THROW(rval);
   PetscFunctionReturn(0);
 }
@@ -84,7 +93,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
     }
     if(*tit == bhTag_header) {
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR(rval);CHKERR_THROW(rval);
-      if(tag_block_header_data[9]>0) CubitBCType |= MATERIALSET;
+      if(tag_block_header_data[1]>0) CubitBCType |= MATERIALSET;
     }
     if(*tit == block_attribs) {
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR(rval); CHKERR_THROW(rval);
@@ -156,14 +165,21 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBC_BitSet _CubitBCType,c
 PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   ErrorCode rval;
-  rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive); CHKERR_PETSC(rval);
+  //rval = moab.list_entity(meshset); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive); 
+  if(rval !=  MB_SUCCESS) {
+    ostringstream ss;
+    ss << "bc set " << *this << endl;
+    PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+  }
+  CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
 PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   if((CubitBCType&CubitBC_BitSet(BLOCKSET)).any()) {
     if(tag_block_header_data!=NULL) {
-      return get_Cubit_msId_entities_by_dimension(moab,tag_block_header_data[11],entities,recursive);
+      return get_Cubit_msId_entities_by_dimension(moab,tag_block_header_data[2],entities,recursive);
     } else {
       SETERRQ(PETSC_COMM_SELF,1,"dimension unknown");
     }
@@ -183,7 +199,8 @@ PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
 
 PetscErrorCode CubitMeshSets::get_Cubit_block_header_data(vector<unsigned int>& material_data) const {
     PetscFunctionBegin;
-    copy(&tag_block_header_data[0],&tag_block_header_data[12],material_data.begin());
+    material_data.resize(3);
+    copy(&tag_block_header_data[0],&tag_block_header_data[3],material_data.begin());
     PetscFunctionReturn(0);
 }
 
@@ -334,11 +351,9 @@ ostream& operator<<(ostream& os,const CubitMeshSets& e) {
   }
   if(e.tag_block_header_data != NULL) {
     os << " block header: ";
-    os << " blockID = " << e.tag_block_header_data[0];
-    os << " blockElemType = " << e.tag_block_header_data[1];
-    os << " blockMat = " << e.tag_block_header_data[9];
-    os << " blockAttributeOrder = " << e.tag_block_header_data[5];
-    os << " blockDimension = " << e.tag_block_header_data[11];
+    os << " blockCol = " << e.tag_block_header_data[0];
+    os << " blockMat = " << e.tag_block_header_data[1];
+    os << " blockDimension = " << e.tag_block_header_data[2];
   }
   return os;
 }

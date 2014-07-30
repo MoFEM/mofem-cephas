@@ -37,4 +37,3 @@ foreach(LINE ${MOAB_VARIBLES})
   endif(NOT LINE MATCHES "^#.*")   
 endforeach(LINE ${MOAB_VARIBLES})
 
-
