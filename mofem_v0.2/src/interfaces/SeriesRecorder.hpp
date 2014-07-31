@@ -1,0 +1,154 @@
+/** \file FieldInterface.hpp
+ * \brief MoFEM interface 
+ * 
+ * Low level data structures not used directly by user
+ *
+ * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+*/
+
+#ifndef __SERIESRECORDER_HPP__
+#define __SERIESRECORDER_HPP__
+
+#include "FieldUnknownInterface.hpp"
+
+namespace MoFEM {
+
+static const MOFEMuuid IDD_MOFEMSeriesRecorder = MOFEMuuid( BitIntefaceId(SERIES_RECORDER) );
+
+struct SeriesRecorder: public FieldUnknownInterface {
+
+  ///destructor
+  virtual ~SeriesRecorder() {}
+
+ /**
+    * \ingroup mofem_series
+    * Add series recorder 
+    *
+    * \param name of series
+    */
+  virtual PetscErrorCode add_series_recorder(const string& serie_name) = 0;
+
+  /**
+    * \ingroup mofem_series
+    * initialize sries for recording
+    *
+    * \param series name
+    */
+  virtual PetscErrorCode initialize_series_recorder(const string& serie_name) = 0;
+
+  /**
+    * \ingroup mofem_series
+    * finalize series for recording, recorded data are not accessible until finializd
+    *
+    * \param series name
+    */
+  virtual PetscErrorCode finalize_series_recorder(const string& serie_name) = 0;
+
+  /**
+    * \ingroup mofem_series
+    * begin series recording
+    * 
+    * \param series name
+    */
+  virtual PetscErrorCode record_begin(const string& serie_name) = 0;
+
+  /**
+    * \ingroup mofem_series
+    * record problem 
+    *
+    * \param series name
+    * \param problem pointer
+    * \param rc could be Row or Col
+    */
+  virtual PetscErrorCode record_problem(const string& serie_name,const MoFEMProblem *problemPtr,RowColData rc) = 0;
+
+  /**
+    * \ingroup mofem_series
+    * record problem
+    *
+    * \param series name
+    * \param problem name
+    * \param rc could be Row or Col
+    */
+  virtual PetscErrorCode record_problem(const string& serie_name,const string& problem_name,RowColData rc) = 0;
+
+  /**
+    * \ingroup mofem_series
+    * record field
+    * 
+    * \param field name
+    * \param bit ref level
+    * \param mask for bir ref level
+    */
+  virtual PetscErrorCode record_field(const string& serie_name,const string& field_name,const BitRefLevel &bit,const BitRefLevel &mask) = 0;
+
+  /**
+    * \ingroup mofem_series
+    * end series recording 
+    *
+    * \param series name
+    */
+  virtual PetscErrorCode record_end(const string& serie_name) = 0;
+  
+  /**
+    * \ingroup mofem_series
+    * load data from series into dofs database
+    * 
+    * \param series name 
+    * \param step number 
+    */
+  virtual PetscErrorCode load_series_data(const string& serie_name,const int step_number) = 0;
+
+  /**
+    * \ingroup mofem_series
+    * print series
+    */
+  virtual PetscErrorCode print_series_steps() = 0;
+
+  /** \brief check if series is in database
+   * \ingroup mofem_series
+   *
+   * \param name field name
+   * \return true if field exist
+   *
+   */
+  virtual bool check_series(const string& name) const = 0;
+
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const string& name) = 0;
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const string& name) = 0;
+
+  /** \brief loop over recorded series step
+    * \ingroup mofem_series
+    *
+    * \param NAME series name
+    * \parma IT iterator variable
+    *
+    * Example: \code
+      for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(mField,"TEST_SERIES1",sit)) {
+
+	ierr = mField.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
+    * } \endcode
+    *
+    */
+  #define _IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
+    SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator IT = MFIELD.get_series_steps_byName_begin(NAME); \
+    IT!=MFIELD.get_series_steps_byName_end(NAME); IT++
+
+};
+
+}
+
+#endif // __SERIESRECORDER_HPP__
+
