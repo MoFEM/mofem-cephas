@@ -232,7 +232,7 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
   vector<vector<DofIdx> > RowGlob;
   vector<vector<DofIdx> > ColGlob;
 
-  vector<DofIdx> DirihletBC;
+  vector<DofIdx> DirichletBC;
 
   virtual PetscErrorCode LhsInt() {
     PetscFunctionBegin;

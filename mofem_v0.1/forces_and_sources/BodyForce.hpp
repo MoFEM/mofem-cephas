@@ -27,17 +27,6 @@
 #ifndef __BODY_FORCE_HPP
 #define __BODY_FORCE_HPP
 
-#include "ForcesAndSurcesCore.hpp"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include<cblas.h>
-  #include<lapack_wrap.h>
-#ifdef __cplusplus
-}
-#endif
-
 namespace MoFEM {
 
 /** \brief Body forces elements
@@ -47,8 +36,8 @@ struct BodyFroceConstantField {
 
   FieldInterface &mField;
 
-  struct MyVolumeFE: public TetElementForcesAndSurcesCore {
-    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSurcesCore(_mField) {}
+  struct MyVolumeFE: public TetElementForcesAndSourcesCore {
+    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
     int getRule(int order) { return ceil(order/2); };
   };
 
@@ -59,13 +48,13 @@ struct BodyFroceConstantField {
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
-  struct OpBodyForce: public TetElementForcesAndSurcesCore::UserDataOperator {
+  struct OpBodyForce: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     Block_BodyForces &dAta;
     Range blockTets;
     OpBodyForce(const string field_name,Vec _F,Block_BodyForces &data,Range block_tets):
-      TetElementForcesAndSurcesCore::UserDataOperator(field_name),
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),blockTets(block_tets) {}
 
     ublas::vector<FieldData> Nf;

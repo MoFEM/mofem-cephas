@@ -22,6 +22,8 @@
 
 #include "SurfacePressureComplexForLazy.hpp"
 
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
@@ -207,7 +209,7 @@ int main(int argc, char *argv[]) {
   #endif //NONLINEAR_TEMPERATUTE
 
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
@@ -217,7 +219,7 @@ int main(int argc, char *argv[]) {
 
   //partition
   ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create matrices
@@ -244,7 +246,7 @@ int main(int argc, char *argv[]) {
     ierr = fe_spatial.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
 
-  SpatialPositionsBCFEMethodPreAndPostProc MyDirihletBC(mField,"SPATIAL_POSITION",Aij,D,F);
+  SpatialPositionsBCFEMethodPreAndPostProc MyDirichletBC(mField,"SPATIAL_POSITION",Aij,D,F);
 
   SnesCtx snes_ctx(mField,"ELASTIC_MECHANICS");
   
@@ -256,16 +258,16 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
-  snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyDirihletBC);
+  snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyDirichletBC);
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  snes_ctx.get_postProcess_to_do_Rhs().push_back(&MyDirihletBC);
+  snes_ctx.get_postProcess_to_do_Rhs().push_back(&MyDirichletBC);
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-  snes_ctx.get_preProcess_to_do_Mat().push_back(&MyDirihletBC);
+  snes_ctx.get_preProcess_to_do_Mat().push_back(&MyDirichletBC);
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  snes_ctx.get_postProcess_to_do_Mat().push_back(&MyDirihletBC);
+  snes_ctx.get_postProcess_to_do_Mat().push_back(&MyDirichletBC);
 
   ierr = mField.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -343,7 +345,7 @@ int main(int argc, char *argv[]) {
   }
 
   PostProcFieldsAndGradientOnRefMesh fe_post_proc_method(moab);
-  ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);

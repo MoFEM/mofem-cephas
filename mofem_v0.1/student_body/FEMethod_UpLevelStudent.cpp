@@ -431,14 +431,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetDataVector(const string &field_name,E
 PetscErrorCode FEMethod_UpLevelStudent::GetGaussDataVector(const string &field_name,vector< ublas::vector<FieldData> > &Data) {
   PetscFunctionBegin;
   H1L2_Data_at_Gauss_pt::iterator miit = h1l2_data_at_gauss_pt.find(field_name);
-  if(miit == h1l2_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE (top tip: if this is Hdiv or Hcrul field use)");
-  Data = miit->second;
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod_UpLevelStudent::GetGaussDataVector_HcurlHdiv(const string &field_name,vector< ublas::matrix<FieldData> > &Data) {
-  PetscFunctionBegin;
-  HcurlHdiv_Data_at_Gauss_pt::iterator miit = hcurl_hdiv_data_at_gauss_pt.find(field_name);
-  if(miit == hcurl_hdiv_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
+  if(miit == h1l2_data_at_gauss_pt.end()) SETERRQ(PETSC_COMM_SELF,1,"no such field in FE");
   Data = miit->second;
   PetscFunctionReturn(0);
 }

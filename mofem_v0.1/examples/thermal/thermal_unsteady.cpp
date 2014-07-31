@@ -19,9 +19,14 @@
 
 #include "FieldInterface.hpp"
 #include "FieldCore.hpp"
-#include "ThermalElement.hpp"
-#include "DirihletBC.hpp"
 
+#include "ForcesAndSurcesCore.hpp"
+#include "TsCtx.hpp"
+#include "ThermalElement.hpp"
+#include "DirichletBC.hpp"
+
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
@@ -129,7 +134,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -142,7 +147,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.partition_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("THERMAL_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
 
@@ -167,21 +172,21 @@ int main(int argc, char *argv[]) {
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  TemperatureBCFEMethodPreAndPostProc my_dirihlet_bc(mField,"TEMP",A,T,F);
+  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"TEMP",A,T,F);
   ThermalElement::UpdateAndControl update_velocities(mField,ts,"TEMP","TEMP_RATE");
   ThermalElement::TimeSeriesMonitor monitor(mField,"THEMP_SERIES","TEMP");
 
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
-  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
-  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
 
   //and temperature element functions
   ierr = thermal_elements.setTimeSteppingProblem(ts_ctx,"TEMP","TEMP_RATE"); CHKERRQ(ierr);
 
   //postprocess
-  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
-  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_velocities);
   ts_ctx.get_postProcess_to_do_Monitor().push_back(&monitor);
 
@@ -257,7 +262,7 @@ int main(int argc, char *argv[]) {
       fe_post_proc_method.do_broadcast = false;
       ostringstream ss;
       ss << "out_post_proc_" << sit->step_number << ".vtk";
-      ierr = mField.loop_finiteElementsPtr("THERMAL_PROBLEM","THERMAL_FE",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
       rval = fe_post_proc_method.moab_post_proc.write_file(ss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
     }
 

@@ -33,6 +33,9 @@ namespace MoFEM {
  * This class is not used directly by the user
  */
 struct FieldCore: public FieldInterface {
+
+  PetscErrorCode QueryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+
   ErrorCode rval;
   PetscErrorCode ierr;
   //Data and low level methods 
@@ -57,8 +60,8 @@ struct FieldCore: public FieldInterface {
   //database
 
   //ref
-  RefMoFEMEntity_multiIndex refinedEntitiesPtr;
-  RefMoFEMElement_multiIndex refinedFiniteElementsPtr;
+  RefMoFEMEntity_multiIndex refinedEntities;
+  RefMoFEMElement_multiIndex refinedFiniteElements;
   //field
   MoFEMField_multiIndex moabFields;
   MoFEMEntity_multiIndex entsMoabField;
@@ -240,8 +243,8 @@ struct FieldCore: public FieldInterface {
   }
 
   //refine
-  PetscErrorCode seed_finiteElementsPtr(const Range &entities,int verb = -1);
-  PetscErrorCode seed_finiteElementsPtr(const EntityHandle meshset,int verb = -1);
+  PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
+  PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
   PetscErrorCode seed_ref_level_2D(const Range &ents2d,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_3D(const Range &ents3d,const BitRefLevel &bit,int verb = -1);
@@ -263,7 +266,7 @@ struct FieldCore: public FieldInterface {
   //remove entities
   PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent = false,int verb = -1);
   PetscErrorCode remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  PetscErrorCode delete_finiteElementsPtr_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode shift_left_bit_ref(const int shif,int verb = -1);
   PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1);
 
@@ -366,17 +369,17 @@ struct FieldCore: public FieldInterface {
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
   PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &ent_fe,int verb = -1);
   PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &ent_fe,int verb = -1);
-  PetscErrorCode build_finiteElementsPtr(int verb = -1);
-  PetscErrorCode clear_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  PetscErrorCode clear_finiteElementsPtr(const string &name,const Range &ents,int verb = -1);
+  PetscErrorCode build_finite_elements(int verb = -1);
+  PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
 
   //entFEAdjacencies
   PetscErrorCode build_adjacencies(const Range &ents,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  PetscErrorCode clear_adjacencies_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+  PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
-  PetscErrorCode clear_adjacencies_finiteElementsPtr(const string &name,const Range &ents,int verb = -1);
+  PetscErrorCode clear_adjacencies_finite_elements(const string &name,const Range &ents,int verb = -1);
   PetscErrorCode clear_adjacencies_entities(const string &name,const Range &ents,int verb = -1);
 
   PetscErrorCode list_adjacencies() const;
@@ -389,7 +392,7 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
-  PetscErrorCode partition_finiteElementsPtr(const string &name,bool do_skip = true,int verb = -1);
+  PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1);
   PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
 
   //save meshsets
@@ -439,10 +442,10 @@ struct FieldCore: public FieldInterface {
   //loops
   PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1);
   PetscErrorCode problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb = -1);
-  PetscErrorCode loop_finiteElementsPtr(
+  PetscErrorCode loop_finite_elements(
     const string &problem_name,const string &fe_name,FEMethod &method,
     int lower_rank,int upper_rank,int verb = -1);
-  PetscErrorCode loop_finiteElementsPtr(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
+  PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
@@ -450,7 +453,8 @@ struct FieldCore: public FieldInterface {
   PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr);
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problemPtr);
   PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr);
-  PetscErrorCode get_finiteElementsPtr(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);
+
+  PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);
 
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const string &field_name);
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const string &field_name);

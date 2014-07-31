@@ -21,9 +21,11 @@
 #ifndef __MOABFIELD_HPP__
 #define __MOABFIELD_HPP__
 
-#include "common.hpp"
+#include "FieldUnknownInterface.hpp"
 
 namespace MoFEM {
+
+static const MOFEMuuid IDD_MOFEMCoreInterface = MOFEMuuid( BitIntefaceId(1<<1) );
 
 /**
  * \brief The user interface
@@ -34,7 +36,11 @@ namespace MoFEM {
  *  (*) define problems, <br>
  *  (*) manage refined meshses
  */
-struct FieldInterface {
+struct FieldInterface: public FieldUnknownInterface {
+
+  ///destructor
+  virtual ~FieldInterface() {}
+
   /// get moab interface
   virtual Interface& get_moab() = 0; 
 
@@ -407,7 +413,7 @@ struct FieldInterface {
   * \param EntityHandle meshset
   *
   */
-  virtual PetscErrorCode seed_finiteElementsPtr(const EntityHandle meshset,int verb = -1) = 0;
+  virtual PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1) = 0;
 
   /**
   * Create finite elements based from eneties in meshses. Throw error if entity is not in database
@@ -415,7 +421,7 @@ struct FieldInterface {
   * \param Range entities
   *
   */
-  virtual PetscErrorCode seed_finiteElementsPtr(const Range &entities,int verb = -1) = 0;
+  virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
 
   /**
   * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjencies) in a particular BitRefLevel
@@ -658,7 +664,7 @@ struct FieldInterface {
 
   /** \brief remove finite element from mofem database
     */
-  virtual PetscErrorCode delete_finiteElementsPtr_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief left shift bit ref level
     * this results of deletion of enetities on far left side
@@ -1099,15 +1105,15 @@ struct FieldInterface {
 
   /** build finite elements
     */
-  virtual PetscErrorCode build_finiteElementsPtr(int verb = -1) = 0;
+  virtual PetscErrorCode build_finite_elements(int verb = -1) = 0;
 
   /** clear finite elements
     */
-  virtual PetscErrorCode clear_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** clear finite elements
     */
-  virtual PetscErrorCode clear_finiteElementsPtr(const string &name,const Range &ents,int verb = -1) = 0;
+  virtual PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1) = 0;
 
   /** \brief build ajacencies 
     *
@@ -1129,7 +1135,7 @@ struct FieldInterface {
     * \param bit
     * \param mask
     */
-  virtual PetscErrorCode clear_adjacencies_finiteElementsPtr(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+  virtual PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief clear adjacency map for entities on given bit level
     *
@@ -1196,7 +1202,7 @@ struct FieldInterface {
    * \param name problem name 
    * \param do_skip if true, MultiIndices are set for finite element only on entities own by given partition
    */
-  virtual PetscErrorCode partition_finiteElementsPtr(const string &name,bool do_skip = true,int verb = -1) = 0;
+  virtual PetscErrorCode partition_finite_elements(const string &name,bool do_skip = true,int verb = -1) = 0;
 
   /** \brief check if matrix fill in correspond to finite element indices
     *
@@ -1577,13 +1583,8 @@ struct FieldInterface {
      * 
      * Iterating over dofs:
      * Example1 iterating over dofs in row by name of the field
-     * for(_IT_GET_FEROW_DOFS_FOR_LOOP_("DISPLACEMENT")) { ... } 
+     * for(_IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(this,"DISPLACEMENT",it)) { ... } 
      * 
-     * Example2 iterating over dofs in row by name of the field and type of the entity
-     * for(_IT_GET_FEROW_DOFS_FOR_LOOP_("DISPLACEMENT",MBVERTEX)) { ... } 
-     * 
-     * Example2 iterating over dofs in row by name of the field, type of the entity and side number
-     * for(_IT_GET_FEROW_DOFS_FOR_LOOP_("DISPLACEMENT",MBEDGE,0)) { ... }
      * 
      */
     PetscErrorCode postProcess();
@@ -1597,6 +1598,25 @@ struct FieldInterface {
     const FEDofMoFEMEntity_multiIndex *dataPtr;
     const FENumeredDofMoFEMEntity_multiIndex *rowPtr;
     const FENumeredDofMoFEMEntity_multiIndex *colPtr;
+
+    /** \brief loop over all dofs which are on a particular FE row 
+      * \ingroup mofem_loop_methods
+      */
+    #define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::iterator IT = FE->rowPtr->begin(); IT != FE->rowPtr->end();IT++ 
+
+    /** \brief loop over all dofs which are on a particular FE column 
+      * \ingroup mofem_loop_methods
+      */
+    #define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE,IT) \
+    FENumeredDofMoFEMEntity_multiIndex::iterator IT = FE->colPtr->begin(); IT != FE->colPtr->end();IT++ 
+
+
+    /** \brief loop over all dofs which are on a particular FE data 
+      * \ingroup mofem_loop_methods
+      */
+    #define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE,IT) \
+    FEDofMoFEMEntity_multiIndex::iterator IT = FE->dataPtr->begin(); IT != FE->dataPtr->end();IT++ 
 
     template<class MULTIINDEX>
     typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,  
@@ -1684,7 +1704,7 @@ struct FieldInterface {
     /** \brief loop over all dofs which are on a particular FE row and field
       * \ingroup mofem_loop_methods
       */
-    #define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE,NAME,IT) \
+    #define _IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->rowPtr->get<FieldName_mi_tag>(),NAME); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->rowPtr->get<FieldName_mi_tag>(),NAME); IT++
@@ -1692,7 +1712,7 @@ struct FieldInterface {
     /** \brief loop over all dofs which are on a particular FE column and field
       * \ingroup mofem_loop_methods
       */
-    #define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE,NAME,IT) \
+    #define _IT_GET_FECOL_BY_NAME_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
       IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->colPtr->get<FieldName_mi_tag>(),NAME); \
       IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->colPtr->get<FieldName_mi_tag>(),NAME); IT++
@@ -1700,7 +1720,7 @@ struct FieldInterface {
     /** \brief loop over all dofs which are on a particular FE data and field
       * \ingroup mofem_loop_methods
       */
-    #define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE,NAME,IT) \
+    #define _IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(FE,NAME,IT) \
     FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
       IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->dataPtr->get<FieldName_mi_tag>(),NAME); \
       IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->dataPtr->get<FieldName_mi_tag>(),NAME); IT++
@@ -1841,7 +1861,7 @@ struct FieldInterface {
    * \param problem_name fe_name \param method is class derived form
    * FieldInterface::FEMethod
   **/ 
-  virtual PetscErrorCode loop_finiteElementsPtr(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
+  virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
    *
@@ -1858,7 +1878,7 @@ struct FieldInterface {
    * \param problem_name fe_name \param method is class derived form
    * FieldInterface::FEMethod
   **/ 
-  virtual PetscErrorCode loop_finiteElementsPtr(
+  virtual PetscErrorCode loop_finite_elements(
     const string &problem_name,const string &fe_name,FEMethod &method,
     int lower_rank,int upper_rank,int verb = -1) = 0;
 
@@ -2055,7 +2075,7 @@ struct FieldInterface {
   /** \brief Get finite elements multi index
     *
     */
-  virtual PetscErrorCode get_finiteElementsPtr(const MoFEMFiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
+  virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
 
   /** 
     * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)

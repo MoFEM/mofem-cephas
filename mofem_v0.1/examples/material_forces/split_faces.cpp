@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,BitRefLevel()); CHKERRQ(ierr);
 
   ierr = mField.build_fields(); CHKERRQ(ierr);
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;

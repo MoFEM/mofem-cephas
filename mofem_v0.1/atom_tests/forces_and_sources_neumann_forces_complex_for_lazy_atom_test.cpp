@@ -27,6 +27,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "FEM.h"
 #include "Projection10NodeCoordsOnField.hpp"
 
 namespace bio = boost::iostreams;
@@ -141,7 +142,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
@@ -151,7 +152,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
   //partition
   ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
@@ -194,8 +195,8 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   feSpatial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETFUNCTION;
   feMaterial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETFUNCTION;
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -203,8 +204,8 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(Aij);  CHKERRQ(ierr);
   feSpatial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETJACOBIAN;
   feMaterial.snes_ctx = FieldInterface::SnesMethod::CTX_SNESSETJACOBIAN;
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
-  ierr = mField.loop_finiteElementsPtr("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feSpatial); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","NEUAMNN_FE",feMaterial); CHKERRQ(ierr);
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 

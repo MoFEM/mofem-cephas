@@ -21,6 +21,8 @@
 #include "FieldCore.hpp"
 #include <petscksp.h>
 
+#include "FEM.h"
+#include "FEMethod_UpLevelStudent.hpp"
 #include "SnesCtx.hpp"
 #include "PostProcVertexMethod.hpp"
 #include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
@@ -36,9 +38,9 @@ static char help[] = "...\n\n";
 
 struct NL_ElasticFEMethod: public FEMethod_DriverComplexForLazy_Spatial {
 
-  NL_ElasticFEMethod(FieldInterface& _mField,BaseDirihletBC *_dirihlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy_Data(_mField,_dirihlet_bc_method_ptr,_verbose), 
-      FEMethod_DriverComplexForLazy_Spatial(_mField,_dirihlet_bc_method_ptr,_lambda,_mu,_verbose)  {
+  NL_ElasticFEMethod(FieldInterface& _mField,BaseDirichletBC *_dirichlet_bc_method_ptr,double _lambda,double _mu,int _verbose = 0): 
+      FEMethod_ComplexForLazy_Data(_mField,_dirichlet_bc_method_ptr,_verbose), 
+      FEMethod_DriverComplexForLazy_Spatial(_mField,_dirichlet_bc_method_ptr,_lambda,_mu,_verbose)  {
     //set_PhysicalEquationNumber(neohookean);
     set_PhysicalEquationNumber(hooke);
   }
@@ -155,7 +157,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_fields(); CHKERRQ(ierr);
 
   //build finite elemnts
-  ierr = mField.build_finiteElementsPtr(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
@@ -165,7 +167,7 @@ int main(int argc, char *argv[]) {
 
   //partition
   ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.partition_finiteElementsPtr("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create matrices
@@ -205,12 +207,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  DirihletBCMethod_DriverComplexForLazy myDirihletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
-  ierr = myDirihletBC.Init(); CHKERRQ(ierr);
+  DirichletBCMethod_DriverComplexForLazy myDirichletBC(mField,"ELASTIC_MECHANICS","SPATIAL_POSITION");
+  ierr = myDirichletBC.Init(); CHKERRQ(ierr);
 
   const double YoungModulus = 1.;
   const double PoissonRatio = 0.;
-  NL_ElasticFEMethod MyFE(mField,&myDirihletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  NL_ElasticFEMethod MyFE(mField,&myDirichletBC,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   MyFE.thermal_expansion = 0.1;
 
   SnesCtx SnesCtx(mField,"ELASTIC_MECHANICS");
@@ -301,7 +303,7 @@ int main(int argc, char *argv[]) {
   }
 
   PostProcStressNonLinearElasticity fe_post_proc_method(moab,MyFE);
-  ierr = mField.loop_finiteElementsPtr("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);

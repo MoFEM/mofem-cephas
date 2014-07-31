@@ -20,10 +20,6 @@
 #ifndef __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 #define __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-
 using namespace MoFEM;
 
 struct PostProcOnRefMesh_Base {
@@ -44,7 +40,7 @@ struct PostProcOnRefMesh_Base {
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
       max_level(0),init_ref(false),do_broadcast(true) {
       PetscBool flg = PETSC_TRUE;
-      PetscOptionsGetInt(PETSC_NULL,"-my_max_pot_proc_ref_level",&max_level,&flg);
+      PetscOptionsGetInt(PETSC_NULL,"-my_max_post_proc_ref_level",&max_level,&flg);
       meshset_level.resize(max_level+1);
     }
 
