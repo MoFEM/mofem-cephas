@@ -29,8 +29,8 @@ file(COPY
 
 #testing
 add_test(SimpleInterfaceTest ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/interface
-  -my_file PeelTest.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -my_order 3 -log_summary)
+  -my_file PeelTest.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -my_order 3 -ksp_monitor -log_summary)
 
 add_test(SimpleInterfaceTestHalfCrack ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/interface
-  -my_file PeelTestHalfCrack.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -my_order 2 -log_summary)
+  -my_file PeelTestHalfCrack.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -my_order 2 -ksp_monitor -log_summary)
 

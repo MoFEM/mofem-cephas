@@ -106,11 +106,11 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
   vector<ublas::vector<FieldData> > DispData;
   string field_name;
 
-  InterfaceFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _young_modulus,string _field_name = "DISPLACEMENT"):
+  InterfaceFEMethod(FieldInterface& _mField,Mat _Aij,Vec _X,Vec _F,double _young_modulus,string _field_name = "DISPLACEMENT"):
     FEMethod_UpLevelStudent(_mField.get_moab(),1),ToolsInterfaceFEMethod(_young_modulus),
     mField(_mField),field_name(_field_name) {
 
-    snes_B = &_Aij;
+    snes_B = _Aij;
     snes_x = _X;
     snes_f = _F;
 
@@ -258,7 +258,7 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
 	  if(ColGlob[cc].size()==0) continue;
 	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
     }
     PetscFunctionReturn(0);
@@ -374,15 +374,15 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESNONE: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       case CTX_SNESSETFUNCTION:  {

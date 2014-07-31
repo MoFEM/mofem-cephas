@@ -98,8 +98,8 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   for(;bit!=ts_ctx->preProcess_IJacobian.end();bit++) {
     (*bit)->ts_u = u;
     (*bit)->ts_u_t = u_t;
-    (*bit)->ts_A = &A;
-    (*bit)->ts_B = &B;
+    (*bit)->ts_A = A;
+    (*bit)->ts_B = B;
     (*bit)->ts_t = t;
     (*bit)->ts_a = a;
     ierr = (*bit)->set_ts_ctx(FieldInterface::TSMethod::CTX_TSSETIJACOBIAN);
@@ -111,8 +111,8 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   for(;lit!=ts_ctx->loops_to_do_IJacobian.end();lit++) {
     lit->second->ts_u = u;
     lit->second->ts_u_t = u_t;
-    lit->second->ts_A = &A;
-    lit->second->ts_B = &B;
+    lit->second->ts_A = A;
+    lit->second->ts_B = B;
     lit->second->ts_t = t;
     lit->second->ts_a = a;
     ierr = lit->second->set_ts_ctx(FieldInterface::TSMethod::CTX_TSSETIJACOBIAN);
@@ -125,8 +125,8 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   for(;bit!=ts_ctx->postProcess_IJacobian.end();bit++) {
     (*bit)->ts_u = u;
     (*bit)->ts_u_t = u_t;
-    (*bit)->ts_A = &A;
-    (*bit)->ts_B = &B;
+    (*bit)->ts_A = A;
+    (*bit)->ts_B = B;
     (*bit)->ts_t = t;
     (*bit)->ts_a = a;
     ierr = (*bit)->set_ts_ctx(FieldInterface::TSMethod::CTX_TSSETIJACOBIAN);

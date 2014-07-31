@@ -112,8 +112,8 @@ struct SnesConstrainSurfacGeometryTools: public FieldInterface::FEMethod {
       }
       break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:
@@ -158,7 +158,7 @@ struct SnesConstrainSurfacGeometry: public SnesConstrainSurfacGeometryTools {
       }
       break;
       case CTX_SNESSETJACOBIAN: {
-	matMethod.C = *snes_B;
+	matMethod.C = snes_B;
 	ierr = setElemData(matMethod); CHKERRQ(ierr);
 	ierr = matMethod.operator()(true,nonlinear); CHKERRQ(ierr);
       }
@@ -180,8 +180,8 @@ struct SnesConstrainSurfacGeometry: public SnesConstrainSurfacGeometryTools {
       break;
       case CTX_SNESSETJACOBIAN: {
 	ierr = matMethod.postProcess(); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:

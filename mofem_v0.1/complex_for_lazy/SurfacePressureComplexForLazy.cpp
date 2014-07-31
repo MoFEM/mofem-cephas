@@ -265,18 +265,18 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
     &*kExtNodeNode.data().begin(),Kext_edge_node,&*kExtFaceNode.data().begin(),
     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
   //cerr << kExtNodeNode << endl;
-  ierr = MatSetValues(*snes_B,
+  ierr = MatSetValues(snes_B,
     9,dofs_x_indices,
     9,dofs_x_indices,
     &*kExtNodeNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  ierr = MatSetValues(*snes_B,
+  ierr = MatSetValues(snes_B,
     kExtFaceNode.size1(),dofs_x_face_indices,
     9,dofs_x_indices,
     &*kExtFaceNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
   //cerr << kExtFaceNode << endl;
   for(int ee = 0;ee<3;ee++) {
     //cerr << kExtEdgeNode[ee] << endl;
-    ierr = MatSetValues(*snes_B,
+    ierr = MatSetValues(snes_B,
       kExtEdgeNode[ee].size1(),dofs_x_edge_indices[ee],
       9,dofs_x_indices,
       Kext_edge_node[ee],ADD_VALUES); CHKERRQ(ierr);
@@ -298,17 +298,17 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
   //cerr << "kExtNodeFace " << kExtNodeFace << endl;
   //cerr << "kExtFaceFace " << kExtFaceFace << endl;
-  ierr = MatSetValues(*snes_B,
+  ierr = MatSetValues(snes_B,
     9,dofs_x_indices,
     kExtNodeFace.size2(),dofs_x_face_indices,
     &*kExtNodeFace.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  ierr = MatSetValues(*snes_B,
+  ierr = MatSetValues(snes_B,
     kExtFaceFace.size1(),dofs_x_face_indices,
     kExtFaceFace.size2(),dofs_x_face_indices,
     &*kExtFaceFace.data().begin(),ADD_VALUES); CHKERRQ(ierr);
   for(int ee = 0;ee<3;ee++) {
     //cerr << "kExtEdgeFace " << kExtEdgeFace[ee] << endl;
-    ierr = MatSetValues(*snes_B,
+    ierr = MatSetValues(snes_B,
       kExtEdgeFace[ee].size1(),dofs_x_edge_indices[ee],
       kExtFaceFace.size2(),dofs_x_face_indices,
       Kext_edge_face[ee],ADD_VALUES); CHKERRQ(ierr);
@@ -340,17 +340,17 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   for(int ee = 0;ee<3;ee++) {
     //cerr << "kExtFaceEdge: " << kExtFaceEdge[ee] << endl;
     //cerr << "kExtFaceEdge: " << kExtNodeEdge[ee] << endl;
-    ierr = MatSetValues(*snes_B,
+    ierr = MatSetValues(snes_B,
       kExtFaceEdge[ee].size1(),dofs_x_face_indices,
       kExtFaceEdge[ee].size2(),dofs_x_edge_indices[ee],
       &*kExtFaceEdge[ee].data().begin(),ADD_VALUES); CHKERRQ(ierr);
-    ierr = MatSetValues(*snes_B,
+    ierr = MatSetValues(snes_B,
       9,dofs_x_indices,
       kExtNodeEdge[ee].size2(),dofs_x_edge_indices[ee],
       &*kExtNodeEdge[ee].data().begin(),ADD_VALUES); CHKERRQ(ierr);
     for(int EE = 0;EE<3;EE++) {
       //cerr << kExtEdgeEdge(EE,ee) << endl;
-      ierr = MatSetValues(*snes_B,
+      ierr = MatSetValues(snes_B,
 	kExtEdgeEdge(EE,ee).size1(),dofs_x_edge_indices[EE],
 	kExtEdgeEdge(EE,ee).size2(),dofs_x_edge_indices[ee],
 	Kext_edge_edge[EE][ee],ADD_VALUES); CHKERRQ(ierr);
@@ -586,7 +586,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::lHs() {
     dofs_X,dofs_X_edge,dofs_X_face,
     &*kExtNodeNode.data().begin(),
     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
-  ierr = MatSetValues(*snes_B,
+  ierr = MatSetValues(snes_B,
     9,dofs_X_indices,
     9,dofs_X_indices,
     &*kExtNodeNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);

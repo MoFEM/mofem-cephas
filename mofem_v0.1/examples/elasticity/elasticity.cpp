@@ -228,7 +228,8 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
 
   //partition
-  ierr = mField.partition_problem("ELASTIC_PROB"); CHKERRQ(ierr);
+  ierr = mField.simple_partition_problem("ELASTIC_PROB"); CHKERRQ(ierr);
+  //PetscBarrier(PETSC_NULL);
   ierr = mField.partition_finite_elements("ELASTIC_PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("ELASTIC_PROB"); CHKERRQ(ierr);
@@ -282,6 +283,7 @@ int main(int argc, char *argv[]) {
   //preproc
   ierr = mField.problem_basic_method_preProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
   //loop elems
+  //PetscBarrier(PETSC_NULL);
   ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC",my_fe);  CHKERRQ(ierr);
   //forces and preassures on surface
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;

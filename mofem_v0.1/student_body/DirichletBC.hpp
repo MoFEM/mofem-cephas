@@ -31,11 +31,11 @@ struct DisplacementBCFEMethodPreAndPostProc: public FieldInterface::FEMethod {
 
   DisplacementBCFEMethodPreAndPostProc(
     FieldInterface& _mField,const string &_field_name,
-    Mat &_Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name) {
-    snes_B = &_Aij;
+    Mat _Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name) {
+    snes_B = _Aij;
     snes_x = _X;
     snes_f = _F;
-    ts_B = &_Aij;
+    ts_B = _Aij;
     ts_u = _X;
     ts_F = _F;
   };

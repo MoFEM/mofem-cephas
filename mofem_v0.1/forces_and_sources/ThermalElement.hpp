@@ -329,8 +329,8 @@ struct ThermalElement {
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),useTsB(true) { }
 
-    Mat *A;
-    OpThermalLhs(const string field_name,Mat *_A,BlockData &data,CommonData &common_data):
+    Mat A;
+    OpThermalLhs(const string field_name,Mat _A,BlockData &data,CommonData &common_data):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),useTsB(false),A(_A) {}
 
@@ -383,7 +383,7 @@ struct ThermalElement {
 	  const_cast<FieldInterface::FEMethod*>(getFEMethod())->ts_B = A;
 	}
 	ierr = MatSetValues(
-	  *(getFEMethod()->ts_B),
+	  (getFEMethod()->ts_B),
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -391,7 +391,7 @@ struct ThermalElement {
 	  transK.resize(nb_col,nb_row);
 	  noalias(transK) = trans( K );
 	  ierr = MatSetValues(
-	    *(getFEMethod()->ts_B),
+	    (getFEMethod()->ts_B),
 	    nb_col,&col_data.getIndices()[0],
 	    nb_row,&row_data.getIndices()[0],
 	    &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -523,7 +523,7 @@ struct ThermalElement {
   
 	PetscErrorCode ierr;
 	ierr = MatSetValues(
-	  *(getFEMethod()->ts_B),
+	  (getFEMethod()->ts_B),
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &M(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -531,7 +531,7 @@ struct ThermalElement {
 	  transM.resize(nb_col,nb_row);
 	  noalias(transM) = trans(M);
 	  ierr = MatSetValues(
-	    *(getFEMethod()->ts_B),
+	    (getFEMethod()->ts_B),
 	    nb_col,&col_data.getIndices()[0],
 	    nb_row,&row_data.getIndices()[0],
 	    &transM(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -704,8 +704,8 @@ struct ThermalElement {
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
       dAta(data),ho_geometry(_ho_geometry),useTsB(true) {}
 
-    Mat *A;
-    OpRadiationLhs(const string field_name,Mat *_A,
+    Mat A;
+    OpRadiationLhs(const string field_name,Mat _A,
       RadiationData &data,bool _ho_geometry = false):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
       dAta(data),ho_geometry(_ho_geometry),useTsB(false) {}
@@ -739,7 +739,7 @@ struct ThermalElement {
 	  const_cast<FieldInterface::FEMethod*>(getFEMethod())->ts_B = A;
 	}
 	ierr = MatSetValues(
-	  *(getFEMethod()->ts_B),
+	  (getFEMethod()->ts_B),
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -747,7 +747,7 @@ struct ThermalElement {
 	  transK.resize(nb_col,nb_row);
 	  noalias(transK) = trans( K );
 	  ierr = MatSetValues(
-	    *(getFEMethod()->ts_B),
+	    (getFEMethod()->ts_B),
 	    nb_col,&col_data.getIndices()[0],
 	    nb_row,&row_data.getIndices()[0],
 	    &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
@@ -947,7 +947,7 @@ struct ThermalElement {
   /** \brief this fucntion is used in case of stationary heat conductivity problem for lhs
     * \infroup mofem_thermal_elem 
     */
-  PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat *A) {
+  PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat A) {
     PetscFunctionBegin;
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {

@@ -137,10 +137,10 @@ struct MyNonLinearSpatialElasticFEMthod: public NonLinearSpatialElasticFEMthod,C
       break;
       case CTX_SNESSETJACOBIAN:
 	ierr = GetTangent(); CHKERRQ(ierr);
-	ierr = AssembleSpatialTangent(*snes_B); CHKERRQ(ierr);
+	ierr = AssembleSpatialTangent(snes_B); CHKERRQ(ierr);
 	if(isCoupledProblem) {
 	  ierr = GetIndicesRow(RowGlobMaterial,material_field_name); CHKERRQ(ierr);
-	  ierr = AssembleSpatialCoupledTangent(*snes_B); CHKERRQ(ierr);
+	  ierr = AssembleSpatialCoupledTangent(snes_B); CHKERRQ(ierr);
 	}
 	break;
       default:
@@ -378,8 +378,8 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
 	}*/
       } break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       } break;
       default: {
       } break;
@@ -456,7 +456,7 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
 	    }
 	    for(int nnn = 0;nnn<3;nnn++) {
 	      if(lambda_dofs_row_indx[nnn] == -1) continue;
-	      ierr = MatSetValues(*snes_B,
+	      ierr = MatSetValues(snes_B,
 		1,&lambda_dofs_row_indx[nnn],1,&disp_dofs_col_idx[3*nn+dd],
 		&g[nnn],ADD_VALUES); CHKERRQ(ierr);
 	    }
@@ -468,7 +468,7 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
 	    }
 	    for(int nnn = 0;nnn<3;nnn++) {
 	      if(lambda_dofs_row_indx[nnn] == -1) continue;
-	      ierr = MatSetValues(*snes_B,
+	      ierr = MatSetValues(snes_B,
 		3,&disp_dofs_row_idx[3*nnn],
 		1,&disp_dofs_col_idx[3*nn+dd],
 		&dELEM_CONSTRAIN1[3*nnn],ADD_VALUES); CHKERRQ(ierr);
@@ -506,7 +506,7 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
 	case CTX_SNESSETJACOBIAN: {
 	  for(int nn = 0;nn<3;nn++) {
 	    int lambda_dof_idx = lambda_dofs_col_indx[nn];
-	    ierr = MatSetValues(*snes_B,3,&disp_dofs_row_idx[3*nn],1,&lambda_dof_idx,&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(snes_B,3,&disp_dofs_row_idx[3*nn],1,&lambda_dof_idx,&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	} break;
 	default:
@@ -532,8 +532,8 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
 	ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       } break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       } break;
       default: {
       } break;
@@ -3020,8 +3020,8 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::preProce
       }
       break;
     case CTX_SNESSETJACOBIAN: 
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = calulate_db(); CHKERRQ(ierr);
       break;
     default:
@@ -3047,7 +3047,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::operator
       //calulate diagonal therm
       double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
       ierr = VecSetValue(ghostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-      ierr = MatSetValue(*snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,INSERT_VALUES); CHKERRQ(ierr);
+      ierr = MatSetValue(snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,INSERT_VALUES); CHKERRQ(ierr);
     } break;
     default:
     break;
@@ -3128,10 +3128,10 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::postProc
 	arc_ptr->diag = *diag;
 	ierr = VecRestoreArray(ghostDiag,&diag); CHKERRQ(ierr);
 	//PetscPrintf(PETSC_COMM_WORLD,"\tdiag = %6.4e\n",arc_ptr->diag);
-	/*ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	/*ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
  	//Matrix View
-	MatView(*snes_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+	MatView(snes_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
 	std::string wait;
 	std::cin >> wait;*/
     } break;

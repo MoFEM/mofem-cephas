@@ -313,10 +313,10 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
       break;
       case CTX_SNESSETJACOBIAN:
 	ierr = GetTangent(); CHKERRQ(ierr);
-	ierr = AssembleSpatialTangent(*snes_B); CHKERRQ(ierr);
+	ierr = AssembleSpatialTangent(snes_B); CHKERRQ(ierr);
 	if(isCoupledProblem) {
 	  ierr = GetIndicesRow(RowGlobMaterial,material_field_name); CHKERRQ(ierr);
-	  ierr = AssembleSpatialCoupledTangent(*snes_B); CHKERRQ(ierr);
+	  ierr = AssembleSpatialCoupledTangent(snes_B); CHKERRQ(ierr);
 	}
 	break;
       default:
@@ -340,8 +340,8 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
       }
       break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:
@@ -474,10 +474,10 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
       break;
       case CTX_SNESSETJACOBIAN: {
 	ierr = GetTangent(); CHKERRQ(ierr);
-	ierr = AssembleMaterialTangent(*snes_B); CHKERRQ(ierr);
+	ierr = AssembleMaterialTangent(snes_B); CHKERRQ(ierr);
 	if(isCoupledProblem) {
 	  ierr = GetIndicesRow(RowGlobSpatial,spatial_field_name); CHKERRQ(ierr);
-	  ierr = AssembleMaterialCoupledTangent(*snes_B); CHKERRQ(ierr);
+	  ierr = AssembleMaterialCoupledTangent(snes_B); CHKERRQ(ierr);
 	}
       }
       break;
@@ -552,7 +552,7 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
 	break;
       case CTX_SNESSETJACOBIAN:
 	ierr = GetTangent(); CHKERRQ(ierr);
-	ierr = AssembleMeshSmoothingTangent(*snes_B); CHKERRQ(ierr);
+	ierr = AssembleMeshSmoothingTangent(snes_B); CHKERRQ(ierr);
 	break;
       default:
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -627,7 +627,7 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
       case CTX_SNESSETJACOBIAN: {
 	double diag = 2*arc_ptr->dlambda*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2;
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValue(*snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValue(snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
@@ -645,8 +645,8 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
       }
       break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(GhostDiag); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(GhostDiag); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(GhostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

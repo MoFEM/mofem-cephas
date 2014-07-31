@@ -32,10 +32,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     FieldInterface& mField;
     bool propeties_from_BLOCKSET_MAT_ELASTICSET;
 	
-    ElasticFEMethod( FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _lambda,double _mu): 
+    ElasticFEMethod(FieldInterface& _mField,Mat _Aij,Vec _X,Vec _F,double _lambda,double _mu): 
       FEMethod_UpLevelStudent(_mField.get_moab(),1),mField(_mField),lambda(_lambda),mu(_mu) {
 
-      snes_B = &_Aij;
+      snes_B = _Aij;
       snes_x = _X;
       snes_f = _F;
 
@@ -326,10 +326,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  if(ColGlob[cc].size()==0) continue;
 	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  if(rr!=cc) {
 	    K(cc,rr) = trans(K(rr,cc));
-	    ierr = MatSetValues(*snes_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(snes_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	}
       }
@@ -507,8 +507,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       switch(snes_ctx) {
         case CTX_SNESNONE: {
 	  // Note MAT_FLUSH_ASSEMBLY
-	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
         }
@@ -520,8 +520,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	break;
         case CTX_SNESSETJACOBIAN: {
 	  // Note MAT_FLUSH_ASSEMBLY
-	  ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	}
         break;
         default:

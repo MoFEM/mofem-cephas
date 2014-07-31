@@ -93,7 +93,9 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
   ierr = iNitalize(); CHKERRQ(ierr);
 
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
-    ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+    if(dofsIndices.size()>0) {
+      ierr = VecSetValues(snes_x,dofsIndices.size(),&*dofsIndices.begin(),&*dofsValues.begin(),INSERT_VALUES); CHKERRQ(ierr);
+    }
     ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
   }
@@ -102,7 +104,9 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
     case CTX_SNESNONE: {} 
     break;
     case CTX_SNESSETFUNCTION: {
-      ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      if(dofsIndices.size()>0) {
+	ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      }
       ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
     }
@@ -118,7 +122,9 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
     case CTX_TSNONE: {}
     break;
     case CTX_TSSETIFUNCTION: {
-      ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      if(dofsIndices.size()>0) {
+	ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      }
       ierr = VecAssemblyBegin(ts_u); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(ts_u); CHKERRQ(ierr);
     }
@@ -137,9 +143,11 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
 PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
   PetscFunctionBegin;
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
-    ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatZeroRowsColumns(*snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
     for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
@@ -163,9 +171,11 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     }
     break;
     case CTX_SNESSETJACOBIAN: {
-      ierr = MatAssemblyBegin(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(*snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(*snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     }
     break;
     default:
@@ -186,9 +196,11 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     }
     break;
     case CTX_TSSETIJACOBIAN: {
-      ierr = MatAssemblyBegin(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(*ts_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(ts_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     }
     break;
     default:

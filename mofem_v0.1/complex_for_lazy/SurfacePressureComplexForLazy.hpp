@@ -61,17 +61,17 @@ struct NeummanForcesSurfaceComplexForLazy {
     const double eps;
     bool uSeF;
 
-    Mat *Aij;
+    Mat Aij;
     Vec F;
 
-    MyTriangleSpatialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+    MyTriangleSpatialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
       TriElementForcesAndSurcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
       typeOfForces(CONSERVATIVE),eps(1e-8),uSeF(false) {
 
-      Aij = &_Aij;
+      Aij = _Aij;
       F = _F;
 
-      snes_B = &_Aij;
+      snes_B = _Aij;
       snes_f = _F;
     
       if(mField.check_field("MESH_NODE_POSITIONS")) {
@@ -175,7 +175,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   struct MyTriangleMaterialFE: public MyTriangleSpatialFE {
 
-    MyTriangleMaterialFE(FieldInterface &_mField,Mat &_Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+    MyTriangleMaterialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
       MyTriangleSpatialFE(_mField,_Aij,_F,scale_lhs,scale_rhs) {}
 
     PetscErrorCode rHs();
@@ -196,7 +196,7 @@ struct NeummanForcesSurfaceComplexForLazy {
       PetscFunctionReturn(0);
   }
 
-  NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat &_Aij,Vec _F): 
+  NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F): 
     mField(m_field),feSpatial(m_field,_Aij,_F,NULL,NULL),feMaterial(m_field,_Aij,_F,NULL,NULL) {
 
     ErrorCode rval;
@@ -224,7 +224,7 @@ struct NeummanForcesSurfaceComplexForLazy {
     PetscFunctionReturn(0);
   }
 
-  NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat &_Aij,Vec _F,double *scale_lhs,double *scale_rhs): 
+  NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs): 
     mField(m_field),feSpatial(m_field,_Aij,_F,scale_lhs,scale_rhs),feMaterial(m_field,_Aij,_F,scale_lhs,scale_rhs) {}
 
   MyTriangleSpatialFE& getLoopSpatialFe() { return feSpatial; }

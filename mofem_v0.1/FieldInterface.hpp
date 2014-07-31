@@ -1486,8 +1486,7 @@ struct FieldInterface: public FieldUnknownInterface {
     SNES snes;
     PetscErrorCode set_snes(SNES _snes);
     Vec snes_x,snes_f;
-    Mat *snes_A,*snes_B;
-    MatStructure *snes_flag;
+    Mat snes_A,snes_B;
     virtual ~SnesMethod() {};
   };
 
@@ -1508,8 +1507,7 @@ struct FieldInterface: public FieldUnknownInterface {
     TS ts;
     PetscErrorCode set_ts(TS _ts);
     Vec ts_u,ts_u_t,ts_F;
-    Mat *ts_A,*ts_B;
-    MatStructure *ts_flag;
+    Mat ts_A,ts_B;
     //
     PetscInt ts_step;
     PetscReal ts_a,ts_t;

@@ -273,7 +273,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
 	    ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
 	    PetscPrintf(PETSC_COMM_WORLD,
-	      "\tsteps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
+	      "\tsteps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",steps,rejects,snesfails,ftime,nonlinits,linits);
 	    ierr = mField.set_global_VecCreateGhost(problemPtr->get_name(),COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	    ierr = mField.set_local_VecCreateGhost(problemPtr->get_name(),ROW,u_by_row,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	    //NumeredDofMoFEMEntity_multiIndex &numered_dofs_cols = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_cols);
@@ -311,7 +311,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    break;
 	  case CTX_TSSETRHSJACOBIAN:
 	  case CTX_TSSETIJACOBIAN:
-	    ierr = MatZeroEntries(*ts_B); CHKERRQ(ierr);
+	    ierr = MatZeroEntries(ts_B); CHKERRQ(ierr);
 	    break;
 	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
@@ -395,11 +395,10 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	    break;
 	  case CTX_TSSETRHSJACOBIAN:
 	  case CTX_TSSETIJACOBIAN: {
-	    ierr = MatAssemblyBegin(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	    ierr = MatAssemblyEnd(*ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	    *ts_flag = SAME_NONZERO_PATTERN; 
+	    ierr = MatAssemblyBegin(ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	    ierr = MatAssemblyEnd(ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	    //Matrix View
-	    //MatView(*ts_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+	    //MatView(ts_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
 	    //std::string wait;
 	    //std::cin >> wait;
 	    } break;
@@ -462,10 +461,10 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 		if(ColGlob[cc].size()==0) continue;
 		if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 		if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-		ierr = MatSetValues(*ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+		ierr = MatSetValues(ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 		if(cc!=rr) {
 		  K(cc,rr) = trans(K(rr,cc));
-		  ierr = MatSetValues(*ts_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
+		  ierr = MatSetValues(ts_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
 		}
 	      }
 	    }
@@ -504,7 +503,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	      if(RowGlob[rr].size()!=Mass[rr].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      if(VelColGlob.size()!=Mass[rr].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      Mass[rr] *= ts_a;
-	      ierr = MatSetValues(*ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],VelColGlob.size(),&VelColGlob[0],&(Mass[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	      ierr = MatSetValues(ts_B,RowGlob[rr].size(),&(RowGlob[rr])[0],VelColGlob.size(),&VelColGlob[0],&(Mass[rr].data())[0],ADD_VALUES); CHKERRQ(ierr);
 	    }
 	  } break;
   	  default:
@@ -556,7 +555,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	  case CTX_TSSETIJACOBIAN: {
 	    if(VelRowGlob.size()!=VV.size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	    if(VelColGlob.size()!=VV.size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	    ierr = MatSetValues(*ts_B,VelRowGlob.size(),&(VelRowGlob)[0],VelColGlob.size(),&VelColGlob[0],&(VV.data())[0],ADD_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValues(ts_B,VelRowGlob.size(),&(VelRowGlob)[0],VelColGlob.size(),&VelColGlob[0],&(VV.data())[0],ADD_VALUES); CHKERRQ(ierr);
 	  } break;
   	  default:
 	    SETERRQ(PETSC_COMM_SELF,1,"sorry... I don't know what to do");
@@ -589,7 +588,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	      if(VelRowGlob.size()!=VU[cc].size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      if(ColGlob[cc].size()!=VU[cc].size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      VU[cc] *= ts_a;
-	      ierr = MatSetValues(*ts_B,VelRowGlob.size(),&(VelRowGlob)[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(VU[cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
+	      ierr = MatSetValues(ts_B,VelRowGlob.size(),&(VelRowGlob)[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(VU[cc].data())[0],ADD_VALUES); CHKERRQ(ierr);
 	    }
 	  } break;
   	  default:

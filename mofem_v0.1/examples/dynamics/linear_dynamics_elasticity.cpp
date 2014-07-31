@@ -234,7 +234,9 @@ int main(int argc, char *argv[]) {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       ierr = iNitalize(); CHKERRQ(ierr);
-      ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      if(dofsIndices.size()>0) {
+	ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      }
       ierr = VecAssemblyBegin(ts_u); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(ts_u); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -254,9 +256,9 @@ int main(int argc, char *argv[]) {
 	}
 	break;
 	case CTX_TSSETIJACOBIAN: {
-	  ierr = MatAssemblyBegin(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(*ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatZeroRowsColumns(*ts_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+	  ierr = MatAssemblyBegin(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatZeroRowsColumns(ts_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
 	}
 	break;
 	default:
@@ -377,7 +379,7 @@ int main(int argc, char *argv[]) {
   ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
   ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,
-    "steps %D (%D rejected, %D SNES fails), ftime %G, nonlinits %D, linits %D\n",
+    "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
   //Save data on mesh
