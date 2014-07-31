@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
   //mesh partitioning 
 
   //partition
-  ierr = mField.simple_partition_problem("ELASTIC_PROB"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("ELASTIC_PROB"); CHKERRQ(ierr);
   //PetscBarrier(PETSC_NULL);
   ierr = mField.partition_finite_elements("ELASTIC_PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
@@ -250,8 +250,15 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_PROB",&Aij); CHKERRQ(ierr);
 
+  //Matrix View
+  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+  //std::string wait;
+  //std::cin >> wait;
+
+
+
   struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
+    MyElasticFEMethod(FieldInterface& _mField,Mat _Aij,Vec _D,Vec& _F,double _lambda,double _mu): 
       ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu) {};
 
     PetscErrorCode Fint(Vec F_int) {
@@ -319,12 +326,7 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
-
-  //Matrix View
-  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-  //std::string wait;
-  //std::cin >> wait;
+  //PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
   //Solver
   KSP solver;
