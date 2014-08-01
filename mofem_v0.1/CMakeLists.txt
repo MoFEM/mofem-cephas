@@ -146,15 +146,12 @@ add_library(mofem_forces_and_sources
 add_library(mofem_homogenisation
   homogenisation/ElasticFE_RVELagrange_Disp.cpp
   homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Disp.cpp
-  #homogenisation/ElasticFE_RVELagrange_Traction.cpp
-  #homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Traction.cpp
+  homogenisation/ElasticFE_RVELagrange_Traction.cpp
+  homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Traction.cpp
   #homogenisation/ElasticFE_RVELagrange_Periodic.cpp
   #homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
-  #homogenisation/ElasticFE_RVELagrange_RigidBodyTranslation.cpp
-  #homogenisation/ElasticFE_RVELagrange_RigidBodyRotation.cpp
-  #homogenisation/MoistureFE_RVELagrange_Disp.cpp
-  #homogenisation/MoistureFE_RVELagrange_Homogenized_Stress_Disp.cpp
-  #homogenisation/MoistureFE_RVELagrange_Traction.cpp
+  homogenisation/ElasticFE_RVELagrange_RigidBodyTranslation.cpp
+  homogenisation/ElasticFE_RVELagrange_RigidBodyRotation.cpp
   )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")

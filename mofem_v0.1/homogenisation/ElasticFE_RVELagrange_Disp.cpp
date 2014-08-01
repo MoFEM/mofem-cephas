@@ -473,18 +473,7 @@ namespace MoFEM {
     //Calculate the right hand side vector, i.e. f=D_max * applied_strain and assemble it into the global force vector F
      PetscErrorCode ElasticFE_RVELagrange_Disp::Rhs() {
       PetscFunctionBegin;
-       
-       switch(rank_field) {
-         case 3:
-           X_mat.resize(3,6);    X_mat.clear();
-           break;
-         case 1:
-           X_mat.resize(1,3);
-           break;
-         default:
-           SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-       }
-
+      X_mat.resize(rank_field,1.5*rank_field+1.5);    X_mat.clear();
       nodes_coord.resize(3,3);
       gauss_coord.resize(3,g_TRI_dim);
       D_mat.resize(row_mat);

@@ -19,11 +19,11 @@
 add_executable(RVE_Cube_Disp RVE_Cube_Disp.cpp)
 target_link_libraries(RVE_Cube_Disp mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
-#aadd_executable(RVE_Cube_Traction RVE_Cube_Traction.cpp)
-#atarget_link_libraries(RVE_Cube_Traction mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+add_executable(RVE_Cube_Traction RVE_Cube_Traction.cpp)
+target_link_libraries(RVE_Cube_Traction mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
-#aadd_executable(RVE_Cube_Periodic RVE_Cube_Periodic.cpp)
-#atarget_link_libraries(RVE_Cube_Periodic mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+#add_executable(RVE_Cube_Periodic RVE_Cube_Periodic.cpp)
+#target_link_libraries(RVE_Cube_Periodic mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

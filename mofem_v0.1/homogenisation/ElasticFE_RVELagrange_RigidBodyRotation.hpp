@@ -26,8 +26,8 @@ namespace MoFEM {
   
   struct ElasticFE_RVELagrange_RigidBodyRotation: public ElasticFE_RVELagrange_Disp {
     
-    ElasticFE_RVELagrange_RigidBodyRotation(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData> _applied_strain):
-    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F, _applied_strain){};
+    ElasticFE_RVELagrange_RigidBodyRotation(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData> _applied_strain, const string& _field_main, const string& _field_lagrange, int _rank_field):
+    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F, _applied_strain, _field_main, _field_lagrange, _rank_field){};
     
     double coords_face[9];
     virtual PetscErrorCode GetN_and_Indices();

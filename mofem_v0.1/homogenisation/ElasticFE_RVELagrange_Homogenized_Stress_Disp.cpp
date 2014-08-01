@@ -57,14 +57,14 @@ namespace MoFEM {
     PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Disp::Calculate_Homo_Stress() {
       PetscFunctionBegin;
       
-      X_mat.resize(rank_field,1.5*rank_field+1.5);  X_mat.clear();  // for rank_field=3 X_mat.resize(3,6)  and for rank_field=3 X_mat.resize(1,3)
+      X_mat.resize(rank_field,1.5*rank_field+1.5);  X_mat.clear();  // for rank_field=3 X_mat.resize(3,6)  and for rank_field=1 X_mat.resize(1,3)
       nodes_coord.resize(3,3);
       gauss_coord.resize(3,g_TRI_dim);
       D_mat.resize(row_mat);
       Lamda.resize(row_mat);
       
       ublas::vector<FieldData>  Stress_Homo_elem;
-      Stress_Homo_elem.resize(6);   Stress_Homo_elem.clear();   //homogenised stress for one element (triangle)
+      Stress_Homo_elem.resize(1.5*rank_field+1.5);   Stress_Homo_elem.clear();   //homogenised stress for one element (triangle)
       
       //used to calculate the coordinates of a Gauss points
       nodes_coord(0,0)=coords_face[0]; nodes_coord(0,1)=coords_face[3]; nodes_coord(0,2)=coords_face[6];

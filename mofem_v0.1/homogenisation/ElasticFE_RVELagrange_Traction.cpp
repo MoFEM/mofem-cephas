@@ -27,8 +27,8 @@ namespace MoFEM {
       
       //Find out indices for row and column for nodes on the surface, i.e. triangles
       row_mat = 0;
-      RowGlob[row_mat].resize(6);
-      ColGlob[row_mat].resize(9);
+      RowGlob[row_mat].resize(1.5*rank_field+1.5);   // for rank_field=3 resize(6)  and for rank_field=1 X_mat.resize(1,3)
+      ColGlob[row_mat].resize(3*rank_field);
       
       typedef FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator row_dofs_iterator;
       typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dofs_iterator;
@@ -50,8 +50,8 @@ namespace MoFEM {
       
       //minimum and maximum rows indices for each node on the surface
       row_dofs_iterator niit,hi_niit;   //iterator for rows
-      niit = rowPtr->get<FieldName_mi_tag>().lower_bound("Lagrange_mul_disp");
-      hi_niit = rowPtr->get<FieldName_mi_tag>().upper_bound("Lagrange_mul_disp");
+      niit = rowPtr->get<FieldName_mi_tag>().lower_bound(field_lagrange);
+      hi_niit = rowPtr->get<FieldName_mi_tag>().upper_bound(field_lagrange);
       int nn = 0;
       for(;niit!=hi_niit;niit++) {
         RowGlob[row_mat][nn*niit->get_max_rank()+niit->get_dof_rank()] = niit->get_petsc_gloabl_dof_idx();
@@ -64,8 +64,8 @@ namespace MoFEM {
         string field_name;
         
         //minimum and maximum row and column indices for each node on the surface
-        col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
-        hi_col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_face[nn]));
+        col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_main,conn_face[nn]));
+        hi_col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_main,conn_face[nn]));
         
         // two different loops, i.e. one for row and one for column (may be need it for multiphysics problems)
         for(;col_niit!=hi_col_niit;col_niit++) {
@@ -73,16 +73,16 @@ namespace MoFEM {
         }
       }
       
-      //        cout<<"\nFor nodes "<<endl;
-      //        cout<<"\n RowGlob[row_mat].size() "<<RowGlob[row_mat].size()<<endl;
-      //        for(int ii=0; ii<RowGlob[row_mat].size(); ii++) cout<<RowGlob[row_mat][ii]<<" ";
-      //        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
-      //        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[row_mat][ii]<<" ";
-      //        cout<<"\n\n\n"<<endl;
-      //        //Stop code
-      //        std::string wait;
-      //        std::cin >> wait;
-      
+//        cout<<"\nFor nodes "<<endl;
+//        cout<<"\n RowGlob[row_mat].size() "<<RowGlob[row_mat].size()<<endl;
+//        for(int ii=0; ii<RowGlob[row_mat].size(); ii++) cout<<RowGlob[row_mat][ii]<<" ";
+//        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
+//        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[row_mat][ii]<<" ";
+//        cout<<"\n\n\n"<<endl;
+//        //Stop code
+//        std::string wait;
+//        std::cin >> wait;
+    
       
       // Find colum indices for Edges (row are always 6)
       vector<int> FaceEdgeSense;
@@ -108,8 +108,8 @@ namespace MoFEM {
         //            cout<<"FaceEdgeSense[ee] "<<FaceEdgeSense[ee]<<endl;
         //            cout<<"edge "<<edge<<endl<<endl;
         
-        col_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
-        col_hi_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
+        col_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_main,edge));
+        col_hi_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_main,edge));
         
         if(col_eiit!=col_hi_eiit) {
           //                cout<<"Hello "<<endl;
@@ -173,8 +173,8 @@ namespace MoFEM {
       
       //Find the column indices for face of the triangle (indices for the rows are the same as for nodes)
       dofs_iterator col_fiit, col_hi_fiit;
-      col_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",face_tri));
-      col_hi_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",face_tri));
+      col_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_main,face_tri));
+      col_hi_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_main,face_tri));
       
       if(col_fiit!=col_hi_fiit) {
         ColGlob[row_mat].resize(distance(col_fiit,col_hi_fiit));
@@ -252,55 +252,109 @@ namespace MoFEM {
       //        std::cin >> wait;
       
       ublas::matrix<FieldData> H_mat_1Node;
-      H_mat_1Node.resize(6,3);  H_mat_1Node.clear();
       
-      if(normal(0)>0){     //+X face of the RVE
-        H_mat_1Node(0,0)=1.0;  H_mat_1Node(3,1)=1.0;  H_mat_1Node(4,2)=1.0;
-      }
       
-      if(normal(0)<0){    //-X face of the RVE
-        H_mat_1Node(0,0)=-1.0;  H_mat_1Node(3,1)=-1.0;  H_mat_1Node(4,2)=-1.0;
-      }
-      
-      if(normal(1)>0){     //+Y face of the RVE
-        H_mat_1Node(1,1)=1.0;  H_mat_1Node(3,0)=1.0;  H_mat_1Node(5,2)=1.0;
-      }
-      
-      if(normal(1)<0){    //-Y face of the RVE
-        H_mat_1Node(1,1)=-1.0;  H_mat_1Node(3,0)=-1.0;  H_mat_1Node(5,2)=-1.0;
-      }
-      
-      if(normal(2)>0){    //+Z face of the RVE
-        H_mat_1Node(2,2)=1.0;  H_mat_1Node(4,0)=1.0;  H_mat_1Node(5,1)=1.0;
-      }
-      
-      if(normal(2)<0){    //-Z face of the RVE
-        H_mat_1Node(2,2)=-1.0;  H_mat_1Node(4,0)=-1.0;  H_mat_1Node(5,1)=-1.0;
-      }
-      
-      H_mat.resize(row_mat);
-      //        cout<<"normal "<<normal<<endl;
-      for(int rrr=0; rrr<row_mat; rrr++){ //for row_mat
-        //            cout<<"(rowNMatrices[rr])[0] "<<(rowNMatrices[rrr])[0]<<endl;
-        int num_col=(rowNMatrices[rrr])[0].size2();
-        H_mat[rrr].resize(6,num_col);
-        int cc1=0;
-        for(int bb = 0; bb<num_col/3; bb++) {  //blocks of 6x3
-          //                cout<<"cc1 "<<cc1<<endl;
-          for(int rr = 0; rr<6; rr++) {
-            //                     cout<<"rr "<<rr<<endl;
-            for(int cc = 0; cc<3; cc++) {
-              //                        cout<<"cc "<<cc<<endl;
-              //                        cout<<"H_mat_1Node(rr,cc)"<<H_mat_1Node(rr,cc)<<endl<<endl;
-              H_mat[rrr](rr,(cc+cc1))=H_mat_1Node(rr,cc);
+      switch(rank_field) {
+        case 3:
+          H_mat_1Node.resize(6,3);  H_mat_1Node.clear();
+          
+          if(normal(0)>0){     //+X face of the RVE
+            H_mat_1Node(0,0)=1.0;  H_mat_1Node(3,1)=1.0;  H_mat_1Node(4,2)=1.0;
+          }
+          
+          if(normal(0)<0){    //-X face of the RVE
+            H_mat_1Node(0,0)=-1.0;  H_mat_1Node(3,1)=-1.0;  H_mat_1Node(4,2)=-1.0;
+          }
+          
+          if(normal(1)>0){     //+Y face of the RVE
+            H_mat_1Node(1,1)=1.0;  H_mat_1Node(3,0)=1.0;  H_mat_1Node(5,2)=1.0;
+          }
+          
+          if(normal(1)<0){    //-Y face of the RVE
+            H_mat_1Node(1,1)=-1.0;  H_mat_1Node(3,0)=-1.0;  H_mat_1Node(5,2)=-1.0;
+          }
+          
+          if(normal(2)>0){    //+Z face of the RVE
+            H_mat_1Node(2,2)=1.0;  H_mat_1Node(4,0)=1.0;  H_mat_1Node(5,1)=1.0;
+          }
+          
+          if(normal(2)<0){    //-Z face of the RVE
+            H_mat_1Node(2,2)=-1.0;  H_mat_1Node(4,0)=-1.0;  H_mat_1Node(5,1)=-1.0;
+          }
+          
+          H_mat.resize(row_mat);
+          //        cout<<"normal "<<normal<<endl;
+          for(int rrr=0; rrr<row_mat; rrr++){ //for row_mat
+            //            cout<<"(rowNMatrices[rr])[0] "<<(rowNMatrices[rrr])[0]<<endl;
+            int num_col=(rowNMatrices[rrr])[0].size2();
+            H_mat[rrr].resize(6,num_col);
+            int cc1=0;
+            for(int bb = 0; bb<num_col/3; bb++) {  //blocks of 6x3
+              //                cout<<"cc1 "<<cc1<<endl;
+              for(int rr = 0; rr<6; rr++) {
+                //                     cout<<"rr "<<rr<<endl;
+                for(int cc = 0; cc<3; cc++) {
+                  //                        cout<<"cc "<<cc<<endl;
+                  //                        cout<<"H_mat_1Node(rr,cc)"<<H_mat_1Node(rr,cc)<<endl<<endl;
+                  H_mat[rrr](rr,(cc+cc1))=H_mat_1Node(rr,cc);
+                }
+              }
+              cc1+=3;
+            }
+//            cout<<"H_mat[rrr] "<<H_mat[rrr]<<endl;
+          }
+          //        std::string wait;
+          //        std::cin >> wait;
+          break;
+          
+        case 1:
+          H_mat_1Node.resize(3,1);  H_mat_1Node.clear();
+          
+          if(normal(0)>0){     //+X face of the RVE
+            H_mat_1Node(0,0)=1.0;
+          }
+          
+          if(normal(0)<0){    //-X face of the RVE
+            H_mat_1Node(0,0)=-1.0;
+          }
+          
+          if(normal(1)>0){     //+Y face of the RVE
+            H_mat_1Node(1,0)=1.0;
+          }
+          
+          if(normal(1)<0){    //-Y face of the RVE
+            H_mat_1Node(1,0)=-1.0;
+          }
+          
+          if(normal(2)>0){    //+Z face of the RVE
+            H_mat_1Node(2,0)=1.0;
+          }
+          
+          if(normal(2)<0){    //-Z face of the RVE
+            H_mat_1Node(2,0)=-1.0;
+          }
+          
+          H_mat.resize(row_mat);
+          for(int rrr=0; rrr<row_mat; rrr++){ //for row_mat
+            int num_col=(rowNMatrices[rrr])[0].size2();
+            H_mat[rrr].resize(3,num_col);
+            int cc1=0;
+            for(int bb = 0; bb<num_col; bb++) {  //blocks of 6x3
+              for(int rr = 0; rr<3; rr++) {
+                for(int cc = 0; cc<1; cc++) {
+                  H_mat[rrr](rr,(cc+cc1))=H_mat_1Node(rr,cc);
+                }
+              }
+              cc1+=1;
             }
           }
-          cc1+=3;
-        }
-        //            cout<<"H_mat[rrr] "<<H_mat[rrr]<<endl;
+          break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
-      //        std::string wait;
-      //        std::cin >> wait;
+
+      
+      
       PetscFunctionReturn(0);
     }
     
@@ -394,7 +448,7 @@ namespace MoFEM {
     //Calculate the right hand side vector, i.e. f=D_mat * applied_strain and assemble it into the global force vector F
     PetscErrorCode ElasticFE_RVELagrange_Traction::Rhs() {
       PetscFunctionBegin;
-      X_mat.resize(3,6);    X_mat.clear();
+      X_mat.resize(rank_field,1.5*rank_field+1.5);    X_mat.clear();
       nodes_coord.resize(3,3);
       gauss_coord.resize(3,g_TRI_dim);
       D_mat.resize(row_mat);
@@ -418,11 +472,21 @@ namespace MoFEM {
       for(int rr=0; rr<1; rr++){
         for(int gg = 0;gg<g_TRI_dim;gg++) {
           double w = area*G_W_TRI[gg];
-          X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
-          X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
-          X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
-          X_mat=0.5*X_mat;
           
+          switch(rank_field) {
+            case 3:
+              X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
+              X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
+              X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
+              X_mat=0.5*X_mat;
+              break;
+            case 1:
+              X_mat(0,0)=gauss_coord(0,gg);  X_mat(0,1)=gauss_coord(1,gg);  X_mat(0,2)=gauss_coord(2,gg);
+              break;
+            default:
+              SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+          }
+
           ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
           ublas::matrix<FieldData> &col_Mat = X_mat;
           
