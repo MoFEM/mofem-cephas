@@ -260,7 +260,7 @@ namespace MoFEM {
 ////        cout<<"\n ColGlob[row_mat].size() "<<ColGlob[1].size()<<endl;
 ////        for(int ii=0; ii<ColGlob[row_mat].size(); ii++) cout<<ColGlob[1][ii]<<" ";
 //        cout<<"\n\n\n"<<endl;
-//
+
       
       //Find the shape function N at each gauss point for all the edges and then re-araange in the form as mentioned for nodes
       if(N_edge[0] != NULL){
@@ -273,11 +273,10 @@ namespace MoFEM {
           int nodes_edge=NBEDGE_H1(FaceEdgeOrder[ee]);
           //                cout<<"nodes_edge  "<<nodes_edge<<endl;
           for(;gg<g_TRI_dim;gg++) {
-            rowNMatrices[row_mat1][gg].resize(3,3*nodes_edge);
-            rowNMatrices[row_mat1][gg].clear();
+            rowNMatrices[row_mat1][gg].resize(rank_field,rank_field*nodes_edge);   rowNMatrices[row_mat1][gg].clear(); // resize(rank_field,rank_field*nodes_edge) = resize(3,9) for rank_field=3
             int kk=0;
             for(int ii=0; ii<nodes_edge; ii++){
-              for (int jj=0; jj<3; jj++){
+              for (int jj=0; jj<rank_field; jj++){
                 //                              cout<<"jj  "<<jj<<endl;
                 //                              cout<<"kk  "<<kk<<endl;
                 //                              cout<<"gg1  "<<gg1<<endl;
@@ -287,6 +286,11 @@ namespace MoFEM {
               gg1++;
             }
           }
+//          for(int jj=0; jj<13; jj++){
+//            cout<<rowNMatrices[1][jj]<<endl<<endl;
+//          }
+//          std::string wait;
+//          std::cin >> wait;
         }
       }
       
@@ -334,11 +338,10 @@ namespace MoFEM {
         //            for(int ii=0; ii<N_face.size(); ii++) cout<<"N_face  "<<N_face[ii]<<endl;
         
         for(;gg<g_TRI_dim;gg++) {
-          rowNMatrices[row_mat][gg].resize(3,3*nodes_face);
-          rowNMatrices[row_mat][gg].clear();
+          rowNMatrices[row_mat][gg].resize(rank_field,rank_field*nodes_face);  rowNMatrices[row_mat][gg].clear();
           int kk=0;
           for(int ii=0; ii<nodes_face; ii++){
-            for (int jj=0; jj<3; jj++){
+            for (int jj=0; jj<rank_field; jj++){
               //                          cout<<"jj  "<<jj<<endl;
               //                          cout<<"kk  "<<kk<<endl;
               //                          cout<<"gg1  "<<gg1<<endl<<endl;
