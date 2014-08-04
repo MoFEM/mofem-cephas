@@ -41,7 +41,7 @@ namespace MoFEM {
     
     //        cout<<"row_mat "<<row_mat<<endl;
     RowGlob[0][0].clear();     ColGlob[0][0].clear();    RowGlob[1][0].clear();     ColGlob[1][0].clear();
-    RowGlob[0][0].resize(9);   ColGlob[0][0].resize(9);  RowGlob[1][0].resize(9);   ColGlob[1][0].resize(9);
+    RowGlob[0][0].resize(3*rank_field);   ColGlob[0][0].resize(3*rank_field);  RowGlob[1][0].resize(3*rank_field);   ColGlob[1][0].resize(3*rank_field);
     
     rval = moab.get_connectivity(prism_periodic,conn_Prism,num_nodes1,true); CHKERR_PETSC(rval);
     rval = moab.get_coords(conn_Prism,num_nodes1,coords_prism); CHKERR_PETSC(rval);
@@ -61,11 +61,11 @@ namespace MoFEM {
         area = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;   // area of each face of triangle
         
         //minimum and maximum row and column indices for each node on the prism triangle
-        niit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
-        hi_niit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",conn_Prism[count]));
+        niit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_lagrange,conn_Prism[count]));
+        hi_niit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_lagrange,conn_Prism[count]));
         
-        col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",conn_Prism[count]));
-        hi_col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",conn_Prism[count]));
+        col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_main,conn_Prism[count]));
+        hi_col_niit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_main,conn_Prism[count]));
         
         if(ff==0){
           for(;niit!=hi_niit;niit++) {
@@ -81,23 +81,23 @@ namespace MoFEM {
     row_mat++;
     
     
-    //        cout<<"\nFor Nodes "<<endl;
-    //        cout<<"\nRowGlob[ii].size() "<<endl;
-    //        for(int ii=0; ii<2; ii++) cout<<RowGlob[ii][0].size() <<"  ";
-    //        cout<<"\nColGlob[ii].size() "<<endl;
-    //        for(int ii=0; ii<2; ii++) cout<<ColGlob[ii][0].size() <<"  ";
-    //        cout<<endl;
-    //        for(int jj=0; jj<2; jj++) for(int ii=0; ii<RowGlob[jj][0].size(); ii++) cout<<RowGlob[jj][0][ii]<<" ";
-    //        cout<<endl;
-    //        for(int jj=0; jj<2; jj++) for(int ii=0; ii<ColGlob[jj][0].size(); ii++) cout<<ColGlob[jj][0][ii]<<" ";
-    //        cout<<"\n\n\n"<<endl;
-    
-    //        cout<<"coord   ";
-    //        for(int ff=0; ff<2; ff++)for(int ii=0; ii<9; ii++) cout<<coords_face[ff][ii]<<"  ";
-    //        cout<<endl<<endl;
-    //        //Stop code
-    //        std::string wait;
-    //        std::cin >> wait;
+//        cout<<"\nFor Nodes "<<endl;
+//        cout<<"\nRowGlob[ii].size() "<<endl;
+//        for(int ii=0; ii<2; ii++) cout<<RowGlob[ii][0].size() <<"  ";
+//        cout<<"\nColGlob[ii].size() "<<endl;
+//        for(int ii=0; ii<2; ii++) cout<<ColGlob[ii][0].size() <<"  ";
+//        cout<<endl;
+//        for(int jj=0; jj<2; jj++) for(int ii=0; ii<RowGlob[jj][0].size(); ii++) cout<<RowGlob[jj][0][ii]<<" ";
+//        cout<<endl;
+//        for(int jj=0; jj<2; jj++) for(int ii=0; ii<ColGlob[jj][0].size(); ii++) cout<<ColGlob[jj][0][ii]<<" ";
+//        cout<<"\n\n\n"<<endl;
+//
+//        cout<<"coord   ";
+//        for(int ff=0; ff<2; ff++)for(int ii=0; ii<9; ii++) cout<<coords_face[ff][ii]<<"  ";
+//        cout<<endl<<endl;
+//        //Stop code
+//        std::string wait;
+//        std::cin >> wait;
     
     // Find row and colum indices for Edges
     vector<int> FaceEdgeSense;
@@ -131,10 +131,10 @@ namespace MoFEM {
         //                std::cin >> wait;
         
         dofs_iterator eiit,hi_eiit,col_eiit,col_hi_eiit;
-        eiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",edge));
-        hi_eiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",edge));
-        col_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",edge));
-        col_hi_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",edge));
+        eiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_lagrange,edge));
+        hi_eiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_lagrange,edge));
+        col_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_main,edge));
+        col_hi_eiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_main,edge));
         
         //For rows (we will get indices only for -ve edges, i.e. eiit!=hi_eiit===True)
         if(ff==0){
@@ -179,23 +179,23 @@ namespace MoFEM {
       }
     }
     
-    //        cout<<"\nFor Edges "<<endl;
-    //        cout<<"\nrow_mat "<<row_mat << endl;
-    //        cout<<"\nRowGlob[ii].size() "<<endl;
-    //        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) cout<<RowGlob[ff][jj].size() <<"  ";
-    //        cout<<endl;
-    //        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) for(int ii=0; ii<RowGlob[ff][jj].size(); ii++) cout<<RowGlob[ff][jj][ii]<<" ";
-    //
-    //        cout<<"\nFor Edges "<<endl;
-    //        cout<<"\nrow_mat "<<row_mat << endl;
-    //        cout<<"\ColGlob[ii].size() "<<endl;
-    //        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) cout<<ColGlob[ff][jj].size() <<"  ";
-    //        cout<<endl;
-    //        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) for(int ii=0; ii<ColGlob[ff][jj].size(); ii++) cout<<ColGlob[ff][jj][ii]<<" ";
-    //
-    //        cout<<endl;
-    //        std::string wait;
-    //        std::cin >> wait;
+//        cout<<"\nFor Edges "<<endl;
+//        cout<<"\nrow_mat "<<row_mat << endl;
+//        cout<<"\nRowGlob[ii].size() "<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) cout<<RowGlob[ff][jj].size() <<"  ";
+//        cout<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) for(int ii=0; ii<RowGlob[ff][jj].size(); ii++) cout<<RowGlob[ff][jj][ii]<<" ";
+//
+//        cout<<"\nFor Edges "<<endl;
+//        cout<<"\nrow_mat "<<row_mat << endl;
+//        cout<<"\ColGlob[ii].size() "<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) cout<<ColGlob[ff][jj].size() <<"  ";
+//        cout<<endl;
+//        for(int ff=0; ff<2; ff++) for(int jj=1; jj<row_mat; jj++) for(int ii=0; ii<ColGlob[ff][jj].size(); ii++) cout<<ColGlob[ff][jj][ii]<<" ";
+//
+//        cout<<endl;
+//        std::string wait;
+//        std::cin >> wait;
     
     
     //Find the shape function N at each gauss point for all the edges and then re-araange in the form as mentioned for nodes
@@ -210,11 +210,10 @@ namespace MoFEM {
         int nodes_edge=NBEDGE_H1(FaceEdgeOrder[ee]);
         //                cout<<"nodes_edge  "<<nodes_edge<<endl;
         for(;gg<g_TRI_dim;gg++) {
-          rowNMatrices[row_mat1][gg].resize(3,3*nodes_edge);
-          rowNMatrices[row_mat1][gg].clear();
+          rowNMatrices[row_mat1][gg].resize(rank_field,rank_field*nodes_edge);  rowNMatrices[row_mat1][gg].clear();
           int kk=0;
           for(int ii=0; ii<nodes_edge; ii++){
-            for (int jj=0; jj<3; jj++){
+            for (int jj=0; jj<rank_field; jj++){
               //                            cout<<"jj  "<<jj<<endl;
               //                            cout<<"kk  "<<kk<<endl;
               //                            cout<<"gg1  "<<gg1<<endl;
@@ -238,11 +237,11 @@ namespace MoFEM {
       rval = moab.side_element(prism_periodic,2,ff_arr[ff],Tri_Prism); CHKERR_PETSC(rval);
       
       dofs_iterator fiit,hi_fiit, col_fiit, col_hi_fiit;
-      fiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("Lagrange_mul_disp",Tri_Prism));
-      hi_fiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("Lagrange_mul_disp",Tri_Prism));
+      fiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_lagrange,Tri_Prism));
+      hi_fiit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_lagrange,Tri_Prism));
       
-      col_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
-      col_hi_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("DISPLACEMENT",Tri_Prism));
+      col_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_main,Tri_Prism));
+      col_hi_fiit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_main,Tri_Prism));
       
       if(col_fiit != col_hi_fiit)  row_mat=4;
       //            cout<<"row_mat hi "<<row_mat<<endl;
@@ -275,11 +274,10 @@ namespace MoFEM {
           int nodes_face=NBFACE_H1(face_order);
           
           for(;gg<g_TRI_dim;gg++) {
-            rowNMatrices[row_mat][gg].resize(3,3*nodes_face);
-            rowNMatrices[row_mat][gg].clear();
+            rowNMatrices[row_mat][gg].resize(rank_field,rank_field*nodes_face);   rowNMatrices[row_mat][gg].clear();
             int kk=0;
             for(int ii=0; ii<nodes_face; ii++){
-              for (int jj=0; jj<3; jj++){
+              for (int jj=0; jj<rank_field; jj++){
                 //                                  cout<<"jj  "<<jj<<endl;
                 //                                  cout<<"kk  "<<kk<<endl;
                 //                                  cout<<"gg1  "<<gg1<<endl<<endl;
@@ -346,9 +344,9 @@ namespace MoFEM {
           if(ff==0) H_mat[ff][rr](ii,ii) = -1.0;
           else H_mat[ff][rr](ii,ii) = +1.0;
         }
-        //                cout<<"H_mat "<<H_mat[ff][rr]<<endl;
+//        cout<<"H_mat "<<H_mat[ff][rr]<<endl;
       }
-      //            cout<<"ff "<<ff<<endl;
+//      cout<<"ff "<<ff<<endl;
     }
     PetscFunctionReturn(0);
   }
@@ -429,7 +427,7 @@ namespace MoFEM {
   //Calculate the right hand side vector, i.e. f=D_mat * applied_strain and assemble it into the global force vector F
   PetscErrorCode ElasticFE_RVELagrange_Periodic::Rhs() {
     PetscFunctionBegin;
-    X_mat.resize(3,6);    X_mat.clear();
+    X_mat.resize(rank_field,1.5*rank_field+1.5);    X_mat.clear();
     nodes_coord.resize(3,3);
     gauss_coord.resize(3,g_TRI_dim);
     
@@ -454,11 +452,21 @@ namespace MoFEM {
       for(int rr=0; rr<row_mat; rr++){
         for(int gg = 0;gg<g_TRI_dim;gg++) {
           double w = area*G_W_TRI[gg];
-          X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
-          X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
-          X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
-          X_mat=0.5*X_mat;
           
+          switch(rank_field) {
+            case 3:
+              X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
+              X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
+              X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
+              X_mat=0.5*X_mat;
+              break;
+            case 1:
+              X_mat(0,0)=gauss_coord(0,gg);  X_mat(0,1)=gauss_coord(1,gg);  X_mat(0,2)=gauss_coord(2,gg);
+              break;
+            default:
+              SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+          }
+
           ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
           ublas::matrix<FieldData> &col_Mat = X_mat;
           

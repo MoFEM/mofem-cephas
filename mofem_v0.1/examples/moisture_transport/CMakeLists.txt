@@ -20,9 +20,12 @@
 add_executable(moisture_trans moisture_trans.cpp)
 target_link_libraries(moisture_trans mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-
 add_executable(RVE_moisture_trans_disp RVE_moisture_trans_disp.cpp)
 target_link_libraries(RVE_moisture_trans_disp mofem_student_body mofem_forces_and_sources mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 add_executable(RVE_moisture_trans_trac RVE_moisture_trans_trac.cpp)
 target_link_libraries(RVE_moisture_trans_trac mofem_student_body mofem_forces_and_sources mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
+add_executable(RVE_moisture_trans_Periodic RVE_moisture_trans_Periodic.cpp)
+target_link_libraries(RVE_moisture_trans_Periodic mofem_student_body mofem_forces_and_sources mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+

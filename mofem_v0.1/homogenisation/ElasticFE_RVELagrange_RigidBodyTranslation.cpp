@@ -26,7 +26,7 @@ namespace MoFEM {
       
       //Find out indices for row and column for nodes on the surface, i.e. triangles
       row_mat = 0;
-      RowGlob[row_mat].resize(1);
+      RowGlob[row_mat].resize(rank_field);
       ColGlob[row_mat].resize(3*rank_field);
       
       typedef FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator row_dofs_iterator;
@@ -40,7 +40,7 @@ namespace MoFEM {
       
       //minimum and maximum rows indices for each node on the surface
       row_dofs_iterator niit,hi_niit;   //iterator for rows
-     
+
 //     cout<<"field_lagrange_rigid_tans = "<<field_lagrange_rigid_tans<<endl;
       niit = rowPtr->get<FieldName_mi_tag>().lower_bound(field_lagrange_rigid_tans);
       hi_niit = rowPtr->get<FieldName_mi_tag>().upper_bound(field_lagrange_rigid_tans);

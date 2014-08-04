@@ -55,38 +55,17 @@ namespace MoFEM {
       rowNMatrices[row_mat].resize(g_TRI_dim);
       int gg = 0;
       int gg1=0;
-//      cout<<"rank_field "<<rank_field<<endl;
-      
-      switch(rank_field) {
-        case 3:
-          for(;gg<g_TRI_dim;gg++) {
-            rowNMatrices[row_mat][gg].resize(3,9);
-            rowNMatrices[row_mat][gg].clear();
-            int kk=0;
-            for(int ii=0; ii<3; ii++){
-              for (int jj=0; jj<3; jj++){
-                rowNMatrices[row_mat][gg](jj,kk)=g_NTRI[gg1]; kk++;
-              }
-              gg1++;
-            }
+      cout<<"rank_field "<<rank_field<<endl;
+      for(;gg<g_TRI_dim;gg++) {
+        rowNMatrices[row_mat][gg].resize(rank_field,3*rank_field);   rowNMatrices[row_mat][gg].clear();
+        int kk=0;
+        for(int ii=0; ii<3; ii++){
+          for (int jj=0; jj<rank_field; jj++){
+            rowNMatrices[row_mat][gg](jj,kk)=g_NTRI[gg1]; kk++;
           }
-          break;
-        case 1:
-          for(;gg<g_TRI_dim;gg++) {
-            rowNMatrices[row_mat][gg].resize(1,3);
-            for(int ii=0; ii<3; ii++){
-              rowNMatrices[row_mat][gg](0,ii)=g_NTRI[gg1]; gg1++;
-            }
-          }
-          break;
-//        default:
-//          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+          gg1++;
+        }
       }
-
-
-      //          for(int jj=0; jj<13; jj++){
-      //                cout<<g_NTRI[3*jj+0]<<" "<<g_NTRI[3*jj+1]<<" "<<g_NTRI[3*jj+2]<<endl;
-      //              cout<<rowNMatrices[0][jj]<<endl<<endl;}
 
       //shape functions matrix (g_NTRI_mat) to find the gauss point coordinates
       g_NTRI_mat.resize(3,g_TRI_dim);

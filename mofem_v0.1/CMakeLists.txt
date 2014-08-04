@@ -148,8 +148,8 @@ add_library(mofem_homogenisation
   homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Disp.cpp
   homogenisation/ElasticFE_RVELagrange_Traction.cpp
   homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Traction.cpp
-  #homogenisation/ElasticFE_RVELagrange_Periodic.cpp
-  #homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
+  homogenisation/ElasticFE_RVELagrange_Periodic.cpp
+  homogenisation/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
   homogenisation/ElasticFE_RVELagrange_RigidBodyTranslation.cpp
   homogenisation/ElasticFE_RVELagrange_RigidBodyRotation.cpp
   )

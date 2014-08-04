@@ -28,8 +28,8 @@ namespace MoFEM {
     
     
     ElasticFE_RVELagrange_Periodic(
-                                   FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData>_applied_strain):
-    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F, _applied_strain){};
+                                   FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F, ublas::vector<FieldData>_applied_strain, const string& _field_main, const string& _field_lagrange, int _rank_field):
+    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F, _applied_strain, _field_main, _field_lagrange, _rank_field){};
     
     vector<vector<vector<DofIdx> > > RowGlob;  //The outer vector is of size 2 (one for -ve triangles and one for +ve triangles)
     vector<vector<vector<DofIdx> > > ColGlob;

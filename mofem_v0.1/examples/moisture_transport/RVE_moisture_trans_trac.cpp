@@ -112,7 +112,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_field("CONC",H1,field_rank); CHKERRQ(ierr);
   ierr = mField.add_field("LAGRANGE_MUL_FIELD",NOFIELD,3); CHKERRQ(ierr);
   ierr = mField.add_field("LAGRANGE_MUL_FIELD_RIGID_TRANS",NOFIELD,1); CHKERRQ(ierr);   //Control 3 rigid body translations in x, y and z axis
-//  ierr = mField.add_field("LAGRANGE_MUL_FIELD_RIGID_ROTATION",NOFIELD,3); CHKERRQ(ierr); //Controla 3 rigid body rotations about x, y and z axis
 
   
   //Problem
@@ -129,8 +128,6 @@ int main(int argc, char *argv[]) {
   ierr = moisture_elements.addMoistureElements("MOISTURE_PROBLEM","CONC"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("LAGRANGE_FE"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("LAGRANGE_FE_RIGID_TRANS"); CHKERRQ(ierr);
-//  ierr = mField.add_finite_element("LAGRANGE_FE_RIGID_ROTATION"); CHKERRQ(ierr);
-
   
   //Define rows/cols and element data for C and CT (for lagrange multipliers)
   //============================================================================================================
@@ -164,21 +161,6 @@ int main(int argc, char *argv[]) {
   //============================================================================================================
   
   
-//  //Define rows/cols and element data for C2 and C2T (for lagrange multipliers to contol the rigid body rotations)
-//  //============================================================================================================
-//  //C2 row as Lagrange_elem_rigid_trans and col as CONC
-//  ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE_RIGID_ROTATION","LAGRANGE_MUL_FIELD_RIGID_ROTATION"); CHKERRQ(ierr);
-//  ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE_RIGID_ROTATION","CONC"); CHKERRQ(ierr);
-//  
-//  //C2T col as Lagrange_elem_rigid_trans and row as CONC
-//  ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE_RIGID_ROTATION","LAGRANGE_MUL_FIELD_RIGID_ROTATION"); CHKERRQ(ierr);
-//  ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE_RIGID_ROTATION","CONC"); CHKERRQ(ierr);
-//  
-//  //As for stress we need both CONC and temprature (Lukasz)
-//  ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE_RIGID_ROTATION","LAGRANGE_MUL_FIELD_RIGID_ROTATION"); CHKERRQ(ierr);
-//  ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE_RIGID_ROTATION","CONC"); CHKERRQ(ierr);
-//  //============================================================================================================
-
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","LAGRANGE_FE"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","LAGRANGE_FE_RIGID_TRANS"); CHKERRQ(ierr);
@@ -305,42 +287,42 @@ int main(int argc, char *argv[]) {
   const double young_modulus = 1;
   const double poisson_ratio = 0.0;
 
-//  double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
-//  Vec RVE_volume_Vec;
-//  ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
-//  ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
-//  
-//  RVEVolume MyRVEVol(mField,A,C,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
-//  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","MOISTURE_FE",MyRVEVol);  CHKERRQ(ierr);
-////  ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
-//  cout<<"Final RVE_volume = "<< RVE_volume <<endl;
-//  
-//  
-//  //create a vector for 6 components of homogenized stress
-//  Vec Stress_Homo;
-//  ierr = VecCreateMPI(PETSC_COMM_WORLD, 3, 3*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
-//  ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-//  
-//  //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  MoistureFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C,F,&RVE_volume, applied_strain, Stress_Homo);
-//  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-//  
-////  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
-////  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  if(pcomm->rank()==0){
-//    PetscScalar    *avec;
-//    VecGetArray(Stress_Homo, &avec);
-//    
-//    cout<< "\nStress_Homo = \n\n";
-//    for(int ii=0; ii<3; ii++){
-//      cout <<*avec<<endl; ;
-//      avec++;
-//    }
-//  }
-//  cout<< "\n\n";
-//
+  double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
+  Vec RVE_volume_Vec;
+  ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
+  
+  RVEVolume MyRVEVol(mField,A,C,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
+  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","MOISTURE_FE",MyRVEVol);  CHKERRQ(ierr);
+//  ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
+  cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+  
+  
+  //create a vector for 6 components of homogenized stress
+  Vec Stress_Homo;
+  ierr = VecCreateMPI(PETSC_COMM_WORLD, 3, 3*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+  
+  //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressDisp(mField,A,C,F,&RVE_volume, applied_strain, Stress_Homo,"CONC","LAGRANGE_MUL_FIELD",field_rank);
+  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
+  
+//  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+//  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  if(pcomm->rank()==0){
+    PetscScalar    *avec;
+    VecGetArray(Stress_Homo, &avec);
+    
+    cout<< "\nStress_Homo = \n\n";
+    for(int ii=0; ii<3; ii++){
+      cout <<*avec<<endl; ;
+      avec++;
+    }
+  }
+  cout<< "\n\n";
+
 //  //=======================================================================================================================================================
 
   
