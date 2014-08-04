@@ -146,8 +146,9 @@ int main(int argc, char *argv[]) {
   //Define problem
   
   //Fields
-  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("Lagrange_mul_disp",H1,3); CHKERRQ(ierr);
+  int field_rank=3;
+  ierr = mField.add_field("DISPLACEMENT",H1,field_rank); CHKERRQ(ierr);
+  ierr = mField.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);
   
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
@@ -319,8 +320,7 @@ int main(int argc, char *argv[]) {
   const double YoungModulus = 1;
   const double PoissonRatio = 0.0;
   MyElasticFEMethod MyFE(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  
-  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,Aij,D,F,applied_strain);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
   
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -390,7 +390,7 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
   
   //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo);
+  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
   
 //  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
