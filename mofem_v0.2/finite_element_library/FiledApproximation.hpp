@@ -26,16 +26,6 @@
 #ifndef __FILEDAPPROXIMATION_HPP
 #define __FILEDAPPROXIMATION_HPP
 
-#include "FieldInterface.hpp"
-#include "FEM.h"
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
-
 using namespace boost::numeric;
 
 namespace MoFEM {
@@ -53,11 +43,11 @@ struct FieldApproximationH1 {
 
   struct OpApprox: public TetElementForcesAndSourcesCore::UserDataOperator {
 
-    Mat &A;
-    Vec &F;
+    Mat A;
+    Vec F;
     FUNEVAL &functionEvaluator;
 
-    OpApprox(const string &field_name,Mat &_A,Vec &_F,FUNEVAL &function_evaluator):
+    OpApprox(const string &field_name,Mat _A,Vec _F,FUNEVAL &function_evaluator):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       A(_A),F(_F),functionEvaluator(function_evaluator) {}
     ~OpApprox() {}
@@ -224,9 +214,9 @@ struct FieldApproximationH1 {
     FUNEVAL &function_evaluator) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
-    fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
-    MatZeroEntries(A);
+    //fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    //fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    /*MatZeroEntries(A);
     VecZeroEntries(F);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -234,7 +224,7 @@ struct FieldApproximationH1 {
     ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);*/
     PetscFunctionReturn(0);
   }
 
