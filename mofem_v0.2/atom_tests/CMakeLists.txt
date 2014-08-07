@@ -153,66 +153,96 @@ add_test(projection_from_10node_tet_atom_compare ${CMAKE_COMMAND} -E compare_fil
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/10node_sphere.txt
   ${CMAKE_BINARY_DIR}/atom_tests/10node_sphere.txt)
 
+#mesh refine
+cm_export_file("../meshes/templar.cub" export_atom_tests)
+
+add_executable(mesh_refine_atom mesh_refine_atom.cpp)
+target_link_libraries(mesh_refine_atom
+  mofem_interfaces
+  mofem_multi_indices
+  ${PROJECT_LIBS})
+
+add_test(mesh_refine_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.cub -log_summary)
+add_test(mesh_refine_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt)
+
 #mesh_insert_interface_atom
-#cm_export_file("../meshes/templar.cub" export_atom_tests)
-#cm_export_file("../meshes/Tinterface.cub" export_atom_tests)
-#cm_export_file("../meshes/4seasons.cub" export_atom_tests)
-#
-#add_executable(mesh_insert_interface_atom mesh_insert_interface_atom.cpp)
-#target_link_libraries(mesh_insert_interface_atom mofem_Field ${PROJECT_LIBS})
-#
-#add_test(mesh_insert_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub -log_summary)
-#add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
-#add_test(mesh_insert_T_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file Tinterface.cub -log_summary)
-#add_test(mesh_insert_T_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
-#add_test(mesh_insert_T_4seasons_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file 4seasons.cub -log_summary)
-#add_test(mesh_insert_T_4seasons_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_4seasons_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
-#
-##mesh refine
-#add_executable(mesh_refine_atom mesh_refine_atom.cpp)
-#target_link_libraries(mesh_refine_atom mofem_student_body mofem_Field ${PROJECT_LIBS})
-#
-#add_test(mesh_refine_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.cub -log_summary)
-#add_test(mesh_refine_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt)
-#
-#
-##foces and sources functions Test
-#add_executable(forces_and_sources_getting_orders_indices_atom_test forces_and_sources_getting_orders_indices_atom_test.cpp)
-#target_link_libraries(forces_and_sources_getting_orders_indices_atom_test mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
-#
-#add_test(forces_and_sources_getting_orders_indices_test 
-#  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_orders_indices_atom_test -my_file elasticity_atom_test_01X_pressure.cub)
-#add_test(forces_and_sources_getting_orders_indices_test_compare ${CMAKE_COMMAND} -E compare_files 
-#  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_orders_indices_atom_test.txt
-#  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_orders_indices_atom_test.txt)
-#
-#add_executable(forces_and_sources_getting_mult_H1_H1_atom_test forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
-#target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
-#
-#add_test(forces_and_sources_getting_mult_H1_H1_test 
-#  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_mult_H1_H1_atom_test -my_file elasticity_atom_test_01X_pressure.cub)
-#add_test(forces_and_sources_getting_mult_H1_H1_test_compare ${CMAKE_COMMAND} -E compare_files 
-#  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_mult_H1_H1_atom_test.txt
-#  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_mult_H1_H1_atom_test.txt)
-#
-#add_executable(forces_and_sources_calculate_jacobian forces_and_sources_calculate_jacobian.cpp)
-#target_link_libraries(forces_and_sources_calculate_jacobian mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
-#
-#add_test(forces_and_sources_calculate_jacobian_test
-#  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_calculate_jacobian -my_file elasticity_atom_test_01X_pressure.cub)
-#add_test(forces_and_sources_calculate_jacobian_test_compare ${CMAKE_COMMAND} -E compare_files 
-#  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_calculate_jacobian.txt
-#  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_calculate_jacobian.txt)
-#
-#add_executable(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
-#target_link_libraries(forces_and_sources_testing_volume_element mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
-#
-#add_test(forces_and_sources_testing_volume_element_test
-#  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element -my_file elasticity_atom_test_01X_pressure.cub)
-#add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND} -E compare_files 
-#  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_volume_element.txt
-#  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt)
-#
+cm_export_file("../meshes/Tinterface.cub" export_atom_tests)
+cm_export_file("../meshes/4seasons.cub" export_atom_tests)
+
+add_executable(mesh_insert_interface_atom mesh_insert_interface_atom.cpp)
+target_link_libraries(mesh_insert_interface_atom 
+  mofem_interfaces
+  mofem_multi_indices
+  ${PROJECT_LIBS})
+
+add_test(mesh_insert_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub -log_summary)
+add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
+add_test(mesh_insert_T_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file Tinterface.cub -log_summary)
+add_test(mesh_insert_T_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
+add_test(mesh_insert_T_4seasons_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file 4seasons.cub -log_summary)
+add_test(mesh_insert_T_4seasons_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_4seasons_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
+
+#foces and sources functions Test
+add_executable(forces_and_sources_getting_orders_indices_atom_test forces_and_sources_getting_orders_indices_atom_test.cpp)
+target_link_libraries(forces_and_sources_getting_orders_indices_atom_test
+  mofem_third_party
+  mofem_approx
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  ${PROJECT_LIBS})
+
+add_test(forces_and_sources_getting_orders_indices_test 
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_orders_indices_atom_test -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_getting_orders_indices_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_orders_indices_atom_test.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_orders_indices_atom_test.txt)
+
+add_executable(forces_and_sources_getting_mult_H1_H1_atom_test forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
+target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test 
+  mofem_third_party
+  mofem_approx
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  ${PROJECT_LIBS})
+
+add_test(forces_and_sources_getting_mult_H1_H1_test 
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_mult_H1_H1_atom_test -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_getting_mult_H1_H1_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_mult_H1_H1_atom_test.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_mult_H1_H1_atom_test.txt)
+
+add_executable(forces_and_sources_calculate_jacobian forces_and_sources_calculate_jacobian.cpp)
+target_link_libraries(forces_and_sources_calculate_jacobian
+  mofem_third_party
+  mofem_approx
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  ${PROJECT_LIBS})
+
+add_test(forces_and_sources_calculate_jacobian_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_calculate_jacobian -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_calculate_jacobian_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_calculate_jacobian.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_calculate_jacobian.txt)
+
+add_executable(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
+target_link_libraries(forces_and_sources_testing_volume_element
+  mofem_third_party
+  mofem_approx
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  ${PROJECT_LIBS})
+
+add_test(forces_and_sources_testing_volume_element_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_volume_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt)
+
 #add_executable(forces_and_sources_testing_field_approximation forces_and_sources_testing_field_approximation.cpp) 
 #target_link_libraries(forces_and_sources_testing_field_approximation mofem_forces_and_sources mofem_student_body mofem_Field ${PROJECT_LIBS})
 #

@@ -17,16 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include "ForcesAndSurcesCore.hpp"
+#include <MoFEM.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
-
-#include<FEM.h>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -43,7 +39,7 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -56,7 +52,7 @@ int main(int argc, char *argv[]) {
   }
 
   //Create MoFEM (Joseph) database
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
