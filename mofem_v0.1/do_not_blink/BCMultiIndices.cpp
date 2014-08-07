@@ -315,7 +315,7 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,CubitB
         type |= MAT_ELASTICSET; }
     else if (name.compare(0,11,"MAT_THERMAL") == 0) {
         type |= MAT_THERMALSET; }
-    else if (name.compare(0,15,"MAT_MOISTURE") == 0) {
+    else if (name.compare(0,12,"MAT_MOISTURE") == 0) {
       type |= MAT_MOISTURESET; }
     else if (name.compare(0,10,"MAT_INTERF") == 0) {
         type |= MAT_INTERFSET; }

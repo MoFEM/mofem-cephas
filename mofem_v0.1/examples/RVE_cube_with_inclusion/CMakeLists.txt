@@ -25,6 +25,17 @@ target_link_libraries(RVE_Cube_with_inclusion_Traction mofem_student_body mofem_
 add_executable(RVE_Cube_with_inclusion_Periodic RVE_Cube_with_inclusion_Periodic.cpp)
 target_link_libraries(RVE_Cube_with_inclusion_Periodic mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
+add_executable(moisture_RVE_Cube_with_inclusion_Disp moisture_RVE_Cube_with_inclusion_Disp.cpp)
+target_link_libraries(moisture_RVE_Cube_with_inclusion_Disp mofem_student_body mofem_forces_and_sources mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
+add_executable(moisture_RVE_Cube_with_inclusion_Traction moisture_RVE_Cube_with_inclusion_Traction.cpp)
+target_link_libraries(moisture_RVE_Cube_with_inclusion_Traction mofem_student_body mofem_forces_and_sources mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
+add_executable(moisture_RVE_Cube_with_inclusion_Periodic moisture_RVE_Cube_with_inclusion_Periodic.cpp)
+target_link_libraries(moisture_RVE_Cube_with_inclusion_Periodic mofem_student_body mofem_forces_and_sources mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
+
+
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

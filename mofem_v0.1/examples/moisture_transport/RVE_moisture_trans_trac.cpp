@@ -30,7 +30,6 @@
 #include "ElasticFE_RVELagrange_Traction.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Traction.hpp"
 #include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"
-#include "ElasticFE_RVELagrange_RigidBodyRotation.hpp"
 #include "RVEVolume.hpp"
 //
 #include "PostProcVertexMethod.hpp"
@@ -164,7 +163,6 @@ int main(int argc, char *argv[]) {
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","LAGRANGE_FE"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","LAGRANGE_FE_RIGID_TRANS"); CHKERRQ(ierr);
-//  ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","LAGRANGE_FE_RIGID_ROTATION"); CHKERRQ(ierr);
   
   
   //set refinment level for problem
@@ -189,7 +187,6 @@ int main(int argc, char *argv[]) {
 
   ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"LAGRANGE_FE"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"LAGRANGE_FE_RIGID_TRANS"); CHKERRQ(ierr);
-//  ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"LAGRANGE_FE_RIGID_ROTATION"); CHKERRQ(ierr);
   
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)

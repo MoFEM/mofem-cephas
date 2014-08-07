@@ -110,13 +110,23 @@ namespace MoFEM {
       ierr = mField.modify_problem_add_finite_element(problem_name,"MOISTURE_FE"); CHKERRQ(ierr);
       
       
-      // loop over all blocksets and get data which name is FluidPressure
+      // loop over all blocksets
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_MOISTURESET,it)) {
         Mat_Moisture moisture_data;
         ierr = it->get_attribute_data_structure(moisture_data); CHKERRQ(ierr);
+        
+//        cout<<"moisture_data.data.Diffusivity = "<<moisture_data.data.Diffusivity<<endl;
+//        cout<<"it->get_msId() = "<<it->get_msId()<<endl;
+        
         setOfBlocks[it->get_msId()].dIffusivity = moisture_data.data.Diffusivity;
+        
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+        
+//        cout<<"setOfBlocks[it->get_msId()].tEts.size() = "<<setOfBlocks[it->get_msId()].tEts.size()<<endl;
+
         ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"MOISTURE_FE"); CHKERRQ(ierr);
+        
+        
       }
       PetscFunctionReturn(0);
     }
@@ -288,9 +298,12 @@ namespace MoFEM {
       map<int,BlockData>::iterator sit = setOfBlocks.begin();
       for(;sit!=setOfBlocks.end();sit++) {
         //add finite elemen
+        cout<<"Hi 1 "<<endl;
+
         feLhs.get_op_to_do_Lhs().push_back(new OpMoistureLhs(field_name,A,sit->second,commonData));
+        cout<<"Hi 2 "<<endl;
+
       }
-      //      cout<<"Hi from function setMoistureFiniteElementLhsOperators"<<endl;
       //      cout<<"field_name = "<<field_name<<endl;
       
       
@@ -340,6 +353,8 @@ namespace MoFEM {
           K.resize(nb_row,nb_col);
           bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
           
+          cout<<"dAta.dIffusivity = "<<dAta.dIffusivity<<endl;
+
           for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
             //            cout<<"gg = "<<gg<<endl;
             //            cout<<"dAta.dIffusivity = "<<dAta.dIffusivity<<endl;

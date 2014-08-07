@@ -23,14 +23,11 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
-#include "ForcesAndSurcesCore.hpp"
-#include "TsCtx.hpp"
-#include "MoistureElement.hpp"
-
+#include "MoistureFEMethod.hpp"
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
 #include "RVEVolume.hpp"
-//
+
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 #include "Projection10NodeCoordsOnField.hpp"
@@ -94,6 +91,8 @@ int main(int argc, char *argv[]) {
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
   
+  
+  
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -105,39 +104,39 @@ int main(int argc, char *argv[]) {
   /***/
   //Define problem
   
-  //Field
+  //Fields
   int field_rank=1;
   ierr = mField.add_field("CONC",H1,field_rank); CHKERRQ(ierr);
   ierr = mField.add_field("LAGRANGE_MUL_FIELD",H1,field_rank); CHKERRQ(ierr);
   
-  
-  //Problem
-  ierr = mField.add_problem("MOISTURE_PROBLEM"); CHKERRQ(ierr);
-  
-
-  //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set();
-  //add entities to field
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"CONC"); CHKERRQ(ierr);
-
   //FE
-  MoistureElement moisture_elements(mField);
-  ierr = moisture_elements.addMoistureElements("MOISTURE_PROBLEM","CONC"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MOISTURE_FE"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("LAGRANGE_FE"); CHKERRQ(ierr);
   
-  //C row as Lagrange_mul_disp and col as DISPLACEMENT
+  //Define rows/cols and element data
+  ierr = mField.modify_finite_element_add_field_row("MOISTURE_FE","CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("MOISTURE_FE","CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("MOISTURE_FE","CONC"); CHKERRQ(ierr);
+  
+  //C row as LAGRANGE_MUL_FIELD and col as CONC
   ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE","LAGRANGE_MUL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE","CONC"); CHKERRQ(ierr);
   
-  //CT col as Lagrange_mul_disp and row as DISPLACEMENT
+  //CT col as LAGRANGE_MUL_FIELD and row as CONC
   ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE","LAGRANGE_MUL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE","CONC"); CHKERRQ(ierr);
   
-  //As for stress we need both displacement and temprature (Lukasz)
+  //As for stress we need both CONC and temprature (Lukasz)
   ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE","LAGRANGE_MUL_FIELD"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE","CONC"); CHKERRQ(ierr);
   
+  
+  //define problems
+  ierr = mField.add_problem("MOISTURE_PROBLEM"); CHKERRQ(ierr);
+  
+  
   //set finite elements for problem
+  ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","MOISTURE_FE"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","LAGRANGE_FE"); CHKERRQ(ierr);
   
   
@@ -150,7 +149,9 @@ int main(int argc, char *argv[]) {
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"CONC",2); CHKERRQ(ierr);
   
+  
   //add finite elements entities
+  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MOISTURE_FE",MBTET); CHKERRQ(ierr);
   Range SurfacesFaces;
   ierr = mField.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
@@ -167,11 +168,11 @@ int main(int argc, char *argv[]) {
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   //int order = 5;
-  ierr = mField.set_field_order(root_set,MBTET,"CONC",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"CONC",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"CONC",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"CONC",1); CHKERRQ(ierr);
-
+  ierr = mField.set_field_order(0,MBTET,"CONC",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"CONC",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"CONC",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"CONC",1); CHKERRQ(ierr);
+  
   ierr = mField.set_field_order(0,MBTRI,"LAGRANGE_MUL_FIELD",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"LAGRANGE_MUL_FIELD",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"LAGRANGE_MUL_FIELD",1); CHKERRQ(ierr);
@@ -204,75 +205,77 @@ int main(int argc, char *argv[]) {
   //print block sets with materials
   ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
   
-  //create matrices (here F, D and A are matrices for the full problem)
-  Vec F,C;
+  //create matrices (here F, D and Aij are matrices for the full problem)
+  Vec F,D;
   ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",ROW,&F); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",COL,&C); CHKERRQ(ierr);
-  Mat A;
-  ierr = mField.MatCreateMPIAIJWithArrays("MOISTURE_PROBLEM",&A); CHKERRQ(ierr);
-
-  ierr = moisture_elements.setMoistureFiniteElementLhsOperators("CONC",(&A)); CHKERRQ(ierr);
-  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,A,C,F,applied_strain,"CONC","LAGRANGE_MUL_FIELD",field_rank);
-
+  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",COL,&D); CHKERRQ(ierr);
+  
+  Mat Aij;
+  ierr = mField.MatCreateMPIAIJWithArrays("MOISTURE_PROBLEM",&Aij); CHKERRQ(ierr);
+  
+  //Assemble F and Aij
+  const double young_modulus = 1;
+  const double poisson_ratio = 0.0;
+  MoistureFEMethod my_fe(mField,Aij,D,F);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,Aij,D,F,applied_strain,"CONC","LAGRANGE_MUL_FIELD",field_rank);
+  
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = MatZeroEntries(A); CHKERRQ(ierr);
+  ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
   
   
-  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","MOISTURE_FE",moisture_elements.getLoopFeLhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","MOISTURE_FE",my_fe);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","LAGRANGE_FE",MyFE_RVELagrange);  CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
+  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  //ierr = MatView(A,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
-//  //Matrix View
-//  MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-//  std::string wait;
-//  std::cin >> wait;
-
+  
+////Matrix View
+//MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+//std::string wait;
+//std::cin >> wait;
+  
   //Solver
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-  ierr = KSPSetOperators(solver,A,A,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
   
-  ierr = KSPSolve(solver,F,C); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
-//  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  ierr = VecView(C,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
   
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
   //Calculation of Homogenized stress
   //=======================================================================================================================================================
-  const double young_modulus = 1;
-  const double poisson_ratio = 0.0;
-
   double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
   Vec RVE_volume_Vec;
   ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
   ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
   
-  RVEVolume MyRVEVol(mField,A,C,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
+  RVEVolume MyRVEVol(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
   ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","MOISTURE_FE",MyRVEVol);  CHKERRQ(ierr);
-//  ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
-  cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+//    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
   
   
   //create a vector for 6 components of homogenized stress
@@ -281,7 +284,7 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
   
   //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C,F,&RVE_volume, applied_strain, Stress_Homo,"CONC","LAGRANGE_MUL_FIELD",field_rank);
+  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo,"CONC","LAGRANGE_MUL_FIELD",field_rank);
   ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
   
 //  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
@@ -300,13 +303,13 @@ int main(int argc, char *argv[]) {
   cout<< "\n\n";
 
   //=======================================================================================================================================================
-
+  
   ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField,"CONC",true,false,"CONC");
   ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
   ent_method_on_10nodeTet.set_nodes = false;
   ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
-
   
+
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -323,11 +326,10 @@ int main(int argc, char *argv[]) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
   
-   
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&C); CHKERRQ(ierr);
-  ierr = MatDestroy(&A); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   
   
